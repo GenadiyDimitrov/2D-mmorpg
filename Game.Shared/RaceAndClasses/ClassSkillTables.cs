@@ -64,7 +64,16 @@ public static partial class ClassSkillTables
                 // 2026-07-31). ⚠ They are NOT learned together any more: he split the `mage 1st.csv`
                 // row on 2026-08-19 and put Bulwark at 14 (*"i splitted them"*), so a level-7 mage buys
                 // offence and waits a tier for defence. 20 MP and 960 SP each — his numbers.
-                new ClassSkill(CastId(FamPhysAtk), 7),               // Might   +8% P.Atk
+                //
+                // 🔑 `BL-263` — MIGHT IS THREE SKILLS NOW, one per race, and this loop picks the
+                //    race's. They are WRAPPERS over one rung (SkillCatalog.MageMightFor): same
+                //    +8% P.Atk, same price, different name/description/icon. The generic
+                //    `cast_atk_phys` is still what a buffer CLASS casts from 20 up, and it
+                //    `Replaces` all three — see ClassSkillTables.Common.
+                // ⚠ Stays in the BASE-CLASS list rather than the race injector: it is one rung at 7
+                //   that a 2nd class supersedes, not a ladder that follows you. Same lifecycle it
+                //   has always had.
+                new ClassSkill(MageMightFor(race), 7),               // Might   +8% P.Atk
                 new ClassSkill(MageAntiMagic, 7, SkillLevel: 1),     // +12 M.Def
                 new ClassSkill(MagicBolt, 14, SkillLevel: 3),
                 new ClassSkill(CastId(FamPhysDef), 14),              // Bulwark +8% P.Def

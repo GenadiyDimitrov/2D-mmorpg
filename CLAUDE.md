@@ -169,11 +169,22 @@ from IG references.
 - **Buffs**: flat skill id = ability identity; `BuffKey` = buff identity for
   stacking. Stacking rules in `ApplyBuff`: (1) conflict is by **FAMILY** — two buffs compete when
   their family sets intersect — and same-family compares `Rank` (incoming ≥ existing → replace;
-  weaker → ignore; equal rank keeps the LONGER remaining time); (2) explicit `Replaces[]` removes
+  weaker → ignore; **equal rank → the INCOMING one replaces, duration plays no part** — `BL-263`,
+  2026-09-18, *"remove the duration check of same rank buffs"*, so a 20-min party buff really does
+  overwrite an hour-long NPC one of the same rung); (2) explicit `Replaces[]` removes
   listed buffs. An **improved/group buff is ONE buff** with `GroupRank = 100 + level` carrying every
   child's magnitudes and declaring `CoveredKeys`, so it always outranks and evicts its singles and a
-  potion can never override it (the IG rule, 0.42.0). ⚠ Authoring rule: a group must be ≥ the best
-  single in EVERY family it covers. Per-class flavor = `DisplayName` override on `ClassSkill`.
+  potion can never override it (the IG rule, 0.42.0). 🔴 **A covered family has NO rank of its own and
+  he DECLINED giving it one** (*"we dont want a body_reinforcment (that provides 10 things) to be
+  replaced by a single buff a one rank higher .. 100+lvl is ok"*) — so the ⚠ authoring rule **a group
+  must be ≥ the best single in EVERY family it covers** is enforced by nothing but this line.
+  ⚠ `SkillCatalog.HarmonyRank` (= `NpcBuffRank + 1`) is the ONLY thing holding a covering harmony
+  above the NPC singles it covers now that equal rank means "whoever cast last" — never collapse it.
+  🔑 **A RACIAL VARIANT IS A WRAPPER, NOT A NEW BUFF** (`BL-263`): `elf_/demon_/human_cast_atk_phys`
+  all name the SAME child rung (`buff_atk_phys_1`), so they land at one `(family, rank)` and replace
+  one another for free — a wrapper states no key and no rank of its own, which is exactly why two of
+  them cannot disagree. `SkillDef.NamesItsBuff` gives the wrapper's own name/description to the buff
+  (the icon already followed `SourceSkillId`). Per-class flavor = `DisplayName` override on `ClassSkill`.
 - **Spell range is PER-SPELL** (the skill's own `Range`), NOT class-tier-based:
   `SkillMath.EffectiveRange` returns `def.Range` for spells (heals shorter than attack
   spells; healer attack ~750, nuker ~900, base nuke 600 — authored per skill). The ONE

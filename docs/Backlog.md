@@ -276,7 +276,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-250` | 🟢 | THE SUBCLASS SYSTEM — **BUILT WHOLE** (0.155.0 server, 0.169.0 sigils, 0.170.0 the class master's dialogue). Only the APK is owed. ❓ one question in §9.6 | classes |
 | `BL-260` | ❓ | **SUMMONERS — the conversation we have never had**, and four shipped decisions already lean on it | classes |
 | `BL-262` | ❓ | THE BOSS MAT PILE TAKES NO RATE KNOB — the same shape `BL-247` fixed in the recipe roll; three ways out, my reading is (2) | items |
-| `BL-263` | 🔵 | **BUFFS ARE WRAPPERS OVER `(family, level)`** — your model, recorded in [design/BuffFamilies.md](design/BuffFamilies.md). Five gaps, five steps; step 1 is the one that stops today's shape biting | skills |
+| `BL-263` | 🟡 | **BUFFS ARE WRAPPERS OVER `(family, level)`** — [design/BuffFamilies.md](design/BuffFamilies.md). Duration is out of the conflict rule and the first three racial wrappers are built (0.176.0); per-family group rank DECLINED. Left: two boot checks nothing enforces, and the rest of the racial split | skills |
 
 ---
 
@@ -872,6 +872,14 @@ Three ways out, and it is your call which:
 
 Nothing is blocked on this; it only bites a level-83+ character who bought a Mark and then joined a
 party with a 4th-class Lightbringer.
+
+🔴 **REOPENED-AND-CHANGED BY `BL-263` (0.176.0, 2026-09-18).** Removing the duration tiebreak flips
+this bug rather than fixing it. The complaint above — *the weaker rung out-holding the stronger* — is
+**gone**: a Lightbringer's rung-2 Mark now replaces an NPC rung-1 Mark on the spot. But the reverse is
+now possible and was not before: **buying the NPC's rung-1 Mark while wearing your own rung 2 will
+overwrite it**, because at equal rank the last cast wins and `BuffWouldLand` no longer refuses it, so
+the gold is taken too. **Option 1 (Rank = rung on the Mark ladder) is the fix, and it now closes both
+directions at once.** ⚠ Option 3 ("leave it") no longer means what it meant when you read it.
 
 ### `BL-165` 🔵 What the tank's 4th tier left open — the two AoE pulls, and one clamp
 
@@ -2060,43 +2068,41 @@ the one genuinely drop-shaped thing in the pile starts obeying the knob you play
 ⚠ Whichever you pick, the fix is a few lines: the pile is one table with one reader now
 (`GameLoopService.RollBossBonus`), and the drop database reads the same table, so both move together.
 
-## `BL-263` 🔵 BUFFS ARE WRAPPERS OVER `(family, level)` — your model
 
-**Your design, 2026-09-18, recorded in full in [design/BuffFamilies.md](design/BuffFamilies.md).**
-Nothing is built. This entry exists so the design is somewhere you will actually walk past.
+## `BL-263` 🔵 BUFFS ARE WRAPPERS OVER `(family, level)` — what is LEFT
 
-> everything is a wrapper for icon/duration/name/descr/animation/cost/cooldown/casttime/etc… but it
-> provides an effect of a family, and the same effect of one family doesn't stack.
+**Your model, 2026-09-18, recorded in full in [design/BuffFamilies.md](design/BuffFamilies.md).**
+🟡 **Three of its five gaps are settled** — the original five-gap text is in
+[BacklogArchive.md](BacklogArchive.md) under this id. Settled on 2026-09-18, in 0.176.0:
 
-`human_body` / `demon_body` / `elf_body` / `npc_body` all provide `(hp_max, N)`. Different look,
-different cast, different duration — same number line, and **conflict is `(family, level)` only, never
-duration**. A group provides several families at `max+1` so no single can take a part back. A
-different family name (`har_hp_max` vs `hp_max`) is a different line and they stack.
+- ✅ **Duration is out of the conflict rule.** *"remove the duration check of same rank buffs"* —
+  equal rank now replaces, in `ApplyBuff` and in the `BuffWouldLand` pre-filter alike.
+- 🔴 **Per-family rank on a group: DECLINED.** *"leave grups to cover only families no rank … we
+  dont want a body_reinforcment (that provides 10 things) to be replaced by a single buff a one rank
+  higher .. 100+lvl is ok"*. `GroupRank = 100 + level` stays. You were right; my step 1 was wrong.
+- ✅ **A wrapper can own the buff's name and description** (`SkillDef.NamesItsBuff`), and the first
+  three exist: `elf_/demon_/human_cast_atk_phys`, three faces over one rung.
 
-🔑 **The engine already speaks this language** — `BuffKey` is your family, `Rank` your level,
-`CoveredKeys` your extra families, and `cast_hp_max` (the buffer's own castable Body) is already one
-id with six levels. Five things are missing. In the order they will bite:
+### What is still owed
 
-1. 🔴 **A covered family carries no level.** `CoveredKeys` is `string[]`, so a group wins everywhere
-   by one number. Today's substitute is a rule a human must remember (*"a group must be ≥ the best
-   single in every family it covers"*) and **nothing checks it**. That class of silent downgrade has
-   already shipped twice.
-2. 🔴 **Equal level keeps the longer duration** — you want duration ignored. We already paid a
-   constant (`HarmonyRank = NpcBuffRank + 1`) purely to work around this.
-3. 🟡 **A wrapper's name and icon don't survive onto the buff** — `ApplyBuff` drops `displayName`
-   when it recurses into the child, so `demon_body` would land on the bar called "Body". Same root
-   cause as the cast-bar/buff-name mismatch you noticed.
-4. 🟡 **A rung is addressed by id, not `(family, level)`** — and ⚠ **rung ids ARE in the database**
-   (`BuffsJson`), contrary to a comment in `Skills.BuffLadders.cs` that says they are not. Moving to
-   `(family, level)` is a save-format change, i.e. a `game.db` delete.
-5. 🟢 **Passives have no family arbitration at all** — your ×4 cast-speed fear is real:
-   `ApplyPassive` multiplies every learned passive and only a `0.4…2.5` clamp hides it.
+1. 🔴 **NOTHING CHECKS "a group must be ≥ the best single in EVERY family it covers."** Declining the
+   per-family rank does not make that authoring rule go away — it only means it cannot be expressed as
+   data. It is still a comment in `CLAUDE.md` and a human's memory, and it has already shipped broken
+   twice. **A boot CHECK is the cheap version**: for every group, compare its folded magnitudes
+   against every single def in each family it covers, and refuse to start if one is weaker.
+   🔵 *Want it?* It is behaviour-neutral and maybe 40 lines.
+2. 🟢 **Passives still have no arbitration at all.** Your ×4 cast-speed fear (*"if I forgot to make
+   one replace the other they stack"*) is real: `ApplyPassive` MULTIPLIES `CastSpeedPct` for every
+   learned passive and only a `0.4…2.5` clamp hides it. Same answer as above — **a boot check before
+   a mechanism**: flag two learnable-together passives feeding one channel with no `Replaces` between
+   them.
+3. 🔵 **The mass racial duplication you said was coming.** Might is done as the proof of concept. The
+   pattern costs one id, one name, one description and one line per race per family — nothing else,
+   because the family key and the rank live on the shared child rung. Say which families you want
+   split and by which races, and it is mechanical.
+4. 🔵 **`Provides: (family, level)[]` replacing `ChildBuffs: string[]`** — the full version of your
+   model. **Not needed for anything you have asked for so far**, and it is a save-format change
+   (⚠ rung ids really are in `BuffsJson`), i.e. a `game.db` delete. Only if a wrapper ever needs to
+   hand out several families at once with a level each.
 
-**My recommendation is NOT to build the whole model.** Steps 1-3 are small, stand alone, and buy most
-of what you described — including racial Body variants, which need no new machinery at all once
-step 2 lands. Step 4 (the full `Provides: (Family, Level)[]`) only if 1-3 turn out not to be enough.
-For passives, **a boot CHECK before a mechanism**: flag two learnable-together passives feeding one
-channel with no `Replaces` between them. That catches the mis-authoring for a fraction of the cost.
-
-🔵 **Waiting on you:** whether to take step 1 now (it is behaviour-neutral and turns an unchecked
-authoring rule into a boot assertion), or to hold the whole thing until the 40+ CSVs are done.
+🔵 **Waiting on you:** items 1 and 2 are the two checks. Item 3 is a list of families from you.

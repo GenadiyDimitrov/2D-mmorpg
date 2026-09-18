@@ -249,8 +249,13 @@ public static partial class SkillCatalog
     /// <param name="text">The rung's own description, used as the level's.</param>
     /// <param name="costs">Authored per-rung prices, weakest first. May be shorter than the ladder,
     /// and any zero field falls back to the formula.</param>
+    /// <param name="replaces">Skill ids this class buff RETIRES — off the buff bar and off the learn
+    /// list alike. Only Might uses it: `BL-263` split the base mage's Might into three racial
+    /// wrappers, and his `cleric 2nd.csv` row names all three (*"cleric just replaces them so nothing
+    /// higher have them"*).</param>
     private static SkillDef CastSingle(string family, string name, SkillEffect effect,
-        string[] children, Func<string, string> text, string desc, RungCost[]? costs = null)
+        string[] children, Func<string, string> text, string desc, RungCost[]? costs = null,
+        string[]? replaces = null)
     {
         int n = children.Length;
         var levels = new SkillLevel[n];
@@ -273,6 +278,7 @@ public static partial class SkillCatalog
             DurationTicks: 12000,
             ChildBuffs: new[] { children[0] },
             Category: SkillCategory.Buff, SpCost: levels[0].SpCost,
+            Replaces: replaces,
             Description: desc, Levels: levels);
     }
 
@@ -512,9 +518,9 @@ public static partial class SkillCatalog
         string[] Rungs(string family, int n) => Enumerable.Range(1, n).Select(i => Rung(family, i)).ToArray();
 
         void Castable(string family, string name, SkillEffect effect, string[] children, string what,
-                      RungCost[]? costs = null) =>
+                      RungCost[]? costs = null, string[]? replaces = null) =>
             list.Add(CastSingle(family, name, effect, children, Text,
-                $"Blesses an ally (or self) with {what} for 20 minutes.", costs));
+                $"Blesses an ally (or self) with {what} for 20 minutes.", costs, replaces));
 
         // The prices below are read straight off his sheets — `mage 1st.csv` (rungs a base mage buys),
         // `cleric 2nd.csv` (2026-08-19), `healer 3rd.csv` (2026-08-20) and `buffer 3rd.csv`. A
@@ -545,8 +551,12 @@ public static partial class SkillCatalog
         RungCost H64 = R(105, 100000), H66 = R(110, 145000), H68 = R(115, 165000);
         RungCost H70 = R(120, 200000), H72 = R(125, 330000);
 
+        // ⚠ THE ONLY `Castable` WITH A `Replaces` (`BL-263`). The three racial Mights a mage learns at
+        //   7 are wrappers over rung 1 of this very family, so the buff bar would sort them out by
+        //   rank on its own — but the LEARN LIST would not: without this a cleric at 20 would be
+        //   offered both his Might and the racial one he already owns. His cleric row names all three.
         Castable(FamPhysAtk, "Might", SkillEffect.BuffPhysAtk, Rungs(FamPhysAtk, 3), "more Physical Attack",
-            C(R(20, 960), R(20, 1700), H40));
+            C(R(20, 960), R(20, 1700), H40), SkillCatalog.MageMightSet);
         Castable(FamPhysDef, "Bulwark", SkillEffect.BuffDef, Rungs(FamPhysDef, 3), "more Physical Defence",
             C(R(20, 960), R(26, 3200), H44));
         Castable(FamMagAtk, "Force", SkillEffect.BuffMagAtk, Rungs(FamMagAtk, 4), "more Magic Attack",

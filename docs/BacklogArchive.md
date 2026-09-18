@@ -24,6 +24,57 @@ Three kinds of entry:
 
 ## Superseded backlog entries
 
+### `BL-263` (superseded 2026-09-18, 0.176.0) — the entry as filed, before three of its five gaps were settled
+
+Filed 2026-09-18 and rewritten the same day, once you ruled on gaps 1, 2 and 3. Gap 1 was **declined**
+(groups keep the flat `GroupRank`); gaps 2 and 3 were **built** in 0.176.0. The remaining open text is
+in [Backlog.md](Backlog.md) under the same id. Verbatim as it stood:
+
+> ## `BL-263` 🔵 BUFFS ARE WRAPPERS OVER `(family, level)` — your model
+>
+> **Your design, 2026-09-18, recorded in full in [design/BuffFamilies.md](design/BuffFamilies.md).**
+> Nothing is built. This entry exists so the design is somewhere you will actually walk past.
+>
+> > everything is a wrapper for icon/duration/name/descr/animation/cost/cooldown/casttime/etc… but it
+> > provides an effect of a family, and the same effect of one family doesn't stack.
+>
+> `human_body` / `demon_body` / `elf_body` / `npc_body` all provide `(hp_max, N)`. Different look,
+> different cast, different duration — same number line, and **conflict is `(family, level)` only, never
+> duration**. A group provides several families at `max+1` so no single can take a part back. A
+> different family name (`har_hp_max` vs `hp_max`) is a different line and they stack.
+>
+> 🔑 **The engine already speaks this language** — `BuffKey` is your family, `Rank` your level,
+> `CoveredKeys` your extra families, and `cast_hp_max` (the buffer's own castable Body) is already one
+> id with six levels. Five things are missing. In the order they will bite:
+>
+> 1. 🔴 **A covered family carries no level.** `CoveredKeys` is `string[]`, so a group wins everywhere
+>    by one number. Today's substitute is a rule a human must remember (*"a group must be ≥ the best
+>    single in every family it covers"*) and **nothing checks it**. That class of silent downgrade has
+>    already shipped twice.
+> 2. 🔴 **Equal level keeps the longer duration** — you want duration ignored. We already paid a
+>    constant (`HarmonyRank = NpcBuffRank + 1`) purely to work around this.
+> 3. 🟡 **A wrapper's name and icon don't survive onto the buff** — `ApplyBuff` drops `displayName`
+>    when it recurses into the child, so `demon_body` would land on the bar called "Body". Same root
+>    cause as the cast-bar/buff-name mismatch you noticed.
+> 4. 🟡 **A rung is addressed by id, not `(family, level)`** — and ⚠ **rung ids ARE in the database**
+>    (`BuffsJson`), contrary to a comment in `Skills.BuffLadders.cs` that says they are not. Moving to
+>    `(family, level)` is a save-format change, i.e. a `game.db` delete.
+> 5. 🟢 **Passives have no family arbitration at all** — your ×4 cast-speed fear is real:
+>    `ApplyPassive` multiplies every learned passive and only a `0.4…2.5` clamp hides it.
+>
+> **My recommendation is NOT to build the whole model.** Steps 1-3 are small, stand alone, and buy most
+> of what you described — including racial Body variants, which need no new machinery at all once
+> step 2 lands. Step 4 (the full `Provides: (Family, Level)[]`) only if 1-3 turn out not to be enough.
+> For passives, **a boot CHECK before a mechanism**: flag two learnable-together passives feeding one
+> channel with no `Replaces` between them. That catches the mis-authoring for a fraction of the cost.
+>
+> 🔵 **Waiting on you:** whether to take step 1 now (it is behaviour-neutral and turns an unchecked
+> authoring rule into a boot assertion), or to hold the whole thing until the 40+ CSVs are done.
+
+⚠ **The `HarmonyRank` line in point 2 was WRONG and is corrected in the code.** The +1 is not a
+workaround for the duration rule — with duration gone it is the *only* thing keeping a covering group
+above the singles it covers, so it stays.
+
 ### `BL-191` (superseded) — THE SKILL MASTERIES, as the roster stood 2026-09-10 to 2026-09-12
 
 **Filed 2026-09-10 when `BL-190` shipped the engine, and mostly CLOSED the same day** when you

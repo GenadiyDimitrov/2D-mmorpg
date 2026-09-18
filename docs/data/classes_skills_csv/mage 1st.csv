@@ -6,7 +6,9 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 ,,,,,,,,,,,,,,,,----------------------------Spellcaster Mastery----------------------------
 1,Spellcaster Mastery,spellcaster_mastery,passive,,,0,0,self/single,0,0,0,"ARMOR - Robe: cast x1, mpReg x1.2; Light/Heavy/None: cast x0.5, as x0.5. WEAPON - Sword/Blunt: cast x1, mAtk x1; Bow/Dagger/None: cast x0.5, mAtk x0.5, mAcc x0.5. Auto-granted and NEVER replaced - every mage weapon/weight penalty lives here and nowhere else.",0,0,[weapon_proficiency]
 ,,,,,,,,,,,,,,,,----------------------------Might----------------------------
-7,Might,cast_atk_phys,buff,,,600,0,party/single,1,1,1200,+8% PAttack and 20 min,20,960,[]
+7,Forest Might,elf_cast_atk_phys,buff,,,600,0,party/single,1,1,1200,By the help of the forest: +8% PAttack,20,960,[],Elf
+7,Demonic Strength,demon_cast_atk_phys,buff,,,600,0,party/single,1,1,1200,Signing a demonic contract: +8% PAttack,20,960,[],Demon
+7,Blessing of Might,human_cast_atk_phys,buff,,,600,0,party/single,1,1,1200,A magical blessing that increases +8% PAttack,20,960,[],Human
 ,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
 7,Anti-Magic,anti_magic_mage,passive,,,0,0,self/single,0,0,0,+12 magic defence,0,480,[]
 14,Anti-Magic,anti_magic_mage,passive,,,0,0,self/single,0,0,0,+16 magic defence and 5% chance for spells to fizzle on you,0,2200,[]
@@ -25,6 +27,8 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 61,Grade B,grade_penalty,passive,,,0,0,self/single,0,0,0,"Allow the user to equip B grade; Auto-granted",0,0,[]
 76,Grade A,grade_penalty,passive,,,0,0,self/single,0,0,0,"Allow the user to equip A grade; Auto-granted",0,0,[]
 80,Grade S,grade_penalty,passive,,,0,0,self/single,0,0,0,"Allow the user to equip S grade; Auto-granted",0,0,[]
+,,,,,,,,,,,,,,,,----------------------------Return----------------------------
+1,Return,return_town,Active,,,0,0,self/single,60,10,0,"Teleport the user to nearest Town; Auto-granted",0,0,,,60/10s fixed times  -> dont know how to express them in the cast/cd columns
 ,,,,,,,,,,,,,,,,----------------------------Blessing----------------------------
 7,Forest Blessing,elf_blessing,passive,,,0,0,self/single,0,0,0,"Received HP recovery magic, M.Atk +5%; Mp regen +10%; Auto-granted",0,0,,Elf
 7,Domonic Blessing,demon_blessing,passive,,,0,0,self/single,0,0,0,"M.Crit.Rate and Cast Speed +5%; Hp regen +10%; Auto-granted",0,0,,Demon

@@ -88,10 +88,15 @@ public static partial class SkillCatalog
     /// <summary>The rank a CLASS harmony competes at, one above <see cref="NpcBuffRank"/>.
     ///
     /// <para>🔑 `BL-183` — this number is what makes covering actually bite. Both shelves used to sit
-    /// at <see cref="NpcBuffRank"/>, and at EQUAL rank <c>ApplyBuff</c> keeps whichever has the longer
-    /// time left: an NPC single harmony runs an HOUR, a class harmony five minutes, so declaring the
+    /// at <see cref="NpcBuffRank"/>, and at equal rank the covering was a coin toss decided by the
+    /// clock (an NPC single harmony runs an HOUR, a class harmony five minutes), so declaring the
     /// covering alone would have inverted the rule and let the bought single refuse the Warchanter's
     /// own. One above, and the class version wins by rank at every rung, both directions.</para>
+    ///
+    /// <para>🔴 <b>`BL-263` MAKES THIS +1 MORE NECESSARY, NOT LESS.</b> Equal rank now simply REPLACES,
+    /// duration ignored — so at a shared rank the winner would be whoever cast LAST, and buying one
+    /// NPC single would knock out the class harmony that covers it. The one rank of separation is the
+    /// only thing expressing "the group is above its parts". Do not collapse it.</para>
     ///
     /// <para>⚠ Every rung shifts together (<c>BuffPlan</c> adds <c>level - 1</c> to a childless
     /// multi-level buff), so this does not change how a harmony competes with ITSELF — only with the

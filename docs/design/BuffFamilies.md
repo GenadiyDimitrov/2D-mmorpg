@@ -1,9 +1,25 @@
 # Buff families — one effect line, many wrappers (`BL-263`)
 
-**Status: 🔵 YOUR DESIGN, RECORDED. Nothing built.** This is the shape you described on 2026-09-18,
-checked line by line against the code, with the gaps named and a staged way in. It does not replace
-[BuffLadders.md](BuffLadders.md) — that document describes the ladders as they are *today*; this one
-describes where they are going and which parts of today's shape will fight it.
+**Status: 🟡 PARTLY BUILT — 0.176.0 (`BL-263`).** Your rulings of 2026-09-18 settled three of the five
+gaps below and **declined** the one I had put first. What actually shipped, and what is still open:
+
+| | | |
+|---|---|---|
+| GAP 1 — per-family rank on a group | 🔴 **DECLINED** | *"leave grups to cover only families no rank … we dont want a body_reinforcment (that provides 10 things) to be replaced by a single buff a one rank higher .. 100+lvl is ok"*. You are right and §3's argument for it was wrong: a group is ONE buff, so a single that outranks it in one family takes all ten parts with it. `GroupRank = 100 + level` stays. |
+| GAP 2 — duration out of the conflict rule | ✅ **BUILT** | *"remove the duration check of same rank buffs"*. Equal rank now replaces, in `ApplyBuff` and in `BuffWouldLand`. ⚠ But the conclusion "delete `HarmonyRank`'s +1 hack" was **wrong** — see the correction under §4 Step 3. |
+| GAP 3 — a wrapper's name/icon | ✅ **BUILT** | `SkillDef.NamesItsBuff`, and the first three wrappers: `elf_/demon_/human_cast_atk_phys`, one rung, three faces. |
+| GAP 4 — `Provides: (family, level)[]` | 🔵 **OPEN, and not needed yet** | The racial wrappers work with no new addressing: they all name the same child id, so they land at the same `(family, rank)` by construction. |
+| GAP 5 — passive arbitration | 🔵 **OPEN** | Untouched. Still no family concept on passives, still only the clamp. |
+
+🔑 **Your "we must add to cs files a family keys and rank so we know that mightA (p_atk/1) and mightB
+(p_atk/1) are replaceable" is ALREADY SATISFIED, and by the shape rather than by new fields:** a
+wrapper carries no key and no rank of its own. It names a child, and the child *is* `(atk_phys, 1)`.
+Two wrappers over one rung cannot disagree about their family or their level because neither of them
+states one. That is what makes the mass racial duplication you are planning cheap — a new race's
+Might is an id, a name, a description and one line pointing at the rung that already exists.
+
+This does not replace [BuffLadders.md](BuffLadders.md) — that document describes the ladders as built;
+this one is your model and the distance still left to it.
 
 ---
 
@@ -169,6 +185,12 @@ No mechanism, and no check. The cheapest useful thing here is **not** the mechan
 
 Each step stands alone and is worth shipping on its own. Nothing here is a rewrite.
 
+🔴 **STEP 1 IS DECLINED — read the status table at the top before acting on it.** It is kept below
+because the *problem* it names is real and still unsolved: the authoring rule "a group must be ≥ the
+best single in EVERY family it covers" is still enforced by a human reading `CLAUDE.md` and by nothing
+else. A **check** could still be built without the per-family rank — compare each group's magnitudes
+against the singles it covers at boot — and that, not the rank, is the version worth proposing next.
+
 **Step 1 — give `CoveredKeys` a level. `(string Family, int Rank)[]`.**
 No behaviour change: author every existing group at its current effective rank and the game plays
 identically. Then add a **startup assertion**: for every group, its declared rank in a family ≥ every
@@ -179,8 +201,14 @@ call. Buys: racial Body variants with *zero* new machinery, the `/buff demon_bod
 described, and it closes the cast-bar mismatch at the same time. Also worth giving
 `ClassSkills.DisplayName` a level parameter while we are in there.
 
-**Step 3 — drop duration from the conflict rule.** Equal or lower level is replaced. Delete
-`HarmonyRank`'s +1 hack, which exists only to work around it.
+**Step 3 — drop duration from the conflict rule.** Equal or lower level is replaced. ~~Delete
+`HarmonyRank`'s +1 hack, which exists only to work around it.~~
+
+> 🔴 **CORRECTION (0.176.0, when this was built).** The first sentence shipped; the second was wrong
+> and was not done. With duration gone, equal rank means *whoever cast last* — so at a shared rank an
+> NPC single harmony bought after the class harmony would simply evict the group that covers it. The
+> +1 is not a workaround for the duration rule; it is the **only** thing expressing "a covering buff
+> sits above its parts", and removing it would have broken covering in both directions. It stays.
 
 **Step 4 (larger, optional) — `Provides: (Family, Level)[]` replacing `ChildBuffs: string[]`**, with a
 per-family value table. This is the full version of your model. Do it only if steps 1-3 have not

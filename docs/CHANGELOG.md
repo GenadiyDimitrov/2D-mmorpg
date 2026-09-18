@@ -7,11 +7,95 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.175.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.176.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-18 (latest) — 0.175.0: `--check` is clean for the first time, and two ids the sweep missed
+## 2026-09-18 (latest) — 0.176.0: duration stops deciding buffs, and Might gets three faces — `BL-263`
+
+His first three rulings on the wrapper model, built. The fourth (*"leave groups to cover only
+families no rank"*) is a **decline** and cost no code — see §2.
+
+### 1. 🔴 EQUAL RANK NOW REPLACES — DURATION PLAYS NO PART
+
+> *"remove the duration check of same rank buffs"*
+
+From 0.36.0 until today, two buffs of the same family at the same rank were settled by whichever had
+**longer left**. That tiebreak is gone from both places that held it — `ApplyBuff`'s Rule 1 and the
+`BuffWouldLand` pre-filter. A conflicting buff is refused only by something **strictly stronger**.
+
+⚠ **What it costs, so it is not a surprise in a playtest:** a 1-hour NPC blessing *is* overwritten by
+a 20-minute party buff of the same rung, and a potion drunk under an identical scroll shortens you to
+the potion's clock. Both used to be refused. He ruled it knowingly (*"we don't care for duration"*).
+
+✅ **What it fixes for free:** §100's Mark bug (an NPC re-buff that wouldn't refresh) can no longer
+recur — it existed only because a *predicate* had to guess a duration. `BuffWouldLand` lost its
+`durationOverride` parameter entirely.
+
+🔴 **`SkillCatalog.HarmonyRank` (`NpcBuffRank + 1`) is now MORE necessary, not less.** [BuffFamilies.md]
+(design/BuffFamilies.md) had it down as a hack to delete once duration went; that was wrong. At equal
+rank the winner is now *whoever cast last*, so the one rank of separation is the only thing keeping a
+covering class harmony above the NPC single it covers. Left in place, with the reason written on it.
+
+### 2. ✅ GROUPS KEEP THE FLAT `GroupRank` — no per-family rank (his decline)
+
+> *"leave grups to cover only families no rank .. we dont want a body_reinforcment (that provides 10
+> things) to be replaced by a single buff a one rank higher .. 100+lvl is ok"*
+
+Step 1 of the BuffFamilies plan — giving `CoveredKeys` a level per family — is **declined**, and he is
+right: a group is ONE buff, so any single that could outrank it in one family would take all ten of
+its parts down with it. `GroupRank = 100 + level` stays exactly as it is. No code changed; the
+design doc and `BuffLadders.md` now say so.
+
+### 3. 🔑 THE WRAPPERS — Might is three skills now, one per race
+
+> *"what i realy want is the wrappers ... a demon_cast_atk_phys to provide the same as
+> npc/human/elf_cast_atk_phys but have different description/icon/name"*
+
+His `mage 1st.csv` Might section is three rows now, and they are built:
+
+| Race | id | name |
+|---|---|---|
+| Elf | `elf_cast_atk_phys` | Forest Might |
+| Demon | `demon_cast_atk_phys` | Demonic Strength |
+| Human | `human_cast_atk_phys` | Blessing of Might |
+
+All three hand out the **same child rung**, `buff_atk_phys_1` (+8% P.Atk), at the same price his rows
+carry (1s cast, 1s reuse, 600 range, 20 min, 20 MP, 960 SP). **That is the whole answer to his
+"we must add to cs files a family keys and rank so we know that mightA (p_atk/1) and mightB (p_atk/1)
+are replaceable"** — the family key and the rank live on the shared child, so two wrappers over one
+rung are interchangeable by construction and a wrapper has no numbers of its own to disagree with.
+
+**One new engine field: `SkillDef.NamesItsBuff`.** A one-child wrapper normally lends its child only a
+duration, a bar row and an icon, and the buff reads with the CHILD's name — which is right for a
+potion ("Potion of Might" pours a buff called "Might") and wrong for these. Set the flag and the
+wrapper's own name and description are what the player sees. Resolved from `SourceSkillId` (the id the
+icon already follows), so the face **survives a relog** with no change to the save format.
+
+The base `cast_atk_phys` is untouched and is still what a buffer class casts from rung 2 up — and it
+now `Replaces` all three racial ids, his cleric row (*"cleric just replaces them so nothing higher have
+them"*). That takes the racial Might off the buff bar **and** off the learn list at 20.
+
+### 4. Two CSV rows that documented code, not new content
+
+`Return` (the free 60s channel home) was in the code and in neither 1st-class file; he added the row
+to both. ⚠ **Its id is `return_town`, not `return`** — he wrote *"just for the id of return im not
+sure - change it as it is"*, so the file now names what the catalog actually holds. His 60s cast /
+10s reuse are already what the skill carries, and `FixedCast`/`FixedCooldown` are what his
+*"60/10s fixed times"* note is asking about: no haste or cooldown buff moves either number.
+
+⚠ One spelling corrected in his row: *"Demonic Strenght"* → **Demonic Strength**, in the CSV and the
+code together. Say the word if you meant the other one.
+
+**Verified:** `dotnet build` clean (server + Unity client), server boots, `SkillCsvSeed --check`
+reports **no discrepancies**, smoke test green.
+
+📥 **A NEW APK IS OWED.** The class-skill TABLE changed (three ids where there was one at level 7) and
+the client builds its Learn tab locally from the compiled `ClassSkills`.
+
+---
+
+## 2026-09-18 — 0.175.0: `--check` is clean for the first time, and two ids the sweep missed
 
 Two small things that both came out of verifying `BL-84`, and neither is a new decision.
 

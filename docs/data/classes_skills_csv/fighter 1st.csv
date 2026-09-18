@@ -21,6 +21,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 5,Shot,shot,physical active,bow,,350,0,enemy/single,3,6,0,power 78 - ranged shot - require a bow,20,160,[]
 10,Shot,shot,physical active,bow,,350,0,enemy/single,3,6,0,power 122 - ranged shot - require a bow,25,910,[]
 15,Shot,shot,physical active,bow,,350,0,enemy/single,3,6,0,power 187 - ranged shot - require a bow,34,910,[]
+,,,,,,,,,,,,,,,,----------------------------Return----------------------------
+1,Return,return_town,Active,,,0,0,self/single,60,10,0,"Teleport the user to nearest Town; Auto-granted",0,0,,,60/10s fixed times  -> dont know how to express them in the cast/cd columns
 ,,,,,,,,,,,,,,,,----------------------------Elf Antidote----------------------------
 10,Antidote,elf_antidote,Physical/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 1 or lower;",9,460,,Elf
 24,Antidote,elf_antidote,Physical/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 2 or lower;",20,3.2k,,Elf

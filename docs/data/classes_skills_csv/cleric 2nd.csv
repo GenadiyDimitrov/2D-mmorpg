@@ -41,7 +41,7 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 20,Resurrection,resurrection,Magic/Heal,,,600,0,target/single,10,10,0,Revive at 30% HP/MP. Does not give back any lost exp.,60,1700,[]
 30,Resurrection,resurrection,Magic/Heal,,,600,0,target/single,10,10,0,Revive at 30% HP/MP; restore 20% of lost exp.,90,12800,[]
 ,,,,,,,,,,,,,,,,----------------------------Might----------------------------
-20,Might,cast_atk_phys,Magic/Buff,,,600,0,party/single,1,1,1200,+12% P.Atk.,20,1700,[]
+20,Might,cast_atk_phys,Magic/Buff,,,600,0,party/single,1,1,1200,+12% P.Atk.,20,1700,[elf_cast_atk_phys human_cast_atk_phys demon_cast_atk_phys]
 ,,,,,,,,,,,,,,,,----------------------------Swift----------------------------
 20,Swift,cast_spd_move,Magic/Buff,,,600,0,party/single,1,1,1200,+20 Move Speed.,20,1700,[]
 30,Swift,cast_spd_move,Magic/Buff,,,600,0,party/single,1,1,1200,+33 Move Speed.,33,6400,[]

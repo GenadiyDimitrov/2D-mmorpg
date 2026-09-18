@@ -7050,12 +7050,15 @@ public class GameLoopService : BackgroundService
                 //
                 // 🔴 `force: true` — `BL-131`. *"now im full buff and cannot put war bulwark because of
                 // 'something stronger'"*. War Might and War Bulwark share a family at the SAME rank, and
-                // ApplyBuff's equal-rank rule keeps whichever runs LONGER — so the moment `BL-126` made
-                // the full buff hand its half out at an hour, the 20-minute one from a button could
-                // never win, and `BL-127`'s six swap buttons quietly stopped swapping. Forcing is the
+                // ApplyBuff's equal-rank rule USED TO keep whichever ran LONGER — so the moment `BL-126`
+                // made the full buff hand its half out at an hour, the 20-minute one from a button could
+                // never win, and `BL-127`'s six swap buttons quietly stopped swapping. Forcing was the
                 // right fix rather than matching durations: this is the STAFF path, its whole purpose is
                 // to put a named buff on someone, and a command that silently does nothing is worse than
                 // one that overrides. The stacking rules are untouched for every skill actually cast.
+                // ⚠ `BL-263` deleted the duration half of that rule, so the swap buttons would work
+                //   now without forcing — but forcing is STILL what this path wants, because it also
+                //   pushes a buff past something genuinely STRONGER, which is a staff command's job.
                 if (!ApplyBuff(buffTarget, buffDef, level, source: admin,
                                durationOverride: buffTicks, force: true))
                 {
@@ -11149,8 +11152,11 @@ public class GameLoopService : BackgroundService
             if (SkillCatalog.Get(skillId) is not SkillDef skill) continue;
             var existing = p.Buffs.FirstOrDefault(b => b.Key == skillId);
             // A running buff at the WRONG rung has to go before the right one can land: every rung
-            // shares the family key at the same Rank, so ApplyBuff's equal-rank rule would keep
-            // whichever had longer left — and a +5% rune with an hour on it would hold off the +100%.
+            // shares the family key at the same Rank, and at equal rank the incoming buff replaces —
+            // which is what we want here, but the removal also has to happen when the NEW rung is
+            // WEAKER (swapping a Grand rune out for a War one), so the explicit drop stays.
+            // ⚠ Before `BL-263` this line was load-bearing in the other direction too: equal rank kept
+            //   whichever ran LONGER, so a +5% rune with an hour on it would hold off the +100%.
             if (existing != null && existing.Level != want.Level)
             {
                 p.Buffs.Remove(existing);
@@ -13144,8 +13150,9 @@ public class GameLoopService : BackgroundService
         // (Might, Focus, …) are one-child WRAPPERS and resolved above, each rung landing as its own
         // child def with its own Rank; the harmonies, Great Might/Bulwark and Mana Blessing have no
         // children and fell through to this flat number, so every rung of them competed as an equal
-        // and "equal rank keeps the longer remaining time" let a Lv1 evict a Lv5. Same shape as
-        // GroupRank. `FlatRank` opts out — see the field's note on SkillDef for the one pair that does.
+        // and a Lv1 could evict a Lv5 (then by outlasting it; since `BL-263` simply by being cast
+        // second — so this line is MORE load-bearing now, not less). Same shape as GroupRank.
+        // `FlatRank` opts out — see the field's note on SkillDef for the one pair that does.
         // …unless the RUNG authors its own rank, which is how a DoT's TIER ladders (see
         // SkillLevel.Rank). His Venom Stab climbs 3,3,4,4,5,5,… — neither flat nor level+1 — and a
         // tier is exactly what an Antidote's `DispelMaxLevel` has to out-reach, so it has to be the
@@ -13159,30 +13166,25 @@ public class GameLoopService : BackgroundService
     /// <summary>Would this buff land, or be refused by something stronger? Asked BEFORE a channelled
     /// consumable starts its cast — a buff scroll is taken from the bag when the cast LANDS, so
     /// without this you would spend a second reading a scroll and lose it for nothing.</summary>
-    /// <param name="durationOverride">The duration this buff will ACTUALLY be granted for, when the
-    /// caller is going to override the skill's own (-1 = the skill's).
+    /// <remarks>🔑 IT TAKES NO DURATION ANY MORE (`BL-263`, 2026-09-18). It used to, and the reason
+    /// is worth keeping even though the parameter is gone: the NPC buffer grants everything for
+    /// <c>NpcBuffTicks</c> (an hour) while a Mark's own duration is five minutes, so a predicate that
+    /// asked <c>BuffPlan</c> for the SKILL's duration read "you already have 47 minutes, this would
+    /// only give you 5" and dropped the Mark out of the landing list before <c>ApplyBuff</c> — which,
+    /// being told the real hour, would have accepted it — ever saw it (§100, 2026-09-16: *"npc buffer
+    /// does not re-buff a mark"*). Now that equal rank simply replaces, that whole class of bug is
+    /// gone by construction.
     ///
-    /// 🔴🔑 WITHOUT IT THIS PREDICATE LIED, AND IT IS WHY A MARK WOULD NOT RE-BUFF (§100, 2026-09-16:
-    /// *"npc buffer does not re-buff a mark — same mark, same lvl, same npc; every other buff's timer
-    /// resets and the Mark's does not"*). The NPC grants everything for <c>NpcBuffTicks</c>, ONE HOUR,
-    /// but this filter asked <c>BuffPlan</c> for the skill's own duration — and a Mark's own duration
-    /// is FIVE MINUTES (it is a Lightbringer party skill the NPC happens to sell). So the equal-rank
-    /// test read "you already have 47 minutes left, this would only give you 5" and dropped the Mark
-    /// out of the landing list before <c>ApplyBuff</c> — which, being told the real hour, would have
-    /// accepted it — ever saw it. Every ordinary blessing authors the full hour itself, which is
-    /// exactly why the Mark was the only one that misbehaved.
-    ///
-    /// ⚠ The general shape: **a pre-filter that predicts a decision must be given the same inputs as
-    /// the decision.** This one shares its two rules with ApplyBuff by hand; when those move, both move.</param>
-    private static bool BuffWouldLand(Entity target, SkillDef def, int level, int durationOverride = -1)
+    /// <para>⚠ The general shape it taught still stands: **a pre-filter that predicts a decision must
+    /// be given the same inputs as the decision.** This one shares its rule with ApplyBuff by hand;
+    /// when that moves, both move.</para></remarks>
+    private static bool BuffWouldLand(Entity target, SkillDef def, int level)
     {
-        var (key, rank, covered, duration) = BuffPlan(def, level);
-        if (durationOverride >= 0) duration = durationOverride;
+        var (key, rank, covered, _) = BuffPlan(def, level);
         foreach (var b in target.Buffs)
         {
             if (!BuffsConflict(b, key, covered)) continue;
             if (rank < b.Rank) return false;
-            if (rank == b.Rank && b.TicksRemaining > duration) return false;
         }
         return true;
     }
@@ -13203,9 +13205,7 @@ public class GameLoopService : BackgroundService
     /// <summary>Apply a buff with the two stacking rules:
     /// (1) FAMILY conflict, then Rank: apply only if the incoming Rank >= the rank of every active
     ///     buff whose family set overlaps this one's (weaker is ignored entirely); on apply, replace
-    ///     them. On EQUAL rank the one with the longer time left wins — potions and scrolls share
-    ///     tiers and differ only in duration, so without that a 20-minute potion would silently eat
-    ///     a 1-hour scroll.
+    ///     them. On EQUAL rank the INCOMING one wins — duration plays no part (`BL-263`).
     /// (2) Replaces: unconditionally remove any active buff whose key is listed,
     ///     regardless of rank or magnitude.
     /// A skill with ONE child hands out that child (the family's rung) and keeps only the duration
@@ -13295,7 +13295,25 @@ public class GameLoopService : BackgroundService
         // Key / rank / covered families come from the SAME resolver the "would this land?" test uses,
         // so a refusal message can never disagree with what actually happens.
         var (key, rank, covered, _) = BuffPlan(def, level);
-        string shownName = string.IsNullOrEmpty(displayName) ? def.Name : displayName!;
+
+        // ---- `BL-263`: THE WRAPPER'S FACE. -------------------------------------------------------
+        //      A one-child wrapper hands out its CHILD, so by default the bar reads with the child's
+        //      name and description — right for a potion ("Potion of Might" pours a buff called
+        //      "Might"), wrong for the racial wrappers he asked for: *"a demon_cast_atk_phys to
+        //      provide the same as human/elf_cast_atk_phys but have different description/icon/name"*.
+        //      A wrapper that sets `NamesItsBuff` lends its name and description as well as its
+        //      duration and row.
+        //
+        //      🔑 RESOLVED FROM `sourceSkillId` RATHER THAN PASSED DOWN THE RECURSION, because that
+        //      is the id the ICON already follows — one answer for all three halves of "which skill is
+        //      this buff" — and because SourceSkillId is PERSISTED, so the face survives a relog for
+        //      free (RestorePersistedBuffs rebuilds from the CHILD def and would otherwise show the
+        //      generic rung name the moment the player logged back in).
+        var faceDef = string.IsNullOrEmpty(sourceSkillId) || sourceSkillId == def.Id
+            ? null
+            : SkillCatalog.Get(sourceSkillId!) is SkillDef w && w.NamesItsBuff ? w : null;
+        string shownName = !string.IsNullOrEmpty(displayName) ? displayName!
+                         : faceDef?.Name ?? def.Name;
         int eff = maxStacks >= 0 ? maxStacks : def.EffectiveMaxStacks;
         int duration = toggle ? int.MaxValue
                               : (durationOverride >= 0 ? durationOverride : def.DurationTicksAt(level));
@@ -13366,11 +13384,21 @@ public class GameLoopService : BackgroundService
         {
             if (rank < c.Rank)
                 return false;                   // weaker: do nothing (no refresh)
-            // Equal rank = the same numbers from a different source (a potion and a scroll of the
-            // tier are identical but for how long they last). Keep whichever runs LONGER, or a
-            // 20-minute potion silently eats the 1-hour scroll you just read.
-            if (rank == c.Rank && c.TicksRemaining > duration)
-                return false;
+            // 🔑 `BL-263`, 2026-09-18 — AND NOTHING ELSE. Equal rank now REPLACES: the last cast
+            // wins, whatever either clock says. His rule, in his words: *"remove the duration check
+            // of same rank buffs"* — a family's LEVEL is the whole contest, so an incoming buff is
+            // refused only by something strictly stronger.
+            //
+            // ⚠ WHAT THIS COSTS, said out loud: a 1-hour NPC blessing IS overwritten by a 20-minute
+            //   party buff of the same rung, and a potion drunk under an identical scroll shortens
+            //   you to the potion's clock. That used to be refused. It is the price of "the last
+            //   cast wins" and he asked for it knowingly (*"we don't care for duration"*).
+            // ⚠ WHAT IT DOES *NOT* CHANGE: covering. A group sits at GroupRank (100 + level) and a
+            //   single can never reach it, which is exactly his second ruling — a ten-part
+            //   Body Reinforcement must not be knocked out by one single a rung higher. And
+            //   `SkillCatalog.HarmonyRank` (NpcBuffRank + 1) is MORE necessary now, not less: at
+            //   equal rank the NPC's bought single would otherwise evict the class harmony that
+            //   covers it, simply by being cast second.
         }
         foreach (var c in conflicts)
             target.Buffs.Remove(c);             // equal/stronger: full replace
@@ -13568,7 +13596,8 @@ public class GameLoopService : BackgroundService
             // reward rune's ("+50% experience"), where the skill's own blurb is only the first rung.
             // DescriptionAt falls back to the skill's own text, so a level that authored none is
             // unchanged from when this read DescriptionOf(def.Id).
-            Description = def.DescriptionAt(level)
+            // …unless a `NamesItsBuff` wrapper owns the face — see `faceDef` above.
+            Description = faceDef?.Description ?? def.DescriptionAt(level)
         });
 
         // Re-bake derived stats (Max HP/MP, shield, atk/def) and refresh the owner's
@@ -20574,9 +20603,9 @@ public class GameLoopService : BackgroundService
                 int tooYoung = ids.Count(id => player.Level < SkillCatalog.NpcBuffMinLevel(id));
                 var landing = ids.Where(id => SkillCatalog.NpcBuffRung(id, player.Level)
                                                   is (SkillDef d, int rung)
-                                              // 🔴 The BUFFER'S HOUR, not the skill's own — §100's Mark
-                                              //    bug; see BuffWouldLand's `durationOverride`.
-                                              && BuffWouldLand(player, d, rung, SkillCatalog.NpcBuffTicks))
+                                              // ✅ No duration argument since `BL-263`: equal rank
+                                              //    replaces, so §100's Mark bug cannot recur here.
+                                              && BuffWouldLand(player, d, rung))
                                  .ToList();
                 if (landing.Count == 0)
                 {
@@ -20657,11 +20686,9 @@ public class GameLoopService : BackgroundService
                 // already hold (your own buffer's stronger Might, a Greater potion) simply does not
                 // land, and the old order took the gold anyway. Same resolver the cast path uses, so
                 // the refusal and the outcome cannot disagree.
-                // 🔴 ...AND THE HOUR HAS TO BE QUOTED HERE TOO (§100, 2026-09-16). The grant below
-                //    forces `NpcBuffTicks`; this predicate used to ask the skill's own duration, so a
-                //    Mark — five minutes of its own — was refused as "you already carry something
-                //    stronger" against the 47 minutes of the Mark you were standing there wearing.
-                if (!BuffWouldLand(player, def, rung, SkillCatalog.NpcBuffTicks))
+                // ✅ Duration plays no part any more (`BL-263`): only something STRICTLY STRONGER
+                //    refuses a blessing, so re-buying one you already wear always refreshes it.
+                if (!BuffWouldLand(player, def, rung))
                 {
                     SendSystemToEntity(player, $"You already carry something stronger than {shown}.");
                     return;

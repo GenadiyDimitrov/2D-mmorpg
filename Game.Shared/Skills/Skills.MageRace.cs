@@ -46,6 +46,46 @@ public static partial class SkillCatalog
     public const string DemonOverLimit     = "demon_over_limit";
     public const string HumanVampiricBolt  = "human_vampiric_bolt";
 
+    // ═══ `BL-263` — THE THREE RACIAL MIGHTS, HIS WRAPPER PROOF-OF-CONCEPT ═══════════════════════
+    //
+    // 🔑 ONE BUFF, THREE FACES. His `mage 1st.csv` Might section is three rows now, one per race,
+    //    and every one of them hands out the SAME child rung — `buff_atk_phys_1`, +8% P.Atk. So all
+    //    three land as `(atk_phys, rank 1)`, which is what makes them mutually replaceable with no
+    //    new machinery: the family key and the rank he asked for are the CHILD's, and a wrapper
+    //    cannot disagree with them because it does not carry any.
+    //
+    // 🔑 WHAT EACH WRAPPER OWNS is its id, its name, its description and its icon — and NOTHING
+    //    numeric. Cast time, cooldown, range, duration, MP and SP are his (identical across the
+    //    three rows: 1s / 1s / 600 / 20 min / 20 MP / 960 SP), and the +8% is the rung's.
+    //
+    // ⚠ THE BASE `cast_atk_phys` STILL EXISTS and is unchanged — it is what every buffer CLASS casts
+    //   from rung 2 up, and it `Replaces` these three (his cleric row), so a cleric's Might at 20
+    //   takes the racial one off both the buff bar and the learn list. See ClassSkillTables.Common.
+    public const string ElfMight   = "elf_cast_atk_phys";
+    public const string DemonMight = "demon_cast_atk_phys";
+    public const string HumanMight = "human_cast_atk_phys";
+
+    /// <summary>The level all three of his racial Might rows are learned at.</summary>
+    public const int MageMightLevel = 7;
+
+    /// <summary>Every racial wrapper over the P.Atk family — what the class Might `Replaces`.
+    ///
+    /// <para>⚠ A PROPERTY, NOT A STATIC FIELD, and deliberately: it is read from
+    /// <c>BuffLadderSkills</c> in another partial file, and static-field initialiser order ACROSS
+    /// partial-class files is compiler-determined (`BL-237` cost a build to learn that). Three
+    /// consts fold at compile time, so this can never be handed a null.</para></summary>
+    public static string[] MageMightSet => new[] { ElfMight, HumanMight, DemonMight };
+
+    /// <summary>The Might a mage of this race learns at 7. The twin of <see cref="MageBlessingFor"/>:
+    /// one place, read by the class table and by nothing else, so the skill a character is OFFERED can
+    /// never be a different one from the skill his race's row authors.</summary>
+    public static string MageMightFor(Race race) => race switch
+    {
+        Race.Elf => ElfMight,
+        Race.Demon => DemonMight,
+        _ => HumanMight,
+    };
+
     /// <summary>The one level every blessing is granted at — his three rows all read 7.</summary>
     public const int MageBlessingLevel = 7;
 
@@ -101,6 +141,26 @@ public static partial class SkillCatalog
                 MaxMpPct: 0.05f),
             Description: "A king's favour: +5% magic critical damage, +5% natural regeneration "
                        + "of both pools and +5% Max MP."));
+
+        // ═══ `BL-263` — THE THREE RACIAL MIGHTS ═════════════════════════════════════════════════
+        //
+        // See the id block at the top of this file for why these are three wrappers over ONE rung.
+        // `NamesItsBuff` is the only new thing in the engine: it tells ApplyBuff that the face on the
+        // buff bar is the WRAPPER's (name + description), not the rung's generic "Might".
+        SkillDef RaceMight(string id, string name, string desc) => new(
+            id, name, BaseClass.Mage, SkillEffect.BuffPhysAtk,
+            MpCost: 20, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
+            DurationTicks: 12000,                        // his DURRATION cell — 20 minutes
+            ChildBuffs: new[] { Rung(FamPhysAtk, 1) },   // +8% P.Atk, the shared rung
+            Category: SkillCategory.Buff, SpCost: 960,
+            NamesItsBuff: true, Description: desc);
+
+        list.Add(RaceMight(ElfMight, "Forest Might",
+            "By the help of the forest: +8% P.Atk for 20 minutes."));
+        list.Add(RaceMight(DemonMight, "Demonic Strength",
+            "Signing a demonic contract: +8% P.Atk for 20 minutes."));
+        list.Add(RaceMight(HumanMight, "Blessing of Might",
+            "A magical blessing that increases +8% P.Atk for 20 minutes."));
 
         // ═══ ELF — SELF HEAL, the sustain ladder ════════════════════════════════════════════════
         //

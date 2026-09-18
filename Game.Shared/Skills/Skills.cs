@@ -989,14 +989,32 @@ public record SkillDef(
     /// so replaces them"*) silently did nothing from the day `BL-160` shipped. Both halves are fixed:
     /// this field does the covering, and <c>ApplyBuff</c>'s Replaces rule now resolves ids to keys too.</para>
     ///
-    /// <para>⚠ A covering buff must OUTRANK what it covers, or the equal-rank "longer time wins" rule
-    /// hands the slot back to the single — see <see cref="SkillCatalog.HarmonyRank"/>. Startup
+    /// <para>⚠ A covering buff must OUTRANK what it covers, or the single simply takes the slot back
+    /// by being cast second — see <see cref="SkillCatalog.HarmonyRank"/>. Startup
     /// validates that every key named here is a real buff key, so a typo is a boot failure rather than
     /// another quietly dead rule.</para>
     ///
     /// <para>⚠ Ignored on a ONE-CHILD WRAPPER: the CHILD is the buff that lands, so the wrapper's own
     /// covering would never be consulted. Put it on the child.</para></summary>
     string[]? CoveredKeys = null,
+    /// <summary>`BL-263` — THIS WRAPPER IS THE BUFF'S FACE. A one-child wrapper normally lends its
+    /// child only a duration and a bar row, and the buff on the bar reads with the CHILD's name and
+    /// description (which is right for a potion: "Potion of Might" pours a buff called "Might").
+    /// Set this and the wrapper's own Name and Description are what the player sees instead.
+    ///
+    /// <para>🔑 <b>THIS IS THE WHOLE RACIAL-WRAPPER MECHANIC</b> (owner, 2026-09-18: *"a
+    /// demon_cast_atk_phys to provide the same as human/elf_cast_atk_phys but have different
+    /// description/icon/name"*). `elf_cast_atk_phys`, `human_cast_atk_phys` and `demon_cast_atk_phys`
+    /// all hand out the SAME child — <c>buff_atk_phys_1</c> — so all three land as
+    /// <c>(atk_phys, rank 1)</c> and replace one another automatically, with no new stacking concept
+    /// at all. The family key and the rank he asked to "add to the cs files" are already there: they
+    /// live on the shared child, which is exactly what makes mightA and mightB interchangeable.</para>
+    ///
+    /// <para>⚠ The ICON never needed this — it already follows the wrapper
+    /// (<c>BuffInstance.SourceSkillId</c>), which is also why the name and description are resolved
+    /// from that same id in <c>ApplyBuff</c> rather than passed down the recursion: a relog restores
+    /// <c>SourceSkillId</c>, so the face survives it for free.</para></summary>
+    bool NamesItsBuff = false,
     /// <summary>THE CASTER'S OWN CHARGE POOL — the Human Ravager's 'Focus' (`BL-237`, his
     /// <c>warrior 3rd.csv</c>). How this skill fills or spends it; null for every skill that does
     /// neither. See <see cref="ChargeRule"/>.</summary>

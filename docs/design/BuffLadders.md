@@ -7,6 +7,31 @@ Still open beyond this doc: **Harmony as party buffs**, and Harmony's own split 
 
 ---
 
+## 🔴 REVISED IN 0.176.0 — DURATION NO LONGER DECIDES ANYTHING (`BL-263`)
+
+**Read this first.** Owner, 2026-09-18: *"remove the duration check of same rank buffs"*. Every
+passage below that says *"equal rank keeps the longer remaining time"* describes the rule as it stood
+from 0.36.0 to 0.175.0 and is **history, not behaviour**. The rule now:
+
+> A conflicting buff is refused only by something **strictly stronger**. At equal rank the incoming
+> buff replaces — whatever either clock says.
+
+What it costs, said plainly: a 1-hour NPC blessing *is* overwritten by a 20-minute party buff of the
+same rung, and a potion drunk under an identical scroll shortens you to the potion's clock. He ruled
+that knowingly (*"we don't care for duration"*).
+
+🔴 **`SkillCatalog.HarmonyRank` (`NpcBuffRank + 1`) becomes MORE necessary, not less** — it is now the
+only thing holding a covering group above the singles it covers, which at a shared rank would
+otherwise be decided by who cast second. Do not collapse it.
+
+✅ **Groups keep their flat `GroupRank` (100 + level) and gain NO per-family rank.** He declined
+[BuffFamilies.md](BuffFamilies.md)'s step 1 on 2026-09-18: *"leave groups to cover only families no
+rank .. we don't want a body_reinforcment (that provides 10 things) to be replaced by a single buff a
+one rank higher .. 100+lvl is ok"*. A group is one buff, so any single that could outrank it in one
+family would take all ten parts with it.
+
+---
+
 ## ⚠ REVISED IN 0.42.0 — a group is ONE buff that OUTRANKS its parts
 
 **Read this before the rest of the document.** Everything below still describes the *ladders* — one
@@ -321,8 +346,10 @@ family contest does the rest: the class harmony evicts the single on landing and
 stands. Two things make it work and both are easy to get wrong:
 
 1. **Rank.** Class harmonies sit at `SkillCatalog.HarmonyRank` = `NpcBuffRank + 1`. Both tiers used to
-   sit at 100, and at equal rank `ApplyBuff` keeps whichever has **longer left** — the NPC single runs
-   an hour, a class harmony five minutes, so the covering would have resolved backwards.
+   sit at 100, and at equal rank the covering was decided by the clock — the NPC single runs an hour,
+   a class harmony five minutes — so it resolved backwards. 🔴 Since `BL-263` removed the clock from
+   the rule, equal rank means *whoever cast last*, so this +1 is the whole of the covering. See the
+   0.176.0 banner at the top.
 2. **Per rung.** A harmony's payload is cumulative and each single sells at the level the harmony
    gains that effect, so covering is per-rung. Harmony of Protection rung 1 (@44) is +30% M.Def and
    covers **Ward only**; Bulwark joins at rung 3 (@56), Body at rung 4 (@66). Covering the full list
