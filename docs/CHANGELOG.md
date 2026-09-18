@@ -7,11 +7,67 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.179.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.180.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-18 (latest) — 0.179.0: two skills that did not do what their rows say
+## 2026-09-18 (latest) — 0.180.0: a Whirlwind that dies with the first mob you kill
+
+> *"i want all the war_aoe aoe skills shouts/wirlwind (except javelin) to be used without a target ..
+> now i do a wirlwind on a one mob while fhgting 20 and i kill that one mob and my wirlwind stops at
+> 5 casts"*
+
+**The first half was already true at 0.179.0; the second half was a different bug in a different
+place, and 0.179.0 is what made it visible.** Every Warlord ring — Shocking Shout, Whirlwind,
+Taunting Shout and the three race Shouts — is `Range 0`, no `AreaAtTarget`, so `SelfCentredArea`
+hands the cast the caster's own id and none of them needs a body. Shocking Javelin keeps
+`AreaAtTarget` and still wants something to throw at, exactly as he asked. Nothing in the catalog
+changed today.
+
+### 🔴🔑 A CAST GATE IS NOT A RULE — the autopilot never passes through it
+
+`SelfCentredArea` lives in `BeginSkill`, and `BeginSkill` is where a *tap* goes. `TryAutoChain`
+**queues a skill directly** (`p.QueuedSkillId` / `p.QueuedTargetId`) and is the one caster in the
+game that never sees that gate — so on auto-hunt it set `tgtId = target.Id`, the mob, for every
+offensive skill including the six self-centred ones. Two consequences, and they are different sizes:
+
+- **The shouts could not fire at all.** They author `Range 0`, so `UpdateQueuedSkill`'s approach test
+  (`DistanceSq(caster, target) > range*range`) can never be satisfied against another body. The
+  autopilot walked at the mob forever and never reached the cast.
+- **Whirlwind anchored its volley on that mob.** Which is the report.
+
+### The volley: twenty strokes ended by the first corpse
+
+Whirlwind is a channel wrapper — `ChannelShots: 20, ChannelIntervalTicks: 2`, his four seconds
+exactly. The channel tick ends a volley the moment `ChannelTargetId` is dead or gone, and that rule
+is *right* for Arrow Barrage, which really is ten arrows **at** someone. It is catastrophic for four
+seconds of blade around the caster: what the strokes catch is decided by geometry twenty separate
+times, and the body that happened to be selected is the one the Warlord kills **first**. Five
+strokes in, fifteen gone, the reuse and the full MP already paid.
+
+**The fix is at the volley's source, not at each caller:**
+
+```csharp
+caster.ChannelTargetId = SelfCentredArea(def) ? caster.Id : target.Id;
+```
+
+A self-centred volley is anchored on the caster, so there is no target to lose and the death test
+below it can never trip. Anchoring here rather than teaching `TryAutoChain` alone covers the mob
+AI, the chain re-entry and whatever queues a skill next.
+
+`TryAutoChain` is fixed too — `SelfCentredArea(def) ? p.Id : target.Id` on both offensive arms — so
+the shouts fire on auto-hunt instead of walking. The `target is null` guard stays: a shout with
+nothing to fight is still a wasted turn, and the sweep already reads `AreaAtTarget ? target : caster`,
+so what the ring catches was never the selection's business either way.
+
+### What this does not change
+
+No `SkillDef` moved, so no CSV row moved — `SkillCsvSeed --check` is clean on all fifteen files and
+`debuff_landmods.csv`'s 86 rows. Whirlwind's real power against a pack is still unmeasured by
+anything in `docs/balance/`: twenty strokes that each sweep a 200 ring is a large jump from twenty
+strokes at one body, and it has now stopped being cut short as well.
+
+## 2026-09-18 — 0.179.0: two skills that did not do what their rows say
 
 ### 1 — the AoE discipline had no AoE
 

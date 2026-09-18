@@ -6258,6 +6258,18 @@ public class GameLoopService : BackgroundService
             // an unguarded autopilot would trade a mage's whole bar away one cast at a time.
             if (def.HpCostAt(lvl) > 0 && p.Hp <= def.HpCostAt(lvl) * 2) continue;
 
+            // 🔴🔑 A SELF-CENTRED RING IS AIMED AT THE CASTER HERE TOO (2026-09-18) — the two
+            //    offensive arms below say `SelfCentredArea(def) ? p.Id : target.Id` for a reason the
+            //    autopilot cannot see from where it stands. This chain QUEUES A SKILL DIRECTLY, so it
+            //    is the one caster in the game that never passes `BeginSkill`'s target gate, where
+            //    0.179.0 taught every hand-pressed shout to aim at its own feet. Two things broke:
+            //      · The Warlord's shouts author **Range 0**, so `UpdateQueuedSkill`'s approach test
+            //        (`DistanceSq > range*range`) can never be satisfied against a body — the
+            //        autopilot walked at the mob forever and the shout never fired at all.
+            //      · Whirlwind's volley then anchored on that mob and died with it (see the channel).
+            //    Nothing is lost by re-aiming: the sweep already reads `AreaAtTarget ? target : caster`,
+            //    so what the ring catches was never the selection's business. The `target is null`
+            //    guard STAYS — a shout with nothing to fight is still a wasted turn.
             Guid tgtId;
             switch (kind)
             {
@@ -6291,11 +6303,11 @@ public class GameLoopService : BackgroundService
                     // Missing or WEAKER on the enemy (owner) — the old test was "any buff with this
                     // key", which let a rank-1 poison block the rank-3 one for its whole duration.
                     if (target is null || AutoBuffCovered(target, def, 0, def.Rank)) continue;
-                    tgtId = target.Id; break;
+                    tgtId = SelfCentredArea(def) ? p.Id : target.Id; break;
                 // (BL-83 removed the Taunt case that sat here with the rung it served.)
                 case AutoSkillKind.Attack:
                     if (target is null) continue;
-                    tgtId = target.Id; break;
+                    tgtId = SelfCentredArea(def) ? p.Id : target.Id; break;
                 default:
                     continue;   // Other → never auto-cast
             }
@@ -12369,7 +12381,20 @@ public class GameLoopService : BackgroundService
         {
             caster.ChannelSkillId = channelId;
             caster.ChannelWrapperId = def.Id;
-            caster.ChannelTargetId = target.Id;
+            // 🔴🔑 A SELF-CENTRED VOLLEY IS ANCHORED ON THE CASTER, NEVER ON A BODY (owner,
+            //    2026-09-18: *"i do a wirlwind on a one mob while fhgting 20 and i kill that one mob
+            //    and my wirlwind stops at 5 casts"*). The channel tick ends the volley the moment
+            //    `ChannelTargetId` dies — right for Arrow Barrage, which really is ten arrows AT
+            //    someone, and catastrophic for Whirlwind: four seconds of blade around the Warlord has
+            //    nothing to do with whichever mob happened to be selected, and the one he killed
+            //    FIRST is the one that cancels the other nineteen strokes. Fifteen of twenty lost.
+            //
+            // ⚠ THE CAST GATE ALONE WAS NOT ENOUGH, which is the trap here. `SelfCentredArea` already
+            //   hands `BeginSkill` the caster's own id (0.179.0), so a hand-pressed Whirlwind was
+            //   safe — but the AUTOPILOT queues a skill directly and never passes that gate, so it
+            //   set the mob. Anchoring at the volley's source covers every caller at once rather
+            //   than making each of them remember.
+            caster.ChannelTargetId = SelfCentredArea(def) ? caster.Id : target.Id;
             caster.ChannelLevel = lvl;
             caster.ChannelShotsLeft = def.ChannelShots;
             caster.ChannelInterval = Math.Max(1, def.ChannelIntervalTicks);
