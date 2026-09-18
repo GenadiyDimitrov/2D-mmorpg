@@ -175,7 +175,13 @@ public static partial class SkillCatalog
             Category: SkillCategory.Physical, CanDouble: true, BlockAccuracy: 1f,
             // The wrapper carries the radius so the ring is DRAWN at cast time and `Retarget.FromDef`
             // knows this is an area skill — it resolves nothing itself. Same note as the Sword Dance.
-            AreaRadius: 200f,
+            // ⚠ AND IT CARRIES THE MODE, which the Sword Dance's wrapper does NOT need (`BL-265`). Not
+            //   to sweep — the channel branch RETURNS long before the sweep — but because the mode is
+            //   also what `SelfCentredArea` reads at cast START, and the WRAPPER is the thing the
+            //   player presses. Without it a Warlord could not begin his whirlwind without first
+            //   clicking a body, while the five shouts beside it needed nothing. The Dance is
+            //   `AreaAtTarget`, so it wants a target either way.
+            AreaRadius: 200f, TargetMode: TargetMode.EnemiesInRadius,
             RequiredWeapon: WeaponType.AnyBlunt, RequiredHands: WeaponHands.Two,
             ChannelSkill: WaraoeWhirlwindStroke, ChannelShots: 20, ChannelIntervalTicks: 2,
             SpCost: Warrior3rdSp[0],
@@ -192,7 +198,10 @@ public static partial class SkillCatalog
             SkillEffect.PhysicalDamage,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Physical, CanDouble: true, BlockAccuracy: 1f,
-            AreaRadius: 200f, SpCost: 0,
+            // ⚠ `EnemiesInRadius` ON THE STROKE, exactly as the Elf's Sword Dance stroke carries it and
+            //   for the same reason: the WRAPPER resolves nothing. Missing until `BL-265`, which made
+            //   twenty strokes of a whirlwind twenty strokes at one body.
+            AreaRadius: 200f, TargetMode: TargetMode.EnemiesInRadius, SpCost: 0,
             Description: "One stroke of a Warlord's whirlwind."));
 
         // ═══ TAUNTING SHOUT — the long provoke, and the first VULNERABILITY in the game ══════════
@@ -204,11 +213,28 @@ public static partial class SkillCatalog
         //    ring harder, which is what makes this the blunt discipline's group tool rather than a
         //    personal one.
         // ⚠ Its landing modifier is OWED BY HIM (`BL-259`) — it is `Physical/Debuf` in his TYPE cell.
-        list.Add(new SkillDef(TauntingShout, "Taunting Shout", BaseClass.Fighter, SkillEffect.None,
+        //
+        // 🔴🔑 IT WAS NEITHER A TAUNT NOR AN AoE UNTIL 0.179.0 (owner, 2026-09-18: *"war_aoe taunting
+        //    shout should work without a target and affect any target in range"*). Two separate
+        //    omissions in one row, and each of them is silent:
+        //      · `SkillEffect.None` — so `ExecuteSkill`'s taunt arm never ran and the authored
+        //        `TauntPower: 3000` was dead data. The skill that provokes a field provoked nobody.
+        //      · no `TargetMode` — so it defaulted to `SelfOrTarget` and landed the vulnerability on
+        //        the ONE selected body while the 600 circle pulsed around the caster. The radius is
+        //        read by the draw (`BroadcastAreaEffect`) whether or not anything sweeps it, which is
+        //        exactly the *"the red circle pulses but nothing is hit"* shape the 2026-08-28 fix
+        //        named. `TargetMode.EnemiesInRadius` is the ONLY thing that makes a ring resolve.
+        //    Both were true of every offensive row in this file — see `BL-265`.
+        // 🔑 `TauntLockTicks: 30` — the provoke is 3 seconds, his Tauting Wall's number, and the ROT is
+        //    the 30 in his DURR cell. Without the split the lock would have read that 30s too, which
+        //    on a 20s reuse is a permanent ring-wide aim lock and strictly better than the TANK's
+        //    10-minute ultimate. One duration cell, two clocks.
+        list.Add(new SkillDef(TauntingShout, "Taunting Shout", BaseClass.Fighter, SkillEffect.Taunt,
             MpCost: 50, CastTicks: 10, CooldownTicks: 200, Range: 0, Power: 0,
             DurationTicks: 300, BuffKey: TauntingShout, Rank: 1,
             Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Physical,
-            AreaRadius: 600f, TauntPower: 3000,
+            AreaRadius: 600f, TargetMode: TargetMode.EnemiesInRadius,
+            TauntPower: 3000, TauntLockTicks: 30,
             VulnerableToWeapon: WeaponType.AnyBlunt, WeaponVulnerabilityPct: .10f,
             RequiredWeapon: WeaponType.AnyBlunt, RequiredHands: WeaponHands.Two,
             SpCost: 74_000,
@@ -348,7 +374,9 @@ public static partial class SkillCatalog
             DebuffSchool: rider == SkillEffect.None ? DebuffSchool.None : DebuffSchool.Physical,
             DebuffLandMod: landMod,
             Category: SkillCategory.Physical, CanDouble: true, BlockAccuracy: 1f,
-            AreaRadius: 200f,
+            // ⚠ `EnemiesInRadius` IS WHAT MAKES THE RING RESOLVE — see `BL-265`. A radius alone only
+            //   draws the circle; every one of this file's rings was single-target until 0.179.0.
+            AreaRadius: 200f, TargetMode: TargetMode.EnemiesInRadius,
             RequiredWeapon: WeaponType.AnyBlunt, RequiredHands: WeaponHands.Two,
             SpCost: Warrior3rdSp[0],
             Description: blurb,
@@ -371,7 +399,9 @@ public static partial class SkillCatalog
             DurationTicks: 150, BuffKey: id, Rank: 1,
             Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Physical,
             DebuffLandMod: WaraoeShoutLandMod,
-            AreaRadius: 200f,
+            // ⚠ `EnemiesInRadius` — `BL-265`, same omission as Shocking Shout's above. A "solo debuff
+            //   on a ring" that lands on ONE man is just a Slash with the damage taken out.
+            AreaRadius: 200f, TargetMode: TargetMode.EnemiesInRadius,
             RequiredWeapon: WeaponType.AnyBlunt, RequiredHands: WeaponHands.Two,
             Replaces: new[] { Smash },
             SpCost: Warrior3rdSp[0],

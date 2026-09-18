@@ -236,6 +236,12 @@ public static partial class SkillCatalog
             MpCost: 0, CastTicks: 50, CooldownTicks: 100, Range: 0, Power: 0,
             DurationTicks: 0, BuffKey: "human_relaxation", Toggle: true, PhysicalCast: true,
             Category: SkillCategory.Physical, TargetMode: TargetMode.SelfOnly,
+            // ⚠ `SeatsCaster` — *"cannot act"*, and it was MISSING (owner, 2026-09-18: *"humans relax
+            //   should prevent me from moving or acting"*). Every word of the description below was
+            //   already written and none of it was enforced: the toggle applied its regen and left you
+            //   standing, free to run, swing and cast while healing 5% of your pool a second. The
+            //   sitting machinery it needed has existed the whole time — see `SkillDef.SeatsCaster`.
+            SeatsCaster: true,
             EndsOnDamageTaken: true, SpCost: RaceEightSp[0],
             Description: "Sit and let the body do its work. You cannot act, and any damage ends it.",
             Levels: Enumerable.Range(0, RaceEightLevels.Length).Select(i => new SkillLevel(

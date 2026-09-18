@@ -1460,6 +1460,8 @@ public class GameLoopService : BackgroundService
             long seatedTicks = _tick - player.SatDownTick;
             if (seatedTicks < MovementTuning.SettledSeconds * GameConstants.TickRate)
                 player.StandUpTicks = MovementTuning.StandUpTicks;
+            // …and a stance that only exists while seated ends with the sit. See EndSeatedStances.
+            EndSeatedStances(player);
         }
 
         player.MoveState = cmd.State;
@@ -1952,12 +1954,20 @@ public class GameLoopService : BackgroundService
     /// MP, cooldown, range and target validity are all different two seconds later.</summary>
     private void BeginSkill(Entity caster, string skillId, Guid? requestedTargetId, bool fromChain = false)
     {
-        // No casting during the stand-up recovery, nor while seated — stand first.
-        if (caster.StandUpTicks > 0 || caster.MoveState == MoveState.Sitting)
-            return;
-
         var def = SkillCatalog.Get(skillId);
         if (def is null || !caster.HasSkill(def.Id))
+            return;
+
+        // No casting during the stand-up recovery, nor while seated — stand first.
+        //
+        // ⚠ ONE EXCEPTION, and it is the door out of the room: a SEATING toggle you are currently
+        //   wearing may be switched OFF from here. Relax is what puts you on the ground, so without
+        //   this the only way to end it would be the sit button or a monster — pressing the stance
+        //   again, which is how every other toggle in the game is turned off, would hit this line and
+        //   do nothing. Turning one ON is still refused while seated, like anything else.
+        bool endingSeatedStance = def.Toggle && def.SeatsCaster
+            && caster.Buffs.Any(b => b.SourceSkillId == def.Id);
+        if (!endingSeatedStance && (caster.StandUpTicks > 0 || caster.MoveState == MoveState.Sitting))
             return;
 
         // Passives (armor masteries) are always-on; they can't be cast.
@@ -2222,7 +2232,8 @@ public class GameLoopService : BackgroundService
         Guid targetId;
         // A support skill lands on a party member only if IsAllyTargetable says so — see that helper for
         // why the test cannot be Effect-only.
-        if (def.PlacesTrap || def.PlacesTotem || def.GrantsHide || AreaResurrect(def))
+        if (def.PlacesTrap || def.PlacesTotem || def.GrantsHide || AreaResurrect(def)
+            || SelfCentredArea(def))
         {
             // Self-delivered: a trap drops at the caster's feet, a totem is planted there, stealth
             // cloaks the caster. Even though these carry damage/CC/heal flags (their deferred payload),
@@ -2233,6 +2244,11 @@ public class GameLoopService : BackgroundService
             // arm below cannot simply be widened: the field is aimed at GROUND, not at a corpse. It has
             // no target to pick and must not demand one — you cast it standing among the fallen, and
             // which bodies it reaches is decided when it LANDS, not when you press it.
+            //
+            // 🔑 AND SO IS A SELF-CENTRED OFFENSIVE RING (2026-09-18) — the same sentence with the
+            // sides swapped: aimed at the ground he is standing on, resolved by geometry when it
+            // lands. See `SelfCentredArea` for why it belongs on THIS side of the `offensive` gate
+            // rather than as an exception inside it.
             targetId = caster.Id;
         }
         else if (def.Resurrect)
@@ -2406,10 +2422,27 @@ public class GameLoopService : BackgroundService
         if (existing is not null)
         {
             caster.Buffs.Remove(existing);
+            // A SEATING toggle gets you back on your feet when you switch it off — the stance and the
+            // sit are one thing (`SkillDef.SeatsCaster`), so ending one must end the other or the
+            // player is left rooted by a stance he can no longer see.
+            if (def.SeatsCaster && caster.MoveState == MoveState.Sitting)
+                StandUp(caster);
             caster.RecomputeDerived();
             PushBuffs(caster);
             SendStats(caster);
             SendSystemToEntity(caster, $"{def.Name} deactivated.");
+            return;
+        }
+
+        // ---- A SEATING TOGGLE SITS YOU DOWN (the Human's Relax) -------------------------------
+        //      His row: *"Sit and relax … (cannot act, status is canceld on dmg taken)"*. The sit IS
+        //      the price — the eight rungs are all 0 MP — so it is charged here, before the buff.
+        //      ⚠ The SAME idle gate `HandleSetMoveState` applies, and for the same reason: sitting
+        //        down mid-fight or mid-cast is not a rest. A refusal, not a silent no-op — a toggle
+        //        that lights up and does nothing is the shape this whole fix exists to remove.
+        if (def.SeatsCaster && (caster.Engaged || caster.IsCommitted || caster.StandUpTicks > 0))
+        {
+            SendSystemToEntity(caster, $"{def.Name} needs you still — you cannot sit now.");
             return;
         }
 
@@ -2423,8 +2456,53 @@ public class GameLoopService : BackgroundService
             return;
         }
         caster.Mp -= mp;
+        // Down BEFORE the buff, so `RecomputeDerived` inside ApplyBuff already sees the seated state
+        // and the stats that go out with it are the ones the player will actually regenerate on.
+        if (def.SeatsCaster)
+            SitDown(caster);
         ApplyBuff(caster, def, level, toggle: true);   // refreshes stats + buff bar
         SendSystemToEntity(caster, $"{def.Name} activated.");
+    }
+
+    /// <summary>Put a player on the ground — the one place the seated state is entered, shared by the
+    /// sit command and by a <see cref="SkillDef.SeatsCaster"/> toggle. Both have to agree about what
+    /// sitting IS (the stand-up clock starts, the walk is abandoned) or a stance-sit would be a
+    /// lookalike that the rest of the loop treats differently from a real one.</summary>
+    private void SitDown(Entity player)
+    {
+        player.MoveState = MoveState.Sitting;
+        player.SatDownTick = _tick;
+        player.TargetX = null;
+        player.TargetY = null;
+    }
+
+    /// <summary>Get a player back on his feet, charging the stand-up recovery unless he has been
+    /// SETTLED long enough — the same rule (and the same reason) as the sit command's, which see.</summary>
+    private void StandUp(Entity player)
+    {
+        if (player.MoveState != MoveState.Sitting) return;
+        long seatedTicks = _tick - player.SatDownTick;
+        if (seatedTicks < MovementTuning.SettledSeconds * GameConstants.TickRate)
+            player.StandUpTicks = MovementTuning.StandUpTicks;
+        player.MoveState = MoveState.Running;
+    }
+
+    /// <summary>End every stance that only exists while its owner is seated
+    /// (<see cref="SkillDef.SeatsCaster"/>). Called wherever a player LEAVES the ground by a route
+    /// other than switching the stance off himself — the sit toggle, and any future one.
+    ///
+    /// <para>🔑 A hit needs no call here: those buffs also carry <c>EndsOnDamageTaken</c>, which the
+    /// damage path already honours in the same breath as standing the victim up. This is the
+    /// VOLUNTARY door, and without it a Human could sit, toggle Relax, stand, and walk away still
+    /// regenerating 5% of his pool a second.</para></summary>
+    private void EndSeatedStances(Entity player)
+    {
+        int removed = player.Buffs.RemoveAll(
+            b => SkillCatalog.Get(b.SourceSkillId) is SkillDef d && d.SeatsCaster);
+        if (removed == 0) return;
+        player.RecomputeDerived();
+        PushBuffs(player);
+        SendSystemToEntity(player, "You stand, and the rest ends.");
     }
 
     private void HandleRespawn(RespawnCmd respawn)
@@ -14769,9 +14847,13 @@ public class GameLoopService : BackgroundService
         }
 
         // THE LOCK — mobs AND players. On a person it is the whole skill.
+        // ⚠ `TauntLockTicks` FIRST, and only then the duration: on a skill that ALSO leaves a debuff
+        //   the two clocks are different lengths (Taunting Shout — a 3s provoke, a 30s blunt
+        //   vulnerability). 0 keeps the old reading, which is every taunt whose duration IS its lock.
         target.CombatTargetId = caster.Id;
-        target.TauntLockTicks = def.DurationTicksAt(lvl) > 0
-            ? def.DurationTicksAt(lvl) : GameConstants.TauntLockTicksDefault;
+        target.TauntLockTicks = def.TauntLockTicks > 0 ? def.TauntLockTicks
+            : def.DurationTicksAt(lvl) > 0 ? def.DurationTicksAt(lvl)
+            : GameConstants.TauntLockTicksDefault;
         BroadcastCombat(caster, target, 0, CombatOutcome.Buff, castName);
     }
 
@@ -17934,6 +18016,27 @@ public class GameLoopService : BackgroundService
     /// totems are target/aoe"*.</para></summary>
     private static bool FriendlyScope(SkillDef def) =>
         def.TargetMode == TargetMode.FriendlyInRadius || def.PlacesTotem;
+
+    /// <summary>Is this a SELF-CENTRED offensive AREA skill — a ring drawn around the caster rather
+    /// than around a body he picked? Then it needs NO TARGET AT ALL, and demanding one is a bug.
+    ///
+    /// <para>🔑 Owner, 2026-09-18: *"war_aoe taunting shout should work without a target and affect any
+    /// target in range"*. The cast-start gate refuses every `offensive` skill that has nothing selected
+    /// — correct for a strike, wrong for a shout: what a self-centred ring catches is decided by
+    /// GEOMETRY when it lands, and the caster's current selection has no part in it. A Warlord walking
+    /// into a pack had to click one of them first to provoke all of them, which reads as the skill
+    /// being broken and is worse in the one case it exists for — a field with nothing clickable yet.</para>
+    ///
+    /// <para>⚠ <c>!AreaAtTarget</c> is the whole of the distinction and it must stay: Arcane Wave and
+    /// Shocking Javelin are `EnemiesInRadius` too, and their circle sits on the TARGET — thrown 900
+    /// away — so those still need something to throw it at. Range plays no part in the test; his
+    /// self-centred rows all author Range 0, but it is the ORIGIN that decides, not the reach.</para>
+    ///
+    /// <para>⚠ Nothing is skipped by handing the cast <c>caster.Id</c>: <see cref="EnemiesInRadius"/>
+    /// carries the whole `BL-77` PvP area filter itself and the sweep flags per body it reaches, so the
+    /// single-target door's CanPvpHit / CanSee / MobTargetOnly checks have nothing left to guard.</para></summary>
+    private static bool SelfCentredArea(SkillDef def) =>
+        def.TargetMode == TargetMode.EnemiesInRadius && !def.AreaAtTarget;
 
     /// <summary>Is this a RESURRECTION FIELD — a res aimed at the ground rather than at one corpse?
     /// Three places have to agree about it (the cast-start target arm, the cast-finish live/dead gate

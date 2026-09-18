@@ -6692,3 +6692,126 @@ rewrite them here and in `Playtest-Archive.md`; both were restored.)
   catch a mistake in it — the compiler is the only safety net, which is fine for constants.
   🔵 Convention to settle with him before starting: strip the `lb_`/discipline prefixes entirely, or keep
   a short one for per-race variants that share a display name across races?
+
+---
+
+## `BL-265` ✅ FOUND AND BUILT 2026-09-18 in **0.179.0** — the AoE discipline had no AoE
+
+**Your ask, 2026-09-18:** *"war_aoe taunting shout should work without a target and affect any target
+in range"*.
+
+**Both halves were true, and the second one was true of the whole discipline.** Taunting Shout is
+fixed and so are the other six rows it turned up. Recorded here rather than left open because nothing
+is owed: it is built, measured, and `--check` is clean on both `war_aoe` files.
+
+### What was wrong — three separate omissions in one row
+
+| | what the row said | what the engine did |
+|---|---|---|
+| **no `TargetMode`** | `enemy/aoe`, AOE 600 | landed on the **one selected body**. The circle still pulsed at 600 — `BroadcastAreaEffect` reads the radius whether or not anything sweeps it. |
+| **`SkillEffect.None`** | *"provoke enemies in a large area"*, and an authored `TauntPower: 3000` | the taunt arm never ran. **The skill did not provoke anything at all**; the 3,000 was dead data. |
+| **needs a target** | RANGE 0 — a ring around the caster | the cast-start gate refuses every offensive skill with nothing selected, so a Warlord walking into a pack had to click one of them first. |
+
+### 🔑 The general rule, and why the radius is not it
+
+**`TargetMode.EnemiesInRadius` is the ONLY thing that makes a ring resolve.** `AreaRadius` draws the
+circle; the sweep is a separate branch of `ExecuteSkill` and a skill that does not declare the mode
+never reaches it. That is the same *"the red circle pulses but nothing is hit"* shape the 2026-08-28
+`AreaRadiusAt` fix named, one layer up — and it is silent both times, because the thing the player
+reads (the circle) is drawn by the half that works.
+
+### The measurement — seven skills, and all seven are yours
+
+A pass over the whole catalog for *offensive, has a radius, does not sweep*:
+
+| skill | file | radius | what it actually did |
+|---|---|---|---|
+| `shocking_shout` | `war_aoe 3rd` | 200 | stunned and struck **one** body |
+| `waraoe_wirlwind_stroke` | `war_aoe 3rd` | 200 | twenty strokes, all at **one** body |
+| `shattering_shout` / `breaking_shout` / `crippling_shout` | `war_aoe 3rd` | 200 | a *"solo debuff on a ring"* on **one** man — i.e. a Slash with the damage removed |
+| `taunting_shout` | `war_aoe 3rd`/`4th` | 600/800 | above |
+| `shocking_javelin` | `war_aoe 4th` | 150 | thrown 900, detonating on **one** body |
+| `warrior_charge_stomp` | `war_aoe 4th` | 200 | the Stomp's arrival hit **one** body — so Charge n Stomp differed from plain Charge by its reuse and nothing else |
+
+**Every other area skill in the game was already correct** — the mage's waves, the archer's barrage
+and grenade, the Elf's Sword Dance, both tank mass-taunts, every trap, every boss slam. The defect is
+confined to the two Warlord files, which landed on 2026-09-17; nothing older is touched. After the
+fix the same pass returns **0**.
+
+### What shipped
+
+1. **All seven declare `TargetMode.EnemiesInRadius`.** Nothing else about them moved — same power,
+   same MP, same radius, same rungs. `shocking_javelin` and `warrior_charge_stomp` keep
+   `AreaAtTarget`, so those two still need a body to aim at; the other five are caster-centred.
+2. **Taunting Shout carries `SkillEffect.Taunt`**, so its authored 3,000 threat is paid to every
+   creature in the ring — the same helper the tank's Taunt and Tauting Wall use, so your *"the aggro
+   ladder is mob-only, the lock reaches players"* ruling holds here unchanged.
+3. **A caster-centred ring no longer needs a target** (`GameLoopService.SelfCentredArea`), joining the
+   trap, the totem, the hide and the resurrection field on the self-delivered side of the cast gate.
+   It is the general rule, not a special case for one skill: what a ring catches is decided by
+   geometry when it lands, so the current selection has no part in it. Nothing is skipped by it —
+   `EnemiesInRadius` carries the whole `BL-77` PvP area filter itself and flags per body it reaches.
+4. **`SkillDef.TauntLockTicks`** — a new field, 0 = the old reading. One duration cell was meaning two
+   different things: Taunting Shout's DURR of 30 is the **blunt vulnerability**, and letting the aim
+   lock read it too would have pinned a whole ring for thirty seconds on a twenty-second reuse —
+   strictly better than the TANK's own 10-minute Tauting Wall (3s). The provoke is 3s, his Wall's
+   number; the rot stays 30s.
+
+⚠ **No CSV moved**, and that is the point: every one of these rows already said `enemy/aoe`. The code
+was behind the file, not the other way round.
+
+⚠ **THIS IS A REAL POWER JUMP AND IT WANTS A PLAYTEST.** Whirlwind alone goes from 20 strokes on one
+body to 20 strokes on everything within 200. That is what your rows author, and it is the first time
+the discipline has actually been the AoE one — but no BalanceMatrix number in `docs/balance/` was
+measured against it.
+
+---
+
+## `BL-266` ✅ FOUND AND BUILT 2026-09-18 in **0.179.0** — Relax did not seat you
+
+**Your ask, 2026-09-18:** *"humans relax should prevent me from moving or acting"*.
+
+**It was supposed to, everywhere but in the code that runs.** Three separate places already stated the
+rule and none of them enforced it:
+
+| where | what it said |
+|---|---|
+| `fighter 1st.csv`, all eight rows | *"Sit and relax: Gives 1.0 % HP/s regen **(cannot act, status is canceld on dmg taken)**"* |
+| the skill's own description | *"Sit and let the body do its work. **You cannot act**, and any damage ends it."* |
+| `GameLoopService`, the regen fold | *"…beside the sitting passives above and for the same reason: **Relax makes you sit**, so charging the sitting bonus on it again would inflate every rung"* |
+
+The toggle applied its regen and left you standing. So the eight rungs — **all authored at 0 MP**,
+because the price was meant to be the sitting — cost nothing whatever: **5% of max HP and 3% of max MP
+per second, held while running, swinging and casting.** The regen was even being paid at the rate
+tuned on the assumption that you were seated.
+
+### 🔑 The machinery was already there. The skill simply never entered the state
+
+`MoveState.Sitting` blocks the move tap, `HandleAttack` and `BeginSkill`; a hit stands you up; and
+`EndsOnDamageTaken` — which Relax already carried — drops the buff the instant anything lands. Both
+halves of your CSV clause were built. Nothing needed inventing; the stance needed wiring to the state.
+
+### What shipped — `SkillDef.SeatsCaster` (new, Relax is its only user)
+
+1. **On → you sit.** The same `MoveState`, the same `SatDownTick`, the same stand-up recovery, and the
+   same *"you must be idle"* gate the sit button applies (engaged / casting / mid-stand are refused,
+   out loud — a toggle that lights up and does nothing is the shape this fix exists to remove).
+2. **Off → you stand.** The stance and the sit are one thing, so ending one ends the other; otherwise
+   you are left rooted by a stance you can no longer see.
+3. **The one exception to the seated cast gate**: a seating toggle **you are wearing** may be pressed
+   to end it. Without it Relax would be the only toggle in the game you could not switch off the way
+   you switched it on, and the only ways out would be the sit button and a monster. Turning one **on**
+   while seated is still refused, like anything else.
+4. **Standing by any other route ends the stance** (`EndSeatedStances`, called from the sit command) —
+   or you could sit, toggle Relax, stand, and walk away still regenerating. A HIT needs no call there:
+   the damage path already ends `EndsOnDamageTaken` buffs and stands the victim up in one breath.
+5. **`SitDown`/`StandUp` are one shared pair**, so the sit command and the stance cannot drift into two
+   different ideas of what sitting is.
+
+⚠ **No CSV moved** — your row already said *"cannot act"*. As with `BL-265`, the code was behind the
+file.
+
+⚠ **Its `CAST 5` cell is not honoured and was not before this** — a `Toggle` flips instantly by design
+(`BeginSkill` dispatches toggles above the cast machinery), so the 5-second sit-down animation your row
+prices is not charged. Left alone deliberately: it is a separate decision, and `--check` passes because
+the def does carry `CastTicks: 50`. Say the word if a seating toggle should pay its cast.

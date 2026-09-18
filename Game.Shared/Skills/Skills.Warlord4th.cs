@@ -169,7 +169,9 @@ public static partial class SkillCatalog
             Power: W4WaraoeShoutPower[0], DurationTicks: 50,
             BuffKey: id, Rank: 1, DebuffSchool: DebuffSchool.Physical,
             Category: SkillCategory.Physical, CanDouble: true, BlockAccuracy: 1f,
-            AreaRadius: radius, AreaAtTarget: atTarget,
+            // ⚠ `EnemiesInRadius` — `BL-265`. It keeps `AreaAtTarget`, so unlike the Warlord's other
+            //   rings this one still NEEDS a body to throw at: the circle sits 900 away, on the target.
+            AreaRadius: radius, AreaAtTarget: atTarget, TargetMode: TargetMode.EnemiesInRadius,
             RequiredWeapon: WeaponType.AnyBlunt, RequiredHands: WeaponHands.Two,
             SpCost: F4New(76).Sp,
             Description: blurb,
@@ -252,7 +254,10 @@ public static partial class SkillCatalog
             new(WarriorChargeStomp, "Charge n Stomp", BaseClass.Fighter, SkillEffect.PhysicalDamage,
                 MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 40, Power: 5000,
                 Category: SkillCategory.Physical, CanDouble: true,
-                AreaRadius: 200f, AreaAtTarget: true, SpCost: 0,
+                // ⚠ `EnemiesInRadius` — `BL-265`. `FinishPull`'s own comment already claimed the
+                //   arrival *"brings its own AoE"*; without this line it brought a single-target hit
+                //   on the anchor and the whole difference between Stomp and plain Charge was the reuse.
+                AreaRadius: 200f, AreaAtTarget: true, TargetMode: TargetMode.EnemiesInRadius, SpCost: 0,
                 Description: "The landing of a Warlord's charge."),
         };
     }

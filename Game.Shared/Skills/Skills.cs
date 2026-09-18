@@ -373,6 +373,16 @@ public record SkillDef(
     // A TOGGLE skill (stance/aura): clicking it applies its self-buff indefinitely;
     // clicking again removes it. Instant, no cast bar; MP charged on activation only.
     bool Toggle = false,
+    // THIS TOGGLE PUTS YOU ON THE GROUND — the Human's Relax, and today its only user. His row says
+    // *"Sit and relax: … (cannot act, status is canceld on dmg taken)"*, and BOTH halves of that were
+    // already built: `MoveState.Sitting` blocks movement, HandleAttack and BeginSkill, and
+    // `EndsOnDamageTaken` drops the buff the moment anything lands. The skill simply never entered the
+    // state, so it was a free 5%-a-second regen you could hold while running and swinging.
+    //
+    // 🔑 IT IS A REAL SIT, not a lookalike: the same `MoveState`, the same stand-up recovery, the same
+    //    "you must be idle to sit" gate. Anything that stands you up — the sit toggle, a mob's hit —
+    //    also ends the buff, because a regen authored *"while seated"* must not survive standing.
+    bool SeatsCaster = false,
     // How many times ONE cast resolves against the target. 1 = an ordinary skill. The Warchanter's
     // Sound Burst is his *"Deals Physical Damag With Power +1000 Twice"* — TWO independent
     // resolutions of the SAME power, so each one rolls its own evasion, block and crit rather than
@@ -686,6 +696,13 @@ public record SkillDef(
     // Per-level on SkillLevel.TauntPower; read it with TauntPowerAt(level), never this field.
     // Rides as a field rather than reusing Power because a taunt may ALSO do damage.
     int TauntPower = 0,
+    // HOW LONG THE TAUNT'S LOCK HOLDS, in ticks (0 = the skill's own DurationTicks, which is what
+    // every taunt built before this used). It exists because ONE skill's duration means two
+    // different things: Taunting Shout leaves a 30-SECOND blunt vulnerability on the ring and must
+    // not also pin twenty creatures' aim for thirty seconds on a twenty-second reuse — that would
+    // be strictly better than the tank's own 10-minute Tauting Wall (3s). The provoke and the rot
+    // are two clocks; a skill that carries both says so here.
+    int TauntLockTicks = 0,
     // MOB-ONLY targeting (BL-70). The skill refuses a player target outright rather than fizzling
     // on one. The rogue's Lure is what this is for: it is a taunt, and a taunt aimed at a person is
     // meaningless — but without an explicit refusal it would look like a working PvP skill that
