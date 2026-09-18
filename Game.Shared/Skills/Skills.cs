@@ -693,7 +693,7 @@ public record SkillDef(
     bool MobTargetOnly = false,
     // `BL-109` — THIS SKILL SUMMONS A WHISP, and these are the whisp's OWN skills (the ids of the
     // `whisps_skills.csv` rows). His comment column on `tank 3rd.csv` says it in as many words:
-    // *"uses whisp_provoke"*, *"uses whisp_heal and whisp_quick_heal"* — which is why this is an
+    // *"uses whisp_taunt"*, *"uses whisp_heal and whisp_quick_heal"* — which is why this is an
     // ARRAY: the healing whisp carries two, and picks between them by the master's HP band.
     //
     // 🔑 A WHISP IS NOT AN ENTITY (his rule: *"it can be part of the character game object no need a

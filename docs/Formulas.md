@@ -259,8 +259,8 @@ FinalStand   = P.Atk x (1 + a[skillLevel][band])   a = 5/10/20 · 7/15/25 · 10/
              + Acc +   c[skillLevel][band]         c = 0/0/2  · 0/2/4   · 2/4/8      flat
 ```
 
-Final Defense is the tank's (`tank_final_defense`, 40/52/60); Final Stand is the warrior's
-(`warrior_final_stand`, 40/52/60, both disciplines) and rides both physical attack getters, so basic
+Final Defense is the tank's (`final_defense`, 40/52/60); Final Stand is the warrior's
+(`final_stand`, 40/52/60, both disciplines) and rides both physical attack getters, so basic
 swings gain it too. Each lands OUTSIDE the buff stack, as a multiplier on the finished stat.
 
 Final Stand's ACCURACY (`BL-237`, 2026-09-14) is a second live channel, not a rider on the P.Atk one,
@@ -443,7 +443,7 @@ A **charge** is the same journey with the ends swapped — the caster travels, t
 Two independent debuffs. A skill refuses to fire when `SkillMath.IsPhysical(def)` matches the half you
 are wearing — physical silence stops physical skills, magical silence stops magical ones, both at once
 is a full silence. **A basic attack is never silenced** (it is not a skill). Bosses are immune to
-both; the boss's own `boss_full_silence` sets both fields.
+both; the boss's own `word_of_unmaking` sets both fields.
 
 `Entity.IsSilencedPhysical/IsSilencedMagical` · `SkillDef.SilencePhysical/SilenceMagical`
 

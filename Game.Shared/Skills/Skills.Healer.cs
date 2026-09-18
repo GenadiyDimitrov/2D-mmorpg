@@ -20,9 +20,9 @@ public static partial class SkillCatalog
     public const string BufferArmorMastery = "buffer_armor_mastery";
     public const string HolyForce = "holy_force";    // "Force" — interrupt resist (+M.Atk @rank 2)
     public const string HolyFocus = "holy_focus";    // "Focus" — physical crit-rate buff
-    public const string HolyShield = "holy_shield";  // "Shield Bless and Harden" — the SHIELD group
+    public const string ShieldBlessAndHarden = "shield_bless_and_harden";  // "Shield Bless and Harden" — the SHIELD group
     public const string HolyFrenzy = "holy_frenzy";  // "Frenzy" — berserk trade-off buff
-    public const string CombatStance = "healer_combat_stance";  // TOGGLE: trade M.Atk for P.Atk
+    public const string CombatStance = "combat_stance";  // TOGGLE: trade M.Atk for P.Atk
     public const string Antidote = "antidote";                  // cure: removes poison/venom
     public const string Resurrection = "resurrection";          // revive a fallen ally (4 levels)
     public const string ShroudingHymn = "shrouding_hymn";       // party STEALTH: unaggroed mobs ignore the group
@@ -64,7 +64,7 @@ public static partial class SkillCatalog
     ///
     /// <para>🔴 IT BECAME ITS OWN SKILL ID ON 2026-09-02 (`BL-119`), and the reason is a bug he found:
     /// *"I managed to make x4 cast speed with light armor ...I'm 40lvl harmonist with 35lvl
-    /// armor_mastery and wc_harmonist_light_mastery — both remove the light penalty"*. While these were
+    /// armor_mastery and harmonist_light_mastery — both remove the light penalty"*. While these were
     /// rungs 5-18 of <see cref="ArmorMasterySkill"/>, a level-40 elf who had not yet BOUGHT rung 5 still
     /// held the cleric's rung 4 — whose Light row cancels the Spellcaster penalty — underneath
     /// Harmonist Light Mastery, which cancels the very same penalty. Armour masteries stack
@@ -99,7 +99,7 @@ public static partial class SkillCatalog
     ///
     /// <para>🔑 THE ×1.2 MP REGEN LEFT THIS SKILL ON 2026-08-27 — *"the mp regen is moved to the
     /// represented masteries per race (human/ork heavy, elf light)"*. It now rides on
-    /// <c>WcBufferHeavy</c> (Human;Demon) and <c>WcHarmonistLight</c> (Elf) instead, in
+    /// <c>WcBufferHeavy</c> (Human;Demon) and <c>HarmonistLightMastery</c> (Elf) instead, in
     /// Skills.Warchanter3rd.Kit.cs. Same outcome for a buffer wearing his race's armour, and it makes
     /// the grant a REWARD FOR WEARING IT: a Human Warchanter in light armour now gets no ×1.2 at all,
     /// where this skill used to hand it to him regardless.</para>
@@ -504,10 +504,10 @@ public static partial class SkillCatalog
         // numbers are a PERCENT of what the shield already carries, so the buff is self-gating — a
         // character with no shield has 0 shield defence and 0 block chance, and 0 × 1.5 is still 0.
         // BlockChance is clamped to StatCaps.BlockChance afterwards, as always.
-        new(HolyShield, "Shield Bless and Harden", BaseClass.Mage,
+        new(ShieldBlessAndHarden, "Shield Bless and Harden", BaseClass.Mage,
             SkillEffect.BuffShieldDef | SkillEffect.BuffBlockChance,
             MpCost: 200, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
-            DurationTicks: 12000, BuffKey: "holy_shield", Rank: 1,  
+            DurationTicks: 12000, BuffKey: "shield_bless_and_harden", Rank: 1,  
             Category: SkillCategory.Buff, SpCost: 100000,
             ChildBuffs: new[] { Rung(FamShieldDef, 3), Rung(FamShieldBlock, 6) },
             TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
@@ -566,7 +566,7 @@ public static partial class SkillCatalog
         new(CombatStance, "Combat Stance", BaseClass.Mage,
             SkillEffect.BuffPhysAtk | SkillEffect.BuffMagAtk,
             MpCost: 20, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            BuffKey: "healer_combat_stance", Rank: 1,
+            BuffKey: "combat_stance", Rank: 1,
             Category: SkillCategory.Buff, Toggle: true, TargetMode: TargetMode.SelfOnly,
             SpCost: 2000,
             Magnitudes: new EffectMagnitude[]

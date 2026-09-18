@@ -270,7 +270,7 @@ a stack of 9 buff scrolls is the friction you wanted or just friction** (§93D).
       cannot see it, it does not need fixing.
 
 
-- [!] I managed to make x4 cast speed with light amror ...I'm 40lvl harmonist with 35lvl armor_mastery  and wc_harmonist_light_mastery both remove the light penalty ... So I think the 40lvl armor mastery should be buffer_armor_mastery that replace 20~35 armor_mastery and wc_chanter_heavy_mastery and harnonist_light_mastery also replaces the armorm_mastery so they won't stack 
+- [!] I managed to make x4 cast speed with light amror ...I'm 40lvl harmonist with 35lvl armor_mastery  and harmonist_light_mastery both remove the light penalty ... So I think the 40lvl armor mastery should be buffer_armor_mastery that replace 20~35 armor_mastery and wc_chanter_heavy_mastery and harnonist_light_mastery also replaces the armorm_mastery so they won't stack 
 
 - [!] field guards/watchmen are targetable  and hittable even without a pvp-on ...and i can hit them auto in auto-farm ...they shouldn't act as mob.. They are like npc that retaliate and can die ..
   - all npc can be attacked only with pvp-on and all npcs (without guards) are immortal (normal hp) but like dummies hp don't go below 1 and don't strike back ..
@@ -1303,9 +1303,11 @@ have still never been played. Check the flag behaviour in the same sitting.
   is settled in **[docs/design/Disciplines.md](../design/Disciplines.md)**: you author **by DISCIPLINE
   with a trailing RACE column**, **10 CSVs not 30**. Still the single biggest unlock, and your `85j` EXP
   park depends on it landing.
-- **`BL-84` rename every skill id to match its name** — unblocked the day the healer landed, and your
-  standing order puts it **after** the healer. Where an authored row hit an existing skill's exact slot
-  the id was **reused rather than retired**, which is right for the data and wrong for reading code.
+- ✅ **`BL-84` rename every skill id to match its name — BUILT (0.174.0, 2026-09-18) and archived.**
+  136 ids, zero collisions, 765 skills before and after. The systematic families (`buff_*` rungs,
+  `pot_*`/`scr_*`, `npc_*`, `cast_*`) were deliberately left alone: SIX defs are called "Focus", so a
+  name is not a unique id there. ⚠ **It needs the `game.db` delete you already agreed to** — skill ids
+  are persisted on every character's bar and learned list.
 - **`BL-93` the in-game visuals** — step 1 is in this build and is invisible by design (§93F). The
   direction is agreed: **budget per FAMILY not per mob**, one humanoid rig, terrain cosmetic and derived
   from the zone circles, downloads via Addressables later. 🔴 **The camera is deferred** — your call, and

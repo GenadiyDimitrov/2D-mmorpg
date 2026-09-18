@@ -438,7 +438,7 @@ public static class SkillText
         // 🔑 A PROC'S COOLDOWN IS THE ONLY COOLDOWN IT HAS, and it lived nowhere on the card (owner,
         // 2026-09-03: *"Also sigils should have cooldown ...now says instant cast and instant reuse
         // ...is it only visual?"*). It is: the six proc sigils, `arcane_protection`,
-        // `magic_proficiency`, `physical_proficiency`, `tank_aggravated_state` and `wc_combo_mastery`
+        // `magic_proficiency`, `physical_proficiency`, `tank_aggravated_state` and `combo_mastery`
         // are all `Category.Passive` with NO `Passive` payload — their entire effect is this block —
         // and the internal cooldown (`ProcCooldownTicks`, enforced in GameLoopService.TryProcs via
         // Entity.ProcCooldowns) is a real, ticking 5-60s lockout that nothing ever printed. The only

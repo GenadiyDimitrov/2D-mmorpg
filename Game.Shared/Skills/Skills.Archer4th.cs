@@ -31,11 +31,11 @@ public static partial class SkillCatalog
     public const string BowSwiftMastery   = "bow_swift_mastery";       // Demon
     public const string BowDamageMastery  = "bow_damage_mastery";      // Human
     public const string BowSpiritMastery  = "bow_management_mastery";  // Elf
-    public const string ArcherHeavyArrow    = "archer_heavy_arrow";
+    public const string HeavyArrow    = "heavy_arrow";
     public const string ArcherArrowBarrage  = "archer_arrow_barrage";
-    public const string ArcherBleedingArrow = "archer_bleeding_arrow";   // Demon
-    public const string ArcherDazzlingArrow = "archer_dazzling_arrow";   // Human
-    public const string ArcherHealingArrow  = "archer_healing_arrow";    // Elf
+    public const string BleedingArrow = "bleeding_arrow";   // Demon
+    public const string DazzlingArrow = "dazzling_arrow";   // Human
+    public const string HealingArrow  = "healing_arrow";    // Elf
 
     /// <summary>The buff each of the three 76 masteries hands its party. A payload def — never
     /// learned, never on a bar; only <c>TryProcs</c> ever applies one.</summary>
@@ -256,14 +256,14 @@ public static partial class SkillCatalog
                        + "included) and +10% critical damage for 30s."));
 
         // ═══ HEAVY ARROW (84) — one shot, and the biggest number in the archer's book ═════════════
-        list.Add(Ultimate(ArcherHeavyArrow, "Heavy Arrow", SkillEffect.PhysicalDamage,
+        list.Add(Ultimate(HeavyArrow, "Heavy Arrow", SkillEffect.PhysicalDamage,
             level: 84, bottles: 2, power: 17000, mp: 195, durationTicks: 0,
             mags: Array.Empty<EffectMagnitude>(),
             "One arrow drawn to the ear and loosed. There is nothing clever about it.",
             "Strikes for power 17,000.", canDouble: true));
 
         // ═══ THE THREE RACE ULTIMATES (85) ═══════════════════════════════════════════════════════
-        list.Add(Ultimate(ArcherBleedingArrow, "Bleeding Arrow",
+        list.Add(Ultimate(BleedingArrow, "Bleeding Arrow",
             // ⚠ NO `Slow` FLAG AND NO 30% MAGNITUDE. The bleed FAMILY carries the slow now, at a flat
             //   20% for every rank (`DotTiers.Rider`) — his 2026-09-10 ruling, *"yes lets make bleed
             //   generally to slow 20% at all ranks"*. This skill used to author 30% of its own.
@@ -274,7 +274,7 @@ public static partial class SkillCatalog
             "Strikes for power 15,000 and leaves a tier-11 bleed for 30s.",
             rank: 11, school: DebuffSchool.Physical, cooldownTicks: 150));
 
-        list.Add(Ultimate(ArcherDazzlingArrow, "Dazzling Arrow",
+        list.Add(Ultimate(DazzlingArrow, "Dazzling Arrow",
             SkillEffect.PhysicalDamage | SkillEffect.Stun | SkillEffect.Cancel,
             level: 85, bottles: 5, power: 15000, mp: 208, durationTicks: 100,
             mags: Array.Empty<EffectMagnitude>(),
@@ -283,7 +283,7 @@ public static partial class SkillCatalog
             "Strikes for power 15,000, stuns for 10s and strips up to 3 buffs.",
             school: DebuffSchool.Physical, dispelCount: 3, cooldownTicks: 150));
 
-        list.Add(Ultimate(ArcherHealingArrow, "Healing Arrow",
+        list.Add(Ultimate(HealingArrow, "Healing Arrow",
             SkillEffect.PhysicalDamage,
             level: 85, bottles: 5, power: 15000, mp: 208, durationTicks: 0,
             mags: Array.Empty<EffectMagnitude>(),

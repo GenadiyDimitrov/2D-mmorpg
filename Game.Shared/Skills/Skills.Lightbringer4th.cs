@@ -366,7 +366,7 @@ public static partial class SkillCatalog
     //  ELEVEN NEW SKILLS
     // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-    public const string HealerShieldMastery  = "healer_shield_mastery";
+    public const string HealersShieldMastery  = "healers_shield_mastery";
     public const string ArcaneResistance     = "arcane_resistance";
     public const string HolyBlessing         = "holy_blessing";
     public const string HolySoul             = "holy_soul";
@@ -505,7 +505,7 @@ public static partial class SkillCatalog
         {
             // ---- HEALER SHIELD MASTERY @76. One rung, no ladder — and it does nothing at all without
             //      a shield, which for a robe-wearing healer is a real choice against a two-handed staff.
-            new(HealerShieldMastery, "Healer's Shield Mastery", BaseClass.Mage, SkillEffect.None,
+            new(HealersShieldMastery, "Healer's Shield Mastery", BaseClass.Mage, SkillEffect.None,
                 MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
                 Category: SkillCategory.Passive, SpCost: sp76,
                 // 🔑 TRULY SHIELD-GATED (`PassiveEffect.RequiresShield`), which is what his row says:

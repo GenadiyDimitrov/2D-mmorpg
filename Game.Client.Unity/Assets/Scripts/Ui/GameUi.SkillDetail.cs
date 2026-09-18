@@ -93,7 +93,7 @@ namespace Game.Client
             // visual, and this line is why. The `passive` bool two blocks up already tests BOTH marks
             // — a `Passive` payload OR `Category.Passive` — and this guard tested only the first, so
             // the TWELVE skills whose whole payload is a PROC (the six proc sigils, arcane_protection,
-            // magic_proficiency, physical_proficiency, tank_aggravated_state, wc_combo_mastery) carry
+            // magic_proficiency, physical_proficiency, tank_aggravated_state, combo_mastery) carry
             // no PassiveEffect, fell through, and printed the casting rows of a skill that is never
             // cast: "Cast instant / Cooldown instant / Target Self". Nothing was broken underneath —
             // their real lockout is ProcCooldownTicks, which SkillText.Mechanics now prints — but the

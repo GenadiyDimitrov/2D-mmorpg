@@ -1,49 +1,49 @@
 SKILL,SKILL_ID,CLASS,DESCR,SAVE,SUCCESS,SHAPE,IN_CODE
-Acoustic Shock,wc_acoustic_shock,Warchanter(Demon),Stun +100%,CON,1,dmg+1 debuff,1
+Acoustic Shock,acoustic_shock,Warchanter(Demon),Stun +100%,CON,1,dmg+1 debuff,1
 Arcane Burst,arcane_burst,Magus(Human),SPT resist -40%,SPT,1.5,dmg+1 debuff,1.5
 Arcane Void,arcane_void,Magus(Human),cancels 2 buff(s),SPT,0.3,DEBUFF ONLY (1),0.3
-Armor Break,lb_ork_armor_break,Lightbringer(Demon),M.Def -20%; P.Def -40%,SPT,1.5,DEBUFF ONLY (2),1.5
-Bind,lb_elf_bind,Lightbringer(Elf),Root,SPT,0.8,DEBUFF ONLY (1),0.8
-Binding Trap,archer_binding_trap,Trapper(Elf),Root,CON,1,DEBUFF ONLY (1),1
+Armor Break,armor_break,Lightbringer(Demon),M.Def -20%; P.Def -40%,SPT,1.5,DEBUFF ONLY (2),1.5
+Bind,bind,Lightbringer(Elf),Root,SPT,0.8,DEBUFF ONLY (1),0.8
+Binding Trap,binding_trap,Trapper(Elf),Root,CON,1,DEBUFF ONLY (1),1
 Bleeding,archer_focus_bleed_1,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Bleed DoT (+ its family rider); Slow -15%,CON,1,dmg+2 debuffs,1
 Bleeding,archer_focus_bleed_2,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Bleed DoT (+ its family rider); Slow -15%,CON,1,dmg+2 debuffs,1
 Bleeding,archer_focus_bleed_3,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Bleed DoT (+ its family rider); Slow -15%,CON,1,dmg+2 debuffs,1
-Bleeding Arrow,archer_bleeding_arrow,Hunter(Demon),Bleed DoT (+ its family rider),CON,1,dmg+1 debuff,1
-Bleeding Trap,archer_bleed_trap,Hunter(Demon),Bleed DoT (+ its family rider),CON,1,DEBUFF ONLY (1),1
+Bleeding Arrow,bleeding_arrow,Hunter(Demon),Bleed DoT (+ its family rider),CON,1,dmg+1 debuff,1
+Bleeding Trap,bleeding_trap,Hunter(Demon),Bleed DoT (+ its family rider),CON,1,DEBUFF ONLY (1),1
 Boss's Judgment,boss_judgment,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Stun,none (fizzle roll),1,DEBUFF ONLY (1),1
 Boss's Judgment,boss_judgment_mark,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",(no payload on the def - CHECK IT),none (fizzle roll),1,DEBUFF ONLY (1),1
-Breaking Shout,waraoe_demon_shout,Warlord(Demon),P/M.Atk -15%,CON,1.5,DEBUFF ONLY (1),1.5
-Charge n Shock,warrior_charge_stun,Warlord,charge; Stun,CON,1,DEBUFF ONLY (1),1
+Breaking Shout,breaking_shout,Warlord(Demon),P/M.Atk -15%,CON,1.5,DEBUFF ONLY (1),1.5
+Charge n Shock,charge_n_shock,Warlord,charge; Stun,CON,1,DEBUFF ONLY (1),1
 Charm,charm,Bulwark(Elf) | Tank(Elf) | Vanguard(Elf),charm; taunt,SPT,0.7,DEBUFF ONLY (1),0.7
 Chilled,nuker_empower_elf_curse_1,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",M.Def -10%; Slow -30%,none (fizzle roll),1,DEBUFF ONLY (2),1
 Chilled,nuker_empower_elf_curse_2,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",M.Def -10%; Slow -30%,none (fizzle roll),1,DEBUFF ONLY (2),1
 Chilled,nuker_empower_elf_curse_3,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",M.Def -10%; Slow -30%,none (fizzle roll),1,DEBUFF ONLY (2),1
 Creeping Frost,creeping_frost,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Stun; Slow,SPT,1,DEBUFF ONLY (2),1
-Crippling Shout,waraoe_elf_shout,Warlord(Elf),Atk.Spd -30%; Cast.Spd -30%; Slow -30%,CON,1.5,DEBUFF ONLY (3),1.5
-Dazzling Arrow,archer_dazzling_arrow,Sharpshooter(Human),cancels 3 buff(s); Stun,CON,1,dmg+2 debuffs,1
+Crippling Shout,crippling_shout,Warlord(Elf),Atk.Spd -30%; Cast.Spd -30%; Slow -30%,CON,1.5,DEBUFF ONLY (3),1.5
+Dazzling Arrow,dazzling_arrow,Sharpshooter(Human),cancels 3 buff(s); Stun,CON,1,dmg+2 debuffs,1
 Demonic Pain,demon_pain,Archer(Demon) | Bulwark(Demon) | Hunter(Demon) | Nullblade(Demon) | Phantom(Demon) | Ravager(Demon) | Rogue(Demon) | Sharpshooter(Demon) | Tank(Demon) | Trapper(Demon) | Vanguard(Demon) | Venomweaver(Demon) | Warlord(Demon) | Warrior(Demon),Bleed DoT (+ its family rider),CON,1.5,DEBUFF ONLY (1),1.5
-Devastating Slam,boss_slam,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Stun,CON,1,dmg+1 debuff,1
+Devastating Slam,devastating_slam,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Stun,CON,1,dmg+1 debuff,1
 Entangling Roots,entangling_roots,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Root,SPT,0.5,DEBUFF ONLY (1),0.5
 Envenom,envenom,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Venom DoT (+ its family rider),CON,1,dmg+1 debuff,1
-Freeze,tank_freeze,Bulwark(Elf),Slow -65%,SPT,1,DEBUFF ONLY (1),1
+Freeze,freeze,Bulwark(Elf),Slow -65%,SPT,1,DEBUFF ONLY (1),1
 Frost Bind,frost_bind,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Slow -50%,SPT,1,DEBUFF ONLY (1),1
 Frost Burst,frost_burst,Magus(Elf),M.Def -35%; Root,SPT,1.5,dmg+2 debuffs,1.5
 Frost Pierce,frost_pierce,Magus(Elf),Bleed DoT (+ its family rider),CON,0.85,dmg+1 debuff,0.85
 Frost Spikes,frost_spikes,Magus(Elf),Slow -45%,SPT,0.85,dmg+1 debuff,0.85
-Grapple,tank_pull,Bulwark,pull; Stun,CON,1,dmg+2 debuffs,1
-Gravity,lb_human_gravity,Lightbringer(Human),Atk.Spd -30%; Cast.Spd -30%,SPT,1,DEBUFF ONLY (2),1
+Grapple,grapple,Bulwark,pull; Stun,CON,1,dmg+2 debuffs,1
+Gravity,gravity,Lightbringer(Human),Atk.Spd -30%; Cast.Spd -30%,SPT,1,DEBUFF ONLY (2),1
 Greater Weakness,greater_weakness,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",P.Def -45%,none (fizzle roll),1,DEBUFF ONLY (1),1
 Hamstring,hamstring,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Slow -60%,CON,1,DEBUFF ONLY (1),1
-Intimidate,tank_fear,Bulwark(Demon),Fear,CON,1,DEBUFF ONLY (1),1
+Intimidate,intimidate,Bulwark(Demon),Fear,CON,1,DEBUFF ONLY (1),1
 Magic Arrow,archer_demon_magic_arrow,Hunter(Demon),P/M.Atk -30%; P.Def -30%,CON,1,dmg+2 debuffs,1
 Magic Arrow,archer_elf_magic_arrow,Trapper(Elf),Atk.Spd -30%; Slow -30%,CON,1,dmg+2 debuffs,1
 Magic Arrow,archer_human_magic_arrow,Sharpshooter(Human),Stun,CON,1,dmg+1 debuff,1
 Mana Strain,mana_strain,Lightbringer,(no payload on the def - CHECK IT),SPT,0.5,DEBUFF ONLY (1),0.5
-Numbing Shock,tank_silence_physical,Bulwark(Demon+Human),silence physical,CON,0.5,DEBUFF ONLY (1),0.5
+Numbing Shock,numbing_shock,Bulwark(Demon+Human),silence physical,CON,0.5,DEBUFF ONLY (1),0.5
 Phantom Jump,rouge_demon_pahantom_jump,Venomweaver(Demon),Slow -90%; Fear,CON,1,DEBUFF ONLY (2),1
 Phantom Jump,rouge_elf_pahantom_jump,Phantom(Elf),Slow -75%; charm,SPT,1,DEBUFF ONLY (2),1
 Phantom Jump,rouge_huamn_pahantom_jump,Nullblade(Human),Stun,CON,1,DEBUFF ONLY (1),1
-Poison Trap,archer_poison_trap,Sharpshooter(Human),Poison DoT (+ its family rider),SPT,1,DEBUFF ONLY (1),1
+Poison Trap,poison_trap,Sharpshooter(Human),Poison DoT (+ its family rider),SPT,1,DEBUFF ONLY (1),1
 Poisoned,archer_ferocity_poison_1,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Poison DoT (+ its family rider); Atk.Spd -15%; Cast.Spd -15%,SPT,1,dmg+3 debuffs,1
 Poisoned,archer_ferocity_poison_2,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Poison DoT (+ its family rider); Atk.Spd -15%; Cast.Spd -15%,SPT,1,dmg+3 debuffs,1
 Poisoned,archer_ferocity_poison_3,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Poison DoT (+ its family rider); Atk.Spd -15%; Cast.Spd -15%,SPT,1,dmg+3 debuffs,1
@@ -52,26 +52,26 @@ Rupture,rupture,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)
 Sapped,nuker_empower_demon_curse_1,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Atk.Spd -23%; Cast.Spd -23%,none (fizzle roll),1,DEBUFF ONLY (2),1
 Sapped,nuker_empower_demon_curse_2,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Atk.Spd -23%; Cast.Spd -23%,none (fizzle roll),1,DEBUFF ONLY (2),1
 Sapped,nuker_empower_demon_curse_3,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Atk.Spd -23%; Cast.Spd -23%,none (fizzle roll),1,DEBUFF ONLY (2),1
-Shattering Shout,waraoe_human_shout,Warlord(Human),P.Def -27%,CON,1.5,DEBUFF ONLY (1),1.5
+Shattering Shout,shattering_shout,Warlord(Human),P.Def -27%,CON,1.5,DEBUFF ONLY (1),1.5
 Shield Bash,shield_bash,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Stun,CON,1,DEBUFF ONLY (1),1
-Shield Shock,tank_shield_stun,Bulwark | Tank | Vanguard,Stun,CON,0.7,DEBUFF ONLY (1),0.7
-Shocking Javelin,waraoe_shock_javelin,Warlord,Stun,CON,1,dmg+1 debuff,1
-Shocking Shout,waraoe_shock_shout,Warlord,Stun,CON,1,dmg+1 debuff,1
-Silencing Shock,tank_silence_magical,Bulwark(Elf),silence magical,SPT,0.7,DEBUFF ONLY (1),0.7
+Shield Shock,shield_shock,Bulwark | Tank | Vanguard,Stun,CON,0.7,DEBUFF ONLY (1),0.7
+Shocking Javelin,shocking_javelin,Warlord,Stun,CON,1,dmg+1 debuff,1
+Shocking Shout,shocking_shout,Warlord,Stun,CON,1,dmg+1 debuff,1
+Silencing Shock,silencing_shock,Bulwark(Elf),silence magical,SPT,0.7,DEBUFF ONLY (1),0.7
 Slash,warrior_demon_slash,Ravager(Demon),P/M.Atk -12%,CON,0.7,dmg+1 debuff,0.7
 Slash,warrior_elf_slash,Ravager(Elf),Atk.Spd -23%; Cast.Spd -23%; Slow -23%,CON,0.7,dmg+3 debuffs,0.7
 Slash,warrior_human_slash,Ravager(Human),P.Def -25%,CON,0.7,dmg+1 debuff,0.7
 Snare Trap,snare_trap,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Root,CON,1,dmg+1 debuff,1
-Soul Sap,lb_ork_sap,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",HP received -50%,none (fizzle roll),1,DEBUFF ONLY (1),1
-Stay,tank_stay,Bulwark,Root,CON,1,DEBUFF ONLY (1),1
-Sword Shock,warrior_sword_shock,Ravager(Demon),Stun,CON,1,dmg+1 debuff,1
-Taunting Shout,waraoe_taunting_shout,Warlord,vulnerable to AnyBlunt +10%; taunt,CON,1,DEBUFF ONLY (1),1
+Soul Sap,soul_sap,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",HP received -50%,none (fizzle roll),1,DEBUFF ONLY (1),1
+Stay,stay,Bulwark,Root,CON,1,DEBUFF ONLY (1),1
+Sword Shock,sword_shock,Ravager(Demon),Stun,CON,1,dmg+1 debuff,1
+Taunting Shout,taunting_shout,Warlord,vulnerable to AnyBlunt +10%; taunt,CON,1,DEBUFF ONLY (1),1
 Terrifying Roar,terrifying_roar,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Fear,CON,1,DEBUFF ONLY (1),1
-Thorn Nova,boss_thorn_nova,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Slow -40%,SPT,1,dmg+1 debuff,1
+Thorn Nova,thorn_nova,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Slow -40%,SPT,1,dmg+1 debuff,1
 Toxic Sting,toxic_sting,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Poison DoT (+ its family rider),SPT,1,dmg+1 debuff,1
 Venom Burst,venom_burst,Venomweaver(Demon),Venom DoT (+ its family rider),CON,1,dmg+1 debuff,1
 Venom Stab,venom_stab,Venomweaver(Demon),Venom DoT (+ its family rider),CON,1,dmg+1 debuff,1
-Warding Step,lb_elf_warden,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Root,SPT,0.5,DEBUFF ONLY (1),0.5
+Warding Step,warding_step,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Root,SPT,0.5,DEBUFF ONLY (1),0.5
 Weakness,weakness,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",P.Def -30%,none (fizzle roll),1,DEBUFF ONLY (1),1
 Weapon Break,weapon_break,Lightbringer,P/M.Atk -25%,SPT,1.5,DEBUFF ONLY (1),1.5
 Whisp Armor Break,whisp_armor_break,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",M.Def -20%; P.Def -40%,SPT,1,DEBUFF ONLY (2),1
@@ -84,4 +84,4 @@ Whisp Weapon Break,whisp_great_weapon_break,"(NOT LEARNABLE - boss/whisp/proc, o
 Whisp Weapon Break,whisp_weapon_break,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",P/M.Atk -25%,SPT,1,DEBUFF ONLY (1),1
 Witches Curse,witches_curse,Magus(Demon),M.Def -35%,SPT,0.85,dmg+1 debuff,0.85
 Witches Scarecrow,witches_scarecrow,Magus(Demon),Fear,SPT,0.5,DEBUFF ONLY (1),0.5
-Word of Unmaking,boss_full_silence,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",silence physical; silence magical,SPT,1,DEBUFF ONLY (1),1
+Word of Unmaking,word_of_unmaking,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",silence physical; silence magical,SPT,1,DEBUFF ONLY (1),1

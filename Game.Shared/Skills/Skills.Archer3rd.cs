@@ -36,24 +36,24 @@ namespace Game.Shared;
 /// </summary>
 public static partial class SkillCatalog
 {
-    // ---- HIS `SKILL_ID` COLUMN, verbatim (`archer_explosive_arrows` is plural, `archer_bow_stence`
+    // ---- HIS `SKILL_ID` COLUMN, verbatim (`explosive_arrow` is plural, `bow_stance`
     //      is spelled that way; an id is a wire and save value and is never tidied after the fact).
     public const string ArcherArmorMastery  = "archer_armor_mastery";
-    public const string BowWeaponMastery    = "bow_weapon_mastery";
-    public const string ArcherBowBlessing   = "archer_bow_blessing";
-    public const string ArcherBowSpirit     = "archer_bow_spirit";
-    public const string ArcherBowFocus      = "archer_bow_focus";
-    public const string ArcherBowFerocity   = "archer_bow_ferocity";
+    public const string BowMastery    = "bow_mastery";
+    public const string BowBlessing   = "bow_blessing";
+    public const string BowSpirit     = "bow_spirit";
+    public const string BowFocus      = "bow_focus";
+    public const string BowFerocity   = "bow_ferocity";
     public const string ArcherBowSwiftness  = "archer_bow_swiftness";
-    public const string ArcherBowStance     = "archer_bow_stence";
+    public const string BowStance     = "bow_stance";
     public const string ArcherTwinArrows    = "archer_twin_arrows";
     /// <summary>ONE ARROW of Twin Arrows — the sub-skill the wrapper fires twice. Never learned,
     /// never on a bar; see the note on the wrapper for why it exists at all.</summary>
     public const string ArcherTwinArrow     = "archer_twin_arrows_arrow";
-    public const string ArcherExplosiveArrow = "archer_explosive_arrows";
-    public const string ArcherBindingTrap   = "archer_binding_trap";
-    public const string ArcherPoisonTrap    = "archer_poison_trap";
-    public const string ArcherBleedTrap     = "archer_bleed_trap";
+    public const string ExplosiveArrow = "explosive_arrow";
+    public const string BindingTrap   = "binding_trap";
+    public const string PoisonTrap    = "poison_trap";
+    public const string BleedingTrap     = "bleeding_trap";
     public const string ArcherMagicArrowHuman = "archer_human_magic_arrow";
     public const string ArcherMagicArrowElf   = "archer_elf_magic_arrow";
     public const string ArcherMagicArrowDemon = "archer_demon_magic_arrow";
@@ -163,12 +163,12 @@ public static partial class SkillCatalog
         //
         // ⚠ IT RETIRES THREE THINGS. `rogue_weapon_mastery` is his own REPLACES cell (and dropping the
         //   DUAL half of it is the point of choosing the bow branch); `archer_bow_mastery` and
-        //   `archer_crit_focus` are the derived kit's, cleaned up here rather than left to stack a
+        //   `killing_focus` are the derived kit's, cleaned up here rather than left to stack a
         //   second bow passive and a permanent +20% crit damage on anyone who bought them.
-        list.Add(new SkillDef(BowWeaponMastery, "Bow Mastery", BaseClass.Fighter, SkillEffect.None,
+        list.Add(new SkillDef(BowMastery, "Bow Mastery", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, SpCost: RogueSp[0],
-            Replaces: new[] { RogueWeaponMastery, ArcherBowMastery, ArcherCritFocus, FighterWeaponMastery },
+            Replaces: new[] { RogueWeaponMastery, ArcherBowMastery, KillingFocus, FighterWeaponMastery },
             Description: "Passive. Your bow reaches far further and bites far harder. No effect with "
                        + "anything else in your hands.",
             Levels: BulwarkRungs(i => new SkillLevel(SpCost: RogueSp[i],
@@ -187,9 +187,9 @@ public static partial class SkillCatalog
         // −10 / −15 / −20% on PHYSICAL reuse only (`PhysCooldownPct`), which is every skill an archer
         // owns. Requires a bow, like everything in this block.
         float[] blessing = { 0.10f, 0.15f, 0.20f };
-        list.Add(new SkillDef(ArcherBowBlessing, "Bow Blessing", BaseClass.Fighter, SkillEffect.BuffCooldown,
+        list.Add(new SkillDef(BowBlessing, "Bow Blessing", BaseClass.Fighter, SkillEffect.BuffCooldown,
             MpCost: BuffMp3[0], CastTicks: 30, CooldownTicks: 20, Range: 0, Power: 0,
-            DurationTicks: TwentyMinutes, BuffKey: "archer_bow_blessing", Rank: 1,
+            DurationTicks: TwentyMinutes, BuffKey: "bow_blessing", Rank: 1,
             Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly,
             RequiredWeapon: WeaponType.Bow, SpCost: BuffSp3[0],
             PhysCooldownPct: blessing[0],
@@ -202,9 +202,9 @@ public static partial class SkillCatalog
         // −10 / −20 / −30%. ⚠ It runs through `EffectiveMpCost` like every other MP modifier, so the
         // number the player is quoted and the number he is charged are the same one.
         float[] spirit = { 0.10f, 0.20f, 0.30f };
-        list.Add(new SkillDef(ArcherBowSpirit, "Bow Spirit", BaseClass.Fighter, SkillEffect.BuffMp,
+        list.Add(new SkillDef(BowSpirit, "Bow Spirit", BaseClass.Fighter, SkillEffect.BuffMp,
             MpCost: BuffMp3[0], CastTicks: 30, CooldownTicks: 20, Range: 0, Power: 0,
-            DurationTicks: TwentyMinutes, BuffKey: "archer_bow_spirit", Rank: 1,
+            DurationTicks: TwentyMinutes, BuffKey: "bow_spirit", Rank: 1,
             Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly,
             RequiredWeapon: WeaponType.Bow, SpCost: BuffSp3[0],
             PhysMpCostPct: spirit[0],
@@ -229,7 +229,7 @@ public static partial class SkillCatalog
         int[] focusAcc      = { 13, 15, 17 };
         float[] focusCrit   = { 0.15f, 0.20f, 0.25f };
         int[] focusAtk      = { 100, 150, 200 };
-        list.Add(Stance(ArcherBowFocus, "Bow Focus",
+        list.Add(Stance(BowFocus, "Bow Focus",
             skillDmg: new[] { 0.10f, 0.10f, 0.10f },
             acc: focusAcc, critRate: focusCrit, critDmg: new[] { 0.10f, 0.10f, 0.10f },
             physAtk: focusAtk, atkSpeed: new[] { 0.10f, 0.10f, 0.10f }, moveSpeed: new[] { 3, 3, 3 },
@@ -238,7 +238,7 @@ public static partial class SkillCatalog
             blurb: "Five minutes of cold aim: everything sharpens, and your arrows leave the target bleeding."));
 
         // --- DEMON: Bow Ferocity. SKILL DAMAGE and CRIT DAMAGE climb; a poison rides along.
-        list.Add(Stance(ArcherBowFerocity, "Bow Ferocity",
+        list.Add(Stance(BowFerocity, "Bow Ferocity",
             skillDmg: new[] { 0.15f, 0.20f, 0.25f },
             acc: new[] { 10, 10, 10 }, critRate: new[] { 0.10f, 0.10f, 0.10f },
             critDmg: new[] { 0.15f, 0.20f, 0.25f },
@@ -301,7 +301,7 @@ public static partial class SkillCatalog
         //    debuff, so it never has to survive its own landing contest.
         // ⚠ The +200 reach needed a buff-side channel — `SkillDef.BuffBowRange`. Bow range had been
         //   passive-only since the masteries were written.
-        list.Add(new SkillDef(ArcherBowStance, "Bow Stance", BaseClass.Fighter,
+        list.Add(new SkillDef(BowStance, "Bow Stance", BaseClass.Fighter,
             SkillEffect.BuffPhysAtk | SkillEffect.BuffCritRate | SkillEffect.BuffCritDamage
             | SkillEffect.BuffPveSkillDamage | SkillEffect.BuffPvpSkillDamage
             | SkillEffect.BuffMoveSpeed,
@@ -329,7 +329,7 @@ public static partial class SkillCatalog
         //    evasion and its own block, which is worth less than one 2000 against a dodgy target and
         //    more against a shield. That distinction is why HitCount is a field, and it survived a
         //    round of "is the archer double-counted?" on 2026-09-09 by his own arithmetic.
-        // ⚠ It also retires `archer_split_volley`, the derived skill it replaces.
+        // ⚠ It also retires `split_volley`, the derived skill it replaces.
         // 🔴 IT IS A WRAPPER NOW, NOT `HitCount: 2` — his ruling of 2026-09-09, made while choosing
         //    Arrow Barrage's shape: *"this will change the twin arrow skill to same logic (1 wrapper
         //    and while cast just cast 2 times same skill per arrow)"*. ✅ The BEHAVIOUR he settled is
@@ -358,7 +358,7 @@ public static partial class SkillCatalog
             // Two arrows, 200ms apart — the same cadence Arrow Barrage fires at, because it is the
             // same act done fewer times.
             ChannelSkill: ArcherTwinArrow, ChannelShots: 2, ChannelIntervalTicks: 2,
-            Replaces: new[] { PreciseShot, ArcherSplitVolley },
+            Replaces: new[] { PreciseShot, SplitVolley },
             Description: "Two arrows on one breath — each finds its own way in.",
             Levels: BulwarkRungs(i => new SkillLevel(
                 Power: TwinArrowPower[i], MpCost: ArcherMp[i], SpCost: RogueSp[i],
@@ -379,7 +379,7 @@ public static partial class SkillCatalog
         // ═══ EXPLOSIVE ARROW — the archer's AoE ══════════════════════════════════════════════════
         // `target/aoe`: thrown 600 and detonating 200 around whatever it lands on (AreaAtTarget), NOT
         // a circle on the archer's own feet. His one-second reuse makes it the rotation filler.
-        list.Add(new SkillDef(ArcherExplosiveArrow, "Explosive Arrow", BaseClass.Fighter,
+        list.Add(new SkillDef(ExplosiveArrow, "Explosive Arrow", BaseClass.Fighter,
             SkillEffect.PhysicalDamage,
             MpCost: ArcherMp[0], CastTicks: 30, CooldownTicks: 10, Range: 600, Power: ArcherArrowPower[0],
             Category: SkillCategory.Physical, SpCost: RogueSp[0],
@@ -397,19 +397,19 @@ public static partial class SkillCatalog
         //    first hostile within `TrapRadius` takes this skill's effect and the trap vanishes. Thirty
         //    seconds to wait, thirty seconds of reuse — so an archer can hold exactly one.
         // ⚠ NO DAMAGE, on his cells: all three DESCRs describe only the rider. The trap is delivery.
-        list.Add(Trap(ArcherBindingTrap, "Binding Trap", SkillEffect.Root, DebuffSchool.Physical,
+        list.Add(Trap(BindingTrap, "Binding Trap", SkillEffect.Root, DebuffSchool.Physical,
             tiers: null, mp: ArcherMp,
             "Holds everything it catches where it stands for 30s.",
             i => "Holds everything within 400 of the trap for 30s when it springs."));
 
         int[] poisonTier = { 3, 3, 4, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 10 };
-        list.Add(Trap(ArcherPoisonTrap, "Poison Trap", SkillEffect.Poison, DebuffSchool.Magical,
+        list.Add(Trap(PoisonTrap, "Poison Trap", SkillEffect.Poison, DebuffSchool.Magical,
             tiers: poisonTier, mp: ArcherMpLow,
             "Poisons everything it catches.",
             i => $"Poisons everything within 400 of the trap (tier {poisonTier[i]}) for 30s when it springs."));
 
         int[] bleedTier = { 3, 3, 4, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 10 };
-        list.Add(Trap(ArcherBleedTrap, "Bleeding Trap", SkillEffect.Bleed, DebuffSchool.Physical,
+        list.Add(Trap(BleedingTrap, "Bleeding Trap", SkillEffect.Bleed, DebuffSchool.Physical,
             tiers: bleedTier, mp: ArcherMpLow,
             "Opens wounds on everything it catches.",
             i => $"Bleeds everything within 400 of the trap (tier {bleedTier[i]}) for 30s when it springs."));

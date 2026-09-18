@@ -19,10 +19,10 @@ public static partial class SkillCatalog
     public const string TankWeaponMastery    = "tank_weapon_mastery";
     public const string WarriorWeaponMastery = "warrior_weapon_mastery";
     public const string RogueWeaponMastery   = "rogue_weapon_mastery";
-    // ⚠ `warrior_strenght` — HIS SPELLING, and the id is his to spell. The C# const reads
-    //   `WarriorStrength` because that is what every other identifier in this file does; the STRING
+    // ⚠ `warriors_strength` — HIS SPELLING, and the id is his to spell. The C# const reads
+    //   `WarriorsStrength` because that is what every other identifier in this file does; the STRING
     //   is what lands in a save file and in his CSV, and those two must agree letter for letter.
-    public const string WarriorStrength      = "warrior_strenght";
+    public const string WarriorsStrength      = "warriors_strength";
     // (`archer_weapon_mastery` — deleted 2026-08-07, playtest-19 `0a`/G1. Orphaned by the
     //  archer→rogue merge: Rogue Weapon Mastery already carries the BOW rungs, so this was a
     //  second bow passive nobody could be granted. Don't re-add it.)
@@ -112,14 +112,14 @@ public static partial class SkillCatalog
         // 🔴 FOUR COLUMNS LEFT THIS SKILL THAT DAY, and only two of them went somewhere else. His
         //    rows now read "crit dmg +35; p.atk +13; With 2h Blunt: Allow basic attack to hit around
         //    in 150 range (max 2 targets)" and nothing more:
-        //      • `acc +3` and `p.atk ×1.2` MOVED to the new `warrior_strenght` (same learn level, same
+        //      • `acc +3` and `p.atk ×1.2` MOVED to the new `warriors_strength` (same learn level, same
         //        weapon gate, its own SP row) — so the accuracy and the percent attack are still paid,
         //        just billed separately, and the 3rd class continues THAT ladder rather than this one.
         //      • `eva −3` and `p.def ×0.9` ARE SIMPLY GONE. The 2H penalty he cut to −10% in
         //        playtest-19 ("I want a warrior in a heavy not to have lower defence than a mage")
         //        has now been cut the rest of the way. Do not restore either on a hunch.
         //    ⚠ The percent attack he re-authored is ×1.2, NOT the ×1.5 four of these rungs carried —
-        //      read `warrior_strenght` before concluding the class lost power.
+        //      read `warriors_strength` before concluding the class lost power.
         new(WarriorWeaponMastery, "Two-Hand Mastery", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, Replaces: new[] { FighterWeaponMastery },
@@ -153,7 +153,7 @@ public static partial class SkillCatalog
         // 🔑 It carries `Replaces: [fighter_weapon_mastery]` for the same reason Two-Hand Mastery does:
         //    both are the 2nd-class successors to the base any-weapon mastery, and a warrior who has
         //    bought either must not keep paying out the level-15 one underneath.
-        new(WarriorStrength, "Warrior's Strength", BaseClass.Fighter, SkillEffect.None,
+        new(WarriorsStrength, "Warrior's Strength", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, Replaces: new[] { FighterWeaponMastery },
             Description: "Passive. With a TWO-HANDED sword or blunt: greatly increased attack power "

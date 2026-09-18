@@ -29,10 +29,10 @@ namespace Game.Shared;
 /// </summary>
 public static partial class SkillCatalog
 {
-    public const string WarriorFocusForce     = "warrior_focus_ranged";
-    public const string WarriorFocusLimit     = "warrior_focus_max";
-    public const string WarriorParry          = "warrior_parry";
-    public const string WarriorSaintsBlessing = "warrior_saints_blessing";
+    public const string FocusForce     = "focus_force";
+    public const string FocusLimit     = "focus_limit";
+    public const string Parry          = "parry";
+    public const string SaintsBlessing = "saints_blessing";
 
     /// <summary>76 → 90, one rung a level. The band every fifteen-rung family in his file uses.</summary>
     internal static readonly int[] Warrior4thLevels =
@@ -179,7 +179,7 @@ public static partial class SkillCatalog
         // ⚠ THE ONLY GATHERER IN THE GAME THAT ALSO DAMAGES, and that is why `IsChargePoolFull` refuses
         //   to gate a damaging skill: a full pool must not refuse an ATTACK. See GameLoopService — the
         //   gather runs AFTER the damage arm, and adds nothing once the pool is at 10.
-        new(WarriorFocusForce, "Focus Force", BaseClass.Fighter, SkillEffect.PhysicalDamage,
+        new(FocusForce, "Focus Force", BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: 5, CastTicks: 10, CooldownTicks: 5, Range: 600, Power: 1200,
             Category: SkillCategory.Physical, CanDouble: true,
             RequiredWeapon: WeaponType.AnySword, RequiredHands: WeaponHands.Two,
@@ -202,7 +202,7 @@ public static partial class SkillCatalog
         //    are the same instruction, and the second one is already built and already tested.
         // ⚠ A gatherer with no damage of its own, so it IS refused at a full pool — 80 HP for nothing
         //   would be the worst button in the game.
-        new(WarriorFocusLimit, "Focus Limit", BaseClass.Fighter, SkillEffect.None,
+        new(FocusLimit, "Focus Limit", BaseClass.Fighter, SkillEffect.None,
             MpCost: 20, CastTicks: 10, CooldownTicks: 900, Range: 0, Power: 0,
             Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly,
             RequiredWeapon: WeaponType.AnySword, RequiredHands: WeaponHands.Two,
@@ -220,11 +220,11 @@ public static partial class SkillCatalog
         // *"Increase P/M.Def with 25%; Decrease move/attack.speed with 10%"*, a TOGGLE at 10 MP/s.
         // Four magnitudes, two of them NEGATIVE — the self-buff-with-a-downside idiom (Defensive Wall,
         // Combat Stance), which is exactly why it is not hostile and sits in the buff row.
-        new(WarriorParry, "Parry", BaseClass.Fighter,
+        new(Parry, "Parry", BaseClass.Fighter,
             SkillEffect.BuffDef | SkillEffect.BuffMagicDef | SkillEffect.BuffMoveSpeed
             | SkillEffect.BuffAtkSpeed,
             MpCost: 10, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            BuffKey: "warrior_parry", Rank: 1, MpPerSecond: 10,
+            BuffKey: "parry", Rank: 1, MpPerSecond: 10,
             Category: SkillCategory.Buff, Toggle: true, TargetMode: TargetMode.SelfOnly,
             RequiredWeapon: WeaponType.AnySword, RequiredHands: WeaponHands.Two,
             CountsTowardBuffLimit: false, SpCost: W4NewSp(78),
@@ -262,10 +262,10 @@ public static partial class SkillCatalog
         //    stance is up or not, which would have made the toggle free — see SkillDef.PhysSkillReflectChance.
         //    Each folds by MAX against its passive twin, so an Elf Ravager holding Deflection (30% at 76)
         //    keeps the stronger of the two rather than summing to 40%.
-        new(WarriorSaintsBlessing, "Saints Blessing", BaseClass.Fighter,
+        new(SaintsBlessing, "Saints Blessing", BaseClass.Fighter,
             SkillEffect.BuffReflect | SkillEffect.BuffMoveSpeed | SkillEffect.BuffAtkSpeed,
             MpCost: 10, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            BuffKey: "warrior_saints_blessing", Rank: 1, MpPerSecond: 10,
+            BuffKey: "saints_blessing", Rank: 1, MpPerSecond: 10,
             Category: SkillCategory.Buff, Toggle: true, TargetMode: TargetMode.SelfOnly,
             RequiredWeapon: WeaponType.AnySword, RequiredHands: WeaponHands.Two,
             CountsTowardBuffLimit: false, SpCost: W4NewSp(78),

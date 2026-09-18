@@ -290,11 +290,11 @@ public static partial class SkillCatalog
     //  SIX NEW SKILLS
     // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-    public const string NukerShieldMastery = "nuker_shield_mastery";
+    public const string MageShieldMastery = "mage_shield_mastery";
 
     /// <summary>⚠ THE CAPITAL F IS HIS, in his own SKILL_ID cell. Ids are append-only strings compared
     /// verbatim by `--check`; it is not ours to tidy.</summary>
-    public const string NukerForceEmpowerment = "nuker_Force_empowerment";
+    public const string ForceEmpowerment = "force_empowerment";
 
     public const string NukerSpellEmpowermentHuman = "nuker_human_spell_empowerment";
     public const string NukerSpellEmpowermentElf = "nuker_elf_spell_empowerment";
@@ -328,7 +328,7 @@ public static partial class SkillCatalog
         //
         // ⚠ `RequiresShield` gates the WHOLE effect, which is what his *"When Shield is equiped"* means
         //   — a nuker who swaps to a two-handed staff keeps none of it, penalty included.
-        list.Add(new SkillDef(NukerShieldMastery, "Mage Shield Mastery", BaseClass.Mage, SkillEffect.None,
+        list.Add(new SkillDef(MageShieldMastery, "Mage Shield Mastery", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, SpCost: sp76,
             Passive: NukerShieldRung(),
@@ -363,7 +363,7 @@ public static partial class SkillCatalog
         EffectMagnitude[] ForceMags(int i) =>
             new EffectMagnitude[] { new(SkillEffect.BuffMagAtk, forceAtk[i], ModifierMode.Percent) };
 
-        list.Add(new SkillDef(NukerForceEmpowerment, "Force Empowerment", BaseClass.Mage,
+        list.Add(new SkillDef(ForceEmpowerment, "Force Empowerment", BaseClass.Mage,
             SkillEffect.BuffMagAtk,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             BuffKey: "nuker_force_empowerment", Rank: 1,
@@ -390,7 +390,7 @@ public static partial class SkillCatalog
         //
         // 🔑 It already EXISTED — an orphan def in Skills.Mage.cs carrying his exact numbers (70% of
         //    damage to MP at 0.5 MP per point, 30s) and on nobody's class table, like Dispel Magic
-        //    before it. Its ID was renamed to his `nuker_mana_barrier` and its reuse corrected from 30s
+        //    before it. Its ID was renamed to his `mana_barrier` and its reuse corrected from 30s
         //    to his 300s in place. Authoring a second def would have left two.
 
         // ═══ THE THREE SPELL EMPOWERMENTS @80 / 85 / 90 — one per race ═══════════════════════════

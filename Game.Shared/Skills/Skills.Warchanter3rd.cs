@@ -192,12 +192,12 @@ public static partial class SkillCatalog
     // ---- Two of the three PARTY ECHOES: a single-target buff the buffer re-learns as a party cast.
     //      Not groups — each hands out the SAME thing its single does, to everyone in radius.
     //      (The third is War Frenzy, which is `Madness` renamed and lives in Skills.Healer.cs.) ----
-    public const string WcWarMight   = "wc_war_might";
-    public const string WcWarBulwark = "wc_war_bulwark";
+    public const string WarMight   = "war_might";
+    public const string WarBulwark = "war_bulwark";
 
     /// <summary>The fourth Harmony (the other three keep their original `npc_harmony_*` ids, which
     /// are append-only and predate this file).</summary>
-    public const string WcHarmonySpeed = "wc_harmony_speed";
+    public const string HarmonyOfSpeed = "harmony_of_speed";
 
     /// <summary>A hidden top rung on Mana Blessing's OWN buff key, so `Soul Reinforcement` can name
     /// it as a child and therefore COVER it.
@@ -454,7 +454,7 @@ public static partial class SkillCatalog
         // keeps the LONGER remaining time, so a fresh cast of either always wins — which is exactly
         // the swap behaviour. Giving the party version a higher rank would have LOCKED the party
         // into whichever half was cast first until it expired.
-        new(WcWarMight, "War Might", BaseClass.Mage, SkillEffect.BuffPhysAtk,
+        new(WarMight, "War Might", BaseClass.Mage, SkillEffect.BuffPhysAtk,
             MpCost: 255, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
             DurationTicks: 12000, BuffKey: GreatBlessingKey, Rank: 1,
             Category: SkillCategory.Buff, SpCost: 880000,
@@ -464,7 +464,7 @@ public static partial class SkillCatalog
             Description: "+10% P.Atk for the whole party, on top of Might, for 20 minutes. Does not "
                        + "stack with War Bulwark or Great Bulwark — an ally carries one, never both."),
 
-        new(WcWarBulwark, "War Bulwark", BaseClass.Mage, SkillEffect.BuffDef,
+        new(WarBulwark, "War Bulwark", BaseClass.Mage, SkillEffect.BuffDef,
             MpCost: 255, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
             DurationTicks: 12000, BuffKey: GreatBlessingKey, Rank: 1,
             Category: SkillCategory.Buff, SpCost: 880000,
@@ -492,7 +492,7 @@ public static partial class SkillCatalog
         //
         // Two rungs and it STOPS (owner: *"The speed one stops - no more buffs for it"*). It is the
         // only harmony that never reaches 74, and that is deliberate, not an unfinished ladder.
-        WcHarmony(WcHarmonySpeed, "Harmony of Speed", "harmony_speed",
+        WcHarmony(HarmonyOfSpeed, "Harmony of Speed", "harmony_speed",
             SkillEffect.BuffMoveSpeed | SkillEffect.BuffEvasion,
             new[]
             {

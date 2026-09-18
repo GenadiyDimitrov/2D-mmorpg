@@ -50,20 +50,20 @@ public static partial class ClassSkillTables
                 new ClassSkill(TankArmorMastery, 24, SkillLevel: 2),
                 new ClassSkill(TankAntiMagic, 24, SkillLevel: 2),
                 new ClassSkill(TankWeaponMastery, 24, SkillLevel: 2),
-                new ClassSkill(TankShieldStun, 24, SkillLevel: 1),
+                new ClassSkill(ShieldShock, 24, SkillLevel: 1),
                 new ClassSkill(TankArmorMastery, 28, SkillLevel: 3),
                 new ClassSkill(TankShieldMastery, 28, SkillLevel: 2),
                 new ClassSkill(TankAntiMagic, 28, SkillLevel: 3),
                 new ClassSkill(TankWeaponMastery, 28, SkillLevel: 3),
-                new ClassSkill(TankShieldStun, 28, SkillLevel: 2),
+                new ClassSkill(ShieldShock, 28, SkillLevel: 2),
                 new ClassSkill(TankArmorMastery, 32, SkillLevel: 4),
                 new ClassSkill(TankAntiMagic, 32, SkillLevel: 4),
                 new ClassSkill(TankWeaponMastery, 32, SkillLevel: 4),
-                new ClassSkill(TankShieldStun, 32, SkillLevel: 3),
+                new ClassSkill(ShieldShock, 32, SkillLevel: 3),
                 new ClassSkill(TankArmorMastery, 36, SkillLevel: 5),
                 new ClassSkill(TankAntiMagic, 36, SkillLevel: 5),
                 new ClassSkill(TankWeaponMastery, 36, SkillLevel: 5),
-                new ClassSkill(TankShieldStun, 36, SkillLevel: 4));
+                new ClassSkill(ShieldShock, 36, SkillLevel: 4));
 
             // 🔑 AND THE TAUNT SPLITS BY RACE FROM LEVEL 24, which is the earliest anything in this
             // game has done so. His `tank 2nd.csv`: Taunt is `Human;Demon`, Charm is `Elf`, and Charm
@@ -93,7 +93,7 @@ public static partial class ClassSkillTables
                 // Warrior's Strength — the accuracy + ×1.2 P.Atk half of the old Two-Hand Mastery,
                 // its own skill since his 2026-09-11 pass. Same level, same gate, its own SP row;
                 // the 3rd class continues THIS ladder (40/46/52) rather than the mastery's.
-                new ClassSkill(WarriorStrength, 20, SkillLevel: 1),
+                new ClassSkill(WarriorsStrength, 20, SkillLevel: 1),
                 new ClassSkill(Smash, 20, SkillLevel: 1),
                 // HP Boost L1-L3 at 20/28/36 (`warrior 2nd.csv`, 2026-08-27). The ladder continues
                 // L4-L10 on the 3rd-class table; the buffer takes L1-L7 from 40. See SkillCatalog.HpBoost.
@@ -202,23 +202,23 @@ public static partial class ClassSkillTables
             // Restore Spirit, Mage Armor Mastery,
             // Anti-Magic (lvls 3-6) and Spell Mastery. Cadence 20/25/30/35.
             ClassSkills.Register(race, BaseClass.Mage, Archetype.Nuker,
-                new ClassSkill(NukerArmorMastery, 20, SkillLevel: 1),
+                new ClassSkill(MageArmorMastery, 20, SkillLevel: 1),
                 new ClassSkill(ElementalBolt, 20, SkillLevel: 1),
                 new ClassSkill(QuickBolt, 20, SkillLevel: 1),
                 new ClassSkill(MageAntiMagic, 20, SkillLevel: 3),
                 new ClassSkill(SpellMastery, 20, SkillLevel: 1),
-                new ClassSkill(NukerArmorMastery, 25, SkillLevel: 2),
+                new ClassSkill(MageArmorMastery, 25, SkillLevel: 2),
                 new ClassSkill(ElementalBolt, 25, SkillLevel: 2),
                 new ClassSkill(QuickBolt, 25, SkillLevel: 2),
                 new ClassSkill(RestoreSpirit, 25, SkillLevel: 1),
                 new ClassSkill(MageAntiMagic, 25, SkillLevel: 4),
                 new ClassSkill(SpellMastery, 25, SkillLevel: 2),
-                new ClassSkill(NukerArmorMastery, 30, SkillLevel: 3),
+                new ClassSkill(MageArmorMastery, 30, SkillLevel: 3),
                 new ClassSkill(ElementalBolt, 30, SkillLevel: 3),
                 new ClassSkill(QuickBolt, 30, SkillLevel: 3),
                 new ClassSkill(MageAntiMagic, 30, SkillLevel: 5),
                 new ClassSkill(SpellMastery, 30, SkillLevel: 3),
-                new ClassSkill(NukerArmorMastery, 35, SkillLevel: 4),
+                new ClassSkill(MageArmorMastery, 35, SkillLevel: 4),
                 new ClassSkill(ElementalBolt, 35, SkillLevel: 4),
                 new ClassSkill(QuickBolt, 35, SkillLevel: 4),
                 new ClassSkill(MageAntiMagic, 35, SkillLevel: 6),
@@ -271,10 +271,10 @@ public static partial class ClassSkillTables
 
             ClassSkills.Register(race, BaseClass.Mage, Archetype.Healer,
                 // Holy Bolt — same skill, per-race name. Continues the Magic Bolt curve.
-                new ClassSkill(HolyStrike, 20, DisplayName: holyBolt, SkillLevel: 1),
-                new ClassSkill(HolyStrike, 25, DisplayName: holyBolt, SkillLevel: 2),
-                new ClassSkill(HolyStrike, 30, DisplayName: holyBolt, SkillLevel: 3),
-                new ClassSkill(HolyStrike, 35, DisplayName: holyBolt, SkillLevel: 4),
+                new ClassSkill(HolyBolt, 20, DisplayName: holyBolt, SkillLevel: 1),
+                new ClassSkill(HolyBolt, 25, DisplayName: holyBolt, SkillLevel: 2),
+                new ClassSkill(HolyBolt, 30, DisplayName: holyBolt, SkillLevel: 3),
+                new ClassSkill(HolyBolt, 35, DisplayName: holyBolt, SkillLevel: 4),
 
                 // Heal — the healer's targeted heal; REPLACES the base-mage Self Heal at 20.
                 new ClassSkill(Heal, 20, SkillLevel: 1),   // power 151

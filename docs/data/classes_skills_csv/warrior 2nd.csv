@@ -6,7 +6,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 32,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,P.def +28 and hpReg +1.6; Light: eva +9;,0,11000,[fighter_armor_mastery]
 36,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,P.def +32 and hpReg +1.6; Light: eva +9;,0,20000,[fighter_armor_mastery]
 ,,,,,,,,,,,,,,,,----------------------------Two-Hand Mastery----------------------------
-20,Warriors Strenght,warrior_strenght,passive,sword|blunt/2,,0,0,self/single,0,0,0,With 2h sword/blunt: acc +3; p.atk x1.2;,0,3400,[fighter_weapon_mastery]
+20,Warriors Strenght,warriors_strength,passive,sword|blunt/2,,0,0,self/single,0,0,0,With 2h sword/blunt: acc +3; p.atk x1.2;,0,3400,[fighter_weapon_mastery]
 ,,,,,,,,,,,,,,,,----------------------------Two-Hand Mastery----------------------------
 20,Two-Hand Mastery,warrior_weapon_mastery,passive,sword|blunt/2,,0,0,self/single,0,0,0,With 2h sword/blunt: crit dmg  +35; p.atk +13; With 2h Blunt: Allow basic attack to hit around in 150 range (max 2 targets),0,3400,[fighter_weapon_mastery]
 24,Two-Hand Mastery,warrior_weapon_mastery,passive,sword|blunt/2,,0,0,self/single,0,0,0,With 2h sword/blunt: crit dmg  +48; p.atk +15; With 2h Blunt: Allow basic attack to hit around in 150 range (max 2 targets),0,6400,[fighter_weapon_mastery]

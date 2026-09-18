@@ -13,7 +13,7 @@ public static partial class SkillCatalog
     public const string RogueArmorMastery   = "rogue_armor_mastery";
     // (`archer_armor_mastery` — deleted 2026-08-07, playtest-19 `0a`/G1. Orphaned by the
     //  archer→rogue merge; a bow character wears the ROGUE light mastery. Don't re-add it.)
-    public const string NukerArmorMastery   = "nuker_armor_mastery";
+    public const string MageArmorMastery   = "mage_armor_mastery";
 
     /// <summary>Rogue armor level. The CSV splits in two, exactly like the warrior's:
     /// <c>with all</c> (MP regen + flat P.Def, and HP regen on the last rung) applies in LIGHT and
@@ -218,7 +218,7 @@ public static partial class SkillCatalog
         // Nuker — Mage Armor Mastery (CSV nuker 2nd): in ROBE, +MP regen, +P.Def, +max MP
         // and a "mpWhenRestored" bonus (extra MP each time Restore Spirit lands). Light/Heavy
         // penalise casting (mage). 4 levels (@20/25/30/35). Replaces the base Robe/Light mastery.
-        new(NukerArmorMastery, "Mage Armor Mastery", BaseClass.Mage, SkillEffect.None,
+        new(MageArmorMastery, "Mage Armor Mastery", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
             Replaces: new[] { MasteryRobe },

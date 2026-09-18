@@ -47,21 +47,21 @@ public static partial class SkillCatalog
     //    Human is proofed against magic, the Elf against physical SKILLS, the Demon against people.
     //    So the ultimate is not a different tool from the passive — it is the same defence, briefly
     //    turned up to where it decides a fight.
-    /// <summary>Human, 80/85/90 — magic resistance 5/7/10%. Pairs with <see cref="DualMagicArmor"/>.</summary>
+    /// <summary>Human, 80/85/90 — magic resistance 5/7/10%. Pairs with <see cref="MagicalArmor"/>.</summary>
     public const string DualAntiMagic = "dual_anti_magic";
-    /// <summary>Elf, 80/85/90 — physical-SKILL evasion 5/7/10%. Pairs with <see cref="DualDodge"/>.
+    /// <summary>Elf, 80/85/90 — physical-SKILL evasion 5/7/10%. Pairs with <see cref="Dodge"/>.
     /// ⚠ Not `Evasion`: his cell says *"p.skill evasion"*, which is <c>SkillEvadeChance</c> — the
     /// grant that `BL-06` left as the ONLY way a physical skill can be dodged at all.</summary>
-    public const string DualAntiPhysical = "dual_anti_physical";
-    /// <summary>Demon, 80/85/90 — PvP damage 5/7/10%. Pairs with <see cref="DualDemonContract"/>.</summary>
-    public const string DualDuelExpertise = "dual_duel_expertise";
+    public const string AntiPhysical = "anti_physical";
+    /// <summary>Demon, 80/85/90 — PvP damage 5/7/10%. Pairs with <see cref="DemonContract"/>.</summary>
+    public const string DuelExpertise = "duel_expertise";
 
     /// <summary>Elf @83 — 30% chance to evade physical skills for 10s.</summary>
-    public const string DualDodge = "dual_dodge";
+    public const string Dodge = "dodge";
     /// <summary>Human @83 — +30% magic resistance for 10s.</summary>
-    public const string DualMagicArmor = "dual_magic_armor";
+    public const string MagicalArmor = "magical_armor";
     /// <summary>Demon @83 — +25% PvP damage for 10s.</summary>
-    public const string DualDemonContract = "dual_demon_contract";
+    public const string DemonContract = "demon_contract";
 
 
     // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -295,12 +295,12 @@ public static partial class SkillCatalog
             "Passive. Spells slide off you a little more each time you learn to expect them.",
             v => $"Magic resistance +{v * 100:0}%.");
 
-        var antiPhysical = Identity(DualAntiPhysical, "Anti-Physical",
+        var antiPhysical = Identity(AntiPhysical, "Anti-Physical",
             v => new PassiveEffect(SkillEvadeChance: v),
             "Passive. You read the wind-up. Some blows simply never arrive.",
             v => $"A {v * 100:0}% chance to evade a physical SKILL outright.");
 
-        var duelExpertise = Identity(DualDuelExpertise, "Duel-Expertise",
+        var duelExpertise = Identity(DuelExpertise, "Duel-Expertise",
             // ⚠ ALL THREE PvP CHANNELS. His cell is `PvP.Dmg`, unqualified — a dagger's damage comes
             //   from skills, basics and (through Venom Burst) neither cleanly, and a bonus that
             //   covered only one of the three would read as broken on the other two.
@@ -337,7 +337,7 @@ public static partial class SkillCatalog
                         SkillEvadeChance: skillEvade, Magnitudes: mags, Description: rung),
                 });
 
-        var dodge = Ultimate83(DualDodge, "Dodge", SkillEffect.None,
+        var dodge = Ultimate83(Dodge, "Dodge", SkillEffect.None,
             Array.Empty<EffectMagnitude>(), 0.30f,
             "Ten seconds in which almost nothing aimed at you connects. Then it does.",
             "10s: a 30% chance to evade any physical SKILL outright.");
@@ -348,12 +348,12 @@ public static partial class SkillCatalog
         //    from ÷1.40 to ÷1.60, which is −12.5% on top of what he already had and −37.5% against a
         //    dual carrying neither. Written down because the gap between "+50% resist" and "half
         //    damage" is exactly what `BL-221` was about.
-        var magicArmor = Ultimate83(DualMagicArmor, "Magical Armor", SkillEffect.BuffMagicResist,
+        var magicArmor = Ultimate83(MagicalArmor, "Magical Armor", SkillEffect.BuffMagicResist,
             new EffectMagnitude[] { new(SkillEffect.BuffMagicResist, 0.50f) }, 0f,
             "Ten seconds wearing the shape of a spell, so the spells find nothing to hold.",
             "10s: +50% magic resistance.");
 
-        var demonContract = Ultimate83(DualDemonContract, "Demon Contract",
+        var demonContract = Ultimate83(DemonContract, "Demon Contract",
             SkillEffect.BuffPvpSkillDamage | SkillEffect.BuffPvpMagicDamage | SkillEffect.BuffPvpBasicDamage,
             new EffectMagnitude[]
             {

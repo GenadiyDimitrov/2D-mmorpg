@@ -1939,7 +1939,7 @@ await gm.DisposeAsync();
         const int CastWait = 15000;
 
         // ---- The HEALING totem: green, and the one he confirmed already worked. ----
-        await tt.Hub.SendAsync("UseSkill", SkillCatalog.LbOrkFont, tt.MyId);
+        await tt.Hub.SendAsync("UseSkill", SkillCatalog.HealingTotem, tt.MyId);
         bool planted = await tt.WaitFor(() => (tt.Totems?.Totems.Length ?? 0) > 0, CastWait);
         Check("planting a totem PUSHES it to the client (it never used to reach the wire at all)",
               planted, $"{tt.Totems?.Totems.Length ?? 0} totems");
@@ -2294,11 +2294,22 @@ await gm.DisposeAsync();
               landed, landed ? "Terrifying Roar is on the bar" : "no fear buff arrived in 4s");
 
         // THE SUBJECT. No Move is sent anywhere in this block.
+        //
+        // 🔴 IT POLLS FOR THE DISTANCE, IT DOES NOT SLEEP FOR IT (found 2026-09-18, while verifying
+        //    `BL-84`). This was `Task.Delay(1500)` and one measurement: a single check on a fixed
+        //    window, against a five-second buff whose first movement tick can land anywhere inside it.
+        //    It FLAKED — one run reported 13 units and failed, the next 100+ and passed, on identical
+        //    code. That is the worst possible defect in the tool that verifies everything else: the
+        //    next person to see it fail spends an hour looking for a regression that is not there, or
+        //    dismisses a real one. `CLAUDE.md` already says it: "SmokeTest must poll, never sleep."
+        // ⚠ The 3-second ceiling is still comfortably inside the 5-second fear, so "the fear expires
+        //   and the body stops dead" below is unaffected — and a genuinely rooted body still fails,
+        //   because polling only ever ends EARLY.
         double fx = fe.MyX, fy = fe.MyY;
-        await Task.Delay(1500);
-        double ran = Math.Sqrt(Math.Pow(fe.MyX - fx, 2) + Math.Pow(fe.MyY - fy, 2));
+        double Ran() => Math.Sqrt(Math.Pow(fe.MyX - fx, 2) + Math.Pow(fe.MyY - fy, 2));
+        bool fled = await fe.WaitFor(() => Ran() > 30.0, 3000);
         Check("FEAR DRIVES A BODY THAT WAS GIVEN NO ORDERS",
-              ran > 30.0, $"moved {ran:0} units in 1.5s with no move command sent");
+              fled, $"moved {Ran():0} units with no move command sent");
 
         // THE REFUSAL. Tap "stop" — a Move to where we already are — repeatedly, and keep watching.
         // Accepted input would park him instantly; refused input leaves the panic running.
@@ -2414,12 +2425,12 @@ await gm.DisposeAsync();
 
         // ---- THE SUMMON REACHES THE WIRE AT ALL. ----
         wh.Whisps = null;
-        await wh.Hub.SendAsync("UseSkill", SkillCatalog.TankWhispCharm, wh.MyId);
+        await wh.Hub.SendAsync("UseSkill", SkillCatalog.CharmingWhisp, wh.MyId);
         bool called = await wh.WaitFor(() => (wh.Whisps?.Whisps.Length ?? 0) > 0, WhispWait);
         Check("a summoned whisp is PUSHED to the client — the only way one is ever visible",
               called, $"{wh.Whisps?.Whisps.Length ?? 0} whisps");
         Check("...and it is the one that was called",
-              wh.Whisps?.Whisps.Any(w => w.SummonSkillId == SkillCatalog.TankWhispCharm) == true,
+              wh.Whisps?.Whisps.Any(w => w.SummonSkillId == SkillCatalog.CharmingWhisp) == true,
               string.Join(", ", wh.Whisps?.Whisps.Select(w => w.SummonSkillId) ?? Enumerable.Empty<string>()));
         Check("...carrying its owner, so a client knows whose spirit it is",
               wh.Whisps?.Whisps.All(w => w.OwnerId == wh.MyId) == true);
@@ -2440,15 +2451,15 @@ await gm.DisposeAsync();
               $"{gap:0} units away (band is {GameConstants.WhispLeashMin:0}-{GameConstants.WhispLeashMax:0})");
 
         // ---- THE PUSH-DOWN STACK, at a limit of one: the second whisp evicts the first. ----
-        await wh.Hub.SendAsync("UseSkill", SkillCatalog.TankWhispHeal, wh.MyId);
+        await wh.Hub.SendAsync("UseSkill", SkillCatalog.HealingWhisp, wh.MyId);
         bool swapped = await wh.WaitFor(
-            () => wh.Whisps?.Whisps.Any(w => w.SummonSkillId == SkillCatalog.TankWhispHeal) == true,
+            () => wh.Whisps?.Whisps.Any(w => w.SummonSkillId == SkillCatalog.HealingWhisp) == true,
             WhispWait);
         Check("a SECOND whisp is summonable and arrives", swapped,
               string.Join(", ", wh.Whisps?.Whisps.Select(w => w.SummonSkillId) ?? Enumerable.Empty<string>()));
         Check("...and at ONE slot it PUSHES THE FIRST OFF — a stack, not a growing set",
               (wh.Whisps?.Whisps.Length ?? 0) == 1
-                  && wh.Whisps?.Whisps.All(w => w.SummonSkillId != SkillCatalog.TankWhispCharm) == true,
+                  && wh.Whisps?.Whisps.All(w => w.SummonSkillId != SkillCatalog.CharmingWhisp) == true,
               $"{wh.Whisps?.Whisps.Length ?? 0} whisps: "
                   + string.Join(", ", wh.Whisps?.Whisps.Select(w => w.SummonSkillId) ?? Enumerable.Empty<string>()));
 
@@ -2470,7 +2481,7 @@ await gm.DisposeAsync();
         //      paid again. That is what is checked.
         wh.SystemChat.Clear();
         await Task.Delay(31000);
-        await wh.Hub.SendAsync("UseSkill", SkillCatalog.TankWhispHeal, wh.MyId);
+        await wh.Hub.SendAsync("UseSkill", SkillCatalog.HealingWhisp, wh.MyId);
         bool renewed = await wh.WaitFor(
             () => wh.SystemChat.Any(s => s.Contains("answers again")), 5000);
         Check("past the reuse, re-calling a whisp you already have RENEWS it (`BL-130`)",
@@ -2478,7 +2489,7 @@ await gm.DisposeAsync();
                                : string.Join(" | ", wh.SystemChat.TakeLast(3)));
         Check("...and it is a refresh, not a second whisp — still exactly one, and the same one",
               (wh.Whisps?.Whisps.Length ?? 0) == 1
-                  && wh.Whisps?.Whisps[0].SummonSkillId == SkillCatalog.TankWhispHeal,
+                  && wh.Whisps?.Whisps[0].SummonSkillId == SkillCatalog.HealingWhisp,
               $"{wh.Whisps?.Whisps.Length ?? 0} whisps: "
                   + string.Join(", ", wh.Whisps?.Whisps.Select(w => w.SummonSkillId) ?? Enumerable.Empty<string>()));
 
@@ -2488,7 +2499,7 @@ await gm.DisposeAsync();
         for (int i = 0; i < 2; i++) await wh.Hub.SendAsync("DebugLevel", 10);
         await wh.Hub.SendAsync("DebugLearnAll");
         await wh.Settle();
-        await wh.Hub.SendAsync("UseSkill", SkillCatalog.TankWhispCharm, wh.MyId);
+        await wh.Hub.SendAsync("UseSkill", SkillCatalog.CharmingWhisp, wh.MyId);
         bool bothRide = await wh.WaitFor(() => (wh.Whisps?.Whisps.Length ?? 0) >= 2, WhispWait);
         Check("Whisp Mastery raises the limit to two, and both whisps ride at once",
               bothRide,
@@ -2662,7 +2673,7 @@ await gm.DisposeAsync();
             await fs.Settle();
             fs.SystemChat.Clear();
             fs.Combat.Clear();
-            await fs.Hub.SendAsync("UseSkill", SkillCatalog.WarriorFocusedDoubleSlash, fdummy.Key);
+            await fs.Hub.SendAsync("UseSkill", SkillCatalog.FocusedDoubleSlash, fdummy.Key);
             bool slashed = await fs.WaitFor(
                 () => fs.Combat.Count(c => c.Skill == "Focused Double Slash" && c.AttackerId == fs.MyId) >= 2, 8000);
             await Task.Delay(500);
@@ -2736,7 +2747,7 @@ await gm.DisposeAsync();
         await f4.Settle();
 
         // ---- FOCUS LIMIT: one press, a full pool of TEN. ----
-        await f4.Hub.SendAsync("UseSkill", SkillCatalog.WarriorFocusLimit, f4.MyId);
+        await f4.Hub.SendAsync("UseSkill", SkillCatalog.FocusLimit, f4.MyId);
         await f4.WaitFor(() => Focus4() >= 10, 6000);
         Check("Focus Limit fills the pool to its ceiling of 10 in one cast", Focus4() == 10,
               $"pool reads {Focus4()}");
@@ -2757,7 +2768,7 @@ await gm.DisposeAsync();
                 await f4.Settle();
                 f4.SystemChat.Clear();
                 f4.Combat.Clear();
-                await f4.Hub.SendAsync("UseSkill", SkillCatalog.WarriorFocusForce, d4.Key);
+                await f4.Hub.SendAsync("UseSkill", SkillCatalog.FocusForce, d4.Key);
                 bool struck = await f4.WaitFor(
                     () => f4.Combat.Any(c => c.Skill == "Focus Force" && c.AttackerId == f4.MyId), 8000);
                 Check("Focus Force strikes even with the pool already full — a gatherer that DAMAGES is "
@@ -2768,7 +2779,7 @@ await gm.DisposeAsync();
 
                 // ---- ...and the Triple Slash spends its four. ----
                 f4.SystemChat.Clear();
-                await f4.Hub.SendAsync("UseSkill", SkillCatalog.WarriorFocusedTripleSlash, d4.Key);
+                await f4.Hub.SendAsync("UseSkill", SkillCatalog.FocusedTrippleSlash, d4.Key);
                 await f4.WaitFor(() => f4.SystemChat.Any(x => x.Contains("spent") && x.Contains("Focus")), 8000);
                 var spend4 = f4.SystemChat.FirstOrDefault(x => x.Contains("spent") && x.Contains("Focus"));
                 Check("Focused Tripple Slash spends exactly 4 of the ten, leaving 6",

@@ -10,7 +10,7 @@ public static partial class SkillCatalog
     // (`self_heal` — THE ID MOVED 2026-09-17, `BL-258`. His race pass deleted the base-mage Self Heal
     //  from `mage 1st.csv` and re-authored it as the ELF's nine-rung ladder, `elf_self_heal`, in
     //  Skills.MageRace.cs. Ids are append-only as a rule; this one is exempt for the same reason
-    //  `mana_barrier` → `nuker_mana_barrier` was — pre-release, nobody outside this machine holds the
+    //  `mana_barrier` → `mana_barrier` was — pre-release, nobody outside this machine holds the
     //  old string, and two defs with one payload is how a number drifts. Don't reinstate it.)
     public const string Might = "might";
     public const string MageAntiMagic = "anti_magic_mage";
@@ -20,7 +20,7 @@ public static partial class SkillCatalog
     public const string GreaterWeakness = "greater_weakness";
     // (`greater_heal` — deleted 2026-08-07 with the God layer, playtest-19 `0b`.)
     public const string FlameBolt = "flame_bolt";
-    public const string HolyStrike = "holy_strike";
+    public const string HolyBolt = "holy_bolt";
     public const string ElementalBurst = "elemental_burst";   // nuker 3rd-class ultimate (consumes Elemental Stones)
     public const string FrostBind = "frost_bind";             // nuker CC — magical Slow (first contested-CC skill)
     public const string EntanglingRoots = "entangling_roots"; // nuker CC — magical Root (contested)
@@ -28,14 +28,14 @@ public static partial class SkillCatalog
     public const string CreepingFrost = "creeping_frost";     // stacking slow (10/20/30% over 3)
     // (`dispel_magic` — deleted 2026-08-07, playtest-19 `0a`/G1: on no class table, learnable by
     //  nobody. SkillEffect.Cancel / DispelCount remain in the engine for a future authored skill.)
-    // 🔑 RENAMED `mana_barrier` → `nuker_mana_barrier` on 2026-09-11 (`BL-192`). It was an ORPHAN for
+    // 🔑 RENAMED `mana_barrier` → `mana_barrier` on 2026-09-11 (`BL-192`). It was an ORPHAN for
     //    months — a def carrying his exact numbers (70% of damage to MP at 0.5 MP a point, 30s) that
     //    NO class table taught, exactly as Dispel Magic was before it was deleted. His `nuker 4th.csv`
     //    finally learns it at 85, under that id. The ID MOVED rather than a second def being authored,
     //    because two defs with one payload is how a number drifts.
     // ⚠ Ids are append-only as a rule; this one is exempt because nothing has ever referenced it —
     //   no class table, no bar, no save. Nobody can be holding the old string.
-    public const string ManaBarrier = "nuker_mana_barrier";   // mana shield (damage→MP)
+    public const string ManaBarrier = "mana_barrier";   // mana shield (damage→MP)
     public const string PhaseShift = "phase_shift";           // blink away from target (escape)
     // --- Nuker 2nd-class (CSV nuker 2nd) ---
     public const string ElementalBolt = "elemental_bolt";     // nuker basic nuke (replaces Magic Bolt)
@@ -454,7 +454,7 @@ public static partial class SkillCatalog
         // Holy Bolt — the Healer's offensive spell (replaces Magic Bolt). ONE skill;
         // per-race NAME only (Holy/Moonlight/Spirit Bolt) via ClassSkill.DisplayName.
         // 4 levels learned at 20/25/30/35.
-        new(HolyStrike, "Holy Bolt", BaseClass.Mage, SkillEffect.MagicDamage,
+        new(HolyBolt, "Holy Bolt", BaseClass.Mage, SkillEffect.MagicDamage,
             MpCost: 20, CastTicks: 40, CooldownTicks: 10, Range: 750, Power: 21,
             // The healer's nuke replaces the basic — and, since 2026-09-17, the HUMAN's level-14
             // drain taster with it (his `cleric 2nd.csv`: `[magic_bolt vampiric_bolt]`). It does NOT

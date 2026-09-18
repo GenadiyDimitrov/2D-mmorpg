@@ -872,7 +872,7 @@ changes and new features that came out of the play session:
   resists (with the CC layer), and moving mob picks off `MobMod` onto a mob StatMods fold if desired.
 - [x] **Boss mechanics** — DONE. **±10-level rule** (`StatCalculator.RaidLevelGapMult` in `FinalizeDamage`);
   **enrage** timer (`BossTick`: one-time +50% atk / faster-swing rage after ~90s, undone on leash-reset);
-  **telegraphed AoE** "Devastating Slam" (`boss_slam`, `TargetMode.EnemiesInRadius`); **visible mob cast-bar**
+  **telegraphed AoE** "Devastating Slam" (`devastating_slam`, `TargetMode.EnemiesInRadius`); **visible mob cast-bar**
   (`MobCastInfo` DTO + client rendering). **PER-MOB UNIQUE SKILLS + PHASES + ADDS DONE (2026-07-07):**
   data-driven `BossCatalog` (`BossProfile` keyed by mob-template id = a `BossSkillEntry[]` kit with HP-gated
   entries + a `BossPhase[]` HP-threshold script). `BossTick` now runs the enrage timer, the phase script
@@ -880,7 +880,7 @@ changes and new features that came out of the play session:
   the first ready HP-gated skill with a foe in radius; reuse via per-skill `CooldownTicks`/`SkillCooldowns`).
   `SummonAdds` spawns Normal-rank, no-zone (no respawn) minions engaged on the boss's target via a refactored
   `BuildMob` (extracted from `SpawnOneInZone`; also used by zone spawns). New phase skill **"Thorn Nova"**
-  (`boss_thorn_nova`, magic AoE + slow). Demo boss: Valley Treant Lord (slam → 50% enrage+2 bogwood
+  (`thorn_nova`, magic AoE + slow). Demo boss: Valley Treant Lord (slam → 50% enrage+2 bogwood
   adds+Thorn Nova → 25% shout). `ResetMob` re-arms phases + clears reuse. See [[boss-mechanics]].
   **Deferred:** boss buffs/heals, multi-stage HP-bar phases, unique skills for the other bosses.
 - [ ] **Boss helper mobs** (owner idea, 2026-07-08, deferred) — dedicated support monsters that assist a

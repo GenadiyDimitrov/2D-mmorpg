@@ -12,7 +12,7 @@
 ///
 /// <para>🔑 <b>THREE OF THE FOUR PASSIVES WERE ALREADY BUILT AND ARE SIMPLY SHARED.</b> Anti-Magic's
 /// rungs 7-20 are <see cref="HealerAntiMagicRungs"/> (his own *"one shared ladder, so all three files"*),
-/// and Spellcaster Weapon Mastery is <see cref="HealerWeaponMasterySkill"/> — whose ladder matched this
+/// and Spellcaster Weapon Mastery is <see cref="SpellcasterWeaponMastery"/> — whose ladder matched this
 /// file's rows to the last digit, which is exactly what the note on that skill predicted would happen
 /// ("the nuker file will want the same row"). Only Mage Armor Mastery is the nuker's own, because it
 /// alone carries `mpWhenRestored`. Nothing was copied; the LEARN LINES point at the same defs.</para>

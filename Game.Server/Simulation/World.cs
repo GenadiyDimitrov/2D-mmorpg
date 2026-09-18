@@ -125,7 +125,7 @@ public class TotemInstance
 /// on the FRONT and the tail falls off the end. See <c>GameLoopService.SummonWhisp</c>.</para></summary>
 public class WhispInstance
 {
-    /// <summary>The SUMMON skill that called it (`tank_whisp_taunt`), which is its identity: one
+    /// <summary>The SUMMON skill that called it (`taunting_whisp`), which is its identity: one
     /// whisp per summon skill, and re-summoning the same one refreshes rather than stacks.</summary>
     public required string SummonSkillId { get; init; }
 

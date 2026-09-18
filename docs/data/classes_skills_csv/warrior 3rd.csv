@@ -1,8 +1,8 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST (x1000),REPLACES,RACE,COMMENT
 ,,,,,,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
-40,Warriors Strenght,warrior_strenght,passive,sword|blunt/2,,0,0,self/single,0,0,0,"With 2h sword/blunt: acc +3; p.atk +25%;",0,28
-46,Warriors Strenght,warrior_strenght,passive,sword|blunt/2,,0,0,self/single,0,0,0,"With 2h sword/blunt: acc +6; p.atk +25%;",0,40
-52,Warriors Strenght,warrior_strenght,passive,sword|blunt/2,,0,0,self/single,0,0,0,"With 2h sword/blunt: acc +9; p.atk +30%;",0,74
+40,Warriors Strenght,warriors_strength,passive,sword|blunt/2,,0,0,self/single,0,0,0,"With 2h sword/blunt: acc +3; p.atk +25%;",0,28
+46,Warriors Strenght,warriors_strength,passive,sword|blunt/2,,0,0,self/single,0,0,0,"With 2h sword/blunt: acc +6; p.atk +25%;",0,40
+52,Warriors Strenght,warriors_strength,passive,sword|blunt/2,,0,0,self/single,0,0,0,"With 2h sword/blunt: acc +9; p.atk +30%;",0,74
 ,,,,,,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
 40,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +40 and hpReg +1.7; Light: eva +9; Heavy: P.Def +10, HP +50;",0,28
 43,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +45 and hpReg +1.7; Light: eva +9; Heavy: P.Def +12, HP +50;",0,35
@@ -36,9 +36,9 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 72,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +582; p.atk +143;",0,650
 74,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +615; p.atk +150;",0,880
 ,,,,,,,,,,,,,,,,,----------------------------Final Stand----------------------------
-40,Final Stand,warrior_final_stand,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Atk with 5%, when HP is below 50% increase P.Atk with 10%, when HP is below 25% increase P.Atk with 20% and acc +2",0,28
-52,Final Stand,warrior_final_stand,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Atk with 7%, when HP is below 50% increase P.Atk with 15% and acc +2, when HP is below 25% increase P.Atk with 25% and acc +4",0,74
-60,Final Stand,warrior_final_stand,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Atk with 10% and acc +2, when HP is below 50% increase P.Atk with 20% and acc +4, when HP is below 25% increase P.Atk with 30% and acc +8",0,120
+40,Final Stand,final_stand,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Atk with 5%, when HP is below 50% increase P.Atk with 10%, when HP is below 25% increase P.Atk with 20% and acc +2",0,28
+52,Final Stand,final_stand,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Atk with 7%, when HP is below 50% increase P.Atk with 15% and acc +2, when HP is below 25% increase P.Atk with 25% and acc +4",0,74
+60,Final Stand,final_stand,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Atk with 10% and acc +2, when HP is below 50% increase P.Atk with 20% and acc +4, when HP is below 25% increase P.Atk with 30% and acc +8",0,120
 ,,,,,,,,,,,,,,,,,----------------------HP Boost----------------------
 43,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +400",0,35,[],,
 49,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +500",0,50,[],,
@@ -48,13 +48,13 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 70,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +900",0,390,[],,
 74,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +1000",0,880,[],,
 ,,,,,,,,,,,,,,,,,----------------------HP Regeneration----------------------
-43,HP Regeneration,warrior_hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.4; When sitting Hp regen +1, Mp regen +2.0;",0,28,[],,
-49,HP Regeneration,warrior_hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.5; When sitting Hp regen +1, Mp regen +2.0;",0,50,[],,
-55,HP Regeneration,warrior_hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.6; When sitting Hp regen +1, Mp regen +2.0;",0,80,[],,
-62,HP Regeneration,warrior_hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.7; When sitting Hp regen +3, Mp regen +2.5;",0,170,[],,
-66,HP Regeneration,warrior_hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.8; When sitting Hp regen +3, Mp regen +2.5;",0,280,[],,
-70,HP Regeneration,warrior_hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.9; When sitting Hp regen +5, Mp regen +3.0;",0,390,[],,
-74,HP Regeneration,warrior_hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +2.0; When sitting Hp regen +5, Mp regen +3.0;",0,880,[],,
+43,HP Regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.4; When sitting Hp regen +1, Mp regen +2.0;",0,28,[],,
+49,HP Regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.5; When sitting Hp regen +1, Mp regen +2.0;",0,50,[],,
+55,HP Regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.6; When sitting Hp regen +1, Mp regen +2.0;",0,80,[],,
+62,HP Regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.7; When sitting Hp regen +3, Mp regen +2.5;",0,170,[],,
+66,HP Regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.8; When sitting Hp regen +3, Mp regen +2.5;",0,280,[],,
+70,HP Regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.9; When sitting Hp regen +5, Mp regen +3.0;",0,390,[],,
+74,HP Regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +2.0; When sitting Hp regen +5, Mp regen +3.0;",0,880,[],,
 ,,,,,,,,,,,,,,,,,----------------------------Overpower----------------------------
 40,Overpower,overpower,passive,,,0,0,self/single,0,0,0,double rate 7% - skills marked [Double] strike for DOUBLE damage that often - scales with ATK - without this passive NO skill can double,0,28,[],
 ,,,,,,,,,,,,,,,,,----------------------------Battle Regeneration----------------------------
@@ -79,14 +79,14 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,----------------------------Charge----------------------------
 40,Charge,warrior_charge,physical/active,sword|blunt/2,,400,0,target/single,0.5,5,1,Charges to enemy; Min charge distance 150,40,28
 ,,,,,,,,,,,,,,,,,----------------------------Champion Presence----------------------------
-64,Champion Presence,warrior_champion_presence,physical buff,,,0,0,self/single,1,5,600,"Increase: Attack Speed with 5%, PVP Dmg with 5%",40,190,,Human
-74,Champion Presence,warrior_champion_presence,physical buff,,,0,0,self/single,1,5,600,"Increase: Attack Speed with 10%, PVP Dmg with 10%",60,880,,Human
+64,Champion Presence,champion_presence,physical buff,,,0,0,self/single,1,5,600,"Increase: Attack Speed with 5%, PVP Dmg with 5%",40,190,,Human
+74,Champion Presence,champion_presence,physical buff,,,0,0,self/single,1,5,600,"Increase: Attack Speed with 10%, PVP Dmg with 10%",60,880,,Human
 ,,,,,,,,,,,,,,,,,----------------------------Berserker Presence----------------------------
-64,Berserker Presence,warrior_berserker_presence,physical buff,,,0,0,self/single,1,5,600,"Increase: P.Atk with 10%, Acc +3",40,190,,Demon
-74,Berserker Presence,warrior_berserker_presence,physical buff,,,0,0,self/single,1,5,600,"Increase: P.Atk with 15%, Acc +5",60,880,,Demon
+64,Berserker Presence,berserker_presence,physical buff,,,0,0,self/single,1,5,600,"Increase: P.Atk with 10%, Acc +3",40,190,,Demon
+74,Berserker Presence,berserker_presence,physical buff,,,0,0,self/single,1,5,600,"Increase: P.Atk with 15%, Acc +5",60,880,,Demon
 ,,,,,,,,,,,,,,,,,----------------------------Saints Presence----------------------------
-64,Saints Presence,warrior_saints_presence,physical buff,,,0,0,self/single,1,5,600,"Increase: P.Crit.Rate  with 5%, P.Crit.Dmg with 10%, Speed +3",40,190,,Elf
-74,Saints Presence,warrior_saints_presence,physical buff,,,0,0,self/single,1,5,600,"Increase: P.Crit.Rate  with 10%, P.Crit.Dmg with 15%, Speed +5",60,880,,Elf
+64,Saints Presence,saints_presence,physical buff,,,0,0,self/single,1,5,600,"Increase: P.Crit.Rate  with 5%, P.Crit.Dmg with 10%, Speed +3",40,190,,Elf
+74,Saints Presence,saints_presence,physical buff,,,0,0,self/single,1,5,600,"Increase: P.Crit.Rate  with 10%, P.Crit.Dmg with 15%, Speed +5",60,880,,Elf
 ,,,,,,,,,,,,,,,,,---------------------------Slash----------------------------
 40,Slash,warrior_human_slash,Physical/Debuf,sword/2,,40,0,target/single,1,3,15,"Deals Physical damage with  +750 power, Decrease P.Def of Enemy with 10%, Cannot be blocked, Can double;",36,28,[smash],Human
 43,Slash,warrior_human_slash,Physical/Debuf,sword/2,,40,0,target/single,1,3,15,"Deals Physical damage with +1000 power, Decrease P.Def of Enemy with 13%, Cannot be blocked, Can double;",40,35,[smash],Human
@@ -144,83 +144,83 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 68,Focus,warrior_focus,physical buff,sword/2,,0,0,self/single,0.5,0.5,600,"Gather 'Focus' up to 8, Cost 20 HP and 5 MP",5,160,,Human
 74,Focus,warrior_focus,physical buff,sword/2,,0,0,self/single,0.5,0.5,600,"Gather 'Focus' up to 10, Cost 20 HP and 5 MP",5,440,,Human
 ,,,,,,,,,,,,,,,,,----------------------------Focus Mastery----------------------------
-43,Focus Mastery,warrior_focus_mastery,passive,sword/2,,0,0,self/single,0,0,0,"Chance to increase 'Focus' up to 2 per: Basic attack (15%), Critical attack (30%);",0,18,,Human
-49,Focus Mastery,warrior_focus_mastery,passive,sword/2,,0,0,self/single,0,0,0,"Chance to increase 'Focus' up to 3 per: Basic attack (15%), Critical attack (30%);",0,25,,Human
-55,Focus Mastery,warrior_focus_mastery,passive,sword/2,,0,0,self/single,0,0,0,"Chance to increase 'Focus' up to 4 per: Basic attack (15%), Critical attack (30%);",0,40,,Human
-62,Focus Mastery,warrior_focus_mastery,passive,sword/2,,0,0,self/single,0,0,0,"Chance to increase 'Focus' up to 6 per: Basic attack (15%), Critical attack (30%);",0,85,,Human
-68,Focus Mastery,warrior_focus_mastery,passive,sword/2,,0,0,self/single,0,0,0,"Chance to increase 'Focus' up to 8 per: Basic attack (15%), Critical attack (30%);",0,160,,Human
-74,Focus Mastery,warrior_focus_mastery,passive,sword/2,,0,0,self/single,0,0,0,"Chance to increase 'Focus' up to 10 per: Basic attack (15%), Critical attack (30%);",0,440,,Human
+43,Focus Mastery,focus_mastery,passive,sword/2,,0,0,self/single,0,0,0,"Chance to increase 'Focus' up to 2 per: Basic attack (15%), Critical attack (30%);",0,18,,Human
+49,Focus Mastery,focus_mastery,passive,sword/2,,0,0,self/single,0,0,0,"Chance to increase 'Focus' up to 3 per: Basic attack (15%), Critical attack (30%);",0,25,,Human
+55,Focus Mastery,focus_mastery,passive,sword/2,,0,0,self/single,0,0,0,"Chance to increase 'Focus' up to 4 per: Basic attack (15%), Critical attack (30%);",0,40,,Human
+62,Focus Mastery,focus_mastery,passive,sword/2,,0,0,self/single,0,0,0,"Chance to increase 'Focus' up to 6 per: Basic attack (15%), Critical attack (30%);",0,85,,Human
+68,Focus Mastery,focus_mastery,passive,sword/2,,0,0,self/single,0,0,0,"Chance to increase 'Focus' up to 8 per: Basic attack (15%), Critical attack (30%);",0,160,,Human
+74,Focus Mastery,focus_mastery,passive,sword/2,,0,0,self/single,0,0,0,"Chance to increase 'Focus' up to 10 per: Basic attack (15%), Critical attack (30%);",0,440,,Human
 ,,,,,,,,,,,,,,,,,---------------------------Focused Blast----------------------------
-40,Focused Blast,warrior_focused_blast,Physical/Active,sword/2,,600,0,target/single,2,3,0,"Deals Physical damage with +2000 power, Cannot be blocked, Can double, Consume 'Focus' to increase power with 10% (Max 2);",36,28,,Human,"Consume! -> increase power on consumed lvls of warrior_focus -> consimed_focus = Min(warrior_focus_count,2); effective_power = basePower x (1 + consimed_focus x 0.1); warrior_focus_count = Max(0, warrior_focus_count- consimed_focus)"
-46,Focused Blast,warrior_focused_blast,Physical/Active,sword/2,,600,0,target/single,2,3,0,"Deals Physical damage with +3200 power, Cannot be blocked, Can double, Consume 'Focus' to increase power with 10% (Max 2);",43,40,,Human
-52,Focused Blast,warrior_focused_blast,Physical/Active,sword/2,,600,0,target/single,2,3,0,"Deals Physical damage with +4200 power, Cannot be blocked, Can double, Consume 'Focus' to increase power with 10% (Max 2);",47,74,,Human
-58,Focused Blast,warrior_focused_blast,Physical/Active,sword/2,,600,0,target/single,2,3,0,"Deals Physical damage with +5400 power, Cannot be blocked, Can double, Consume 'Focus' to increase power with 10% (Max 2);",55,88,,Human
-62,Focused Blast,warrior_focused_blast,Physical/Active,sword/2,,600,0,target/single,2,3,0,"Deals Physical damage with +6600 power, Cannot be blocked, Can double, Consume 'Focus' to increase power with 10% (Max 2);",58,170,,Human
-66,Focused Blast,warrior_focused_blast,Physical/Active,sword/2,,600,0,target/single,2,3,0,"Deals Physical damage with +7800 power, Cannot be blocked, Can double, Consume 'Focus' to increase power with 10% (Max 2);",65,280,,Human
-70,Focused Blast,warrior_focused_blast,Physical/Active,sword/2,,600,0,target/single,2,3,0,"Deals Physical damage with +8800 power, Cannot be blocked, Can double, Consume 'Focus' to increase power with 10% (Max 2);",70,390,,Human
-74,Focused Blast,warrior_focused_blast,Physical/Active,sword/2,,600,0,target/single,2,3,0,"Deals Physical damage with +10000 power, Cannot be blocked, Can double, Consume 'Focus' to increase power with 10% (Max 2);",78,880,,Human
+40,Focused Blast,focused_blast,Physical/Active,sword/2,,600,0,target/single,2,3,0,"Deals Physical damage with +2000 power, Cannot be blocked, Can double, Consume 'Focus' to increase power with 10% (Max 2);",36,28,,Human,"Consume! -> increase power on consumed lvls of warrior_focus -> consimed_focus = Min(warrior_focus_count,2); effective_power = basePower x (1 + consimed_focus x 0.1); warrior_focus_count = Max(0, warrior_focus_count- consimed_focus)"
+46,Focused Blast,focused_blast,Physical/Active,sword/2,,600,0,target/single,2,3,0,"Deals Physical damage with +3200 power, Cannot be blocked, Can double, Consume 'Focus' to increase power with 10% (Max 2);",43,40,,Human
+52,Focused Blast,focused_blast,Physical/Active,sword/2,,600,0,target/single,2,3,0,"Deals Physical damage with +4200 power, Cannot be blocked, Can double, Consume 'Focus' to increase power with 10% (Max 2);",47,74,,Human
+58,Focused Blast,focused_blast,Physical/Active,sword/2,,600,0,target/single,2,3,0,"Deals Physical damage with +5400 power, Cannot be blocked, Can double, Consume 'Focus' to increase power with 10% (Max 2);",55,88,,Human
+62,Focused Blast,focused_blast,Physical/Active,sword/2,,600,0,target/single,2,3,0,"Deals Physical damage with +6600 power, Cannot be blocked, Can double, Consume 'Focus' to increase power with 10% (Max 2);",58,170,,Human
+66,Focused Blast,focused_blast,Physical/Active,sword/2,,600,0,target/single,2,3,0,"Deals Physical damage with +7800 power, Cannot be blocked, Can double, Consume 'Focus' to increase power with 10% (Max 2);",65,280,,Human
+70,Focused Blast,focused_blast,Physical/Active,sword/2,,600,0,target/single,2,3,0,"Deals Physical damage with +8800 power, Cannot be blocked, Can double, Consume 'Focus' to increase power with 10% (Max 2);",70,390,,Human
+74,Focused Blast,focused_blast,Physical/Active,sword/2,,600,0,target/single,2,3,0,"Deals Physical damage with +10000 power, Cannot be blocked, Can double, Consume 'Focus' to increase power with 10% (Max 2);",78,880,,Human
 ,,,,,,,,,,,,,,,,,---------------------------Focused Double Slash----------------------------
-46,Focused Double Slash,warrior_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +1600 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",58,40,,Human,"Consume! -> consume warrior_focus once per skil use - not each slash"
-49,Focused Double Slash,warrior_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +1900 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",60,50,,Human
-52,Focused Double Slash,warrior_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +2100 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",62,74,,Human
-55,Focused Double Slash,warrior_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +2400 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",65,80,,Human
-58,Focused Double Slash,warrior_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +2700 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",70,88,,Human
-60,Focused Double Slash,warrior_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +3000 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",71,120,,Human
-62,Focused Double Slash,warrior_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +3300 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",73,170,,Human
-64,Focused Double Slash,warrior_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +3600 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",77,190,,Human
-66,Focused Double Slash,warrior_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +3900 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",79,280,,Human
-68,Focused Double Slash,warrior_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +4100 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",81,320,,Human
-70,Focused Double Slash,warrior_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +4400 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",83,390,,Human
-72,Focused Double Slash,warrior_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +4700 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",85,650,,Human
-74,Focused Double Slash,warrior_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +5000 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",88,880,,Human
+46,Focused Double Slash,focused_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +1600 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",58,40,,Human,"Consume! -> consume warrior_focus once per skil use - not each slash"
+49,Focused Double Slash,focused_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +1900 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",60,50,,Human
+52,Focused Double Slash,focused_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +2100 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",62,74,,Human
+55,Focused Double Slash,focused_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +2400 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",65,80,,Human
+58,Focused Double Slash,focused_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +2700 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",70,88,,Human
+60,Focused Double Slash,focused_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +3000 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",71,120,,Human
+62,Focused Double Slash,focused_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +3300 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",73,170,,Human
+64,Focused Double Slash,focused_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +3600 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",77,190,,Human
+66,Focused Double Slash,focused_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +3900 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",79,280,,Human
+68,Focused Double Slash,focused_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +4100 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",81,320,,Human
+70,Focused Double Slash,focused_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +4400 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",83,390,,Human
+72,Focused Double Slash,focused_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +4700 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",85,650,,Human
+74,Focused Double Slash,focused_double_slash,Physical/Active,sword/2,,40,0,target/single,1.5,3,0,"Deals Physical damage with +5000 power twice, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 3);",88,880,,Human
 ,,,,,,,,,,,,,,,,,---------------------------Focused Tripple Slash----------------------------
-55,Focused Tripple Slash,warrior_tripple_slash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +2400 power three times, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 4);",75,80,,Human,Consume!
-58,Focused Tripple Slash,warrior_tripple_slash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +2700 power three times, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 4);",80,88,,Human
-60,Focused Tripple Slash,warrior_tripple_slash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +3000 power three times, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 4);",81,120,,Human
-62,Focused Tripple Slash,warrior_tripple_slash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +3300 power three times, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 4);",83,170,,Human
-64,Focused Tripple Slash,warrior_tripple_slash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +3600 power three times, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 4);",87,190,,Human
-66,Focused Tripple Slash,warrior_tripple_slash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +3900 power three times, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 4);",89,280,,Human
-68,Focused Tripple Slash,warrior_tripple_slash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +4100 power three times, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 4);",91,320,,Human
-70,Focused Tripple Slash,warrior_tripple_slash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +4400 power three times, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 4);",93,390,,Human
-72,Focused Tripple Slash,warrior_tripple_slash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +4700 power three times, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 4);",95,650,,Human
-74,Focused Tripple Slash,warrior_tripple_slash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +5000 power three times, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 4);",98,880,,Human
+55,Focused Tripple Slash,focused_tripple_slash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +2400 power three times, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 4);",75,80,,Human,Consume!
+58,Focused Tripple Slash,focused_tripple_slash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +2700 power three times, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 4);",80,88,,Human
+60,Focused Tripple Slash,focused_tripple_slash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +3000 power three times, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 4);",81,120,,Human
+62,Focused Tripple Slash,focused_tripple_slash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +3300 power three times, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 4);",83,170,,Human
+64,Focused Tripple Slash,focused_tripple_slash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +3600 power three times, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 4);",87,190,,Human
+66,Focused Tripple Slash,focused_tripple_slash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +3900 power three times, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 4);",89,280,,Human
+68,Focused Tripple Slash,focused_tripple_slash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +4100 power three times, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 4);",91,320,,Human
+70,Focused Tripple Slash,focused_tripple_slash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +4400 power three times, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 4);",93,390,,Human
+72,Focused Tripple Slash,focused_tripple_slash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +4700 power three times, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 4);",95,650,,Human
+74,Focused Tripple Slash,focused_tripple_slash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +5000 power three times, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 4);",98,880,,Human
 ,,,,,,,,,,,,,,,,,============================================= DEMON =================================
 ,,,,,,,,,,,,,,,,,----------------------------Battle Frenzy----------------------------
-60,Battle Frenzy,warrior_battle_frenzy,physical buff,,,0,0,self/single,2,300,60,"Increasing Resistance to debuffs with 40%, Resistance to buff-removal with 20%, Speed +10, Accuracy +2, P.Atk.Speed with 10%, P.Crit.Rate by 30, P.Crit.Dmg with 30%. Decreases P.Skill MP consumption with 50%; Decrease received HP 60%; Can be used when HP is less or equal to 30%",40,120,,Demon
-66,Battle Frenzy,warrior_battle_frenzy,physical buff,,,0,0,self/single,2,300,60,"Increasing Resistance to debuffs with 60%, Resistance to buff-removal with 30%, Speed +20, Accuracy +4, P.Atk.Speed with 20%, P.Crit.Rate by 65, P.Crit.Dmg with 65%. Decreases P.Skill MP consumption with 50%; Decrease received HP 70%; Can be used when HP is less or equal to 30%",60,280,,Demon
-74,Battle Frenzy,warrior_battle_frenzy,physical buff,,,0,0,self/single,2,300,60,"Increasing Resistance to debuffs with 80%, Resistance to buff-removal with 40%, Speed +30, Accuracy +6, P.Atk.Speed with 30%, P.Crit.Rate by 100, P.Crit.Dmg with 100%. Decreases P.Skill MP consumption with 50%; Decrease received HP 80%; Can be used when HP is less or equal to 30%",80,880,,Demon
+60,Battle Frenzy,battle_frenzy,physical buff,,,0,0,self/single,2,300,60,"Increasing Resistance to debuffs with 40%, Resistance to buff-removal with 20%, Speed +10, Accuracy +2, P.Atk.Speed with 10%, P.Crit.Rate by 30, P.Crit.Dmg with 30%. Decreases P.Skill MP consumption with 50%; Decrease received HP 60%; Can be used when HP is less or equal to 30%",40,120,,Demon
+66,Battle Frenzy,battle_frenzy,physical buff,,,0,0,self/single,2,300,60,"Increasing Resistance to debuffs with 60%, Resistance to buff-removal with 30%, Speed +20, Accuracy +4, P.Atk.Speed with 20%, P.Crit.Rate by 65, P.Crit.Dmg with 65%. Decreases P.Skill MP consumption with 50%; Decrease received HP 70%; Can be used when HP is less or equal to 30%",60,280,,Demon
+74,Battle Frenzy,battle_frenzy,physical buff,,,0,0,self/single,2,300,60,"Increasing Resistance to debuffs with 80%, Resistance to buff-removal with 40%, Speed +30, Accuracy +6, P.Atk.Speed with 30%, P.Crit.Rate by 100, P.Crit.Dmg with 100%. Decreases P.Skill MP consumption with 50%; Decrease received HP 80%; Can be used when HP is less or equal to 30%",80,880,,Demon
 ,,,,,,,,,,,,,,,,,---------------------------Sword Shock----------------------------
-40,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +1000 power and Stuns for 5s, Cannot be blocked, Can double;",36,28,,Demon
-43,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +1300 power and Stuns for 5s, Cannot be blocked, Can double;",40,35,,Demon
-46,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +1600 power and Stuns for 5s, Cannot be blocked, Can double;",43,40,,Demon
-49,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +1900 power and Stuns for 5s, Cannot be blocked, Can double;",45,50,,Demon
-52,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +2100 power and Stuns for 5s, Cannot be blocked, Can double;",47,74,,Demon
-55,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +2400 power and Stuns for 5s, Cannot be blocked, Can double;",50,80,,Demon
-58,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +2700 power and Stuns for 5s, Cannot be blocked, Can double;",55,88,,Demon
-60,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +3000 power and Stuns for 5s, Cannot be blocked, Can double;",56,120,,Demon
-62,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +3300 power and Stuns for 5s, Cannot be blocked, Can double;",58,170,,Demon
-64,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +3600 power and Stuns for 5s, Cannot be blocked, Can double;",62,190,,Demon
-66,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +3900 power and Stuns for 5s, Cannot be blocked, Can double;",65,280,,Demon
-68,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +4100 power and Stuns for 5s, Cannot be blocked, Can double;",68,320,,Demon
-70,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +4400 power and Stuns for 5s, Cannot be blocked, Can double;",70,390,,Demon
-72,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +4700 power and Stuns for 5s, Cannot be blocked, Can double;",75,650,,Demon
-74,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +5000 power and Stuns for 5s, Cannot be blocked, Can double;",78,880,,Demon
+40,Sword Shock,sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +1000 power and Stuns for 5s, Cannot be blocked, Can double;",36,28,,Demon
+43,Sword Shock,sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +1300 power and Stuns for 5s, Cannot be blocked, Can double;",40,35,,Demon
+46,Sword Shock,sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +1600 power and Stuns for 5s, Cannot be blocked, Can double;",43,40,,Demon
+49,Sword Shock,sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +1900 power and Stuns for 5s, Cannot be blocked, Can double;",45,50,,Demon
+52,Sword Shock,sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +2100 power and Stuns for 5s, Cannot be blocked, Can double;",47,74,,Demon
+55,Sword Shock,sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +2400 power and Stuns for 5s, Cannot be blocked, Can double;",50,80,,Demon
+58,Sword Shock,sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +2700 power and Stuns for 5s, Cannot be blocked, Can double;",55,88,,Demon
+60,Sword Shock,sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +3000 power and Stuns for 5s, Cannot be blocked, Can double;",56,120,,Demon
+62,Sword Shock,sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +3300 power and Stuns for 5s, Cannot be blocked, Can double;",58,170,,Demon
+64,Sword Shock,sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +3600 power and Stuns for 5s, Cannot be blocked, Can double;",62,190,,Demon
+66,Sword Shock,sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +3900 power and Stuns for 5s, Cannot be blocked, Can double;",65,280,,Demon
+68,Sword Shock,sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +4100 power and Stuns for 5s, Cannot be blocked, Can double;",68,320,,Demon
+70,Sword Shock,sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +4400 power and Stuns for 5s, Cannot be blocked, Can double;",70,390,,Demon
+72,Sword Shock,sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +4700 power and Stuns for 5s, Cannot be blocked, Can double;",75,650,,Demon
+74,Sword Shock,sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +5000 power and Stuns for 5s, Cannot be blocked, Can double;",78,880,,Demon
 ,,,,,,,,,,,,,,,,,---------------------------Demonic Smash----------------------------
-40,Demonic Smash,warrior_demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +3000 power, Cannot be blocked, Can double;",36,28,[],Demon
-43,Demonic Smash,warrior_demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +3900 power, Cannot be blocked, Can double;",40,35,[],Demon
-46,Demonic Smash,warrior_demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +4800 power, Cannot be blocked, Can double;",43,40,[],Demon
-49,Demonic Smash,warrior_demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +5700 power, Cannot be blocked, Can double;",45,50,[],Demon
-52,Demonic Smash,warrior_demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +6300 power, Cannot be blocked, Can double;",47,74,[],Demon
-55,Demonic Smash,warrior_demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +7200 power, Cannot be blocked, Can double;",50,80,[],Demon
-58,Demonic Smash,warrior_demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +8100 power, Cannot be blocked, Can double;",55,88,[],Demon
-60,Demonic Smash,warrior_demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +9000 power, Cannot be blocked, Can double;",56,120,[],Demon
-62,Demonic Smash,warrior_demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +9900 power, Cannot be blocked, Can double;",58,170,[],Demon
-64,Demonic Smash,warrior_demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +10800 power, Cannot be blocked, Can double;",62,190,[],Demon
-66,Demonic Smash,warrior_demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +11700 power, Cannot be blocked, Can double;",65,280,[],Demon
-68,Demonic Smash,warrior_demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +12300 power, Cannot be blocked, Can double;",68,320,[],Demon
-70,Demonic Smash,warrior_demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +13200 power, Cannot be blocked, Can double;",70,390,[],Demon
-72,Demonic Smash,warrior_demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +14100 power, Cannot be blocked, Can double;",75,650,[],Demon
-74,Demonic Smash,warrior_demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +15000 power, Cannot be blocked, Can double;",78,880,[],Demon
+40,Demonic Smash,demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +3000 power, Cannot be blocked, Can double;",36,28,[],Demon
+43,Demonic Smash,demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +3900 power, Cannot be blocked, Can double;",40,35,[],Demon
+46,Demonic Smash,demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +4800 power, Cannot be blocked, Can double;",43,40,[],Demon
+49,Demonic Smash,demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +5700 power, Cannot be blocked, Can double;",45,50,[],Demon
+52,Demonic Smash,demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +6300 power, Cannot be blocked, Can double;",47,74,[],Demon
+55,Demonic Smash,demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +7200 power, Cannot be blocked, Can double;",50,80,[],Demon
+58,Demonic Smash,demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +8100 power, Cannot be blocked, Can double;",55,88,[],Demon
+60,Demonic Smash,demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +9000 power, Cannot be blocked, Can double;",56,120,[],Demon
+62,Demonic Smash,demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +9900 power, Cannot be blocked, Can double;",58,170,[],Demon
+64,Demonic Smash,demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +10800 power, Cannot be blocked, Can double;",62,190,[],Demon
+66,Demonic Smash,demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +11700 power, Cannot be blocked, Can double;",65,280,[],Demon
+68,Demonic Smash,demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +12300 power, Cannot be blocked, Can double;",68,320,[],Demon
+70,Demonic Smash,demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +13200 power, Cannot be blocked, Can double;",70,390,[],Demon
+72,Demonic Smash,demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +14100 power, Cannot be blocked, Can double;",75,650,[],Demon
+74,Demonic Smash,demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +15000 power, Cannot be blocked, Can double;",78,880,[],Demon
 ,,,,,,,,,,,,,,,,,============================================= ELF =================================
 ,,,,,,,,,,,,,,,,,---------------------------Demonic Smash----------------------------
 40,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,150,target/aoe,0.5,5,2,"Deals Physical damage with +375 power 10 times over 2s, Cannot be blocked, Can double;",36,28,[],Elf
@@ -239,11 +239,11 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 72,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,150,target/aoe,0.5,5,2,"Deals Physical damage with +1765 power 10 times over 2s, Cannot be blocked, Can double;",75,650,[],Elf
 74,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,150,target/aoe,0.5,5,2,"Deals Physical damage with +1875 power 10 times over 2s, Cannot be blocked, Can double;",78,880,[],Elf
 ,,,,,,,,,,,,,,,,,---------------------------Sword Blast----------------------------
-40,Sword Blast,warrior_sword_blast,Physical/Active,sword/2,,600,00,target/single,2,3,0,"Deals Physical damage with +2000 power, Cannot be blocked, Can double;",36,28,,Elf
-46,Sword Blast,warrior_sword_blast,Physical/Active,sword/2,,600,00,target/single,2,3,0,"Deals Physical damage with +3200 power, Cannot be blocked, Can double;",43,40,,Elf
-52,Sword Blast,warrior_sword_blast,Physical/Active,sword/2,,600,00,target/single,2,3,0,"Deals Physical damage with +4200 power, Cannot be blocked, Can double;",47,74,,Elf
-58,Sword Blast,warrior_sword_blast,Physical/Active,sword/2,,600,00,target/single,2,3,0,"Deals Physical damage with +5400 power, Cannot be blocked, Can double;",55,88,,Elf
-62,Sword Blast,warrior_sword_blast,Physical/Active,sword/2,,600,00,target/single,2,3,0,"Deals Physical damage with +6600 power, Cannot be blocked, Can double;",58,170,,Elf
-66,Sword Blast,warrior_sword_blast,Physical/Active,sword/2,,600,00,target/single,2,3,0,"Deals Physical damage with +7800 power, Cannot be blocked, Can double;",65,280,,Elf
-70,Sword Blast,warrior_sword_blast,Physical/Active,sword/2,,600,00,target/single,2,3,0,"Deals Physical damage with +8800 power, Cannot be blocked, Can double;",70,390,,Elf
-74,Sword Blast,warrior_sword_blast,Physical/Active,sword/2,,600,00,target/single,2,3,0,"Deals Physical damage with +10000 power, Cannot be blocked, Can double;",78,880,,Elf
+40,Sword Blast,sword_blast,Physical/Active,sword/2,,600,00,target/single,2,3,0,"Deals Physical damage with +2000 power, Cannot be blocked, Can double;",36,28,,Elf
+46,Sword Blast,sword_blast,Physical/Active,sword/2,,600,00,target/single,2,3,0,"Deals Physical damage with +3200 power, Cannot be blocked, Can double;",43,40,,Elf
+52,Sword Blast,sword_blast,Physical/Active,sword/2,,600,00,target/single,2,3,0,"Deals Physical damage with +4200 power, Cannot be blocked, Can double;",47,74,,Elf
+58,Sword Blast,sword_blast,Physical/Active,sword/2,,600,00,target/single,2,3,0,"Deals Physical damage with +5400 power, Cannot be blocked, Can double;",55,88,,Elf
+62,Sword Blast,sword_blast,Physical/Active,sword/2,,600,00,target/single,2,3,0,"Deals Physical damage with +6600 power, Cannot be blocked, Can double;",58,170,,Elf
+66,Sword Blast,sword_blast,Physical/Active,sword/2,,600,00,target/single,2,3,0,"Deals Physical damage with +7800 power, Cannot be blocked, Can double;",65,280,,Elf
+70,Sword Blast,sword_blast,Physical/Active,sword/2,,600,00,target/single,2,3,0,"Deals Physical damage with +8800 power, Cannot be blocked, Can double;",70,390,,Elf
+74,Sword Blast,sword_blast,Physical/Active,sword/2,,600,00,target/single,2,3,0,"Deals Physical damage with +10000 power, Cannot be blocked, Can double;",78,880,,Elf

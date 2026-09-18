@@ -374,6 +374,7 @@ if (args.Length > 0 && args[0] == "--cleave")
 }
 // `BL-158` — what the buffer actually sells a character of each level, READ OFF the real shelf.
 if (args.Length > 0 && args[0] == "--npcshelf") { NpcShelfDump(); return; }
+if (args.Length > 0 && args[0] == "--skillids") { SkillIdAudit(); return; }
 
 // `--dmgmatrix` — THE WHOLE DAMAGE BOARD: every attacker archetype against every target archetype,
 // hit and crit, beside the numbers the OWNER says each cell should read (2026-09-06).
@@ -1331,9 +1332,9 @@ if (args.Length > 0 && args[0] == "--castcycle")
         ("+ NPC shelf",            e => ApplyNpcBuffs(e)),
         ("+ Harmony of Wizard L8", e => { ApplyNpcBuffs(e); WearAt(e, SkillCatalog.NpcHarmonyWizard, 8); }),
         ("+ Harmony of Soul L7",   e => { ApplyNpcBuffs(e); WearAt(e, SkillCatalog.NpcHarmonyWizard, 8);
-                                          WearAt(e, SkillCatalog.WcHarmonySoul, 7); }),
+                                          WearAt(e, SkillCatalog.HarmonyOfTheSoul, 7); }),
         ("+ Spell Rune",           e => { ApplyNpcBuffs(e); WearAt(e, SkillCatalog.NpcHarmonyWizard, 8);
-                                          WearAt(e, SkillCatalog.WcHarmonySoul, 7);
+                                          WearAt(e, SkillCatalog.HarmonyOfTheSoul, 7);
                                           WearAt(e, SkillCatalog.SpellRuneBuff, 1); }),
         // 🔴 THE GRAND RUNE IS MEASURED BESIDE THE SINGLE IT REPLACES, and that is the whole reason
         //    this row exists: `BL-216` gave the Spell Rune a cast-time cut and did not come back to
@@ -1341,7 +1342,7 @@ if (args.Length > 0 && args[0] == "--castcycle")
         //    than the vendor one it supersedes. His *"spell rune don't decrease the cast time"*,
         //    2026-09-13. ⚠ The two `castTimeMult` cells must read the SAME number.
         ("+ Grand Rune (instead)", e => { ApplyNpcBuffs(e); WearAt(e, SkillCatalog.NpcHarmonyWizard, 8);
-                                          WearAt(e, SkillCatalog.WcHarmonySoul, 7);
+                                          WearAt(e, SkillCatalog.HarmonyOfTheSoul, 7);
                                           WearAt(e, SkillCatalog.GrandRuneBuff, 1); }),
     };
 
@@ -1479,7 +1480,7 @@ if (args.Length > 0 && args[0] == "--mcrit")
             ("+ NPC shelf, no Mark",        e => Shelf(e)),
             ("+ Harmony of the Wizard L5",  e => { Shelf(e); Wear(e, SkillCatalog.NpcHarmonyWizard, 5); }),
             ("+ Harmony Mark L2  (buffer)", e => { Shelf(e); Wear(e, SkillCatalog.NpcHarmonyWizard, 5);
-                                                   Wear(e, SkillCatalog.WcHarmonyMark, 2); }),
+                                                   Wear(e, SkillCatalog.HarmonyMark, 2); }),
         };
         foreach (var (label, dress) in stages)
         {
@@ -6832,6 +6833,169 @@ static void BuffMenuDump()
     }
 }
 
+// ═══ `BL-84` — DOES EVERY SKILL ID MATCH ITS NAME? ═══════════════════════════════════════════════
+//
+// Owner, 2026-08-17: *"After the healer is done I want to change all the game skills id's to match the
+// skill names ... not `healer_blessing` <> Healer's Blessing, it should be `healers_blessing` or something
+// that matches it."*
+//
+// 🔑 THIS PAGE IS THE MEASUREMENT, not the rename. It prints every skill whose id does not read as its
+//    name, so the sweep is planned against data rather than against a guess about how many there are —
+//    and so the same command proves afterwards that the sweep is COMPLETE. `SkillCsvSeed --check`
+//    cannot help here: it matches CSV rows to code BY NAME, so a wrong id is invisible to it.
+//
+// ⚠ The DISPLAY NAME is per race/class for some skills (`ClassSkills.DisplayName`), so the def's own
+//   `Name` is what is compared — it is the id's natural pair and the only one that is single-valued.
+static void SkillIdAudit()
+{
+    Console.WriteLine("=== SKILL IDS vs NAMES (BL-84) ===");
+    Console.WriteLine("An id 'matches' when slugging its name reproduces it, optionally after a");
+    Console.WriteLine("race prefix (human_/elf_/demon_) — his own recent ids use that shape");
+    Console.WriteLine("(`human_vampiric_bolt`, `elf_self_heal`), so it is treated as correct.");
+    Console.WriteLine();
+
+    static string Slug(string name)
+    {
+        var sb = new System.Text.StringBuilder();
+        foreach (char c in name.ToLowerInvariant())
+        {
+            if (char.IsLetterOrDigit(c)) sb.Append(c);
+            else if (c == ' ' || c == '-' || c == '_') { if (sb.Length > 0 && sb[^1] != '_') sb.Append('_'); }
+            // apostrophes vanish: "Angel's Protection" -> angels_protection, which is what he wrote.
+        }
+        return sb.ToString().Trim('_');
+    }
+
+    
+    string[] racePrefixes = { "human_", "elf_", "demon_", "ork_" };
+    // 🔑 THE ONLY IDS IN SCOPE ARE THE CLASS-KIT ONES — the ids named after the DISCIPLINE or CLASS
+    //    that happened to own the slot. His three examples are all of that shape (`healer_blessing`,
+    //    `quick_great_heal`, `healing_totem`), and the 44+ kit he authored later already obeys the target
+    //    convention with no prefix at all (`urgent_heal`, `ultimate_heal`, `resurrection_field`).
+    // ⚠ EVERY OTHER FAMILY IS SYSTEMATIC AND STAYS. `buff_crit_rate_4` is not the bug — it is more
+    //    informative than a slugged name, and SIX defs are called "Focus", so the name is not even a
+    //    unique id. Same for `pot_*`/`scr_*` (three rungs share one name), `npc_*` (the shelf wrapper
+    //    shares its name with its rungs), `cast_*`, `rune_*`, `sigil_*`, `swap_*`.
+    string[] kitPrefixes =
+    {
+        "lb_", "wc_", "holy_", "waraoe_", "warrior_", "archer_", "tank_", "nuker_",
+        "rogue_", "rouge_", "dual_", "healer_", "buffer_", "fighter_", "bow_", "whisp_", "boss_",
+    };
+    var all = SkillCatalog.AllSkills.OrderBy(d => d.Id, StringComparer.Ordinal).ToList();
+    // How many defs answer to each slugged name. A name shared by several defs cannot BE an id, and
+    // that single fact is what decides whether a prefix is decoration or identity.
+    var nameCount = all.GroupBy(d => Slug(d.Name)).ToDictionary(g => g.Key, g => g.Count());
+
+    var inScope = new List<SkillDef>();
+    foreach (var def in all)
+        foreach (var p in kitPrefixes)
+            if (def.Id.StartsWith(p, StringComparison.Ordinal)) { inScope.Add(def); break; }
+
+    var rename = new List<(string Id, string Name, string To, string Why)>();
+    var keep = new List<(string Id, string Name, string Why)>();
+
+    foreach (var def in inScope)
+    {
+        string want = Slug(def.Name);
+
+        // 🔑 A SHARED NAME MEANS THE PREFIX IS THE IDENTITY. `archer_armor_mastery`,
+        //    `rogue_armor_mastery` and `warrior_armor_mastery` are three different passives all called
+        //    "Armor Mastery": strip the prefix and they become one id. Those stay exactly as they are.
+        if (nameCount[want] > 1)
+        {
+            keep.Add((def.Id, def.Name, $"{nameCount[want]} defs are called \"{def.Name}\" — "
+                                      + "the prefix is what tells them apart"));
+            continue;
+        }
+        // A numbered rung inside a kit skill (Combo Rush 1-6, the support payloads) is systematic for
+        // the same reason: the number is the identity and the name is shared, so it is caught above.
+        if (def.Id == want) continue;
+
+        // WHY it is being renamed, which is the difference between his complaint and mere tidying:
+        //   WORD  — the id's own word does not describe the skill at all (`arcane_lance` = Arcane
+        //           Lance). This is the pathology he named, and it is the half that is worth doing.
+        //   PREFIX — the id already reads correctly once the discipline marker comes off.
+        string tail = def.Id;
+        foreach (var p in kitPrefixes)
+            if (tail.StartsWith(p, StringComparison.Ordinal)) { tail = tail.Substring(p.Length); break; }
+        foreach (var p in racePrefixes)
+            if (tail.StartsWith(p, StringComparison.Ordinal)) { tail = tail.Substring(p.Length); break; }
+        bool wordWrong = tail != want;
+        rename.Add((def.Id, def.Name, want, wordWrong ? "WORD" : "PREFIX"));
+    }
+
+    Console.WriteLine($"{all.Count} skills in the catalogue. {inScope.Count} carry a class/discipline "
+                    + "prefix and are in scope.");
+    Console.WriteLine($"  {rename.Count(r => r.Why == "WORD"),4}  ids whose own WORD does not describe "
+                    + "the skill  <- his complaint");
+    Console.WriteLine($"  {rename.Count(r => r.Why == "PREFIX"),4}  ids that read correctly once the "
+                    + "prefix comes off");
+    Console.WriteLine($"  {keep.Count,4}  KEPT: the prefix is the identity (several defs share the name)");
+    Console.WriteLine($"  {all.Count - inScope.Count,4}  out of scope: systematic families "
+                    + "(buff_/pot_/scr_/npc_/cast_/rune_/sigil_/swap_)");
+    Console.WriteLine();
+
+    foreach (var why in new[] { "WORD", "PREFIX" })
+    {
+        var rows = rename.Where(r => r.Why == why).OrderBy(r => r.To, StringComparer.Ordinal).ToList();
+        Console.WriteLine($"--- {why} ({rows.Count}) ---");
+        Console.WriteLine($"{"CURRENT ID",-38} {"NAME",-34} NEW ID");
+        foreach (var r in rows) Console.WriteLine($"{r.Id,-38} {r.Name,-34} {r.To}");
+        Console.WriteLine();
+    }
+
+    Console.WriteLine($"--- KEPT ({keep.Count}) — the prefix carries the identity ---");
+    foreach (var k in keep.OrderBy(k => k.Id, StringComparer.Ordinal))
+        Console.WriteLine($"{k.Id,-38} {k.Name,-34} {k.Why}");
+
+    // ---- THE MACHINE-READABLE MAPPING, which is what actually drives the sweep. ----------------
+    // 🔑 THE CONST NAME COMES FROM REFLECTION, not from guessing. Every id is a `const string` on
+    //    SkillCatalog, and an id renamed while its constant still reads `HealerBlessing` is half a job —
+    //    the whole point is that the CODE reads as the skill. Reflection is the only way to pair them
+    //    without a second hand-written table, and it also proves the constant exists at all.
+    var constOf = new Dictionary<string, string>(StringComparer.Ordinal);
+    foreach (var f in typeof(SkillCatalog).GetFields(
+                 System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static))
+        if (f.IsLiteral && f.FieldType == typeof(string)
+            && f.GetRawConstantValue() is string v && !constOf.ContainsKey(v))
+            constOf[v] = f.Name;
+
+    static string Pascal(string slug) => string.Concat(
+        slug.Split('_', StringSplitOptions.RemoveEmptyEntries)
+            .Select(w => char.ToUpperInvariant(w[0]) + w.Substring(1)));
+
+    var existingConsts = new HashSet<string>(constOf.Values, StringComparer.Ordinal);
+    Console.WriteLine();
+    Console.WriteLine("--- MAPPING (old_id<TAB>new_id<TAB>old_const<TAB>new_const) ---");
+    foreach (var r in rename.OrderBy(r => r.Id, StringComparer.Ordinal))
+    {
+        string oc = constOf.TryGetValue(r.Id, out var c) ? c : "(no const)";
+        string nc = Pascal(r.To);
+        Console.WriteLine($"MAP\t{r.Id}\t{r.To}\t{oc}\t{nc}");
+    }
+    Console.WriteLine();
+    var constClash = rename.Select(r => Pascal(r.To))
+        .Where(n => existingConsts.Contains(n)
+                    && !rename.Any(r => constOf.TryGetValue(r.Id, out var c) && c == n))
+        .Distinct().ToList();
+    Console.WriteLine("--- CONST-NAME COLLISIONS against a constant that is NOT being renamed: "
+                    + constClash.Count + " ---");
+    foreach (var n in constClash) Console.WriteLine($"  {n}");
+    var noConst = rename.Where(r => !constOf.ContainsKey(r.Id)).ToList();
+    Console.WriteLine($"--- IDS WITH NO CONSTANT (a bare literal somewhere): {noConst.Count} ---");
+    foreach (var r in noConst) Console.WriteLine($"  {r.Id}");
+
+    // The safety net: the rename must not collide with an id that already exists elsewhere.
+    Console.WriteLine();
+    var existing = new HashSet<string>(all.Select(d => d.Id), StringComparer.Ordinal);
+    var clashes = rename.Where(r => existing.Contains(r.To)).ToList();
+    var dupes = rename.GroupBy(r => r.To).Where(g => g.Count() > 1).ToList();
+    Console.WriteLine($"--- COLLISIONS: {clashes.Count} against an existing id, "
+                    + $"{dupes.Count} against each other ---");
+    foreach (var c in clashes) Console.WriteLine($"  {c.Id} -> {c.To}  (already taken)");
+    foreach (var g in dupes) Console.WriteLine($"  {g.Key} <- {string.Join(", ", g.Select(r => r.Id))}");
+}
+
 static void NpcShelfDump()
 {
     var shelf = SkillCatalog.NewbieBuffSet;
@@ -7262,7 +7426,7 @@ static void DedupeByKey(Entity e)
 /// remove-then-add rather than an add.</para></summary>
 static void SwapToHarmonyMark(Entity e)
 {
-    if (SkillCatalog.Get(SkillCatalog.WcHarmonyMark) is not { } mark) return;
+    if (SkillCatalog.Get(SkillCatalog.HarmonyMark) is not { } mark) return;
     int top = mark.MaxLevel;
     e.Buffs.RemoveAll(b => b.Key == mark.BuffKey);
     e.Buffs.Add(new Game.Server.Simulation.BuffInstance
@@ -7280,7 +7444,7 @@ static void SwapToHarmonyMark(Entity e)
 
 static void WarchanterParty(Entity e)
 {
-    foreach (var id in new[] { SkillCatalog.WcArcaneFeralProt, SkillCatalog.WcHarmonySoul })
+    foreach (var id in new[] { SkillCatalog.WcArcaneFeralProt, SkillCatalog.HarmonyOfTheSoul })
     {
         if (SkillCatalog.Get(id) is not { } def) { Console.Error.WriteLine($"  !! missing {id}"); continue; }
         int top = def.MaxLevel;
@@ -7382,7 +7546,7 @@ static void CcProfile(string[] args)
     // The Nullblade's ultimate is the case he named — ten seconds at +50% mRes on top.
     {
         var ult = Dressed(() => Who(Race.Human, BaseClass.Fighter, Discipline.Nullblade, L, q), true);
-        ApplyOneBuff(ult, SkillCatalog.DualMagicArmor);
+        ApplyOneBuff(ult, SkillCatalog.MagicalArmor);
         float b = StatCalculator.DebuffLandChance(caster.EffectiveAtk, ult.EffectiveSpt, L, L);
         float noM = b * ult.CcLandRetain * ult.CcLandRetainMagical;
         Console.WriteLine($"  {"  …+ Magical Armor",-20} {ult.EffectiveSpt,4} {ult.MagicResist,6:P0} |"
@@ -7634,10 +7798,10 @@ static void MagicResistChain(string[] args)
     var stages = new (string Label, Action<Entity> Wear)[]
     {
         ("bare (passives only)",        _ => { }),
-        ("+ Magical Armor (ult, +50%)", e => ApplyOneBuff(e, SkillCatalog.DualMagicArmor)),
+        ("+ Magical Armor (ult, +50%)", e => ApplyOneBuff(e, SkillCatalog.MagicalArmor)),
         ("+ NPC shelf",                 e => ApplyNpcBuffs(e, fullShelf: true)),
         ("+ shelf + Magical Armor",     e => { ApplyNpcBuffs(e, fullShelf: true);
-                                               ApplyOneBuff(e, SkillCatalog.DualMagicArmor); }),
+                                               ApplyOneBuff(e, SkillCatalog.MagicalArmor); }),
     };
 
     var who = new (string Name, Func<Entity> Make)[]
@@ -7654,7 +7818,7 @@ static void MagicResistChain(string[] args)
         foreach (var (label, wear) in stages)
         {
             var d = make();
-            bool holdsUlt = d.LearnedSkills.ContainsKey(SkillCatalog.DualMagicArmor);
+            bool holdsUlt = d.LearnedSkills.ContainsKey(SkillCatalog.MagicalArmor);
             if (label.Contains("Magical Armor") && !holdsUlt)
             {
                 Console.WriteLine($"  {name,-22} {label,-30}  (not learned — 4th class {d.FourthClass},"
@@ -7678,7 +7842,7 @@ static void MagicResistChain(string[] args)
     }
 
     // The def itself, printed raw — if the payload is missing this is where it shows.
-    if (SkillCatalog.Get(SkillCatalog.DualMagicArmor) is { } ult)
+    if (SkillCatalog.Get(SkillCatalog.MagicalArmor) is { } ult)
     {
         Console.WriteLine("--- THE SKILL DEF AS THE CATALOG HOLDS IT ---");
         Console.WriteLine($"  id {ult.Id}  effect [{ult.Effect}]  category {ult.Category}"
@@ -7884,7 +8048,7 @@ static Entity SpawnRanked(int level, MobRank rank, bool solo = false, bool world
     // A boss fights with its kit, not with its fists — BuildMob teaches every boss the telegraphed
     // slam when its template has no BossProfile of its own. Leaving it out measured a boss swinging
     // bare-handed and understated what a tank has to survive.
-    if (rank == MobRank.Boss) m.LearnedSkills[SkillCatalog.BossSlamSkill] = 1;
+    if (rank == MobRank.Boss) m.LearnedSkills[SkillCatalog.DevastatingSlam] = 1;
     m.RecomputeDerived();   // playtest-20 #7: a rank must survive a recompute
     return m;
 }
@@ -8446,7 +8610,7 @@ static void MpNpc()
         // ---- HEALER: his attack spell (the farm rotation), then his workhorse heal (party duty).
         var healer = BuildCasterFor(race, 74, Archetype.Healer, Discipline.Lightbringer);
         ApplyNpcBuffs(healer);
-        var (hRay, hRayL) = Pick(healer, SkillCatalog.HolyRay, SkillCatalog.HolyStrike);
+        var (hRay, hRayL) = Pick(healer, SkillCatalog.HolyRay, SkillCatalog.HolyBolt);
         var (hHeal, hHealL) = Pick(healer, SkillCatalog.GreatHeal, SkillCatalog.Heal);
         Line("healer", healer, hRay, hRayL, 0f, "-");
         Line("  heal", healer, hHeal, hHealL, 0f, "-");
@@ -8460,10 +8624,10 @@ static void MpNpc()
         // ---- BUFFER: the two toggles alone, then toggles + his sound skill.
         var buffer = BuildCasterFor(race, 74, Archetype.Healer, Discipline.Warchanter);
         ApplyNpcBuffs(buffer);
-        var reinf = SkillCatalog.Get(SkillCatalog.WcReinforcement);
-        var sharp = SkillCatalog.Get(SkillCatalog.WcSharpening);
-        int rr = buffer.SkillLevelOf(SkillCatalog.WcReinforcement);
-        int sr = buffer.SkillLevelOf(SkillCatalog.WcSharpening);
+        var reinf = SkillCatalog.Get(SkillCatalog.Reinforcement);
+        var sharp = SkillCatalog.Get(SkillCatalog.Sharpening);
+        int rr = buffer.SkillLevelOf(SkillCatalog.Reinforcement);
+        int sr = buffer.SkillLevelOf(SkillCatalog.Sharpening);
         float toggles = (reinf != null && rr > 0 ? reinf.MpPerSecondAt(rr) : 0)
                       + (sharp != null && sr > 0 ? sharp.MpPerSecondAt(sr) : 0);
         Line("toggles", buffer, null, 0, toggles, $"Reinf r{rr} + Sharp r{sr}");
@@ -8602,7 +8766,7 @@ static void MpCase()
     {
         var e = make();
         float pct = buffed ? 1.20f * 1.20f : 1f;
-        var (atk, atkLvl) = Best(e, SkillCatalog.HolyRay, SkillCatalog.HolyStrike);
+        var (atk, atkLvl) = Best(e, SkillCatalog.HolyRay, SkillCatalog.HolyBolt);
         var (heal, healLvl) = Best(e, SkillCatalog.GreatHeal, SkillCatalog.Heal);
 
         Console.WriteLine($"--- {label} ---");
@@ -8698,7 +8862,7 @@ static void MpCase()
             });
         e.RecomputeDerived();
 
-        var (d, l) = Best(e, SkillCatalog.HolyRay, SkillCatalog.HolyStrike);
+        var (d, l) = Best(e, SkillCatalog.HolyRay, SkillCatalog.HolyBolt);
         if (d is null) continue;
         int mp = Cost(e, d, l);
 
@@ -8747,7 +8911,7 @@ static void MpCase()
         ("robe only, no weapon, no jewels",      false, false) })
     {
         var h = BuildHisHealer(43, jewels: jw, weapon: wp);
-        var (d, l) = Best(h, SkillCatalog.HolyRay, SkillCatalog.HolyStrike);
+        var (d, l) = Best(h, SkillCatalog.HolyRay, SkillCatalog.HolyBolt);
         if (d is null) continue;
         int c = Cost(h, d, l);
         var (ca, re) = Cycle(h, d, l);
@@ -8911,7 +9075,7 @@ static void MpDrain(int[] argLevels)
     {
         ("1. HEALER - Holy Bolt (Holy Ray REPLACES it at 40: the bolt leaves the bar)",
             Archetype.Healer, Discipline.Lightbringer,
-            new[] { SkillCatalog.HolyRay, SkillCatalog.HolyStrike }),
+            new[] { SkillCatalog.HolyRay, SkillCatalog.HolyBolt }),
         ("2. NUKER - Elemental Bolt (Elemental Blast REPLACES it at 40)",
             Archetype.Nuker, Discipline.Magus,
             new[] { SkillCatalog.ElementalBlast, SkillCatalog.ElementalBolt }),
@@ -8978,10 +9142,10 @@ static void MpDrain(int[] argLevels)
             var e = BuildCasterFor(race, L, Archetype.Healer, Discipline.Warchanter);
             float bfSt = Mp(e, MoveState.Running, false, BuffPct);
 
-            var reinf = SkillCatalog.Get(SkillCatalog.WcReinforcement);
-            var sharp = SkillCatalog.Get(SkillCatalog.WcSharpening);
-            int rr = e.SkillLevelOf(SkillCatalog.WcReinforcement);
-            int sr = e.SkillLevelOf(SkillCatalog.WcSharpening);
+            var reinf = SkillCatalog.Get(SkillCatalog.Reinforcement);
+            var sharp = SkillCatalog.Get(SkillCatalog.Sharpening);
+            int rr = e.SkillLevelOf(SkillCatalog.Reinforcement);
+            int sr = e.SkillLevelOf(SkillCatalog.Sharpening);
 
             float auth = 0f, chg = 0f;
             if (reinf != null && rr > 0) { auth += reinf.MpCostAt(rr); chg += reinf.MpPerSecondAt(rr); }
@@ -9905,7 +10069,7 @@ static class BuffCensus
 
         var claimed = new HashSet<string>(StringComparer.Ordinal);
         foreach (string id in new[] { SkillCatalog.NpcHarmonyWarrior, SkillCatalog.NpcHarmonyProtection,
-                                      SkillCatalog.NpcHarmonyWizard,  SkillCatalog.WcHarmonySpeed })
+                                      SkillCatalog.NpcHarmonyWizard,  SkillCatalog.HarmonyOfSpeed })
         {
             if (SkillCatalog.Get(id) is not SkillDef def) continue;
             Console.WriteLine($"     {def.Name}   (rank {GameLoopService.BuffPlan(def, 1).Rank} at rung 1, "

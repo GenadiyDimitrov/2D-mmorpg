@@ -16,47 +16,47 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,"magic def +144, mRes +35%",0,0,100kk
 90,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,"magic def +149, mRes +35%",0,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Spellcaster Weapon Mastery----------------------------
-76,Spellcaster Weapon Mastery,healer_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +101, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,6.5kk,1kk
-77,Spellcaster Weapon Mastery,healer_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +102, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,11kk,1kk
-78,Spellcaster Weapon Mastery,healer_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +104, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,16kk,1kk
-79,Spellcaster Weapon Mastery,healer_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +105, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,80kk,1kk
-80,Spellcaster Weapon Mastery,healer_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +106, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,5kk
-81,Spellcaster Weapon Mastery,healer_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +108, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,7.5kk
-82,Spellcaster Weapon Mastery,healer_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +109, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,10kk
-83,Spellcaster Weapon Mastery,healer_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +110, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,15kk
-84,Spellcaster Weapon Mastery,healer_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +112, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,30kk
-85,Spellcaster Weapon Mastery,healer_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +113, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,50kk
-86,Spellcaster Weapon Mastery,healer_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +115, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,75kk
-87,Spellcaster Weapon Mastery,healer_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +116, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,100kk
-88,Spellcaster Weapon Mastery,healer_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +117, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,100kk
-89,Spellcaster Weapon Mastery,healer_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +119, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,100kk
-90,Spellcaster Weapon Mastery,healer_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +120, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,100kk
+76,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +101, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,6.5kk,1kk
+77,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +102, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,11kk,1kk
+78,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +104, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,16kk,1kk
+79,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +105, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,80kk,1kk
+80,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +106, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,5kk
+81,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +108, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,7.5kk
+82,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +109, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,10kk
+83,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +110, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,15kk
+84,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +112, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,30kk
+85,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +113, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,50kk
+86,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +115, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,75kk
+87,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +116, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,100kk
+88,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +117, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,100kk
+89,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +119, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,100kk
+90,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +120, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Healer Armor Mastery----------------------------
-76,Mage Armor Mastery,nuker_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +89, maxMP +220; mpWhenRestored +60%; mDef  +2%",0,6.5kk,1kk
-77,Mage Armor Mastery,nuker_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +91, maxMP +220; mpWhenRestored +60%; mDef  +4%",0,11kk,1kk
-78,Mage Armor Mastery,nuker_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +92, maxMP +250; mpWhenRestored +60%; mDef  +5%; Decrease Mp Consumption with 5%",0,16kk,1kk
-79,Mage Armor Mastery,nuker_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +93, maxMP +250; mpWhenRestored +60%; mDef  +7%; Decrease Mp Consumption with 5%",0,80kk,1kk
-80,Mage Armor Mastery,nuker_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +95, maxMP +250; mpWhenRestored +65%; mDef  +8%; Decrease Mp Consumption with 5%",0,0,5kk
-81,Mage Armor Mastery,nuker_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +96, maxMP +290; mpWhenRestored +65%; mDef +10%; Decrease Mp Consumption with 8%",0,0,7.5kk
-82,Mage Armor Mastery,nuker_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +97, maxMP +290; mpWhenRestored +65%; mDef +11%; Decrease Mp Consumption with 8%",0,0,10kk
-83,Mage Armor Mastery,nuker_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +99, maxMP +300; mpWhenRestored +65%; mDef +13%; Decrease Mp Consumption with 8%",0,0,15kk
-84,Mage Armor Mastery,nuker_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe: pDef +100, maxMP +300; mpWhenRestored +65%; mDef +14%; Decrease Mp Consumption with 8%",0,0,30kk
-85,Mage Armor Mastery,nuker_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe: pDef +101, maxMP +300; mpWhenRestored +70%; mDef +16%; Decrease Mp Consumption with 8%",0,0,50kk
-86,Mage Armor Mastery,nuker_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe: pDef +103, maxMP +330; mpWhenRestored +70%; mDef +17%; Decrease Mp Consumption with 10%",0,0,75kk
-87,Mage Armor Mastery,nuker_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe: pDef +104, maxMP +330; mpWhenRestored +70%; mDef +19%; Decrease Mp Consumption with 10%",0,0,100kk
-88,Mage Armor Mastery,nuker_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe: pDef +105, maxMP +350; mpWhenRestored +70%; mDef +20%; Decrease Mp Consumption with 10%",0,0,100kk
-89,Mage Armor Mastery,nuker_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe: pDef +107, maxMP +350; mpWhenRestored +70%; mDef +22%; Decrease Mp Consumption with 10%",0,0,100kk
-90,Mage Armor Mastery,nuker_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe: pDef +108, maxMP +400; mpWhenRestored +70%; mDef +25%; Decrease Mp Consumption with 10%",0,0,100kk
+76,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +89, maxMP +220; mpWhenRestored +60%; mDef  +2%",0,6.5kk,1kk
+77,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +91, maxMP +220; mpWhenRestored +60%; mDef  +4%",0,11kk,1kk
+78,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +92, maxMP +250; mpWhenRestored +60%; mDef  +5%; Decrease Mp Consumption with 5%",0,16kk,1kk
+79,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +93, maxMP +250; mpWhenRestored +60%; mDef  +7%; Decrease Mp Consumption with 5%",0,80kk,1kk
+80,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +95, maxMP +250; mpWhenRestored +65%; mDef  +8%; Decrease Mp Consumption with 5%",0,0,5kk
+81,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +96, maxMP +290; mpWhenRestored +65%; mDef +10%; Decrease Mp Consumption with 8%",0,0,7.5kk
+82,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +97, maxMP +290; mpWhenRestored +65%; mDef +11%; Decrease Mp Consumption with 8%",0,0,10kk
+83,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +99, maxMP +300; mpWhenRestored +65%; mDef +13%; Decrease Mp Consumption with 8%",0,0,15kk
+84,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe: pDef +100, maxMP +300; mpWhenRestored +65%; mDef +14%; Decrease Mp Consumption with 8%",0,0,30kk
+85,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe: pDef +101, maxMP +300; mpWhenRestored +70%; mDef +16%; Decrease Mp Consumption with 8%",0,0,50kk
+86,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe: pDef +103, maxMP +330; mpWhenRestored +70%; mDef +17%; Decrease Mp Consumption with 10%",0,0,75kk
+87,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe: pDef +104, maxMP +330; mpWhenRestored +70%; mDef +19%; Decrease Mp Consumption with 10%",0,0,100kk
+88,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe: pDef +105, maxMP +350; mpWhenRestored +70%; mDef +20%; Decrease Mp Consumption with 10%",0,0,100kk
+89,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe: pDef +107, maxMP +350; mpWhenRestored +70%; mDef +22%; Decrease Mp Consumption with 10%",0,0,100kk
+90,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe: pDef +108, maxMP +400; mpWhenRestored +70%; mDef +25%; Decrease Mp Consumption with 10%",0,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Arcane Momentum----------------------------
 76,Arcane Momentum,reuse_reset_momentum,Passive,,,0,0,self/single,0,0,0,reuse reset 5% - a skill you cast has that chance to come off reuse immediately - never on a fixed-cooldown skill - scales with ATK,0,6.5kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Mage Shield Mastery----------------------------
-76,Mage Shield Mastery,nuker_shield_mastery,Passive,,/shield,0,0,self/single,0,0,0,"When Shield is equiped mp consumption -10% and mpReg +10%, Pdef +100, but shield can never block (block rate x0)",0,6.5kk,1kk
+76,Mage Shield Mastery,mage_shield_mastery,Passive,,/shield,0,0,self/single,0,0,0,"When Shield is equiped mp consumption -10% and mpReg +10%, Pdef +100, but shield can never block (block rate x0)",0,6.5kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Mana Barrier----------------------------
-85,Mana Barrier,nuker_mana_barrier,Magic/Buff,,,0,,self/single,0,300,30,"Diverts 70% of incoming damage to MP (0.5 MP per damage) for 30s or while MP lasts.",30,0,100kk,5
+85,Mana Barrier,mana_barrier,Magic/Buff,,,0,,self/single,0,300,30,"Diverts 70% of incoming damage to MP (0.5 MP per damage) for 30s or while MP lasts.",30,0,100kk,5
 ,,,,,,,,,,,,,,,,,,,----------------------------Force Empowerment----------------------------
-78,Force Empowerment,nuker_Force_empowerment,Toggle,,,0,,self/single,0,0,0,"Increases mAtk +14%, mana consumption with 20% and drains 50/s HP",0,16kk,1kk,,,
-80,Force Empowerment,nuker_Force_empowerment,Toggle,,,0,,self/single,0,0,0,"Increases mAtk +15%, mana consumption with 15% and drains 40/s HP",0,150kk,10kk,,,
-82,Force Empowerment,nuker_Force_empowerment,Toggle,,,0,,self/single,0,0,0,"Increases mAtk +16%, mana consumption with 10% and drains 30/s HP",0,300kk,50kk,,,
+78,Force Empowerment,force_empowerment,Toggle,,,0,,self/single,0,0,0,"Increases mAtk +14%, mana consumption with 20% and drains 50/s HP",0,16kk,1kk,,,
+80,Force Empowerment,force_empowerment,Toggle,,,0,,self/single,0,0,0,"Increases mAtk +15%, mana consumption with 15% and drains 40/s HP",0,150kk,10kk,,,
+82,Force Empowerment,force_empowerment,Toggle,,,0,,self/single,0,0,0,"Increases mAtk +16%, mana consumption with 10% and drains 30/s HP",0,300kk,50kk,,,
 ,,,,,,,,,,,,,,,,,,,----------------------------Race Empowerment----------------------------
 80,Spell Empowerment,nuker_demon_spell_empowerment,Magic/Buff,,,0,,self/single,1,5,600,"Increases magic MP consumption by 30% and M. Atk. by 15%; being attacked with 5% chance decrease attackers cast/attack speed with 23%",100,150kk,10kk,,,Demon
 85,Spell Empowerment,nuker_demon_spell_empowerment,Magic/Buff,,,0,,self/single,1,5,600,"Increases magic MP consumption by 25% and M. Atk. by 15%; being attacked with 5% chance decrease attackers cast/attack speed with 23%",100,0,100kk,,,Demon

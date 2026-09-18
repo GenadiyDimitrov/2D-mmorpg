@@ -247,7 +247,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-76` | 🔴 | Boss skill gems — a boss drops a gem that grants a skill, three rarities | items |
 | `BL-78` | 🔵 | Mobs are too easy — three of four built, only THE BILL is left | world |
 | `BL-80` | 🔵 | Fortress sieges — your own design, transcribed whole | world |
-| `BL-84` | 🔴 | Rename every skill id to match its name — unblocked, needs a window | classes |
 | `BL-93` | 🔵 | In-game visuals — models, terrain, the look of the world | UI |
 | `BL-102` | 🔴 | The character models have no animation clips — one file from you | UI |
 | `BL-103` | 🔵 | Visible weapons — the shape is settled, the meshes are not | UI |
@@ -602,32 +601,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
     `BL-51` castles/sieges (nothing exists), **raid points** (no such currency), a **weekly world clock**
     (`GameClock` has no weekly window), and mob **healer/commander AI** that casts like a party. ⚠ It also
     presumes clans, which are **OFF** (`BL-73`).
-
-- `BL-84` 🔴 **RENAME EVERY SKILL ID TO MATCH ITS NAME — UNBLOCKED 2026-08-20: THE HEALER IS DONE.**
-  ⏰ This is the reminder you asked for. The trigger you named has fired — `healer 3rd.csv` is built and
-  shipped in 0.74.0 — so this is now next in the queue whenever you want it, not a filed idea.
-  2026-08-17: *"After the healer is done I want to change all the game skills id's to match the skill
-  names ... not `lb_elf_dawn` <> Healer's Blessing, it should be `healers_blessing` or something that
-  matches it. Make a note to remind me after the healer is done (I want all the skills, not only the
-  healers — all 1st, 2nd + healer 3rd)."*
-  **Scope, his**: every skill in the **1st** and **2nd** class tables plus the **healer 3rd** — not the
-  healer alone. The other seven disciplines follow when their CSVs land, so the convention has to be
-  settled here and then simply obeyed.
-  🔑 **Why it is worth doing**: the ids were named after the SLOT a skill sat in, not the skill. Three
-  level-40 healer ids now openly contradict the thing they identify — `lb_elf_dawn` is *Healer Blessing*,
-  `lb_human_mend` is *Quick Great Heal*, `lb_ork_font` is *Healing Totem* — because each was reused when
-  his authored row landed on its slot. That is the right call for data (see `BL-02`) and the wrong one
-  for reading code, and it gets worse with every CSV he writes.
-  ✅ **NO MIGRATION NEEDED — he settled it the same day**: *"I'll reset the db anyways so it's not of a
-  concern."* Ids are persisted (learned skills + the skill bar's `SkillBarCsv`), so a rename would
-  normally orphan every character's bar — the failure `retired-skill-ids-leak` recorded once. A DB reset
-  removes that entirely, which turns this from a migration into an ordinary rename. **Do it in one pass
-  while the reset is happening**, not spread across versions, or the two halves meet in a live DB and the
-  problem comes back. ⚠ Ids also appear in `docs/` and in the premium/consumable catalogs, and
-  `SkillCsvSeed` matches CSV rows to code **by NAME**, so the checker can neither verify this pass nor
-  catch a mistake in it — the compiler is the only safety net, which is fine for constants.
-  🔵 Convention to settle with him before starting: strip the `lb_`/discipline prefixes entirely, or keep
-  a short one for per-race variants that share a display name across races?
 
 - `BL-93` 🔵 **IN-GAME VISUALS — MODELS, TERRAIN, THE LOOK OF THE WORLD. You asked for the discussion,
   2026-08-26:** *"after all I want to speak about the in game visuals - models/terain etc."* Opened as

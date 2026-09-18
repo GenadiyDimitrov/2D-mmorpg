@@ -403,7 +403,7 @@ public static partial class SkillCatalog
             // need for another hit floor) - leave the mechanic but not the skill on warrior"*.
             //
             // 🔑 THE ARGUMENT IS THAT ACCURACY ALREADY DID THE JOB. Warrior's Strength now carries up
-            // to +9 accuracy (`warrior_strenght` rung 4), and on a resolver that is one line —
+            // to +9 accuracy (`warriors_strength` rung 4), and on a resolver that is one line —
             // `miss = 5% + (EVA − ACC) × 1%` — nine points IS nine points of a rogue's evasion lead.
             // The floor existed to stop an evasion-stacked rogue locking a warrior out entirely; the
             // accuracy he now buys does that directly, and a floor on top would have been the same

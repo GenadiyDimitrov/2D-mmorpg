@@ -271,18 +271,18 @@ public static partial class ClassSkillTables
         // when he called that file finished; it was ruled on 2026-09-09 with the blow rework and its
         // row was written into the file in the same commit.
         shared.Add(new ClassSkill(TankVitalOrganProtection, 80));
-        shared.AddRange(Ladder(TankStay,        even, 16));
-        shared.AddRange(Ladder(TankShieldStun,  even, 20));
+        shared.AddRange(Ladder(Stay,        even, 16));
+        shared.AddRange(Ladder(ShieldShock,  even, 20));
         shared.AddRange(Ladder(DefensiveWall,   even, 3));
         shared.AddRange(Ladder(TankMagicWall,   even, 1));
-        shared.AddRange(Ladder(TankPull,        even, 1));
+        shared.AddRange(Ladder(Grapple,        even, 1));
 
         // ---- NEW AT THE 4th TIER, on their own levels ----
         shared.Add(new ClassSkill(TankTauntingWall, 80));
         // The Perfect Whisp: six rungs, 80 → 90, and no race — the only whisp all three tanks share.
-        shared.AddRange(Ladder(TankWhispHelp, new[] { 80, 82, 84, 86, 88, 90 }, 1));
+        shared.AddRange(Ladder(PerfectWhisp, new[] { 80, 82, 84, 86, 88, 90 }, 1));
         // Whisp Mastery's third slot, at 83.
-        shared.AddRange(At(TankWhispMastery, (83, 2)));
+        shared.AddRange(At(WhispMastery, (83, 2)));
         // 🔴 UNDYING WILL MOVES TIER, exactly as the healer's Rite of Preservation did. It was
         //    registered at 83 on the THIRD-class table with a placeholder 100k SP; his `tank 4th.csv`
         //    prices it at 500kk + 100kk gold and two Physical Stones, which is a 4th-tier price. Two
@@ -301,31 +301,31 @@ public static partial class ClassSkillTables
         var human = new List<ClassSkill>(shared);
         human.AddRange(Ladder(Provoke,             even, 20));
         human.AddRange(Ladder(TankMassProvoke,     even, 16));
-        human.AddRange(Ladder(TankSmashRate,       even, 16));
-        human.AddRange(Ladder(TankSilencePhysical, even, 1));
-        human.AddRange(Ladder(TankWhispTaunt,      even, 9));
-        human.AddRange(Ladder(TankWhispBind,       odd,  9));
+        human.AddRange(Ladder(ShieldSmashRate,       even, 16));
+        human.AddRange(Ladder(NumbingShock, even, 1));
+        human.AddRange(Ladder(TauntingWhisp,      even, 9));
+        human.AddRange(Ladder(BindingWhisp,       odd,  9));
         human.AddRange(physicalBacklash);
 
         // ---- ELF: charm (which replaces taunt), freeze, the rate smash, the MAGICAL silence,
         //      charm+heal whisps. ----
         var elf = new List<ClassSkill>(shared);
         elf.AddRange(Ladder(TankCharm,            even, 20));
-        elf.AddRange(Ladder(TankFreeze,           even, 16));
-        elf.AddRange(Ladder(TankSmashRate,        even, 16));
-        elf.AddRange(Ladder(TankSilenceMagical,   even, 1));
-        elf.AddRange(Ladder(TankWhispCharm,       even, 9));
-        elf.AddRange(Ladder(TankWhispHeal,        odd,  9));
+        elf.AddRange(Ladder(Freeze,           even, 16));
+        elf.AddRange(Ladder(ShieldSmashRate,        even, 16));
+        elf.AddRange(Ladder(SilencingShock,   even, 1));
+        elf.AddRange(Ladder(CharmingWhisp,       even, 9));
+        elf.AddRange(Ladder(HealingWhisp,        odd,  9));
         elf.AddRange(magicalBacklash);
 
         // ---- DEMON: taunt, intimidate, the POWER smash, the physical silence, the two break whisps.
         var demon = new List<ClassSkill>(shared);
         demon.AddRange(Ladder(Provoke,             even, 20));
-        demon.AddRange(Ladder(TankFear,            even, 16));
-        demon.AddRange(Ladder(TankSmashPower,      even, 16));
-        demon.AddRange(Ladder(TankSilencePhysical, even, 1));
-        demon.AddRange(Ladder(TankWhispArmorBreak, even, 9));
-        demon.AddRange(Ladder(TankWhispWeaponBreak, odd, 9));
+        demon.AddRange(Ladder(Intimidate,            even, 16));
+        demon.AddRange(Ladder(ShieldSmashPower,      even, 16));
+        demon.AddRange(Ladder(NumbingShock, even, 1));
+        demon.AddRange(Ladder(ArmorBreakingWhisp, even, 9));
+        demon.AddRange(Ladder(WeaponBreakingWhisp, odd, 9));
         demon.AddRange(physicalBacklash);
 
         ClassSkills.RegisterFourth(Race.Human, Discipline.Bulwark, human.ToArray());
@@ -382,7 +382,7 @@ public static partial class ClassSkillTables
         // Anti-Magic reached 20 (it began at rung 7 in the cleric's table), the two masteries and the
         // three ordinary heals reached 14, Resurrection reached 16.
         shared.AddRange(Ladder(MageAntiMagic,             HealerFourthBands, 21));
-        shared.AddRange(Ladder(HealerWeaponMasterySkill,  HealerFourthBands, 15));
+        shared.AddRange(Ladder(SpellcasterWeaponMastery,  HealerFourthBands, 15));
         shared.AddRange(Ladder(HealerArmorMasterySkill,   HealerFourthBands, 15));
         shared.AddRange(Ladder(HolyRay,                   HealerFourthBands, 15));
         shared.AddRange(Ladder(GreatHeal,                 HealerFourthBands, 15));
@@ -401,7 +401,7 @@ public static partial class ClassSkillTables
         shared.AddRange(At(Antidote, (76, 10)));
 
         // ═══ NEW AT THE 4th TIER ═════════════════════════════════════════════════════════════════
-        shared.Add(new ClassSkill(HealerShieldMastery, 76));
+        shared.Add(new ClassSkill(HealersShieldMastery, 76));
         shared.Add(new ClassSkill(ArcaneResistance,    76));
         shared.Add(new ClassSkill(HolyBlessing,        78));
         shared.Add(new ClassSkill(HolySoul,            76));
@@ -434,8 +434,8 @@ public static partial class ClassSkillTables
         ClassSkills.RegisterFourth(Race.Human, Discipline.Lightbringer,
             shared.Concat(ManaBless())
                   .Concat(SkillCatalog.LightbringerFourthTwinsFor(Race.Human, HealerFourthEven))
-                  .Concat(Ladder(LbHumanMend,    HealerFourthBands, 15))
-                  .Concat(Ladder(LbHumanGravity, HealerFourthEven,  15))
+                  .Concat(Ladder(QuickGreatHeal,    HealerFourthBands, 15))
+                  .Concat(Ladder(Gravity, HealerFourthEven,  15))
                   .Concat(At(LifeMark, (78, 1), (83, 2)))
                   .Concat(new[] { new ClassSkill(LifeRestoration, 83) })
                   .ToArray());
@@ -443,8 +443,8 @@ public static partial class ClassSkillTables
         ClassSkills.RegisterFourth(Race.Elf, Discipline.Lightbringer,
             shared.Concat(Fortitude())
                   .Concat(SkillCatalog.LightbringerFourthTwinsFor(Race.Elf, HealerFourthEven))
-                  .Concat(Ladder(LbElfDawn, HealerFourthBands, 15))
-                  .Concat(Ladder(LbElfBind, HealerFourthEven,  15))
+                  .Concat(Ladder(HealerBlessing, HealerFourthBands, 15))
+                  .Concat(Ladder(Bind, HealerFourthEven,  15))
                   .Concat(Ladder(HealerPartyBlessing, new[] { 83, 84, 85, 86, 87, 88, 89, 90 }, 1))
                   .Concat(At(HolyMark, (78, 1), (83, 2)))
                   .Concat(new[] { new ClassSkill(ElvenRestoration, 83) })
@@ -452,8 +452,8 @@ public static partial class ClassSkillTables
 
         ClassSkills.RegisterFourth(Race.Demon, Discipline.Lightbringer,
             shared.Concat(ManaBless()).Concat(Fortitude())
-                  .Concat(Ladder(LbOrkFont,       HealerFourthBands, 15))
-                  .Concat(Ladder(LbOrkArmorBreak, HealerFourthEven,  15))
+                  .Concat(Ladder(HealingTotem,       HealerFourthBands, 15))
+                  .Concat(Ladder(ArmorBreak, HealerFourthEven,  15))
                   .Concat(At(BloodMark, (78, 1), (83, 2)))
                   .Concat(new[] { new ClassSkill(SpiritRestoration, 83) })
                   .ToArray());
@@ -498,10 +498,10 @@ public static partial class ClassSkillTables
         shared.AddRange(Ladder(MageAntiMagic,         all, 21));
         shared.AddRange(Ladder(BufferArmorMastery,    all, 15));
         shared.AddRange(Ladder(SpellMastery,          all, 19));
-        shared.AddRange(Ladder(WcHarmonyRestoration,  all, 15));
+        shared.AddRange(Ladder(HarmonyOfRestoration,  all, 15));
         // ---- …and every other level ----
-        shared.AddRange(Ladder(WcReinforcement,       even, 14));
-        shared.AddRange(Ladder(WcSharpening,          even, 14));
+        shared.AddRange(Ladder(Reinforcement,       even, 14));
+        shared.AddRange(Ladder(Sharpening,          even, 14));
         shared.AddRange(Ladder(WcSoulReinforce,       even, 2));
         shared.AddRange(Ladder(WcArcaneFeralProt,     even, 2));
 
@@ -512,8 +512,8 @@ public static partial class ClassSkillTables
         //   58/66/74. The LEVELS are unchanged; an off-by-three here sells a level-77 buffer his
         //   level-58 rung.
         shared.AddRange(At(NpcHarmonyWizard,     (77, 6), (78, 7), (79, 8)));
-        shared.AddRange(Ladder(WcHarmonySoul, new[] { 77, 78, 79, 80, 81, 82, 83 }, 1));
-        shared.Add(new ClassSkill(WcHarmonyMadness, 83));
+        shared.AddRange(Ladder(HarmonyOfTheSoul, new[] { 77, 78, 79, 80, 81, 82, 83 }, 1));
+        shared.Add(new ClassSkill(HarmonyOfMadness, 83));
         // Urgent Lesser Heal @83 - SHARED, all three races, exactly as the healer's Urgent Great Heal
         // is shared at the same level (owner, 2026-09-13: *"I would like buffers to get at same lvl as
         // healers get the urgent great heal ... Buffers to get urgent lesser heal"*).
@@ -522,25 +522,25 @@ public static partial class ClassSkillTables
         //    there is no ladder underneath this to retire. Do not give it a Replaces.
         shared.Add(new ClassSkill(UrgentLesserHeal, 83));
         // Harmony Mark: 79, then its second rung at 83 — the only two it has.
-        shared.AddRange(At(WcHarmonyMark, (79, 1), (83, 2)));
+        shared.AddRange(At(HarmonyMark, (79, 1), (83, 2)));
 
         // ---- HUMAN: the shield buffer. His own blunt line, and the robe+shield passive nobody else
         //      can satisfy — the elf holds a bow and the demon a two-handed maul. ----
         var human = new List<ClassSkill>(shared);
         human.Add(new ClassSkill(BufferShieldMastery, 76));
         human.AddRange(Ladder(DoctorBluntMastery, even, 9));
-        human.AddRange(Ladder(WcSoundSmash,       all,  14));
+        human.AddRange(Ladder(SoundSmash,       all,  14));
 
         // ---- ELF: the archer. ----
         var elf = new List<ClassSkill>(shared);
-        elf.AddRange(Ladder(WcHarmonistBowMast, even, 9));
-        elf.AddRange(Ladder(WcSoundBurst,       all,  14));
+        elf.AddRange(Ladder(HarmonistBowMastery, even, 9));
+        elf.AddRange(Ladder(SoundBurst,       all,  14));
 
         // ---- DEMON: the melee fighter, two damage skills as always. ----
         var demon = new List<ClassSkill>(shared);
-        demon.AddRange(Ladder(WcWarlockWeapon,  even, 9));
-        demon.AddRange(Ladder(WcSoundSmash,     all,  14));
-        demon.AddRange(Ladder(WcAcousticShock,  all,  14));
+        demon.AddRange(Ladder(WarlockWeaponMastery,  even, 9));
+        demon.AddRange(Ladder(SoundSmash,     all,  14));
+        demon.AddRange(Ladder(AcousticShock,  all,  14));
 
         ClassSkills.RegisterFourth(Race.Human, Discipline.Warchanter, human.ToArray());
         ClassSkills.RegisterFourth(Race.Elf,   Discipline.Warchanter, elf.ToArray());
@@ -571,11 +571,11 @@ public static partial class ClassSkillTables
 
         var shared = new List<ClassSkill>();
         shared.AddRange(Ladder(ArcherArmorMastery));
-        shared.AddRange(Ladder(BowWeaponMastery));
+        shared.AddRange(Ladder(BowMastery));
         shared.AddRange(Ladder(ArcherTwinArrows));
-        shared.AddRange(Ladder(ArcherExplosiveArrow));
+        shared.AddRange(Ladder(ExplosiveArrow));
         // The two ultimates his RACE column leaves blank.
-        shared.Add(new ClassSkill(ArcherHeavyArrow,   84));
+        shared.Add(new ClassSkill(HeavyArrow,   84));
         shared.Add(new ClassSkill(ArcherArrowBarrage, 85));
         // 🔴 `BL-213` — OVERPOWER's SECOND AND LAST RUNG for the bow branch: 7% at 76, where the
         //    warrior's third (10%) would be. The melee rogue's line, copied deliberately — see the 3rd
@@ -587,16 +587,16 @@ public static partial class ClassSkillTables
         shared.Add(new ClassSkill(Overpower, 76, SkillLevel: 2, SpCost: 6_500_000));
 
         var human = new List<ClassSkill>(shared);
-        human.AddRange(Ladder(ArcherPoisonTrap));
+        human.AddRange(Ladder(PoisonTrap));
         human.AddRange(Ladder(ArcherMagicArrowHuman));
         human.Add(new ClassSkill(BowDamageMastery,   76));
-        human.Add(new ClassSkill(ArcherDazzlingArrow, 85));
+        human.Add(new ClassSkill(DazzlingArrow, 85));
 
         var elf = new List<ClassSkill>(shared);
-        elf.AddRange(Ladder(ArcherBindingTrap));
+        elf.AddRange(Ladder(BindingTrap));
         elf.AddRange(Ladder(ArcherMagicArrowElf));
         elf.Add(new ClassSkill(BowSpiritMastery,   76));
-        elf.Add(new ClassSkill(ArcherHealingArrow, 85));
+        elf.Add(new ClassSkill(HealingArrow, 85));
         // 🔴 NO ANTIDOTE RUNG AT 76, and it took `--check` to say so. A tenth rung was added here by
         //    analogy with the healer's (whose Antidote does get one more at 76, reaching rank 10) —
         //    and `archer 4th.csv` authors no Antidote row at all. The Elf archer's cure stops at rank
@@ -605,10 +605,10 @@ public static partial class ClassSkillTables
 
 
         var demon = new List<ClassSkill>(shared);
-        demon.AddRange(Ladder(ArcherBleedTrap));
+        demon.AddRange(Ladder(BleedingTrap));
         demon.AddRange(Ladder(ArcherMagicArrowDemon));
         demon.Add(new ClassSkill(BowSwiftMastery,    76));
-        demon.Add(new ClassSkill(ArcherBleedingArrow, 85));
+        demon.Add(new ClassSkill(BleedingArrow, 85));
 
         ClassSkills.RegisterFourth(Race.Human, Discipline.Sharpshooter, human.ToArray());
         ClassSkills.RegisterFourth(Race.Elf,   Discipline.Trapper,      elf.ToArray());
@@ -675,13 +675,13 @@ public static partial class ClassSkillTables
         human.AddRange(Ladder(KillingStab, all, 16));
         human.AddRange(Ladder(HeavyStab,   all, 16));
         human.AddRange(Identity(DualAntiMagic));
-        human.Add(new ClassSkill(DualMagicArmor, 83));
+        human.Add(new ClassSkill(MagicalArmor, 83));
 
         var elf = new List<ClassSkill>(shared);
         elf.AddRange(Ladder(KillingStab, all, 16));
         elf.AddRange(Ladder(SwiftStab,   all, 16));
-        elf.AddRange(Identity(DualAntiPhysical));
-        elf.Add(new ClassSkill(DualDodge, 83));
+        elf.AddRange(Identity(AntiPhysical));
+        elf.Add(new ClassSkill(Dodge, 83));
 
         // ⚠ THE DEMON STILL GETS NO KILLING STAB — his `Human;Elf` cell on it at the 3rd tier is a
         //   race ruling, not a tier one, and Venom Stab + Venom Burst remain the whole of the
@@ -689,8 +689,8 @@ public static partial class ClassSkillTables
         var demon = new List<ClassSkill>(shared);
         demon.AddRange(Ladder(VenomStab,  all, 16));
         demon.AddRange(Ladder(VenomBurst, all, 16));
-        demon.AddRange(Identity(DualDuelExpertise));
-        demon.Add(new ClassSkill(DualDemonContract, 83));
+        demon.AddRange(Identity(DuelExpertise));
+        demon.Add(new ClassSkill(DemonContract, 83));
 
         ClassSkills.RegisterFourth(Race.Human, Discipline.Nullblade,   human.ToArray());
         ClassSkills.RegisterFourth(Race.Elf,   Discipline.Phantom,     elf.ToArray());
@@ -744,8 +744,8 @@ public static partial class ClassSkillTables
         // ---- THE THREE PASSIVES. Two are shared outright with the healer's kit (same def, same
         //      rungs); Mage Armor Mastery is the nuker's own because it alone carries mpWhenRestored.
         shared.AddRange(Ladder(MageAntiMagic,            21));
-        shared.AddRange(Ladder(HealerWeaponMasterySkill, 15));
-        shared.AddRange(Ladder(NukerArmorMastery,        19));
+        shared.AddRange(Ladder(SpellcasterWeaponMastery, 15));
+        shared.AddRange(Ladder(MageArmorMastery,        19));
 
         // ---- THE THREE SHARED ATTACK SPELLS, one rung a level.
         shared.AddRange(Ladder(ElementalBlast, 15));
@@ -757,8 +757,8 @@ public static partial class ClassSkillTables
         shared.AddRange(Ult(Thunderstorm,   4));
 
         // ---- NEW AT THE 4th TIER, and shared by all three races.
-        shared.Add(new ClassSkill(NukerShieldMastery, 76));
-        shared.AddRange(At(NukerForceEmpowerment, (78, 1), (80, 2), (82, 3)));
+        shared.Add(new ClassSkill(MageShieldMastery, 76));
+        shared.AddRange(At(ForceEmpowerment, (78, 1), (80, 2), (82, 3)));
         shared.Add(new ClassSkill(ManaBarrier, 85));
 
         // ═══ THE RACE SPLIT ══════════════════════════════════════════════════════════════════════
@@ -832,8 +832,8 @@ public static partial class ClassSkillTables
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
             ClassSkills.RegisterFourth(race, Discipline.Warlord,
                 new ClassSkill(WarriorChargeNormal, 80),
-                new ClassSkill(WarriorChargeInstant, 80),
-                new ClassSkill(WarriorChargeStun, 80),
+                new ClassSkill(FlashStep, 80),
+                new ClassSkill(ChargeNShock, 80),
                 new ClassSkill(WarriorChargeAoe, 80));
 
         // ═══ THE WARLORD'S 4th CLASS — every remaining row of `war_aoe 4th.csv` (2026-09-17) ═════
@@ -850,14 +850,14 @@ public static partial class ClassSkillTables
         var warlord = new List<ClassSkill>();
         warlord.AddRange(Ladder(WarriorArmorMastery, all, 21));
         warlord.AddRange(Ladder(WarriorBluntMastery, all, 16));
-        warlord.AddRange(Ladder(WaraoeShockShout, all, 16));
-        warlord.AddRange(Ladder(WaraoeShockJavelin, all, 1));      // new at 76
+        warlord.AddRange(Ladder(ShockingShout, all, 16));
+        warlord.AddRange(Ladder(ShockingJavelin, all, 1));      // new at 76
         warlord.AddRange(Ladder(WaraoeWhirlwind, all, 16));
-        warlord.Add(new ClassSkill(WaraoeMasterCombat, 76));       // new at 76
-        warlord.Add(new ClassSkill(WaraoeTauntingShout, 80, SkillLevel: 3));
-        warlord.Add(new ClassSkill(WaraoeTauntingShout, 90, SkillLevel: 4));
-        warlord.Add(new ClassSkill(WarriorFinalStand, 80, SkillLevel: 4));
-        warlord.Add(new ClassSkill(WarriorFinalStand, 90, SkillLevel: 5));
+        warlord.Add(new ClassSkill(MasterOfCombat, 76));       // new at 76
+        warlord.Add(new ClassSkill(TauntingShout, 80, SkillLevel: 3));
+        warlord.Add(new ClassSkill(TauntingShout, 90, SkillLevel: 4));
+        warlord.Add(new ClassSkill(FinalStand, 80, SkillLevel: 4));
+        warlord.Add(new ClassSkill(FinalStand, 90, SkillLevel: 5));
         // HP Boost rungs 11-18, his eight even levels. ⚠ Its prices are the LADDER's (the SkillDef now
         //   carries gold on those rungs), so no SpCost override here — unlike the 3rd-tier rows, where
         //   the two disciplines genuinely disagree on rungs 1-2.
@@ -867,13 +867,13 @@ public static partial class ClassSkillTables
 
         // ---- The Warlord's three race halves: one Support rung and one Shout ladder each. ----
         ClassSkills.RegisterFourth(Race.Human, Discipline.Warlord,
-            Ladder(WaraoeHumanShout, even, 16)
+            Ladder(ShatteringShout, even, 16)
                 .Append(new ClassSkill(WaraoeSupport, 80, SkillLevel: 4)).ToArray());
         ClassSkills.RegisterFourth(Race.Demon, Discipline.Warlord,
-            Ladder(WaraoeDemonShout, even, 16)
+            Ladder(BreakingShout, even, 16)
                 .Append(new ClassSkill(WaraoeBloodSupport, 80, SkillLevel: 4)).ToArray());
         ClassSkills.RegisterFourth(Race.Elf, Discipline.Warlord,
-            Ladder(WaraoeElfShout, even, 16)
+            Ladder(CripplingShout, even, 16)
                 .Append(new ClassSkill(WaraoeLifeSupport, 80, SkillLevel: 4)).ToArray());
 
         // ---- What every Ravager learns: the armour (rungs 21-35) and the sword (16-30). ----
@@ -883,29 +883,29 @@ public static partial class ClassSkillTables
 
         // ---- HUMAN — the Focus kit continues, and gains the two tools that FILL the pool. ----
         var human = new List<ClassSkill>(shared);
-        human.AddRange(Ladder(WarriorChampionPresence, SkillCatalog.W4PresenceLevels, 3));
+        human.AddRange(Ladder(ChampionPresence, SkillCatalog.W4PresenceLevels, 3));
         human.AddRange(Ladder(WarriorHumanSlash, all, 16));
-        human.AddRange(Ladder(WarriorFocusedBlast, even, 9));
-        human.AddRange(Ladder(WarriorFocusedDoubleSlash, all, 14));
-        human.AddRange(Ladder(WarriorFocusedTripleSlash, all, 11));
-        human.Add(new ClassSkill(WarriorFocusForce, 78));
-        human.Add(new ClassSkill(WarriorFocusLimit, 78));
+        human.AddRange(Ladder(FocusedBlast, even, 9));
+        human.AddRange(Ladder(FocusedDoubleSlash, all, 14));
+        human.AddRange(Ladder(FocusedTrippleSlash, all, 11));
+        human.Add(new ClassSkill(FocusForce, 78));
+        human.Add(new ClassSkill(FocusLimit, 78));
 
         // ---- DEMON — the two strikes continue, and Parry is the new stance. ----
         var demon = new List<ClassSkill>(shared);
-        demon.AddRange(Ladder(WarriorBerserkerPresence, SkillCatalog.W4PresenceLevels, 3));
+        demon.AddRange(Ladder(BerserkerPresence, SkillCatalog.W4PresenceLevels, 3));
         demon.AddRange(Ladder(WarriorDemonSlash, all, 16));
-        demon.AddRange(Ladder(WarriorSwordShock, all, 16));
-        demon.AddRange(Ladder(WarriorDemonicSmash, all, 16));
-        demon.Add(new ClassSkill(WarriorParry, 78));
+        demon.AddRange(Ladder(SwordShock, all, 16));
+        demon.AddRange(Ladder(DemonicSmash, all, 16));
+        demon.Add(new ClassSkill(Parry, 78));
 
         // ---- ELF — the dance and the blast continue, and Saints Blessing is the new stance. ----
         var elf = new List<ClassSkill>(shared);
-        elf.AddRange(Ladder(WarriorSaintsPresence, SkillCatalog.W4PresenceLevels, 3));
+        elf.AddRange(Ladder(SaintsPresence, SkillCatalog.W4PresenceLevels, 3));
         elf.AddRange(Ladder(WarriorElfSlash, all, 16));
         elf.AddRange(Ladder(WarriorSwordDance, all, 16));
-        elf.AddRange(Ladder(WarriorSwordBlast, even, 9));
-        elf.Add(new ClassSkill(WarriorSaintsBlessing, 78));
+        elf.AddRange(Ladder(SwordBlast, even, 9));
+        elf.Add(new ClassSkill(SaintsBlessing, 78));
 
         ClassSkills.RegisterFourth(Race.Human, Discipline.Ravager, human.ToArray());
         ClassSkills.RegisterFourth(Race.Demon, Discipline.Ravager, demon.ToArray());

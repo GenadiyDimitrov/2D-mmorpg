@@ -270,12 +270,12 @@ namespace Game.Client
         {
             switch (summonSkillId)
             {
-                case "tank_whisp_taunt":        return new Color(0.95f, 0.45f, 0.25f);   // angry orange
-                case "tank_whisp_charm":        return new Color(0.90f, 0.45f, 0.85f);   // lure violet
-                case "tank_whisp_bind":         return new Color(0.45f, 0.75f, 0.95f);   // holding ice
-                case "tank_whisp_heal":         return new Color(0.35f, 0.90f, 0.45f);   // the heal green
-                case "tank_whisp_armor_break":  return new Color(0.85f, 0.80f, 0.40f);   // dulled gold
-                case "tank_whisp_weapon_break": return new Color(0.75f, 0.35f, 0.35f);   // blunted red
+                case "taunting_whisp":        return new Color(0.95f, 0.45f, 0.25f);   // angry orange
+                case "charming_whisp":        return new Color(0.90f, 0.45f, 0.85f);   // lure violet
+                case "binding_whisp":         return new Color(0.45f, 0.75f, 0.95f);   // holding ice
+                case "healing_whisp":         return new Color(0.35f, 0.90f, 0.45f);   // the heal green
+                case "armor_breaking_whisp":  return new Color(0.85f, 0.80f, 0.40f);   // dulled gold
+                case "weapon_breaking_whisp": return new Color(0.75f, 0.35f, 0.35f);   // blunted red
                 default:                        return new Color(0.85f, 0.85f, 0.95f);   // an unknown spirit
             }
         }

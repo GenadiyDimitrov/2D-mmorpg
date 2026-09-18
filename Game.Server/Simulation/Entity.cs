@@ -2089,7 +2089,7 @@ public class Entity
         }
     }
 
-    /// <summary>FINAL DEFENSE (the tank's `tank_final_defense`) — the fraction to add to P.Def or
+    /// <summary>FINAL DEFENSE (the tank's `final_defense`) — the fraction to add to P.Def or
     /// M.Def at the current HP band. Returns the fraction to add.
     ///
     /// <para>🔑 THREE RUNGS SINCE 2026-09-11, and the numbers therefore live in an ARRAY rather than
@@ -2110,7 +2110,7 @@ public class Entity
         return row[Math.Clamp(lvl, 1, row.Length) - 1][band - 1];
     }
 
-    /// <summary>FINAL STAND (the warrior's `warrior_final_stand`) — the P.Atk twin of the above, and
+    /// <summary>FINAL STAND (the warrior's `final_stand`) — the P.Atk twin of the above, and
     /// deliberately the same shape: his `warrior 3rd.csv` / `war_aoe 3rd.csv` rows are Final Defense's
     /// sentence with "P.Def" swapped for "P.Atk" and no magic column at all.</summary>
     public float FinalStandBonus
@@ -3830,8 +3830,8 @@ public class Entity
             // FINAL DEFENSE / FINAL STAND — a LEVEL, not a passive: what they grant depends on
             // CURRENT HP, which no recompute can see (see Entity.FinalDefenceBonus). All this pass
             // decides is which rung the character has bought.
-            FinalDefenseLevel = SkillLevelOf(SkillCatalog.TankFinalDefense);
-            FinalStandLevel   = SkillLevelOf(SkillCatalog.WarriorFinalStand);
+            FinalDefenseLevel = SkillLevelOf(SkillCatalog.FinalDefense);
+            FinalStandLevel   = SkillLevelOf(SkillCatalog.FinalStand);
 
             // THE ONE REMAINING WEAPON PENALTY (Spellcaster Mastery): an UNTRAINED weapon — bow, dagger
             // or bare hands — halves cast speed and magic, and multiplies the fizzle roll. Sword and

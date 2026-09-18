@@ -34,16 +34,16 @@ namespace Game.Shared;
 /// </summary>
 public static partial class SkillCatalog
 {
-    public const string WaraoeBattleRevival = "waraoe_battle_revival";
+    public const string BattleRevival = "battle_revival";
     public const string WaraoeLifeSupport   = "waraoe_life_support";    // Elf
     public const string WaraoeBloodSupport  = "waraoe_blood_support";   // Demon
     public const string WaraoeSupport       = "waraoe_support";         // Human ("Vanguard support")
-    public const string WaraoeShockShout    = "waraoe_shock_shout";
+    public const string ShockingShout    = "shocking_shout";
     public const string WaraoeWhirlwind     = "waraoe_wirlwind";        // his spelling — ids are append-only
-    public const string WaraoeTauntingShout = "waraoe_taunting_shout";
-    public const string WaraoeHumanShout    = "waraoe_human_shout";
-    public const string WaraoeDemonShout    = "waraoe_demon_shout";
-    public const string WaraoeElfShout      = "waraoe_elf_shout";
+    public const string TauntingShout = "taunting_shout";
+    public const string ShatteringShout    = "shattering_shout";
+    public const string BreakingShout    = "breaking_shout";
+    public const string CripplingShout      = "crippling_shout";
     /// <summary>ONE STROKE of Whirlwind — the sub-skill the wrapper fires twenty times. Never learned,
     /// never on a bar, no MP of its own. Same shape as the Elf's Sword Dance stroke; see
     /// <see cref="SkillDef.ChannelSkill"/>.</summary>
@@ -119,7 +119,7 @@ public static partial class SkillCatalog
         // ⚠ It does NOT `Replaces` Battle Regeneration. His file authors both, and the Warlord's
         //   Battle Regeneration runs to rung 6 (35%) at level 70 — the same level this arrives. Two
         //   heals on two reuses is what he wrote.
-        list.Add(new SkillDef(WaraoeBattleRevival, "Battle Revival", BaseClass.Fighter, SkillEffect.Heal,
+        list.Add(new SkillDef(BattleRevival, "Battle Revival", BaseClass.Fighter, SkillEffect.Heal,
             MpCost: 0, CastTicks: 0, CooldownTicks: 3000, Range: 0, Power: 0,
             Category: SkillCategory.Heal, PhysicalCast: true, TargetMode: TargetMode.SelfOnly,
             SpCost: 390_000, FixedCast: true,
@@ -156,7 +156,7 @@ public static partial class SkillCatalog
         //  Can double"*. Range 0 + AreaRadius 200 and NO `AreaAtTarget` = centred on the caster.
         // ⚠ ITS STUN IS CONTESTED (`DebuffSchool.Physical`, ATK vs CON) and its landing modifier is
         //   OWED BY HIM — see `BL-259`. `debuff_landmods.csv` carries the row with the code default.
-        list.Add(WarlordShout(WaraoeShockShout, "Shocking Shout", SkillEffect.Stun,
+        list.Add(WarlordShout(ShockingShout, "Shocking Shout", SkillEffect.Stun,
             WaraoeShockShoutPower, castTicks: 10, cooldownTicks: 50, durationTicks: 50,
             "A bellow that flattens everything around you.",
             _ => "and stuns everything around you for 5s", landMod: 1f,
@@ -204,9 +204,9 @@ public static partial class SkillCatalog
         //    ring harder, which is what makes this the blunt discipline's group tool rather than a
         //    personal one.
         // ⚠ Its landing modifier is OWED BY HIM (`BL-259`) — it is `Physical/Debuf` in his TYPE cell.
-        list.Add(new SkillDef(WaraoeTauntingShout, "Taunting Shout", BaseClass.Fighter, SkillEffect.None,
+        list.Add(new SkillDef(TauntingShout, "Taunting Shout", BaseClass.Fighter, SkillEffect.None,
             MpCost: 50, CastTicks: 10, CooldownTicks: 200, Range: 0, Power: 0,
-            DurationTicks: 300, BuffKey: WaraoeTauntingShout, Rank: 1,
+            DurationTicks: 300, BuffKey: TauntingShout, Rank: 1,
             Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Physical,
             AreaRadius: 600f, TauntPower: 3000,
             VulnerableToWeapon: WeaponType.AnyBlunt, WeaponVulnerabilityPct: .10f,
@@ -230,11 +230,11 @@ public static partial class SkillCatalog
             }.Concat(WarlordTauntingShoutRungs()).ToArray()));
 
         // ═══ THE THREE RACE SHOUTS — the Slashes' rots, on a ring, with no strike ════════════════
-        list.Add(RaceShout(WaraoeHumanShout, "Shattering Shout", SkillEffect.DebuffDef,
+        list.Add(RaceShout(ShatteringShout, "Shattering Shout", SkillEffect.DebuffDef,
             WaraoeHumanShoutDef, W4WaraoeHumanShoutDef, v => new EffectMagnitude[] { new(SkillEffect.DebuffDef, v) },
             "A shout that opens armour: every guard in the ring fails for 15s.",
             v => $"Cuts the P.Def of everything within 200 by {v * 100f:0}% for 15s."));
-        list.Add(RaceShout(WaraoeDemonShout, "Breaking Shout",
+        list.Add(RaceShout(BreakingShout, "Breaking Shout",
             // ⚠ ONE FLAG FOR BOTH HALVES. `DebuffAtk` cuts P.Atk AND M.Atk — the Demon's Slash has
             //   always been authored this way and its own rung text says so. There is no
             //   `DebuffMagicAtk`, and the enum has no bit left to add one.
@@ -242,7 +242,7 @@ public static partial class SkillCatalog
             v => new EffectMagnitude[] { new(SkillEffect.DebuffAtk, v) },
             "A shout that breaks the swing: everything in the ring hits softer for 15s.",
             v => $"Cuts the P.Atk and M.Atk of everything within 200 by {v * 100f:0}% for 15s."));
-        list.Add(RaceShout(WaraoeElfShout, "Crippling Shout",
+        list.Add(RaceShout(CripplingShout, "Crippling Shout",
             SkillEffect.Slow | SkillEffect.DebuffAtkSpeed | SkillEffect.DebuffCastSpeed,
             WaraoeElfShoutSpeed, W4WaraoeElfShoutSpeed,
             v => new EffectMagnitude[]

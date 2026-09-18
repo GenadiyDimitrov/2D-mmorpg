@@ -754,8 +754,8 @@ namespace Game.Client
             // *"Can remove the 4 harmonies as they will be inside their colection and fullbuff gives
             // harmony mark anyways"*). They are one tap further away and lost nothing: the full buff
             // already lands a Mark, and swapping to another is what the Marks drawer is for.
-            BuffButton("Great Might (War Might)",     "wc_war_might");
-            BuffButton("Great Bulwark (War Bulwark)", "wc_war_bulwark");
+            BuffButton("Great Might (War Might)",     "war_might");
+            BuffButton("Great Bulwark (War Bulwark)", "war_bulwark");
 
             // `BL-180` — every OTHER buff in the game, four drawers deep. See BuildDebugBuffs.
             DebugAction("Buffs >", () => { _debugBuffsView = true; _debugBuffDrawer = null; RefreshDebugPanel(); });

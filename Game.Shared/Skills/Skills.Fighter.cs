@@ -81,8 +81,8 @@ public static partial class SkillCatalog
     public const string TankShieldMastery = "tank_shield_mastery"; // passive: +shield def/rate + bow resist
     public const string TankAntiMagic = "tank_anti_magic";         // passive: +magic def
     public const string DefensiveWall = "defensive_wall";          // huge def buff (self, -move)
-    public const string TankShieldStun = "tank_shield_stun";       // stun 9s
-    public const string TankStay = "tank_stay";                    // root/hold 15s
+    public const string ShieldShock = "shield_shock";       // stun 9s
+    public const string Stay = "stay";                    // root/hold 15s
 
     // --- Rogue 2nd-class (CSV rogue 2nd) ---
     public const string Sprint = "sprint";                         // burst move-speed buff
@@ -582,7 +582,7 @@ public static partial class SkillCatalog
         // 10-second reuse. It is now a nineteen-rung ladder from 24, the reuse is THREE seconds, and
         // it lands at ×0.7 — a 9-second stun every 3 seconds would be a perma-lock at ×1, and the
         // landing multiplier is what pays for the cadence.
-        new(TankShieldStun, "Shield Shock", BaseClass.Fighter, SkillEffect.Stun,
+        new(ShieldShock, "Shield Shock", BaseClass.Fighter, SkillEffect.Stun,
             MpCost: 15, CastTicks: 10, CooldownTicks: 30, Range: 40, Power: 0,
             DurationTicks: 90, BuffKey: "stun", Rank: 1, DebuffLandMod: 0.7f, SharesLadderKey: true,
             Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Physical, SpCost: 6400,
@@ -606,7 +606,7 @@ public static partial class SkillCatalog
         // ⚠ IT MOVED TIER in his tank pass: it was the 2nd class's single level-36 skill and is now
         // the 3rd's whole fifteen-rung ladder from 40. Ten seconds, not the old fifteen, and the
         // exclamation mark is gone from his name for it.
-        new(TankStay, "Stay", BaseClass.Fighter, SkillEffect.Root,
+        new(Stay, "Stay", BaseClass.Fighter, SkillEffect.Root,
             MpCost: 40, CastTicks: 20, CooldownTicks: 40, Range: 400, Power: 0,
             DurationTicks: 100, BuffKey: "root", Rank: 1, SharesLadderKey: true,
             Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Physical, SpCost: 28000,

@@ -69,9 +69,9 @@ not apply the way it does to the table above.
 | **Arcane Resistance** | `arcane_resistance` | 1 | For 20 minutes each of the target's buffs has a 30% chance to survive an enemy's dispel | Arcane Resistance | no |
 | **Battle Fury** | `battle_fury` | 1 | +20% Attack and +15% Move Speed for 30s | Battle Fury | no |
 | **Battle Presence** | `battle_stance` | 2 | A desperate defence: DOUBLES your P.Def for 90s. Usable only at ≤60% HP. Cannot be combined with Battle Presence | Battle Defence, Battle Presence | no |
-| **Blessing of Light** | `lb_blessing` | 1 | Party: +15% max HP and +15% defence | Blessing of Light | no |
+| **Blessing of Light** | `blessing_of_light` | 1 | Party: +15% max HP and +15% defence | Blessing of Light | no |
 | **Bow Expertise** | `bow_expertise` | 2 | Steadies your aim: +12% attack speed while wielding a bow, for 20 minutes | Bow Expertise | no |
-| **Combat Stance** | `healer_combat_stance` | 1 | Toggle. Channel your magic into melee: +50% P.Atk but -50% M.Atk (weaker heals and spells). Click again to end | Combat Stance | no |
+| **Combat Stance** | `combat_stance` | 1 | Toggle. Channel your magic into melee: +50% P.Atk but -50% M.Atk (weaker heals and spells). Click again to end | Combat Stance | no |
 | **Combo Rush** | `wc_combo` | 6 | A surge of momentum: +20% attack speed and +15% cast speed for 30s | Combo Rush | no |
 | **Conceal** | `conceal` | 1 | For 30s, monsters that haven't already noticed you leave you alone. Anything already chasing you keeps chasing | Conceal | no |
 | **Defensive Wall** | `defensive_wall` | 1 | Raise an impregnable guard for 30s: +1800 P.Def, +1600 M.Def and high cancel resistance, but your movement is halved | Defensive Wall | no |
@@ -98,10 +98,10 @@ not apply the way it does to the table above.
 | **Holy Soul** | `holy_soul` | 1 | Stance. Every skill costs 30% less MP, but you cast 10% slower and burn 50 HP a second | Holy Soul | no |
 | **Indomitable** | `indomitable` | 1 | For 30s your buffs have an 80% chance to resist being cancelled/dispelled | Indomitable | no |
 | **Last Stand** | `last_stand` | 1 | For 10s, the next blow that would kill you instead leaves you at 50% HP | Last Stand | no |
-| **Mana Barrier** | `nuker_mana_barrier` | 1 | Diverts 70% of incoming damage to MP (0.5 MP per damage) for 30s, while MP lasts | Mana Barrier | no |
+| **Mana Barrier** | `mana_barrier` | 1 | Diverts 70% of incoming damage to MP (0.5 MP per damage) for 30s, while MP lasts | Mana Barrier | no |
 | **Mana Blessing** | `mana_blessing` | 2 | −20% physical and −10% magic skill MP cost | Soul Reinforcement (group), Mana Blessing | no |
 | **Meditation** | `meditation` | 1 | Sit inside your own magic for 30s: MP floods back and your Physical Defence all but disappears. The first hit you take ends it | Meditation | no |
-| **Reinforcement** | `wc_reinforcement` | 1 | Toggle. Brace yourself: greater physical defence for as long as you can pay for it | Reinforcement | no |
+| **Reinforcement** | `reinforcement` | 1 | Toggle. Brace yourself: greater physical defence for as long as you can pay for it | Reinforcement | no |
 | **Rune of Drop** | `rune_drop` | 1 | Held rune: +5% DROP CHANCE on every monster drop while it is in your bag | Rune of Drop | no |
 | **Rune of Exp/SP** | `rune_expsp` | 1 | Held rune: +5% experience AND +5% SP from monsters while it is in your bag | Rune of Exp/SP | no |
 | **Rune of Experience** | `rune_exp` | 1 | Held rune: +5% EXPERIENCE from monsters while it is in your bag | Rune of Experience | no |
@@ -109,7 +109,7 @@ not apply the way it does to the table above.
 | **Rune of Sinister** | `rune_sinister` | 1 | Held rune: you gain NO experience and NO SP from monsters while it is in your bag. Gold and drops are untouched — grind for items without levelling | Rune of Sinister | no |
 | **Rune of Sinners** | `rune_sinners` | 1 | A timed rune given by the Gods to punish those who sinned: experience, SP, gold and drops are ALL zero while it is in your bag. Bound to your soul for the time it has left — no keeper will accept it, and it cannot be sold, traded or destroyed. It leaves when it expires | Rune of Sinners | no |
 | **Rune of Skillpoints** | `rune_sp` | 1 | Held rune: +5% SP from monsters while it is in your bag | Rune of Skillpoints | no |
-| **Sharpening** | `wc_sharpening` | 1 | Toggle. Hone your weapon: greater physical attack for as long as you can pay for it | Sharpening | no |
+| **Sharpening** | `sharpening` | 1 | Toggle. Hone your weapon: greater physical attack for as long as you can pay for it | Sharpening | no |
 | **Shield Mastery** | `shield_mastery` | 1 | Tank passive: greatly improves your shield's block chance and defence (only while a shield is equipped) | Shield Mastery | no |
 | **Shield Reinforcement** | `shield_reinforcement` | 1 | Stance. Brace behind your shield: +300 P.Def and half again your block chance, for 15 MP a second | Shield Reinforcement | no |
 | **Shrouding Hymn** | `shrouding_hymn` | 1 | For 1 minute, monsters that haven't already noticed you and your nearby allies leave you alone. Anything already chasing keeps chasing | Shrouding Hymn | no |

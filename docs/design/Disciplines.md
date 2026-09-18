@@ -308,9 +308,9 @@ actually built (Phase 24.1) plus your worked example of 2026-06-22 — **confirm
 **Race**
 | | Main 1 | Main 2 | Trade-off |
 |---|---|---|---|
-| **Human** | strong, **fast single-target** heal *(built: `lb_human_mend`)* | **cleanse** debuffs from an ally *(`lb_human_purify`)* | weaker AoE |
-| **Elf** | **AoE** heal, removes bleeds *(`lb_elf_dawn`)* | **holds** the target (root) + **drops own aggro** *(`lb_elf_warden`)* | weaker single-target |
-| **Demon** | **totem** AoE heal — placed, allies stand in it *(built as a plain AoE heal, `lb_ork_font`; the totem waits on the summon system)* | **anti-heal** debuff on an enemy *(`lb_ork_sap`)* | positioning-dependent |
+| **Human** | strong, **fast single-target** heal *(built: `quick_great_heal`)* | **cleanse** debuffs from an ally *(`purify`)* | weaker AoE |
+| **Elf** | **AoE** heal, removes bleeds *(`healer_blessing`)* | **holds** the target (root) + **drops own aggro** *(`warding_step`)* | weaker single-target |
+| **Demon** | **totem** AoE heal — placed, allies stand in it *(built as a plain AoE heal, `healing_totem`; the totem waits on the summon system)* | **anti-heal** debuff on an enemy *(`soul_sap`)* | positioning-dependent |
 
 Plus **Rite of Preservation @83** — auto-resurrect cast on an ally, `BL-35`. Already in code.
 

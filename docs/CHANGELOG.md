@@ -7,11 +7,100 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.173.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.174.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-17 (latest) — 0.173.0: the Spirit Helper's shelf is a FILE now — `BL-163`
+## 2026-09-18 (latest) — 0.174.0: every skill id reads as its skill — `BL-84`
+
+Your ask of 2026-08-17, and the reminder you asked me to file has now been acted on:
+
+*"After the healer is done I want to change all the game skills id's to match the skill names ... not
+`lb_elf_dawn` <> Healer's Blessing, it should be `healers_blessing` or something that matches it. Make
+a note to remind me after the healer is done (I want all the skills, not only the healers — all 1st,
+2nd + healer 3rd)."*
+
+**136 ids renamed. Zero collisions. 765 skills before, 765 after.**
+
+| was | is | name |
+|---|---|---|
+| `lb_elf_dawn` | `healer_blessing` | Healer Blessing |
+| `lb_human_mend` | `quick_great_heal` | Quick Great Heal |
+| `lb_ork_font` | `healing_totem` | Healing Totem |
+| `wc_human_bolt` | `arcane_lance` | Arcane Lance |
+| `wc_elf_pass` | `harmony` | Harmony |
+| `tank_defence_sigil` | `aegis_sigil` | Aegis Sigil |
+
+### 🔑 It is NOT 605 ids, and working out which is the whole job
+
+My first pass asked "does slugging the name reproduce the id" and flagged **605 of 765**. That test was
+wrong, not the codebase. `buff_crit_rate_4` is not the bug you described — it is more informative than
+its name, and **six different defs are called "Focus"**, so the name is not even a unique id. Slugging
+names collided on **71** groups.
+
+So the scope is the ids named after **the discipline or class that happened to own the slot**, which is
+exactly the shape of all three of your examples — and which the 44+ kit you authored later already
+avoids (`urgent_heal`, `ultimate_heal`, `resurrection_field`, no prefix at all). It splits three ways:
+
+| | |
+|---|---|
+| **82 WORD** | the id's own word does not describe the skill (`wc_human_bolt` = Arcane Lance). **Your complaint**, and the half that was worth doing. |
+| **54 PREFIX** | the id already read correctly once the discipline marker came off (`wc_acoustic_shock` → `acoustic_shock`). |
+| **131 KEPT** | the prefix IS the identity. `archer_armor_mastery`, `rogue_armor_mastery` and `warrior_armor_mastery` are three different passives all called "Armor Mastery"; strip the prefix and they become one id. |
+| **605 out of scope** | the systematic families — `buff_*` rungs, `pot_*`/`scr_*`, `npc_*`, `cast_*`, `rune_*`, `sigil_*`, `swap_*`. Untouched on purpose. |
+
+### It was generated, not typed
+
+`dotnet run --project tools/BalanceMatrix -- --skillids` is a new page and it is the whole method: it
+prints the three groups, the collision check, and a machine-readable mapping that **drives** the sweep.
+The constant name comes from **reflection** over `SkillCatalog`'s literals, so `LbElfDawn` became
+`HealerBlessing` in the same pass — an id renamed while its constant still reads `LbElfDawn` is half a
+job, since the code is what you read. Before the sweep it reported 82 + 54; after, **0 + 0**.
+
+### Five typos and a retired race word fell out of it
+
+Not looked for — the audit pairs each id against its name, and a typo is a mismatch:
+
+* `archer_bow_stence` → `bow_stance`
+* `warrior_strenght` → `warriors_strength`
+* `nuker_Force_empowerment` → `force_empowerment` (a capital letter, in an id)
+* `wc_bloodhanter_blunt_mastery` → `warlock_weapon_mastery` (a misspelling of a class name that no longer exists)
+* `archer_explosive_arrows` → `explosive_arrow` (the name is singular)
+
+🔑 **And every `_ork_` id is gone** — `lb_ork_font`, `wc_ork_chant`, `waraoe_ork_shout` and the rest.
+The race became the Demon in `BL-101` and the word had survived in the ids ever since.
+
+### What was checked, and how
+
+| | |
+|---|---|
+| **the compiler** | 136 constants renamed with all their references; `Game.sln`, the Unity client, and all three tools build |
+| **`--skillids`** | WORD 0, PREFIX 0, and still 765 skills — no id was lost or merged into another |
+| **the CSVs** | 20 of them carry `SKILL_ID` columns and moved with the code. `git diff --numstat` shows identical add/remove counts on every one, so nothing was reformatted (the Excel corruption trap) |
+| **`SkillCsvSeed --check`** | the same **144** discrepancies as before, byte for byte as a set — the rename introduced none. ⚠ Those 144 are a real pre-existing drift; see below |
+| **`debuff_landmods.csv`** | 86 rows still verify, which is the proof the rename reached that file's `SKILL_ID` column too |
+| **the smoke test** | 279 pass / 3 fail — exactly the baseline (the `Open-Checklist` §101 crafting three) |
+| **the server** | boots green on a fresh `game.db` |
+
+⚠ **A `game.db` DELETE IS REQUIRED, and you already ruled that it is fine**: *"I'll reset the db
+anyways so it's not of a concern."* Skill ids are persisted (learned skills + the skill bar), so every
+character's bar and skill list must be recreated. One of the ids you hold today will not exist tomorrow.
+
+### Two findings recorded rather than absorbed
+
+🔴 **The 144 `--check` discrepancies are the CSVs trailing YOUR OWN ruling.** All 144 are the same 17
+Sigil rows repeated across the nine 4th-tier files, saying `SP 20,000,000` where the code says 0 — and
+0 is correct: you ruled it in 0.169.0 (*"yes sigils become end game and hard"*), the price moved onto
+the road (three subclasses each levelled to 75) and charging for the commit would charge twice. So the
+FILE owes the code, which is the clause `BL-163`'s own commit missed. Fixed in the next version.
+
+🔴 **The smoke test's fear check was FLAKY and is now polled.** It slept a fixed 1.5s and measured
+once; on one run it read 13 units and failed, on the next 100+ and passed, on identical code. It now
+polls for the distance with a 3-second ceiling — which `CLAUDE.md` already required ("SmokeTest must
+poll, never sleep"). A flaky check in the tool that verifies everything else is the worst kind: the
+next person either hunts a regression that is not there, or dismisses one that is.
+
+## 2026-09-17 — 0.173.0: the Spirit Helper's shelf is a FILE now — `BL-163`
 
 Your ruling of 2026-09-04, the day after `BL-158` shipped:
 

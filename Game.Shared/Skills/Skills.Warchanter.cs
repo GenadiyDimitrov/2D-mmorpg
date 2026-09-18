@@ -6,18 +6,18 @@ namespace Game.Shared;
 /// (Who learns these, and when, is in RaceAndClasses/ClassSkillTables.Third.cs.)</summary>
 public static partial class SkillCatalog
 {
-    public const string WcHumanBolt = "wc_human_bolt";
-    public const string WcHumanChant = "wc_human_chant";
-    public const string WcHumanRenew = "wc_human_renew";
-    public const string WcHumanPass = "wc_human_pass";
-    public const string WcElfBolt = "wc_elf_bolt";
-    public const string WcElfChant = "wc_elf_chant";
-    public const string WcElfRenew = "wc_elf_renew";
-    public const string WcElfPass = "wc_elf_pass";
-    public const string WcOrkBolt = "wc_ork_bolt";
-    public const string WcOrkChant = "wc_ork_chant";
-    public const string WcOrkRenew = "wc_ork_renew";
-    public const string WcOrkPass = "wc_ork_pass";
+    public const string ArcaneLance = "arcane_lance";
+    public const string GrandAnthem = "grand_anthem";
+    public const string RenewingVerse = "renewing_verse";
+    public const string Resonance = "resonance";
+    public const string StarlightLance = "starlight_lance";
+    public const string SylvanAnthem = "sylvan_anthem";
+    public const string DawnVerse = "dawn_verse";
+    public const string Harmony = "harmony";
+    public const string SpiritLance = "spirit_lance";
+    public const string WarAnthem = "war_anthem";
+    public const string SpiritVerse = "spirit_verse";
+    public const string TotemicBond = "totemic_bond";
 
     // ---- Warchanter kit factories (same numbers per race; names differ) ----
     private static SkillDef WcChant(string id, string name) => new(
@@ -53,26 +53,26 @@ public static partial class SkillCatalog
         id, name, BaseClass.Mage, SkillEffect.MagicDamage,
         // A proper single-target nuke: ~4s base cast (WIT/gear/buffs shorten it), real power.
         MpCost: 50, CastTicks: 40, CooldownTicks: 20, Range: 750, Power: 120,
-        Replaces: new[] { MagicBolt, HolyStrike },   // 3rd-class nuke replaces the lower ones
+        Replaces: new[] { MagicBolt, HolyBolt },   // 3rd-class nuke replaces the lower ones
         Category: SkillCategory.Magic, SpCost: 500,
         Description: "A heavy single-target nuke (replaces Magic Bolt / Holy Strike).");
 
     private static SkillDef[] WarchanterSkills() => new SkillDef[]
     {
         // Mega party buff (same magnitudes all races; names differ per race).
-        WcChant(WcHumanChant, "Grand Anthem"),
-        WcChant(WcElfChant, "Sylvan Anthem"),
-        WcChant(WcOrkChant, "War Anthem"),
+        WcChant(GrandAnthem, "Grand Anthem"),
+        WcChant(SylvanAnthem, "Sylvan Anthem"),
+        WcChant(WarAnthem, "War Anthem"),
         // Party heal + heal-over-time.
-        WcRenew(WcHumanRenew, "Renewing Verse"),
-        WcRenew(WcElfRenew, "Dawn Verse"),
-        WcRenew(WcOrkRenew, "Spirit Verse"),
+        WcRenew(RenewingVerse, "Renewing Verse"),
+        WcRenew(DawnVerse, "Dawn Verse"),
+        WcRenew(SpiritVerse, "Spirit Verse"),
         // Single-target magic nuke (the buffer's only direct damage).
-        WcBolt(WcHumanBolt, "Arcane Lance"),
-        WcBolt(WcElfBolt, "Starlight Lance"),
-        WcBolt(WcOrkBolt, "Spirit Lance"),
+        WcBolt(ArcaneLance, "Arcane Lance"),
+        WcBolt(StarlightLance, "Starlight Lance"),
+        WcBolt(SpiritLance, "Spirit Lance"),
         // Passives (per-race lean; v1 is a flat caster set — robe/light conditional comes in P1).
-        new(WcHumanPass, "Resonance", BaseClass.Mage, SkillEffect.None,
+        new(Resonance, "Resonance", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, SpCost: 500,
             // MagicCritRate is a MULTIPLIER (0.20 = ×1.2), not +20 points — the same convention
@@ -81,12 +81,12 @@ public static partial class SkillCatalog
             // the game; as a ×1.2 it is a buffer's nudge, which is all it was ever meant to be.
             Passive: new PassiveEffect(MaxMpPct: 0.10f, MpRegen: 2f, MagicCritRate: 0.20f),
             Description: "Passive. +10% max MP, +MP regen, ×1.2 magic crit rate."),
-        new(WcElfPass, "Harmony", BaseClass.Mage, SkillEffect.None,
+        new(Harmony, "Harmony", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, SpCost: 500,
             Passive: new PassiveEffect(MaxMpPct: 0.10f, MpRegen: 2f, CastSpeedPct: 0.08f),
             Description: "Passive. +10% max MP, +MP regen, +8% cast speed."),
-        new(WcOrkPass, "Totemic Bond", BaseClass.Mage, SkillEffect.None,
+        new(TotemicBond, "Totemic Bond", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, SpCost: 500,
             Passive: new PassiveEffect(MaxMpPct: 0.10f, MpRegen: 2f, AttackPct: 0.08f),

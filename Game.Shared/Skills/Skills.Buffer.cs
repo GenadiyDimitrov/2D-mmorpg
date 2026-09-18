@@ -105,7 +105,7 @@ public static partial class SkillCatalog
     public static readonly string[] NpcMarkSet = { HolyMark, LifeMark, BloodMark };
     // (Shield Bless and Harden — his `buffer 3rd.csv` @66 — is NOT here. It is a real improved GROUP
     // over the two shield families, so it lives with the other groups in Skills.Healer.cs as
-    // `HolyShield`. AdminBuffSet still hands it out.)
+    // `ShieldBlessAndHarden`. AdminBuffSet still hands it out.)
 
     public const int NpcBuffTicks = 36000;   // 1 hour @ 10 ticks/s
     public const int NpcBuffRank  = 100;     // overrides player self-buffs (rank 1-4)
@@ -334,7 +334,7 @@ public static partial class SkillCatalog
     /// granting both would only show whichever landed last.</summary>
     private static readonly HashSet<string> AdminBuffSkip = new()
     {
-        WcWarBulwark,
+        WarBulwark,
         // 🔑 THE TWO HE DOES NOT WANT IN A FULL BUFF (owner, 2026-09-03): *"don't want a Shrouding
         //    hymn in the full buff. And bow expertise."* Both are situational rather than wrong, and
         //    both actively spoil the thing a full buff is FOR — reading a fully-buffed character's

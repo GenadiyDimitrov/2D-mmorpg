@@ -11,10 +11,10 @@ namespace Game.Shared;
 /// `BL-185` built on 2026-09-06 while he wrote the file. Every one of them is retired by a
 /// <see cref="SkillDef.Replaces"/> clause on its authored successor:
 /// <list type="bullet">
-///   <item><c>archer_bow_mastery</c> → <c>bow_weapon_mastery</c></item>
-///   <item><c>archer_split_volley</c> → <c>archer_twin_arrows</c></item>
+///   <item><c>archer_bow_mastery</c> → <c>bow_mastery</c></item>
+///   <item><c>split_volley</c> → <c>archer_twin_arrows</c></item>
 ///   <item><c>archer_bow_expertise</c> → <c>wc_bow_expertise</c> (his own cell names the buffer's id)</item>
-///   <item><c>archer_crit_focus</c> → <c>bow_weapon_mastery</c>, whose crit-damage column replaces it</item>
+///   <item><c>killing_focus</c> → <c>bow_mastery</c>, whose crit-damage column replaces it</item>
 /// </list></para>
 ///
 /// <para>🔑 <b>WHY THE DEFS SURVIVE AT ALL.</b> The house rule, stated in four places and learned the
@@ -22,7 +22,7 @@ namespace Game.Shared;
 /// one. 0.116.0 shipped these to his phone — a level-90 archer made to check the damage matrix is
 /// exactly what they were built for — so a character holding one is not hypothetical. Kept, orphaned,
 /// and above all REPLACED, because <c>archer_bow_mastery</c> left in place would have stacked a second
-/// bow passive on top of his authored one and <c>archer_crit_focus</c> would have been a permanent
+/// bow passive on top of his authored one and <c>killing_focus</c> would have been a permanent
 /// +20% crit damage nobody could account for.</para>
 ///
 /// <para>⚠ DO NOT RE-GRANT THESE and do not extend them. When the numbers here disagree with
@@ -35,14 +35,14 @@ public static partial class SkillCatalog
     public const string ArcherBowMastery = "archer_bow_mastery";
     /// <summary>Archer two-arrow skill — Sound Burst's ladder at ×1.25, same 900 range and same
     /// <see cref="SkillDef.HitCount"/> of 2 (two independent resolutions, not one double hit).</summary>
-    public const string ArcherSplitVolley = "archer_split_volley";
+    public const string SplitVolley = "split_volley";
     /// <summary>Archer Bow Expertise — *"have the same bow expertise"*, i.e. the HARMONIST's +12% rung
     /// rather than the rogue's +8%. ⚠ A CLONE, not a re-registration: `wc_bow_expertise` is declared
     /// <see cref="BaseClass.Mage"/> and this class is a Fighter. Same <c>BuffKey</c> and Rank as the
     /// harmonist's, so an archer and a buffer in the same party never stack two of them.</summary>
     public const string ArcherBowExpertise = "archer_bow_expertise";
     /// <summary>Archer crit passive — his *"passive that increase crit dmg +20% and +700flat"*.</summary>
-    public const string ArcherCritFocus = "archer_crit_focus";
+    public const string KillingFocus = "killing_focus";
 
     private static SkillDef[] ArcherKitRetiredSkills()
     {
@@ -66,7 +66,7 @@ public static partial class SkillCatalog
         //      2: TWO independent resolutions of the same power, so each rolls its own crit and its
         //      own evasion check. That is what makes the archer a crit class rather than a big-hit
         //      one, and it is the reason his IG table's archer crit multiplier climbs to ×5. ----
-        list.Add(new SkillDef(ArcherSplitVolley, "Split Volley", BaseClass.Fighter, SkillEffect.PhysicalDamage,
+        list.Add(new SkillDef(SplitVolley, "Split Volley", BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: SoundMp[0], CastTicks: 30, CooldownTicks: 30, Range: 900, Power: Up(SoundPower[0]),
             Category: SkillCategory.Physical,
             RequiredWeapon: WeaponType.Bow, HitCount: 2,
@@ -97,7 +97,7 @@ public static partial class SkillCatalog
         //
         // ONE RUNG, deliberately: he gave one pair of numbers, not a ladder, and inventing eight rungs
         // to reach them would be authoring where he did not.
-        list.Add(new SkillDef(ArcherCritFocus, "Killing Focus", BaseClass.Fighter, SkillEffect.None,
+        list.Add(new SkillDef(KillingFocus, "Killing Focus", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
             Description: "Passive. Your critical hits land far harder.",

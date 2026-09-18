@@ -29,15 +29,15 @@ namespace Game.Shared;
 public partial class SkillCatalog
 {
     // ---- New ids. The rest of the tank's kit already existed and is EXTENDED, not replaced:
-    //      provoke, tank_stay, tank_shield_stun, tank_anti_magic, tank_armor_mastery,
+    //      provoke, stay, shield_shock, tank_anti_magic, tank_armor_mastery,
     //      tank_shield_mastery, tank_weapon_mastery, defensive_wall.
     public const string TankCharm              = "charm";
     public const string TankMassProvoke        = "mass_provoke";
-    public const string TankFear               = "tank_fear";
-    public const string TankFreeze             = "tank_freeze";
-    public const string TankSmashRate          = "tank_smash_rate";
-    public const string TankSmashPower         = "tank_smash_power";
-    public const string TankFinalDefense       = "tank_final_defense";
+    public const string Intimidate               = "intimidate";
+    public const string Freeze             = "freeze";
+    public const string ShieldSmashRate          = "shield_smash_rate";
+    public const string ShieldSmashPower         = "shield_smash_power";
+    public const string FinalDefense       = "final_defense";
     public const string TankAggravatedState    = "tank_aggravated_state";
     public const string TankShieldReinforce    = "tank_shield_reinforcement";
     // The two proc payloads of Aggravated State. Never learned, never on a bar: a proc's rung is an
@@ -129,7 +129,7 @@ public partial class SkillCatalog
         // fear: the victim cannot act and bolts at a run to random points nearby, for ten seconds.
         // The longest control in the tank's kit, and the reason the Demon needs no mass taunt: one
         // thing is simply out of the fight.
-        new(TankFear, "Intimidate", BaseClass.Fighter, SkillEffect.Fear,
+        new(Intimidate, "Intimidate", BaseClass.Fighter, SkillEffect.Fear,
             MpCost: BulwarkControlMp[0], CastTicks: 0, CooldownTicks: 50, Range: 600, Power: 0,
             DurationTicks: 100, BuffKey: "fear", Rank: 1, SharesLadderKey: true,
             DebuffSchool: DebuffSchool.Physical, Category: SkillCategory.Debuff,
@@ -145,7 +145,7 @@ public partial class SkillCatalog
         // ═══ FREEZE — the Elf's slow, 30 seconds of it ═══════════════════════════════════════════
         // 30% → 50%, and it PLATEAUS at 50 from rung 10. Deliberate, and the same shape the healer's
         // debuff ladders take: past the ceiling a rung buys LANDING CHANCE, not magnitude.
-        new(TankFreeze, "Freeze", BaseClass.Fighter, SkillEffect.Slow,
+        new(Freeze, "Freeze", BaseClass.Fighter, SkillEffect.Slow,
             MpCost: BulwarkControlMp[0], CastTicks: 0, CooldownTicks: 30, Range: 600, Power: 0,
             DurationTicks: 300, BuffKey: "slow", Rank: 1, SharesLadderKey: true,
             DebuffSchool: DebuffSchool.Magical, Category: SkillCategory.Debuff,
@@ -168,7 +168,7 @@ public partial class SkillCatalog
         // shape, and for the [level][band] table his three rows fill.
         // ⚠ The top rung is UNCHANGED (10/20/30 + 5/10): a tank who reaches 60 is exactly as strong as
         //   he was, and the two new rows are a cheaper on-ramp twenty levels earlier.
-        new(TankFinalDefense, "Final Defense", BaseClass.Fighter, SkillEffect.None,
+        new(FinalDefense, "Final Defense", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, SpCost: 28_000,
             Description: "Passive. The worse it is going, the harder you are: below 75% HP, below 50% "
@@ -261,7 +261,7 @@ public partial class SkillCatalog
         // is the level-5 sword/blunt bash off `fighter 1st.csv`; a smash is the same beat with a shield
         // behind it, so the 40 rung retires it the way Holy Ray retires Holy Bolt. It is a WITHIN-chain
         // replace (fighter → tank), which is what his cross-chain id rule allows.
-        new(TankSmashRate, "Shield Smash - Rate", BaseClass.Fighter,
+        new(ShieldSmashRate, "Shield Smash - Rate", BaseClass.Fighter,
             SkillEffect.PhysicalDamage,
             MpCost: BulwarkSmashMp[0], CastTicks: 10, CooldownTicks: 60, Range: 40, Power: 1000,
             DurationTicks: 300, BuffKey: "smash_rate", Rank: 1,
@@ -282,7 +282,7 @@ public partial class SkillCatalog
                                + $"−{mRate[i] * 100:0}% M.Crit rate for 30s.");
             }).Concat(TankFourthSmashRateRungs()).ToArray()),
 
-        new(TankSmashPower, "Shield Smash - Power", BaseClass.Fighter,
+        new(ShieldSmashPower, "Shield Smash - Power", BaseClass.Fighter,
             SkillEffect.PhysicalDamage,
             MpCost: BulwarkSmashMp[0], CastTicks: 10, CooldownTicks: 60, Range: 40, Power: 1000,
             DurationTicks: 300, BuffKey: "smash_power", Rank: 1,

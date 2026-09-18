@@ -12,9 +12,9 @@ public static partial class SkillCatalog
 {
     public const string MobNukeSkill = "mob_nuke";   // 600 range · 4.0s cast · 1.0s reuse
     public const string MobBoltSkill = "mob_bolt";   // 150 range · 1.5s cast · 0.5s reuse
-    public const string BossSlamSkill = "boss_slam"; // boss AoE: telegraphed slam (dmg + stun) around it
-    public const string BossThornNovaSkill = "boss_thorn_nova"; // boss AoE: magic burst + slow (phase skill)
-    public const string BossFullSilenceSkill = "boss_full_silence"; // `BL-155` boss AoE: 15s full silence
+    public const string DevastatingSlam = "devastating_slam"; // boss AoE: telegraphed slam (dmg + stun) around it
+    public const string ThornNova = "thorn_nova"; // boss AoE: magic burst + slow (phase skill)
+    public const string WordOfUnmaking = "word_of_unmaking"; // `BL-155` boss AoE: 15s full silence
 
     // The 13 spell levels are tied to these mob levels (interpolation anchors from the CSV
     // ask: nuke power 18→129 / MP 7→40, bolt power 7→33 / MP 5→10 across mob levels 10..85).
@@ -66,7 +66,7 @@ public static partial class SkillCatalog
             // contested Stun to everyone in ~250. The long cast is the "boss skill" tell —
             // players can move out / interrupt. Damage rides the boss's (high) P.Atk; the flat
             // Power is a modest add. MP-free (bosses aren't MP-gated).
-            new SkillDef(BossSlamSkill, "Devastating Slam", BaseClass.Fighter,
+            new SkillDef(DevastatingSlam, "Devastating Slam", BaseClass.Fighter,
                 SkillEffect.PhysicalDamage | SkillEffect.Stun,
                 MpCost: 0, CastTicks: 30, CooldownTicks: 120, Range: 0, Power: 60,
                 Category: SkillCategory.Physical, SpCost: 0,
@@ -77,7 +77,7 @@ public static partial class SkillCatalog
             // Boss THORN NOVA — a wider (300) MAGIC burst + a contested Slow, on a longer cast
             // (2.5s) and reuse. Authored as a PHASE skill (BossCatalog gates it to sub-50% HP), so
             // a boss picks up a second, distinct attack once wounded. Rides the boss's M.Atk.
-            new SkillDef(BossThornNovaSkill, "Thorn Nova", BaseClass.Mage,
+            new SkillDef(ThornNova, "Thorn Nova", BaseClass.Mage,
                 SkillEffect.MagicDamage | SkillEffect.Slow,
                 MpCost: 0, CastTicks: 25, CooldownTicks: 200, Range: 0, Power: 90,
                 Category: SkillCategory.Magic, SpCost: 0,
@@ -108,13 +108,13 @@ public static partial class SkillCatalog
             // 15s becomes ~12.6s), which is the *"investing have benefits"* rule landing exactly where
             // it should. 🔵 WATCH IT IN PLAY: 15s on a 45s reuse is 33% uptime with no heals, which is
             // brutal by design and the number to move first if a boss becomes unkillable.
-            new SkillDef(BossFullSilenceSkill, "Word of Unmaking", BaseClass.Mage, SkillEffect.None,
+            new SkillDef(WordOfUnmaking, "Word of Unmaking", BaseClass.Mage, SkillEffect.None,
                 MpCost: 0, CastTicks: 30, CooldownTicks: 450, Range: 0, Power: 0,
                 Category: SkillCategory.Debuff, SpCost: 0,
                 TargetMode: TargetMode.EnemiesInRadius, AreaRadius: 500f,
                 DebuffSchool: DebuffSchool.Magical, DurationTicks: 150,
                 SilencePhysical: true, SilenceMagical: true,
-                BuffKey: "boss_full_silence", Rank: 1,
+                BuffKey: "word_of_unmaking", Rank: 1,
                 Description: "A boss's word of unmaking — every skill fails for all nearby foes."),
         };
     }

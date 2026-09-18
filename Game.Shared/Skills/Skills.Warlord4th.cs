@@ -34,8 +34,8 @@ namespace Game.Shared;
 /// </summary>
 public static partial class SkillCatalog
 {
-    public const string WaraoeMasterCombat  = "waraoe_master_combat";
-    public const string WaraoeShockJavelin  = "waraoe_shock_javelin";
+    public const string MasterOfCombat  = "master_of_combat";
+    public const string ShockingJavelin  = "shocking_javelin";
 
     /// <summary>76 → 90, every level — the band his fifteen-rung 4th-tier families use, and the same
     /// one `warrior 4th.csv` uses. Shocking Shout, Shocking Javelin and Whirlwind ride it.</summary>
@@ -74,8 +74,8 @@ public static partial class SkillCatalog
         { .25f, .25f, .25f, .25f, .25f, .30f, .30f, .30f };
 
     public const string WarriorChargeNormal  = "warrior_charge_normal";
-    public const string WarriorChargeInstant = "warrior_charge_instant";
-    public const string WarriorChargeStun    = "warrior_charge_stun";
+    public const string FlashStep = "flash_step";
+    public const string ChargeNShock    = "charge_n_shock";
     public const string WarriorChargeAoe     = "warrior_charge_aoe";
     /// <summary>THE STOMP ITSELF — the hidden sub-skill Charge n Stomp fires when it ARRIVES. Never
     /// learned, never on a bar, no MP and no reuse of its own; see
@@ -91,7 +91,7 @@ public static partial class SkillCatalog
     /// <summary>The interlock, built from the id list: each variant replaces the base Charge and every
     /// OTHER variant. One place, so a fifth charge cannot be added and half-wired.</summary>
     private static readonly string[] WarlordChargeIds =
-        { WarriorChargeNormal, WarriorChargeInstant, WarriorChargeStun, WarriorChargeAoe };
+        { WarriorChargeNormal, FlashStep, ChargeNShock, WarriorChargeAoe };
 
     private static string[] ChargeReplaces(string self) =>
         new[] { WarriorCharge }.Concat(WarlordChargeIds.Where(id => id != self)).ToArray();
@@ -114,12 +114,12 @@ public static partial class SkillCatalog
             //    stance. `MoveSpeedPenaltyPct` is the field the Marks already use (`BL-238`).
             // ⚠ A TOGGLE, so it runs until you cannot pay for it — see TickToggleUpkeep, which reads
             //   the RUNG's `MpPerSecond` and not the def's.
-            new SkillDef(WaraoeMasterCombat, "Master of Combat", BaseClass.Fighter,
+            new SkillDef(MasterOfCombat, "Master of Combat", BaseClass.Fighter,
                 SkillEffect.BuffAccuracy | SkillEffect.BuffDef | SkillEffect.BuffMagicDef
                 | SkillEffect.BuffAtkSpeed,
                 MpCost: 30, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
                 Toggle: true, MpPerSecond: 30, MoveSpeedPenaltyPct: 0.30f,
-                BuffKey: WaraoeMasterCombat, Rank: 1,
+                BuffKey: MasterOfCombat, Rank: 1,
                 Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly,
                 RequiredWeapon: WeaponType.AnyBlunt, RequiredHands: WeaponHands.Two,
                 SpCost: mcSp,
@@ -146,7 +146,7 @@ public static partial class SkillCatalog
             // 🔑 SAME POWER LADDER AS SHOCKING SHOUT, cell for cell. It buys reach with RADIUS (150
             //    against 200), not with damage.
             // ⚠ Its landing modifier rides Shocking Shout's, and both are owed by him (`BL-259`).
-            WarlordShout4th(WaraoeShockJavelin, "Shocking Javelin",
+            WarlordShout4th(ShockingJavelin, "Shocking Javelin",
                 range: 900f, radius: 150f, atTarget: true,
                 "A javelin of thunder, thrown into a crowd 900 away."),
         };
@@ -222,7 +222,7 @@ public static partial class SkillCatalog
             //    requirement and the arrival seam, and it is the DURATION cell alone that makes it
             //    instant. Authoring it as `SkillEffect.Blink` would have given it a second, parallel
             //    set of rules to keep in step with the other three for no gain.
-            Charge(WarriorChargeInstant, "Flash Step", WarriorChargeInstant,
+            Charge(FlashStep, "Flash Step", FlashStep,
                 castTicks: 0, cooldownTicks: 100, strideSeconds: 0f, SkillEffect.None,
                 "Step instantly to an enemy up to 800 away. No cast — and twice the reuse."),
 
@@ -234,7 +234,7 @@ public static partial class SkillCatalog
             // ⚠ TWO SEPARATE 2s, and they only LOOK like one number: `PullSeconds` is the stride (his
             //   DURR cell) and `DurationTicks` is the stun (*"Chance to stun target for 2s"*, his
             //   DESCR). They are authored apart so that changing one never silently moves the other.
-            Charge(WarriorChargeStun, "Charge n Shock", WarriorChargeStun,
+            Charge(ChargeNShock, "Charge n Shock", ChargeNShock,
                 castTicks: 5, cooldownTicks: 100, strideSeconds: 2f, SkillEffect.Stun,
                 "A heavy, deliberate charge — slower to arrive, and it puts the target down for 2s.",
                 durationTicks: 20, school: DebuffSchool.Physical),

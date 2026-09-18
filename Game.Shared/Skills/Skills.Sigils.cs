@@ -60,24 +60,24 @@ public static partial class SkillCatalog
 
     // ---- Sigil ids. `<flavour>_<slot>_sigil`, which is his own naming from the CSV's comment
     //      column (`Healer_Defence_Rune`) with the word he chose on 2026-08-26. ----
-    public const string HealerAttackSigil   = "healer_attack_sigil";
-    public const string HealerDefenceSigil  = "healer_defence_sigil";
-    public const string HealerSupportSigil  = "healer_support_sigil";
-    public const string WarriorAttackSigil  = "warrior_attack_sigil";
-    public const string WarriorDefenceSigil = "warrior_defence_sigil";
-    public const string WarriorSupportSigil = "warrior_support_sigil";
-    public const string BufferAttackSigil   = "buffer_attack_sigil";
-    public const string BufferDefenceSigil  = "buffer_defence_sigil";
-    public const string BufferSupportSigil  = "buffer_support_sigil";
-    public const string TankAttackSigil     = "tank_attack_sigil";
-    public const string TankDefenceSigil    = "tank_defence_sigil";
-    public const string TankSupportSigil    = "tank_support_sigil";
+    public const string HolyPowerSigil   = "holy_power_sigil";
+    public const string HolyProtectionSigil  = "holy_protection_sigil";
+    public const string HolySupportSigil  = "holy_support_sigil";
+    public const string FurySigil  = "fury_sigil";
+    public const string DuelSigil = "duel_sigil";
+    public const string FortitudeSigil = "fortitude_sigil";
+    public const string SoulSigil   = "soul_sigil";
+    public const string SpiritSigil  = "spirit_sigil";
+    public const string ImmortalitySigil  = "immortality_sigil";
+    public const string BodySigil     = "body_sigil";
+    public const string AegisSigil    = "aegis_sigil";
+    public const string CriticalProtectionSigil    = "critical_protection_sigil";
     public const string MageAttackSigil     = "mage_attack_sigil";
     public const string MageDefenceSigil    = "mage_defence_sigil";
     public const string MageSupportSigil    = "mage_support_sigil";
-    public const string RogueAttackSigil    = "rogue_attack_sigil";
-    public const string RogueDefenceSigil   = "rogue_defence_sigil";
-    public const string RogueSupportSigil   = "rogue_support_sigil";
+    public const string FocusSigil    = "focus_sigil";
+    public const string AgilitySigil   = "agility_sigil";
+    public const string AimSigil   = "aim_sigil";
 
     /// <summary>`BL-250` §3 — WHICH SIGIL GROUP A DISCIPLINE UNLOCKS. His table, verbatim: the three
     /// Apprentice unlock <b>mage</b>, the Priest's healer discipline <b>healer</b> and its buffer
@@ -167,35 +167,35 @@ public static partial class SkillCatalog
     /// <summary>The eighteen, in slot-then-flavour order (the order the Sigils tab renders).</summary>
     public static readonly string[] AllSigilIds =
     {
-        HealerAttackSigil,  WarriorAttackSigil,  BufferAttackSigil,
-        TankAttackSigil,    MageAttackSigil,     RogueAttackSigil,
-        HealerDefenceSigil, WarriorDefenceSigil, BufferDefenceSigil,
-        TankDefenceSigil,   MageDefenceSigil,    RogueDefenceSigil,
-        HealerSupportSigil, WarriorSupportSigil, BufferSupportSigil,
-        TankSupportSigil,   MageSupportSigil,    RogueSupportSigil,
+        HolyPowerSigil,  FurySigil,  SoulSigil,
+        BodySigil,    MageAttackSigil,     FocusSigil,
+        HolyProtectionSigil, DuelSigil, SpiritSigil,
+        AegisSigil,   MageDefenceSigil,    AgilitySigil,
+        HolySupportSigil, FortitudeSigil, ImmortalitySigil,
+        CriticalProtectionSigil,   MageSupportSigil,    AimSigil,
     };
 
     private static readonly Dictionary<string, (SigilFlavour Flavour, SigilSlot Slot)> SigilTable =
         new()
         {
-            [HealerAttackSigil]   = (SigilFlavour.Healer,  SigilSlot.Attack),
-            [HealerDefenceSigil]  = (SigilFlavour.Healer,  SigilSlot.Defence),
-            [HealerSupportSigil]  = (SigilFlavour.Healer,  SigilSlot.Support),
-            [WarriorAttackSigil]  = (SigilFlavour.Warrior, SigilSlot.Attack),
-            [WarriorDefenceSigil] = (SigilFlavour.Warrior, SigilSlot.Defence),
-            [WarriorSupportSigil] = (SigilFlavour.Warrior, SigilSlot.Support),
-            [BufferAttackSigil]   = (SigilFlavour.Buffer,  SigilSlot.Attack),
-            [BufferDefenceSigil]  = (SigilFlavour.Buffer,  SigilSlot.Defence),
-            [BufferSupportSigil]  = (SigilFlavour.Buffer,  SigilSlot.Support),
-            [TankAttackSigil]     = (SigilFlavour.Tank,    SigilSlot.Attack),
-            [TankDefenceSigil]    = (SigilFlavour.Tank,    SigilSlot.Defence),
-            [TankSupportSigil]    = (SigilFlavour.Tank,    SigilSlot.Support),
+            [HolyPowerSigil]   = (SigilFlavour.Healer,  SigilSlot.Attack),
+            [HolyProtectionSigil]  = (SigilFlavour.Healer,  SigilSlot.Defence),
+            [HolySupportSigil]  = (SigilFlavour.Healer,  SigilSlot.Support),
+            [FurySigil]  = (SigilFlavour.Warrior, SigilSlot.Attack),
+            [DuelSigil] = (SigilFlavour.Warrior, SigilSlot.Defence),
+            [FortitudeSigil] = (SigilFlavour.Warrior, SigilSlot.Support),
+            [SoulSigil]   = (SigilFlavour.Buffer,  SigilSlot.Attack),
+            [SpiritSigil]  = (SigilFlavour.Buffer,  SigilSlot.Defence),
+            [ImmortalitySigil]  = (SigilFlavour.Buffer,  SigilSlot.Support),
+            [BodySigil]     = (SigilFlavour.Tank,    SigilSlot.Attack),
+            [AegisSigil]    = (SigilFlavour.Tank,    SigilSlot.Defence),
+            [CriticalProtectionSigil]    = (SigilFlavour.Tank,    SigilSlot.Support),
             [MageAttackSigil]     = (SigilFlavour.Mage,    SigilSlot.Attack),
             [MageDefenceSigil]    = (SigilFlavour.Mage,    SigilSlot.Defence),
             [MageSupportSigil]    = (SigilFlavour.Mage,    SigilSlot.Support),
-            [RogueAttackSigil]    = (SigilFlavour.Rogue,   SigilSlot.Attack),
-            [RogueDefenceSigil]   = (SigilFlavour.Rogue,   SigilSlot.Defence),
-            [RogueSupportSigil]   = (SigilFlavour.Rogue,   SigilSlot.Support),
+            [FocusSigil]    = (SigilFlavour.Rogue,   SigilSlot.Attack),
+            [AgilitySigil]   = (SigilFlavour.Rogue,   SigilSlot.Defence),
+            [AimSigil]   = (SigilFlavour.Rogue,   SigilSlot.Support),
         };
 
     /// <summary>(flavour, slot) for a sigil id, or null if the id is not a sigil. The one place any
@@ -261,59 +261,59 @@ public static partial class SkillCatalog
         return new SkillDef[]
         {
             // ═══ HEALER ══════════════════════════════════════════════════════════════════════════
-            Sigil(HealerAttackSigil, "Holy Power Sigil", SigilFlavour.Healer, SigilSlot.Attack,
+            Sigil(HolyPowerSigil, "Holy Power Sigil", SigilFlavour.Healer, SigilSlot.Attack,
                 "Your healing is 5% stronger.",
                 passive: new PassiveEffect(HealPowerPct: 0.05f)),
 
-            Sigil(HealerDefenceSigil, "Holy Protection Sigil", SigilFlavour.Healer, SigilSlot.Defence,
+            Sigil(HolyProtectionSigil, "Holy Protection Sigil", SigilFlavour.Healer, SigilSlot.Defence,
                 "Debuffs that contest your Spirit are 10% less likely to land on you.",
                 passive: new PassiveEffect(CcResistMagical: 0.10f)),
 
-            Sigil(HealerSupportSigil, "Holy Support Sigil", SigilFlavour.Healer, SigilSlot.Support,
+            Sigil(HolySupportSigil, "Holy Support Sigil", SigilFlavour.Healer, SigilSlot.Support,
                 "When you are hit, a 5% chance to mend 2% of your maximum HP.",
                 procChance: 0.05f, procOnDamaged: true, procCooldownTicks: 50,
                 procRung: SigilHolyMend),
 
             // ═══ WARRIOR ═════════════════════════════════════════════════════════════════════════
-            Sigil(WarriorAttackSigil, "Fury Sigil", SigilFlavour.Warrior, SigilSlot.Attack,
+            Sigil(FurySigil, "Fury Sigil", SigilFlavour.Warrior, SigilSlot.Attack,
                 "When you attack, a 3% chance to swing 30% faster for 15 seconds.",
                 procChance: 0.03f, procCooldownTicks: 200, procRung: SigilFuryHaste),
 
-            Sigil(WarriorDefenceSigil, "Duel Sigil", SigilFlavour.Warrior, SigilSlot.Defence,
+            Sigil(DuelSigil, "Duel Sigil", SigilFlavour.Warrior, SigilSlot.Defence,
                 "You take 5% less damage from other players.",
                 // NEGATIVE = less taken, the same convention the armour sets' PvP clause uses.
                 passive: new PassiveEffect(PvpDamageTakenPct: -0.05f)),
 
-            Sigil(WarriorSupportSigil, "Fortitude Sigil", SigilFlavour.Warrior, SigilSlot.Support,
+            Sigil(FortitudeSigil, "Fortitude Sigil", SigilFlavour.Warrior, SigilSlot.Support,
                 "Debuffs that contest your Constitution are 5% less likely to land on you.",
                 passive: new PassiveEffect(CcResistPhysical: 0.05f)),
 
             // ═══ BUFFER ══════════════════════════════════════════════════════════════════════════
-            Sigil(BufferAttackSigil, "Soul Sigil", SigilFlavour.Buffer, SigilSlot.Attack,
+            Sigil(SoulSigil, "Soul Sigil", SigilFlavour.Buffer, SigilSlot.Attack,
                 "Maximum MP +10%.",
                 passive: new PassiveEffect(MaxMpPct: 0.10f)),
 
-            Sigil(BufferDefenceSigil, "Spirit Sigil", SigilFlavour.Buffer, SigilSlot.Defence,
+            Sigil(SpiritSigil, "Spirit Sigil", SigilFlavour.Buffer, SigilSlot.Defence,
                 "MP regeneration +10%.",
                 passive: new PassiveEffect(MpRegenPct: 0.10f)),
 
-            Sigil(BufferSupportSigil, "Immortality Sigil", SigilFlavour.Buffer, SigilSlot.Support,
+            Sigil(ImmortalitySigil, "Immortality Sigil", SigilFlavour.Buffer, SigilSlot.Support,
                 "When you are hit, a 3% chance to become immortal for 5 seconds — your HP cannot fall, "
                 + "and cannot be healed either.",
                 procChance: 0.03f, procOnDamaged: true, procCooldownTicks: 200,
                 procRung: SigilImmortality),
 
             // ═══ TANK ════════════════════════════════════════════════════════════════════════════
-            Sigil(TankAttackSigil, "Body Sigil", SigilFlavour.Tank, SigilSlot.Attack,
+            Sigil(BodySigil, "Body Sigil", SigilFlavour.Tank, SigilSlot.Attack,
                 "Maximum HP +10%.",
                 passive: new PassiveEffect(MaxHpPct: 0.10f)),
 
-            Sigil(TankDefenceSigil, "Aegis Sigil", SigilFlavour.Tank, SigilSlot.Defence,
+            Sigil(AegisSigil, "Aegis Sigil", SigilFlavour.Tank, SigilSlot.Defence,
                 "When you are hit, a 3% chance to raise both defences by 25% for 15 seconds.",
                 procChance: 0.03f, procOnDamaged: true, procCooldownTicks: 200,
                 procRung: SigilAegisGuard),
 
-            Sigil(TankSupportSigil, "Critical Protection Sigil", SigilFlavour.Tank, SigilSlot.Support,
+            Sigil(CriticalProtectionSigil, "Critical Protection Sigil", SigilFlavour.Tank, SigilSlot.Support,
                 "Attackers are 10% less likely to crit you, and their crits hit 10% softer.",
                 passive: new PassiveEffect(CritRateResist: 0.10f, CritDmgResist: 0.10f)),
 
@@ -331,15 +331,15 @@ public static partial class SkillCatalog
                 procChance: 0.05f, procCooldownTicks: 50, procRung: SigilArcaneWell),
 
             // ═══ ROGUE ═══════════════════════════════════════════════════════════════════════════
-            Sigil(RogueAttackSigil, "Focus Sigil", SigilFlavour.Rogue, SigilSlot.Attack,
+            Sigil(FocusSigil, "Focus Sigil", SigilFlavour.Rogue, SigilSlot.Attack,
                 "When you attack, a 3% chance to raise your critical rate by 5 points for 15 seconds.",
                 procChance: 0.03f, procCooldownTicks: 200, procRung: SigilFocusEdge),
 
-            Sigil(RogueDefenceSigil, "Agility Sigil", SigilFlavour.Rogue, SigilSlot.Defence,
+            Sigil(AgilitySigil, "Agility Sigil", SigilFlavour.Rogue, SigilSlot.Defence,
                 "Evasion +3, and spells aimed at you fail 3 points more often.",
                 passive: new PassiveEffect(Evasion: 3, MagicEvasion: 3f)),
 
-            Sigil(RogueSupportSigil, "Aim Sigil", SigilFlavour.Rogue, SigilSlot.Support,
+            Sigil(AimSigil, "Aim Sigil", SigilFlavour.Rogue, SigilSlot.Support,
                 "With a bow, attack range +100. With any other weapon, accuracy +5.",
                 // BowRange is already bow-conditional in RecomputeDerived; the accuracy is not, so a
                 // bow user technically gets both. That is his row read literally — the two clauses

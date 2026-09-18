@@ -6954,7 +6954,7 @@ public class GameLoopService : BackgroundService
     //   /buff                        the whole ADMIN set, every buff at its own top rung, for 1 hour
     //   /buff harmony of wizard      that one buff, at ITS top rung, for 1 hour
     //   /buff hw 2                   the same buff by acronym, at rung 2
-    //   /buff wc_harmony_mark 1h 2   his own example: that mark, rung 2, for an hour
+    //   /buff harmony_mark 1h 2   his own example: that mark, rung 2, for an hour
     //   /buff Ivan aim 30m           on another player (staff only), for thirty minutes
     // 🔑 EVERYTHING DEFAULTS TO ONE HOUR — *"or if we cannot put duration in the command atleast make
     // it 1h from /buff and admin buttons"*. `BL-126` already did that for the SET; this extends it to
@@ -7003,7 +7003,7 @@ public class GameLoopService : BackgroundService
                 string buffWho = ReferenceEquals(buffTarget, admin) ? "you" : buffTarget.Name;
 
                 // `BL-131` — THE DURATION WORD, pulled out before the level. *"/buff command must have
-                // duration => /buff [target]<name>[duration][lvl] ... /buff wc_harmony_mark 1h"*.
+                // duration => /buff [target]<name>[duration][lvl] ... /buff harmony_mark 1h"*.
                 // ⚠ Order matters: the duration is stripped FIRST so that `<name> 1h 2` still leaves a
                 // bare trailing `2` for SplitTrailingLevel to read as the rung.
                 var (durArg, durTicks) = SplitDurationWord(arg);
@@ -8657,7 +8657,7 @@ public class GameLoopService : BackgroundService
     /// of the argument and the duration in TICKS, or null when there was none.
     ///
     /// <para>🔑 It scans every word rather than only the last, because his grammar puts the duration in
-    /// the MIDDLE — *"/buff [target]&lt;name&gt;[duration][lvl]"*, e.g. `/buff wc_harmony_mark 1h 2`.
+    /// the MIDDLE — *"/buff [target]&lt;name&gt;[duration][lvl]"*, e.g. `/buff harmony_mark 1h 2`.
     /// A bare number stays the LEVEL (that is <see cref="SplitTrailingLevel"/>'s job); only a number
     /// with a unit letter glued to it is a duration, so nothing that worked before changes meaning.</para>
     ///
@@ -11700,7 +11700,7 @@ public class GameLoopService : BackgroundService
     private static float EnrageScaleAt(int stage) => stage >= 2 ? EnrageRung2 : stage == 1 ? EnrageRung1 : 1f;
 
     // The kit a boss with no BossCatalog profile uses: just the generic slam.
-    private static readonly BossSkillEntry[] DefaultBossKit = { new(SkillCatalog.BossSlamSkill) };
+    private static readonly BossSkillEntry[] DefaultBossKit = { new(SkillCatalog.DevastatingSlam) };
 
     /// <summary>Per-tick boss logic while engaged: the enrage timer, the HP-threshold phase script
     /// (announce / enrage / adds), and the skill rotation (cast the first ready boss skill with a
@@ -22304,7 +22304,7 @@ public class GameLoopService : BackgroundService
                 foreach (var s in profile.Skills)
                     mob.LearnedSkills[s.SkillId] = 1;
             else
-                mob.LearnedSkills[SkillCatalog.BossSlamSkill] = 1;
+                mob.LearnedSkills[SkillCatalog.DevastatingSlam] = 1;
         }
 
         // Training dummy: TAKES damage (so you see the numbers) but never dies — a huge HP pool +

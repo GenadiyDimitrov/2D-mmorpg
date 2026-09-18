@@ -54,69 +54,69 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 72,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +76;",0,650
 74,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +81;",0,880
 ,,,,,,,,,,,,,,,,,----------------------------Final Defense----------------------------
-40,Final Defense,tank_final_defense,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Def with 5%, when HP is below 50% increase P.Def with 10% and M.Def with 2.5%, when HP is below 25% increase P.Def with 15% and M.Def with 5%",0,28
-52,Final Defense,tank_final_defense,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Def with 7%, when HP is below 50% increase P.Def with 14% and M.Def with 3.5%, when HP is below 25% increase P.Def with 21% and M.Def with 7%",0,74
-60,Final Defense,tank_final_defense,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Def with 10%, when HP is below 50% increase P.Def with 20% and M.Def with 5%, when HP is below 25% increase P.Def with 30% and M.Def with 10%",0,120
+40,Final Defense,final_defense,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Def with 5%, when HP is below 50% increase P.Def with 10% and M.Def with 2.5%, when HP is below 25% increase P.Def with 15% and M.Def with 5%",0,28
+52,Final Defense,final_defense,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Def with 7%, when HP is below 50% increase P.Def with 14% and M.Def with 3.5%, when HP is below 25% increase P.Def with 21% and M.Def with 7%",0,74
+60,Final Defense,final_defense,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Def with 10%, when HP is below 50% increase P.Def with 20% and M.Def with 5%, when HP is below 25% increase P.Def with 30% and M.Def with 10%",0,120
 ,,,,,,,,,,,,,,,,,----------------------------Aggravated State----------------------------
 52,Aggravated State,tank_aggravated_state,Passive,,,0,900,party/aoe,0,25,30,"When dmg is received with 15% chance increase P.Atk and Attack speed of party memebrs with 2% and owner with 3% and P.Skill.Power with 10%",0,74
 60,Aggravated State,tank_aggravated_state,Passive,,,0,900,party/aoe,0,25,30,"When dmg is received with 15% chance increase P.Atk and Attack speed of party memebrs with 3% and owner with 5% and P.Skill.Power with 15%",0,120
 68,Aggravated State,tank_aggravated_state,Passive,,,0,900,party/aoe,0,25,30,"When dmg is received with 15% chance increase P.Atk and Attack speed of party memebrs with 5% and owner with 7% and P.Skill.Power with 20%",0,320
 ,,,,,,,,,,,,,,,,,----------------------------Whisp Mastery----------------------------
-60,Whisp Mastery,tank_whisp_mastery,Passive,,,0,0,self/single,0,0,0,"Increase the limit of active whisps to 2",0,120
+60,Whisp Mastery,whisp_mastery,Passive,,,0,0,self/single,0,0,0,"Increase the limit of active whisps to 2",0,120
 ,,,,,,,,,,,,,,,,,----------------------------Taunting Whisps----------------------------
-40,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 6500), Consumes 4 skill stones",50,28,,Human,uses whisp_provoke
-46,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 7500); Consumes 4 skill stones",54,40,,Human,uses whisp_provoke
-52,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 8500); Consumes 4 skill stones",58,74,,Human,uses whisp_provoke
-58,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 9500); Consumes 4 skill stones",66,88,,Human,uses whisp_provoke
-62,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 10500); Consumes 4 skill stones",76,170,,Human,uses whisp_provoke
-66,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 11200); Consumes 4 skill stones",84,280,,Human,uses whisp_provoke
-70,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 11600); Consumes 4 skill stones",92,390,,Human,uses whisp_provoke
-74,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 12000); Consumes 4 skill stones",100,880,,Human,uses whisp_provoke
+40,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 6500), Consumes 4 skill stones",50,28,,Human,uses whisp_taunt
+46,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 7500); Consumes 4 skill stones",54,40,,Human,uses whisp_taunt
+52,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 8500); Consumes 4 skill stones",58,74,,Human,uses whisp_taunt
+58,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 9500); Consumes 4 skill stones",66,88,,Human,uses whisp_taunt
+62,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 10500); Consumes 4 skill stones",76,170,,Human,uses whisp_taunt
+66,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 11200); Consumes 4 skill stones",84,280,,Human,uses whisp_taunt
+70,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 11600); Consumes 4 skill stones",92,390,,Human,uses whisp_taunt
+74,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 12000); Consumes 4 skill stones",100,880,,Human,uses whisp_taunt
 ,,,,,,,,,,,,,,,,,----------------------------Binding Whisps----------------------------
-43,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",50,35,,Human,uses whisp_bind
-49,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",54,50,,Human,uses whisp_bind
-55,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",58,81,,Human,uses whisp_bind
-60,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",66,120,,Human,uses whisp_bind
-64,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",76,190,,Human,uses whisp_bind
-68,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",84,320,,Human,uses whisp_bind
-72,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",92,650,,Human,uses whisp_bind
-74,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",100,880,,Human,uses whisp_bind
+43,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",50,35,,Human,uses whisp_bind
+49,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",54,50,,Human,uses whisp_bind
+55,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",58,81,,Human,uses whisp_bind
+60,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",66,120,,Human,uses whisp_bind
+64,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",76,190,,Human,uses whisp_bind
+68,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",84,320,,Human,uses whisp_bind
+72,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",92,650,,Human,uses whisp_bind
+74,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",100,880,,Human,uses whisp_bind
 ,,,,,,,,,,,,,,,,,----------------------------Charming Whisps----------------------------
-40,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 6500), Consumes 4 skill stones",50,28,,Elf,uses whisp_charm
-46,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 7500); Consumes 4 skill stones",54,40,,Elf,uses whisp_charm
-52,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 8500); Consumes 4 skill stones",58,74,,Elf,uses whisp_charm
-58,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 9500); Consumes 4 skill stones",66,88,,Elf,uses whisp_charm
-62,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 10500); Consumes 4 skill stones",76,170,,Elf,uses whisp_provoke
-66,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 11200); Consumes 4 skill stones",84,280,,Elf,uses whisp_provoke
-70,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 11600); Consumes 4 skill stones",92,390,,Elf,uses whisp_provoke
-74,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 12000); Consumes 4 skill stones",100,880,,Elf,uses whisp_provoke
+40,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 6500), Consumes 4 skill stones",50,28,,Elf,uses whisp_charm
+46,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 7500); Consumes 4 skill stones",54,40,,Elf,uses whisp_charm
+52,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 8500); Consumes 4 skill stones",58,74,,Elf,uses whisp_charm
+58,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 9500); Consumes 4 skill stones",66,88,,Elf,uses whisp_charm
+62,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 10500); Consumes 4 skill stones",76,170,,Elf,uses whisp_taunt
+66,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 11200); Consumes 4 skill stones",84,280,,Elf,uses whisp_taunt
+70,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 11600); Consumes 4 skill stones",92,390,,Elf,uses whisp_taunt
+74,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 12000); Consumes 4 skill stones",100,880,,Elf,uses whisp_taunt
 ,,,,,,,,,,,,,,,,,----------------------------Healing Whisps----------------------------
-43,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 250); Consumes 4 skill stones",50,35,,Elf,uses whisp_heal and whisp_quick_heal
-49,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 320); Consumes 4 skill stones",54,50,,Elf,uses whisp_heal and whisp_quick_heal
-55,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 390); Consumes 4 skill stones",58,81,,Elf,uses whisp_heal and whisp_quick_heal
-60,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 460); Consumes 4 skill stones",66,120,,Elf,uses whisp_heal and whisp_quick_heal
-64,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 530); Consumes 4 skill stones",76,190,,Elf,uses whisp_heal and whisp_quick_heal
-68,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 600); Consumes 4 skill stones",84,320,,Elf,uses whisp_heal and whisp_quick_heal
-72,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 670); Consumes 4 skill stones",92,650,,Elf,uses whisp_heal and whisp_quick_heal
-74,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 740); Consumes 4 skill stones",100,880,,Elf,uses whisp_heal and whisp_quick_heal
+43,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 250); Consumes 4 skill stones",50,35,,Elf,uses whisp_heal and whisp_quick_heal
+49,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 320); Consumes 4 skill stones",54,50,,Elf,uses whisp_heal and whisp_quick_heal
+55,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 390); Consumes 4 skill stones",58,81,,Elf,uses whisp_heal and whisp_quick_heal
+60,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 460); Consumes 4 skill stones",66,120,,Elf,uses whisp_heal and whisp_quick_heal
+64,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 530); Consumes 4 skill stones",76,190,,Elf,uses whisp_heal and whisp_quick_heal
+68,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 600); Consumes 4 skill stones",84,320,,Elf,uses whisp_heal and whisp_quick_heal
+72,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 670); Consumes 4 skill stones",92,650,,Elf,uses whisp_heal and whisp_quick_heal
+74,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 740); Consumes 4 skill stones",100,880,,Elf,uses whisp_heal and whisp_quick_heal
 ,,,,,,,,,,,,,,,,,----------------------------Armor Breaking Whisps----------------------------
-40,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 10% and MDef by 5%); Consumes 4 skill stones", 50, 28,,Demon,uses whisp_armor_break
-46,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 12% and MDef by 6%); Consumes 4 skill stones", 54, 40,,Demon,uses whisp_armor_break
-52,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 14% and MDef by 7%); Consumes 4 skill stones", 58, 74,,Demon,uses whisp_armor_break
-58,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 16% and MDef by 8%); Consumes 4 skill stones", 66, 88,,Demon,uses whisp_armor_break
-62,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 18% and MDef by 9%); Consumes 4 skill stones", 76,170,,Demon,uses whisp_armor_break
-66,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 22% and MDef by 11%); Consumes 4 skill stones", 84,280,,Demon,uses whisp_armor_break
-70,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 26% and MDef by 13%); Consumes 4 skill stones", 92,390,,Demon,uses whisp_armor_break
-74,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 30% and MDef by 15%); Consumes 4 skill stones",100,880,,Demon,uses whisp_armor_break
+40,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 10% and MDef by 5%); Consumes 4 skill stones", 50, 28,,Demon,uses whisp_armor_break
+46,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 12% and MDef by 6%); Consumes 4 skill stones", 54, 40,,Demon,uses whisp_armor_break
+52,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 14% and MDef by 7%); Consumes 4 skill stones", 58, 74,,Demon,uses whisp_armor_break
+58,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 16% and MDef by 8%); Consumes 4 skill stones", 66, 88,,Demon,uses whisp_armor_break
+62,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 18% and MDef by 9%); Consumes 4 skill stones", 76,170,,Demon,uses whisp_armor_break
+66,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 22% and MDef by 11%); Consumes 4 skill stones", 84,280,,Demon,uses whisp_armor_break
+70,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 26% and MDef by 13%); Consumes 4 skill stones", 92,390,,Demon,uses whisp_armor_break
+74,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 30% and MDef by 15%); Consumes 4 skill stones",100,880,,Demon,uses whisp_armor_break
 ,,,,,,,,,,,,,,,,,----------------------------Weapon Breaking Whisps----------------------------
-43,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 5%); Consumes 4 skill stones",50,35,,Demon,uses whisp_weapon_break
-49,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 6%); Consumes 4 skill stones",54,50,,Demon,uses whisp_weapon_break
-55,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 7%); Consumes 4 skill stones",58,81,,Demon,uses whisp_weapon_break
-60,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 8%); Consumes 4 skill stones",66,120,,Demon,uses whisp_weapon_break
-64,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 9%); Consumes 4 skill stones",76,190,,Demon,uses whisp_weapon_break
-68,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 11%); Consumes 4 skill stones",84,320,,Demon,uses whisp_weapon_break
-72,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 13%); Consumes 4 skill stones",92,650,,Demon,uses whisp_weapon_break
-74,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 15%); Consumes 4 skill stones",100,880,,Demon,uses whisp_weapon_break
+43,Weapon Breaking Whisp,weapon_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 5%); Consumes 4 skill stones",50,35,,Demon,uses whisp_weapon_break
+49,Weapon Breaking Whisp,weapon_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 6%); Consumes 4 skill stones",54,50,,Demon,uses whisp_weapon_break
+55,Weapon Breaking Whisp,weapon_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 7%); Consumes 4 skill stones",58,81,,Demon,uses whisp_weapon_break
+60,Weapon Breaking Whisp,weapon_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 8%); Consumes 4 skill stones",66,120,,Demon,uses whisp_weapon_break
+64,Weapon Breaking Whisp,weapon_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 9%); Consumes 4 skill stones",76,190,,Demon,uses whisp_weapon_break
+68,Weapon Breaking Whisp,weapon_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 11%); Consumes 4 skill stones",84,320,,Demon,uses whisp_weapon_break
+72,Weapon Breaking Whisp,weapon_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 13%); Consumes 4 skill stones",92,650,,Demon,uses whisp_weapon_break
+74,Weapon Breaking Whisp,weapon_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 15%); Consumes 4 skill stones",100,880,,Demon,uses whisp_weapon_break
 ,,,,,,,,,,,,,,,,,----------------------------Defensive Wall----------------------------
 46,Defensive Wall,defensive_wall,pfysical buff,,,0,0,self/single,0.5,900,30,increase p.def +3700; m.def +3300; buff cancel resist x1.8; ms x0.5,20,40,[]
 ,,,,,,,,,,,,,,,,,---------------------------Reinforcement----------------------------
@@ -170,98 +170,98 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 72,Mass Taunt,mass_provoke,physical active,,,0,400,enemy/aoe,0.5,30,3,"Agro enemies around - locks them onto you for 3s then leaves you 6900 aggro ahead;",105,650,,Human
 74,Mass Taunt,mass_provoke,physical active,,,0,400,enemy/aoe,0.5,30,3,"Agro enemies around - locks them onto you for 3s then leaves you 7200 aggro ahead;",110,880,,Human
 ,,,,,,,,,,,,,,,,,----------------------------Intimidate----------------------------
-40,Intimidate,tank_fear,physical debuff,,,600,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",40,28,,Demon
-43,Intimidate,tank_fear,physical debuff,,,600,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",45,35,,Demon
-46,Intimidate,tank_fear,physical debuff,,,600,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",50,40,,Demon
-49,Intimidate,tank_fear,physical debuff,,,600,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",55,50,,Demon
-52,Intimidate,tank_fear,physical debuff,,,600,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",60,74,,Demon
-55,Intimidate,tank_fear,physical debuff,,,600,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",65,81,,Demon
-58,Intimidate,tank_fear,physical debuff,,,600,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",70,88,,Demon
-60,Intimidate,tank_fear,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",75,120,,Demon
-62,Intimidate,tank_fear,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",80,170,,Demon
-64,Intimidate,tank_fear,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",85,190,,Demon
-66,Intimidate,tank_fear,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",90,280,,Demon
-68,Intimidate,tank_fear,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",95,320,,Demon
-70,Intimidate,tank_fear,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",100,390,,Demon
-72,Intimidate,tank_fear,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",105,650,,Demon
-74,Intimidate,tank_fear,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",110,880,,Demon
+40,Intimidate,intimidate,physical debuff,,,600,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",40,28,,Demon
+43,Intimidate,intimidate,physical debuff,,,600,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",45,35,,Demon
+46,Intimidate,intimidate,physical debuff,,,600,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",50,40,,Demon
+49,Intimidate,intimidate,physical debuff,,,600,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",55,50,,Demon
+52,Intimidate,intimidate,physical debuff,,,600,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",60,74,,Demon
+55,Intimidate,intimidate,physical debuff,,,600,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",65,81,,Demon
+58,Intimidate,intimidate,physical debuff,,,600,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",70,88,,Demon
+60,Intimidate,intimidate,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",75,120,,Demon
+62,Intimidate,intimidate,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",80,170,,Demon
+64,Intimidate,intimidate,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",85,190,,Demon
+66,Intimidate,intimidate,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",90,280,,Demon
+68,Intimidate,intimidate,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",95,320,,Demon
+70,Intimidate,intimidate,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",100,390,,Demon
+72,Intimidate,intimidate,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",105,650,,Demon
+74,Intimidate,intimidate,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",110,880,,Demon
 ,,,,,,,,,,,,,,,,,----------------------------Freeze----------------------------
-40,Freeze,tank_freeze,Magical debuff,,,600,0,enemy/single,0,3,30,"Slow enemy move speed with 30% ;",40,28,,Elf
-43,Freeze,tank_freeze,Magical debuff,,,600,0,enemy/single,0,3,30,"Slow enemy move speed with 31% ;",45,35,,Elf
-46,Freeze,tank_freeze,Magical debuff,,,600,0,enemy/single,0,3,30,"Slow enemy move speed with 33% ;",50,40,,Elf
-49,Freeze,tank_freeze,Magical debuff,,,600,0,enemy/single,0,3,30,"Slow enemy move speed with 35% ;",55,50,,Elf
-52,Freeze,tank_freeze,Magical debuff,,,600,0,enemy/single,0,3,30,"Slow enemy move speed with 37% ;",60,74,,Elf
-55,Freeze,tank_freeze,Magical debuff,,,600,0,enemy/single,0,3,30,"Slow enemy move speed with 40% ;",65,81,,Elf
-58,Freeze,tank_freeze,Magical debuff,,,600,0,enemy/single,0,3,30,"Slow enemy move speed with 43% ;",70,88,,Elf
-60,Freeze,tank_freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 45% ;",75,120,,Elf
-62,Freeze,tank_freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 47% ;",80,170,,Elf
-64,Freeze,tank_freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 50% ;",85,190,,Elf
-66,Freeze,tank_freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 50% ;",90,280,,Elf
-68,Freeze,tank_freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 50% ;",95,320,,Elf
-70,Freeze,tank_freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 50% ;",100,390,,Elf
-72,Freeze,tank_freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 50% ;",105,650,,Elf
-74,Freeze,tank_freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 50% ;",110,880,,Elf
+40,Freeze,freeze,Magical debuff,,,600,0,enemy/single,0,3,30,"Slow enemy move speed with 30% ;",40,28,,Elf
+43,Freeze,freeze,Magical debuff,,,600,0,enemy/single,0,3,30,"Slow enemy move speed with 31% ;",45,35,,Elf
+46,Freeze,freeze,Magical debuff,,,600,0,enemy/single,0,3,30,"Slow enemy move speed with 33% ;",50,40,,Elf
+49,Freeze,freeze,Magical debuff,,,600,0,enemy/single,0,3,30,"Slow enemy move speed with 35% ;",55,50,,Elf
+52,Freeze,freeze,Magical debuff,,,600,0,enemy/single,0,3,30,"Slow enemy move speed with 37% ;",60,74,,Elf
+55,Freeze,freeze,Magical debuff,,,600,0,enemy/single,0,3,30,"Slow enemy move speed with 40% ;",65,81,,Elf
+58,Freeze,freeze,Magical debuff,,,600,0,enemy/single,0,3,30,"Slow enemy move speed with 43% ;",70,88,,Elf
+60,Freeze,freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 45% ;",75,120,,Elf
+62,Freeze,freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 47% ;",80,170,,Elf
+64,Freeze,freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 50% ;",85,190,,Elf
+66,Freeze,freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 50% ;",90,280,,Elf
+68,Freeze,freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 50% ;",95,320,,Elf
+70,Freeze,freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 50% ;",100,390,,Elf
+72,Freeze,freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 50% ;",105,650,,Elf
+74,Freeze,freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 50% ;",110,880,,Elf
 ,,,,,,,,,,,,,,,,,----------------------------Stay----------------------------
-40,Stay,tank_stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",40,28
-43,Stay,tank_stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",45,35
-46,Stay,tank_stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",50,40
-49,Stay,tank_stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",55,50
-52,Stay,tank_stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",60,74
-55,Stay,tank_stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",65,81
-58,Stay,tank_stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",70,88
-60,Stay,tank_stay,physical debuff,,,600,0,enemy/single,2,4,10,"Hold enemy for 10s;",75,120
-62,Stay,tank_stay,physical debuff,,,600,0,enemy/single,2,4,10,"Hold enemy for 10s;",80,170
-64,Stay,tank_stay,physical debuff,,,600,0,enemy/single,2,4,10,"Hold enemy for 10s;",85,190
-66,Stay,tank_stay,physical debuff,,,600,0,enemy/single,2,4,10,"Hold enemy for 10s;",90,280
-68,Stay,tank_stay,physical debuff,,,600,0,enemy/single,2,4,10,"Hold enemy for 10s;",95,320
-70,Stay,tank_stay,physical debuff,,,600,0,enemy/single,2,4,10,"Hold enemy for 10s;",100,390
-72,Stay,tank_stay,physical debuff,,,600,0,enemy/single,2,4,10,"Hold enemy for 10s;",105,650
-74,Stay,tank_stay,physical debuff,,,600,0,enemy/single,2,4,10,"Hold enemy for 10s;",110,880
+40,Stay,stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",40,28
+43,Stay,stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",45,35
+46,Stay,stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",50,40
+49,Stay,stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",55,50
+52,Stay,stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",60,74
+55,Stay,stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",65,81
+58,Stay,stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",70,88
+60,Stay,stay,physical debuff,,,600,0,enemy/single,2,4,10,"Hold enemy for 10s;",75,120
+62,Stay,stay,physical debuff,,,600,0,enemy/single,2,4,10,"Hold enemy for 10s;",80,170
+64,Stay,stay,physical debuff,,,600,0,enemy/single,2,4,10,"Hold enemy for 10s;",85,190
+66,Stay,stay,physical debuff,,,600,0,enemy/single,2,4,10,"Hold enemy for 10s;",90,280
+68,Stay,stay,physical debuff,,,600,0,enemy/single,2,4,10,"Hold enemy for 10s;",95,320
+70,Stay,stay,physical debuff,,,600,0,enemy/single,2,4,10,"Hold enemy for 10s;",100,390
+72,Stay,stay,physical debuff,,,600,0,enemy/single,2,4,10,"Hold enemy for 10s;",105,650
+74,Stay,stay,physical debuff,,,600,0,enemy/single,2,4,10,"Hold enemy for 10s;",110,880
 ,,,,,,,,,,,,,,,,,----------------------------Shield Smash - Rate----------------------------
-40,Shield Smash - Rate,tank_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1000, Decrease P.Crit.Rate with 30% and M.Crit.Rate with 5%; Requre: Shield;",62,28,[strike],Human;Elf
-43,Shield Smash - Rate,tank_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1200, Decrease P.Crit.Rate with 31% and M.Crit.Rate with 6%; Requre: Shield;",65,35,[strike],Human;Elf
-46,Shield Smash - Rate,tank_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1200, Decrease P.Crit.Rate with 33% and M.Crit.Rate with 8%; Requre: Shield;",71,40,[strike],Human;Elf
-49,Shield Smash - Rate,tank_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1200, Decrease P.Crit.Rate with 35% and M.Crit.Rate with 10%; Requre: Shield;",76,50,[strike],Human;Elf
-52,Shield Smash - Rate,tank_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1400, Decrease P.Crit.Rate with 37% and M.Crit.Rate with 12%; Requre: Shield;",83,74,[strike],Human;Elf
-55,Shield Smash - Rate,tank_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1600, Decrease P.Crit.Rate with 40% and M.Crit.Rate with 15%; Requre: Shield;",90,81,[strike],Human;Elf
-58,Shield Smash - Rate,tank_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1800, Decrease P.Crit.Rate with 43% and M.Crit.Rate with 18%; Requre: Shield;",95,88,[strike],Human;Elf
-60,Shield Smash - Rate,tank_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +2000, Decrease P.Crit.Rate with 45% and M.Crit.Rate with 20%; Requre: Shield;",98,120,[strike],Human;Elf
-62,Shield Smash - Rate,tank_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +2200, Decrease P.Crit.Rate with 47% and M.Crit.Rate with 22%; Requre: Shield;",100,170,[strike],Human;Elf
-64,Shield Smash - Rate,tank_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +2400, Decrease P.Crit.Rate with 50% and M.Crit.Rate with 25%; Requre: Shield;",105,190,[strike],Human;Elf
-66,Shield Smash - Rate,tank_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +2700, Decrease P.Crit.Rate with 50% and M.Crit.Rate with 25%; Requre: Shield;",108,280,[strike],Human;Elf
-68,Shield Smash - Rate,tank_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +3000, Decrease P.Crit.Rate with 50% and M.Crit.Rate with 25%; Requre: Shield;",112,320,[strike],Human;Elf
-70,Shield Smash - Rate,tank_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +3300, Decrease P.Crit.Rate with 50% and M.Crit.Rate with 25%; Requre: Shield;",114,390,[strike],Human;Elf
-72,Shield Smash - Rate,tank_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +3700, Decrease P.Crit.Rate with 50% and M.Crit.Rate with 25%; Requre: Shield;",117,650,[strike],Human;Elf
-74,Shield Smash - Rate,tank_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +4000, Decrease P.Crit.Rate with 50% and M.Crit.Rate with 25%; Requre: Shield;",120,880,[strike],Human;Elf
+40,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1000, Decrease P.Crit.Rate with 30% and M.Crit.Rate with 5%; Requre: Shield;",62,28,[strike],Human;Elf
+43,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1200, Decrease P.Crit.Rate with 31% and M.Crit.Rate with 6%; Requre: Shield;",65,35,[strike],Human;Elf
+46,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1200, Decrease P.Crit.Rate with 33% and M.Crit.Rate with 8%; Requre: Shield;",71,40,[strike],Human;Elf
+49,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1200, Decrease P.Crit.Rate with 35% and M.Crit.Rate with 10%; Requre: Shield;",76,50,[strike],Human;Elf
+52,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1400, Decrease P.Crit.Rate with 37% and M.Crit.Rate with 12%; Requre: Shield;",83,74,[strike],Human;Elf
+55,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1600, Decrease P.Crit.Rate with 40% and M.Crit.Rate with 15%; Requre: Shield;",90,81,[strike],Human;Elf
+58,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1800, Decrease P.Crit.Rate with 43% and M.Crit.Rate with 18%; Requre: Shield;",95,88,[strike],Human;Elf
+60,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +2000, Decrease P.Crit.Rate with 45% and M.Crit.Rate with 20%; Requre: Shield;",98,120,[strike],Human;Elf
+62,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +2200, Decrease P.Crit.Rate with 47% and M.Crit.Rate with 22%; Requre: Shield;",100,170,[strike],Human;Elf
+64,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +2400, Decrease P.Crit.Rate with 50% and M.Crit.Rate with 25%; Requre: Shield;",105,190,[strike],Human;Elf
+66,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +2700, Decrease P.Crit.Rate with 50% and M.Crit.Rate with 25%; Requre: Shield;",108,280,[strike],Human;Elf
+68,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +3000, Decrease P.Crit.Rate with 50% and M.Crit.Rate with 25%; Requre: Shield;",112,320,[strike],Human;Elf
+70,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +3300, Decrease P.Crit.Rate with 50% and M.Crit.Rate with 25%; Requre: Shield;",114,390,[strike],Human;Elf
+72,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +3700, Decrease P.Crit.Rate with 50% and M.Crit.Rate with 25%; Requre: Shield;",117,650,[strike],Human;Elf
+74,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +4000, Decrease P.Crit.Rate with 50% and M.Crit.Rate with 25%; Requre: Shield;",120,880,[strike],Human;Elf
 ,,,,,,,,,,,,,,,,,----------------------------Shield Smash - Dmg----------------------------
-40,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1000, Decrease P.Crit.Dmg with 15% and M.Crit.Dmg with 3%; Requre: Shield;",62,28,[strike],Demon
-43,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1200, Decrease P.Crit.Dmg with 17% and M.Crit.Dmg with 4%; Requre: Shield;",65,35,[strike],Demon
-46,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1200, Decrease P.Crit.Dmg with 19% and M.Crit.Dmg with 5%; Requre: Shield;",71,40,[strike],Demon
-49,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1200, Decrease P.Crit.Dmg with 22% and M.Crit.Dmg with 7%; Requre: Shield;",76,50,[strike],Demon
-52,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1400, Decrease P.Crit.Dmg with 24% and M.Crit.Dmg with 8%; Requre: Shield;",83,74,[strike],Demon
-55,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1600, Decrease P.Crit.Dmg with 26% and M.Crit.Dmg with 9%; Requre: Shield;",90,81,[strike],Demon
-58,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1800, Decrease P.Crit.Dmg with 28% and M.Crit.Dmg with 11%; Requre: Shield;",95,88,[strike],Demon
-60,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +2000, Decrease P.Crit.Dmg with 31% and M.Crit.Dmg with 12%; Requre: Shield;",98,120,[strike],Demon
-62,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +2200, Decrease P.Crit.Dmg with 33% and M.Crit.Dmg with 13%; Requre: Shield;",100,170,[strike],Demon
-64,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +2400, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",105,190,[strike],Demon
-66,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +2700, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",108,280,[strike],Demon
-68,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +3000, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",112,320,[strike],Demon
-70,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +3300, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",114,390,[strike],Demon
-72,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +3700, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",117,650,[strike],Demon
-74,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +4000, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",120,880,[strike],Demon
+40,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1000, Decrease P.Crit.Dmg with 15% and M.Crit.Dmg with 3%; Requre: Shield;",62,28,[strike],Demon
+43,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1200, Decrease P.Crit.Dmg with 17% and M.Crit.Dmg with 4%; Requre: Shield;",65,35,[strike],Demon
+46,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1200, Decrease P.Crit.Dmg with 19% and M.Crit.Dmg with 5%; Requre: Shield;",71,40,[strike],Demon
+49,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1200, Decrease P.Crit.Dmg with 22% and M.Crit.Dmg with 7%; Requre: Shield;",76,50,[strike],Demon
+52,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1400, Decrease P.Crit.Dmg with 24% and M.Crit.Dmg with 8%; Requre: Shield;",83,74,[strike],Demon
+55,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1600, Decrease P.Crit.Dmg with 26% and M.Crit.Dmg with 9%; Requre: Shield;",90,81,[strike],Demon
+58,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +1800, Decrease P.Crit.Dmg with 28% and M.Crit.Dmg with 11%; Requre: Shield;",95,88,[strike],Demon
+60,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +2000, Decrease P.Crit.Dmg with 31% and M.Crit.Dmg with 12%; Requre: Shield;",98,120,[strike],Demon
+62,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +2200, Decrease P.Crit.Dmg with 33% and M.Crit.Dmg with 13%; Requre: Shield;",100,170,[strike],Demon
+64,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +2400, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",105,190,[strike],Demon
+66,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +2700, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",108,280,[strike],Demon
+68,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +3000, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",112,320,[strike],Demon
+70,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +3300, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",114,390,[strike],Demon
+72,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +3700, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",117,650,[strike],Demon
+74,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +4000, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",120,880,[strike],Demon
 ,,,,,,,,,,,,,,,,,----------------------------Shield Shock----------------------------
-40,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",62,28
-43,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",65,35
-46,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",71,40
-49,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",76,50
-52,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",83,74
-56,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",90,81
-58,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",95,88
-60,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",98,120
-62,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",100,170
-64,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",105,190
-66,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",108,280
-68,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",112,320
-70,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",114,390
-72,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",117,650
-74,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",120,880
+40,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",62,28
+43,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",65,35
+46,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",71,40
+49,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",76,50
+52,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",83,74
+56,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",90,81
+58,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",95,88
+60,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",98,120
+62,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",100,170
+64,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",105,190
+66,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",108,280
+68,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",112,320
+70,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",114,390
+72,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",117,650
+74,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",120,880

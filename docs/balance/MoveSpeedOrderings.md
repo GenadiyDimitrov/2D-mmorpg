@@ -300,7 +300,7 @@ a **separate trailing factor beside the slow one**, so it multiplies the flat sh
 So the CSVs keep *"Decrease movement speed with 10%"* on all four Mark rows — the **10% debuff
 wording** of the two you offered, not the −15% buff one. Nothing in code or data moves.
 
-⚠ **The two warrior toggles use the same channel** (`warrior_parry` and `warrior_saints_blessing`,
+⚠ **The two warrior toggles use the same channel** (`parry` and `saints_blessing`,
 *"Decrease move/attack.speed with 10%"*) — so they sit in the same position and price the same way. If
 you ever author a move-speed cut that should ride *inside* the buff bracket instead, it needs a
 different field; `MoveSpeedPenaltyPct` is the debuff-position one by construction.

@@ -50,9 +50,9 @@ public static partial class SkillCatalog
 {
     // ---- The four NEW ids. Append-only, as always. ----
     public const string BufferShieldMastery = "buffer_shield_mastery";
-    public const string WcHarmonySoul       = "wc_harmony_soul";
-    public const string WcHarmonyMadness    = "wc_harmony_madness";
-    public const string WcHarmonyMark       = "wc_harmony_mark";
+    public const string HarmonyOfTheSoul       = "harmony_of_the_soul";
+    public const string HarmonyOfMadness    = "harmony_of_madness";
+    public const string HarmonyMark       = "harmony_mark";
     public const string UrgentLesserHeal    = "urgent_lesser_heal";
 
     /// <summary>The 4th tier's every-level band, 76-90. Same list the healer uses; named here so the
@@ -419,7 +419,7 @@ public static partial class SkillCatalog
             // reduction: his row asks for −10% magical and −20% physical on ONE buff, which the
             // single `BuffCooldown` number could not say. See SkillDef.PhysCooldownPct.
             // ⚠ Own key, covers nothing, MULTIPLIES on top of the basic layer — the harmony rule.
-            new(WcHarmonySoul, "Harmony of the Soul", BaseClass.Mage, SkillEffect.None,
+            new(HarmonyOfTheSoul, "Harmony of the Soul", BaseClass.Mage, SkillEffect.None,
                 MpCost: soulRungs[0].MpCost, CastTicks: 10, CooldownTicks: 1200, Range: 600, Power: 0,
                 DurationTicks: 3000, BuffKey: "harmony_soul", Rank: NpcBuffRank,
                 Category: SkillCategory.Buff, SpCost: soulRungs[0].SpCost,
@@ -435,7 +435,7 @@ public static partial class SkillCatalog
             //    10% of both pools and pays 8% of everything that kills things with.
             // ⚠ The two costs are NEGATIVE magnitudes — a buff may reduce, and Max HP/MP handle it the
             //   same way the older Frenzy already does.
-            new(WcHarmonyMadness, "Harmony of Madness", BaseClass.Mage,
+            new(HarmonyOfMadness, "Harmony of Madness", BaseClass.Mage,
                 SkillEffect.BuffHp | SkillEffect.BuffMp | SkillEffect.BuffAtk
                 | SkillEffect.BuffAtkSpeed | SkillEffect.BuffCastSpeed
                 | SkillEffect.BuffMoveSpeed | SkillEffect.BuffEvasion,
@@ -532,7 +532,7 @@ public static partial class SkillCatalog
             //    because MagicCritDamageMult COMPOUNDS in RecomputeDerived. The 5.0 cap
             //    (`StatCaps.MagicCritDamageCap`) is well clear of it, which is his *"we should not
             //    limit it .. x3.12 is max currently"*.
-            new(WcHarmonyMark, "Harmony Mark", BaseClass.Mage,
+            new(HarmonyMark, "Harmony Mark", BaseClass.Mage,
                 markMags2.Aggregate(SkillEffect.None, (a, m) => a | m.Effect),
                 MpCost: 300, CastTicks: 50, CooldownTicks: 1200, Range: 900, Power: 0,
                 DurationTicks: 3000, BuffKey: MarkKey, Rank: 1, FlatRank: true,

@@ -124,8 +124,8 @@ public static class BossCatalog
             Skills: new[]
             {
                 // Phase skill first so it takes priority once the boss is wounded.
-                new BossSkillEntry(SkillCatalog.BossThornNovaSkill, MaxHpFraction: 0.50f),
-                new BossSkillEntry(SkillCatalog.BossSlamSkill),
+                new BossSkillEntry(SkillCatalog.ThornNova, MaxHpFraction: 0.50f),
+                new BossSkillEntry(SkillCatalog.DevastatingSlam),
             },
             Phases: new[]
             {
@@ -155,7 +155,7 @@ public static class BossCatalog
         // ESCORTED like the treant (the ×2 `solo boss` rung belongs to a boss that fights alone to the
         // end, which she does not once the brood lands).
         ["emberwyrm_matriarch"] = new BossProfile(
-            Skills: new[] { new BossSkillEntry(SkillCatalog.BossSlamSkill) },
+            Skills: new[] { new BossSkillEntry(SkillCatalog.DevastatingSlam) },
             Phases: new[]
             {
                 new BossPhase(0.50f, "The Emberwyrm Matriarch shrieks — the brood answers from the crags!",
@@ -182,8 +182,8 @@ public static class BossCatalog
         ["grave_lich"] = new BossProfile(
             Skills: new[]
             {
-                new BossSkillEntry(SkillCatalog.BossFullSilenceSkill),
-                new BossSkillEntry(SkillCatalog.BossSlamSkill),
+                new BossSkillEntry(SkillCatalog.WordOfUnmaking),
+                new BossSkillEntry(SkillCatalog.DevastatingSlam),
             },
             Phases: System.Array.Empty<BossPhase>(),
             // SOLO — a dungeon boss stands alone at the end of its corridor, with the last mob group
@@ -194,8 +194,8 @@ public static class BossCatalog
         ["dread_knight"] = new BossProfile(
             Skills: new[]
             {
-                new BossSkillEntry(SkillCatalog.BossFullSilenceSkill),
-                new BossSkillEntry(SkillCatalog.BossSlamSkill),
+                new BossSkillEntry(SkillCatalog.WordOfUnmaking),
+                new BossSkillEntry(SkillCatalog.DevastatingSlam),
             },
             Phases: System.Array.Empty<BossPhase>(),
             // SOLO — a dungeon boss stands alone at the end of its corridor, with the last mob group
@@ -206,8 +206,8 @@ public static class BossCatalog
         ["disciple_of_the_dawn"] = new BossProfile(
             Skills: new[]
             {
-                new BossSkillEntry(SkillCatalog.BossFullSilenceSkill),
-                new BossSkillEntry(SkillCatalog.BossSlamSkill),
+                new BossSkillEntry(SkillCatalog.WordOfUnmaking),
+                new BossSkillEntry(SkillCatalog.DevastatingSlam),
             },
             Phases: System.Array.Empty<BossPhase>(),
             // SOLO — a dungeon boss stands alone at the end of its corridor, with the last mob group

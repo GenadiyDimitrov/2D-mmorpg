@@ -36,8 +36,8 @@ public static partial class SkillCatalog
     /// <summary>The P.Atk twin of the tank's Final Defense — his row is that skill's sentence with
     /// "P.Def" swapped for "P.Atk" and no magic column. Its numbers live in
     /// <c>Entity.FinalStandBonus</c>, not here, because they are read LIVE off the HP bar.</summary>
-    public const string WarriorFinalStand = "warrior_final_stand";
-    public const string WarriorHpRegeneration = "warrior_hp_regeneration";
+    public const string FinalStand = "final_stand";
+    public const string HpRegeneration = "hp_regeneration";
 
     // ---- HIS LADDER. Fifteen rungs at these levels, on the armour and both weapon masteries. ----
     internal static readonly int[] Warrior3rdLevels =
@@ -186,7 +186,7 @@ public static partial class SkillCatalog
         // for the same reason Final Defense's live in `FinalDefenceBonus`: HP moves every tick and
         // nothing recomputes derived stats when it does, so a buff would have needed a watcher on the
         // damage path, the heal path, the regen tick AND the potion path. A getter cannot be forgotten.
-        new(WarriorFinalStand, "Final Stand", BaseClass.Fighter, SkillEffect.None,
+        new(FinalStand, "Final Stand", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, SpCost: 28_000,
             Description: "Passive. The worse it is going, the harder you swing: below 75%, below 50% "
@@ -226,7 +226,7 @@ public static partial class SkillCatalog
         // half, and folding his authored +2.0 inside would have silently made it +3.0.
         // ⚠ The MP half is the interesting one: a warrior has no other MP regen source of his own at
         //   all, so this is what lets him sit for ten seconds between pulls instead of thirty.
-        new(WarriorHpRegeneration, "HP Regeneration", BaseClass.Fighter, SkillEffect.None,
+        new(HpRegeneration, "HP Regeneration", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, SpCost: 42_000,
             Description: "Passive. Your wounds close faster, and faster still when you sit down to "
@@ -256,10 +256,10 @@ public static partial class SkillCatalog
     //  Every number below is his row, read column by column; nothing here is derived.
     // ═══════════════════════════════════════════════════════════════════════════════════════════
     public const string WarriorFocus              = "warrior_focus";
-    public const string WarriorFocusMastery       = "warrior_focus_mastery";
-    public const string WarriorFocusedBlast       = "warrior_focused_blast";
-    public const string WarriorFocusedDoubleSlash = "warrior_double_slash";
-    public const string WarriorFocusedTripleSlash = "warrior_tripple_slash";   // his spelling, kept (ids are append-only)
+    public const string FocusMastery       = "focus_mastery";
+    public const string FocusedBlast       = "focused_blast";
+    public const string FocusedDoubleSlash = "focused_double_slash";
+    public const string FocusedTrippleSlash = "focused_tripple_slash";   // his spelling, kept (ids are append-only)
 
     // Focus and Focus Mastery share one ladder: the same six levels and the same six caps.
     internal static readonly int[] WarriorFocusLevels = { 43, 49, 55, 62, 68, 74 };
@@ -316,7 +316,7 @@ public static partial class SkillCatalog
         // 🔑 Read as ONE roll per landed swing: 30% when the swing crit, 15% when it did not. A miss
         //    gathers nothing. The weapon gate is the skill's own `RequiredWeapon`, the proc-passive idiom
         //    (Combo Mastery reads the same two fields).
-        new(WarriorFocusMastery, "Focus Mastery", BaseClass.Fighter, SkillEffect.None,
+        new(FocusMastery, "Focus Mastery", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
             RequiredWeapon: WeaponType.AnySword, RequiredHands: WeaponHands.Two,
@@ -331,7 +331,7 @@ public static partial class SkillCatalog
         // *"Deals Physical damage with +N power, Cannot be blocked, Can double, Consume 'Focus' to
         // increase power with 10% (Max 2)"*. Range 600 is his — a blast, not a melee strike, so the
         // RANGE-40 law does not reach it.
-        FocusedStrike(WarriorFocusedBlast, "Focused Blast", FocusedBlastLevels, FocusedBlastPower,
+        FocusedStrike(FocusedBlast, "Focused Blast", FocusedBlastLevels, FocusedBlastPower,
             FocusedBlastMp, FocusedBlastSp, castTicks: 20, cooldownTicks: 30, range: 600, hits: 1,
             spendMax: 2, powerPerCharge: 0.10f,
             description: "Hurl a focused blow at a distant enemy. It cannot be blocked, and spends up to 2 Focus for more power.",
@@ -341,14 +341,14 @@ public static partial class SkillCatalog
         // Comment: *"consume warrior_focus once per skil use - not each slash"*. The bonus is taken
         // once, before the first slash, and both slashes swing with it. Cast 1.5 / reuse 3 per his
         // second-round ruling (it had been copied from the Triple).
-        FocusedStrike(WarriorFocusedDoubleSlash, "Focused Double Slash", FocusedDoubleLevels, FocusedDoublePower,
+        FocusedStrike(FocusedDoubleSlash, "Focused Double Slash", FocusedDoubleLevels, FocusedDoublePower,
             FocusedDoubleMp, FocusedDoubleSp, castTicks: 15, cooldownTicks: 30, range: 40, hits: 2,
             spendMax: 3, powerPerCharge: 0.15f,
             description: "Slash twice. Neither slash can be blocked, and the pair spends up to 3 Focus for more power.",
             power4: W4FocusedMultiPower, mp4: W4DoubleMp),
 
         // ═══ FOCUSED TRIPPLE SLASH — three hits, spends up to 4 ONCE ═════════════════════════════
-        FocusedStrike(WarriorFocusedTripleSlash, "Focused Tripple Slash", FocusedTripleLevels, FocusedTriplePower,
+        FocusedStrike(FocusedTrippleSlash, "Focused Tripple Slash", FocusedTripleLevels, FocusedTriplePower,
             FocusedTripleMp, FocusedTripleSp, castTicks: 20, cooldownTicks: 50, range: 40, hits: 3,
             spendMax: 4, powerPerCharge: 0.15f,
             description: "Slash three times. No slash can be blocked, and the flurry spends up to 4 Focus for more power.",
@@ -411,16 +411,16 @@ public static partial class SkillCatalog
     // ═══════════════════════════════════════════════════════════════════════════════════════════
 
     public const string WarriorCharge            = "warrior_charge";
-    public const string WarriorChampionPresence  = "warrior_champion_presence";
-    public const string WarriorBerserkerPresence = "warrior_berserker_presence";
-    public const string WarriorSaintsPresence    = "warrior_saints_presence";
+    public const string ChampionPresence  = "champion_presence";
+    public const string BerserkerPresence = "berserker_presence";
+    public const string SaintsPresence    = "saints_presence";
     public const string WarriorHumanSlash        = "warrior_human_slash";
     public const string WarriorDemonSlash        = "warrior_demon_slash";
     public const string WarriorElfSlash          = "warrior_elf_slash";
-    public const string WarriorBattleFrenzy      = "warrior_battle_frenzy";
-    public const string WarriorSwordShock        = "warrior_sword_shock";
-    public const string WarriorDemonicSmash      = "warrior_demonic_smash";
-    public const string WarriorSwordBlast        = "warrior_sword_blast";
+    public const string BattleFrenzy      = "battle_frenzy";
+    public const string SwordShock        = "sword_shock";
+    public const string DemonicSmash      = "demonic_smash";
+    public const string SwordBlast        = "sword_blast";
     public const string WarriorSwordDance        = "warrior_sword_dance";
     /// <summary>ONE STROKE of Saints Sword Dance — the sub-skill the wrapper fires ten times. Never
     /// learned, never on a bar, no MP of its own. See <see cref="SkillDef.ChannelSkill"/>.</summary>
@@ -513,7 +513,7 @@ public static partial class SkillCatalog
         //    hold two of these; keys are separate because they are separate abilities, not a family.
         // *"Increase: Attack Speed with 5%, PVP Dmg with 5%"*. "PVP Dmg" is all THREE PvP channels,
         // exactly as Monster Knowledge's "PVE Dmg" is all three PvE ones — he names the CONTEXT.
-        Presence(WarriorChampionPresence, "Champion Presence",
+        Presence(ChampionPresence, "Champion Presence",
             SkillEffect.BuffAtkSpeed | SkillEffect.BuffPvpSkillDamage
             | SkillEffect.BuffPvpMagicDamage | SkillEffect.BuffPvpBasicDamage,
             new[] { .05f, .10f, .15f, .20f }, new[] { .05f, .10f, .15f, .25f },
@@ -529,7 +529,7 @@ public static partial class SkillCatalog
 
         // *"Increase: P.Atk with 10%, Acc +3"* — a percentage and a FLAT, which is why the two
         // magnitudes carry different modes.
-        Presence(WarriorBerserkerPresence, "Berserker Presence",
+        Presence(BerserkerPresence, "Berserker Presence",
             SkillEffect.BuffPhysAtk | SkillEffect.BuffAccuracy,
             new[] { .10f, .15f, .20f, .25f }, new[] { 3f, 5f, 5f, 7f },
             (atk, acc) => new EffectMagnitude[]
@@ -590,11 +590,11 @@ public static partial class SkillCatalog
         //
         // ⚠ `CountsTowardBuffLimit: false`, like the two Battle stances and for their reason: a buff
         //   you may only press below 30% HP is an emergency, not a slot you plan around.
-        new(WarriorBattleFrenzy, "Battle Frenzy", BaseClass.Fighter,
+        new(BattleFrenzy, "Battle Frenzy", BaseClass.Fighter,
             SkillEffect.BuffMoveSpeed | SkillEffect.BuffAccuracy | SkillEffect.BuffAtkSpeed
             | SkillEffect.BuffCritRate | SkillEffect.BuffCritDamage | SkillEffect.BuffCancelResist,
             MpCost: W3FrenzyMp[0], CastTicks: 20, CooldownTicks: 3000, Range: 0, Power: 0,
-            DurationTicks: 600, BuffKey: "warrior_battle_frenzy", Rank: 1, CountsTowardBuffLimit: false,
+            DurationTicks: 600, BuffKey: "battle_frenzy", Rank: 1, CountsTowardBuffLimit: false,
             Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly,
             RequireHpBelowFraction: 0.30f, SpCost: W3FrenzySp[0],
             PhysMpCostPct: 0.50f, BuffHealReceivedPct: -W3FrenzyHealRecv[0],
@@ -624,7 +624,7 @@ public static partial class SkillCatalog
         // ⚠ HIS DURR CELL READ 0 while the DESCR said *"Stuns for 5s"*. A zero-tick stun is not a
         //   skill; the cell moved to 5 in the same commit as this line, in BOTH tiers. Same shape as
         //   the Human archer's Magic Arrow, whose own cell has always read 5.
-        WarriorStrike(WarriorSwordShock, "Sword Shock", SkillEffect.Stun,
+        WarriorStrike(SwordShock, "Sword Shock", SkillEffect.Stun,
             W3SwordShockPower, W4SwordShockPower,
             castTicks: 10, cooldownTicks: 50, range: 40f, durationTicks: 50,
             _ => Array.Empty<EffectMagnitude>(),
@@ -632,7 +632,7 @@ public static partial class SkillCatalog
             _ => "and stuns it for 5s", mp4: W4SlashMp),
 
         // ═══ DEMONIC SMASH — the Demon's big one. No rider, 3x Sword Shock's power ════════════════
-        WarriorStrike(WarriorDemonicSmash, "Demonic Smash", SkillEffect.None,
+        WarriorStrike(DemonicSmash, "Demonic Smash", SkillEffect.None,
             W3DemonicSmashPower, W4DemonicSmashPower,
             castTicks: 20, cooldownTicks: 50, range: 40f, durationTicks: 0,
             _ => Array.Empty<EffectMagnitude>(),
@@ -644,7 +644,7 @@ public static partial class SkillCatalog
         //    SP, same 600 range, in both tiers. The Human pays for that reach in Focus; the Elf just
         //    swings.
         // ⚠ Range 600, so the RANGE-40 melee law does not reach it (same as Focused Blast).
-        WarriorStrike(WarriorSwordBlast, "Sword Blast", SkillEffect.None,
+        WarriorStrike(SwordBlast, "Sword Blast", SkillEffect.None,
             FocusedBlastPower, W4FocusedBlastPower,
             castTicks: 20, cooldownTicks: 30, range: 600f, durationTicks: 0,
             _ => Array.Empty<EffectMagnitude>(),
@@ -731,10 +731,10 @@ public static partial class SkillCatalog
             new(SkillEffect.BuffCritDamage, dmg[i]),
             new(SkillEffect.BuffMoveSpeed, speed[i], ModifierMode.Flat),
         };
-        return new(WarriorSaintsPresence, "Saints Presence", BaseClass.Fighter,
+        return new(SaintsPresence, "Saints Presence", BaseClass.Fighter,
             SkillEffect.BuffCritRate | SkillEffect.BuffCritDamage | SkillEffect.BuffMoveSpeed,
             MpCost: PresenceMp[0], CastTicks: 10, CooldownTicks: 50, Range: 0, Power: 0,
-            DurationTicks: 6000, BuffKey: WarriorSaintsPresence, Rank: 1,
+            DurationTicks: 6000, BuffKey: SaintsPresence, Rank: 1,
             Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly,
             SpCost: PresenceSp(0),
             Magnitudes: Mags(0),

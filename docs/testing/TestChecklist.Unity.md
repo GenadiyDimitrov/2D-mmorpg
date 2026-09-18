@@ -1274,7 +1274,7 @@ used to be at parity. That is the honest price of the rework, not a bug. The lev
 50** and the **flat ×3**, both your numbers. Play both and tell me whether the nuker's lead is
 earned or wants trimming. -> 
 
-**56d. Resonance changed units.** `wc_human_pass` was `+0.05 flat points` (2.5× the entire old rate);
+**56d. Resonance changed units.** `resonance` was `+0.05 flat points` (2.5× the entire old rate);
 it is now `0.20` = **×1.2 multiplier**, matching the physical convention. Check it reads as a
 percentage in the skill text, not a flat number.
 

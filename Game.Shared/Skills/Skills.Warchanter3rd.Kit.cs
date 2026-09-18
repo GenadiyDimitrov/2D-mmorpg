@@ -27,35 +27,35 @@ namespace Game.Shared;
 public static partial class SkillCatalog
 {
     // ---- PASSIVES ----
-    public const string WcComboMastery       = "wc_combo_mastery";
+    public const string ComboMastery       = "combo_mastery";
     /// <summary>Combo Rush — the proc's buff, ONE family of SIX rungs sharing the key `wc_combo`.
     /// Hidden: never taught, never on a bar, only ever applied by Combo Mastery's proc.
     /// Rungs 1-3 are what your PARTY gets, rungs 4-6 what YOU get; see <see cref="ComboRushRungs"/>.</summary>
     public static readonly string[] WcComboRush =
         { "wc_combo_rush_1", "wc_combo_rush_2", "wc_combo_rush_3",
           "wc_combo_rush_4", "wc_combo_rush_5", "wc_combo_rush_6" };
-    public const string WcManaVampirism      = "wc_mana_vampirism";
+    public const string ManaVampirism      = "mana_vampirism";
     // ⚠ THE ID STRINGS BELOW ARE FROZEN AND NO LONGER MATCH THEIR NAMES, ON PURPOSE. Both skills were
     // renamed 2026-08-29 when the class names caught up with the Ork→Demon change (`BL-101`), and a
     // skill id is APPEND-ONLY: characters persist their learned ids, so `wc_chanter_heavy_mastery` and
-    // `wc_bloodhanter_blunt_mastery` can never move without orphaning every save that holds them. The
+    // `warlock_weapon_mastery` can never move without orphaning every save that holds them. The
     // C# const identifiers were renamed to match the new names — those are compile-checked and cost
     // nothing — and the id strings stayed. Read the string as a serial number, not as a name.
     public const string WcBufferHeavy        = "wc_chanter_heavy_mastery";      // Human;Demon
-    public const string WcHarmonistLight     = "wc_harmonist_light_mastery";    // Elf
-    public const string WcHarmonistBowProf   = "wc_harmonist_bow_proficiency";  // Elf
-    public const string WcHarmonistBowMast   = "wc_harmonist_bow_mastery";      // Elf
-    public const string WcWarlockWeapon      = "wc_bloodhanter_blunt_mastery";  // Demon
+    public const string HarmonistLightMastery     = "harmonist_light_mastery";    // Elf
+    public const string HarmonistBowProficiency   = "harmonist_bow_proficiency";  // Elf
+    public const string HarmonistBowMastery   = "harmonist_bow_mastery";      // Elf
+    public const string WarlockWeaponMastery      = "warlock_weapon_mastery";  // Demon
     public const string DoctorBluntMastery   = "doctor_blunt_mastery";          // Human, 1H blunt
     // ---- ACTIVES ----
-    public const string WcHarmonyRestoration = "wc_harmony_restoration";
-    public const string WcSoundBurst         = "wc_sound_burst";        // Elf, bow, hits twice
-    public const string WcSoundSmash         = "wc_sound_smash";        // Demon;Human, blunt
-    public const string WcAcousticShock      = "wc_acoustic_shock";     // Demon only, blunt + STUN
+    public const string HarmonyOfRestoration = "harmony_of_restoration";
+    public const string SoundBurst         = "sound_burst";        // Elf, bow, hits twice
+    public const string SoundSmash         = "sound_smash";        // Demon;Human, blunt
+    public const string AcousticShock      = "acoustic_shock";     // Demon only, blunt + STUN
     public const string WcBowExpertise       = "wc_bow_expertise";      // Elf
     // ---- TOGGLES ----
-    public const string WcReinforcement      = "wc_reinforcement";
-    public const string WcSharpening         = "wc_sharpening";
+    public const string Reinforcement      = "reinforcement";
+    public const string Sharpening         = "sharpening";
 
     /// <summary>His SP column for the 40-74 band, in file order. Every 14-rung ladder in
     /// `buffer 3rd.csv` carries exactly these numbers, so they are written once.</summary>
@@ -123,7 +123,7 @@ public static partial class SkillCatalog
         //      evasion / crit-rate lean on top. ----
         // 🔴 REPLACES `armor_mastery` — see Heavy Armor Mastery above; this is the exact skill his ×4
         //    cast-speed reading came from, and light is the weight the cleric's rung 4 also covers.
-        list.Add(new SkillDef(WcHarmonistLight, "Harmonist Light Mastery", BaseClass.Mage, SkillEffect.None,
+        list.Add(new SkillDef(HarmonistLightMastery, "Harmonist Light Mastery", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
             Replaces: new[] { ArmorMasterySkill },
@@ -144,7 +144,7 @@ public static partial class SkillCatalog
         //      working around it. All three numbers are exact inverses of what Spellcaster Mastery
         //      charges a bow (x0.5 cast, x0.5 M.Atk, x25 fizzle), so an Elf Warchanter with a bow is
         //      a full caster — which is the entire reason his elf can be an archer AND a buffer. ----
-        list.Add(new SkillDef(WcHarmonistBowProf, "Harmonist Bow Proficiency", BaseClass.Mage, SkillEffect.None,
+        list.Add(new SkillDef(HarmonistBowProficiency, "Harmonist Bow Proficiency", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
             Description: "Passive. A bow is no longer an untrained weapon for you: it costs you no "
@@ -160,7 +160,7 @@ public static partial class SkillCatalog
         //      ladder; only the P.Atk does), and the P.Atk climbs 100 to 600. ----
         int[] bowMastAtk = { 100, 200, 300, 400, 500, 540, 560, 600 };
         int[] raceMastSp = { 36_000, 64_000, 81_000, 120_000, 190_000, 320_000, 390_000, 880_000 };
-        list.Add(new SkillDef(WcHarmonistBowMast, "Harmonist Bow Mastery", BaseClass.Mage, SkillEffect.None,
+        list.Add(new SkillDef(HarmonistBowMastery, "Harmonist Bow Mastery", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
             Description: "Passive. Your bow reaches much further and hits much harder.",
@@ -192,7 +192,7 @@ public static partial class SkillCatalog
         //    *"the spell mastery ... they share one so we gate only the type, and their additional
         //    passives are hands gated"*. Do not push hands up into BufferMastery.
         int[] bluntAtk = { 30, 40, 50, 60, 70, 80, 90, 100 };
-        list.Add(new SkillDef(WcWarlockWeapon, "Warlock Weapon Mastery", BaseClass.Mage, SkillEffect.None,
+        list.Add(new SkillDef(WarlockWeaponMastery, "Warlock Weapon Mastery", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
             Description: "Passive. A TWO-HANDED blunt weapon — a maul or a staff — strikes harder "
@@ -250,7 +250,7 @@ public static partial class SkillCatalog
         //    `Require: Bow/Blunt`; only the code said blunt. Same shape as the Combo Mastery bug found
         //    the same day, and the reason the WEAPON column now exists: a requirement written in prose
         //    cannot be compared to the one the engine enforces.
-        list.Add(new SkillDef(WcManaVampirism, "Mana Vampirism", BaseClass.Mage, SkillEffect.None,
+        list.Add(new SkillDef(ManaVampirism, "Mana Vampirism", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
             Description: "Passive. Your basic attacks with a blunt weapon or a bow drain mana back to you.",
@@ -282,7 +282,7 @@ public static partial class SkillCatalog
         //    looks exactly like a 3% roll that keeps missing. It is the same blunt-or-bow pair the
         //    shared Spell Mastery uses, and hands-agnostic for the same reason.
         int[] comboSp = { 74_000, 190_000, 880_000 };
-        list.Add(new SkillDef(WcComboMastery, "Combo Mastery", BaseClass.Mage, SkillEffect.None,
+        list.Add(new SkillDef(ComboMastery, "Combo Mastery", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 600, Range: 0, Power: 0,
             DurationTicks: 300,
             Category: SkillCategory.Passive,
@@ -325,7 +325,7 @@ public static partial class SkillCatalog
         int[] hotHp   = { 30, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100 };
         int[] hotMp   = { 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 5, 5, 5, 10 };
         int[] hotCost = { 238, 272, 304, 352, 360, 380, 392, 400, 420, 432, 448, 452, 458, 464 };
-        list.Add(new SkillDef(WcHarmonyRestoration, "Harmony of Restoration", BaseClass.Mage,
+        list.Add(new SkillDef(HarmonyOfRestoration, "Harmony of Restoration", BaseClass.Mage,
             SkillEffect.HealOverTime | SkillEffect.RestoreMp,
             MpCost: hotCost[0], CastTicks: 20, CooldownTicks: 100, Range: 600, Power: 0,
             DurationTicks: 300, BuffKey: "wc_restoration", Rank: 1, CountsTowardBuffLimit: false,
@@ -353,12 +353,12 @@ public static partial class SkillCatalog
         //   the ranged one, which also hits TWICE, is deliberately slower. `--check` reported all 28
         //   rows and the code was the stale side (owner, 2026-09-09: *"Make it 5s reuse - if csv is
         //   authored after the code"*, and it was).
-        list.Add(SoundSkill(WcSoundBurst, "Sound Burst", WeaponType.Bow, range: 900, castTicks: 30,
+        list.Add(SoundSkill(SoundBurst, "Sound Burst", WeaponType.Bow, range: 900, castTicks: 30,
             hits: 2, stunTicks: 0, cooldownTicks: 50,
             desc: "Looses two arrows on one breath — each resolves on its own."));
 
         // ---- Sound Smash (Demon + Human) — the melee twin: 40 range, blunt, one hit, faster cast. ----
-        list.Add(SoundSkill(WcSoundSmash, "Sound Smash", WeaponType.Blunt, range: 40, castTicks: 10,
+        list.Add(SoundSkill(SoundSmash, "Sound Smash", WeaponType.Blunt, range: 40, castTicks: 10,
             hits: 1, stunTicks: 0,
             desc: "A concussive blow that rings through armour."));
 
@@ -369,7 +369,7 @@ public static partial class SkillCatalog
         //      demon's second damage skill, and the reason it is worth pressing over Sound Smash.
         //      ⚠ Stun is CONTESTED (ATK vs CON, DebuffSchool.Physical) like every other CC in the
         //      game, so it is not a guaranteed lock and bosses are immune. ----
-        list.Add(SoundSkill(WcAcousticShock, "Acoustic Shock", WeaponType.Blunt, range: 40, castTicks: 10,
+        list.Add(SoundSkill(AcousticShock, "Acoustic Shock", WeaponType.Blunt, range: 40, castTicks: 10,
             hits: 1, stunTicks: 50,
             desc: "A blow pitched to shatter the senses: damage, and the target reels."));
 
@@ -391,14 +391,14 @@ public static partial class SkillCatalog
 
         int[] reinforceDef = { 240, 260, 280, 300, 320, 340, 380, 400, 440, 480, 520, 560, 600 };
         int[] reinforceMp  = { 12, 13, 14, 15, 16, 17, 19, 20, 22, 24, 26, 28, 30 };
-        list.Add(BuildStance(WcReinforcement, "Reinforcement", SkillEffect.BuffDef, "wc_reinforcement",
+        list.Add(BuildStance(Reinforcement, "Reinforcement", SkillEffect.BuffDef, "reinforcement",
             reinforceDef, reinforceMp,
             "Brace yourself: greater physical defence for as long as you can pay for it.",
             BufferFourthReinforcementRungs()));
 
         int[] sharpenAtk = { 60, 80, 100, 120, 140, 160, 180, 200, 220, 240, 260, 280, 300 };
         int[] sharpenMp  = { 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
-        list.Add(BuildStance(WcSharpening, "Sharpening", SkillEffect.BuffPhysAtk, "wc_sharpening",
+        list.Add(BuildStance(Sharpening, "Sharpening", SkillEffect.BuffPhysAtk, "sharpening",
             sharpenAtk, sharpenMp,
             "Hone your weapon: greater physical attack for as long as you can pay for it.",
             BufferFourthSharpeningRungs()));
@@ -488,7 +488,7 @@ public static partial class SkillCatalog
             // 🔑 A SOUND SKILL RETIRES HOLY BOLT (owner, playtest 28: *"holy bolt should be replaced from
             // sound smash/burst — [they] are the attack skills of buffers; healers replace [it] with a
             // stronger one, same should be valit for the buffers"*). He is describing something the
-            // healer already does and the buffer did not: Holy Ray carries `Replaces: [HolyStrike]`, so a
+            // healer already does and the buffer did not: Holy Ray carries `Replaces: [HolyBolt]`, so a
             // Lightbringer's Learn tab and bar lose the obsolete bolt the moment the real spell arrives.
             // The Warchanter inherited Holy Bolt from the cleric tier and kept it forever beside a kit
             // that was supposed to have superseded it.
@@ -502,7 +502,7 @@ public static partial class SkillCatalog
             // caught with the wrong weapon in his hands now has no attack skill at all rather than a weak
             // one. That is consistent with the rest of his 3rd-class design — each race's Warchanter is
             // built around one weapon — but it is a door closing, not just a door opening.
-            Replaces: new[] { HolyStrike },
+            Replaces: new[] { HolyBolt },
             RequiredWeapon: weapon, HitCount: hits,
             DurationTicks: stunTicks,
             DebuffSchool: stunTicks > 0 ? DebuffSchool.Physical : DebuffSchool.None,

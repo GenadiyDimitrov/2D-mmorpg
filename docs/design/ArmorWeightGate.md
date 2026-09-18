@@ -204,7 +204,7 @@ P.Atk and accuracy on a weapon that is not for hitting) is a far smaller edge th
 genuinely differ still needs it — but nothing authors one today. Worth knowing before reaching for it.
 
 ⚠ **The 4th-class shield bonus you are counting on exists for the HEALER, not the buffer.**
-`healer_shield_mastery` @76 (+10% heal power, +10% MP regen, plain `/shield`, any armour) is on the
+`healers_shield_mastery` @76 (+10% heal power, +10% MP regen, plain `/shield`, any armour) is on the
 Lightbringer's table. The Warchanter's 4th tier has no shield row built; `buffer 4th.csv` 136-138 are
 the three 3rd-tier rungs at 40/60/70 pasted into a 76-90 file with a blank `SKILL_ID`. Your file, in
 progress — untouched, but say the word if that is meant to be a real 4th-tier passive.

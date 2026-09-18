@@ -36,7 +36,7 @@ namespace Game.Shared;
 public partial class SkillCatalog
 {
     // ---- The whisp's own kit. One id per row of `whisps_skills.csv`. ----
-    public const string WhispProvoke    = "whisp_provoke";
+    public const string WhispTaunt    = "whisp_taunt";
     public const string WhispCharm      = "whisp_charm";
     public const string WhispBind       = "whisp_bind";
     public const string WhispArmorBreak = "whisp_armor_break";
@@ -106,7 +106,7 @@ public partial class SkillCatalog
         //      1.5s Provoke — and the aggro number comes from the summon rung, like every other
         //      "Power depends on whisp lvl" row. Both halves land on the MASTER, never on the whisp:
         //      a spirit that could hold aggro itself would be a pet, and an untargetable one at that.
-        new(WhispProvoke, "Whisp Taunt", BaseClass.Mage, SkillEffect.Taunt,
+        new(WhispTaunt, "Whisp Taunt", BaseClass.Mage, SkillEffect.Taunt,
             MpCost: 0, CastTicks: 0, CooldownTicks: 100, Range: 400, Power: 0,
             DurationTicks: 10, TauntPower: WhispThreat[0],
             Category: SkillCategory.Debuff,
@@ -246,34 +246,34 @@ public partial class SkillCatalog
     //  kept that way — a difference between two of these would be a number nobody authored.
     // =======================================================================================
 
-    public const string TankWhispTaunt       = "tank_whisp_taunt";
-    public const string TankWhispBind        = "tank_whisp_bind";
-    public const string TankWhispCharm       = "tank_whisp_charm";
-    public const string TankWhispHeal        = "tank_whisp_heal";
-    public const string TankWhispArmorBreak  = "tank_whisp_armor_break";
-    public const string TankWhispWeaponBreak = "tank_whisp_weapon_break";
-    public const string TankWhispMastery     = "tank_whisp_mastery";
+    public const string TauntingWhisp       = "taunting_whisp";
+    public const string BindingWhisp        = "binding_whisp";
+    public const string CharmingWhisp       = "charming_whisp";
+    public const string HealingWhisp        = "healing_whisp";
+    public const string ArmorBreakingWhisp  = "armor_breaking_whisp";
+    public const string WeaponBreakingWhisp = "weapon_breaking_whisp";
+    public const string WhispMastery     = "whisp_mastery";
 
     /// <summary>His six summon rows and the mastery. A summon is an ordinary self-cast skill whose
     /// entire payload is <see cref="SkillDef.SummonsWhisp"/> — no buff, no damage, no target.</summary>
     private static SkillDef[] WhispSummonSkills() => new SkillDef[]
     {
-        WhispSummon(TankWhispTaunt,       "Taunting Whisp",        WhispProvoke,     WhispSpA,
+        WhispSummon(TauntingWhisp,       "Taunting Whisp",        WhispTaunt,     WhispSpA,
             "Calls a whisp that shrieks your enemies onto you."),
-        WhispSummon(TankWhispCharm,       "Charming Whisp",        WhispCharm,       WhispSpA,
+        WhispSummon(CharmingWhisp,       "Charming Whisp",        WhispCharm,       WhispSpA,
             "Calls a whisp that lures your enemies to you."),
-        WhispSummon(TankWhispArmorBreak,  "Armor Breaking Whisp",  WhispArmorBreak,  WhispSpA,
+        WhispSummon(ArmorBreakingWhisp,  "Armor Breaking Whisp",  WhispArmorBreak,  WhispSpA,
             "Calls a whisp that frays your enemies' guard."),
 
-        WhispSummon(TankWhispBind,        "Binding Whisp",         WhispBind,        WhispSpB,
+        WhispSummon(BindingWhisp,        "Binding Whisp",         WhispBind,        WhispSpB,
             "Calls a whisp that pins your enemies where they stand."),
-        WhispSummon(TankWhispWeaponBreak, "Weapon Breaking Whisp", WhispWeaponBreak, WhispSpB,
+        WhispSummon(WeaponBreakingWhisp, "Weapon Breaking Whisp", WhispWeaponBreak, WhispSpB,
             "Calls a whisp that blunts your enemies' weapons."),
 
         // The healer whisp is the one row carrying TWO ids — his comment cell says so in as many
         // words (*"uses whisp_heal and whisp_quick_heal"*). They are one whisp with two gears, split
         // by the master's HP band; see the two defs above.
-        WhispSummon(TankWhispHeal,        "Healing Whisp",         WhispHeal,        WhispSpB,
+        WhispSummon(HealingWhisp,        "Healing Whisp",         WhispHeal,        WhispSpB,
             "Calls a whisp that tends its master's wounds.", second: WhispQuickHeal),
 
         // ---- WHISP MASTERY. *"Increase the limit of active whisps to 2"* at 60 and *"to 3"* at 83
@@ -281,7 +281,7 @@ public partial class SkillCatalog
         //      thing that makes the Perfect Whisp a choice rather than an ultimatum: with three slots
         //      a tank can carry it AND the two his race gives him.
         //      ⚠ The base is 1 and the passive ADDS, so rung 1 carries 1 and rung 2 carries 2.
-        new(TankWhispMastery, "Whisp Mastery", BaseClass.Fighter, SkillEffect.None,
+        new(WhispMastery, "Whisp Mastery", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, SpCost: 120_000,
             Passive: new PassiveEffect(WhispSlots: 1),

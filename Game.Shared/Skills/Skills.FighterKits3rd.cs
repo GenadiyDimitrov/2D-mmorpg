@@ -82,7 +82,7 @@ public static partial class SkillCatalog
 
         // ---- Warrior Sundering Blow — Sound Smash's thirteen rungs at ×1.25 power. Same MP, same SP,
         //      same 40 range, same 1s cast, same 3s reuse; the weapon is a 2H sword instead of a blunt.
-        //      ⚠ It does NOT carry Sound Smash's `Replaces: [HolyStrike]` — that clause exists to
+        //      ⚠ It does NOT carry Sound Smash's `Replaces: [HolyBolt]` — that clause exists to
         //      retire the BUFFER's inherited cleric bolt and means nothing on a fighter. ----
         list.Add(new SkillDef(WarSunderingBlow, "Sundering Blow", BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: SoundMp[0], CastTicks: 10, CooldownTicks: 30, Range: 40, Power: Up(SoundPower[0]),

@@ -1,9 +1,9 @@
 LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPLACES,Comment
 ,,,,,,,,,,,,,,,,----------------------------Mage Armor Mastery----------------------------
-20,Mage Armor Mastery,nuker_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,Robe: pDef +20 maxMP +20 mpWhenRestored +10%,0,3200,[mastery_robe]
-25,Mage Armor Mastery,nuker_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,Robe: pDef +25 maxMP +20 mpWhenRestored +15%,0,6400,[mastery_robe]
-30,Mage Armor Mastery,nuker_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,Robe: pDef +30 maxMP +30 mpWhenRestored +20%,0,12800,[mastery_robe]
-35,Mage Armor Mastery,nuker_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,Robe: pDef +35 maxMP +30 mpWhenRestored +25%,0,25000,[mastery_robe]
+20,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,Robe: pDef +20 maxMP +20 mpWhenRestored +10%,0,3200,[mastery_robe]
+25,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,Robe: pDef +25 maxMP +20 mpWhenRestored +15%,0,6400,[mastery_robe]
+30,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,Robe: pDef +30 maxMP +30 mpWhenRestored +20%,0,12800,[mastery_robe]
+35,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,Robe: pDef +35 maxMP +30 mpWhenRestored +25%,0,25000,[mastery_robe]
 ,,,,,,,,,,,,,,,,----------------------------Anti magic----------------------------
 20,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,magic def +20; mRes +5%,0,3200,[]
 25,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,magic def +25; mRes +5%,0,6400,[]

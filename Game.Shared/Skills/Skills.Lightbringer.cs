@@ -26,19 +26,19 @@ public static partial class SkillCatalog
     // ---- Skills invented before his file existed. Their DEFS stay in the catalog (deleting a def is
     //      what the old orphan warnings were about) but NOTHING GRANTS THEM any more: his 40-74 rows
     //      are the discipline now, and none of these is on one. Do not re-add them to the class table.
-    //      `LbElfWarden` in particular duplicated his Bind, which is what the 2026-08-17 note flagged.
-    public const string LbBlessing = "lb_blessing";
-    public const string LbDevotion = "lb_devotion";   // passive
-    public const string LbHumanPurify = "lb_human_purify"; // cleanse an ally
-    public const string LbElfWarden = "lb_elf_warden";     // root enemy + self de-taunt
-    public const string LbOrkSap = "lb_ork_sap";           // anti-heal debuff
+    //      `WardingStep` in particular duplicated his Bind, which is what the 2026-08-17 note flagged.
+    public const string BlessingOfLight = "blessing_of_light";
+    public const string Devotion = "devotion";   // passive
+    public const string Purify = "purify"; // cleanse an ally
+    public const string WardingStep = "warding_step";     // root enemy + self de-taunt
+    public const string SoulSap = "soul_sap";           // anti-heal debuff
 
     // ---- The three per-race heals. Their IDS ARE REUSED, not retired: each of his rows occupies the
     //      exact slot (race + level 40 + role) an invented skill already held, so a character who
     //      learned one keeps a working skill instead of an orphan.
-    public const string LbHumanMend = "lb_human_mend";     // → Quick Great Heal
-    public const string LbElfDawn = "lb_elf_dawn";         // → Healer Blessing
-    public const string LbOrkFont = "lb_ork_font";         // → Healing Totem
+    public const string QuickGreatHeal = "quick_great_heal";     // → Quick Great Heal
+    public const string HealerBlessing = "healer_blessing";         // → Healer Blessing
+    public const string HealingTotem = "healing_totem";         // → Healing Totem
     // ---- Shared upgrades: each REPLACES its 2nd-class original rather than stacking beside it.
     public const string HolyRay = "holy_ray";              // replaces Holy Bolt
     public const string GreatHeal = "great_heal";          // replaces Heal
@@ -46,12 +46,12 @@ public static partial class SkillCatalog
     public const string Conceal = "conceal";               // self-only mob stealth
     // His 2026-08-20 split of the two shared cleric masteries — the healer's halves (the BUFFER keeps
     // continuing the originals). Both REPLACE their cleric original at 40.
-    public const string HealerWeaponMasterySkill = "healer_weapon_mastery"; // replaces Spell Mastery
+    public const string SpellcasterWeaponMastery = "spellcaster_weapon_mastery"; // replaces Spell Mastery
     public const string HealerArmorMasterySkill = "healer_armor_mastery";   // replaces Armor Mastery
     // One control debuff per race, all contested ATK vs SPT.
-    public const string LbHumanGravity = "lb_human_gravity";  // slows attack + cast
-    public const string LbElfBind = "lb_elf_bind";            // 30s hold
-    public const string LbOrkArmorBreak = "lb_ork_armor_break"; // shreds P.Def / M.Def
+    public const string Gravity = "gravity";  // slows attack + cast
+    public const string Bind = "bind";            // 30s hold
+    public const string ArmorBreak = "armor_break"; // shreds P.Def / M.Def
 
     // ---- The 44+ kit, all new ids (2026-08-20) ----
     public const string UrgentHeal = "urgent_heal";              // % of the target's Max HP, long reuse
@@ -100,7 +100,7 @@ public static partial class SkillCatalog
         new(HolyRay, "Holy Ray", BaseClass.Mage, SkillEffect.MagicDamage,
             MpCost: 30, CastTicks: 25, CooldownTicks: 10, Range: 600, Power: 42,
             Category: SkillCategory.Magic,  SpCost: 36000,
-            Replaces: new[] { HolyStrike },
+            Replaces: new[] { HolyBolt },
             Description: "The healer's attack spell: faster and stronger than Holy Bolt, at shorter range.",
             // ⚠ The level-52 rung read 52, the SAME as 48. He ruled a duplicate description is the
             // ERROR (2026-08-20), so it is 57 — continuing the +5 stride and smoothing the +11 jump to 63.
@@ -389,14 +389,14 @@ public static partial class SkillCatalog
 
         // ═══ HUMAN: single-target throughput + Gravity ═══════════════════════════════════════════
         //
-        // 🔑 `LbHumanMend` IS his "Quick Great Heal" — same race, same level 40, same job, so the id is
+        // 🔑 `QuickGreatHeal` IS his "Quick Great Heal" — same race, same level 40, same job, so the id is
         // reused and retuned rather than retired next to a near-duplicate. It shipped as "Mending
         // Light" at power 230.
         //
         // It heals for EXACTLY what Great Heal does at every rung, in 2 seconds instead of 5, for
         // roughly 1.5× the MP. That is the Human's whole discipline in one line: the same throughput
         // measured in HP, far more of it measured per second, and a bar that empties much faster.
-        new(LbHumanMend, "Quick Great Heal", BaseClass.Mage, SkillEffect.Heal,
+        new(QuickGreatHeal, "Quick Great Heal", BaseClass.Mage, SkillEffect.Heal,
             MpCost: 93, CastTicks: 20, CooldownTicks: 10, Range: 600, Power: 400,
             Category: SkillCategory.Heal,  SpCost: 36000,
             Replaces: new[] { QuickHeal },
@@ -412,7 +412,7 @@ public static partial class SkillCatalog
                     Description: $"Heals a single ally for {pow[i]} on a 2s cast.");
             }).Concat(HealerFourthQuickHealRungs()).ToArray()),
 
-        new(LbHumanGravity, "Gravity", BaseClass.Mage,
+        new(Gravity, "Gravity", BaseClass.Mage,
             SkillEffect.DebuffAtkSpeed | SkillEffect.DebuffCastSpeed,
             MpCost: 35, CastTicks: 25, CooldownTicks: 50, Range: 600, Power: 0,
             DurationTicks: 300, BuffKey: "gravity", Rank: 1,
@@ -443,7 +443,7 @@ public static partial class SkillCatalog
 
         // ═══ ELF: the heal-and-cure + Bind ═══════════════════════════════════════════════════════
         //
-        // 🔑 `LbElfDawn` IS his "Healer Blessing". Reused and retuned like the Human's. ⚠ Two things his
+        // 🔑 `HealerBlessing` IS his "Healer Blessing". Reused and retuned like the Human's. ⚠ Two things his
         // rows CHANGED about the original: it is SINGLE-TARGET now, not an area heal, and its cure is
         // SCOPED — bleed and poison up to a rank that climbs 3 → 9 across the ladder, rather than the
         // blanket "cleanses everything" it used to be. That ceiling is the same one Antidote runs on,
@@ -451,7 +451,7 @@ public static partial class SkillCatalog
         //
         // Its heal is BELOW Great Heal's at every rung (360 vs 400 … 800 vs 860) on a 3s cast: the Elf
         // pays for the cure in healing, where the Human pays for speed in MP.
-        new(LbElfDawn, "Healer Blessing", BaseClass.Mage, SkillEffect.Heal | SkillEffect.Cleanse,
+        new(HealerBlessing, "Healer Blessing", BaseClass.Mage, SkillEffect.Heal | SkillEffect.Cleanse,
             MpCost: 62, CastTicks: 30, CooldownTicks: 30, Range: 600, Power: 360,
             Category: SkillCategory.Heal,  SpCost: 36000,
             DispelMask: SkillEffect.Bleed | SkillEffect.Poison | SkillEffect.Venom,
@@ -468,7 +468,7 @@ public static partial class SkillCatalog
                     Description: $"Heals an ally for {pow[i]} and cures their bleed and poison of rank {rank[i]} or lower.");
             }).Concat(HealerFourthBlessingRungs()).ToArray()),
 
-        new(LbElfBind, "Bind", BaseClass.Mage, SkillEffect.Root,
+        new(Bind, "Bind", BaseClass.Mage, SkillEffect.Root,
             MpCost: 35, CastTicks: 25, CooldownTicks: 50, Range: 600, Power: 0,
             DurationTicks: 300, BuffKey: "root", Rank: 1,
             DebuffLandMod: 0.7f,   // his healer CSV: "(success chance x0.7)"
@@ -497,7 +497,7 @@ public static partial class SkillCatalog
         // heal over time"*): 64 HP/s for 238 MP, against the 30/93 it shipped with. Over its 30s life
         // that is 1920 HP to one ally — or to six — for less than four Great Heals' worth of MP. The
         // 25s reuse against a 30s duration is what stops two ever overlapping.
-        new(LbOrkFont, "Healing Totem", BaseClass.Mage, SkillEffect.Heal,
+        new(HealingTotem, "Healing Totem", BaseClass.Mage, SkillEffect.Heal,
             MpCost: 238, CastTicks: 10, CooldownTicks: 250, Range: 0, Power: 64,
             Category: SkillCategory.Heal,  SpCost: 36000,
             // SelfOnly, like the trap: you plant it where you stand, so the cast needs no target and
@@ -541,7 +541,7 @@ public static partial class SkillCatalog
         // magnitude on the buff flag is how the engine already expresses an M.Def debuff. P.Def has its
         // own `DebuffDef` flag, whose magnitudes are authored positive and subtracted — hence the two
         // signs below looking inconsistent while meaning the same thing.
-        new(LbOrkArmorBreak, "Armor Break", BaseClass.Mage,
+        new(ArmorBreak, "Armor Break", BaseClass.Mage,
             SkillEffect.DebuffDef | SkillEffect.BuffMagicDef,
             MpCost: 35, CastTicks: 25, CooldownTicks: 50, Range: 600, Power: 0,
             DurationTicks: 300, BuffKey: "armor_break", Rank: 1,
@@ -610,7 +610,7 @@ public static partial class SkillCatalog
         //
         //      ⚠ RENAMED 2026-08-24 in `healer 3rd.csv`, from "Healer Weapon Mastery" — the skill is
         //      not healer-flavoured, it is what a 3rd-class CASTER's blunt does, and the nuker file
-        //      will want the same row. **The id stays `healer_weapon_mastery`**: skill ids are
+        //      will want the same row. **The id stays `spellcaster_weapon_mastery`**: skill ids are
         //      append-only and a rename would strand every learned row in every saved character.
         //      Display names are free to move, ids are not.
         //
@@ -620,7 +620,7 @@ public static partial class SkillCatalog
         //      choice"*. A `MagicWeaponOnly` flag was built first and removed the same day: Blunt
         //      leaves a plain mace WORKING, it just carries less M.Atk and rolls no caster attributes.
         //      A mastery that can refuse a weapon the type system says is fine is a wall, not a choice.
-        new(HealerWeaponMasterySkill, "Spellcaster Weapon Mastery", BaseClass.Mage, SkillEffect.None,
+        new(SpellcasterWeaponMastery, "Spellcaster Weapon Mastery", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, Replaces: new[] { SpellMastery },
             Description: "Passive. Divine power flows through a BLUNT weapon — wand, staff or mace: "
@@ -662,36 +662,36 @@ public static partial class SkillCatalog
         // character who already bought one into a broken row on their bar and their skill window
         // (see the retired-id leak). The same treatment the 40+ purge gave the fighter kits in 2026-08.
         //
-        // 🔴 `LbElfWarden` in particular is the overlap the 2026-08-17 note flagged: it was an invented
+        // 🔴 `WardingStep` in particular is the overlap the 2026-08-17 note flagged: it was an invented
         // 8-second root, and his `Bind` at 40 is a 30-second one. Now that Bind is real, Warding Step
         // is simply gone from the kit rather than sitting beside it as a strictly worse duplicate.
-        new(LbBlessing, "Blessing of Light", BaseClass.Mage,
+        new(BlessingOfLight, "Blessing of Light", BaseClass.Mage,
             SkillEffect.BuffHp | SkillEffect.BuffDef,
             MpCost: 50, CastTicks: 20, CooldownTicks: 30, Range: 0, Power: 0,
-            DurationTicks: 12000, BuffKey: "lb_blessing", Rank: 1,
+            DurationTicks: 12000, BuffKey: "blessing_of_light", Rank: 1,
             Magnitudes: new EffectMagnitude[]
             {
                 new(SkillEffect.BuffHp, 0.15f), new(SkillEffect.BuffDef, 0.15f),
             },
             Category: SkillCategory.Buff, TargetMode: TargetMode.AlliesInRadius, AreaRadius: 600,
             SpCost: 500, Description: "Party: +15% max HP and +15% defence."),
-        new(LbDevotion, "Devotion", BaseClass.Mage, SkillEffect.None,
+        new(Devotion, "Devotion", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, SpCost: 500,
             Passive: new PassiveEffect(MaxMpPct: 0.10f, MpRegen: 2f, MagicDefence: 10),
             Description: "Passive. +10% max MP, +MP regen, +10 magic defence."),
-        new(LbHumanPurify, "Purify", BaseClass.Mage, SkillEffect.Cleanse,
+        new(Purify, "Purify", BaseClass.Mage, SkillEffect.Cleanse,
             MpCost: 24, CastTicks: 8, CooldownTicks: 50, Range: 500, Power: 0,
             Category: SkillCategory.Heal, SpCost: 6000,
             Description: "Removes harmful effects (curses, anti-heal, roots) from an ally."),
-        new(LbElfWarden, "Warding Step", BaseClass.Mage, SkillEffect.Root | SkillEffect.Detaunt,
+        new(WardingStep, "Warding Step", BaseClass.Mage, SkillEffect.Root | SkillEffect.Detaunt,
             MpCost: 30, CastTicks: 6, CooldownTicks: 120, Range: 500, Power: 0,
             DurationTicks: 80, BuffKey: "root", Rank: 1, DebuffSchool: DebuffSchool.Magical,
             DebuffLandMod: 0.5f,   // BL-90: a MAGICAL hold, his general "x0.5". Physical ones stay x1 (CON saves).
             Category: SkillCategory.Debuff, SpCost: 6000,
             Description: "Holds an enemy in place for 8s and sheds the caster's aggro "
                        + "from nearby foes (they look elsewhere)."),
-        new(LbOrkSap, "Soul Sap", BaseClass.Mage, SkillEffect.DebuffHealRecv,
+        new(SoulSap, "Soul Sap", BaseClass.Mage, SkillEffect.DebuffHealRecv,
             MpCost: 28, CastTicks: 8, CooldownTicks: 150, Range: 500, Power: 0,
             DurationTicks: 150, BuffKey: "antiheal", Rank: 1,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.DebuffHealRecv, 0.50f) },

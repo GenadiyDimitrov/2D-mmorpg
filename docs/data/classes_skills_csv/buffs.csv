@@ -178,8 +178,8 @@ Harmony of Protection,npc_harmony_protection,Magic/Buff,,,600,800,party/aoe,1,"+
 Harmony of Protection,npc_harmony_protection,Magic/Buff,,,600,800,party/aoe,1,"+30% M.Def, +20% HP Regen, +25% P.Def, +30% Max HP, +20% Mele Reflect"
 Harmony of Protection,npc_harmony_protection,Magic/Buff,,,600,800,party/aoe,1,"+30% M.Def, +20% HP Regen, +25% P.Def, +30% Max HP, +20% Mele Reflect, +10% Bow Resistance"
 ,,,,,,,,,,,,---------------------------Harmony of Speed------------------------------
-Harmony of Speed,wc_harmony_speed,Magic/Buff,,,600,800,party/aoe,1,+20 move speed
-Harmony of Speed,wc_harmony_speed,Magic/Buff,,,600,800,party/aoe,1,"+20 move speed, +3 Evasion"
+Harmony of Speed,harmony_of_speed,Magic/Buff,,,600,800,party/aoe,1,+20 move speed
+Harmony of Speed,harmony_of_speed,Magic/Buff,,,600,800,party/aoe,1,"+20 move speed, +3 Evasion"
 ,,,,,,,,,,,,---------------------------Harmony of the Warrior------------------------------
 Harmony of the Warrior,npc_harmony_warrior,Magic/Buff,,,600,800,party/aoe,1,+100% crit rate
 Harmony of the Warrior,npc_harmony_warrior,Magic/Buff,,,600,800,party/aoe,1,"+100% crit rate, +35% crit damage"
@@ -197,19 +197,19 @@ Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,"+10% 
 Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,"+10% M.Atk, 30% cast speed, +20% MP Regen, -35% Magical Reuse, +100% magic crit rate"
 Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,"+10% M.Atk, 30% cast speed, +20% MP Regen, -35% Magical Reuse, +100% magic crit rate, +30% magic critical dmg"
 ,,,,,,,,,,,,---------------------------Harmony of the Soul------------------------------
-Harmony of the Soul,wc_harmony_soul,Magic/Buff,,,600,800,party/aoe,1,"-10% Magical Reuse, -20% Physical Reuse, -10% Magic MP Consumption, -10% Physical MP Consumption"
-Harmony of the Soul,wc_harmony_soul,Magic/Buff,,,600,800,party/aoe,1,"-15% Magical Reuse, -25% Physical Reuse, -12% Magic MP Consumption, -15% Physical MP Consumption"
-Harmony of the Soul,wc_harmony_soul,Magic/Buff,,,600,800,party/aoe,1,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption"
-Harmony of the Soul,wc_harmony_soul,Magic/Buff,,,600,800,party/aoe,1,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +5% Healing Received"
-Harmony of the Soul,wc_harmony_soul,Magic/Buff,,,600,800,party/aoe,1,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +10% Healing Received"
-Harmony of the Soul,wc_harmony_soul,Magic/Buff,,,600,800,party/aoe,1,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +15% Healing Received, +20% SPT Debuff Resistance"
-Harmony of the Soul,wc_harmony_soul,Magic/Buff,,,600,800,party/aoe,1,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +20% Healing Received, +30% SPT Debuff Resistance"
+Harmony of the Soul,harmony_of_the_soul,Magic/Buff,,,600,800,party/aoe,1,"-10% Magical Reuse, -20% Physical Reuse, -10% Magic MP Consumption, -10% Physical MP Consumption"
+Harmony of the Soul,harmony_of_the_soul,Magic/Buff,,,600,800,party/aoe,1,"-15% Magical Reuse, -25% Physical Reuse, -12% Magic MP Consumption, -15% Physical MP Consumption"
+Harmony of the Soul,harmony_of_the_soul,Magic/Buff,,,600,800,party/aoe,1,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption"
+Harmony of the Soul,harmony_of_the_soul,Magic/Buff,,,600,800,party/aoe,1,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +5% Healing Received"
+Harmony of the Soul,harmony_of_the_soul,Magic/Buff,,,600,800,party/aoe,1,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +10% Healing Received"
+Harmony of the Soul,harmony_of_the_soul,Magic/Buff,,,600,800,party/aoe,1,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +15% Healing Received, +20% SPT Debuff Resistance"
+Harmony of the Soul,harmony_of_the_soul,Magic/Buff,,,600,800,party/aoe,1,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +20% Healing Received, +30% SPT Debuff Resistance"
 ,,,,,,,,,,,,---------------------------Harmony of Madness------------------------------
-Harmony of Madness,wc_harmony_madness,Magic/Buff,,,600,800,party/aoe,1,"−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion.",367,500kk,100kk
+Harmony of Madness,harmony_of_madness,Magic/Buff,,,600,800,party/aoe,1,"−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion.",367,500kk,100kk
 ,,,,,,,,,,,,==========================Groups===========================
 War Frenzy,madness,Magic/Buff,,,600,800,party/aoe,1,"-10% Max HP/MP, +8% offence and speed, +8 move, -8 evasion."
-War Bulwark,wc_war_bulwark,Magic/Buff,,,600,800,party/aoe,1,+15% P.Def. Does not stack with Other Great Might|Bulwark effects.
-War Might,wc_war_might,Magic/Buff,,,600,800,party/aoe,1,+10% P.Atk. Does not stack with Other Great Might|Bulwark effects.
+War Bulwark,war_bulwark,Magic/Buff,,,600,800,party/aoe,1,+15% P.Def. Does not stack with Other Great Might|Bulwark effects.
+War Might,war_might,Magic/Buff,,,600,800,party/aoe,1,+10% P.Atk. Does not stack with Other Great Might|Bulwark effects.
 Shield Reinforcement,wc_shield_reinforcement,Magic/Buff,,,600,800,party/aoe,1,"Increases Shield Dmg Reduction with 25%, and Rate with 30%",
 Feral Precision,wc_feral_precision,Magic/Buff,,,600,800,party/aoe,1,"+30% critical rate, +35% critical damage, +4 accuracy"
 Feral Bloodlust,wc_feral_bloodlust,Magic/Buff,,,600,800,party/aoe,1,"+15% P.Atk, Attack Speed +33%, 9% melee vampirism."
@@ -236,5 +236,5 @@ Arcane and Feral Protection,wc_arcane_feral_protection,Magic/Buff,,,600,800,part
 Arcane and Feral Protection,wc_arcane_feral_protection,Magic/Buff,,,600,800,party/aoe,1,"63% resist to CON debuff, 50% resist to SPT debuffs"
 Arcane and Feral Protection,wc_arcane_feral_protection,Magic/Buff,,,600,800,party/aoe,1,"65% resist to CON debuff, 50% resist to SPT debuffs"
 ,,,,,,,,,,,,---------------------------Mark----------------------------
-Harmony Mark,wc_harmony_mark,Magic/Heal,,,900,800,party/aoe,300,"Increases: Atk with 10%; Acc +3; Atk/Cast.Speed, Def, Crit.Rate, Crit.Dmg, Max HP/MP and regen with 20%;  Consumes 10 skill stones; Do not Stack with Other 'Mark' skills"
-Harmony Mark,wc_harmony_mark,Magic/Heal,,,900,800,party/aoe,300,"Increases: Atk with 10%; Acc +3; Atk/Cast.Speed, Def, Crit.Rate, Crit.Dmg, Max HP/MP and regen with 20%; Critical.Rate.Received -10%; P.Critical.Dmg.Received -30%;Consumes 15 skill stones; Do not Stack with Other 'Mark' skills"
+Harmony Mark,harmony_mark,Magic/Heal,,,900,800,party/aoe,300,"Increases: Atk with 10%; Acc +3; Atk/Cast.Speed, Def, Crit.Rate, Crit.Dmg, Max HP/MP and regen with 20%;  Consumes 10 skill stones; Do not Stack with Other 'Mark' skills"
+Harmony Mark,harmony_mark,Magic/Heal,,,900,800,party/aoe,300,"Increases: Atk with 10%; Acc +3; Atk/Cast.Speed, Def, Crit.Rate, Crit.Dmg, Max HP/MP and regen with 20%; Critical.Rate.Received -10%; P.Critical.Dmg.Received -30%;Consumes 15 skill stones; Do not Stack with Other 'Mark' skills"

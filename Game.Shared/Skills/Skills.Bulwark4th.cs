@@ -43,30 +43,30 @@ namespace Game.Shared;
 //         (50%/25%) for all eight 4th-tier rungs, so this one is flat at 35%/15% — on both sides now.
 //
 //  ⚠ ONE ID IN HIS FILE WAS A PASTE AND IS CORRECTED ON BOTH SIDES: the eight `Silencing Shock` rows
-//  carried SKILL_ID `tank_shield_stun` — Shield Shock's id — while being a different name, a
+//  carried SKILL_ID `shield_shock` — Shield Shock's id — while being a different name, a
 //  different TYPE (`Magical/Debuff` vs `physical active`), a different range, cast, reuse, duration
 //  and the only rows in the block with a RACE. Two skills cannot share one id: the engine keys
-//  cooldowns, saved bars and buff families on it. Set to `tank_silence_magical`, which is what
+//  cooldowns, saved bars and buff families on it. Set to `silencing_shock`, which is what
 //  `BL-155` built the engine half against.
 // ===========================================================================
 
 public partial class SkillCatalog
 {
     // ---- The ids that are new at the 4th tier. Everything else in his file EXTENDS a skill that
-    //      already exists: provoke, charm, mass_provoke, tank_fear, tank_freeze, tank_stay,
-    //      tank_shield_stun, tank_smash_rate/power, tank_armor_mastery, tank_anti_magic,
-    //      defensive_wall, tank_pull, tank_silence_physical/magical, backlash, undying_will and the
+    //      already exists: provoke, charm, mass_provoke, intimidate, freeze, stay,
+    //      shield_shock, shield_smash_rate/power, tank_armor_mastery, tank_anti_magic,
+    //      defensive_wall, grapple, numbing_shock/magical, backlash, undying_will and the
     //      six whisp calls.
-    public const string TankPull            = "tank_pull";
-    public const string TankSilencePhysical = "tank_silence_physical";
-    public const string TankSilenceMagical  = "tank_silence_magical";
+    public const string Grapple            = "grapple";
+    public const string NumbingShock = "numbing_shock";
+    public const string SilencingShock  = "silencing_shock";
     public const string TankMagicWall       = "magic_wall";
     public const string TankTauntingWall    = "tauting_wall";          // his spelling, kept: it is the id
     /// <summary>Tauting Wall's own half of itself. A payload def, never learned and never on a bar —
     /// the same shape Aggravated State's proc rungs use, and the thing <see cref="SkillDef.SelfBuff"/>
     /// points at.</summary>
     public const string TankTauntingWallGuard = "tauting_wall_guard";
-    public const string TankWhispHelp       = "tank_whisp_help";
+    public const string PerfectWhisp       = "perfect_whisp";
     /// <summary>`BL-188` (2026-09-09) — the 80 passive that cuts an attacker's BLOW landing rate by
     /// 30%. The tank's answer to the melee rogue, and the only blow defence anywhere.</summary>
     public const string TankVitalOrganProtection = "vital_organ_protection";
@@ -446,7 +446,7 @@ public partial class SkillCatalog
         //
         // ⚠ THE DRAG IS TIMED, NOT PACED: `PullSeconds` is the whole journey from any distance and the
         // speed is derived. Range buys reach and never buys lockdown — see SkillDef.Pulls.
-        new(TankPull, "Grapple", BaseClass.Fighter, SkillEffect.PhysicalDamage | SkillEffect.Stun,
+        new(Grapple, "Grapple", BaseClass.Fighter, SkillEffect.PhysicalDamage | SkillEffect.Stun,
             MpCost: TankFourthBashMp[0], CastTicks: 5, CooldownTicks: 150, Range: 600, Power: 2100,
             DurationTicks: 10,                       // the STUN tail: his 1s, held back until arrival
             Pulls: true, PullSeconds: 1.2f,          // his 1.2s drag
@@ -476,7 +476,7 @@ public partial class SkillCatalog
         // guessed. Renamed from "Numbing Strike" to match his NAME column, and it lands at ×0.5
         // where the Elf's magical twin lands at ×0.7: the physical half is harder to stick and
         // cheaper to re-throw.
-        new(TankSilencePhysical, "Numbing Shock", BaseClass.Fighter, SkillEffect.None,
+        new(NumbingShock, "Numbing Shock", BaseClass.Fighter, SkillEffect.None,
             MpCost: TankFourthBashMp[0], CastTicks: 20, CooldownTicks: 60, Range: 40, Power: 0,
             DurationTicks: 50,
             SilencePhysical: true, DebuffLandMod: 0.5f,
@@ -496,10 +496,10 @@ public partial class SkillCatalog
         // two debuffs, and the cast gate asks the two questions separately.
         //
         // ⚠ RENAMED FROM "Silencing Ward" to his NAME cell, and its id is the ONE correction this
-        // pass made to `tank 4th.csv`: all eight rows carried `tank_shield_stun`. See the file header.
+        // pass made to `tank 4th.csv`: all eight rows carried `shield_shock`. See the file header.
         // It reaches 150 (a step further than the Human's 40 — the Elf is the magic knight of the
         // three), casts in 1.5s and holds for 10 seconds at ×0.7.
-        new(TankSilenceMagical, "Silencing Shock", BaseClass.Fighter, SkillEffect.None,
+        new(SilencingShock, "Silencing Shock", BaseClass.Fighter, SkillEffect.None,
             MpCost: TankFourthBashMp[0], CastTicks: 15, CooldownTicks: 60, Range: 150, Power: 0,
             DurationTicks: 100,
             SilenceMagical: true, DebuffLandMod: 0.7f,
@@ -613,7 +613,7 @@ public partial class SkillCatalog
         //
         // ⚠ IT IS NOT RACE-SPLIT — his row carries no RACE, so all three tanks call it, and it is the
         // only whisp any of them shares.
-        WhispSummon(TankWhispHelp, "Perfect Whisp", WhispClear, null,
+        WhispSummon(PerfectWhisp, "Perfect Whisp", WhispClear, null,
             "Calls a spirit that does a little of everything — mends, refuels, and wears your enemy "
             + "down.",
             extra: new[] { WhispGreatHeal, WhispMana, WhispGreatArmorBreak,

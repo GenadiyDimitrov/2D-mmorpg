@@ -46,7 +46,7 @@ public static class SkillIcons
         ["holy_force"]  = "🔰",   // interrupt resist / +M.Atk
         ["holy_focus"]  = "🎯",   // crit rate
         ["holy_frenzy"] = "😤",   // berserk
-        ["healer_combat_stance"] = "🥊",   // toggle: trade M.Atk for P.Atk
+        ["combat_stance"] = "🥊",   // toggle: trade M.Atk for P.Atk
 
         // ---- MAGE / NUKER ----
         ["magic_bolt"]      = "🔷",
@@ -64,23 +64,23 @@ public static class SkillIcons
         ["elemental_bolt"]  = "🌟",
         ["quick_bolt"]      = "⚡",
         ["flame_bolt"]      = "🔥",
-        ["holy_strike"]     = "☀️",   // "Holy Bolt"
+        ["holy_bolt"]     = "☀️",   // "Holy Bolt"
         ["glacial_spike"]   = "🧊",
         ["elemental_burst"] = "💥",
         ["frost_bind"]      = "❄️",
         ["entangling_roots"] = "🪢",
         ["creeping_frost"]  = "🌨",
         // 🔴 THE KEY MOVED WITH THE SKILL ID (`BL-192`, 2026-09-11): `mana_barrier` →
-        //    `nuker_mana_barrier`. This table is keyed by SKILL ID, so the rename would have silently
+        //    `mana_barrier`. This table is keyed by SKILL ID, so the rename would have silently
         //    dropped the glyph back to the letters fallback the first time anyone learned it.
         // ⚠ AND THE GLYPH CHANGED, because 🔮 is also the NPC buffer's `atk_mag` — a buff every Magus
         //   wears — and his rule is that no two skills ONE class can hold may share an icon.
-        ["nuker_mana_barrier"] = "🧿",
+        ["mana_barrier"] = "🧿",
         ["phase_shift"]     = "🌌",
         // ---- THE MAGUS'S 4th TIER (`BL-192`). The three Spell Empowerments deliberately SHARE one
         //      glyph: they are one skill per race and no character can ever hold two.
-        ["nuker_shield_mastery"]         = "🪬",
-        ["nuker_Force_empowerment"]      = "💢",
+        ["mage_shield_mastery"]         = "🪬",
+        ["force_empowerment"]      = "💢",
         ["nuker_human_spell_empowerment"] = "✴️",
         ["nuker_elf_spell_empowerment"]   = "✴️",
         ["nuker_demon_spell_empowerment"] = "✴️",

@@ -6541,3 +6541,48 @@ written against `MobType.Drops` would answer "nothing drops this" — correctly,
    `DropEntry`s — `RollBossBonus` rolls them by hand — so the two sides can drift. If the in-game
    version is built, that roll should move into a real drop table first, and then there is one source
    of truth instead of two.
+
+---
+
+## `BL-84` ✅ BUILT 2026-09-18 in **0.174.0** — every skill id reads as its skill
+
+**136 ids renamed, zero collisions, 765 skills before and after.** The convention question this entry
+closed with was answered by the DATA rather than by asking. A blanket "id = slugged name" flags 605 of
+765 and collides on 71 name groups, because `buff_crit_rate_4` is not the bug he described — it is more
+informative than its name, and SIX defs are called "Focus". The scope is the ids named after the
+discipline or class that owned the SLOT, which is the shape of all three of his examples and which his
+own 44+ kit already avoids (`urgent_heal`, `ultimate_heal`). 82 had a WRONG WORD (his complaint), 54
+only needed the prefix off, and 131 KEPT their prefix because it IS the identity (three different
+"Armor Mastery" passives). Race prefixes stay where races diverge. Generated and verified by a new
+`--skillids` page in `tools/BalanceMatrix`: 82 + 54 before, 0 + 0 after. Constants moved in the same
+pass, from reflection over the literals, so `LbElfDawn` is `HealerBlessing`. Five typos and every
+surviving `_ork_` id fell out of it.
+
+⚠ **The text below is the entry AS IT STOOD, and its old ids are left alone on purpose** — it quotes
+him, and a record that renames the thing it is complaining about says nothing. (The rename sweep did
+rewrite them here and in `Playtest-Archive.md`; both were restored.)
+
+  ⏰ This is the reminder you asked for. The trigger you named has fired — `healer 3rd.csv` is built and
+  shipped in 0.74.0 — so this is now next in the queue whenever you want it, not a filed idea.
+  2026-08-17: *"After the healer is done I want to change all the game skills id's to match the skill
+  names ... not `lb_elf_dawn` <> Healer's Blessing, it should be `healers_blessing` or something that
+  matches it. Make a note to remind me after the healer is done (I want all the skills, not only the
+  healers — all 1st, 2nd + healer 3rd)."*
+  **Scope, his**: every skill in the **1st** and **2nd** class tables plus the **healer 3rd** — not the
+  healer alone. The other seven disciplines follow when their CSVs land, so the convention has to be
+  settled here and then simply obeyed.
+  🔑 **Why it is worth doing**: the ids were named after the SLOT a skill sat in, not the skill. Three
+  level-40 healer ids now openly contradict the thing they identify — `lb_elf_dawn` is *Healer Blessing*,
+  `lb_human_mend` is *Quick Great Heal*, `lb_ork_font` is *Healing Totem* — because each was reused when
+  his authored row landed on its slot. That is the right call for data (see `BL-02`) and the wrong one
+  for reading code, and it gets worse with every CSV he writes.
+  ✅ **NO MIGRATION NEEDED — he settled it the same day**: *"I'll reset the db anyways so it's not of a
+  concern."* Ids are persisted (learned skills + the skill bar's `SkillBarCsv`), so a rename would
+  normally orphan every character's bar — the failure `retired-skill-ids-leak` recorded once. A DB reset
+  removes that entirely, which turns this from a migration into an ordinary rename. **Do it in one pass
+  while the reset is happening**, not spread across versions, or the two halves meet in a live DB and the
+  problem comes back. ⚠ Ids also appear in `docs/` and in the premium/consumable catalogs, and
+  `SkillCsvSeed` matches CSV rows to code **by NAME**, so the checker can neither verify this pass nor
+  catch a mistake in it — the compiler is the only safety net, which is fine for constants.
+  🔵 Convention to settle with him before starting: strip the `lb_`/discipline prefixes entirely, or keep
+  a short one for per-race variants that share a display name across races?
