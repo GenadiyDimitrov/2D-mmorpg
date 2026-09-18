@@ -276,6 +276,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-250` | 🟢 | THE SUBCLASS SYSTEM — **BUILT WHOLE** (0.155.0 server, 0.169.0 sigils, 0.170.0 the class master's dialogue). Only the APK is owed. ❓ one question in §9.6 | classes |
 | `BL-260` | ❓ | **SUMMONERS — the conversation we have never had**, and four shipped decisions already lean on it | classes |
 | `BL-262` | ❓ | THE BOSS MAT PILE TAKES NO RATE KNOB — the same shape `BL-247` fixed in the recipe roll; three ways out, my reading is (2) | items |
+| `BL-263` | 🔵 | **BUFFS ARE WRAPPERS OVER `(family, level)`** — your model, recorded in [design/BuffFamilies.md](design/BuffFamilies.md). Five gaps, five steps; step 1 is the one that stops today's shape biting | skills |
 
 ---
 
@@ -2058,3 +2059,44 @@ the one genuinely drop-shaped thing in the pile starts obeying the knob you play
 
 ⚠ Whichever you pick, the fix is a few lines: the pile is one table with one reader now
 (`GameLoopService.RollBossBonus`), and the drop database reads the same table, so both move together.
+
+## `BL-263` 🔵 BUFFS ARE WRAPPERS OVER `(family, level)` — your model
+
+**Your design, 2026-09-18, recorded in full in [design/BuffFamilies.md](design/BuffFamilies.md).**
+Nothing is built. This entry exists so the design is somewhere you will actually walk past.
+
+> everything is a wrapper for icon/duration/name/descr/animation/cost/cooldown/casttime/etc… but it
+> provides an effect of a family, and the same effect of one family doesn't stack.
+
+`human_body` / `demon_body` / `elf_body` / `npc_body` all provide `(hp_max, N)`. Different look,
+different cast, different duration — same number line, and **conflict is `(family, level)` only, never
+duration**. A group provides several families at `max+1` so no single can take a part back. A
+different family name (`har_hp_max` vs `hp_max`) is a different line and they stack.
+
+🔑 **The engine already speaks this language** — `BuffKey` is your family, `Rank` your level,
+`CoveredKeys` your extra families, and `cast_hp_max` (the buffer's own castable Body) is already one
+id with six levels. Five things are missing. In the order they will bite:
+
+1. 🔴 **A covered family carries no level.** `CoveredKeys` is `string[]`, so a group wins everywhere
+   by one number. Today's substitute is a rule a human must remember (*"a group must be ≥ the best
+   single in every family it covers"*) and **nothing checks it**. That class of silent downgrade has
+   already shipped twice.
+2. 🔴 **Equal level keeps the longer duration** — you want duration ignored. We already paid a
+   constant (`HarmonyRank = NpcBuffRank + 1`) purely to work around this.
+3. 🟡 **A wrapper's name and icon don't survive onto the buff** — `ApplyBuff` drops `displayName`
+   when it recurses into the child, so `demon_body` would land on the bar called "Body". Same root
+   cause as the cast-bar/buff-name mismatch you noticed.
+4. 🟡 **A rung is addressed by id, not `(family, level)`** — and ⚠ **rung ids ARE in the database**
+   (`BuffsJson`), contrary to a comment in `Skills.BuffLadders.cs` that says they are not. Moving to
+   `(family, level)` is a save-format change, i.e. a `game.db` delete.
+5. 🟢 **Passives have no family arbitration at all** — your ×4 cast-speed fear is real:
+   `ApplyPassive` multiplies every learned passive and only a `0.4…2.5` clamp hides it.
+
+**My recommendation is NOT to build the whole model.** Steps 1-3 are small, stand alone, and buy most
+of what you described — including racial Body variants, which need no new machinery at all once
+step 2 lands. Step 4 (the full `Provides: (Family, Level)[]`) only if 1-3 turn out not to be enough.
+For passives, **a boot CHECK before a mechanism**: flag two learnable-together passives feeding one
+channel with no `Replaces` between them. That catches the mis-authoring for a fraction of the cost.
+
+🔵 **Waiting on you:** whether to take step 1 now (it is behaviour-neutral and turns an unchecked
+authoring rule into a boot assertion), or to hold the whole thing until the 40+ CSVs are done.
