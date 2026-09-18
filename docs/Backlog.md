@@ -275,7 +275,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-250` | 🟢 | THE SUBCLASS SYSTEM — **BUILT WHOLE** (0.155.0 server, 0.169.0 sigils, 0.170.0 the class master's dialogue). Only the APK is owed. ❓ one question in §9.6 | classes |
 | `BL-260` | ❓ | **SUMMONERS — the conversation we have never had**, and four shipped decisions already lean on it | classes |
 | `BL-262` | ❓ | THE BOSS MAT PILE TAKES NO RATE KNOB — the same shape `BL-247` fixed in the recipe roll; three ways out, my reading is (2) | items |
-| `BL-263` | 🟡 | **BUFFS ARE WRAPPERS OVER `(family, level)`** — [design/BuffFamilies.md](design/BuffFamilies.md). Duration is out of the conflict rule and the first three racial wrappers are built (0.176.0); per-family group rank DECLINED. Left: two boot checks nothing enforces, and the rest of the racial split | skills |
+| `BL-263` | 🟡 | **BUFFS ARE WRAPPERS OVER `(family, level)`** — [design/BuffFamilies.md](design/BuffFamilies.md). Duration is out of the conflict rule and the first three racial wrappers are built (0.176.0); per-family group rank DECLINED, and so is the group-vs-single authoring check — a group ALWAYS outranks its singles. Left: the passive check and the racial split, both DEFERRED on your call | skills |
 
 ---
 
@@ -2052,24 +2052,32 @@ the one genuinely drop-shaped thing in the pile starts obeying the knob you play
 
 ### What is still owed
 
-1. 🔴 **NOTHING CHECKS "a group must be ≥ the best single in EVERY family it covers."** Declining the
-   per-family rank does not make that authoring rule go away — it only means it cannot be expressed as
-   data. It is still a comment in `CLAUDE.md` and a human's memory, and it has already shipped broken
-   twice. **A boot CHECK is the cheap version**: for every group, compare its folded magnitudes
-   against every single def in each family it covers, and refuse to start if one is weaker.
-   🔵 *Want it?* It is behaviour-neutral and maybe 40 lines.
-2. 🟢 **Passives still have no arbitration at all.** Your ×4 cast-speed fear (*"if I forgot to make
-   one replace the other they stack"*) is real: `ApplyPassive` MULTIPLIES `CastSpeedPct` for every
-   learned passive and only a `0.4…2.5` clamp hides it. Same answer as above — **a boot check before
-   a mechanism**: flag two learnable-together passives feeding one channel with no `Replaces` between
-   them.
-3. 🔵 **The mass racial duplication you said was coming.** Might is done as the proof of concept. The
-   pattern costs one id, one name, one description and one line per race per family — nothing else,
-   because the family key and the rank live on the shared child rung. Say which families you want
-   split and by which races, and it is mechanical.
+1. 🔴 **CLOSED — "a group must be ≥ the best single it covers" IS NOT A RULE.** Your ruling,
+   2026-09-18: *"no a group outranks any singles .. so if i have all the singles that a grup buffs and
+   give more stat then the group .. the group still overrides them and it compacs it in one slot"*.
+   So the boot check proposed here is **declined**: it would refuse to start on a configuration you
+   consider legal. ✅ **The code already behaves this way and needed no change** — verified
+   2026-09-18: `GroupRank = 100 + level`, every NPC shelf single lands at `NpcBuffRank = 100`, every
+   class single at rank 1-6, and the only literal rank above that in the whole catalog is a DoT tier
+   of 10. **No single can outrank a group that covers it, at any magnitude.**
+   ⚠ **The consequence, stated so it is not a surprise in a playtest:** taking a group CAN be a net
+   stat downgrade if you were already wearing a full set of stronger singles, and there is no way to
+   refuse one. You priced that yourself — the **slot** is what the group is buying, not the numbers.
+   🔑 **The old authoring rule is retired**, and `CLAUDE.md`'s line calling it "enforced by nothing"
+   is now wrong twice over: it is enforced by nothing *because it is not a requirement*.
+2. ⏸ **DEFERRED on your call, 2026-09-18** (*"2 and 3 will be defered for now"*). **Passives still
+   have no arbitration at all.** Your ×4 cast-speed fear (*"if I forgot to make one replace the other
+   they stack"*) is real: `ApplyPassive` MULTIPLIES `CastSpeedPct` for every learned passive and only
+   a `0.4…2.5` clamp hides it. The cheap version is a boot check, not a mechanism: flag two
+   learnable-together passives feeding one channel with no `Replaces` between them.
+3. ⏸ **DEFERRED on your call, 2026-09-18.** **The mass racial duplication you said was coming.**
+   Might is done as the proof of concept. The pattern costs one id, one name, one description and one
+   line per race per family — nothing else, because the family key and the rank live on the shared
+   child rung. Say which families you want split and by which races, and it is mechanical.
 4. 🔵 **`Provides: (family, level)[]` replacing `ChildBuffs: string[]`** — the full version of your
    model. **Not needed for anything you have asked for so far**, and it is a save-format change
    (⚠ rung ids really are in `BuffsJson`), i.e. a `game.db` delete. Only if a wrapper ever needs to
    hand out several families at once with a level each.
 
-🔵 **Waiting on you:** items 1 and 2 are the two checks. Item 3 is a list of families from you.
+🟢 **Nothing here is waiting on me.** Items 2 and 3 are parked at your word; item 1 is answered and
+cost no code; item 4 is a "only if you ever need it". The entry stays open only to hold 2-4.

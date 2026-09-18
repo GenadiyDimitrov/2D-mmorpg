@@ -176,8 +176,13 @@ from IG references.
   child's magnitudes and declaring `CoveredKeys`, so it always outranks and evicts its singles and a
   potion can never override it (the IG rule, 0.42.0). 🔴 **A covered family has NO rank of its own and
   he DECLINED giving it one** (*"we dont want a body_reinforcment (that provides 10 things) to be
-  replaced by a single buff a one rank higher .. 100+lvl is ok"*) — so the ⚠ authoring rule **a group
-  must be ≥ the best single in EVERY family it covers** is enforced by nothing but this line.
+  replaced by a single buff a one rank higher .. 100+lvl is ok"*). 🔑 **AND "a group must be ≥ the
+  best single it covers" IS NOT A RULE** — his ruling of 2026-09-18, which retired it: *"no a group
+  outranks any singles .. so if i have all the singles that a grup buffs and give more stat then the
+  group .. the group still overrides them and it compacs it in one slot"*. **The SLOT is what a group
+  buys, not the numbers**, so a group may legally be weaker than the set it evicts and there is no
+  check to write. `GroupRank = 100 + level` against `NpcBuffRank = 100` and class singles at 1-6 is
+  what makes it true; nothing in the catalog ranks a single higher than 10.
   ⚠ `SkillCatalog.HarmonyRank` (= `NpcBuffRank + 1`) is the ONLY thing holding a covering harmony
   above the NPC singles it covers now that equal rank means "whoever cast last" — never collapse it.
   🔑 **A RACIAL VARIANT IS A WRAPPER, NOT A NEW BUFF** (`BL-263`): `elf_/demon_/human_cast_atk_phys`
