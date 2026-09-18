@@ -4115,6 +4115,35 @@ public class GameLoopService : BackgroundService
         var swaps = byId.Keys.Where(id => SkillCatalog.StatSwapOf(id) is not null).ToList();
         foreach (var id in swaps) byId.Remove(id);
 
+        // ---- NOR THE SIGILS, for exactly the same reason (owner, 2026-09-18: *"im lvl 76 war master
+        //      and i wear all sigils as passives and in the window are shown as worn"*).
+        // 🔴 THIS BUTTON WALKED STRAIGHT PAST THE SIGIL GATE. `Cumulative` INJECTS all eighteen at
+        //    level 76 for any ascended class (ClassSkills.cs — they are a grid bought on their own tab,
+        //    not learn lines), and everything here is granted on LEARN LEVEL alone. The two rules that
+        //    make a sigil a choice — three slots, opened one per arrived subclass, and a tree your
+        //    subclasses have unlocked — live in `SigilRefusal`, which only the ordinary LearnSkill path
+        //    consults. So one press wore all eighteen passives at once, every one of them live in
+        //    RecomputeDerived: the same "quietly wrecks the numbers this button exists to test" failure
+        //    the stat swaps above were pulled for. Commit them on the Sigils tab.
+        var sigils = byId.Keys.Where(id => SkillCatalog.SigilOf(id) is not null).ToList();
+        foreach (var id in sigils) byId.Remove(id);
+
+        // ---- …AND CLEAR AN ILLEGAL SET THIS BUTTON ALREADY HANDED OUT. Refusing to grant them does
+        //      nothing for the character who is already wearing eighteen. Only an over-the-limit set is
+        //      touched, so a deliberately committed one is never disturbed, and it clears ALL of them
+        //      rather than trimming to a legal count: which three to keep is a build decision, and
+        //      "all at once, nothing partial" is already the Mindwright's own rule.
+        int wornNow = player.LearnedSkills.Count(kv => SkillCatalog.SigilOf(kv.Key) is not null);
+        int cleared = 0;
+        if (wornNow > SigilSlotsOpen(player))
+        {
+            foreach (var id in player.LearnedSkills.Keys.Where(k => SkillCatalog.SigilOf(k) is not null).ToList())
+            {
+                player.LearnedSkills.Remove(id);
+                cleared++;
+            }
+        }
+
         foreach (var (id, lvl) in byId)
             player.LearnedSkills[id] = lvl;
         // Cross-skill replacements (e.g. Flame Bolt replaces Magic Bolt).
@@ -4128,6 +4157,14 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(player,
                 $"[DEBUG] Skipped {swaps.Count} stat-swap passives — they are a permanent build choice " +
                 "(and cannot all be held at once). Buy the ones you want in the skills window.");
+        if (sigils.Count > 0)
+            SendSystemToEntity(player,
+                $"[DEBUG] Skipped {sigils.Count} sigils — three of eighteen is a permanent choice, and " +
+                "only your subclasses open the slots. Commit them on the Sigils tab.");
+        if (cleared > 0)
+            SendSystemToEntity(player,
+                $"[DEBUG] Cleared {cleared} sigils this button should never have granted — you were " +
+                $"wearing more than your {SigilSlotsOpen(player)} slot(s). Re-commit on the Sigils tab.");
         SendStats(player);
         SendLearned(player);
         SaveEntity(player);

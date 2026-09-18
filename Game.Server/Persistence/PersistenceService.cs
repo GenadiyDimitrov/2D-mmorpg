@@ -230,7 +230,12 @@ public class PersistenceService
         // Stat swaps are a permanent BUILD decision, and granting them all cancels out to roughly +0
         // while quietly wrecking the damage numbers — the same reason the debug "learn all" button
         // refuses them. Buy them deliberately in the skills window.
-        foreach (var id in learned.Keys.Where(id => SkillCatalog.StatSwapOf(id) is not null).ToList())
+        // ⚠ The SIGIL half is INERT today and is here so it stays true: this seed asks `Cumulative`
+        //    without the 4th tier, and that is the only thing that injects the eighteen. The day the
+        //    seed ascends, the same "three permanent choices out of eighteen" rule applies — which is
+        //    exactly the hole the debug learn-all button had until 2026-09-18.
+        foreach (var id in learned.Keys.Where(id => SkillCatalog.StatSwapOf(id) is not null
+                                                 || SkillCatalog.SigilOf(id) is not null).ToList())
             learned.Remove(id);
         // Cross-skill replacements (a higher-tier spell removes the one it supersedes).
         foreach (var id in learned.Keys.ToList())

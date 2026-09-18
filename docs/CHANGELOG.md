@@ -7,11 +7,59 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.177.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.178.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-18 (latest) — 0.177.0: a Mark's rung is its rank — `BL-164`
+## 2026-09-18 (latest) — 0.178.0: the debug "learn all" wore all eighteen sigils
+
+> *"also fix sigils! ... im lvl 76 war master and i wear all sigils as passives and in the window are
+> shown as worn!"*
+
+**The Sigils tab was telling the truth — the character really was wearing all eighteen.**
+
+The sigils are not learn lines. They are a fixed grid injected into every ascended class's
+`Cumulative` at level 76 (`ClassSkills.cs`), because they are bought on their own tab; the two rules
+that make them a CHOICE — at most three, one slot per arrived subclass, and only from a tree a
+subclass has unlocked — live in `SigilRefusal`, which **only the ordinary LearnSkill path consults**.
+`HandleDebugLearnAll` grants everything in `Cumulative` whose learn level is met, so it walked past
+that gate entirely and handed out the whole grid. Every one of the eighteen passives was live in
+`RecomputeDerived`, so the stats of any character that pressed it were junk.
+
+That is the same failure the **stat swaps** were pulled out of this button for, in the same method,
+for the same stated reason: *"any subset is an arbitrary BUILD decision"*.
+
+### The fix
+
+- **The debug button skips sigils**, exactly as it already skips the stat swaps, and says so.
+- **It also clears an illegal set it handed out earlier** — refusing to grant them does nothing for
+  the character already wearing eighteen. Only an over-the-limit set is touched, so a deliberately
+  committed one is never disturbed, and it clears ALL of them rather than trimming to a legal count:
+  which three to keep is a build decision, and *"all at once, nothing partial"* is already the
+  Mindwright's rule. Press the button once and the character is clean; re-commit on the Sigils tab.
+- **The admin endgame seed carries the same filter**, inert today (it asks `Cumulative` without the
+  4th tier, which is the only thing that injects the grid) and there so it stays true the day that
+  seed ascends.
+
+⚠ **Server-side only — no APK.** The tab renders `Learned`; it was right all along.
+
+### Also in this version
+
+- **`BL-263` item 3 records the colour rule** for the racial split when it is built: the abbreviation
+  does NOT split (`Mig` stays `Mig`), the SQUARE'S COLOUR carries the source — elf dark green, human
+  dark blue, demon dark red, NPC the current gray, potion dark yellow, scroll dark brown. It needs no
+  server work: `BuffDto.SourceSkillId` already says which face cast it and the client compiles
+  `SkillCatalog`. Two notes in the entry: a sub-60s buff already blinks in that same dark yellow, and
+  potion/scroll squares draw in the Consumable group rather than the limited bar.
+- **`BL-264` filed** — no CSV anywhere says which buffs fight each other; from `mage 1st.csv` you
+  cannot tell that the three Mights are one family. A generated `FAMILY` + `RANK` column, checked like
+  every other column. §2 of the entry: the `RACE` cell is the other column nothing verifies, which is
+  why the stray `Human` tag on the Wirlwind block sat in `war_aoe 4th.csv` under a green checker.
+- **`war_aoe 4th.csv`: his Wirlwind race tag removed** (his edit). The code was never race-split there
+  — `WaraoeWhirlwind` is in the shared Warlord list registered for all three races — so the file now
+  matches the game, and `SkillCsvSeed --check` is clean.
+
+## 2026-09-18 — 0.177.0: a Mark's rung is its rank — `BL-164`
 
 > *"i want mark to have ranks .. a Life mark L2 to be replaced only by other l2 marks .. not some1 to
 > be able to put lower rank -> admin of buffer gives me rank2 and stupid me goes to npc and overrites

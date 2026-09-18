@@ -275,7 +275,8 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-250` | 🟢 | THE SUBCLASS SYSTEM — **BUILT WHOLE** (0.155.0 server, 0.169.0 sigils, 0.170.0 the class master's dialogue). Only the APK is owed. ❓ one question in §9.6 | classes |
 | `BL-260` | ❓ | **SUMMONERS — the conversation we have never had**, and four shipped decisions already lean on it | classes |
 | `BL-262` | ❓ | THE BOSS MAT PILE TAKES NO RATE KNOB — the same shape `BL-247` fixed in the recipe roll; three ways out, my reading is (2) | items |
-| `BL-263` | 🟡 | **BUFFS ARE WRAPPERS OVER `(family, level)`** — [design/BuffFamilies.md](design/BuffFamilies.md). Duration is out of the conflict rule and the first three racial wrappers are built (0.176.0); per-family group rank DECLINED, and so is the group-vs-single authoring check — a group ALWAYS outranks its singles. Left: the passive check and the racial split, both DEFERRED on your call | skills |
+| `BL-263` | 🟡 | **BUFFS ARE WRAPPERS OVER `(family, level)`** — [design/BuffFamilies.md](design/BuffFamilies.md). Duration is out of the conflict rule and the first three racial wrappers are built (0.176.0); per-family group rank DECLINED, and so is the group-vs-single authoring check — a group ALWAYS outranks its singles. Left: the passive check and the racial split, both DEFERRED on your call — the racial split now carries your colour-not-abbreviation rule | skills |
+| `BL-264` | ❓ | **NO CSV SAYS WHICH BUFFS FIGHT EACH OTHER** — from `mage 1st` you cannot tell the three Mights are one family. A generated `FAMILY` + `RANK` column, checked like every other; §2 the RACE cell nothing verifies | skills |
 
 ---
 
@@ -2074,6 +2075,36 @@ the one genuinely drop-shaped thing in the pile starts obeying the knob you play
    Might is done as the proof of concept. The pattern costs one id, one name, one description and one
    line per race per family — nothing else, because the family key and the rank live on the shared
    child rung. Say which families you want split and by which races, and it is mechanical.
+
+   🔑 **WHEN IT IS BUILT, THE SQUARE'S LETTERS DO NOT SPLIT — ITS COLOUR DOES** (your rule,
+   2026-09-18, and it lands with the racial split, not before): *"untill we have icons not the
+   abriviation to change but the color … a might buff that we have now 7 types -> 3 racial L1, 1
+   clerics L2+, 1 npc L3, one scroll and one potion to be diffrent color .. not the 3 racial might to
+   be FMi/BMi/DStr but to **Mig** (as it is now) -> just elf buffs to be **dark green**, humans **dark
+   blue**, demons **dark red**, npc **the current gray**, potions **dark yellow**, scroll **dark
+   brown** -> thats only for the limited buff bar as other buffs are self and no ratial split can
+   overrite them"*.
+
+   ✅ **NOTHING IS MISSING FOR THIS — it is a client-only change and needs no server work and no new
+   DTO field.** The square is already told who cast it: `BuffDto.SourceSkillId` is sent and persisted,
+   and the client compiles `Game.Shared`, so from that one id it can read the race off the wrapper
+   (`elf_/human_/demon_cast_atk_phys`), spot the `npc_*` shelf, and separate potion from scroll with
+   `SkillCatalog.ConsumableBuffForm`. It is one `tint` in `GameUi.Feedback.cs` (`LayoutBuffRow`), where
+   the colour is already chosen per square. ⚠ **It is an APK, though** — a client-only fix ships in no
+   other way.
+
+   ⚠ **TWO COLOURS ARE ALREADY IN USE IN THAT METHOD AND ONE OF THEM IS YOURS.** A buff under 60s
+   **blinks dark yellow** — the same colour you have given potions — and a weapon-gated-off buff goes
+   near-black. My reading, unless you say otherwise: **state beats provenance**, so the expiry blink
+   and the gated-off dim keep winning over the source colour. A colour that tells you where a buff
+   came from is worth less than the one that tells you it is about to fall off.
+
+   ❓ **ONE THING TO CONFIRM: potion and scroll squares are not IN the limited bar today.** The client
+   draws four groups — the limited Buff row (the one with the 20-slot counter), then Consumable, Item
+   and Other — and both potion and scroll Might land in **Consumable**. So your seven Mights are five
+   squares in the limited bar and two below it. I read *"only the limited buff bar"* as *"don't bother
+   colouring Item and Other"* and will colour the Buff and Consumable groups; say so if you meant the
+   top row alone and the potion/scroll colours were for later.
 4. 🔵 **`Provides: (family, level)[]` replacing `ChildBuffs: string[]`** — the full version of your
    model. **Not needed for anything you have asked for so far**, and it is a save-format change
    (⚠ rung ids really are in `BuffsJson`), i.e. a `game.db` delete. Only if a wrapper ever needs to
@@ -2081,3 +2112,58 @@ the one genuinely drop-shaped thing in the pile starts obeying the knob you play
 
 🟢 **Nothing here is waiting on me.** Items 2 and 3 are parked at your word; item 1 is answered and
 cost no code; item 4 is a "only if you ever need it". The entry stays open only to hold 2-4.
+
+---
+
+## `BL-264` ❓ NO CSV SAYS WHICH BUFFS FIGHT EACH OTHER — a FAMILY column, generated and checked
+
+**Your ask, 2026-09-18:** *"i never saw in the csvs where to show what buff what family is in ..
+meaning no loooking at the mage 1st i cannot tell that the 3 mights replace each other"*.
+
+**You are right, and it is worse than "not shown".** The only place any CSV says a word about
+stacking today is **prose in a DESCR cell** — three rows of `buffer 3rd.csv` read *"Does not stack
+(Great Might|Great Group Might|Great Group Bulwark)"* — free text that nothing verifies and that
+stops at those three rows. The family itself lives only in code: `SkillDef.BuffKey` on the rung a
+skill grants, plus `CoveredKeys` on a group.
+
+**Your own worked example, `mage 1st.csv` rows 9-11:**
+
+| row | id | name | race | what the row tells you |
+|---|---|---|---|---|
+| 7 | `elf_cast_atk_phys` | Forest Might | Elf | nothing about Might |
+| 7 | `demon_cast_atk_phys` | Demonic Strength | Demon | nothing about Might |
+| 7 | `human_cast_atk_phys` | Blessing of Might | Human | nothing about Might |
+
+All three name the same child rung (`buff_atk_phys_1`), which is the whole reason they replace each
+other — and `cast_atk_phys` on the cleric's ladder, the NPC's shelf row, the potion and the scroll
+are in that same family, a file away in `buffs.csv`, equally unmarked. Seven rows, one family, no
+cell anywhere saying so.
+
+### What I would build (one increment, say yes)
+
+1. **Two derived columns — `FAMILY` and `RANK` — on every class CSV and on `buffs.csv`**, beside
+   `REPLACES` (empty on nearly every row). `FAMILY` = the key the row's buff lands in
+   (`buff_atk_phys` for all seven Mights), blank on a non-buff row, and a `|` list for a group that
+   covers several families. **`RANK` because family alone only tells you they FIGHT** — it is the
+   rank that says who wins, and you already think in it: *"3 racial L1, 1 clerics L2+, 1 npc L3"*.
+2. **Generated, never typed** — a dump pass fills both columns from the code, exactly the way
+   `debuff_landmods.csv` gets its derived columns while your own column is preserved.
+3. **Checked** — `SkillCsvSeed --check` reports DRIFT when a row's family/rank and the code's
+   disagree. That is the only thing that makes the column worth reading a month from now.
+4. **Two-way like every other column**: editing a `FAMILY` cell is you merging or splitting who evicts
+   whom, and the code follows. That is arguably the point — you cannot rule on a split you cannot see.
+
+⚠ **It is a column added to ~20 files**, so it wants its own commit and a `git diff --numstat
+docs/data/` afterwards — the CSVs have been corrupted by the tools that read them before.
+
+### §2 — THE `RACE` CELL IS THE OTHER COLUMN NOTHING VERIFIES (found 2026-09-18)
+
+Your whirlwind question turned this up. `--check` collapses the code side across **all three races**
+(`tools/SkillCsvSeed/Check.cs:441` — it unions Human/Elf/Demon before comparing), so in a 3rd/4th-tier
+file the `RACE` cell is compared against nothing. The stray `Human` you just deleted from the fifteen
+Wirlwind rows of `war_aoe 4th.csv` had been there since the file landed on 2026-09-17 and the checker
+was green the whole time.
+
+**Cheap to close**: for a spec that names ONE discipline, compare per race instead of per union, and
+report a cell that claims a race the code does not register (and a blank cell the code splits). Not
+free — the rogue files are three disciplines, one per race, and would keep the union. Say the word.
