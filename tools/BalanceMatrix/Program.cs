@@ -6879,7 +6879,7 @@ static void SkillIdAudit()
     string[] kitPrefixes =
     {
         "lb_", "wc_", "holy_", "waraoe_", "warrior_", "archer_", "tank_", "nuker_",
-        "rogue_", "rouge_", "dual_", "healer_", "buffer_", "fighter_", "bow_", "whisp_", "boss_",
+        "rogue_", "rouge_", "dual_", "healer_", "buffer_", "fighter_", "bow_", "whisp_", "boss_", "mage_",
     };
     var all = SkillCatalog.AllSkills.OrderBy(d => d.Id, StringComparer.Ordinal).ToList();
     // How many defs answer to each slugged name. A name shared by several defs cannot BE an id, and

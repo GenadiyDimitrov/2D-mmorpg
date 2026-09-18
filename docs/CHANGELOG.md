@@ -7,11 +7,48 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.174.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.175.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-18 (latest) — 0.174.0: every skill id reads as its skill — `BL-84`
+## 2026-09-18 (latest) — 0.175.0: `--check` is clean for the first time, and two ids the sweep missed
+
+Two small things that both came out of verifying `BL-84`, and neither is a new decision.
+
+### 1. `SkillCsvSeed --check`: 144 discrepancies → **ZERO**
+
+Every one of the 144 was the same 17 Sigil rows in `shared 4th.csv`, reported once per 4th-tier file
+that folds it in, saying **`SP 20kk` / `GOLD 10kk`** where the code says 0.
+
+**The code was right and the FILE owed it.** You ruled this in 0.169.0 — *"yes sigils become end game
+and hard"* — and the price did not vanish, it moved onto the road: three sigils is now **three
+subclasses each levelled to 75**, every one born at 40 with no SP. Charging 20kk SP for the commit on
+top of that would charge twice for the same thing. So the rows now read `0,0,0`.
+
+🔑 **This is the clause the two-way CSV contract keeps losing:** *"a skill touched on the way past
+still owes its CSV row"*. 0.169.0 changed a price in code and left the file quoting the old one for a
+day. Nothing about the balance moved here — the file was brought to your ruling, not the other way
+round. ⚠ Your `COMMENT` column still records which slot each sigil came from
+(`Tank_Defence_Sigil`, `Healer_Defence_Sigil`…) and is left exactly as you wrote it; after `BL-84` it
+is the only place that history survives, which makes it more useful than it was.
+
+### 2. Two ids `BL-84` missed, because I left `mage_` out of the prefix list
+
+`mage_attack_sigil` was **Frenzy Sigil** and `mage_support_sigil` was **Arcane Support Sigil** — the
+same slot-named pathology as the other 82, sitting behind a prefix my scope list did not include.
+(`mage_defence_sigil` is genuinely *Mage Defence Sigil* and stays.)
+
+* `mage_attack_sigil` → **`frenzy_sigil`**
+* `mage_support_sigil` → **`arcane_support_sigil`**
+
+🔑 **The audit is what found them, and that is the point of having built it as a page rather than a
+script.** Adding one string to `kitPrefixes` in `--skillids` re-measured the whole catalogue and
+printed exactly two rows. It now reports **0 WORD, 0 PREFIX** over 163 in-scope ids, with 765 skills
+still in the catalogue.
+
+⚠ **The `game.db` delete 0.174.0 asks for covers these two as well** — same version, same reset.
+
+## 2026-09-18 — 0.174.0: every skill id reads as its skill — `BL-84`
 
 Your ask of 2026-08-17, and the reminder you asked me to file has now been acted on:
 

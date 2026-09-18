@@ -72,9 +72,9 @@ public static partial class SkillCatalog
     public const string BodySigil     = "body_sigil";
     public const string AegisSigil    = "aegis_sigil";
     public const string CriticalProtectionSigil    = "critical_protection_sigil";
-    public const string MageAttackSigil     = "mage_attack_sigil";
+    public const string FrenzySigil     = "frenzy_sigil";
     public const string MageDefenceSigil    = "mage_defence_sigil";
-    public const string MageSupportSigil    = "mage_support_sigil";
+    public const string ArcaneSupportSigil    = "arcane_support_sigil";
     public const string FocusSigil    = "focus_sigil";
     public const string AgilitySigil   = "agility_sigil";
     public const string AimSigil   = "aim_sigil";
@@ -168,11 +168,11 @@ public static partial class SkillCatalog
     public static readonly string[] AllSigilIds =
     {
         HolyPowerSigil,  FurySigil,  SoulSigil,
-        BodySigil,    MageAttackSigil,     FocusSigil,
+        BodySigil,    FrenzySigil,     FocusSigil,
         HolyProtectionSigil, DuelSigil, SpiritSigil,
         AegisSigil,   MageDefenceSigil,    AgilitySigil,
         HolySupportSigil, FortitudeSigil, ImmortalitySigil,
-        CriticalProtectionSigil,   MageSupportSigil,    AimSigil,
+        CriticalProtectionSigil,   ArcaneSupportSigil,    AimSigil,
     };
 
     private static readonly Dictionary<string, (SigilFlavour Flavour, SigilSlot Slot)> SigilTable =
@@ -190,9 +190,9 @@ public static partial class SkillCatalog
             [BodySigil]     = (SigilFlavour.Tank,    SigilSlot.Attack),
             [AegisSigil]    = (SigilFlavour.Tank,    SigilSlot.Defence),
             [CriticalProtectionSigil]    = (SigilFlavour.Tank,    SigilSlot.Support),
-            [MageAttackSigil]     = (SigilFlavour.Mage,    SigilSlot.Attack),
+            [FrenzySigil]     = (SigilFlavour.Mage,    SigilSlot.Attack),
             [MageDefenceSigil]    = (SigilFlavour.Mage,    SigilSlot.Defence),
-            [MageSupportSigil]    = (SigilFlavour.Mage,    SigilSlot.Support),
+            [ArcaneSupportSigil]    = (SigilFlavour.Mage,    SigilSlot.Support),
             [FocusSigil]    = (SigilFlavour.Rogue,   SigilSlot.Attack),
             [AgilitySigil]   = (SigilFlavour.Rogue,   SigilSlot.Defence),
             [AimSigil]   = (SigilFlavour.Rogue,   SigilSlot.Support),
@@ -318,7 +318,7 @@ public static partial class SkillCatalog
                 passive: new PassiveEffect(CritRateResist: 0.10f, CritDmgResist: 0.10f)),
 
             // ═══ MAGE ════════════════════════════════════════════════════════════════════════════
-            Sigil(MageAttackSigil, "Frenzy Sigil", SigilFlavour.Mage, SigilSlot.Attack,
+            Sigil(FrenzySigil, "Frenzy Sigil", SigilFlavour.Mage, SigilSlot.Attack,
                 "When you attack, a 3% chance to raise both attacks and both speeds by 8% for 15 seconds.",
                 procChance: 0.03f, procCooldownTicks: 200, procRung: SigilFrenzySurge),
 
@@ -326,7 +326,7 @@ public static partial class SkillCatalog
                 "Magic defence +7%.",
                 passive: new PassiveEffect(MagicDefencePct: 0.07f)),
 
-            Sigil(MageSupportSigil, "Arcane Support Sigil", SigilFlavour.Mage, SigilSlot.Support,
+            Sigil(ArcaneSupportSigil, "Arcane Support Sigil", SigilFlavour.Mage, SigilSlot.Support,
                 "When you attack, a 5% chance to recover 2% of your maximum MP.",
                 procChance: 0.05f, procCooldownTicks: 50, procRung: SigilArcaneWell),
 
