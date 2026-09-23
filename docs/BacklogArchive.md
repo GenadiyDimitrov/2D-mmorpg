@@ -6870,3 +6870,20 @@ it was drunk empty and re-looted. That reason only holds for **stackables**. ❓
 item INSTANCE for equipment (each maul is its own row, with its own enchant) and keep the def-id lock
 for stackables. One flag, two keys. Or do you want the instance lock for stacks too? Then an emptied
 stack forgets its lock.
+
+---
+
+## `BL-268` ✅ BUILT 2026-09-23 in **0.189.0** — landscape both ways
+
+The entry's reading (*"`autorotateToLandscapeLeft/Right = true`, portrait both false"*) was
+**already** the project setting, and had been for a long time. What stopped the flip was
+`useOSAutorotation: 1`, which makes Unity declare `userLandscape`. That obeys the phone's rotation
+lock, so with auto-rotate off the game never turns. It is now `0` (`sensorLandscape`), and `GameBoot.Awake`
+sets the four autorotate flags + `AutoRotation` in code as well.
+
+The entry as it stood:
+
+## `BL-268` 🔴 LANDSCAPE BOTH WAYS
+
+*"default game is landscape mode but I want to rotate on both sides (both landscapes only, no
+portrait)"* — Unity `autorotateToLandscapeLeft/Right = true`, portrait both false. Needs an APK.

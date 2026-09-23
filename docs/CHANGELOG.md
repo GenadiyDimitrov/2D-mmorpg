@@ -7,11 +7,26 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.188.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.189.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-23 (latest) — 0.188.0: equipment locks per ITEM (`BL-267`)
+## 2026-09-23 (latest) — 0.189.0: landscape both ways, whatever the rotation lock says (`BL-268`)
+
+> *"default game is landscape mode but I want to rotate on both sides (both landscapes only, no
+> portrait)"*
+
+The project **already** allowed both landscapes and no portrait (`allowedAutorotateToLandscape*: 1`,
+`defaultScreenOrientation: 4` = auto-rotate). What stopped it was `useOSAutorotation: 1`: Unity then
+writes `userLandscape` into the manifest, which **obeys the phone's rotation lock**. On a phone with
+auto-rotate off, the game stays whichever way it started. The setting is now **`0`**
+(`sensorLandscape`: flips with the sensor between the two landscapes, never to portrait, lock or
+no lock). `GameBoot.Awake` also sets the four `Screen.autorotateTo*` flags and
+`ScreenOrientation.AutoRotation` in code, so a stray settings edit cannot quietly undo it.
+
+**Needs an APK** (a manifest + client change). ⚠ Unverified on a device; I could not run it.
+
+## 2026-09-23 — 0.188.0: equipment locks per ITEM (`BL-267`)
 
 > *"I want [lock] to be per equipment item not per item_ID .. now I have 2 maul weapons .. and one
 > is +3 .. I lock it and I cannot sell the other maul"*

@@ -1100,6 +1100,17 @@ namespace Game.Client
             // battery for frames nobody asked for. 60 is the honest target for a game this simple.
             Application.targetFrameRate = 60;
 
+            // `BL-268` — LANDSCAPE BOTH WAYS, NEVER PORTRAIT (owner, 2026-09-23). ProjectSettings already
+            // allowed both landscapes, but with `useOSAutorotation: 1` Unity declares `userLandscape`,
+            // which obeys the phone's rotation LOCK — so with auto-rotate off (how most people keep a
+            // phone) the game never flipped. The setting is now 0 (`sensorLandscape`: flips with the
+            // sensor whatever the lock says). Stated here too so a stray settings edit cannot undo it.
+            Screen.autorotateToPortrait = false;
+            Screen.autorotateToPortraitUpsideDown = false;
+            Screen.autorotateToLandscapeLeft = true;
+            Screen.autorotateToLandscapeRight = true;
+            Screen.orientation = ScreenOrientation.AutoRotation;
+
             // KEEP THE SCREEN ON. An MMO is watched as much as it is touched — you stand still while
             // regenerating, while auto-hunting, while reading a drop list — and the phone reads all of
             // that as "idle" and dims out. Tapping every ten seconds to stop the screen sleeping is
