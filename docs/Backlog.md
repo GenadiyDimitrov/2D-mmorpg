@@ -279,9 +279,9 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-264` | ❓ | **NO CSV SAYS WHICH BUFFS FIGHT EACH OTHER** — from `mage 1st` you cannot tell the three Mights are one family. A generated `FAMILY` + `RANK` column, checked like every other; §2 the RACE cell nothing verifies | skills |
 | `BL-270` | 🔵 | A vertical skill bar, or a wheel, for hand-held play | client |
 | `BL-272` | ❓ | **RARITY COLLAPSE — Common + Mythic only** for equipment — [design/Rework-2026-09-23.md](design/Rework-2026-09-23.md) §2.1 | items |
-| `BL-273` | ❓ | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05`/`BL-50` — §2.2 | items |
+| `BL-273` | ❓ | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05`/`BL-50` — §2.2; ✅ no profession lock | items |
 | `BL-274` | ❓ | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3 | items |
-| `BL-277` | ❓ | **VITALITY + BLESSING** (names owed) — §3; ⚠ the Blessing refund as written never empties | progression |
+| `BL-277` | ❓ | **VITALITY + BLESSING** (names owed) — §3; ✅ refund = drain, pace = empty; 🔴 drain needs our curve, G owed | progression |
 | `BL-278` | ❓ | **BOSS REGEN AS A CLOCK** — 1/30000, ×2 / ×5 on enrage; no in-combat mob regen — §4 | combat |
 | `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
 | `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
@@ -2213,6 +2213,18 @@ is a real UI piece.
 In short: Common (T40-T61 only, Mythic stats, no enchant/attribute/set, drop 0.5% normal / 2%
 elite, sold cheap) and Mythic (T1/T20 in shops at a real price; T40+ out of shops; T40 in a
 dedicated shop at price + 2× craft mats). Consumables keep their rarities.
+✅ **2026-09-23 answers (design doc §2.1 "Your answers", §2.4):**
+- Equipment → Common + Mythic, yes. ⏸ Consumables may drop rarity entirely for levels 1-6 (later, not blocking).
+- **Common is UNMODIFIABLE** (no enchant, no attribute, no set bonus; flat stats only). A fresh
+  Mythic is ahead from day one.
+- Merchants sell **Mythic T1/T20/T40**. The **dedicated shop moves to T52** (price + mats, no recipe).
+  **T61+ is drop/craft only.** Vendors sell **temporary 2-hour Common T40/T52** gear in selection
+  boxes: a weapon at 5× a Common 2H, or a set by weight at 5× the set's sum.
+- **Disassembly gives ESSENCE only** (see `BL-273`). The 20% head/mats/recipe roll is gone.
+- ✅ Second round: the temp armour boxes include the shield; temp gear is untradeable and **ticks
+  only while worn** (needs an **empty saved gear preset** to unequip everything); **no temp jewellery**.
+  The **T52 shop costs essence, no mats**: 500 T52 + ~5-10k T40 (¾ of the worth). ❓ Is there gold
+  on top? Light box has a shield too?
 
 ## `BL-273` ❓ THE CRAFTING REWORK — supersedes `BL-05` and `BL-50`
 
@@ -2220,6 +2232,21 @@ dedicated shop at price + 2× craft mats). Consumables keep their rarities.
 recipes at 20/40/60/100% (learn one, spend one; mat cost 30/50/70/100%), the refinable metal ladder
 (10:1), MP per craft, un-droppable learned recipes for scrolls/potions/runes. Eight questions, and
 first of all: **profession lock or not** (my pick: not).
+✅ **2026-09-23: NO professions and NO lock.** The quest makes you a crafter for good. Recipes can be
+forgotten to free slots. Progression only goes up: every craft raises the generic craft level AND that
+type's level (weapon / armour / scribe). ❓ Is the type list exactly those three?
+✅ **2026-09-23: ESSENCE** (design doc §2.4). Breaking a Common or Mythic gives its grade's essence,
+**authored once per item from its price** (never a live formula). A Mythic gives 100%, a Common 70%.
+Recipes need essence as well as mats; at 100% a T80 weapon needs 2000, a T40 weapon 400, a T80 body
+1500, gloves/boots/earring 400, shield/helm/necklace 600, rings 200. 🔴 Open: T76+ essence has
+almost no source (Commons stop at T61), so a T80 craft may cost a whole T80 item. Also open: does a
+shattered enchant give essence; does a vendor sell essence; does the recipe % scale essence; the
+T52/T61/T76 numbers.
+✅ **2026-09-23, second round (§2.4):** T76+ **essence drops directly** (no T76+ Commons); a T80
+Mythic breaks for ~10k; **no essence refinement**. A **shattered enchant +N→N+1 gives N×10%** of the
+break value (+15→16 = 150%), and enchanting up to break is intended. **No vendor sells essence.** Essence
+scales with the recipe %; **refined mats don't**; 20 heads per 100% recipe, scaled (20% → 4). ❓ Open:
+heads use the plain % (4) or the 30% curve (6)? Does +0→1 give 0%? Per-tier numbers.
 
 ## `BL-274` ❓ PER-MOB DROP TABLES
 
@@ -2234,8 +2261,13 @@ recipe quests.
 (40/min, admin-tunable), from raid/world bosses by the EXP share; drained per kill by
 `baseExp/(L²·10)`. The 3-minute +100% Blessing, filled by kills, combat time, stage drops and level-ups.
 The items: keep-rune, restore potion, blessing booster, the subclass box. Charisma speeds up the fill.
-A new block on the details panel. 🔴 **The Blessing refund as written is ~111× the drain and never
-empties.** That has to be settled first.
+A new block on the details panel.
+✅ **2026-09-23:** (1) **The refund matches the drain.** During the Blessing a kill drains nothing and
+gives back what it would have drained, so each Blessing returns ~3 min of drain (the boss formula stays
+on bosses). (2) **The pace is vitality-EMPTY.** The EXP curve stays, and Vitality is catch-up for less
+active players. 🔴 **New finding:** on our curve `baseExp/(L²·10)` barely drains anything (a full gauge
+lasts ~187 levels of kills at 40), and no single divisor fixes that. Proposal:
+`20000·baseExp/(ExpToNext(L)·G)`, with G still to be measured (§3.3).
 
 ## `BL-278` ❓ BOSS REGEN AS A CLOCK
 
