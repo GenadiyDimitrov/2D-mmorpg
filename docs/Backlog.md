@@ -274,7 +274,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-272` | ❓ | **RARITY COLLAPSE — Common + Mythic only** for equipment — [design/Rework-2026-09-23.md](design/Rework-2026-09-23.md) §2.1 | items |
 | `BL-273` | ❓ | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05` (archived) — §2.2; ✅ no profession lock | items |
 | `BL-274` | ❓ | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3 | items |
-| `BL-277` | 🔵 | **WAYFARER'S FAVOR + WAYFARER'S BLESSING** (was Vitality + Blessing) — §3; 🟢 **part 1 (the Favor gauge) BUILT 0.195.0**, parts 2-3 owed · ✅ FULLY RULED 2026-09-23 · ✅ names, refund = drain, pace = empty, drain in HOURS (a full Favor = 2 h of farming, H = 2 final, ÷ measured kills/h), party drains own share, offline = not in the world (8 h 20 min to full, never ×2 with town), subclass box once per slot, panel ships with it; 0.1%/kill, modifier × every source; boss grant flat 3k/9-man, grant-only, window 8 (judged + unpaid at 9+, built 0.194.0); four runes, box = both 1 h runes | progression |
+| `BL-277` | 🔵 | **WAYFARER'S FAVOR + WAYFARER'S BLESSING** (was Vitality + Blessing) — §3; 🟢 **part 1 (the Favor gauge) BUILT 0.195.0, part 2 (the Blessing) BUILT 0.196.0**, part 3 owed · ✅ FULLY RULED 2026-09-23 · ✅ names, refund = drain, pace = empty, drain in HOURS (a full Favor = 2 h of farming, H = 2 final, ÷ measured kills/h), party drains own share, offline = not in the world (8 h 20 min to full, never ×2 with town), subclass box once per slot, panel ships with it; 0.1%/kill, modifier × every source; boss grant flat 3k/9-man, grant-only, window 8 (judged + unpaid at 9+, built 0.194.0); four runes, box = both 1 h runes | progression |
 | `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
 | `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
 | `BL-282` | 🟡 | **`BalanceMatrix --craft-cost`** ✅ built + all inputs ruled; only C5 (consumables) left, waits on §2.2 #8 — kills + hours per crafted T40/52/61/76/80 item under the NEW rules, by recipe %; extends M1-M9 | items |
@@ -2373,6 +2373,15 @@ the Details tab's "Other" block (Favor, stage, finished Exp/SP/Gold/Drop rates).
 both from his own text: the Favor bonus **adds** to charisma's (*"100 + 400 + 50 = x5.5"*), and it touches
 **kill EXP only** (quest rewards neither pay it nor drain it). **Owed: part 2 (the Blessing), part 3 (items +
 boss grant).**
+🟢 **2026-09-24 — PART 2 BUILT in 0.196.0 (the Blessing, design doc §7 step 3).** `WayfarerBlessing` beside the
+Favor: 0.1%/non-boss kill that paid EXP, 1%/min in combat (by the second, `IsInCombat`), +8% per Favor stage a
+drain crosses, +30% per level earned; one fill-rate multiplier in `AddBlessing` (×1 until `BL-283` / the booster
+rune); at 100 it fires 180 s of +100% (added to `KillExpBonus`) with Protection + refund = the drain; the gauge
+resets to 0 at the end. Boss kills: no fill, no refund. Clock on the character (saved, paused offline), buff icon
+re-asserted from it every second (the `BL-98` pattern). Details "Other" gets the Blessing row. Three calls made
+on the way, none ruled in the doc: **the clock pauses while logged out** (his *"not offline"*); **it survives
+death / a subclass swap / a cleanse** (it is the character's, like the runes); **an offline-farmer fills it**
+(it is in the world and drains the Favor, so it gets both halves). Say if any is wrong. **Owed: part 3.**
 
 ## `BL-280` 🔵 ZONES BY ARCHETYPE, AND NO MOB CLUSTERS
 

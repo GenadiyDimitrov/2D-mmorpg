@@ -26,6 +26,8 @@ public static class SkillIcons
         ["use_scroll_resurrect"]     = "📃",
         ["use_scroll_resurrect_ult"] = "⛑",
         ["angels_protection"] = "😇",
+        // `BL-277` part 2 — engine-applied and held by every class, so its glyph is used by nothing else.
+        ["wayfarer_blessing"] = "🍀",
 
         // ---- BUFFS (highest priority) ----
         // The four SINGLE speed buffs (docs/design/BuffLadders.md): a potion, a scroll and one rung

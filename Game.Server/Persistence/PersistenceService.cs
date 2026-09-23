@@ -804,6 +804,9 @@ public class PersistenceService
             ? WayfarerFavor.Credit(rec.FavorPoints,
                                    Math.Max(0, (DateTime.UtcNow - stamp).TotalMinutes), RateConfig.FavorPerMinute)
             : Math.Clamp(rec.FavorPoints, 0, WayfarerFavor.MaxPoints);
+        // `BL-277` part 2 — the Blessing comes back exactly as it left: nothing fills or counts down away.
+        entity.BlessingPercent = Math.Clamp(rec.BlessingPercent, 0, WayfarerBlessing.MaxPercent);
+        entity.BlessingSecondsLeft = Math.Clamp(rec.BlessingSecondsLeft, 0, WayfarerBlessing.DurationSeconds);
         // The CHOICE comes back; whether it is still HELD is decided by the loop's title refresh, which
         // is what fills entity.Title. A choice for a board you have since lost simply draws nothing.
         entity.TitleCategory = rec.TitleCategory ?? "";
@@ -1045,6 +1048,7 @@ public class PersistenceService
         long TotalOnlineSeconds,
         int Charisma, long CharismaLifetime, int LikesRemainingToday, string LikeBudgetDay,
         double FavorPoints, DateTime FavorStampUtc,   // `BL-277`: the stamp is the CAPTURE time
+        double BlessingPercent, int BlessingSecondsLeft,
         string TitleCategory, string CustomTitle, string CustomTitleColor, bool MayWriteTitle,
         bool GodMode, bool AdminInvisible,   // `BL-182` — the two staff toggles survive a relog
         int SocialOptions,
@@ -1100,6 +1104,7 @@ public class PersistenceService
                 e.BossJudgmentRung, e.BossJudgmentUntil, e.TotalOnlineSeconds,
                 e.Charisma, e.CharismaLifetime, e.LikesRemainingToday, e.LikeBudgetDay,
                 e.FavorPoints, DateTime.UtcNow,
+                e.BlessingPercent, e.BlessingSecondsLeft,
                 e.TitleCategory, e.CustomTitle, e.CustomTitleColor, e.MayWriteTitle,
                 e.GodMode, e.AdminInvisible,
                 (int)e.Social,
@@ -1151,6 +1156,8 @@ public class PersistenceService
                 string skillId = string.IsNullOrEmpty(b.SkillId) ? b.SourceSkillId : b.SkillId;
                 if (b.IsDebuff || b.Internal || string.IsNullOrEmpty(skillId)) continue;
                 if (SkillCatalog.IsRuneBuff(skillId)) continue;
+                // `BL-277` — the Blessing's face; its clock is saved on the character (BlessingSecondsLeft).
+                if (skillId == SkillCatalog.WayfarerBlessingBuff) continue;
 
                 DateTime? expires = b.Toggle
                     ? null
@@ -1232,6 +1239,8 @@ public class PersistenceService
         rec.LikeBudgetDay = snap.LikeBudgetDay;
         rec.FavorPoints = snap.FavorPoints;
         rec.FavorStampUtc = snap.FavorStampUtc;
+        rec.BlessingPercent = snap.BlessingPercent;
+        rec.BlessingSecondsLeft = snap.BlessingSecondsLeft;
         rec.TitleCategory = snap.TitleCategory;
         rec.CustomTitle = snap.CustomTitle;
         rec.CustomTitleColor = snap.CustomTitleColor;

@@ -229,13 +229,17 @@ namespace Game.Client
 
             // `BL-277` — his "Other" block: the Wayfarer's Favor gauge and the FINISHED rates (server
             // rate × runes × charisma + Favor), sent by the server so the sheet never re-derives them.
-            // The Blessing and Charisma lines join it when those are built.
+            // The Charisma line joins it when `BL-283` is built.
             var f = Boot.Favor;
             if (f != null)
             {
                 t.AppendLine(Head("Other"));
                 t.AppendLine(Row2("Favor", f.Points.ToString("N0") + " / " + WayfarerFavor.MaxPoints.ToString("N0"),
                                   "Stage", f.Stage + "  (+" + (WayfarerFavor.BonusPerStage * f.Stage * 100f).ToString("0") + "%)"));
+                // `BL-277` part 2 — his "Our_Blessing: 98/100 (x4)": current progress and the fill rate.
+                // The time left of a running one is on its buff square, so the row just says it is on.
+                t.AppendLine(Row2("Blessing", f.BlessingActive ? "ACTIVE" : f.BlessingPercent + " / 100",
+                                  "Fill rate", Rate(f.BlessingFillRate)));
                 t.AppendLine(Row2("Exp rate", Rate(f.ExpRate), "SP rate", Rate(f.SpRate)));
                 t.AppendLine(Row2("Gold rate", Rate(f.GoldRate), "Drop rate", Rate(f.DropRate)));
                 t.AppendLine();

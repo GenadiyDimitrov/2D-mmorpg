@@ -1096,8 +1096,9 @@ group fires, never what the other members pay.
 
 ```
 memberExp = mobValue * roll * partyBonus(n) * damageShare / n * levelGap(member - mob)
-paid      = memberExp * (charismaMult + favorBonus) * serverRate * runes       (SP: the same, off mobSp)
+paid      = memberExp * (charismaMult + favorBonus + blessing) * serverRate * runes   (SP: the same)
 favorBonus = 0.5 * stage                           stage 0-8, read BEFORE this kill's drain
+blessing  = 1.0 while a Wayfarer's Blessing runs, else 0                        (below, 0.196.0)
 stage tops 500 | 5000 | 6000 | 10000 | 11500 | 15000 | 17000 | 20000         (any point > 0 = stage 1)
 drain     = 20000 * (memberExp / MobExpReward(L)) / (killsPerHour(L) * 2)     L = member level
             not on a boss kill; not when the kill paid 0 EXP or a rune zeroes EXP
@@ -1117,6 +1118,29 @@ FavorPerMinute = 40 (admin Tune tab)                                           f
   ticker runs only for a character in it. An offline-farmer is autosaved while it hunts, so its away
   time is not credited, and it is excluded from the city ticker.
 - Quest EXP is not touched by the Favor (a quest reward is not a kill, and never drains).
+
+### The Wayfarer's Blessing (`BL-277` part 2, 0.196.0)
+
+`Game.Shared/WayfarerFavor.cs` (`WayfarerBlessing`) + `GameLoopService.AddBlessing` / `TickBlessing` /
+`FavorOnKill`. A 0-100% gauge:
+
+```
+fill      = source * fillRate                         applied ONCE, in AddBlessing
+fillRate  = 1                                         hook: charisma (BL-283), booster rune (part 3)
+source    kill that paid EXP (not a boss)   +0.1
+          each second in combat             +1/60     (1%/min; "in combat" = IsInCombat, 30 s window)
+          each Favor stage a drain crosses  +8
+          each level earned (AwardExp)      +30       (not a debug/admin level set)
+at 100    fires automatically: 180 s of blessing = +1.0 in the bonus sum above
+while on  gauge parked at 100, nothing fills; a non-boss kill does NOT drain the Favor and
+          ADDS the drain it would have cost:  favor += drain   (clamp 20000)
+ends      gauge = 0
+```
+
+- The clock counts only while the character is in the world (paused offline, saved with the character);
+  an offline-farmer is in the world, so for it both fill and clock run.
+- A boss kill neither fills the gauge nor gets the refund; its EXP still pays at the current bonus sum.
+- The buff on the bar is cosmetic and re-asserted every second from the clock; nothing reads it.
 
 ---
 

@@ -2243,6 +2243,7 @@ public static partial class SkillCatalog
         list.AddRange(Shared4thSkills());     // Skills.Shared4th.cs (his `shared 4th.csv` ALL-CLASSES passives)
         list.AddRange(SigilSkills());         // Skills.Sigils.cs (the 4th class's 18 Attack/Defence/Support sigils)
         list.AddRange(BossJudgmentSkills());  // Skills.BossJudgment.cs (`BL-98` the six-rung ladder — engine-applied only)
+        list.AddRange(WayfarerSkills());      // Skills.Wayfarer.cs (`BL-277` the Blessing's buff-bar face — engine-applied only)
         list.AddRange(WhispSkills());         // Skills.Whisps.cs (`BL-109` the whisp's own nine — cast by the whisp, never learned)
         list.AddRange(WhispSummonSkills());   // Skills.Whisps.cs (his six calls + Whisp Mastery)
         list.AddRange(FighterKits3rdSkills()); // Skills.FighterKits3rd.cs (`BL-185` the warrior's derived damage kit)

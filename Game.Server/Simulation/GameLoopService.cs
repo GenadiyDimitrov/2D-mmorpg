@@ -9723,6 +9723,7 @@ public class GameLoopService : BackgroundService
                 TickRegionNotice(entity);
                 TickOnlineTime(entity);
                 TickFavorTown(entity);   // `BL-277` the city minute
+                if (_tick % GameConstants.SecondIntervalTicks == 0) TickBlessing(entity);   // `BL-277` part 2
                 EnforceDungeonWalls(entity);
                 if (_tick % GameConstants.TickRate == 0) ReconcileTimedItems(entity);   // runes, ~1/s
                 if (_tick % GameConstants.TickRate == 0) TickCraftMasterProximity(entity);
@@ -11193,31 +11194,127 @@ public class GameLoopService : BackgroundService
         PushFavorIfMoved(p);
     }
 
-    /// <summary>`BL-277` — drain the Favor for one NON-BOSS kill that paid this member
-    /// <paramref name="baseExpShare"/> of base EXP (see <see cref="WayfarerFavor.DrainPerKill"/>). A
-    /// kill that paid no EXP drains nothing, and neither does one under a rune that zeroes EXP (the
-    /// Rune of Sinister) — his *"every time you kill a monster that awards EXP/SP"*.</summary>
-    private void DrainFavor(Entity p, double baseExpShare, int level)
+    /// <summary>`BL-277` — what one NON-BOSS kill that paid this member <paramref name="baseExpShare"/> of
+    /// base EXP does to the two gauges. A kill that paid no EXP moves nothing, and neither does one under a
+    /// rune that zeroes EXP (the Rune of Sinister) — his *"every time you kill a monster that awards
+    /// EXP/SP"*, which is also his Blessing rule (*"every monster killed that gives non-zero EXP"*).
+    /// <list type="bullet">
+    /// <item>Normally: the Favor DRAINS (<see cref="WayfarerFavor.DrainPerKill"/>), and every stage the
+    /// drain carries it down through fills the Blessing +8%.</item>
+    /// <item><paramref name="blessed"/> (a Blessing was running when the kill was made): **Protection +
+    /// refund** — the Favor does not drain, and GAINS the points this kill would have drained (his
+    /// *"just match the drain … u return 3 min of drain back every blessing activation"*).</item>
+    /// <item>Either way the Blessing gets its +0.1% kill fill (a no-op while one is running).</item>
+    /// </list>
+    /// A boss kill never comes here: it neither drains, refunds nor fills (*"otherwise u will lose all ur
+    /// favor"*) — it GRANTS, which is `BL-277` part 3.</summary>
+    private void FavorOnKill(Entity p, double baseExpShare, int level, bool blessed)
     {
-        if (p.FavorPoints <= 0 || baseExpShare <= 0 || p.Runes.Exp <= 0f) return;
-        p.FavorPoints = Math.Max(0, p.FavorPoints - WayfarerFavor.DrainPerKill(baseExpShare, level));
+        if (baseExpShare <= 0 || p.Runes.Exp <= 0f) return;
+        double drain = WayfarerFavor.DrainPerKill(baseExpShare, level);
+        if (blessed)
+            p.FavorPoints = Math.Min(WayfarerFavor.MaxPoints, p.FavorPoints + drain);
+        else if (p.FavorPoints > 0)
+        {
+            int stageBefore = WayfarerFavor.Stage(p.FavorPoints);
+            p.FavorPoints = Math.Max(0, p.FavorPoints - drain);
+            int stagesLost = stageBefore - WayfarerFavor.Stage(p.FavorPoints);
+            if (stagesLost > 0) AddBlessing(p, stagesLost * WayfarerBlessing.PerFavorStageLost);
+        }
+        AddBlessing(p, WayfarerBlessing.PerKill);
         PushFavorIfMoved(p);
     }
 
-    /// <summary>The FINISHED personal EXP/SP multiplier for mob kills: 1 + charisma's bonus + the Favor's.
-    /// ADDITIVE, his arithmetic (*"100 base % + 400% + 50% = x5.5"*); the server rate and runes multiply
-    /// it later, in <see cref="AwardExp"/>. The one place this sum is made — the kill and the sheet
-    /// both read it.</summary>
+    /// <summary>`BL-277` part 2 — 🔑 **THE ONE FILL-RATE MULTIPLIER** for the Blessing gauge, applied in
+    /// exactly one place (<see cref="AddBlessing"/>), so it multiplies EVERY source — kills, combat minutes,
+    /// stage drops and the level-up bump — as he ruled. **×1 today:** charisma's +10%-per-100 (`BL-283`) and
+    /// the booster rune's ×2 (`BL-277` part 3) land HERE and nowhere else.</summary>
+    private static float BlessingFillRate(Entity p) => 1f;
+
+    /// <summary>Add <paramref name="percent"/> (already the SOURCE's number, ×1) to the Blessing gauge,
+    /// scaled once by <see cref="BlessingFillRate"/>. Reaching the top fires the Blessing on the spot. While
+    /// one is running the gauge is parked at the top and nothing is added — the overflow is not banked
+    /// (*"after 3 minutes expire, the gauge resets to 0%"*). The caller pushes the sheet.</summary>
+    private void AddBlessing(Entity p, double percent)
+    {
+        if (p.Kind != EntityKind.Player || p.BlessingActive || percent <= 0) return;
+        p.BlessingPercent = Math.Min(WayfarerBlessing.MaxPercent, p.BlessingPercent + percent * BlessingFillRate(p));
+        if (p.BlessingPercent >= WayfarerBlessing.MaxPercent) StartBlessing(p);
+    }
+
+    /// <summary>The gauge hit 100%: fire automatically (his *"once the gauge reaches 100%, the Blessing
+    /// triggers automatically"*).</summary>
+    private void StartBlessing(Entity p)
+    {
+        p.BlessingPercent = WayfarerBlessing.MaxPercent;
+        p.BlessingSecondsLeft = WayfarerBlessing.DurationSeconds;
+        RefreshBlessingBuff(p);
+        SendSystemToEntity(p, "The Wayfarer's Blessing is upon you: +100% EXP and SP for 3 minutes, "
+                            + "and your kills restore the Wayfarer's Favor instead of draining it.");
+        SendFavor(p);   // the rates on the sheet now include the +100%
+    }
+
+    /// <summary>The 3 minutes ran out: the gauge resets to 0 and starts over.</summary>
+    private void EndBlessing(Entity p)
+    {
+        p.BlessingSecondsLeft = 0;
+        p.BlessingPercent = 0;
+        if (p.Buffs.RemoveAll(b => b.Key == SkillCatalog.WayfarerBlessingBuff) > 0) PushBuffs(p);
+        SendSystemToEntity(p, "The Wayfarer's Blessing fades.");
+        SendFavor(p);
+    }
+
+    /// <summary>Put the buff-bar face back for the time the CLOCK says is left. Cosmetic (the `BL-98`
+    /// pattern): nothing reads the buff, so whatever strips it — death, a subclass swap, a cleanse, a
+    /// double-click — is undone within a second and ends nothing.</summary>
+    private void RefreshBlessingBuff(Entity p)
+    {
+        if (SkillCatalog.Get(SkillCatalog.WayfarerBlessingBuff) is not SkillDef def) return;
+        p.Buffs.RemoveAll(b => b.Key == SkillCatalog.WayfarerBlessingBuff);
+        // One spare second, so the bar's own countdown can never expire the face a tick before the clock
+        // ends the Blessing and make the re-assert flicker it back on for its last second.
+        ApplyBuff(p, def, 1, durationOverride: (p.BlessingSecondsLeft + 1) * GameConstants.TickRate);
+        PushBuffs(p);
+    }
+
+    /// <summary>`BL-277` part 2 — once a second, for a player in the world: run a Blessing's clock, or
+    /// fill the gauge 1% per minute of COMBAT (*"staying in active combat continuously builds up points.
+    /// 1%/60s"*). "In combat" is <see cref="IsInCombat"/> — the same 30 s window the logout gate uses — so
+    /// a farm that kills every ~50 s counts for most of the hour, which is what his "100 minutes" assumed.
+    /// Nothing ticks while logged out (*"not offline"*); an offline-FARMER is still in the world, so for it
+    /// both halves run, the same way it drains the Favor.</summary>
+    private void TickBlessing(Entity p)
+    {
+        if (p.BlessingActive)
+        {
+            if (--p.BlessingSecondsLeft <= 0) { EndBlessing(p); return; }
+            if (!p.Buffs.Any(b => b.Key == SkillCatalog.WayfarerBlessingBuff)) RefreshBlessingBuff(p);
+            return;
+        }
+        if (p.Dead || !IsInCombat(p)) return;
+        AddBlessing(p, WayfarerBlessing.PerCombatMinute / 60.0);
+        PushFavorIfMoved(p);
+    }
+
+    /// <summary>The FINISHED personal EXP/SP multiplier for mob kills: 1 + charisma's bonus + the Favor's
+    /// + the Blessing's +100% while one runs. ADDITIVE, his arithmetic (*"100 base % + 400% + 50% =
+    /// x5.5"*, and *"when blessing activates the SP/EXP start to show x3.5"* on a ×2.5); the server rate and
+    /// runes multiply it later, in <see cref="AwardExp"/>. The one place this sum is made — the kill and the
+    /// sheet both read it.</summary>
     private static float KillExpBonus(Entity p) =>
-        GameConstants.CharismaExpMultiplier(p.Charisma) + WayfarerFavor.Bonus(p.FavorPoints);
+        GameConstants.CharismaExpMultiplier(p.Charisma) + WayfarerFavor.Bonus(p.FavorPoints)
+        + (p.BlessingActive ? WayfarerBlessing.Bonus : 0f);
 
     /// <summary>The whole-point value the sheet shows. Ceiling, so a gauge holding 0.3 reads 1 — it IS
     /// paying stage 1, and "0" beside a +50% would read as a bug.</summary>
     private static int FavorShown(Entity p) => (int)Math.Ceiling(p.FavorPoints);
 
+    /// <summary>The Blessing's whole percent on the sheet. FLOOR: "100" must only ever mean it fired.</summary>
+    private static int BlessingShown(Entity p) => (int)Math.Floor(p.BlessingPercent);
+
     private void PushFavorIfMoved(Entity p)
     {
-        if (FavorShown(p) != p.FavorSentPoints) SendFavor(p);
+        if (FavorShown(p) != p.FavorSentPoints || BlessingShown(p) != p.BlessingSentPercent) SendFavor(p);
     }
 
     /// <summary>`BL-277` — the gauge and the four FINISHED rates for the details sheet (server rate ×
@@ -11228,8 +11325,10 @@ public class GameLoopService : BackgroundService
         var rates = RateConfig.World * p.Runes;
         float bonus = KillExpBonus(p);
         p.FavorSentPoints = FavorShown(p);
+        p.BlessingSentPercent = BlessingShown(p);
         SendTo(p, "Favor", new FavorUpdate(p.FavorSentPoints, WayfarerFavor.Stage(p.FavorPoints),
-            rates.Exp * bonus, rates.Sp * bonus, rates.Gold, rates.DropChance));
+            rates.Exp * bonus, rates.Sp * bonus, rates.Gold, rates.DropChance,
+            p.BlessingSentPercent, BlessingFillRate(p), p.BlessingActive));
     }
 
     // (The old RuneBuffKeys array is gone: SkillCatalog.IsRuneBuff answers the same question from the
@@ -16678,10 +16777,14 @@ public class GameLoopService : BackgroundService
             double memberExp = shareExp * gap;
             int level = m.Level;   // before AwardExp can level them: the drain prices the kill they made
             float personal = KillExpBonus(m);
+            // Read BEFORE AwardExp: a level-up inside it can fire a Blessing, and the kill that did it
+            // was made (and paid) without one, so it drains like any other.
+            bool blessed = m.BlessingActive;
             AwardExp(m, (long)(memberExp * personal), (long)(shareSp * gap * personal));
             // Each member drains on their OWN share (his ruling). A boss kill never drains (*"otherwise
-            // u will lose all ur favor"*) — it GRANTS instead, which is `BL-277` part 3.
-            if (victim.Rank != MobRank.Boss) DrainFavor(m, memberExp, level);
+            // u will lose all ur favor"*), never refunds and never fills the Blessing — it GRANTS
+            // instead, which is `BL-277` part 3.
+            if (victim.Rank != MobRank.Boss) FavorOnKill(m, memberExp, level, blessed);
         }
     }
 
@@ -16768,13 +16871,21 @@ public class GameLoopService : BackgroundService
         // differ, and a line claiming SP you did not receive is worse than no line.
         TallyReward(player, expGained, player.SkillPoints - spBefore, 0);
 
-        bool leveled = false;
+        int levelsGained = 0;
         while (player.Level < LevelCapFor(player)
                && player.Exp >= StatCalculator.ExpToNext(player.Level))
         {
             player.Exp -= StatCalculator.ExpToNext(player.Level);
             player.Level++;
-            leveled = true;
+            levelsGained++;
+        }
+        bool leveled = levelsGained > 0;
+        // `BL-277` part 2 — *"every time your character levels up, you get a direct +30% bump"*: each
+        // level EARNED (a kill or a quest), never a debug/admin level set, which does not come through here.
+        if (leveled)
+        {
+            AddBlessing(player, levelsGained * WayfarerBlessing.PerLevelUp);
+            PushFavorIfMoved(player);
         }
 
         // At the cap, park EXP at the bar's start rather than letting it pile up invisibly — an

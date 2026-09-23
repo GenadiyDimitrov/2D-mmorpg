@@ -7,11 +7,35 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.195.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.196.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-23 (latest) — 0.195.0: the Wayfarer's Favor gauge (`BL-277` part 1)
+## 2026-09-24 (latest) — 0.196.0: the Wayfarer's Blessing (`BL-277` part 2)
+
+> *"Once the gauge reaches 100%, the Blessing triggers automatically."*
+
+**A 0-100% gauge that fills while you fight, and at 100% fires 3 minutes of +100% EXP/SP by itself.**
+`Game.Shared/WayfarerFavor.cs` (`WayfarerBlessing`) holds the numbers.
+
+- **Fills:** +0.1% per non-boss kill that paid EXP, +1% per minute in combat (by the second, the same
+  30 s "in combat" window as the logout gate), +8% per Favor stage a kill's drain carries you through,
+  +30% per level earned. At ×1 that is a Blessing every ~90 min with the Favor empty and ~60 min while it
+  drains (design §3.10).
+- **One fill-rate multiplier, applied once** where the gauge is added to (`AddBlessing`), so it scales
+  every source. It reads **×1** until charisma (`BL-283`) and the booster rune (part 3) exist.
+- **While it runs:** +100% added to the personal bonus sum (charisma + Favor + Blessing, his *"x3.5"* on
+  a ×2.5), and **Protection + refund**: a non-boss kill does not drain the Favor, and gives back the
+  points it would have drained. A boss kill gets no fill and no refund. The gauge sits at 100 and resets
+  to 0 when the 3 minutes end.
+- **Buff icon** "Wayfarer's Blessing", cosmetic like the boss's judgment: the clock lives on the
+  character and re-asserts the icon every second, so death, a subclass swap, a cleanse or a double-click
+  cannot end it early. The clock pauses while logged out and is saved with the character.
+- **Details tab → "Other":** a *Blessing* row (`98 / 100` or `ACTIVE`, and the fill rate). The Exp/SP
+  rate rows include the +100% while it runs.
+- ⚠ **`game.db` delete** (two new character columns). **Needs an APK** (`Favor` message grew 3 fields).
+
+## 2026-09-23 — 0.195.0: the Wayfarer's Favor gauge (`BL-277` part 1)
 
 > *"The vitality only helps someone not so active not to be so far behind."*
 

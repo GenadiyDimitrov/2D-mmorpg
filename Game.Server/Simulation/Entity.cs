@@ -733,6 +733,17 @@ public class Entity
     /// fraction does not push a message. Runtime only; -1 = never sent.</summary>
     public int FavorSentPoints { get; set; } = -1;
 
+    // ----- `BL-277` part 2 Wayfarer's Blessing (see WayfarerBlessing) -----
+    /// <summary>The 0-<see cref="WayfarerBlessing.MaxPercent"/> gauge. Persisted. Held at the top while a
+    /// Blessing runs, and reset to 0 when it ends.</summary>
+    public double BlessingPercent { get; set; }
+    /// <summary>🔑 THE Blessing: seconds left of the running one, 0 = none. Everything reads THIS — the
+    /// buff on the bar is only its face. Persisted, and only counted down while in the world.</summary>
+    public int BlessingSecondsLeft { get; set; }
+    public bool BlessingActive => BlessingSecondsLeft > 0;
+    /// <summary>The whole-percent value the client was last sent. Runtime only; -1 = never sent.</summary>
+    public int BlessingSentPercent { get; set; } = -1;
+
     // ----- Wearable title -----
     /// <summary>WHERE the worn title comes from: a leaderboard category, a staff title id,
     /// <see cref="TitleCatalog.Custom"/> for one the player wrote, or "" for none. Persisted.

@@ -88,3 +88,39 @@ public static class WayfarerFavor
          65,  65,  64,  63,  63,  62,  61,  60,  60,  59,   // 91-100
     };
 }
+
+/// <summary>`BL-277` part 2 — **WAYFARER'S BLESSING**, the 0-100% gauge that fills while you FIGHT and,
+/// when full, fires a 3-minute +100% EXP/SP on its own. Full rulings: <c>docs/design/Rework-2026-09-23.md</c>
+/// §3 points 2 and 10 (and his note's "Bonus while actively fighting" block, verbatim in the appendix).
+///
+/// <para>🔑 **Every source is multiplied by ONE fill rate, applied once, where the gauge is added to**
+/// (his fifth-round ruling: *"OK mobs 0.1% x1"* + the modifier multiplies kills, combat minutes, stage
+/// drops AND the level-up bump). The rate reads ×1 until charisma (`BL-283`) and the booster rune
+/// (`BL-277` part 3) exist.</para>
+///
+/// <para>Shared, because the client prints the gauge and must never re-derive the numbers.</para></summary>
+public static class WayfarerBlessing
+{
+    /// <summary>The gauge's top. Reaching it fires the Blessing.</summary>
+    public const double MaxPercent = 100;
+
+    /// <summary>A normal kill that paid EXP (never a boss kill — that one only GRANTS Favor).</summary>
+    public const double PerKill = 0.1;
+
+    /// <summary>A minute in combat — accrued by the second (<c>PerCombatMinute / 60</c> each).</summary>
+    public const double PerCombatMinute = 1;
+
+    /// <summary>Each Favor stage a kill's drain carries you down through.</summary>
+    public const double PerFavorStageLost = 8;
+
+    /// <summary>Each level gained.</summary>
+    public const double PerLevelUp = 30;
+
+    /// <summary>How long a fired Blessing lasts: 3 minutes of time IN THE WORLD (the clock does not run
+    /// while logged out — *"not offline"*).</summary>
+    public const int DurationSeconds = 180;
+
+    /// <summary>+100% EXP/SP while active — ADDED to the other personal bonuses (charisma, Favor), his
+    /// *"the SP/EXP start to show x3.5"* on a ×2.5 Favor rate.</summary>
+    public const float Bonus = 1.0f;
+}
