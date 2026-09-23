@@ -2271,7 +2271,8 @@ potions, scrolls/runes and refines raise only the generic level. Still open: the
 slots). **Type levels 0-10:** +0.5% each, % only, no slots.
 ✅ **2026-09-23, names (§2.2 #4):** essence carries the **grade** name (Darksteel / Cobalt / Bloodsteel /
 Adamantine / Soulcrystal Essence). The refinable mats (one weapon line, one armour line, normal →
-refined → rare → refined rare → legendary) get new names. ❓ Which names is still open.
+refined → rare → refined rare → legendary) are **Nightsilver** (weapons) and **Nightsilk** (armour), one
+family. In the note, "darksteel" as a mat = Nightsilver.
 
 ## `BL-274` ❓ PER-MOB DROP TABLES
 
