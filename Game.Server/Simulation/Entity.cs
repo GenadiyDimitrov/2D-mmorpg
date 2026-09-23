@@ -1951,9 +1951,12 @@ public class Entity
 
     /// <summary>Buffed attack power for BASIC attacks (archetype-scaled). Basic attacks
     /// are physical, so they take the shared BuffAtk plus physical-only BuffPhysAtk.</summary>
+    // §102.6 (2026-09-23): `/stat patk` reaches this too. It used to be checked only in
+    // EffectiveAttack (the SKILL path), so *"/stat patk 99999 does nothing to basic
+    // attacks … with 1kk patk the dmg was the same 500"*. The two getters are one stat to the admin.
     public float EffectiveBasicAttack =>
-        AtkDebuffed(ModifiedStatDual(BasicAttackPower, SkillEffect.BuffAtk, SkillEffect.BuffPhysAtk))
-        * (1f + FinalStandBonus);
+        AdminStat("patk") ?? AtkDebuffed(ModifiedStatDual(BasicAttackPower, SkillEffect.BuffAtk, SkillEffect.BuffPhysAtk))
+                             * (1f + FinalStandBonus);
 
     /// <summary>Apply DebuffAtk (e.g. venom) as a multiplicative reduction to an attack value.</summary>
     private float AtkDebuffed(float v)

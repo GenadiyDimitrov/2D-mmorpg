@@ -7,11 +7,23 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.185.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.186.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-23 (latest) — 0.185.0: smallest stack first, and partial stacks merge (§102.5)
+## 2026-09-23 (latest) — 0.186.0: `/stat patk` reaches basic attacks (§102.6)
+
+> *"admins /stat patk 99999 does nothing to basic attacks (at least against bosses) — dmg with 1kk
+> patk was the same 500 .. only skills got affected"*
+
+P.Atk has two getters. `Entity.EffectiveAttack` feeds skills and `Entity.EffectiveBasicAttack`
+feeds the swing, and the admin override was checked only in the first. `EffectiveBasicAttack` now
+reads `AdminStat("patk")` first, the same way, so the number he types is the number both paths use.
+No boss-specific cap was hiding it: `FinalizeDamage` only applies the ±10 raid level multiplier.
+
+Server only — **no APK needed**.
+
+## 2026-09-23 — 0.185.0: smallest stack first, and partial stacks merge (§102.5)
 
 > *"with 999 + 58 potions, drinking takes the 999. Buying 850 with 200 held makes 850 + 200. Ten
 > stacks of 80 take ten slots"* — drink from the SMALLEST stack first; buying and looting top the
