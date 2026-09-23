@@ -115,7 +115,7 @@ public static partial class SkillCatalog
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, SpCost: Shared4thSp83,
             RequiredWeapon: WeaponType.AnySword | WeaponType.AnyBlunt | WeaponType.Dual | WeaponType.Bow,
-            ProcChance: 0.05f, ProcCooldownTicks: 300,
+            ProcChance: 0.05f, ProcCooldownTicks: 300, ProcBasicAttackOnly: true,
             ProcSelfRungs: new[] { PhysProwessSurge },
             WeaponMasteryLevels: new[]
             {
@@ -127,12 +127,12 @@ public static partial class SkillCatalog
             },
             Levels: new[] { new SkillLevel(SpCost: Shared4thSp83, GoldCost: Shared4thGold83,
                 Description: "Blunt / sword / dual: P.Atk +100 and attack speed +10%. Bow: accuracy "
-                           + "+8 and range +50. With any of them, a 5% chance — on a physical skill "
-                           + "or a basic attack — to raise your critical rate and physical skill "
+                           + "+8 and range +50. With any of them, a 5% chance — on a basic attack "
+                           + "only — to raise your critical rate and physical skill "
                            + "damage by 20% for 10 seconds.") },
             Description: "Blunt / sword / dual: P.Atk +100 and attack speed +10%. Bow: accuracy +8 "
-                       + "and range +50. With any of them, a 5% chance — on a physical skill or a "
-                       + "basic attack — to raise your critical rate and physical skill damage by "
+                       + "and range +50. With any of them, a 5% chance — on a basic attack only — "
+                       + "to raise your critical rate and physical skill damage by "
                        + "20% for 10 seconds."),
 
         // ═══ THE PROC PAYLOADS ═══════════════════════════════════════════════════════════════════

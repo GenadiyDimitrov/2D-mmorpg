@@ -445,6 +445,10 @@ public record SkillDef(
     // magic dmg taken"*, and a passive that fired on a sword swing would be a different skill.
     // Inert unless ProcOnDamaged is set.
     bool ProcMagicOnly = false,
+    // Narrows the Hit trigger to BASIC ATTACKS — owner, 2026-09-23 (§102.2): Fury Sigil and Physical
+    // Proficiency are *"basic attack only"*; they were firing off every landed physical skill too.
+    // Inert on the other two triggers.
+    bool ProcBasicAttackOnly = false,
     // The buff rungs the proc hands out, INDEXED BY THIS PASSIVE'S LEVEL (rung[level-1]). Two arrays
     // because the caster and the party get DIFFERENT rungs of the SAME family — his design, 2026-08-21:
     // *"half of both goes to the party as buff (u get the 20% and party 10%) -> so something like 6

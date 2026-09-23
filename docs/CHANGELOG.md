@@ -7,11 +7,34 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.181.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.182.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-23 (latest) — 0.181.0: the auto-potion MP rows sit under the HP rows (§102.1)
+## 2026-09-23 (latest) — 0.182.0: Fury Sigil and Physical Proficiency proc on basic attacks only (§102.2)
+
+> *"Fury Sigil + Physical Proficiency proc on skills — basic attack only"*
+
+Both ride the ON-HIT trigger, and the ON-HIT trigger has two callers: the basic-attack path and
+the physical-skill path (`TryOnHitProcs` at the skill landing). Neither proc said which one it
+wanted, so both fired from skills too. A new `SkillDef.ProcBasicAttackOnly` narrows the Hit
+trigger to basic attacks. It is set on exactly these two; Combo Mastery, the Warlord's Supports and
+the archer stances keep firing from both paths, because he named only these two.
+
+**CSV:** `shared 4th.csv` — both DESCR cells now say *basic attacks only* (Physical Proficiency's
+said *"physical skills or basic attacks"*). ⚠ That file is not one `SkillCsvSeed --check` walks.
+
+### The reflect half of §102.2 was already true in code
+`BuffReflect` feeds `Entity.MeleeReflect`, and exactly one place reads it: the basic-attack path
+(bows excluded, capped at 50%). So **Harmony of Protection's 20% already returns basic-attack
+damage only**, and **Saints Blessing already matches his spec**: 30% of every basic hit, 15% to
+reflect a debuff, 10% to reflect a physical skill in full. The physical skills he saw bouncing came
+from the warrior's auto-granted **`deflection`** (15%/30% to reflect a physical skill), which is
+§102.3 and goes in 0.183.0.
+
+Server + shared — no client change, **no APK needed**.
+
+## 2026-09-23 — 0.181.0: the auto-potion MP rows sit under the HP rows (§102.1)
 
 > *"MP potions in the auto-potion window overflow it; must sit BELOW the HP ones"*
 

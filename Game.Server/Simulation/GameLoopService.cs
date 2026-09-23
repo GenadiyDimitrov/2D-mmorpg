@@ -10891,8 +10891,8 @@ public class GameLoopService : BackgroundService
 
     /// <param name="victim">What was just hit, so a proc with a `ProcVictimRungs` payload has
     /// somewhere to put it. Null on the two triggers where nothing is being struck.</param>
-    private void TryOnHitProcs(Entity attacker, Entity? victim = null) =>
-        TryProcs(attacker, ProcWhen.Hit, magicHit: false, victim: victim);
+    private void TryOnHitProcs(Entity attacker, Entity? victim = null, bool basicAttack = false) =>
+        TryProcs(attacker, ProcWhen.Hit, magicHit: false, victim: victim, basicAttack: basicAttack);
 
     /// <summary>WHEN a proc is being rolled. Three moments, and a passive names exactly one — the
     /// third arrived with Magic Proficiency (`BL-108`), whose *"when using Magic"* covers buffs and
@@ -10930,7 +10930,8 @@ public class GameLoopService : BackgroundService
     /// a <see cref="ProcWhen.Hit"/> trigger, and the thing that just hit YOU on a
     /// <see cref="ProcWhen.Damaged"/> one. The name is the Hit trigger's; the role is "the other
     /// party", and it is deliberately one parameter rather than two because the payload arm is one.</param>
-    private void TryProcs(Entity owner, ProcWhen when, bool magicHit, Entity? victim = null)
+    private void TryProcs(Entity owner, ProcWhen when, bool magicHit, Entity? victim = null,
+                          bool basicAttack = false)
     {
         if (owner.Kind != EntityKind.Player || owner.LearnedSkills.Count == 0)
             return;
@@ -10960,6 +10961,8 @@ public class GameLoopService : BackgroundService
             if (mine != when)
                 continue;
             if (def.ProcMagicOnly && !magicHit)      // Strong Spirit: magic damage only
+                continue;
+            if (def.ProcBasicAttackOnly && when == ProcWhen.Hit && !basicAttack)   // §102.2
                 continue;
             if (owner.ProcCooldowns.ContainsKey(skillId))
                 continue;
@@ -15406,7 +15409,7 @@ public class GameLoopService : BackgroundService
             }
             // ON-HIT PROCS (Combo Mastery). Basic attacks are one of the two damage paths that can
             // fire one; the physical-skill path is the other. Rolled on a landed hit only.
-            if (damage > 0) TryOnHitProcs(attacker, target);
+            if (damage > 0) TryOnHitProcs(attacker, target, basicAttack: true);
             // `BL-237` — FOCUS MASTERY: a landed swing may gather Focus, at the crit chance if it crit.
             if (damage > 0) TryChargeOnBasic(attacker, outcome == CombatOutcome.Crit);
             // MANA vampirism (Warchanter Mana Vampirism) — the same trigger, a different bar. His row

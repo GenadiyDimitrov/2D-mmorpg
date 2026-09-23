@@ -230,7 +230,8 @@ public static partial class SkillCatalog
         SkillDef Sigil(string id, string name, SigilFlavour flavour, SigilSlot slot, string blurb,
                        PassiveEffect? passive = null,
                        float procChance = 0f, bool procOnDamaged = false,
-                       int procCooldownTicks = 0, string? procRung = null) =>
+                       int procCooldownTicks = 0, string? procRung = null,
+                       bool procBasicOnly = false) =>
             new(id, name, BaseClass.Fighter, SkillEffect.None,
                 MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
                 Category: SkillCategory.Passive,
@@ -250,6 +251,7 @@ public static partial class SkillCatalog
                 // "gone for good", so a second Attack sigil would have deleted the first.
                 Passive: passive,
                 ProcChance: procChance, ProcOnDamaged: procOnDamaged,
+                ProcBasicAttackOnly: procBasicOnly,
                 ProcCooldownTicks: procCooldownTicks,
                 ProcSelfRungs: procRung is null ? null : new[] { procRung },
                 Description: blurb);
@@ -276,8 +278,9 @@ public static partial class SkillCatalog
 
             // ═══ WARRIOR ═════════════════════════════════════════════════════════════════════════
             Sigil(FurySigil, "Fury Sigil", SigilFlavour.Warrior, SigilSlot.Attack,
-                "When you attack, a 3% chance to swing 30% faster for 15 seconds.",
-                procChance: 0.03f, procCooldownTicks: 200, procRung: SigilFuryHaste),
+                "When you land a basic attack, a 3% chance to swing 30% faster for 15 seconds.",
+                procChance: 0.03f, procCooldownTicks: 200, procRung: SigilFuryHaste,
+                procBasicOnly: true),
 
             Sigil(DuelSigil, "Duel Sigil", SigilFlavour.Warrior, SigilSlot.Defence,
                 "You take 5% less damage from other players.",

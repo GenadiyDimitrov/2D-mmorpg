@@ -9,7 +9,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,,,----------------------------Magic Proficiency----------------------------
 83,Magic Proficiency,magic_proficiency,Passive,,,0,0,self/single,0,30,10,"Increase M.Atk and Casting speed with 5% and MP consumation with -5%; With 10% chance when using Magic(spells/buffs/debuffs/heals) Increase additionally M.Atk +5%, Casting speed +5%, M.Crit.Rate +5%, M.Crit.Dmg +10%, MP consumation -15%",0,500kk,100kk,,,,
 ,,,,,,,,,,,,,,,,,,,----------------------------Physical Proficiency----------------------------
-83,Physical Proficiency,physical_proficiency,Passive,sword|blunt|bow|duals,,0,0,self/single,0,30,10,"Blunt/Sword/Dual: Increase P.Atk +100, Atk.Speed +10%; Bow: Acc +8, Range +50; Blunt/Sword/Dual/Bow: WIth 5% chance when attacking with pysical skills or basick attacks to increase P.Crit.Rate and P.Skill.Power with 20%",0,500kk,100kk,,,,
+83,Physical Proficiency,physical_proficiency,Passive,sword|blunt|bow|duals,,0,0,self/single,0,30,10,"Blunt/Sword/Dual: Increase P.Atk +100, Atk.Speed +10%; Bow: Acc +8, Range +50; Blunt/Sword/Dual/Bow: WIth 5% chance on a basic attack (basic attacks only) to increase P.Crit.Rate and P.Skill.Power with 20%",0,500kk,100kk,,,,
 ,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,----------------------------Sigils----------------------------
 ,,,,,,,,,,,,,,,,,,,A-Attack Replaces B/C/D..Z-Attack
@@ -31,7 +31,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 76,Agility Sigil,agility_sigil,Passive,,,0,0,self/single,0,0,0,Increase P/M.Evasion +3,0,0,0,,[spirit_sigil holy_protection_sigil mage_defence_sigil aegis_sigil duel_sigil],,Rogue_Defence_Sigil
 ,,,,,,,,,,,,,,,,,,,----------------------------Attack Sigil----------------------------
 76,Holy Power Sigil,holy_power_sigil,Passive,,,0,0,self/single,0,0,0,Increase healing power with 5%,0,0,0,,[soul_sigil frenzy_sigil focus_sigil body_sigil fury_sigil],,Healer_Attack_Sigil
-76,Fury Sigil,fury_sigil,Passive,,,0,0,self/single,0,20,15,3% chance on attack to increase attack speed with 30%,0,0,0,,[soul_sigil holy_power_sigil frenzy_sigil focus_sigil body_sigil],,Warrior_Attack_Sigil
+76,Fury Sigil,fury_sigil,Passive,,,0,0,self/single,0,20,15,3% chance on a basic attack (basic attacks only) to increase attack speed with 30%,0,0,0,,[soul_sigil holy_power_sigil frenzy_sigil focus_sigil body_sigil],,Warrior_Attack_Sigil
 76,Soul Sigil,soul_sigil,Passive,,,0,0,self/single,0,0,0,Increase max MP 10%,0,0,0,,[holy_power_sigil frenzy_sigil focus_sigil body_sigil fury_sigil],,Buffer_Attack_Sigil
 76,Body Sigil,body_sigil,Passive,,,0,0,self/single,0,0,0,Increase max HP 10%,0,0,0,,[soul_sigil holy_power_sigil frenzy_sigil focus_sigil fury_sigil],,Tank_Attack_Sigil
 76,Frenzy Sigil,frenzy_sigil,Passive,,,0,0,self/single,0,20,15,3% chance on attack to increase P/M.Atk and P/M.Speed with 8%,0,0,0,,[soul_sigil holy_power_sigil focus_sigil body_sigil fury_sigil],,Mage_Attack_Sigil
