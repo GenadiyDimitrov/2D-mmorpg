@@ -2362,14 +2362,19 @@ public class Entity
     public int CastInitialMpPaid { get; set; }
 
     /// <summary>The inventory item that STARTED this cast, for a consumable with a cast time (a buff
-    /// scroll). One unit of it is taken when the cast lands, and nothing is taken if it is interrupted
-    /// — which is the whole reason the item is not consumed up front.
+    /// scroll). 🔴 Since §102.4 (2026-09-23) one unit is taken when the cast STARTS
+    /// (<c>GameLoopService.PayCastItems</c>) and an interrupt loses it — the old "taken on landing,
+    /// kept on interrupt" rule let a Scroll of Return be read and cancelled until it succeeded.
     ///
     /// It exists because the older mechanism keyed on the SKILL's <c>ConsumableId</c>, i.e. the skill
     /// had to name its own item. The Return/Resurrection scrolls do; the 48 buff scrolls never did, so
     /// they read for free, for ever. Naming the instance instead means every present and future
     /// channelled consumable is charged for without authoring anything.</summary>
     public Guid? CastFromItemInstance { get; set; }
+
+    /// <summary>§102.4 — the in-flight cast's <c>ConsumableId</c> reagent was already taken at cast
+    /// start, so the landing must not take it again. Cleared on landing and on cancel.</summary>
+    public bool CastReagentPaid { get; set; }
 
     /// <summary>`BL-172` — WHO the in-flight `/unstuck` channel is rescuing, by character name.
     /// <para>🔑 A name and not a <see cref="Guid"/>, because the ordinary case has no entity to point

@@ -7,11 +7,32 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.183.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.184.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-23 (latest) — 0.183.0: the warrior's `deflection` is gone (§102.3)
+## 2026-09-23 (latest) — 0.184.0: a cast's item is spent when the cast STARTS (§102.4)
+
+> *"A consumed item is spent the moment you click — interrupt = lost (Scroll of Return,
+> skill/holy stones…)"*
+
+Both ways a cast costs an item used to charge at **landing**: the scroll instance that started it
+(`CastFromItemInstance`, the Return, Resurrection and 48 buff scrolls) and the skill's reagent
+(`ConsumableId`, the skill and holy stones). An interrupt or ESC "refunded" the item just by never
+taking it. That made Return a free retry until it went through, and made a stone-priced skill
+free to start.
+
+**The new `PayCastItems`** takes both at the one commit point every player cast passes through
+(`UpdateQueuedSkill`, past the range walk, just before the 20% MP slice). If the item is gone, the
+cast does not start. Cancel and interrupt no longer give anything back. `Entity.CastReagentPaid` stops
+the landing from charging the reagent a second time. A mob that casts a reagent skill (no bag) keeps
+the old landing path unchanged.
+
+The feedback gate in `HandleCastSkill` (*"X requires 2x Skill Stone"*) is unchanged.
+
+Server only — **no APK needed**.
+
+## 2026-09-23 — 0.183.0: the warrior's `deflection` is gone (§102.3)
 
 > *"Warrior `deflection` is not in any CSV → remove it, like `evasion_mastery` / `precision`"*
 

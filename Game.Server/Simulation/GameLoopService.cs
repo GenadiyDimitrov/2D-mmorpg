@@ -2111,7 +2111,7 @@ public class GameLoopService : BackgroundService
         }
 
         // Reagent gate: skills with a ConsumableId need that item to cast. Checked up
-        // front for feedback; actually consumed when the cast completes (in ExecuteSkill).
+        // front for feedback; actually consumed when the cast STARTS (PayCastItems, §102.4).
         // ⚠ Per-LEVEL since the 4th tier: Ultimate Heal costs one Skill Stone below 76 and two above.
         int reagentCount = def.ConsumableAmountAt(Math.Max(1, caster.SkillLevelOf(def.Id)));
         if (!string.IsNullOrEmpty(def.ConsumableId) &&
@@ -4515,7 +4515,7 @@ public class GameLoopService : BackgroundService
 
         // A consumable with a CAST TIME (the Return / Resurrection scrolls) is channelled: queue the skill
         // and let the normal cast pipeline run it. It consumes the item itself (its ConsumableId) when the
-        // cast lands, and refunds it if interrupted. The skill is NOT learned — the ITEM grants it.
+        // cast STARTS, and an interrupt loses it (§102.4). The skill is NOT learned — the ITEM grants it.
         if (skill.CastTicks > 0)
         {
             if (player.IsCommitted || player.QueuedSkillId is not null)
@@ -12026,6 +12026,43 @@ public class GameLoopService : BackgroundService
     private static int EffectiveMpCost(Entity caster, SkillDef def, int skillLevel) =>
         (int)(def.MpCostAt(skillLevel) * MpCostFactor(caster, def));
 
+    /// <summary>§102.4 — take what a cast costs in ITEMS, at the moment it starts: the scroll instance
+    /// that began it (<see cref="Entity.CastFromItemInstance"/>) and/or the skill's reagent
+    /// (<see cref="SkillDef.ConsumableId"/>). False = refused, nothing started. Sets
+    /// <see cref="Entity.CastReagentPaid"/> so the landing does not charge the reagent a second time.</summary>
+    private bool PayCastItems(Entity caster, SkillDef def)
+    {
+        bool spent = false;
+        if (caster.CastFromItemInstance is Guid usedInstance)
+        {
+            caster.CastFromItemInstance = null;
+            var used = caster.Inventory.FirstOrDefault(i => i.InstanceId == usedInstance);
+            if (used is null)
+            {
+                SendSystemToEntity(caster, $"You no longer have the {def.Name.Replace("Scroll of ", "")} scroll.");
+                return false;
+            }
+            ConsumeOne(caster, used);
+            spent = true;
+        }
+        caster.CastReagentPaid = false;
+        if (!string.IsNullOrEmpty(def.ConsumableId))
+        {
+            int need = def.ConsumableAmountAt(Math.Max(1, caster.SkillLevelOf(def.Id)));
+            if (!ConsumeItem(caster, def.ConsumableId, need))
+            {
+                string itemName = ItemCatalog.Get(def.ConsumableId)?.Name ?? def.ConsumableId;
+                SendSystemToEntity(caster, $"{def.Name} requires {need}x {itemName}.");
+                if (spent) SendInventory(caster);
+                return false;
+            }
+            caster.CastReagentPaid = true;
+            spent = true;
+        }
+        if (spent) SendInventory(caster);
+        return true;
+    }
+
     private void UpdateQueuedSkill(Entity caster, string skillId)
     {
         var def = SkillCatalog.Get(skillId);
@@ -12071,6 +12108,17 @@ public class GameLoopService : BackgroundService
         {
             caster.TargetX = target.X;
             caster.TargetY = target.Y;
+            return;
+        }
+
+        // §102.4 — THE ITEM IS SPENT WHEN THE CAST STARTS, not when it lands. It used to be taken at
+        // landing and "refunded" on an interrupt by simply never being taken, so a Scroll of Return
+        // could be read, cancelled and read again until nothing interrupted it — and a skill/holy
+        // stone was free insurance. His rule: *"spent at cast START; an interrupt or cancel loses it"*.
+        // Here, past the range walk, is the commit point every player cast goes through.
+        if (caster.Kind == EntityKind.Player && !PayCastItems(caster, def))
+        {
+            caster.QueuedSkillId = null;
             return;
         }
 
@@ -12239,9 +12287,9 @@ public class GameLoopService : BackgroundService
             BroadcastAreaEffect(def.AreaAtTarget ? target : caster, areaR, AreaKindOf(def));
 
 
-        // The consumable that STARTED this cast (a buff scroll): take one unit now that it lands.
-        // Gone from the bag mid-cast (traded, dropped, sold) = cancel without charging the finish MP,
-        // exactly like a missing reagent.
+        // The consumable that STARTED this cast (a buff scroll). Since §102.4 a PLAYER's is taken at
+        // cast start (PayCastItems), which nulls this — so this block only runs for a cast that
+        // somehow skipped the start. Gone from the bag = cancel without charging the finish MP.
         if (caster.CastFromItemInstance is Guid usedInstance)
         {
             caster.CastFromItemInstance = null;
@@ -12256,9 +12304,12 @@ public class GameLoopService : BackgroundService
             SendInventory(caster);
         }
 
-        // Reagent: consume the required item now that the cast lands (re-check in case it
-        // was traded/dropped mid-cast). Missing = cancel without charging the finish MP.
-        if (!string.IsNullOrEmpty(def.ConsumableId))
+        // Reagent: a PLAYER paid it at cast start (§102.4, PayCastItems). Anything that reaches here
+        // unpaid (a mob casting a reagent skill) keeps the old land-time charge.
+        // Missing = cancel without charging the finish MP.
+        if (caster.CastReagentPaid)
+            caster.CastReagentPaid = false;
+        else if (!string.IsNullOrEmpty(def.ConsumableId))
         {
             int need = def.ConsumableAmountAt(lvl);
             if (!ConsumeItem(caster, def.ConsumableId, need))
@@ -18439,7 +18490,8 @@ public class GameLoopService : BackgroundService
         entity.ChainedTargetId = null;
         entity.CastTicksRemaining = 0;
         entity.CastInitialMpPaid = 0;
-        entity.CastFromItemInstance = null;   // interrupted: the scroll stays in the bag
+        entity.CastFromItemInstance = null;
+        entity.CastReagentPaid = false;       // §102.4: interrupted = the item is LOST, it was spent at start
         // `BL-172` — a cancelled rescue rescues nobody. Cleared here rather than only in FinishUnstuck
         // so a name can never survive into an unrelated later cast of the same skill.
         entity.UnstuckTargetName = null;
