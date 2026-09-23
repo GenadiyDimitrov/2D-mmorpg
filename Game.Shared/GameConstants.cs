@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.191.0";
+    public const string GameVersion = "0.192.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -347,6 +347,10 @@ public static class GameConstants
 
     /// <summary>Seconds per tick (0.1s at 10 t/s).</summary>
     public const float TickSeconds = 1f / TickRate;
+
+    /// <summary>`BL-279` — the ceiling of a skill's custom auto-hunt delay, in seconds. His range is
+    /// *"1~9999s"*. Shared so the client's picker and the server's clamp can never disagree.</summary>
+    public const int AutoDelayMaxSeconds = 9999;
 
     /// <summary>How far (world units) an entity can see other entities.</summary>
     public const float ViewRange = 3000f;

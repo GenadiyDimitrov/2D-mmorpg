@@ -1402,6 +1402,10 @@ namespace Game.Client
                 AutoSkills.Clear();
                 if (c.Skills != null)
                     foreach (var s in c.Skills) if (s.Enabled) AutoSkills.Add(s.SkillId);
+                // `BL-279` — and every custom delay, marked or not (a delay may be set before the mark).
+                AutoDelays.Clear();
+                if (c.Skills != null)
+                    foreach (var s in c.Skills) if (s.ExtraDelayTicks > 0) AutoDelays[s.SkillId] = s;
             });
             _net.AutoHuntStatusReceived += st => Main(() =>
             {
@@ -1889,6 +1893,7 @@ namespace Game.Client
             // was stored "per account" because nothing on the client ever forgot it.
             AutoSkills.Clear();
             AutoHunting = false;
+            AutoDelays.Clear();   // `BL-279` — per character, exactly like the marks above
             AutoConfig = new AutoHuntConfigDto(false, 60, 40, false, new AutoSkillDto[0], new string[0]);
             // C1: the chat log is per CHARACTER too. A new character inherited the DELETED one's chat
             // (owner) for the same reason the auto-hunt marks above did — the buffer is a singleton
@@ -2573,13 +2578,43 @@ namespace Game.Client
             foreach (var id in AutoSkills)
                 if (id == AutoHuntIds.BasicAttack || Learned.ContainsKey(id))
                 {
-                    int extra = 0;   // preserve any per-skill reuse the server already knows
-                    if (AutoConfig.Skills != null)
-                        foreach (var s in AutoConfig.Skills)
-                            if (s.SkillId == id) { extra = s.ExtraDelayTicks; break; }
-                    skills.Add(new AutoSkillDto(id, true, extra));
+                    // `BL-279` — the mark carries its custom delay (value, exact/added, on/off) with it.
+                    skills.Add(AutoDelays.TryGetValue(id, out var d)
+                        ? d with { Enabled = true }
+                        : new AutoSkillDto(id, true, 0));
                 }
+            // …and a delay set on a skill that is NOT marked yet rides along disabled, so the number
+            // survives until the mark does (the server keeps the row and never fires a disabled one).
+            foreach (var d in AutoDelays.Values)
+                if (!AutoSkills.Contains(d.SkillId))
+                    skills.Add(d with { Enabled = false });
             return AutoConfig with { Enabled = enabled, Skills = skills.ToArray() };
+        }
+
+        /// <summary>`BL-279` — every skill's CUSTOM auto-hunt delay, by auto id, marked or not.</summary>
+        public readonly Dictionary<string, AutoSkillDto> AutoDelays = new Dictionary<string, AutoSkillDto>();
+
+        /// <summary>True when this auto id has a custom delay AND it is switched on — the slot's clock.</summary>
+        public bool AutoDelayActive(string autoId) =>
+            autoId != null && AutoDelays.TryGetValue(autoId, out var d) && d.DelayOn && d.ExtraDelayTicks > 0;
+
+        /// <summary>`BL-279` — set a custom delay (whole seconds, 1..9999) and switch it ON. His spec:
+        /// *"When custom delay is set and OK is clicked the delay:ON becomes active"*.</summary>
+        public void SetAutoDelay(string autoId, int seconds, bool exact)
+        {
+            if (string.IsNullOrEmpty(autoId)) return;
+            seconds = Mathf.Clamp(seconds, 1, GameConstants.AutoDelayMaxSeconds);
+            int ticks = Mathf.RoundToInt(seconds / GameConstants.TickSeconds);
+            AutoDelays[autoId] = new AutoSkillDto(autoId, AutoSkills.Contains(autoId), ticks, exact, true);
+            PushAutoConfig(BuildAutoConfig(AutoHunting));
+        }
+
+        /// <summary>`BL-279` — Delay ON/OFF: the default reuse or the custom one, the number kept.</summary>
+        public void ToggleAutoDelay(string autoId)
+        {
+            if (autoId == null || !AutoDelays.TryGetValue(autoId, out var d)) return;
+            AutoDelays[autoId] = d with { DelayOn = !d.DelayOn };
+            PushAutoConfig(BuildAutoConfig(AutoHunting));
         }
 
         public async void ToggleAutoHunt()

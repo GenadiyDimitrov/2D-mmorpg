@@ -624,9 +624,18 @@ public record PartyLootVoteDto(LootMode Mode, string RequestedBy, bool Open = tr
 
 // ----- Auto-hunt / idle farming (docs/design/AutoHunt.md) -------------------------
 
-/// <summary>One auto-use skill: the skill id, whether it's on, and an ADDITIONAL post-cast delay
-/// (ticks, ≥0) on top of the skill's own reuse (so auto-reuse is never below the default).</summary>
-public record AutoSkillDto(string SkillId, bool Enabled, int ExtraDelayTicks);
+/// <summary>One auto-use skill: the skill id, whether it's on, and its CUSTOM DELAY (ticks, ≥0).
+///
+/// <para>`BL-279` (owner, 2026-09-23) — the delay has two readings, picked by
+/// <paramref name="DelayExact"/>: ADDED (false) runs it AFTER the skill's own live reuse (0.4 s reuse +
+/// 1 s = every 1.4 s); EXACT (true) makes the skill fire every N from use to use, the live reuse
+/// subtracted at use time and never going below it. <paramref name="DelayOn"/> switches between the
+/// custom delay and the default WITHOUT losing the number. Both appended with defaults, so a save or a
+/// client from before reads as "added, on" — which is exactly what `ExtraDelayTicks` always meant.</para>
+/// <para>A row may be <paramref name="Enabled"/> = false and still carry a delay: that is a skill you
+/// set a delay on but have not marked for auto yet, and the number must survive until you do.</para></summary>
+public record AutoSkillDto(string SkillId, bool Enabled, int ExtraDelayTicks,
+                           bool DelayExact = false, bool DelayOn = true);
 
 /// <summary>One class a character owns (an IG-style subclass). Server → client, so the UI can list
 /// them and let you swap. <paramref name="Active"/> = the one being played right now.</summary>

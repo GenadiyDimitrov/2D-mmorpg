@@ -5390,7 +5390,10 @@ public class GameLoopService : BackgroundService
         p.AutoBuffPotions   = c.AutoBuffPotions;
         p.AutoSkills.Clear();
         foreach (var s in c.Skills ?? Array.Empty<AutoSkillDto>())
-            p.AutoSkills.Add(new AutoSkillDto(s.SkillId, s.Enabled, Math.Max(0, s.ExtraDelayTicks)));
+            p.AutoSkills.Add(new AutoSkillDto(s.SkillId, s.Enabled,
+                // `BL-279` — 1..9999 s, his range; 0 = no custom delay.
+                Math.Clamp(s.ExtraDelayTicks, 0, (int)Math.Round(GameConstants.AutoDelayMaxSeconds / GameConstants.TickSeconds)),
+                s.DelayExact, s.DelayOn));
         WarnUncastableAutoSkills(p);
         p.AutoBuffPotionIds.Clear();
         foreach (var id in c.BuffPotionIds ?? Array.Empty<string>())
@@ -6325,7 +6328,7 @@ public class GameLoopService : BackgroundService
 
             p.QueuedSkillId = def.Id;
             p.QueuedTargetId = tgtId;
-            p.AutoReadyTick[def.Id] = _tick + AutoCycleTicks(p, def, entry.ExtraDelayTicks);
+            p.AutoReadyTick[def.Id] = _tick + AutoCycleTicks(p, def, entry);
             p.AutoChainCursor[(int)kind] = (i + 1) % n;
             return true;
         }
@@ -6469,7 +6472,7 @@ public class GameLoopService : BackgroundService
 
     /// <summary>Estimated full recast cycle in ticks: cast time + (cooldown-reduced) reuse + the
     /// user's extra delay. Used both to gate the auto-recast and to price MP/s.</summary>
-    private int AutoCycleTicks(Entity p, SkillDef def, int extraDelay)
+    private int AutoCycleTicks(Entity p, SkillDef def, AutoSkillDto entry)
     {
         // Same one test the real cast uses (`BL-132`) — an estimate that priced a physical stun on the
         // cast stat would quote an MP/s the fight never charges.
@@ -6482,7 +6485,14 @@ public class GameLoopService : BackgroundService
         float cdr = p.CooldownReductionFor(def);
         if (reducedCd > 0 && cdr > 0f)
             reducedCd = Math.Max(1, (int)(reducedCd * (1f - cdr)));
-        return castTicks + reducedCd + Math.Max(0, extraDelay);
+        int natural = castTicks + reducedCd;
+        // `BL-279` — THE CUSTOM DELAY, two readings (see AutoSkillDto). ADDED waits it out after the
+        // skill's own reuse; EXACT fires every N from use to use and can never beat the real reuse,
+        // which is re-read HERE at use time because it is dynamic (cast speed, reuse buffs). OFF keeps
+        // the number and uses the default.
+        if (!entry.DelayOn || entry.ExtraDelayTicks <= 0) return natural;
+        return entry.DelayExact ? Math.Max(natural, entry.ExtraDelayTicks)
+                                : natural + entry.ExtraDelayTicks;
     }
 
     /// <summary>Push the auto-hunt HUD: total MP/s of enabled auto-skills (after cost/CD-reduction
@@ -6505,7 +6515,7 @@ public class GameLoopService : BackgroundService
             // 🔵 The same gap exists for every long BUFF on the bar — it is renewed on expiry too, and
             // still priced on its cooldown. Not touched here: that is a number he has been reading for
             // a while and it is his call whether it moves.
-            int cycleTicks = AutoCycleTicks(p, def, entry.ExtraDelayTicks);
+            int cycleTicks = AutoCycleTicks(p, def, entry);
             if (def.SummonsWhisp is { Length: > 0 })
                 cycleTicks = Math.Max(cycleTicks, def.DurationTicksAt(lvl));
             float reuseSec = Math.Max(0.1f, cycleTicks * GameConstants.TickSeconds);

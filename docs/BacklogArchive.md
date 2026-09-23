@@ -6923,3 +6923,27 @@ The entry as it stood:
 aggressive lvl 90 .. they must be npc with titles and just fighting 'script' .. also they must be
 allowed to fight inside the town - when a pk is inside a town and they lock on they should be able to
 hit him"*. This also fixes §102.7 (your Whirlwind without PvP hit a field guard, and it killed you).
+
+---
+
+## `BL-279` ✅ BUILT 2026-09-23 in **0.192.0** — custom skill delay for auto-hunt
+
+Built to his spec. **The ❓ answered itself:** the delay persists **per skill id, per class**, in the
+auto-hunt config beside the Auto mark. `AutoSkillDto.ExtraDelayTicks` already existed there, the
+server already honoured it as "added", and no UI had ever set it. It gained `DelayExact` and
+`DelayOn`. A slot is only a view of that, so moving the skill to another slot keeps its delay.
+
+The entry as it stood:
+
+## `BL-279` 🔴 CUSTOM SKILL DELAY FOR AUTO-HUNT
+
+**Lost once already**; it is in no file in the repo. Your spec, 2026-09-23:
+- Holding a bar skill → its context menu gains **"Delay: ON/OFF"** and **"Custom delay"** under "Auto on".
+- "Custom delay" opens the numpad picker. The value is 1-9999 s, used by auto-hunt only, per skill.
+- Where the picker has "max", it gets an **exact / added** switch:
+  - **added** — the delay runs AFTER the skill's own reuse: 0.4 s reuse + 1 s = every 1.4 s.
+  - **exact** — the skill fires every N s from use to use: the live reuse (it is dynamic) is subtracted
+    at use time, and N can never go below the skill's real reuse.
+- OK sets **Delay: ON** and puts a clock icon on the slot; the toggle switches between the default and
+  the custom delay without losing the number.
+❓ Where does it persist — with the server-owned bar (per character, per slot), or per skill id?

@@ -7,11 +7,42 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.191.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.192.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-23 (latest) — 0.191.0: the watch looks like the watch, and follows a PK into town (`BL-276`, §102.7)
+## 2026-09-23 (latest) — 0.192.0: a custom auto-hunt delay per skill, exact or added (`BL-279`)
+
+> *"holding down a skill on the bar shows the context menu … a 'delay:ON/OFF' and 'custom delay'
+> buttons under 'auto on' … the custom delay is between 1~9999s … exact/added on the place of current
+> 'max' … When custom delay is set and OK is clicked the 'delay:ON' becomes active and a clock icon
+> appears on the skill"*
+
+**Half of it already existed, unreachable.** `AutoSkillDto.ExtraDelayTicks` has been in the auto-hunt
+config since the auto-hunt was built, and `AutoCycleTicks` already added it after the skill's own
+reuse. No UI ever set it. What was built:
+
+- **`AutoSkillDto` + `DelayExact` + `DelayOn`** (appended with defaults, so saves and older clients
+  read as "added, on", which is what the field always meant).
+- **`AutoCycleTicks`**, the one cycle rule: *added* = the live reuse + N; *exact* = N from use to use,
+  **never below the live reuse**, which is re-read at use time because cast speed and reuse buffs
+  move it. *Off* uses the default and keeps the number. The server clamps N to 1–9999 s
+  (`GameConstants.AutoDelayMaxSeconds`, shared with the picker).
+- **The slot menu** gains **Delay: ON/off** and **Custom delay** under Auto. With no delay set yet,
+  Delay opens the picker, since there is nothing to switch to.
+- **The picker** is the shop's numpad: it now opens on a given value, and its **Max** button can be
+  a mode switch. Here it reads **Exact / Added**, and the line under the title says what the number
+  will do.
+- **A clock** (drawn from rectangles, `UiKit.Icon.Clock`; the TMP atlas has no glyph for it) in the
+  slot's top-right corner while the delay is on.
+
+**Where it lives** (the entry's ❓): **per skill id, per class**, in the server's auto-hunt config beside
+the Auto mark, not on the slot. Move the skill and its delay goes with it. A delay set on a skill that
+is not marked Auto rides along as a disabled row, so the number survives until you mark it.
+
+**Needs an APK.**
+
+## 2026-09-23 — 0.191.0: the watch looks like the watch, and follows a PK into town (`BL-276`, §102.7)
 
 > *"can town watchman and field watchman be NPCs? not mobs .. now they look like scary mobs red
 > aggressive lvl 90 .. they must be npc with titles and just fighting 'script' .. also they must be

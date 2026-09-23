@@ -284,7 +284,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-274` | ❓ | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3 | items |
 | `BL-277` | ❓ | **VITALITY + BLESSING** (names owed) — §3; ⚠ the Blessing refund as written never empties | progression |
 | `BL-278` | ❓ | **BOSS REGEN AS A CLOCK** — 1/30000, ×2 / ×5 on enrage; no in-combat mob regen — §4 | combat |
-| `BL-279` | 🔴 | CUSTOM SKILL DELAY for auto-hunt (exact / added), lost before it was ever filed | client |
 | `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
 | `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
 
@@ -2250,19 +2249,6 @@ empties.** That has to be settled first.
 
 §4 of the design doc. The pick: bosses `1/30000`/s, ×2 at the 1st enrage, ×5 at the 2nd; normal mobs
 get no in-combat regen (5%/s idle stays). ❓ Is that one knob today or two?
-
-## `BL-279` 🔴 CUSTOM SKILL DELAY FOR AUTO-HUNT
-
-**Lost once already**; it is in no file in the repo. Your spec, 2026-09-23:
-- Holding a bar skill → its context menu gains **"Delay: ON/OFF"** and **"Custom delay"** under "Auto on".
-- "Custom delay" opens the numpad picker. The value is 1-9999 s, used by auto-hunt only, per skill.
-- Where the picker has "max", it gets an **exact / added** switch:
-  - **added** — the delay runs AFTER the skill's own reuse: 0.4 s reuse + 1 s = every 1.4 s.
-  - **exact** — the skill fires every N s from use to use: the live reuse (it is dynamic) is subtracted
-    at use time, and N can never go below the skill's real reuse.
-- OK sets **Delay: ON** and puts a clock icon on the slot; the toggle switches between the default and
-  the custom delay without losing the number.
-❓ Where does it persist — with the server-owned bar (per character, per slot), or per skill id?
 
 ## `BL-280` 🔵 ZONES BY ARCHETYPE, AND NO MOB CLUSTERS
 

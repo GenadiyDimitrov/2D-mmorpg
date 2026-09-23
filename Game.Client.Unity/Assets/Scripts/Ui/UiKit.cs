@@ -158,7 +158,7 @@ namespace Game.Client
 
         /// <summary>The icon set. Deliberately tiny — each one is hand-composed below, so this grows
         /// only when a button genuinely cannot be a word.</summary>
-        public enum Icon { Lock, Unlock, Bin, Bubble }
+        public enum Icon { Lock, Unlock, Bin, Bubble, Clock }
 
         /// <summary>One rectangle of an icon, positioned in the face's NORMALISED space (0..1, y up),
         /// so the whole glyph scales with the button instead of being pinned to a pixel size.</summary>
@@ -209,12 +209,29 @@ namespace Game.Client
                     IconPart(face, 0.22f, 0.52f, 0.78f, 0.60f, PanelLight);   // two lines of "speech"
                     IconPart(face, 0.22f, 0.70f, 0.66f, 0.78f, PanelLight);
                     break;
+                case Icon.Clock:
+                    // `BL-279` — the slot's custom-delay mark. A square rim (rectangles cannot draw a round
+                    // one), a hand to twelve and a hand to three. Drawn in the icon's own colour so a
+                    // caller can tint the whole thing by tinting nothing but the parts.
+                    IconPart(face, 0.08f, 0.08f, 0.92f, 0.92f, Text);          // rim
+                    IconPart(face, 0.20f, 0.20f, 0.80f, 0.80f, PanelLight);    // face
+                    IconPart(face, 0.46f, 0.46f, 0.56f, 0.76f, Text);          // hour hand, up
+                    IconPart(face, 0.46f, 0.44f, 0.72f, 0.54f, Text);          // minute hand, right
+                    break;
             }
         }
 
         /// <summary>A button whose face is a drawn icon rather than text. Same shape and states as
         /// <see cref="TextButton"/> so the two sit together in a row without looking like different
         /// widgets.</summary>
+        /// <summary>`BL-279` — a drawn icon with no button behind it: a MARK, for a corner of a slot.</summary>
+        public static RectTransform IconMark(Transform parent, Icon icon)
+        {
+            var face = Box(parent, "IconMark", new Color(0, 0, 0, 0), blocksInput: false);
+            PaintIcon(face.transform, icon);
+            return Rect(face.gameObject);
+        }
+
         public static Button IconButton(Transform parent, Icon icon, Action onClick)
         {
             var image = Box(parent, "IconButton", PanelLight);

@@ -73,6 +73,7 @@ namespace Game.Client
         private readonly RectTransform[] _slotReuseRects = new RectTransform[SlotsPerPage];
         private readonly TextMeshProUGUI[] _slotReuseText = new TextMeshProUGUI[SlotsPerPage];
         private readonly TextMeshProUGUI[] _slotAutoMarks = new TextMeshProUGUI[SlotsPerPage];
+        private readonly RectTransform[] _slotDelayMarks = new RectTransform[SlotsPerPage];   // `BL-279`
         /// <summary>How many of a consumable slot's item are in the bag (32n). Bottom-LEFT, because the
         /// top-left is the slot number and the bottom-right is the auto "A".</summary>
         private readonly TextMeshProUGUI[] _slotCounts = new TextMeshProUGUI[SlotsPerPage];
@@ -91,6 +92,8 @@ namespace Game.Client
         // slot context menu (press and hold)
         private RectTransform _slotMenu, _slotMenuScrim;
         private Button _slotMenuAuto, _slotMenuDetail;
+        private Button _slotMenuDelay, _slotMenuCustom;   // `BL-279`
+        private bool _delayPickExact;                     // `BL-279` — the picker's exact/added switch
         private int _menuSlot = -1;        // page-relative slot the menu belongs to
         private int _pendingMoveFrom = -1; // absolute bar index being moved, or -1
         private TextMeshProUGUI _pageLabel;
@@ -607,6 +610,14 @@ namespace Game.Client
                             new Vector2(-4f, 2f), new Vector2(20f, 16f));
                 auto.gameObject.SetActive(false);
                 _slotAutoMarks[i] = auto;
+
+                // `BL-279` — a CLOCK, top-right, = this slot's custom auto delay is ON. Top-right is the
+                // one free corner (number top-left, count bottom-left, "A" bottom-right).
+                var clock = UiKit.IconMark(button.transform, UiKit.Icon.Clock);
+                UiKit.Place(clock, new Vector2(1f, 1f), new Vector2(1f, 1f),
+                            new Vector2(-3f, -3f), new Vector2(14f, 14f));
+                clock.gameObject.SetActive(false);
+                _slotDelayMarks[i] = clock;
 
                 // How many are left, bottom-LEFT. Only ever shown for an item slot: a potion bar you
                 // cannot count is a bar you have to open the bag to trust (32n).
@@ -1587,6 +1598,8 @@ namespace Game.Client
                 bool auto = !string.IsNullOrEmpty(token) && Boot.AutoSkills.Contains(AutoIdFor(token));
                 _slotBorders[i].enabled = auto;
                 _slotAutoMarks[i].gameObject.SetActive(auto);
+                _slotDelayMarks[i].gameObject.SetActive(
+                    !string.IsNullOrEmpty(token) && Boot.AutoDelayActive(AutoIdFor(token)));
 
                 // Aqua frame OUTSIDE that one = this slot holds a TOGGLE and the toggle is on.
                 _slotToggleBorders[i].enabled = IsToggleOn(token);
@@ -1796,6 +1809,29 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_slotMenuAuto.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                         new Vector2(0f, -96f), new Vector2(130f, 40f));
 
+            // `BL-279` — CUSTOM DELAY, his two buttons "under Auto on". Delay switches between the
+            // skill's default reuse and the custom one without losing the number; with no number set
+            // yet it opens the picker instead, because there is nothing to switch to.
+            _slotMenuDelay = UiKit.TextButton(inner, "Delay", () =>
+            {
+                var id = AutoIdFor(TokenAt(_menuSlot));
+                CloseSlotMenu();
+                if (string.IsNullOrEmpty(id)) return;
+                if (Boot.AutoDelays.ContainsKey(id)) Boot.ToggleAutoDelay(id);
+                else OpenDelayPicker(id);
+            }, 16f);
+            UiKit.Place(UiKit.Rect(_slotMenuDelay.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                        new Vector2(0f, -140f), new Vector2(130f, 40f));
+
+            _slotMenuCustom = UiKit.TextButton(inner, "Custom delay", () =>
+            {
+                var id = AutoIdFor(TokenAt(_menuSlot));
+                CloseSlotMenu();
+                if (!string.IsNullOrEmpty(id)) OpenDelayPicker(id);
+            }, 15f);
+            UiKit.Place(UiKit.Rect(_slotMenuCustom.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                        new Vector2(0f, -184f), new Vector2(130f, 40f));
+
             // Details last, because it is the one option that does not change anything.
             _slotMenuDetail = UiKit.TextButton(inner, "Details", () =>
             {
@@ -1824,6 +1860,29 @@ namespace Game.Client
         /// mark, so <c>AssignSlot</c> needs the same mapping to clear it when a token leaves.</remarks>
         private static string AutoIdFor(string token) => GameBoot.AutoIdFor(token);
 
+        /// <summary>`BL-279` — the custom-delay picker: the shop's numpad, seconds 1-9999, with his
+        /// EXACT / ADDED switch where "Max" sits. Opens on the delay already set, if any. OK sets it
+        /// and switches it ON (the slot grows its clock).</summary>
+        private void OpenDelayPicker(string autoId)
+        {
+            int current = 1;
+            _delayPickExact = false;
+            if (Boot.AutoDelays.TryGetValue(autoId, out var d))
+            {
+                current = Mathf.Max(1, Mathf.RoundToInt(d.ExtraDelayTicks * GameConstants.TickSeconds));
+                _delayPickExact = d.DelayExact;
+            }
+            string name = SkillCatalog.Get(autoId)?.Name ?? "Basic attack";
+            OpenNumpad("Custom delay: " + name + " (s)", GameConstants.AutoDelayMaxSeconds, "OK",
+                secs => { Boot.SetAutoDelay(autoId, secs, _delayPickExact); CloseNumpad(); },
+                secs => _delayPickExact
+                    ? "Exact: used every " + secs + "s (never faster than its own reuse)"
+                    : "Added: its own reuse, then " + secs + "s more",
+                current,
+                () => _delayPickExact ? "Exact" : "Added",
+                () => _delayPickExact = !_delayPickExact);
+        }
+
         private string TokenAt(int slotOnPage)
         {
             int index = _barPage * SlotsPerPage + slotOnPage;
@@ -1846,17 +1905,22 @@ namespace Game.Client
             bool autoable = autoId != null;
 
             _slotMenuAuto.gameObject.SetActive(autoable);
+            _slotMenuDelay.gameObject.SetActive(autoable);
+            _slotMenuCustom.gameObject.SetActive(autoable);
             if (autoable)
+            {
                 UiKit.SetButtonText(_slotMenuAuto, Boot.AutoSkills.Contains(autoId) ? "Auto: ON" : "Auto: off");
+                UiKit.SetButtonText(_slotMenuDelay, Boot.AutoDelayActive(autoId) ? "Delay: ON" : "Delay: off");
+            }
 
             // Details only for a real skill — an action or an item has no SkillDef to describe.
             _slotMenuDetail.gameObject.SetActive(isSkill);
             UiKit.Place(UiKit.Rect(_slotMenuDetail.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                        new Vector2(0f, autoable ? -140f : -96f), new Vector2(130f, 40f));
+                        new Vector2(0f, autoable ? -228f : -96f), new Vector2(130f, 40f));
 
             // Sit the menu above the bar. It is pinned to the right rather than to the held slot:
             // anchoring per-slot pushes it off screen for the edge columns on a phone.
-            int rows = 2 + (autoable ? 1 : 0) + (isSkill ? 1 : 0);
+            int rows = 2 + (autoable ? 3 : 0) + (isSkill ? 1 : 0);
             var rt = _slotMenu;
             rt.anchorMin = rt.anchorMax = new Vector2(1f, 0f);
             rt.pivot = new Vector2(1f, 0f);

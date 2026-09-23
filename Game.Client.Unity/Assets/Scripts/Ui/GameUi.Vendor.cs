@@ -57,6 +57,11 @@ namespace Game.Client
         private TextMeshProUGUI _numpadTitle;
         private TMP_InputField _numpadInput;
         private Button _numpadOkButton;
+        // `BL-279` — the bottom-left button is "Max" for a quantity and a MODE switch (exact/added) for a
+        // delay. Kept so OpenNumpad can repaint it per use.
+        private Button _numpadMaxButton;
+        private Func<string> _numpadModeLabel;
+        private Action _numpadModeTap;
         private int _numpadMax = 1;
         private Action<int> _numpadOk;
         private string _numpadHead = "";
@@ -573,7 +578,8 @@ namespace Game.Client
                             new Vector2(x0 + col * (bw + gap), y0 - rowIdx * (bh + gap)), new Vector2(bw, bh));
             }
 
-            var max = UiKit.TextButton(inner, "Max", () => _numpadInput.text = _numpadMax.ToString(), 16f);
+            var max = UiKit.TextButton(inner, "Max", NumpadMaxOrMode, 16f);
+            _numpadMaxButton = max;
             UiKit.Place(UiKit.Rect(max.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(18f, 16f), new Vector2(100f, 46f));
 
@@ -594,17 +600,32 @@ namespace Game.Client
         /// spends gold is exactly the ambiguity the removed confirm dialog used to cover.
         /// <paramref name="summary"/> re-renders under the title on every keystroke, so the total is
         /// on screen at the moment you press the button.</summary>
+        /// <param name="initial">What the box opens showing (a delay opens on the one already set).</param>
+        /// <param name="modeLabel">`BL-279` — when given, the Max button becomes a MODE switch showing this
+        /// label and calling <paramref name="modeTap"/>; null keeps it "Max".</param>
         private void OpenNumpad(string title, int max, string okLabel, Action<int> onOk,
-                                Func<int, string> summary = null)
+                                Func<int, string> summary = null, int initial = 1,
+                                Func<string> modeLabel = null, Action modeTap = null)
         {
+            _numpadModeLabel = modeTap != null ? modeLabel : null;
+            _numpadModeTap = modeTap;
+            UiKit.SetButtonText(_numpadMaxButton, _numpadModeLabel != null ? _numpadModeLabel() : "Max");
             _numpadMax = Mathf.Max(1, max);
             _numpadOk = onOk;
             _numpadHead = title + "   (max " + _numpadMax + ")";
             _numpadSummary = summary;
             UiKit.SetButtonText(_numpadOkButton, okLabel);
-            _numpadInput.SetTextWithoutNotify("1");
+            _numpadInput.SetTextWithoutNotify(Mathf.Clamp(initial, 1, _numpadMax).ToString());
             RefreshNumpadTitle();
             OpenWindow(_numpadPanel);
+        }
+
+        private void NumpadMaxOrMode()
+        {
+            if (_numpadModeTap == null) { _numpadInput.text = _numpadMax.ToString(); return; }
+            _numpadModeTap();
+            if (_numpadModeLabel != null) UiKit.SetButtonText(_numpadMaxButton, _numpadModeLabel());
+            RefreshNumpadTitle();   // the summary line reads the mode too
         }
 
         private int NumpadQty() =>
