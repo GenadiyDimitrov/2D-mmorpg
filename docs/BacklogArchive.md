@@ -6887,3 +6887,19 @@ The entry as it stood:
 
 *"default game is landscape mode but I want to rotate on both sides (both landscapes only, no
 portrait)"* — Unity `autorotateToLandscapeLeft/Right = true`, portrait both false. Needs an APK.
+
+---
+
+## `BL-271` ✅ BUILT 2026-09-23 in **0.190.0** — quest rewards in the combat channel
+
+Built as specified: on completion the COMBAT feed gets one `EXP`-tagged line (exp, SP, gold, **as
+banked**, after world rate × runes × the SP ceiling) and one `LOOT`-tagged line per reward item.
+Server only.
+
+The entry as it stood:
+
+## `BL-271` 🔴 QUEST REWARDS IN THE COMBAT CHANNEL
+
+*"receiving reward from quest should be shown in the combat channel .. exp/sp/reward .. if its written
+a player can see and decide if that quest is worth repeating"* — one line per reward on quest
+completion: EXP, SP, gold, each item × qty.

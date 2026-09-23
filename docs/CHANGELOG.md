@@ -7,11 +7,28 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.189.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.190.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-23 (latest) — 0.189.0: landscape both ways, whatever the rotation lock says (`BL-268`)
+## 2026-09-23 (latest) — 0.190.0: quest rewards are printed in the combat channel (`BL-271`)
+
+> *"receiving reward from quest should be shown in the combat channel .. exp/sp/reward .. if its
+> written a player can see and decide if that quest is worth repeating"*
+
+`CompleteQuestAtNpc` (the only path that pays a quest) now writes to the **combat** feed, the same
+channel and tags a kill's reward uses:
+- `Quest reward (<name>): Exp: +N, SP: +N, <gold>: +N`, tagged `EXP`;
+- `Quest reward: <item>[ xN]`, tagged `LOOT`, one line per distinct reward item.
+
+The numbers are what was **banked**, not what was authored. A private reward tally wraps
+`AwardExp`, the one place world rates, runes and the SP ceiling apply, exactly as the kill line
+does. Gold is the post-rate figure. The outer kill tally is saved and restored, so a quest closed
+mid-kill cannot swallow that kill's line. "Quest complete: X!" stays in System as before.
+
+Server only — **no APK needed** (the client already renders both tags on the combat channel).
+
+## 2026-09-23 — 0.189.0: landscape both ways, whatever the rotation lock says (`BL-268`)
 
 > *"default game is landscape mode but I want to rotate on both sides (both landscapes only, no
 > portrait)"*

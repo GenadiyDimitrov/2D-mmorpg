@@ -21652,6 +21652,13 @@ public class GameLoopService : BackgroundService
         var qr = RateConfig.Quest;
         long exp = (long)((def.Reward.Exp + gatherExp) * qr.Exp);
         long sp  = (long)(def.Reward.SkillPoints * qr.Sp);
+        // `BL-271` — the reward goes to the COMBAT feed, where a kill's reward already goes: *"if its
+        // written a player can see and decide if that quest is worth repeating"*. A private tally
+        // around AwardExp captures what was actually BANKED (world rate × runes × the SP ceiling), the
+        // same numbers the kill line prints — never the authored figure. The outer tally is restored,
+        // so a quest closed mid-kill cannot swallow that kill's line.
+        var outerTally = _killTally;
+        _killTally = new Dictionary<Entity, (long Exp, long Sp, long Gold)>();
         if (exp > 0 || sp > 0)
         {
             // ⚠ A quest that authors SP gets it ON TOP of the SP its exp derives — that is what the two
@@ -21669,9 +21676,22 @@ public class GameLoopService : BackgroundService
             player.Gold += gold;
             SendGold(player);
         }
+        _killTally.TryGetValue(player, out var banked);
+        _killTally = outerTally;
+        if (banked.Exp > 0 || banked.Sp > 0 || gold > 0)
+            SendCombatToEntity(player, "EXP",
+                $"Quest reward ({def.Name}): Exp: +{banked.Exp:N0}, SP: +{banked.Sp:N0}, "
+              + $"{GameConstants.CurrencyName}: +{gold:N0}");
         if (def.Reward.ItemIds is { Length: > 0 })
+        {
             foreach (var itemId in def.Reward.ItemIds)
                 AddItem(player, itemId);
+            // One line per item, duplicates counted — the same shape as a loot line.
+            foreach (var g in def.Reward.ItemIds.GroupBy(id => id))
+                if (ItemCatalog.Get(g.Key) is ItemDef rewardDef)
+                    SendCombatToEntity(player, "LOOT",
+                        $"Quest reward: {rewardDef.Name}{(g.Count() > 1 ? $" x{g.Count()}" : "")}");
+        }
 
         player.ActiveQuests.Remove(questId);
         if (def.Daily)

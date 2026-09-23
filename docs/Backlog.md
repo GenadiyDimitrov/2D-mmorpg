@@ -279,7 +279,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-264` | ❓ | **NO CSV SAYS WHICH BUFFS FIGHT EACH OTHER** — from `mage 1st` you cannot tell the three Mights are one family. A generated `FAMILY` + `RANK` column, checked like every other; §2 the RACE cell nothing verifies | skills |
 | `BL-269` | 🔴 | 6/12/18/24 extra skill slots (half or all of a 2nd/3rd bar) | client |
 | `BL-270` | 🔵 | A vertical skill bar, or a wheel, for hand-held play | client |
-| `BL-271` | 🔴 | Quest rewards printed in the combat channel (exp/sp/gold/items) | quests |
 | `BL-272` | ❓ | **RARITY COLLAPSE — Common + Mythic only** for equipment — [design/Rework-2026-09-23.md](design/Rework-2026-09-23.md) §2.1 | items |
 | `BL-273` | ❓ | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05`/`BL-50` — §2.2 | items |
 | `BL-274` | ❓ | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3 | items |
@@ -2217,12 +2216,6 @@ option picks how many are SHOWN; it must not change what the server stores.
 but need options to make it different and esier for hand-held"*. Client-only; it is a layout option
 over the same 12 (+`BL-269`) slots. ❓ Which one first? A vertical column is cheap; a thumb wheel
 is a real UI piece.
-
-## `BL-271` 🔴 QUEST REWARDS IN THE COMBAT CHANNEL
-
-*"receiving reward from quest should be shown in the combat channel .. exp/sp/reward .. if its written
-a player can see and decide if that quest is worth repeating"* — one line per reward on quest
-completion: EXP, SP, gold, each item × qty.
 
 ## `BL-272` ❓ RARITY COLLAPSE — Common + Mythic only for equipment
 
