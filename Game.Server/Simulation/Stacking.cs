@@ -138,6 +138,63 @@ internal static class Stacking
         return placed;
     }
 
+    // ----- §102.5 (2026-09-23): SMALLEST FIRST, AND PARTIALS MERGE ---------------------------------
+    // *"with 999 + 58 potions, drinking takes the 999 … ten stacks of 80 take ten slots"*. His rule:
+    // drink from the SMALLEST stack first, and buying/looting top the partial stack up to the cap.
+
+    /// <summary>The unequipped row of <paramref name="defId"/> holding the FEWEST — the one a drink or
+    /// a spend should come out of, so the bag drains its odd stack and keeps the full ones.</summary>
+    public static InventoryItem? SmallestOf(IEnumerable<InventoryItem> container, string defId)
+    {
+        InventoryItem? best = null;
+        foreach (var it in container)
+            if (it.DefId == defId && !it.Equipped && (best is null || it.Quantity < best.Quantity))
+                best = it;
+        return best;
+    }
+
+    /// <summary>The smallest row that is INTERCHANGEABLE with <paramref name="row"/>
+    /// (<see cref="SameStack"/>) — what a click on any one of them should actually spend. Returns
+    /// <paramref name="row"/> itself when nothing smaller is identical to it.</summary>
+    public static InventoryItem SmallestLike(IEnumerable<InventoryItem> container, InventoryItem row)
+    {
+        var best = row;
+        foreach (var it in container)
+            if (!it.Equipped && it.Quantity < best.Quantity && SameStack(it, row))
+                best = it;
+        return best;
+    }
+
+    /// <summary>Merge every group of interchangeable rows of this def into as few rows as the cap
+    /// allows — full rows first in bag order, the remainder in the last one, empties removed. Run after
+    /// an item is ADDED, so ten stacks of 80 settle into one of 800 on the next purchase or pickup.
+    /// ⚠ Only <see cref="SameStack"/> rows merge, so a bound, renamed or timed copy stays its own row.
+    /// Nothing is ever destroyed: a legacy over-cap total keeps its excess in the last row.</summary>
+    public static void Consolidate(List<InventoryItem> container, ItemDef def)
+    {
+        if (!def.IsStackable) return;
+        int cap = def.MaxStack;
+        var rows = container.Where(r => r.DefId == def.Id && !r.Equipped).ToList();
+        var seen = new HashSet<InventoryItem>();
+        foreach (var head in rows)
+        {
+            if (!seen.Add(head)) continue;
+            var group = new List<InventoryItem> { head };
+            foreach (var r in rows)
+                if (!seen.Contains(r) && SameStack(head, r)) { group.Add(r); seen.Add(r); }
+            if (group.Count < 2) continue;
+
+            long total = group.Sum(r => (long)r.Quantity);
+            for (int i = 0; i < group.Count; i++)
+            {
+                int q = i == group.Count - 1 ? (int)total : (int)Math.Min(cap, total);
+                group[i].Quantity = q;
+                total -= q;
+            }
+            container.RemoveAll(r => r.Quantity <= 0 && group.Contains(r));
+        }
+    }
+
     /// <summary>Split every row that sits over its cap into legal ones, in place. A login runs this so
     /// a character saved before the caps existed — or before one was retuned downwards — is migrated
     /// rather than left holding a row the rules say is impossible.

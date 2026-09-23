@@ -4464,7 +4464,9 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        UsePotion(player, item, cmd.TargetId);
+        // §102.5 — a click (bag or bar) on ANY of several identical stacks drinks from the SMALLEST, so
+        // 999 + 58 empties the 58 first instead of leaving an odd row behind for ever.
+        UsePotion(player, Stacking.SmallestLike(player.Inventory, item), cmd.TargetId);
     }
 
     /// <summary>A dead player answered a resurrection offer. Accept → revive (restoring the offered exp);
@@ -5775,7 +5777,7 @@ public class GameLoopService : BackgroundService
             foreach (var line in p.AutoHealPotions.Where(l => l.Enabled).OrderByDescending(l => l.ThresholdPct))
             {
                 if (hpPctNow >= line.ThresholdPct) continue;
-                if (p.Inventory.FirstOrDefault(i => i.DefId == line.ItemId && !i.Equipped) is InventoryItem pot
+                if (Stacking.SmallestOf(p.Inventory, line.ItemId) is InventoryItem pot
                     && UsePotion(p, pot, quiet: true))
                     break;
             }
@@ -5797,7 +5799,7 @@ public class GameLoopService : BackgroundService
             foreach (var line in p.AutoManaPotions.Where(l => l.Enabled).OrderByDescending(l => l.ThresholdPct))
             {
                 if (mpPctNow >= line.ThresholdPct) continue;
-                if (p.Inventory.FirstOrDefault(i => i.DefId == line.ItemId && !i.Equipped) is InventoryItem pot
+                if (Stacking.SmallestOf(p.Inventory, line.ItemId) is InventoryItem pot
                     && UsePotion(p, pot, quiet: true))
                     break;
             }
@@ -5874,7 +5876,7 @@ public class GameLoopService : BackgroundService
                 // cheap Buffs scan per tick instead of an inventory walk per rung.
                 if (BuffAlreadyUp(p, wrapper, 1)) break;
 
-                if (p.Inventory.FirstOrDefault(i => i.DefId == candidate.ItemId && !i.Equipped)
+                if (Stacking.SmallestOf(p.Inventory, candidate.ItemId)
                         is InventoryItem item && UsePotion(p, item, quiet: true))
                     break;
             }
@@ -5890,7 +5892,7 @@ public class GameLoopService : BackgroundService
             if (ItemCatalog.Get(it.DefId) is not ItemDef d) continue;
             if (!ItemCatalog.IsHealPotion(d) || ItemCatalog.IsManaPotion(d)) continue;
             int score = (int)d.Rarity;
-            if (score > bestScore) { bestScore = score; best = it; }
+            if (score > bestScore || (score == bestScore && it.Quantity < best!.Quantity)) { bestScore = score; best = it; }   // §102.5: smallest stack of the best
         }
         return best;
     }
@@ -5907,7 +5909,7 @@ public class GameLoopService : BackgroundService
             if (ItemCatalog.Get(it.DefId) is not ItemDef d) continue;
             if (!ItemCatalog.IsManaPotion(d)) continue;
             int score = (int)d.Rarity;
-            if (score > bestScore) { bestScore = score; best = it; }
+            if (score > bestScore || (score == bestScore && it.Quantity < best!.Quantity)) { bestScore = score; best = it; }   // §102.5: smallest stack of the best
         }
         return best;
     }
@@ -17916,6 +17918,8 @@ public class GameLoopService : BackgroundService
 
             return newItem;
         });
+        // §102.5 — and settle any partial rows left from before into full ones.
+        Stacking.Consolidate(player.Inventory, def);
         return true;
     }
 
@@ -17928,21 +17932,25 @@ public class GameLoopService : BackgroundService
         return n;
     }
 
-    /// <summary>Remove <paramref name="amount"/> of an item across stacks. Returns false
-    /// (removing nothing) if the player doesn't have enough.</summary>
+    /// <summary>Remove <paramref name="amount"/> of an item across stacks, SMALLEST STACK FIRST (§102.5).
+    /// Returns false (removing nothing) if the player doesn't have enough.</summary>
     private static bool ConsumeItem(Entity player, string defId, int amount)
     {
         if (amount <= 0) return true;
         if (CountItem(player, defId) < amount) return false;
         int remaining = amount;
-        for (int i = player.Inventory.Count - 1; i >= 0 && remaining > 0; i--)
+        while (remaining > 0)
         {
-            var it = player.Inventory[i];
-            if (it.DefId != defId) continue;
+            // Every row of the def, equipped included — the same reach CountItem gated on above, so a
+            // hand-in of a worn item can never come up short.
+            InventoryItem? it = null;
+            foreach (var r in player.Inventory)
+                if (r.DefId == defId && (it is null || r.Quantity < it.Quantity)) it = r;
+            if (it is null) break;
             int take = Math.Min(it.Quantity, remaining);
             it.Quantity -= take;
             remaining -= take;
-            if (it.Quantity <= 0) player.Inventory.RemoveAt(i);
+            if (it.Quantity <= 0) player.Inventory.Remove(it);
         }
         return true;
     }

@@ -7,11 +7,41 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.184.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.185.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-23 (latest) — 0.184.0: a cast's item is spent when the cast STARTS (§102.4)
+## 2026-09-23 (latest) — 0.185.0: smallest stack first, and partial stacks merge (§102.5)
+
+> *"with 999 + 58 potions, drinking takes the 999. Buying 850 with 200 held makes 850 + 200. Ten
+> stacks of 80 take ten slots"* — drink from the SMALLEST stack first; buying and looting top the
+> partial stack up to 999 first.
+
+**Drinking.** Every path that picks a row now picks the smallest one:
+- `HandleUsePotion` (bag click, bar slot, quick-use button) redirects to the smallest row
+  **identical** to the one clicked (`Stacking.SmallestLike`, identity by `SameStack`, so a bound or
+  renamed copy is never spent in place of the one you meant);
+- the auto-potion HP/MP ladders and the Buffs tab use `Stacking.SmallestOf` (it was
+  `FirstOrDefault`, the oldest row, which is how the 999 went first);
+- `BestHealPotion`/`BestManaPotion` break a rarity tie on the smaller stack;
+- `ConsumeItem` (reagents, quest hand-ins, every def-id spend) takes smallest-first. It used to
+  take from the newest row.
+
+**Adding.** `AddItem` already filled partial rows before opening a new one (0.93.0), but only one
+row at a time. Rows left over from before, or from paths that open fresh rows (admin `/give`, the
+warehouse fast path), were never merged. The new **`Stacking.Consolidate`** runs after every
+`AddItem` (buy, loot, quest reward, craft). It folds each group of interchangeable rows into full
+rows plus one remainder, so ten 80s become one 800 the next time you buy or pick one up. Timed,
+bound and renamed rows are not interchangeable and stay separate. Nothing is ever destroyed.
+
+⚠ **I could not reproduce "850 + 200" from the code.** A plain 200 row was already topped up by a
+purchase. If his 200 carried instance state (an admin `/give` with a flag, a quest-bound copy), the
+top-up rightly skipped it, and it still will. Consolidate settles every case where the rows are
+really the same item.
+
+Server only — **no APK needed** (the client's bar already resolves an item by def id).
+
+## 2026-09-23 — 0.184.0: a cast's item is spent when the cast STARTS (§102.4)
 
 > *"A consumed item is spent the moment you click — interrupt = lost (Scroll of Return,
 > skill/holy stones…)"*
