@@ -1090,6 +1090,36 @@ group fires, never what the other members pay.
 
 ---
 
+## Kill EXP and the Wayfarer's Favor (`BL-277`, 0.195.0)
+
+`GameLoopService.PayKillShare` + `Game.Shared/WayfarerFavor.cs`. Per member of a kill:
+
+```
+memberExp = mobValue * roll * partyBonus(n) * damageShare / n * levelGap(member - mob)
+paid      = memberExp * (charismaMult + favorBonus) * serverRate * runes       (SP: the same, off mobSp)
+favorBonus = 0.5 * stage                           stage 0-8, read BEFORE this kill's drain
+stage tops 500 | 5000 | 6000 | 10000 | 11500 | 15000 | 17000 | 20000         (any point > 0 = stage 1)
+drain     = 20000 * (memberExp / MobExpReward(L)) / (killsPerHour(L) * 2)     L = member level
+            not on a boss kill; not when the kill paid 0 EXP or a rune zeroes EXP
+offline   = + (now - last save) minutes * FavorPerMinute, once at login        clamp 20000
+city      = + FavorPerMinute per FULL 60 s in a RegenBoost safe zone            reset: leaving, any fight
+FavorPerMinute = 40 (admin Tune tab)                                           full gauge = 8 h 20 min
+```
+
+- 🔑 **The bonuses ADD, the rates MULTIPLY** — his *"100 base % + 400% + 50% = x5.5"*. Charisma
+  (`1 … 1.5`) and the Favor stage sum into one personal multiplier (`KillExpBonus`); the server rate and
+  the runes multiply the result as before. The sheet's *Exp rate* is that finished product.
+- 🔑 **A full gauge lasts `H = 2` hours of farming at EVERY level**, because the drain divides by the
+  same-level normal mob's EXP and the measured kills/h, never by IG's `L²·10` (which swings ~2000× on
+  our curve). `killsPerHour(L)` is an **authored table** (59-90/h), read off BalanceMatrix M1's clock
+  with `--favor-kph`; a same-level normal kill at ~70/h drains ~143 points.
+- Offline and city never stack: offline is time **out of the world**, credited at login; the city
+  ticker runs only for a character in it. An offline-farmer is autosaved while it hunts, so its away
+  time is not credited, and it is excluded from the city ticker.
+- Quest EXP is not touched by the Favor (a quest reward is not a kill, and never drains).
+
+---
+
 ## Where to look when this page is not enough
 
 | | |

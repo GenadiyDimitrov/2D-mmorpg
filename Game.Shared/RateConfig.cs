@@ -68,6 +68,11 @@ public static class RateConfig
     /// handed out: they expire on their own hour.</para></summary>
     public static bool FreeBuffs = false;
 
+    /// <summary>`BL-277` — **Wayfarer's Favor points per whole minute** away (offline) or idle in a city.
+    /// His note: *"an option in the admin/setup menu how many points per min, default 40"* — 40 fills the
+    /// 20,000 gauge in 8 h 20 min. Live from the Debug window's Tune tab. 0 = the gauge never refills.</summary>
+    public static int FavorPerMinute = WayfarerFavor.DefaultPerMinute;
+
     /// <summary>QUEST rewards only, composed ON TOP of <see cref="World"/>. At <see cref="RateSet.One"/>
     /// it changes nothing on its own — but routing quest rewards through it is what finally makes them
     /// obey the server rates at all: quest GOLD and quest SP used to be added raw, so on a x30 server

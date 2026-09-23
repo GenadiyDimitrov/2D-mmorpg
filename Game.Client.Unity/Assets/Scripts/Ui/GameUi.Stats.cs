@@ -91,7 +91,8 @@ namespace Game.Client
             // sheet keyed only on StatsUpdate would keep showing yesterday's karma. The TAB is NOT in
             // the stamp: switching it resets the stamp directly, which is cheaper and unambiguous.
             int stamp = s.GetHashCode() ^ (Boot.Progress != null ? Boot.Progress.Level * 7919 : 0)
-                      ^ (Boot.Karma * 31 + Boot.PkCount * 7 + Boot.PvpCount + (Boot.PvpEnabled ? 1 : 0));
+                      ^ (Boot.Karma * 31 + Boot.PkCount * 7 + Boot.PvpCount + (Boot.PvpEnabled ? 1 : 0))
+                      ^ (Boot.Favor != null ? Boot.Favor.GetHashCode() * 17 : 0);   // `BL-277`, its own push
             if (stamp == _statsStamp) return;
             _statsStamp = stamp;
 
@@ -226,6 +227,20 @@ namespace Game.Client
                 t.AppendLine(Row2("Block Rate", Pct(s.BlockChance), "Block Red", Pct(s.BlockReduction)));
             t.AppendLine();
 
+            // `BL-277` — his "Other" block: the Wayfarer's Favor gauge and the FINISHED rates (server
+            // rate × runes × charisma + Favor), sent by the server so the sheet never re-derives them.
+            // The Blessing and Charisma lines join it when those are built.
+            var f = Boot.Favor;
+            if (f != null)
+            {
+                t.AppendLine(Head("Other"));
+                t.AppendLine(Row2("Favor", f.Points.ToString("N0") + " / " + WayfarerFavor.MaxPoints.ToString("N0"),
+                                  "Stage", f.Stage + "  (+" + (WayfarerFavor.BonusPerStage * f.Stage * 100f).ToString("0") + "%)"));
+                t.AppendLine(Row2("Exp rate", Rate(f.ExpRate), "SP rate", Rate(f.SpRate)));
+                t.AppendLine(Row2("Gold rate", Rate(f.GoldRate), "Drop rate", Rate(f.DropRate)));
+                t.AppendLine();
+            }
+
             // Not on his layout, and kept because nothing else shows them and they cost two lines: the
             // gear summary and the wallet. They sit at the BOTTOM of DETAILS, which is where a row
             // nobody asked for belongs.
@@ -295,6 +310,9 @@ namespace Game.Client
         }
 
         private static string Pct(float value) => (value * 100f).ToString("0.#") + "%";
+
+        /// <summary>A rate as his "x2.5" — up to two decimals, trailing zeros dropped.</summary>
+        private static string Rate(float value) => "x" + value.ToString("0.##");
 
         /// <summary>A bonus as a signed percent — "0%", "+12%", "-30%". Used where the wire carries a
         /// MULTIPLIER (1 = neutral) and the row wants the bonus it represents.</summary>

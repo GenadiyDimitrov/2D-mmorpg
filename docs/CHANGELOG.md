@@ -7,11 +7,36 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.194.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.195.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-23 (latest) — 0.194.0: boss regen is a clock (`BL-278`); the boss band is 8 levels
+## 2026-09-23 (latest) — 0.195.0: the Wayfarer's Favor gauge (`BL-277` part 1)
+
+> *"The vitality only helps someone not so active not to be so far behind."*
+
+**A 0-20,000 catch-up gauge that fills while you are away and drains while you farm**, paying
+**+50% EXP/SP per stage** across his eight stages (500 / 5,000 / 6,000 / 10,000 / 11,500 / 15,000 /
+17,000 / 20,000), so a full gauge is +400%. `Game.Shared/WayfarerFavor.cs` holds the whole rule.
+
+- **Fills:** offline time is credited once at login as `(now − last save) × 40/min`, clamped to 20,000,
+  and logging out anywhere counts. Idling in one of the five **cities** pays 40 per full 60 s, and
+  stepping out or any fight restarts the minute. Dungeon doors and the training outpost don't count.
+  The two never stack, and a living offline-farmer gains nothing. A full gauge is 8 h 20 min.
+- **Drains:** each non-boss kill costs `20000 × (your EXP share ÷ a same-level normal mob's EXP) ÷
+  (killsPerHour(L) × 2)`, so a full gauge lasts **2 hours of farming at every level** (~143 points for a
+  same-level kill at ~70/h). A party member drains on their own share only. **Boss kills never
+  drain**: their grant arrives in part 3. `killsPerHour(L)` is an authored table (59-90/h) read off
+  BalanceMatrix's M1 clock with the new `--favor-kph`.
+- **The bonus ADDS to charisma's** (his *"100 + 400 + 50 = x5.5"*), and the server rate and runes
+  multiply the sum as before. With the gauge empty, nothing about levelling moved. Kill EXP only: quest
+  rewards are not touched.
+- **Details tab → "Other":** Favor points / stage, and the finished Exp / SP / Gold / Drop rates
+  (server × runes × bonuses), pushed by the server on a new `Favor` message.
+- **Admin Tune tab:** *"Favor pts/min (away+city)"*, default 40 (`RateConfig.FavorPerMinute`).
+- ⚠ **`game.db` delete** (two new character columns). **Needs an APK** (new message, new Tune field).
+
+## 2026-09-23 — 0.194.0: boss regen is a clock (`BL-278`); the boss band is 8 levels
 
 > *"i want to make the boss not immortal but not able to be solo + healer killed"*
 

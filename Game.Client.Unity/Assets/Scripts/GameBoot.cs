@@ -117,6 +117,8 @@ namespace Game.Client
         public float SecondsSinceFrame => FramesReceived == 0 ? -1f : Time.realtimeSinceStartup - LastFrameTime;
 
         public StatsUpdate Stats { get; private set; }
+        /// <summary>`BL-277` - the Wayfarer's Favor gauge and the finished rates the details sheet prints.</summary>
+        public FavorUpdate Favor { get; private set; }
         public ProgressUpdate Progress { get; private set; }
         public long Gold { get; private set; }
 
@@ -1330,6 +1332,7 @@ namespace Game.Client
             _net.SnapshotDeltaReceived += OnDelta;
             _net.SnapshotReceived += OnFullSnapshot;
             _net.StatsReceived += s => Main(() => { Stats = s; if (s != null) SkillPoints = s.SkillPoints; });
+            _net.FavorReceived += f => Main(() => Favor = f);
             _net.ProgressReceived += p => Main(() =>
             {
                 Progress = p;
@@ -2035,7 +2038,7 @@ namespace Game.Client
                 if (CameraRig != null) CameraRig.Target = null;
                 if (Marker != null) { Marker.Follow = null; Marker.Hide(); }
                 ResetWorldTransients();
-                Stats = null; Progress = null; Gold = 0; Platinum = 0;
+                Stats = null; Favor = null; Progress = null; Gold = 0; Platinum = 0;
                 Characters = Array.Empty<CharacterSlot>();
                 LastError = null;
                 Phase = ClientPhase.Offline;

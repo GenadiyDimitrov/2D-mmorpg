@@ -2564,6 +2564,10 @@ if (args.Length > 0 && args[0] == "--drops") { DropFinder.Run(args); return; }
 // CraftCost(); everything the code already has (kill clock, gear-drop rate) is measured.
 if (args.Length > 0 && args[0] == "--craft-cost") { CraftCost(); return; }
 
+// `--favor-kph` — the KILLS/H TABLE `WayfarerFavor.KillsPerHour` is authored from (`BL-277`). Same M1 clock
+// `--craft-cost` reads; printed as a pasteable C# array. Re-run and re-paste when the pace moves.
+if (args.Length > 0 && args[0] == "--favor-kph") { FavorKph(); return; }
+
 // `--paths` — HOW MANY CLASSES CAN ONE CHARACTER OWN (`BL-255`). The add rule compares the PATH, not
 // the discipline, because the rogue's branches are split per race; this prints the paths and what each
 // one costs a main, so the answer is measured rather than counted on fingers.
@@ -6293,6 +6297,29 @@ Console.WriteLine();
 //  every type — that world is what the rework removes.) C1 shows each ingredient, so the bottleneck is
 //  visible too.
 // =====================================================================================================
+// =====================================================================================================
+//  --favor-kph (`BL-277`): M1's walk-dominated kill clock at EVERY level 1-90, as the C# table the
+//  Wayfarer's Favor drain divides by. Authored, not computed live on the server, so a combat change can
+//  never silently move the Favor (his ruling, design doc §3 point 3); this is how the table is refreshed.
+// =====================================================================================================
+static void FavorKph()
+{
+    var ttk = new Dictionary<int, float>();
+    float Ttk(int L) => ttk.TryGetValue(L, out var v) ? v : ttk[L] = BandTtk(L);
+    double anchorKph = CoinObserved / Math.Max(1, PerKill(PlaytestLevel).Coin) / 14.5;
+    double overhead = Math.Max(0, 3600.0 / Math.Max(1, anchorKph) - Ttk(PlaytestLevel));
+    Console.WriteLine($"// M1 clock: {overhead:F1}s loop overhead + same-level TTK, anchored on the playtest-18 farm.");
+    Console.WriteLine("private static readonly int[] KillsPerHourTable =");
+    Console.WriteLine("{");
+    for (int L = 1; L <= ExpCurve.MaxLevel; L += 10)
+    {
+        var row = Enumerable.Range(L, Math.Min(10, ExpCurve.MaxLevel - L + 1))
+            .Select(l => ((int)Math.Round(3600.0 / (overhead + Ttk(l)))).ToString().PadLeft(3));
+        Console.WriteLine($"    {string.Join(", ", row)},   // {L}-{Math.Min(L + 9, ExpCurve.MaxLevel)}");
+    }
+    Console.WriteLine("};");
+}
+
 static void CraftCost()
 {
     // ------------------------------------------------------------------------------------------------

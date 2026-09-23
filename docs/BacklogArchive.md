@@ -7013,3 +7013,30 @@ The entry as it stood:
     costs 8 Rare mats**, so a C recipe reads cheaper than an E one (the Rare faucet is 0.09/kill against
     Common's 1.76 while your C target is 5-10h), and a **fully S-geared character is 347 farm hours**.
     Shipped as-is on purpose; nothing is retuned until you say so. See `docs/balance/CraftingMats.md` §8.
+
+---
+
+## `BL-285` ✅ ANSWERED 2026-09-23 — already built, since 0.28.8
+
+His answer: *"it's active and the mobs color names change as of many versions ago - white +-3 yellow +-4~5,
+light red +-6~8, dark red 9+"*. He was right and the entry was wrong: a mob's world name has been coloured by
+the level gap since 0.28.8 (`GameUi.World.NameColour` → `GameUi.Feedback.LevelColour`). The note that filed it
+looked only at `EntityManager` and the target window. Nothing owed.
+
+⚠ **The live ramp is not quite the one he quoted.** In code, by `mob − you`: **red ≥ +9, orange +5…+8, yellow
++2…+4, white −2…+1, green −3…−8, grey ≤ −9**. So red at 9+ matches, but the lower steps sit one or two levels
+from his "white ±3 / yellow 4-5 / light red 6-8", and below you it turns green, then grey. If he wants his
+steps exactly, that is a one-function change (and an APK). Asked in the 0.195.0 report and not assumed.
+
+The entry as it stood:
+
+## `BL-285` ❓ LEVEL COLOURS ON MOB NAMES — RED ABOVE, GRAY BELOW AT 9+
+
+Said alongside the `BL-277` window ruling (2026-09-23): *"also mobs at 9th lvl difference are red/gray"*.
+⚠ **Nothing in the client colours a name by level today** — every mob label is the same red
+(`EntityManager` colours by `EntityKind`), and the target window prints a plain `Lv N`. So the rule he
+describes (IG's convention) is not in the game. A proposal: colour the target-window level and the world
+name by `StatCalculator.BossJudges` for bosses and by the same 9+ gap for every mob — red when it is 9+
+above you, gray when 9+ below, white in between — reading the shared predicate so the colour can never
+disagree with the judgment and the payout. ❓ **His call:** is this wanted, only the two end colours or a
+full ramp (IG has several steps), and for every mob or only bosses. Needs an APK.

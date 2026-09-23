@@ -796,6 +796,14 @@ public class PersistenceService
         entity.CharismaLifetime = rec.CharismaLifetime;
         entity.LikesRemainingToday = rec.LikesRemainingToday;
         entity.LikeBudgetDay = rec.LikeBudgetDay;
+        // `BL-277` — the OFFLINE credit, added once here at world entry: (now − last save) × the knob,
+        // clamped to the gauge. *"Offline is offline"*: logging out anywhere counts, and nothing ticks
+        // while away. An offline-farmer is autosaved while it hunts, so only the time after its session
+        // ended is credited.
+        entity.FavorPoints = rec.FavorStampUtc is DateTime stamp
+            ? WayfarerFavor.Credit(rec.FavorPoints,
+                                   Math.Max(0, (DateTime.UtcNow - stamp).TotalMinutes), RateConfig.FavorPerMinute)
+            : Math.Clamp(rec.FavorPoints, 0, WayfarerFavor.MaxPoints);
         // The CHOICE comes back; whether it is still HELD is decided by the loop's title refresh, which
         // is what fills entity.Title. A choice for a board you have since lost simply draws nothing.
         entity.TitleCategory = rec.TitleCategory ?? "";
@@ -1036,6 +1044,7 @@ public class PersistenceService
         int BossJudgmentRung, DateTime? BossJudgmentUntilUtc,
         long TotalOnlineSeconds,
         int Charisma, long CharismaLifetime, int LikesRemainingToday, string LikeBudgetDay,
+        double FavorPoints, DateTime FavorStampUtc,   // `BL-277`: the stamp is the CAPTURE time
         string TitleCategory, string CustomTitle, string CustomTitleColor, bool MayWriteTitle,
         bool GodMode, bool AdminInvisible,   // `BL-182` — the two staff toggles survive a relog
         int SocialOptions,
@@ -1090,6 +1099,7 @@ public class PersistenceService
                 e.JailedUntil, e.ChatBannedUntil,
                 e.BossJudgmentRung, e.BossJudgmentUntil, e.TotalOnlineSeconds,
                 e.Charisma, e.CharismaLifetime, e.LikesRemainingToday, e.LikeBudgetDay,
+                e.FavorPoints, DateTime.UtcNow,
                 e.TitleCategory, e.CustomTitle, e.CustomTitleColor, e.MayWriteTitle,
                 e.GodMode, e.AdminInvisible,
                 (int)e.Social,
@@ -1220,6 +1230,8 @@ public class PersistenceService
         rec.CharismaLifetime = snap.CharismaLifetime;
         rec.LikesRemainingToday = snap.LikesRemainingToday;
         rec.LikeBudgetDay = snap.LikeBudgetDay;
+        rec.FavorPoints = snap.FavorPoints;
+        rec.FavorStampUtc = snap.FavorStampUtc;
         rec.TitleCategory = snap.TitleCategory;
         rec.CustomTitle = snap.CustomTitle;
         rec.CustomTitleColor = snap.CustomTitleColor;

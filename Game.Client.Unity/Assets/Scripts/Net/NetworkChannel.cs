@@ -46,6 +46,7 @@ namespace Game.Client
         public event Action<BuyBackUpdate> BuyBackReceived;
         public event Action<RestoreUpdate> RestoreReceived;
         public event Action<StatsUpdate> StatsReceived;
+        public event Action<FavorUpdate> FavorReceived;   // `BL-277`
         public event Action<BuffUpdate> BuffsReceived;
         /// <summary>The SELECTED target's buffs/debuffs, with DoT stacks already folded in.</summary>
         public event Action<TargetBuffUpdate> TargetBuffsReceived;
@@ -165,6 +166,7 @@ namespace Game.Client
             _connection.On<BuyBackUpdate>("BuyBack", b => BuyBackReceived?.Invoke(b));
             _connection.On<RestoreUpdate>("Restore", r => RestoreReceived?.Invoke(r));
             _connection.On<StatsUpdate>("Stats", st => StatsReceived?.Invoke(st));
+            _connection.On<FavorUpdate>("Favor", f => FavorReceived?.Invoke(f));
             _connection.On<LearnedSkills>("Learned", l => LearnedReceived?.Invoke(l));
             _connection.On<SkillBarDto>("SkillBar", b => SkillBarReceived?.Invoke(b));
             _connection.On<SubclassListDto>("Subclasses", s => SubclassesReceived?.Invoke(s));

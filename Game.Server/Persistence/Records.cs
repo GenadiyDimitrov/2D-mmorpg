@@ -155,6 +155,14 @@ public class CharacterRecord
     public int LikesRemainingToday { get; set; } = GameConstants.DailyLikeBudget;
     public string LikeBudgetDay { get; set; } = "";
 
+    // ----- `BL-277` Wayfarer's Favor. Schema change — delete game.db to recreate. -----
+    public double FavorPoints { get; set; }
+    /// <summary>When the character was last SAVED from the world (logout, autosave, event save). The
+    /// offline credit at login is <c>(now − this) × RateConfig.FavorPerMinute</c>. A living offline-
+    /// farmer is still in the world and keeps being autosaved, so its away time is never credited — which
+    /// is his *"a living auto-hunter gains nothing"*. Null = never saved from the world (no credit).</summary>
+    public DateTime? FavorStampUtc { get; set; }
+
     /// <summary>WHERE the worn title comes from: a leaderboard category, a staff title id,
     /// <see cref="TitleCatalog.Custom"/>, or "" for none. The SOURCE, not the words — a granted title is
     /// only drawn while the character still holds it. (Schema change — delete game.db to recreate.)</summary>

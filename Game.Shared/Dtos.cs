@@ -1113,7 +1113,16 @@ public record DebugConfigDto(
     float FreeClassChange = 0f,
     // `BL-126` — ANYONE MAY `/buff` THEMSELVES. Same 0/1 shape and the same reason as the field above;
     // appended LAST because the record is positional and the client sends it in order.
-    float FreeBuffs = 0f);
+    float FreeBuffs = 0f,
+    // `BL-277` — Wayfarer's Favor points per whole minute offline / idle in a city (default 40 = a full
+    // gauge in 8 h 20 min). Appended LAST: positional, and the client sends it in order.
+    int FavorPerMinute = WayfarerFavor.DefaultPerMinute);
+
+/// <summary>`BL-277` — Server -> owning client: the Wayfarer's Favor gauge and the four rates the details
+/// sheet prints. The rates are FINISHED (server rate × runes × the personal bonuses, Favor included), so
+/// the sheet shows exactly what a kill pays and never re-derives it. Pushed on login, whenever the gauge's
+/// whole-point value moves (a kill, a town minute), and beside every Stats push (runes change the rates).</summary>
+public record FavorUpdate(int Points, int Stage, float ExpRate, float SpRate, float GoldRate, float DropRate);
 
 /// <summary>One member row in the party window. Debuffs = the names of the debuffs currently on this
 /// member, so a healer sees at a glance who to cleanse without selecting each one.</summary>

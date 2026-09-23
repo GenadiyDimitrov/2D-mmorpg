@@ -903,7 +903,8 @@ public class GameLoopService : BackgroundService
         GameConstants.RegenIntervalSeconds, StatCalculator.ConRegenBase,
         StatCalculator.MobRegenDivisor, StatCalculator.MobRegenPctIdle,
         RateConfig.FreeClassChange ? 1f : 0f,
-        RateConfig.FreeBuffs ? 1f : 0f);
+        RateConfig.FreeBuffs ? 1f : 0f,
+        RateConfig.FavorPerMinute);
 
     private void HandleRequestDebugConfig(RequestDebugConfigCmd cmd)
     {
@@ -960,6 +961,8 @@ public class GameLoopService : BackgroundService
         RateConfig.FreeClassChange = c.FreeClassChange != 0f;
         // `BL-126`, the same shape and the same reading of a typed number.
         RateConfig.FreeBuffs = c.FreeBuffs != 0f;
+        // `BL-277`. Floored at 0 (a gauge that never refills); no ceiling, since a big number is a test knob.
+        RateConfig.FavorPerMinute = Math.Max(0, c.FavorPerMinute);
     }
 
     // Lives NEXT TO THE EXE (Debug/publish output), like an options.ini — NOT a build item, so an
@@ -9719,6 +9722,7 @@ public class GameLoopService : BackgroundService
                 TickPotion(entity);
                 TickRegionNotice(entity);
                 TickOnlineTime(entity);
+                TickFavorTown(entity);   // `BL-277` the city minute
                 EnforceDungeonWalls(entity);
                 if (_tick % GameConstants.TickRate == 0) ReconcileTimedItems(entity);   // runes, ~1/s
                 if (_tick % GameConstants.TickRate == 0) TickCraftMasterProximity(entity);
@@ -11163,6 +11167,69 @@ public class GameLoopService : BackgroundService
         long threeHoursTicks = GameConstants.BreakReminderSeconds * GameConstants.TickRate;
         if (entity.SessionOnlineTicks > 0 && entity.SessionOnlineTicks % threeHoursTicks == 0)
             SendTo(entity, "Notice", "You've been playing for an extended period — please take a break.");
+    }
+
+    /// <summary>`BL-277` — **the CITY half of the Favor refill.** Every FULL 60 s spent in a city pays
+    /// <see cref="RateConfig.FavorPerMinute"/>; stepping out or any fight restarts the minute (his note:
+    /// *"going outside of town or starting a fight resets the 60s cycle"*). A city is a safe zone that
+    /// pays the rest bonus (<see cref="SafeZone.RegenBoost"/>): the five cities, never the training
+    /// outpost or a dungeon door, which is his *"not dungeon entrances or other non-town peaceful zones"*.
+    ///
+    /// <para>🔑 It can never stack with the OFFLINE credit (*"offline + in town should not do double
+    /// x40"*): that one is paid at login for time spent out of the world, and this only runs for a
+    /// character in it. An offline-farmer is in the world but is not a player sitting in town, so it is
+    /// excluded here and gains nothing either way.</para></summary>
+    private void TickFavorTown(Entity p)
+    {
+        bool inCity = !p.Dead && !p.IsOfflineFarming
+                      && WorldMap.SafeZoneAt(p.X, p.Y) is { RegenBoost: true };
+        if (!inCity) { p.FavorTownSince = -1; return; }
+        // A fight since the minute began (or no minute running yet) starts a fresh one from now.
+        if (p.FavorTownSince < 0 || p.LastCombatTick >= p.FavorTownSince) { p.FavorTownSince = _tick; return; }
+        if (_tick - p.FavorTownSince < 60L * GameConstants.TickRate) return;
+
+        p.FavorTownSince = _tick;
+        p.FavorPoints = WayfarerFavor.Credit(p.FavorPoints, 1, RateConfig.FavorPerMinute);
+        PushFavorIfMoved(p);
+    }
+
+    /// <summary>`BL-277` — drain the Favor for one NON-BOSS kill that paid this member
+    /// <paramref name="baseExpShare"/> of base EXP (see <see cref="WayfarerFavor.DrainPerKill"/>). A
+    /// kill that paid no EXP drains nothing, and neither does one under a rune that zeroes EXP (the
+    /// Rune of Sinister) — his *"every time you kill a monster that awards EXP/SP"*.</summary>
+    private void DrainFavor(Entity p, double baseExpShare, int level)
+    {
+        if (p.FavorPoints <= 0 || baseExpShare <= 0 || p.Runes.Exp <= 0f) return;
+        p.FavorPoints = Math.Max(0, p.FavorPoints - WayfarerFavor.DrainPerKill(baseExpShare, level));
+        PushFavorIfMoved(p);
+    }
+
+    /// <summary>The FINISHED personal EXP/SP multiplier for mob kills: 1 + charisma's bonus + the Favor's.
+    /// ADDITIVE, his arithmetic (*"100 base % + 400% + 50% = x5.5"*); the server rate and runes multiply
+    /// it later, in <see cref="AwardExp"/>. The one place this sum is made — the kill and the sheet
+    /// both read it.</summary>
+    private static float KillExpBonus(Entity p) =>
+        GameConstants.CharismaExpMultiplier(p.Charisma) + WayfarerFavor.Bonus(p.FavorPoints);
+
+    /// <summary>The whole-point value the sheet shows. Ceiling, so a gauge holding 0.3 reads 1 — it IS
+    /// paying stage 1, and "0" beside a +50% would read as a bug.</summary>
+    private static int FavorShown(Entity p) => (int)Math.Ceiling(p.FavorPoints);
+
+    private void PushFavorIfMoved(Entity p)
+    {
+        if (FavorShown(p) != p.FavorSentPoints) SendFavor(p);
+    }
+
+    /// <summary>`BL-277` — the gauge and the four FINISHED rates for the details sheet (server rate ×
+    /// runes × <see cref="KillExpBonus"/>), so the sheet prints what a kill actually pays.</summary>
+    private void SendFavor(Entity p)
+    {
+        if (p.Kind != EntityKind.Player) return;
+        var rates = RateConfig.World * p.Runes;
+        float bonus = KillExpBonus(p);
+        p.FavorSentPoints = FavorShown(p);
+        SendTo(p, "Favor", new FavorUpdate(p.FavorSentPoints, WayfarerFavor.Stage(p.FavorPoints),
+            rates.Exp * bonus, rates.Sp * bonus, rates.Gold, rates.DropChance));
     }
 
     // (The old RuneBuffKeys array is gone: SkillCatalog.IsRuneBuff answers the same question from the
@@ -16605,9 +16672,16 @@ public class GameLoopService : BackgroundService
             // fight and the payout can never disagree about who was in it.
             if (victim.Rank == MobRank.Boss && StatCalculator.BossJudges(m.Level, victim.Level)) continue;
             // Personal amplifiers, applied at the same stage as the level gap (owner): the shared party
-            // share × the mob-level gap × this member's own CHARISMA bonus (1.0…1.5).
-            float cha = GameConstants.CharismaExpMultiplier(m.Charisma);
-            AwardExp(m, (long)(shareExp * gap * cha), (long)(shareSp * gap * cha));
+            // share × the mob-level gap × this member's own bonuses — charisma (+0…50%) and, `BL-277`,
+            // the Wayfarer's Favor stage (+0…400%), ADDED together (see KillExpBonus). The kill pays at
+            // the stage the gauge is at BEFORE this kill's drain.
+            double memberExp = shareExp * gap;
+            int level = m.Level;   // before AwardExp can level them: the drain prices the kill they made
+            float personal = KillExpBonus(m);
+            AwardExp(m, (long)(memberExp * personal), (long)(shareSp * gap * personal));
+            // Each member drains on their OWN share (his ruling). A boss kill never drains (*"otherwise
+            // u will lose all ur favor"*) — it GRANTS instead, which is `BL-277` part 3.
+            if (victim.Rank != MobRank.Boss) DrainFavor(m, memberExp, level);
         }
     }
 
@@ -18431,6 +18505,9 @@ public class GameLoopService : BackgroundService
             // number on a sheet with no attacker in it.
             p.RestoreMpMod, p.BlowRate, p.MagicCritRateResist,
             StatCalculator.MagicFailChance(p.Level, p.Level, p.MagicFailMod, 1f, p.MagicFailBonus, 0f)));
+        // `BL-277` — the rates on the sheet move with the runes, which is a Stats-push moment; and this
+        // is also what delivers the gauge at world entry.
+        SendFavor(p);
     }
 
     /// <summary>The player's HP/MP regen per second AS IT IS ACTUALLY PAID right now — base + flat

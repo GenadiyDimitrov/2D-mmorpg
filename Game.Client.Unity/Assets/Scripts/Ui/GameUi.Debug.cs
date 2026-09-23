@@ -120,6 +120,8 @@ namespace Game.Client
             // `BL-126` — while this is 1, ANY player may `/buff` HIMSELF (never others) and gets the
             // whole admin set for an hour. Same 0/1 shape and the same reason as the row above.
             ("freeBuffs", "Free self /buff 0/1", true),
+            // `BL-277` - Wayfarer's Favor points per whole minute offline or idle in a city (default 40).
+            ("favorPerMin", "Favor pts/min (away+city)", false),
         };
 
         private void BuildDebugPanel()
@@ -1189,6 +1191,7 @@ namespace Game.Client
             Set("mobRegenIdle", d.MobRegenPctIdle.ToString("0.####", CultureInfo.InvariantCulture));
             Set("freeClassChange", d.FreeClassChange.ToString("0.####", CultureInfo.InvariantCulture));
             Set("freeBuffs", d.FreeBuffs.ToString("0.####", CultureInfo.InvariantCulture));
+            Set("favorPerMin", I(d.FavorPerMinute));
         }
 
         private void ApplyTuning()
@@ -1206,7 +1209,7 @@ namespace Game.Client
                 I("idleCap"), I("offlineCap"), I("grace"),
                 I("testSkillPower"), F("testSkillMod"),
                 F("regenInterval"), F("conRegen"), I("mobRegen"), F("mobRegenIdle"),
-                F("freeClassChange"), F("freeBuffs"));
+                F("freeClassChange"), F("freeBuffs"), I("favorPerMin"));
 
             Boot.Debug(n => n.SetDebugConfigAsync(dto), "tuning");
         }

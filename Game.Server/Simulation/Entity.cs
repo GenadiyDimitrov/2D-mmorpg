@@ -720,6 +720,19 @@ public class Entity
     /// <summary>UTC date (yyyy-MM-dd) the like budget was last granted; a new day refills it to the budget.</summary>
     public string LikeBudgetDay { get; set; } = "";
 
+    // ----- `BL-277` Wayfarer's Favor (see WayfarerFavor) -----
+    /// <summary>The 0-<see cref="WayfarerFavor.MaxPoints"/> gauge. A DOUBLE on purpose: a far-below-level
+    /// kill drains a fraction of a point, and rounding each one to an int would make it drain nothing.
+    /// Persisted; the offline credit is added once, at load.</summary>
+    public double FavorPoints { get; set; }
+    /// <summary>Tick the current city minute started, or -1 when not in a city. Runtime only: a relog,
+    /// a step outside or any fight restarts the minute (his *"going outside of town or starting a fight
+    /// resets the 60s cycle"*).</summary>
+    public long FavorTownSince { get; set; } = -1;
+    /// <summary>The whole-point value the client was last sent, so a kill that moves the gauge by a
+    /// fraction does not push a message. Runtime only; -1 = never sent.</summary>
+    public int FavorSentPoints { get; set; } = -1;
+
     // ----- Wearable title -----
     /// <summary>WHERE the worn title comes from: a leaderboard category, a staff title id,
     /// <see cref="TitleCatalog.Custom"/> for one the player wrote, or "" for none. Persisted.
