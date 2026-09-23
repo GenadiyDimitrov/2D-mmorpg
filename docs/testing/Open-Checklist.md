@@ -1518,7 +1518,7 @@ section; if the three still fail, the first thing to establish is whether the ba
 pass (a test defect) or the first attempt already refuses (an engine defect). Those are different bugs and
 the current output cannot tell them apart.
 
-## §102 — YOUR NOTE OF 2026-09-23, the BUGS (eight; SEVEN fixed 0.181–0.191, 102.8 deferred by you)
+## §102 — YOUR NOTE OF 2026-09-23, the BUGS (ten; SEVEN fixed 0.181–0.191, 102.8 deferred by you, 102.9–10 open)
 
 Your note is verbatim in [design/Rework-2026-09-23.md](../design/Rework-2026-09-23.md); its asks are
 `BL-267`…`BL-281`. These are the defects in it.
@@ -1533,3 +1533,5 @@ Your note is verbatim in [design/Rework-2026-09-23.md](../design/Rework-2026-09-
 | 102.6 | ✅ **FIXED 0.186.0** — **`/stat patk 99999` does nothing to basic attacks** (1kk P.Atk still hit a boss for ~500); only skills changed | the admin override must reach the basic-attack path |
 | 102.7 | ✅ **FIXED 0.191.0** (`BL-276`) — With PvP OFF, your Whirlwind hit a **lvl-90 field guard**, and it killed you | fixed by `BL-276` (watchmen become NPCs) |
 | 102.8 | ⏸ Self-centred harmful AoE can be cast **inside town**; it does nothing there (tested every combination) | deferred by you; a refusal at cast time is enough |
+| 102.9 | 🔴 **OPEN** (reported 2026-09-23 in the summoner discussion) — **Elf cleric: the self-heal stays** in the kit after the class change | *"heal should have replaced my self heal"*: the Heal must **replace** the self-heal |
+| 102.10 | 🔴 **OPEN** (same day) — **Mage: Magic Bolt stays** after the class change | *"elemental bolts and holy bolt should replace it"*: each discipline's bolt **replaces** Magic Bolt |

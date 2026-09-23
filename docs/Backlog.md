@@ -2019,8 +2019,17 @@ one-line "…when the summoner ships"; that is cheap once and a trap four more t
     several, one attack command drives them all.
 - **Q4** (does a pet break "a class grants no stats") is **answered by construction**: the pet has its
   OWN authored stats, raised by the master's passives. That is a kit, not a stat bonus on the class.
-- ❓ **Not answered yet:** Q2 (three race names), the XP split, and threat inheritance (does a mob
-  hit by the pet aggro the master?).
+- ❓ ~~**Not answered yet:** Q2 (three race names), the XP split, and threat inheritance.~~ Answered
+  2026-09-23 below, except the names.
+- ✅ **2026-09-23, second round (design doc §6):** **the summoner = the nuker's SECOND BRANCH**, and
+  `PathOf` then makes it a new path by construction (so Q1 is closed). The split is nuker 2nd → summoner
+  3rd → master 4th, and the Magus keeps his 2nd-class summon. **A pet has the summoning RUNG's level**,
+  earns no XP, and its kill credits the master. **A pet is its own threat target**, plus a new mob
+  passive **"hunts the master"** that routes pet threat to the master (anti-summoner zones). **Pet death
+  drops its threat** and the master's stays. **Logout dismisses**; offline farm keeps the pet unless the
+  master died. **Master dead:** the pet fights on uncontrolled, and its kills give no EXP but the
+  drops fall. 📝 **Auto-hunt must drive summons.** ⏳ **Q2 names:** elf = spirits (his lean: Spirit
+  Tamer / Spirit Master), demon = evil beasts/hellhounds, human = undecided.
 
 ---
 
@@ -2268,6 +2277,18 @@ has its **own drop group** (own `/droprate` knob), separate from Common gear; st
 dust/stone, **for now**, goes on some normal mobs at 76/80/85, on top of their own mats; real volcanic
 places come with the map rework (`BL-281`). **Naming: equipment "Mythic" becomes plain
 items; the reduced ones are "Common" items** (a `BL-272` text change).
+✅ **2026-09-23 (§2.3 Q4): daily recipe quests exist for T76/T80 only.** Three NPCs (weapon / armour /
+jewels), each with a T76 quest (75-85) and a T80 quest (80+), where 80-85 chooses one. A quest gives a
+**40%** recipe rolled uniformly within its kind: 1/8 weapons, 1/7 armour, 1/3 jewels. T40 = shop + normal
+drop recipes, T52 = shop + drops, T61 = craft/drop + Commons, T76/T80 = crafted only. Needs a
+random-pool `QuestReward`. **The slot model:** one slot per recipe item, holding the highest learned %;
+a higher % overrides that slot; recipes at or below it are spent as mats; deleting refunds nothing. ❓ One
+shared daily stamp per NPC (max 3 recipes/day)?
+✅ **2026-09-23 (§2.3 Q5): boss drops.** Below T76, bosses drop **full gear only** (no Commons), with
+recipes + new mats replacing the Common rolls; Commons/essence come from normals and elites. **T76/T80
+bosses drop at least one full item, guaranteed**, plus direct essence of ~1/10 an item's break value.
+All three kinds (weapon / armour / jewels) stay on bosses. Boss recipe %: T61 100%, T76/T80 60%.
+✅ **The guaranteed item holds at EVERY tier.** **One daily per NPC/kind**, shared by its T76 and T80 quest (max 3 a day, any tier mix).
 
 ## `BL-277` ❓ VITALITY + BLESSING (names owed)
 
@@ -2287,6 +2308,9 @@ lasts ~187 levels of kills at 40), and no single divisor fixes that. Proposal:
 
 §4 of the design doc. The pick: bosses `1/30000`/s, ×2 at the 1st enrage, ×5 at the 2nd; normal mobs
 get no in-combat regen (5%/s idle stays). ❓ Is that one knob today or two?
+✅ **2026-09-23:** one rule for every engaged mob: **HP/s = maxHp ÷ D, D = 30000** (one INT admin knob,
+replacing `MobHpRegenPctCombat`). Bosses ×2 at the 1st enrage, ×10 at the 2nd (200/400/2000 HP/s on 6M).
+No rank split; **maxHp < D → 0, not computed**. The multipliers are hard-coded. Idle 5%/s is unchanged.
 
 ## `BL-280` 🔵 ZONES BY ARCHETYPE, AND NO MOB CLUSTERS
 
