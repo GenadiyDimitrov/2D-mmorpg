@@ -278,7 +278,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-278` | ❓ | **BOSS REGEN AS A CLOCK** — HP/s = maxHp ÷ 30000 for every engaged mob, ×2 / ×10 on enrage; one INT knob — §4 | combat |
 | `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
 | `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
-| `BL-282` | 🔵 | **`BalanceMatrix --craft-cost`** — kills + hours per crafted T40/52/61/76/80 item under the NEW rules, by recipe %; extends M1-M9 | items |
+| `BL-282` | 🔵 | **`BalanceMatrix --craft-cost`** ✅ built, waiting on your inputs (heads, volcanic bar, Nightsilver, targets) — kills + hours per crafted T40/52/61/76/80 item under the NEW rules, by recipe %; extends M1-M9 | items |
 | `BL-283` | 🔵 | **CHARISMA** — recommendations/likes; lifetime vs current (cap 1000); +10% Blessing fill per 100 — split out of `BL-277`; ✅ 10 pts/rec, 10/day, 30-day ring, real recs only, ×2 with rune = ×4, title for #1 | social |
 
 ---
@@ -2357,6 +2357,18 @@ under the OLD rules); do not write a second economy model. None of the rework is
 chances, mats per recipe and essence per tier are an **input table at the top of the section** for you to
 set. Kill speed comes from the tool's own measured time-to-kill. Its purpose is to set the chances against
 a target in hours instead of by hand.
+✅ **2026-09-23: THE TOOL IS BUILT** (`--craft-cost`, `CraftCost()` in `tools/BalanceMatrix/Program.cs`).
+C0 inputs (tagged NOTE/RULED/PLACEHOLDER) · C1 hours per ingredient · C2 per success by recipe %, novice
+vs maxed, with quest days · C3 the essence solve · C4 a full character. C5 (consumables vs shop, §2.2 #8)
+waits until the consumables that get recipes are listed. The entry stays open for **your inputs**, since
+the results (design doc §2.2 #10) show three of the note's numbers carrying almost all the cost:
+**heads** at 0.1% (85-87% of T40-T61, 44-99h for 20), the **Volcanic Bar** at 0.3% (99% of T76/T80,
+~10,000h), and **Nightsilver**, which is nearly FREE (the refine ladder from 20-85 normals a kill;
+T76's 50 refined-rare is 50,000 normal, not the note's 5,000,000). ❓ Owed: the head chance, the bar lever,
+whether Nightsilver should be a sink, and whether your 2026-08-13 hour targets still stand. The open
+essence numbers (C3) can't be solved until those four land.
+⚠ The tool uses M1's kill clock, **~66-81 kills/h**, not the `360` that `BL-277`'s Favor drain was set on
+(4-5× off). `BL-277` already says to re-measure its constant.
 
 ## `BL-283` 🔵 CHARISMA — RECOMMENDATIONS / LIKES
 
