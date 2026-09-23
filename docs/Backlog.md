@@ -281,10 +281,11 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-272` | ❓ | **RARITY COLLAPSE — Common + Mythic only** for equipment — [design/Rework-2026-09-23.md](design/Rework-2026-09-23.md) §2.1 | items |
 | `BL-273` | ❓ | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05`/`BL-50` — §2.2; ✅ no profession lock | items |
 | `BL-274` | ❓ | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3 | items |
-| `BL-277` | ❓ | **VITALITY + BLESSING** (names owed) — §3; ✅ refund = drain, pace = empty; 🔴 drain needs our curve, G owed | progression |
+| `BL-277` | ❓ | **WAYFARER'S FAVOR + WAYFARER'S BLESSING** (was Vitality + Blessing) — §3; ✅ names, refund = drain, pace = empty, drain in HOURS (a full Favor = 2 h of farming), party drains own share | progression |
 | `BL-278` | ❓ | **BOSS REGEN AS A CLOCK** — 1/30000, ×2 / ×5 on enrage; no in-combat mob regen — §4 | combat |
 | `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
 | `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
+| `BL-282` | 🔵 | **`BalanceMatrix --craft-cost`** — kills + hours per crafted T40/52/61/76/80 item under the NEW rules, by recipe %; extends M1-M9 | items |
 
 ---
 
@@ -2292,7 +2293,7 @@ bosses drop at least one full item, guaranteed**, plus direct essence of ~1/10 a
 All three kinds (weapon / armour / jewels) stay on bosses. Boss recipe %: T61 100%, T76/T80 60%.
 ✅ **The guaranteed item holds at EVERY tier.** **One daily per NPC/kind**, shared by its T76 and T80 quest (max 3 a day, any tier mix).
 
-## `BL-277` ❓ VITALITY + BLESSING (names owed)
+## `BL-277` ❓ WAYFARER'S FAVOR + WAYFARER'S BLESSING (was Vitality + Blessing)
 
 §3 of the design doc. 20,000 points over 8 stages (+50%…+400% EXP/SP); gained offline and in town
 (40/min, admin-tunable), from raid/world bosses by the EXP share; drained per kill by
@@ -2305,6 +2306,28 @@ on bosses). (2) **The pace is vitality-EMPTY.** The EXP curve stays, and Vitalit
 active players. 🔴 **New finding:** on our curve `baseExp/(L²·10)` barely drains anything (a full gauge
 lasts ~187 levels of kills at 40), and no single divisor fixes that. Proposal:
 `20000·baseExp/(ExpToNext(L)·G)`, with G still to be measured (§3.3).
+✅ **2026-09-23, second round (§3):** **Names: the 0-20000 gauge is *Wayfarer's Favor*, the 3-minute
+buff is *Wayfarer's Blessing*.** (Declined: *Resolve*/*Vigor*, which read as buffs, and *Timelord's…*,
+because "Time Lord" is Doctor Who's term.) **The drain is measured in HOURS, not levels:** a full Favor
+lasts **H = 2 h** of same-level normal farming at every level:
+`drain/kill = 20000 × (baseExp ÷ sameLevelNormalExp(L)) ÷ (360 × H)`. So elites and x2/x3 zones still
+drain in proportion to their EXP, and one night offline (8.3 h at 40/min) is worth the same at 20 and at
+80. (A G counted in levels would last minutes at 20 and ~150 h at 80.) **A party kill drains each member
+by their OWN EXP share.** The check he asked for, *"not OP, a catch-up, not 'go offline to farm 3× later'"*:
+8 h offline + 2 h play = ~6.75 h of progress, and 10 h of active farming = 10 h, so active farming always
+wins. ⚠ `360` = the tool's 10 s/kill; the constant needs re-measuring once `BL-282` / the pace numbers move.
+
+## `BL-282` 🔵 `BalanceMatrix --craft-cost` — WHAT A CRAFT COSTS IN KILLS AND HOURS
+
+Offered in the §2.2.3 discussion, and filed on your call (2026-09-23) so the design talk could go on.
+For T40/52/61/76/80 and each recipe % (20/40/60/100), novice vs maxed crafter (+10%): the **expected
+kills and farm hours per crafted item** under the NEW rules. That means `BL-272` Common/Mythic, `BL-273`
+recipe % × mat curve, the recipe consumed on a fail, the refinable-metal ladder and essence, and `BL-274`
+per-mob drops. ⚠ **Extend `BalanceMatrix` M1-M9** (they already price crafts in farm hours per success
+under the OLD rules); do not write a second economy model. None of the rework is built, so the drop
+chances, mats per recipe and essence per tier are an **input table at the top of the section** for you to
+set. Kill speed comes from the tool's own measured time-to-kill. Its purpose is to set the chances against
+a target in hours instead of by hand.
 
 ## `BL-278` ❓ BOSS REGEN AS A CLOCK
 
