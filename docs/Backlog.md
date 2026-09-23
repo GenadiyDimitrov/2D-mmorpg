@@ -2019,8 +2019,8 @@ one-line "…when the summoner ships"; that is cheap once and a trap four more t
     several, one attack command drives them all.
 - **Q4** (does a pet break "a class grants no stats") is **answered by construction**: the pet has its
   OWN authored stats, raised by the master's passives. That is a kit, not a stat bonus on the class.
-- ❓ ~~**Not answered yet:** Q2 (three race names), the XP split, and threat inheritance.~~ Answered
-  2026-09-23 below, except the names.
+- ❓ ~~**Not answered yet:** Q2 (three race names), the XP split, and threat inheritance.~~ All answered
+  2026-09-23 below.
 - ✅ **2026-09-23, second round (design doc §6):** **the summoner = the nuker's SECOND BRANCH**, and
   `PathOf` then makes it a new path by construction (so Q1 is closed). The split is nuker 2nd → summoner
   3rd → master 4th, and the Magus keeps his 2nd-class summon. **A pet has the summoning RUNG's level**,
@@ -2028,8 +2028,10 @@ one-line "…when the summoner ships"; that is cheap once and a trap four more t
   passive **"hunts the master"** that routes pet threat to the master (anti-summoner zones). **Pet death
   drops its threat** and the master's stays. **Logout dismisses**; offline farm keeps the pet unless the
   master died. **Master dead:** the pet fights on uncontrolled, and its kills give no EXP but the
-  drops fall. 📝 **Auto-hunt must drive summons.** ⏳ **Q2 names:** elf = spirits (his lean: Spirit
-  Tamer / Spirit Master), demon = evil beasts/hellhounds, human = undecided.
+  drops fall. 📝 **Auto-hunt must drive summons.** ✅ **Q2 names (2026-09-23): creature + Tamer →
+  creature + Lord.** Elf **Spirit Tamer → Spirit Lord**, Demon **Hound Tamer → Hound Lord**, Human
+  **Golem Tamer → Golem Lord**. *Lord*, not *Master*, so *Master* stays the nuker 4ths' word. Also in
+  `design/ClassRenames.md`.
 
 ---
 

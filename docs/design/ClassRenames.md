@@ -97,6 +97,22 @@ off the blue bar, so *Mana Adept → Arcane Master* still reads as raw → maste
 ⚠ I took **Ice Master** over your `Blizzard Master`: *Blizzard* is a very well-known game company's
 name, and ice loses nothing.
 
+## The summoner is the NINTH path, not built yet (`BL-260`, 2026-09-23)
+
+> *"i want to keep the tamer/master theme"*, with Lord in place of Master *"so master is kept for nukers"*
+
+It branches off the nuker 2nd (the race's **Apprentice**), so only the 3rd and 4th are new names.
+
+| race  | creature   | 3rd              | 4th             |
+| ----- | ---------- | ---------------- | --------------- |
+| Elf   | spirits    | **Spirit Tamer** | **Spirit Lord** |
+| Demon | hellhounds | **Hound Tamer**  | **Hound Lord**  |
+| Human | golems     | **Golem Tamer**  | **Golem Lord**  |
+
+IP: IG's human summoner 4th is *Arcana Lord*. *Golem Lord* shares the suffix but is a different
+compound (the *Temple Knight* vs *Templar* corollary above). None of these are `Discipline` values
+yet; they arrive with the summoner build.
+
 ## 🔑 EVERY AoE / SUPPORT 4th CLASS IS A "WAR" WORD
 
 > *"my general idea is anything aoe is War named -> war master, war doctor, war harmonist,
