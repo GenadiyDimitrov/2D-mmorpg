@@ -406,9 +406,9 @@ public static class MobCatalog
     /// only targets it will ever acquire are PKs. Dropless and hand-placed, like every authored
     /// creature that is content rather than roster.</summary>
     private static MobType GuardMob(string id, string name, int level, float run, MobBuild build,
-        MobRole role, float aggroRange, MobMod? mod = null) =>
+        MobRole role, float aggroRange, MobMod? mod = null, string title = "Town Watch") =>
         new(id, name, run * 0.55f, run, Aggressive: true, Drops: null, Mod: mod, Level: level,
-            Category: MobCategory.Humanoid, Role: role, Title: "Town Watch", Build: build,
+            Category: MobCategory.Humanoid, Role: role, Title: title, Build: build,
             HandPlaced: true, Guard: true, AggroRange: aggroRange);
 
     /// <summary>THE GUARD TOWER — what makes a FIELD guard something other than a tougher watchman.
@@ -1616,10 +1616,10 @@ public static class MobCatalog
             // enchant rungs above the town pair: this one is not a duel, it is a closed road.
             GuardMob("guard_field_tank", "Field Warden", 90, 132f,
                 GuardTank(tier: 80, ench: 16, held: ItemCatalog.WarRune), MobRole.Melee,
-                aggroRange: 400f, mod: GuardTower("Guard tower")),
+                aggroRange: 400f, mod: GuardTower("Guard tower"), title: "Field Watch"),
             GuardMob("guard_field_archer", "Field Longbow", 90, 135f,
                 GuardArcher(tier: 80, ench: 16, held: ItemCatalog.WarRune), MobRole.Archer,
-                aggroRange: 600f, mod: GuardTower("Guard tower")),
+                aggroRange: 600f, mod: GuardTower("Guard tower"), title: "Field Watch"),
         };
         var dict = new Dictionary<string, MobType>(StringComparer.OrdinalIgnoreCase);
         foreach (var m in list)

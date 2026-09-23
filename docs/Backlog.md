@@ -282,7 +282,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-272` | ❓ | **RARITY COLLAPSE — Common + Mythic only** for equipment — [design/Rework-2026-09-23.md](design/Rework-2026-09-23.md) §2.1 | items |
 | `BL-273` | ❓ | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05`/`BL-50` — §2.2 | items |
 | `BL-274` | ❓ | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3 | items |
-| `BL-276` | 🔴 | Town + field WATCHMEN become NPCs with titles, and fight a PK inside town | world |
 | `BL-277` | ❓ | **VITALITY + BLESSING** (names owed) — §3; ⚠ the Blessing refund as written never empties | progression |
 | `BL-278` | ❓ | **BOSS REGEN AS A CLOCK** — 1/30000, ×2 / ×5 on enrage; no in-combat mob regen — §4 | combat |
 | `BL-279` | 🔴 | CUSTOM SKILL DELAY for auto-hunt (exact / added), lost before it was ever filed | client |
@@ -2237,13 +2236,6 @@ first of all: **profession lock or not** (my pick: not).
 wood OR metal OR thread), plus that item's parts, its recipe and a rare Mythic. The refinable-metal
 grades by level band, volcanic mats in 2-3 zones, recipe % by source (normal/elite/boss/quest), daily
 recipe quests.
-
-## `BL-276` 🔴 WATCHMEN ARE NPCs, NOT MOBS
-
-*"can town watchman and field watchman be NPCs? not mobs .. now they look like scary mobs red
-aggressive lvl 90 .. they must be npc with titles and just fighting 'script' .. also they must be
-allowed to fight inside the town - when a pk is inside a town and they lock on they should be able to
-hit him"*. This also fixes §102.7 (your Whirlwind without PvP hit a field guard, and it killed you).
 
 ## `BL-277` ❓ VITALITY + BLESSING (names owed)
 

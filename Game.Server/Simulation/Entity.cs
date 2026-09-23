@@ -4417,13 +4417,23 @@ public class Entity
     private Subclass AppearanceClass =>
         Subclasses.FirstOrDefault(s => s.Slot == 0) ?? ActiveSubclass;
 
+    /// <summary>`BL-276` — a BL-79 guard. Asked here for the wire only; the game loop has its own
+    /// `IsGuard` for the rules.</summary>
+    private bool IsGuardMob =>
+        Kind == EntityKind.Mob && MobTypeId is string gid && MobCatalog.Get(gid).Guard;
+
+    // `BL-276` — A GUARD IS SENT AS AN NPC. *"now they look like scary mobs red aggressive lvl 90 ..
+    // they must be npc with titles and just fighting 'script'"*. The SIMULATION keeps it a mob — its
+    // fighting script IS the mob AI (aggro, chase, swing, leash), and nothing else could run it — but
+    // the client is told Npc, so it draws the NPC model, the yellow name, the title, no aggressive `*`
+    // and a Talk button. The attack gate is unchanged: PvP on, exactly as for any NPC (`BL-115`).
     public EntityDto ToDto() =>
-        new(Id, Name, Kind,
+        new(Id, Name, IsGuardMob ? EntityKind.Npc : Kind,
             Kind == EntityKind.Player ? AppearanceClass.Race : Race,
             Kind == EntityKind.Player ? AppearanceClass.BaseClass : BaseClass,
             X, Y, Speed, Level,
             Hp, MaxHp, Mp, MaxMp, SecondClass, ThirdClass, Dead, IsDisconnected, FlagState,
-            Kind == EntityKind.Mob && Aggressive, Title, TitleColor, SocialClanShown,
+            Kind == EntityKind.Mob && Aggressive && !IsGuardMob, Title, TitleColor, SocialClanShown,
             ModelCategory, ModelRole, Warp);
 
     /// <summary>`BL-93` — the creature's authored family/role, for the client to pick a MODEL with.

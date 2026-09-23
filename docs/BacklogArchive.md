@@ -6903,3 +6903,23 @@ The entry as it stood:
 *"receiving reward from quest should be shown in the combat channel .. exp/sp/reward .. if its written
 a player can see and decide if that quest is worth repeating"* — one line per reward on quest
 completion: EXP, SP, gold, each item × qty.
+
+---
+
+## `BL-276` ✅ BUILT 2026-09-23 in **0.191.0** — watchmen are NPCs, and fight a PK in town
+
+Built. The guards stay MOBS in the simulation, because their "fighting script" *is* the mob AI (aggro,
+chase, swing, leash), but the client is told `Npc`. It draws the NPC model, the yellow name, their
+title (**Town Watch** / **Field Watch**), no aggressive `*`, and Talk (they answer with one line).
+One helper, `TownShields`, lets a guard keep fighting a **PK** inside the safe zone: aggro, the caster
+AI, the swing, and walking the town. A player's AoE no longer touches a guard with PvP off, which
+fixes §102.7. A guard's own AoE reaches PKs only.
+
+The entry as it stood:
+
+## `BL-276` 🔴 WATCHMEN ARE NPCs, NOT MOBS
+
+*"can town watchman and field watchman be NPCs? not mobs .. now they look like scary mobs red
+aggressive lvl 90 .. they must be npc with titles and just fighting 'script' .. also they must be
+allowed to fight inside the town - when a pk is inside a town and they lock on they should be able to
+hit him"*. This also fixes §102.7 (your Whirlwind without PvP hit a field guard, and it killed you).

@@ -1104,6 +1104,15 @@ public class GameLoopService : BackgroundService
     private static bool IsGuard(Entity e) =>
         e.Kind == EntityKind.Mob && e.MobTypeId is { } id && MobCatalog.Get(id).Guard;
 
+    /// <summary>`BL-276` — does the TOWN protect <paramref name="target"/> from this creature? Every
+    /// mob's fight ends at the safe-zone line, with ONE exception: a guard that has an OUTLAW. His
+    /// words: *"they must be allowed to fight inside the town — when a pk is inside a town and they
+    /// lock on they should be able to hit him"*. Before this a PK simply ran into town and the watch
+    /// reset at the gate, which made the town the one place a red name was safe.</summary>
+    private bool TownShields(Entity mob, Entity target) =>
+        GameConstants.InSafeZone(target.X, target.Y)
+        && !(IsGuard(mob) && target.Kind == EntityKind.Player && FlagOf(target) == PvpFlag.Pk);
+
     /// <summary>Award kill consequences for a player killing a player: an INNOCENT victim → PK
     /// (karma + red name, consecutive/level-scaled); a FLAGGED/RED victim → a justified PvP kill.</summary>
     private void ApplyPvpKill(Entity killer, Entity victim)
@@ -10811,11 +10820,17 @@ public class GameLoopService : BackgroundService
             bool hostile = e.Kind switch
             {
                 // A creature is fair game for a player's AoE and never for another creature's.
-                EntityKind.Mob => !mobCaster,
+                // 🔴 §102.7 / `BL-276` — EXCEPT THE WATCH. *"without pvp on I could hit with the
+                //    whirlwind aoe skill and die from a 90 lvl field guard"*. A single swing at a guard
+                //    already asked the PvP toggle (CanPvpHit, `BL-79`); the sweep never did, so one
+                //    ring pulled a level-90 wall onto a player who had not chosen that fight.
+                EntityKind.Mob => !mobCaster && (!IsGuard(e) || caster.PvpEnabled),
                 // A player: a mob's slam always reaches him (outside town); another player's area
                 // skill only with PvP on, and then only where a normal attack would land.
+                // `BL-276` — a GUARD's area reaches OUTLAWS only, and reaches them in town too: the
+                // watch never splashes an innocent standing beside the PK it is fighting.
                 EntityKind.Player => mobCaster
-                    ? !GameConstants.InSafeZone(e.X, e.Y)
+                    ? IsGuard(caster) ? FlagOf(e) == PvpFlag.Pk : !GameConstants.InSafeZone(e.X, e.Y)
                     : caster.PvpEnabled && !e.AdminInvisible && CanPvpHit(caster, e),
                 _ => false,
             };
@@ -11557,7 +11572,7 @@ public class GameLoopService : BackgroundService
             {
                 if (candidate.Kind != EntityKind.Player || candidate.Dead ||
                     candidate.Stealthed ||
-                    GameConstants.InSafeZone(candidate.X, candidate.Y))
+                    TownShields(mob, candidate))   // `BL-276`: a guard follows a PK in
                     continue;
 
                 // BL-79 — A GUARD ONLY EVER ACQUIRES AN OUTLAW. His design, playtest 25: "only
@@ -11960,7 +11975,7 @@ public class GameLoopService : BackgroundService
             Disengage(mob);
             return;
         }
-        if (GameConstants.InSafeZone(target.X, target.Y))
+        if (TownShields(mob, target))   // `BL-276`
         {
             ResetMob(mob);
             return;
@@ -15319,8 +15334,7 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        if (attacker.Kind == EntityKind.Mob &&
-            GameConstants.InSafeZone(target.X, target.Y))
+        if (attacker.Kind == EntityKind.Mob && TownShields(attacker, target))   // `BL-276`
         {
             ResetMob(attacker);
             return;
@@ -17514,7 +17528,8 @@ public class GameLoopService : BackgroundService
             ny = e.Y + dy / dist * step;
         }
 
-        if (e.Kind == EntityKind.Mob && GameConstants.InSafeZone(nx, ny))
+        // `BL-276` — a GUARD may walk the town: it is posted there, and it follows an outlaw in.
+        if (e.Kind == EntityKind.Mob && !IsGuard(e) && GameConstants.InSafeZone(nx, ny))
         {
             e.TargetX = null;
             e.TargetY = null;
@@ -20597,6 +20612,13 @@ public class GameLoopService : BackgroundService
     private void HandleTalk(TalkCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
+        // `BL-276` — a guard is DRAWN as an NPC, so the client offers Talk. It has no dialog; it says
+        // so, rather than the tap doing nothing and reading as a bug.
+        if (_world.Entities.TryGetValue(cmd.NpcEntityId, out var watch) && IsGuard(watch))
+        {
+            SendSystemToEntity(player, $"{watch.Name}: \"Move along. The watch keeps the peace.\"");
+            return;
+        }
         if (!_world.Entities.TryGetValue(cmd.NpcEntityId, out var npc) || npc.Kind != EntityKind.Npc)
             return;
 

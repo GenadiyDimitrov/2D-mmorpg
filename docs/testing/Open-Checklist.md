@@ -1531,5 +1531,5 @@ Your note is verbatim in [design/Rework-2026-09-23.md](../design/Rework-2026-09-
 | 102.4 | ✅ **FIXED 0.184.0** — **A consumed item is not spent on click**: cancel the Scroll of Return and it is still in the bag, so you can spam it until it succeeds. Same for skill/holy stones | spent at cast START; an interrupt or cancel loses it |
 | 102.5 | ✅ **FIXED 0.185.0** — **Stacks**: with 999 + 58 potions, drinking takes the 999. Buying 850 with 200 held makes 850 + 200. Ten stacks of 80 take ten slots | drink from the SMALLEST stack first; buying and looting top up the partial stack to 999 first |
 | 102.6 | ✅ **FIXED 0.186.0** — **`/stat patk 99999` does nothing to basic attacks** (1kk P.Atk still hit a boss for ~500); only skills changed | the admin override must reach the basic-attack path |
-| 102.7 | With PvP OFF, your Whirlwind hit a **lvl-90 field guard**, and it killed you | fixed by `BL-276` (watchmen become NPCs) |
+| 102.7 | ✅ **FIXED 0.191.0** (`BL-276`) — With PvP OFF, your Whirlwind hit a **lvl-90 field guard**, and it killed you | fixed by `BL-276` (watchmen become NPCs) |
 | 102.8 | ⏸ Self-centred harmful AoE can be cast **inside town**; it does nothing there (tested every combination) | deferred by you; a refusal at cast time is enough |

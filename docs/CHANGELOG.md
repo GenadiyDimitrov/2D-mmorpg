@@ -7,11 +7,41 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.190.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.191.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-23 (latest) — 0.190.0: quest rewards are printed in the combat channel (`BL-271`)
+## 2026-09-23 (latest) — 0.191.0: the watch looks like the watch, and follows a PK into town (`BL-276`, §102.7)
+
+> *"can town watchman and field watchman be NPCs? not mobs .. now they look like scary mobs red
+> aggressive lvl 90 .. they must be npc with titles and just fighting 'script' .. also they must be
+> allowed to fight inside the town — when a pk is inside a town and they lock on they should be able
+> to hit him"* · *"without pvp on I could hit with the whirlwind aoe skill and die from a 90 lvl
+> field guard"*
+
+**They stay mobs in the simulation, and are drawn as NPCs.** Their "fighting script" is the mob AI
+(aggro, chase, swing, leash, respawn), and turning them into `EntityKind.Npc` would have meant
+writing a second one. So `Entity.ToDto` sends a guard as `Kind = Npc`, with `Aggressive = false`.
+The client draws the NPC model, the NPC's yellow name, the title line (**Town Watch** for the town
+pair and now **Field Watch** for the field pair), no `*`, and a Talk button, which gets one line back
+(*"Move along. The watch keeps the peace."*) instead of a silent tap. Attacking one still needs
+PvP on, exactly as for any NPC (`BL-115`). An NPC's nameplate now shows its HP bar **once it is
+hurt**, so a guard in a real fight shows how the fight is going.
+
+**The town no longer shields a PK from the watch.** New `TownShields(mob, target)`: the safe zone
+protects a target from every creature *except* a guard whose target is a PK. It replaced the plain
+safe-zone test in the aggro scan, the caster AI, and the swing. Guards may also **walk** inside a safe
+zone (every other mob is still stopped at the line). A guard's own area skills reach **PKs only**,
+so an innocent standing next to the outlaw is never splashed.
+
+**§102.7 — a PvP-off AoE no longer reaches a guard.** A single swing at a guard already asked the
+PvP toggle (`BL-79`), but `EnemiesInRadius` never did. So one Whirlwind pulled a level-90 wall onto a
+player who had not chosen that fight. Guards are now in a player's sweep only with PvP on.
+
+**Needs an APK** for the nameplate HP bar; the rest works with the current APK, since the Kind
+comes from the server. ⚠ Unplayed. The first real test is a red name running into town.
+
+## 2026-09-23 — 0.190.0: quest rewards are printed in the combat channel (`BL-271`)
 
 > *"receiving reward from quest should be shown in the combat channel .. exp/sp/reward .. if its
 > written a player can see and decide if that quest is worth repeating"*

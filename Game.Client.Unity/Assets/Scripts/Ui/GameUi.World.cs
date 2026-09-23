@@ -2284,7 +2284,9 @@ namespace Game.Client
                 // drawing through it.
                 plate.Cast.anchoredPosition = new Vector2(0f, hasTitle ? 2f + TitleLineHeight : 2f);
 
-                bool bar = e.MaxHp > 0 && e.Kind != EntityKind.Npc;
+                // `BL-276` — an NPC shows its bar once it is HURT: the watch is drawn as an NPC and can be
+                // in a real fight with a PK, and a townsfolk struck with PvP on (`BL-115`) shows its 1 HP.
+                bool bar = e.MaxHp > 0 && (e.Kind != EntityKind.Npc || e.Hp < e.MaxHp);
                 plate.BarBg.gameObject.SetActive(bar);
                 if (bar) UiKit.SetBar(plate.BarFill, e.Hp, e.MaxHp);
 
