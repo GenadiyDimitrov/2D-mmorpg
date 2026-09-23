@@ -2267,9 +2267,11 @@ first possible shatter is +3→4 = 30%. **The craft types are weapon / armour / 
 potions, scrolls/runes and refines raise only the generic level. Still open: the per-tier essence numbers.
 ✅ **2026-09-23, craft levels (§2.2 #2, #6):** the success bonus (5% general + 5% type) applies to
 **T76/T80 crafts only**. It reduces losses on high gear and does nothing on a 100% recipe or below T76.
-**General crafter level 1-10:** L1 = 0%, 10 slots; L2-L9 add +0.5% and +5 slots each; L10 adds +1% (5%
-total). **Type levels 0-10:** +0.5% each, % only, no slots. ❓ Slot count at L10: he said 60, but his steps
-give 55 unless L1 starts at 15.
+**General crafter level 0-10:** L0 = 0%, 10 slots; each level adds +0.5% and +5 slots (L10 = 5%, 60
+slots). **Type levels 0-10:** +0.5% each, % only, no slots.
+✅ **2026-09-23, names (§2.2 #4):** essence carries the **grade** name (Darksteel / Cobalt / Bloodsteel /
+Adamantine / Soulcrystal Essence). The refinable mats (one weapon line, one armour line, normal →
+refined → rare → refined rare → legendary) get new names. ❓ Which names is still open.
 
 ## `BL-274` ❓ PER-MOB DROP TABLES
 
