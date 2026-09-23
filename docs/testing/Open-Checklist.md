@@ -1518,7 +1518,7 @@ section; if the three still fail, the first thing to establish is whether the ba
 pass (a test defect) or the first attempt already refuses (an engine defect). Those are different bugs and
 the current output cannot tell them apart.
 
-## §102 — YOUR NOTE OF 2026-09-23, the BUGS (eight; none fixed yet)
+## §102 — YOUR NOTE OF 2026-09-23, the BUGS (eight; SEVEN fixed 0.181–0.191, 102.8 deferred by you)
 
 Your note is verbatim in [design/Rework-2026-09-23.md](../design/Rework-2026-09-23.md); its asks are
 `BL-267`…`BL-281`. These are the defects in it.
