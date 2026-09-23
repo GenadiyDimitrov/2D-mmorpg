@@ -202,6 +202,14 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(models.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(18f, y), new Vector2(260f, 38f));
             _modelToggle = models;
+
+            // `BL-269` — extra skill squares, 0/6/12/18/24: *"need option to add more 6/12/18/24 skill slots
+            // (half of or full the 2nd and 3rd skill bars)"*. A LOOK setting like the rest of this column,
+            // so it lives on the phone; what the server stores is the same 60-slot bar either way.
+            var extraSlots = UiKit.TextButton(inner, "", () => { CycleExtraSlots(); RefreshSettingsLabels(); }, 15f);
+            UiKit.Place(UiKit.Rect(extraSlots.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(292f, y), new Vector2(260f, 38f));
+            _extraSlotsToggle = extraSlots;
             y -= 48f;
 
             var save = UiKit.TextButton(inner, "Save", () => PlayerPrefs.Save(), 16f);
@@ -212,7 +220,7 @@ namespace Game.Client
             {
                 foreach (var key in new[] { PrefPitch, PrefYaw, PrefOrtho, PrefOrthoSize,
                                             PrefEntity, PrefPlate, PrefUiScale, PrefDamage, PrefZones,
-                                            PrefTicks })
+                                            PrefTicks, PrefExtraSlots })
                     PlayerPrefs.DeleteKey(key);
                 PlayerPrefs.Save();
                 ClientLog.Info("Look settings reset — restart the app to apply.");
@@ -225,6 +233,7 @@ namespace Game.Client
         }
 
         private Button _damageToggle, _zoneToggle, _projectionToggle, _modelToggle, _tickToggle;
+        private Button _extraSlotsToggle;   // `BL-269`
 
         private void RefreshSettingsLabels()
         {
@@ -237,6 +246,8 @@ namespace Game.Client
             UiKit.SetButtonText(_zoneToggle, zonesOn ? "Zone colours: ON" : "Zone colours: off");
             UiKit.SetButtonText(_modelToggle,
                 EntityManager.ModelsEnabled ? "3D models: ON" : "3D models: off (faster)");
+            UiKit.SetButtonText(_extraSlotsToggle,
+                _extraSlots > 0 ? "Extra skill slots: " + _extraSlots : "Extra skill slots: off");
         }
 
         private static void Row(Transform parent, ref float y, Slider slider)

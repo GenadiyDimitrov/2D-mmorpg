@@ -277,7 +277,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-262` | ❓ | THE BOSS MAT PILE TAKES NO RATE KNOB — the same shape `BL-247` fixed in the recipe roll; three ways out, my reading is (2) | items |
 | `BL-263` | 🟡 | **BUFFS ARE WRAPPERS OVER `(family, level)`** — [design/BuffFamilies.md](design/BuffFamilies.md). Duration is out of the conflict rule and the first three racial wrappers are built (0.176.0); per-family group rank DECLINED, and so is the group-vs-single authoring check — a group ALWAYS outranks its singles. Left: the passive check and the racial split, both DEFERRED on your call — the racial split now carries your colour-not-abbreviation rule | skills |
 | `BL-264` | ❓ | **NO CSV SAYS WHICH BUFFS FIGHT EACH OTHER** — from `mage 1st` you cannot tell the three Mights are one family. A generated `FAMILY` + `RANK` column, checked like every other; §2 the RACE cell nothing verifies | skills |
-| `BL-269` | 🔴 | 6/12/18/24 extra skill slots (half or all of a 2nd/3rd bar) | client |
 | `BL-270` | 🔵 | A vertical skill bar, or a wheel, for hand-held play | client |
 | `BL-272` | ❓ | **RARITY COLLAPSE — Common + Mythic only** for equipment — [design/Rework-2026-09-23.md](design/Rework-2026-09-23.md) §2.1 | items |
 | `BL-273` | ❓ | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05`/`BL-50` — §2.2 | items |
@@ -2200,13 +2199,6 @@ report a cell that claims a race the code does not register (and a blank cell th
 free — the rogue files are three disciplines, one per race, and would keep the union. Say the word.
 
 ---
-
-## `BL-269` 🔴 EXTRA SKILL SLOTS — 6 / 12 / 18 / 24
-
-*"need option to add more 6/12/18/24 skill slots (half of or full the 2nd and 3rd skill bars) - like
-additional skill bars"*. ⚠ **The bar belongs to the SERVER** (CLAUDE.md): the extra slots are extra
-server-owned bar pages, persisted, and auto-placement (`SyncSkillBar`) has to know about them. The
-option picks how many are SHOWN; it must not change what the server stores.
 
 ## `BL-270` 🔵 A VERTICAL BAR, OR A WHEEL
 

@@ -6947,3 +6947,22 @@ The entry as it stood:
 - OK sets **Delay: ON** and puts a clock icon on the slot; the toggle switches between the default and
   the custom delay without losing the number.
 ❓ Where does it persist — with the server-owned bar (per character, per slot), or per skill id?
+
+---
+
+## `BL-269` ✅ BUILT 2026-09-23 in **0.193.0** — extra skill slots
+
+Built as a **view setting**, which is what the entry's ⚠ asked for. The server's bar was already 60
+slots (five pages of twelve), so nothing stored changed and `SyncSkillBar` needed nothing. Settings →
+**Extra skill slots** cycles off / 6 / 12 / 18 / 24 (kept in `PlayerPrefs`). The extra squares are
+rows of six stacked above the main bar, and they show the **pages after** the main bar's current page,
+so they never repeat it and they page along with it.
+
+The entry as it stood:
+
+## `BL-269` 🔴 EXTRA SKILL SLOTS — 6 / 12 / 18 / 24
+
+*"need option to add more 6/12/18/24 skill slots (half of or full the 2nd and 3rd skill bars) - like
+additional skill bars"*. ⚠ **The bar belongs to the SERVER** (CLAUDE.md): the extra slots are extra
+server-owned bar pages, persisted, and auto-placement (`SyncSkillBar`) has to know about them. The
+option picks how many are SHOWN; it must not change what the server stores.

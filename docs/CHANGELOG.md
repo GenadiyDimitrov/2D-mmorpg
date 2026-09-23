@@ -7,11 +7,32 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.192.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.193.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-23 (latest) — 0.192.0: a custom auto-hunt delay per skill, exact or added (`BL-279`)
+## 2026-09-23 (latest) — 0.193.0: up to 24 extra skill squares on screen (`BL-269`)
+
+> *"need option to add more 6/12/18/24 skill slots (half of or full the 2nd and 3rd skill bars) -
+> like additional skill bars"*
+
+**Settings → "Extra skill slots"** cycles **off → 6 → 12 → 18 → 24**, remembered on the phone. The
+extra squares are rows of six in a second panel stacked on top of the main bar. With 12 you see the
+whole next page, and with 24 the next two.
+
+**What they show:** the pages **after** the main bar's current page (main on 1 → extras show 2 and 3;
+page the main bar to 2 → extras show 3 and 4, wrapping). So an extra row never duplicates the main
+row, and one swipe still pages everything. One `BarIndexOf(visible)` maps a square to its bar index,
+and tap, hold-menu, move, remove, assign and the refresh all go through it. Each square is a full
+square: auto `A`, the `BL-279` clock, reuse sheet, count, cancel X, toggle ring.
+
+**The server did not change.** Its bar has been 60 slots (five pages of twelve) all along, and the
+phone showed one page at a time. `SyncSkillBar` and the saved bar are untouched, which is what the
+backlog entry's ⚠ asked for: the option decides what is **shown**, not what is **stored**.
+
+**Needs an APK.**
+
+## 2026-09-23 — 0.192.0: a custom auto-hunt delay per skill, exact or added (`BL-279`)
 
 > *"holding down a skill on the bar shows the context menu … a 'delay:ON/OFF' and 'custom delay'
 > buttons under 'auto on' … the custom delay is between 1~9999s … exact/added on the place of current

@@ -55,28 +55,37 @@ namespace Game.Client
         private const int BarColumns = 6, BarRows = 2;
         private const int SlotsPerPage = BarColumns * BarRows;
         private const int BarPages = GameConstants.SkillBarSlots / SlotsPerPage;
+        // `BL-269` — up to 24 EXTRA squares (his 6/12/18/24: half or all of a 2nd and 3rd bar), drawn as
+        // rows of six above the main bar. They SHOW the pages after the main one; the server stores the
+        // same 60-slot bar it always has, so this is a view setting and nothing on the wire moved.
+        private const int ExtraSlotsMax = 24;
+        private const int MaxVisibleSlots = SlotsPerPage + ExtraSlotsMax;
+        private const string PrefExtraSlots = "ui.extraSlots";
+        private int _extraSlots;
+        private RectTransform _skillBarExtraPanel;
+        private float _barWidth;
         /// <summary>Side of one square. A field, not a local, because the reuse overlay resizes itself
         /// against it every frame and the two must not drift apart.</summary>
         private const float SlotSize = 78f;
         private RectTransform _skillBarPanel;
-        private readonly Button[] _slotButtons = new Button[SlotsPerPage];
-        private readonly TextMeshProUGUI[] _slotFaces = new TextMeshProUGUI[SlotsPerPage];
-        private readonly Image[] _slotBorders = new Image[SlotsPerPage];
+        private readonly Button[] _slotButtons = new Button[MaxVisibleSlots];
+        private readonly TextMeshProUGUI[] _slotFaces = new TextMeshProUGUI[MaxVisibleSlots];
+        private readonly Image[] _slotBorders = new Image[MaxVisibleSlots];
         /// <summary>The "this stance is ON" ring — one per square, drawn OUTSIDE the green auto ring so
         /// a slot can carry both marks at once (owner, playtest 28: *"toggle skill on the skill bar
         /// should be marked with aqua border or different color (not so bright just different form the
         /// rest) when 'on'"*). It answers a question the buff bar technically already answered and the
         /// thumb could not: the toggle is where you press it, the buff square is somewhere else.</summary>
-        private readonly Image[] _slotToggleBorders = new Image[SlotsPerPage];
-        private readonly TextMeshProUGUI[] _slotCancel = new TextMeshProUGUI[SlotsPerPage];
-        private readonly Image[] _slotReuse = new Image[SlotsPerPage];
-        private readonly RectTransform[] _slotReuseRects = new RectTransform[SlotsPerPage];
-        private readonly TextMeshProUGUI[] _slotReuseText = new TextMeshProUGUI[SlotsPerPage];
-        private readonly TextMeshProUGUI[] _slotAutoMarks = new TextMeshProUGUI[SlotsPerPage];
-        private readonly RectTransform[] _slotDelayMarks = new RectTransform[SlotsPerPage];   // `BL-279`
+        private readonly Image[] _slotToggleBorders = new Image[MaxVisibleSlots];
+        private readonly TextMeshProUGUI[] _slotCancel = new TextMeshProUGUI[MaxVisibleSlots];
+        private readonly Image[] _slotReuse = new Image[MaxVisibleSlots];
+        private readonly RectTransform[] _slotReuseRects = new RectTransform[MaxVisibleSlots];
+        private readonly TextMeshProUGUI[] _slotReuseText = new TextMeshProUGUI[MaxVisibleSlots];
+        private readonly TextMeshProUGUI[] _slotAutoMarks = new TextMeshProUGUI[MaxVisibleSlots];
+        private readonly RectTransform[] _slotDelayMarks = new RectTransform[MaxVisibleSlots];   // `BL-279`
         /// <summary>How many of a consumable slot's item are in the bag (32n). Bottom-LEFT, because the
         /// top-left is the slot number and the bottom-right is the auto "A".</summary>
-        private readonly TextMeshProUGUI[] _slotCounts = new TextMeshProUGUI[SlotsPerPage];
+        private readonly TextMeshProUGUI[] _slotCounts = new TextMeshProUGUI[MaxVisibleSlots];
 
         /// <summary>
         /// How long after a cast STARTS before its slot will accept a cancel tap.
@@ -549,12 +558,26 @@ namespace Game.Client
             UiKit.Place(_skillBarPanel, new Vector2(1f, 0f), new Vector2(1f, 0f),
                         new Vector2(-12f, 14f), new Vector2(w, h));
             var inner = _skillBarPanel.GetChild(0);
+            _barWidth = w;
 
-            for (int i = 0; i < SlotsPerPage; i++)
+            // `BL-269` — the EXTRA rows' panel, stacked on top of the main bar. Built at full size once;
+            // ApplyExtraSlots shrinks it to the rows the setting asks for and hides the rest.
+            _skillBarExtraPanel = UiKit.PanelBox(_worldRoot, "SkillBarExtra");
+            UiKit.Place(_skillBarExtraPanel, new Vector2(1f, 0f), new Vector2(1f, 0f),
+                        new Vector2(-12f, 14f + h + 6f),
+                        new Vector2(w, ExtraSlotsMax / BarColumns * (slot + pad) + pad));
+            var extraInner = _skillBarExtraPanel.GetChild(0);
+
+            for (int i = 0; i < MaxVisibleSlots; i++)
             {
                 int index = i;   // captured; the loop variable is shared
-                var at = new Vector2(pad + (i % BarColumns) * (slot + pad),
-                                     -(pad + (i / BarColumns) * (slot + pad)));
+                // `BL-269` — squares 0-11 are the main bar; 12+ are the extra rows, laid out from the top
+                // of their own panel, six to a row.
+                bool extra = i >= SlotsPerPage;
+                int j = extra ? i - SlotsPerPage : i;
+                var host = extra ? extraInner : inner;
+                var at = new Vector2(pad + (j % BarColumns) * (slot + pad),
+                                     -(pad + (j / BarColumns) * (slot + pad)));
 
                 // The auto-use marker: a THIN green frame drawn behind the slot, peeking out 2px.
                 //
@@ -570,13 +593,13 @@ namespace Game.Client
                 // The colour is deliberately muted (his words: "not so bright just different form the
                 // rest"). A saturated cyan on a dark bar reads as an ALERT, and a stance being on is
                 // the opposite of an alert — it is the state you meant to be in.
-                var onBorder = UiKit.Box(inner, "ToggleBorder", new Color(0.30f, 0.68f, 0.72f), blocksInput: false);
+                var onBorder = UiKit.Box(host, "ToggleBorder", new Color(0.30f, 0.68f, 0.72f), blocksInput: false);
                 UiKit.Place(UiKit.Rect(onBorder.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                             at + new Vector2(-5f, 5f), new Vector2(slot + 10f, slot + 10f));
                 onBorder.enabled = false;
                 _slotToggleBorders[i] = onBorder;
 
-                var border = UiKit.Box(inner, "AutoBorder", new Color(0.35f, 0.85f, 0.40f), blocksInput: false);
+                var border = UiKit.Box(host, "AutoBorder", new Color(0.35f, 0.85f, 0.40f), blocksInput: false);
                 UiKit.Place(UiKit.Rect(border.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                             at + new Vector2(-2f, 2f), new Vector2(slot + 4f, slot + 4f));
                 border.enabled = false;
@@ -584,7 +607,7 @@ namespace Game.Client
 
                 // No onClick: PressAndHold owns both gestures, so a hold can open the menu without
                 // the button also casting what was in it on release.
-                var button = UiKit.TextButton(inner, "", null, 20f);
+                var button = UiKit.TextButton(host, "", null, 20f);
                 button.targetGraphic.color = new Color(0.17f, 0.20f, 0.24f, 1f);   // opaque: see above
                 var press = button.gameObject.AddComponent<PressAndHold>();
                 press.OnTap = () => FireSlot(index);
@@ -596,7 +619,7 @@ namespace Game.Client
                 _slotFaces[i] = button.GetComponentInChildren<TextMeshProUGUI>();
 
                 // Slot number, top-left, like the WPF squares.
-                var hotkey = UiKit.Label(button.transform, (i + 1).ToString(), 12f, UiKit.TextDim);
+                var hotkey = UiKit.Label(button.transform, (j % SlotsPerPage + 1).ToString(), 12f, UiKit.TextDim);
                 UiKit.Place(UiKit.Rect(hotkey.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                             new Vector2(4f, -2f), new Vector2(20f, 16f));
 
@@ -674,6 +697,45 @@ namespace Game.Client
             var next = UiKit.TextButton(inner, ">", () => PageBy(1), 18f);
             UiKit.Place(UiKit.Rect(next.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
                         new Vector2(-pad, 4f), new Vector2(40f, 20f));
+
+            _extraSlots = Mathf.Clamp(PlayerPrefs.GetInt(PrefExtraSlots, 0) / BarColumns * BarColumns,
+                                      0, ExtraSlotsMax);
+            ApplyExtraSlots();
+        }
+
+        /// <summary>`BL-269` — show <see cref="_extraSlots"/> extra squares (0/6/12/18/24): resize the
+        /// extra panel to that many rows and hide every square past them.</summary>
+        private void ApplyExtraSlots()
+        {
+            int rows = _extraSlots / BarColumns;
+            _skillBarExtraPanel.gameObject.SetActive(rows > 0);
+            _skillBarExtraPanel.sizeDelta = new Vector2(_barWidth, rows * (SlotSize + 6f) + 6f);
+            for (int i = SlotsPerPage; i < MaxVisibleSlots; i++)
+            {
+                bool shown = i < SlotsPerPage + _extraSlots;
+                _slotButtons[i].gameObject.SetActive(shown);
+                _slotBorders[i].gameObject.SetActive(shown);
+                _slotToggleBorders[i].gameObject.SetActive(shown);
+            }
+        }
+
+        /// <summary>`BL-269` — the Settings button: 0 → 6 → 12 → 18 → 24 → 0, remembered on the phone.</summary>
+        private void CycleExtraSlots()
+        {
+            _extraSlots = _extraSlots >= ExtraSlotsMax ? 0 : _extraSlots + BarColumns;
+            PlayerPrefs.SetInt(PrefExtraSlots, _extraSlots);
+            ApplyExtraSlots();
+        }
+
+        /// <summary>`BL-269` — which BAR index a visible square shows. Squares 0-11 are the main bar's
+        /// current page; the extra squares show the NEXT pages after it (wrapping), twelve to a page, so
+        /// the extra rows never repeat what the main bar already shows and page along with it.</summary>
+        private int BarIndexOf(int visible)
+        {
+            if (visible < SlotsPerPage) return _barPage * SlotsPerPage + visible;
+            int j = visible - SlotsPerPage;
+            int page = (_barPage + 1 + j / SlotsPerPage) % BarPages;
+            return page * SlotsPerPage + j % SlotsPerPage;
         }
 
         private void BuildCommandBar()
@@ -1564,11 +1626,10 @@ namespace Game.Client
         {
             _pageLabel.text = (_barPage + 1) + " / " + BarPages;
             var bar = Boot.SkillBar;
-            int first = _barPage * SlotsPerPage;
 
-            for (int i = 0; i < SlotsPerPage; i++)
+            for (int i = 0; i < SlotsPerPage + _extraSlots; i++)   // `BL-269`: the extra rows too
             {
-                int index = first + i;
+                int index = BarIndexOf(i);
                 string token = bar != null && index < bar.Length ? bar[index] : null;
 
                 bool usable;
@@ -1705,7 +1766,7 @@ namespace Game.Client
 
         private void FireSlot(int slotOnPage)
         {
-            int index = _barPage * SlotsPerPage + slotOnPage;
+            int index = BarIndexOf(slotOnPage);
 
             // Tapping the slot that is mid-cast CANCELS it — but not instantly. See CastCancelGrace:
             // a double tap would otherwise start the cast and kill it in the same gesture, paying the
@@ -1783,7 +1844,7 @@ namespace Game.Client
 
             var move = UiKit.TextButton(inner, "Move", () =>
             {
-                _pendingMoveFrom = _barPage * SlotsPerPage + _menuSlot;
+                _pendingMoveFrom = BarIndexOf(_menuSlot);
                 _pendingAssign = null;     // the two modes would fight over the next tap
                 CloseSlotMenu();
             }, 16f);
@@ -1792,7 +1853,7 @@ namespace Game.Client
 
             var bin = UiKit.TextButton(inner, "Remove", () =>
             {
-                int index = _barPage * SlotsPerPage + _menuSlot;
+                int index = BarIndexOf(_menuSlot);
                 Boot.AssignSlot(index, null);
                 _skillsRevision = -1;      // the "* on bar" marks are now stale
                 CloseSlotMenu();
@@ -1885,7 +1946,7 @@ namespace Game.Client
 
         private string TokenAt(int slotOnPage)
         {
-            int index = _barPage * SlotsPerPage + slotOnPage;
+            int index = BarIndexOf(slotOnPage);
             var bar = Boot.SkillBar;
             return bar != null && index >= 0 && index < bar.Length ? bar[index] : null;
         }
