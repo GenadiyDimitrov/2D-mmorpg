@@ -281,11 +281,12 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-272` | ❓ | **RARITY COLLAPSE — Common + Mythic only** for equipment — [design/Rework-2026-09-23.md](design/Rework-2026-09-23.md) §2.1 | items |
 | `BL-273` | ❓ | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05`/`BL-50` — §2.2; ✅ no profession lock | items |
 | `BL-274` | ❓ | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3 | items |
-| `BL-277` | ❓ | **WAYFARER'S FAVOR + WAYFARER'S BLESSING** (was Vitality + Blessing) — §3; ✅ names, refund = drain, pace = empty, drain in HOURS (a full Favor = 2 h of farming), party drains own share | progression |
+| `BL-277` | ❓ | **WAYFARER'S FAVOR + WAYFARER'S BLESSING** (was Vitality + Blessing) — §3; ✅ names, refund = drain, pace = empty, drain in HOURS (a full Favor = 2 h of farming), party drains own share, offline = not in the world (8 h 20 min to full, never ×2 with town), subclass box once per slot, panel ships with it | progression |
 | `BL-278` | ❓ | **BOSS REGEN AS A CLOCK** — 1/30000, ×2 / ×5 on enrage; no in-combat mob regen — §4 | combat |
 | `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
 | `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
 | `BL-282` | 🔵 | **`BalanceMatrix --craft-cost`** — kills + hours per crafted T40/52/61/76/80 item under the NEW rules, by recipe %; extends M1-M9 | items |
+| `BL-283` | 🔵 | **CHARISMA** — recommendations/likes; lifetime vs current (cap 1000); +10% Blessing fill per 100 — split out of `BL-277` | social |
 
 ---
 
@@ -2316,18 +2317,16 @@ drain in proportion to their EXP, and one night offline (8.3 h at 40/min) is wor
 by their OWN EXP share.** The check he asked for, *"not OP, a catch-up, not 'go offline to farm 3× later'"*:
 8 h offline + 2 h play = ~6.75 h of progress, and 10 h of active farming = 10 h, so active farming always
 wins. ⚠ `360` = the tool's 10 s/kill; the constant needs re-measuring once `BL-282` / the pace numbers move.
-
-## `BL-282` 🔵 `BalanceMatrix --craft-cost` — WHAT A CRAFT COSTS IN KILLS AND HOURS
-
-Offered in the §2.2.3 discussion, and filed on your call (2026-09-23) so the design talk could go on.
-For T40/52/61/76/80 and each recipe % (20/40/60/100), novice vs maxed crafter (+10%): the **expected
-kills and farm hours per crafted item** under the NEW rules. That means `BL-272` Common/Mythic, `BL-273`
-recipe % × mat curve, the recipe consumed on a fail, the refinable-metal ladder and essence, and `BL-274`
-per-mob drops. ⚠ **Extend `BalanceMatrix` M1-M9** (they already price crafts in farm hours per success
-under the OLD rules); do not write a second economy model. None of the rework is built, so the drop
-chances, mats per recipe and essence per tier are an **input table at the top of the section** for you to
-set. Kill speed comes from the tool's own measured time-to-kill. Its purpose is to set the chances against
-a target in hours instead of by hand.
+✅ **2026-09-23, third round (§3.6-3.9):** **Offline is offline, town is town.** Logging out anywhere
+counts. Offline = **not in the world**: credited at login as `(now − last save) × 40/min`, clamped to
+20,000. A living offline-farmer is in the world and gains nothing; its death or empty budget ends the
+session like a logout. Town is its own online ticker (per full 60 s, reset by leaving town or fighting).
+**Full bar = 8 h 20 min**, and the two sources **never stack** (an offline character cannot be in town).
+**The subclass box** (1× 1 h keep-rune + 4× restore potions) is given **only the first time each subclass
+slot is filled**. Swapping gives nothing, and neither does removing a subclass and adding a new one;
+this needs a persisted per-slot marker. **The details-panel block ships WITH this entry** (the EXP/SP
+line only differs from the server rate once Favor exists). **Charisma is split out to `BL-283`**; the
+Blessing carries a fill-rate hook at +0% until then.
 
 ## `BL-278` ❓ BOSS REGEN AS A CLOCK
 
@@ -2349,3 +2348,24 @@ pulling clusters. The rest comes with the map work (`BL-281`).
 *"we need new model+animations and to start to think of expanding and ordering (fixing mob positions)
 the map and adding real paths/roads visually like terrain + the Line of sight etc."* Noted, deferred
 by you.
+
+## `BL-282` 🔵 `BalanceMatrix --craft-cost` — WHAT A CRAFT COSTS IN KILLS AND HOURS
+
+Offered in the §2.2.3 discussion, and filed on your call (2026-09-23) so the design talk could go on.
+For T40/52/61/76/80 and each recipe % (20/40/60/100), novice vs maxed crafter (+10%): the **expected
+kills and farm hours per crafted item** under the NEW rules. That means `BL-272` Common/Mythic, `BL-273`
+recipe % × mat curve, the recipe consumed on a fail, the refinable-metal ladder and essence, and `BL-274`
+per-mob drops. ⚠ **Extend `BalanceMatrix` M1-M9** (they already price crafts in farm hours per success
+under the OLD rules); do not write a second economy model. None of the rework is built, so the drop
+chances, mats per recipe and essence per tier are an **input table at the top of the section** for you to
+set. Kill speed comes from the tool's own measured time-to-kill. Its purpose is to set the chances against
+a target in hours instead of by hand.
+
+## `BL-283` 🔵 CHARISMA — RECOMMENDATIONS / LIKES
+
+Split out of `BL-277` on your call (2026-09-23). From the note: players recommend/like each other;
+the panel shows **`Charisma: lifetime (current)`**, and current caps at **1000**. It speeds up the
+Wayfarer's Blessing fill in whole steps: **+10% per full 100** (0-99 = 0%, 100-199 = 10% … 1000 = +100%;
+123 is still 10%). ❓ Not yet discussed: who may recommend whom, how often, whether current decays (and
+what separates it from lifetime), and whether it does anything besides the Blessing. `BL-277` ships with
+the fill-rate hook at +0%, so this does not block it.
