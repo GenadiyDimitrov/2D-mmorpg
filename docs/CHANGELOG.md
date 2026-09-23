@@ -7,11 +7,23 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.180.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.181.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-18 (latest) — 0.180.0: a Whirlwind that dies with the first mob you kill
+## 2026-09-23 (latest) — 0.181.0: the auto-potion MP rows sit under the HP rows (§102.1)
+
+> *"MP potions in the auto-potion window overflow it; must sit BELOW the HP ones"*
+
+`BL-243` put the three mana rows in a second column beside the four heal rows. A `SliderRow` draws
+its track at a **fixed x 250–550 inside the row**, whatever width the row is given, so the right
+column's tracks ended around x 1036 in a 760-wide window. The Potions tab is one column again: the
+heal ladder, then the mana ladder under it, then the PvP note. The window is 620 tall (was 520),
+which is still shorter than the auto-farm window.
+
+Client only — **needs an APK**.
+
+## 2026-09-18 — 0.180.0: a Whirlwind that dies with the first mob you kill
 
 > *"i want all the war_aoe aoe skills shouts/wirlwind (except javelin) to be used without a target ..
 > now i do a wirlwind on a one mob while fhgting 20 and i kill that one mob and my wirlwind stops at

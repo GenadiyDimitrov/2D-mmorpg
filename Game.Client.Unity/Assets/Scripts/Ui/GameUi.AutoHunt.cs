@@ -156,7 +156,7 @@ namespace Game.Client
         {
             _autoPotionsPanel = UiKit.PanelBox(_worldRoot, "AutoPotions");
             UiKit.Place(_autoPotionsPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                        Vector2.zero, new Vector2(760f, 520f));
+                        Vector2.zero, new Vector2(760f, 620f));
             var inner = _autoPotionsPanel.GetChild(0);
             float chrome = UiKit.WindowChrome(_autoPotionsPanel, "Auto Potions",
                                               () => CloseWindow(_autoPotionsPanel));
@@ -190,47 +190,48 @@ namespace Game.Client
             _autoPotionsPanel.gameObject.SetActive(false);
         }
 
-        // `BL-243`: the tab is TWO COLUMNS now — HP on the left, MP on the right. Stacking the second
-        // ladder under the first would have needed ~120px the 520-tall window does not have, and the
-        // window is 760 wide with a 620-wide slider using barely half of it. Side by side also reads
-        // the way the decision is made: the two ladders are set against each other, not in sequence.
-        private const float PotColLeftX = 18f, PotColRightX = 392f;
-        private const float PotToggleW = 84f, PotSliderW = 262f;
+        // `BL-243` put MP in a second column beside HP, and §102.1 (2026-09-23) moved it BELOW: a
+        // `SliderRow` draws its track at a FIXED x 250..550 inside the row whatever width the row is
+        // given, so the right column's tracks ran out of the 760-wide window. One column, and the
+        // window 100px taller — the auto-farm window is already 600, so the phone has the room.
+        private const float PotColX = 18f;
+        private const float PotToggleW = 84f, PotSliderW = 560f, PotRowH = 40f;
 
         private void BuildPotionsTab()
         {
-            UiKit.Place(UiKit.Rect(UiKit.Label(_potionsTabRoot, "Heal potions — drink below HP %:", 13f, UiKit.Accent).gameObject),
-                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(PotColLeftX, -12f), new Vector2(350f, 20f));
-            UiKit.Place(UiKit.Rect(UiKit.Label(_potionsTabRoot, "Mana potions — drink below MP %:", 13f, UiKit.Accent).gameObject),
-                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(PotColRightX, -12f), new Vector2(350f, 20f));
-
             // One row per tier: an on/off toggle + a threshold slider whose title is the tier name. Armed
             // from the highest threshold down, so common@80 / uncommon@70 / rare@50 fall back for one
             // another (the server drinks the first ready one whose line is crossed).
-            float y = -38f;
+            float y = -12f;
+            UiKit.Place(UiKit.Rect(UiKit.Label(_potionsTabRoot, "Heal potions — drink below HP %:", 13f, UiKit.Accent).gameObject),
+                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(PotColX, y), new Vector2(700f, 20f));
+            y -= 26f;
             for (int i = 0; i < HealPotRows.Length; i++)
             {
                 int idx = i;
-                _potToggles[i] = ToggleButton(_potionsTabRoot, new Vector2(PotColLeftX, y),
+                _potToggles[i] = ToggleButton(_potionsTabRoot, new Vector2(PotColX, y),
                     () => { _potOn[idx] = !_potOn[idx]; RefreshAutoLabels(); }, PotToggleW);
                 _potSliders[i] = UiKit.SliderRow(_potionsTabRoot, HealPotRows[i].Name, 5f, 95f, DefaultPotThreshold[i], "0", null);
                 UiKit.Place(UiKit.Rect(_potSliders[i].transform.parent.gameObject),
                             new Vector2(0f, 1f), new Vector2(0f, 1f),
-                            new Vector2(PotColLeftX + PotToggleW + 10f, y - 6f), new Vector2(PotSliderW, 26f));
-                y -= 46f;
+                            new Vector2(PotColX + PotToggleW + 10f, y - 6f), new Vector2(PotSliderW, 26f));
+                y -= PotRowH;
             }
 
-            y = -38f;
+            y -= 8f;
+            UiKit.Place(UiKit.Rect(UiKit.Label(_potionsTabRoot, "Mana potions — drink below MP %:", 13f, UiKit.Accent).gameObject),
+                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(PotColX, y), new Vector2(700f, 20f));
+            y -= 26f;
             for (int i = 0; i < ManaPotRows.Length; i++)
             {
                 int idx = i;
-                _manaToggles[i] = ToggleButton(_potionsTabRoot, new Vector2(PotColRightX, y),
+                _manaToggles[i] = ToggleButton(_potionsTabRoot, new Vector2(PotColX, y),
                     () => { _manaOn[idx] = !_manaOn[idx]; RefreshAutoLabels(); }, PotToggleW);
                 _manaSliders[i] = UiKit.SliderRow(_potionsTabRoot, ManaPotRows[i].Name, 5f, 95f, DefaultManaThreshold[i], "0", null);
                 UiKit.Place(UiKit.Rect(_manaSliders[i].transform.parent.gameObject),
                             new Vector2(0f, 1f), new Vector2(0f, 1f),
-                            new Vector2(PotColRightX + PotToggleW + 10f, y - 6f), new Vector2(PotSliderW, 26f));
-                y -= 46f;
+                            new Vector2(PotColX + PotToggleW + 10f, y - 6f), new Vector2(PotSliderW, 26f));
+                y -= PotRowH;
             }
 
             // Mana potions are PvE-only (owner, 2026-08-27) and UsePotion refuses them in a PvP flag,
@@ -238,7 +239,7 @@ namespace Game.Client
             // rather than letting it read as a bug.
             UiKit.Place(UiKit.Rect(UiKit.Label(_potionsTabRoot,
                     "Mana potions are PvE only — none of these are drunk while PvP-flagged.", 12f, UiKit.TextDim).gameObject),
-                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(PotColRightX, y - 2f), new Vector2(350f, 20f));
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(PotColX, y - 2f), new Vector2(700f, 20f));
         }
 
         // ----- the BUFFS tab (BL-04) ---------------------------------------------------------------

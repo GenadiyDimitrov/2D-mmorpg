@@ -1525,7 +1525,7 @@ Your note is verbatim in [design/Rework-2026-09-23.md](../design/Rework-2026-09-
 
 | # | bug | your words / the rule |
 |---|---|---|
-| 102.1 | **Auto-potion window**: the MP-potion value bars run out of the window | MP rows go BELOW the HP rows |
+| 102.1 | ✅ **FIXED 0.181.0** — **Auto-potion window**: the MP-potion value bars run out of the window | MP rows go BELOW the HP rows |
 | 102.2 | **Fury Sigil** and **Physical Proficiency** proc on skills; **Harmony of Protection** reflects skills | all three: **basic attack only**. **Saints reflect** = 30% of the damage of 100% of basic hits · 15% chance to reflect a debuff · 10% chance to reflect physical-skill damage. A reflect whose description does not say otherwise is basic-attack only |
 | 102.3 | Warrior **`deflection`** (`Skills.Common.cs`, *"15/30% chance to reflect a physical skill"*) is in NO CSV | remove it, as `evasion_mastery` and `precision` were |
 | 102.4 | **A consumed item is not spent on click**: cancel the Scroll of Return and it is still in the bag, so you can spam it until it succeeds. Same for skill/holy stones | spent at cast START; an interrupt or cancel loses it |
