@@ -7,11 +7,36 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.193.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.194.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-23 (latest) — 0.193.0: up to 24 extra skill squares on screen (`BL-269`)
+## 2026-09-23 (latest) — 0.194.0: boss regen is a clock (`BL-278`); the boss band is 8 levels
+
+> *"i want to make the boss not immortal but not able to be solo + healer killed"*
+
+**Engaged mob HP regen = `maxHp ÷ D` per second, D = 30,000** (`StatCalculator.MobRegenDivisor`, an INT),
+**×2 after a boss's 1st enrage and ×10 after its 2nd** (`EnrageRegenMult`, hard-coded). On a 6M boss that
+is **200 / 400 / 2,000 HP/s**, where the old flat 1/1000 was 6,000 HP/s, more than a full party's DPS. The
+top rate is still 3× below the old one, so a proper party wins against an enraged boss, and a tank + healer
+duo takes long enough to reach enrage and lose.
+
+- **One rule for every rank.** Any mob with `maxHp < D` (every normal, most elites) regenerates **nothing**
+  while engaged, and the tick is skipped rather than computed, because the regen loop floors a heal at
+  1 HP. That is his "no in-combat regen for mobs", as IG does it. A 60k elite heals 2 HP/s.
+- **The admin Tune tab** shows *"Mob regen fight: maxHp / N"* (an integer) in place of the old fraction.
+  0 = no engaged regen anywhere; anything else is floored at 10. Idle regen (5%/s) and the engaged MP
+  rate did not change. An old `debug-config.json` without the field loads the default 30,000.
+- **`BossJudgmentGap` 9 → 8** (his re-ruling beside `BL-277`: *"at 9th lvl difference boss start to use
+  judgment and no exp/favor grant"*). A gap of 8 is the last one inside the fight. At 9+ the boss judges
+  you **and pays you nothing**: `PayKillShare` now skips a member the same `BossJudges` would punish, so
+  the fight and the payout cannot disagree about who was in it. The Favor grant (`BL-277` part 3) will
+  read the same predicate.
+- `docs/Formulas.md`: the mob regen line and the raid level-gap table.
+
+**Needs an APK** (the Tune tab's field changed type; the DTO is positional).
+
+## 2026-09-23 — 0.193.0: up to 24 extra skill squares on screen (`BL-269`)
 
 > *"need option to add more 6/12/18/24 skill slots (half of or full the 2nd and 3rd skill bars) -
 > like additional skill bars"*

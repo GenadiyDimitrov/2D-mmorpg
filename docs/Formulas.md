@@ -906,7 +906,9 @@ MDef  = 0.0027   * (L + 38)^2.542
 PAtk  = 1.12e-6  * (L + 31)^4.539
 MAtk  = 1.14e-7  * (L + 32)^4.904
 Gold  = 25 + L*8
-Regen = 0.1%/s of its OWN pool engaged, 5%/s idle          no level term
+Regen = engaged  maxHp / D * enrage      D = MobRegenDivisor (30000), 0 if maxHp < D
+        enrage   x1 calm | x2 after the 1st | x10 after the 2nd     (hard-coded, BL-278)
+        idle     5%/s of its OWN pool                          no level term
 ```
 
 - ⚠ The four combat curves are **one smooth `a*(L+shift)^k` each**, refitted to the current chronicle
@@ -914,6 +916,10 @@ Regen = 0.1%/s of its OWN pool engaged, 5%/s idle          no level term
   kink is inherited and multiplied.
 - ⚠ `StatCalculator.MobMaxHp` is a **different, mostly-unused** linear path. Check which one a mob
   actually uses before quoting a number.
+- 🔑 **Engaged regen is a CLOCK, not a wall** (`BL-278`, 0.194.0): a 6M boss heals 200 / 400 / 2,000 HP/s
+  across its enrages, so a tank + healer duo reaches enrage and loses while a party still wins. One
+  rule for every rank: under D (every normal, most elites) there is no in-combat regen at all, and the
+  tick is skipped outright (its 1-HP floor would otherwise hand a point back).
 - Mob regen is a fraction of its own pool because the player CON curve is exponential and a mob's
   CON is `15 + 2L` — that curve on a mob is absurd.
 
@@ -990,7 +996,8 @@ measured by `dotnet run --project tools/BalanceMatrix` (the two `BL-13` tables)
 
 ```
 DAMAGE to a boss      gap<=5  x1.0 | 6-10  1.0-0.06*(gap-5) | 11+  max(0.10, 0.70-0.10*(gap-10))
-INTERFERING           gap<=9  free | gap>9  one rung up THE BOSS'S JUDGMENT (`BL-98`)
+INTERFERING           gap<=8  free | gap>8  one rung up THE BOSS'S JUDGMENT (`BL-98`)
+PAID for the kill     gap<=8  EXP/SP by the normal share | gap>8  nothing (and no Favor grant, `BL-277`)
 ```
 
 **The boss's judgment — six rungs, odd = petrified, even = remembered.**

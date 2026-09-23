@@ -1102,9 +1102,10 @@ public record DebugConfigDto(
     float RegenIntervalSeconds = 3f, float ConRegenBase = 1.03f,
     // Mob regen is a FRACTION OF THE MOB'S OWN POOL per second, not the CON curve (see
     // StatCalculator.MobHpRegenPerSecond). No level term, so neither number ever needs revisiting
-    // when the level range grows. IN COMBAT reads as a maximum kill time (0.001 = you must finish
-    // inside ~16 minutes); IDLE reads as time-to-full (0.05 = 20 seconds).
-    float MobHpRegenPctCombat = 0.001f, float MobRegenPctIdle = 0.05f,
+    // when the level range grows. IN COMBAT (`BL-278`) is a DIVISOR: HP/s = maxHp ÷ D, ×2 / ×10 on the
+    // boss enrages, nothing at all below D (30000 = a 6M boss heals 200/s; 0 = off); IDLE reads as
+    // time-to-full (0.05 = 20 seconds).
+    int MobRegenDivisor = 30000, float MobRegenPctIdle = 0.05f,
     // `BL-118` — CLASS CHANGE WITHOUT THE QUEST. 0 = off, anything else = on. A 0/1 float rather than
     // a bool because the panel's Tune tab is a grid of numeric fields with one round-trip, and a
     // single odd-shaped control there would be its own little machine to keep in step. Appended LAST:

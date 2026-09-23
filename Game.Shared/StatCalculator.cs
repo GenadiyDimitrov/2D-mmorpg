@@ -308,16 +308,24 @@ public static class StatCalculator
     // is what it was designed to be. It only broke when fed a number three times larger than any
     // player will ever have.
 
-    /// <summary>Fraction of its own Max HP a mob regenerates per second WHILE ENGAGED. Deliberately
-    /// tiny: its only job is to stop a hopelessly weak attacker from chipping something down forever
-    /// (a mob wedged on geometry, say). Read it as a MAXIMUM KILL TIME — a mob healing p of its bar
-    /// per second cannot be killed by damage below p, so you must finish inside 1/p seconds. 0.001 =
-    /// a ~16-minute wall, and that sentence stays true at every level and every HP total.
+    /// <summary>`BL-278` (owner, 2026-09-23) — **ENGAGED HP REGEN IS A CLOCK, NOT A WALL**: every engaged
+    /// mob heals <c>maxHp ÷ D</c> per second, D = this divisor. It replaced the float
+    /// <c>MobHpRegenPctCombat = 0.001</c>, whose 1/1000 on a 6M boss was 6,000 HP/s, more than a full
+    /// party's DPS (his note: *"u bearly get to 6k dps as a party"*).
     ///
-    /// It is NOT the anti-underlevelled mechanic; the level-gap table already is (75% avoid at 19
-    /// levels, and pinned to the 5% band edge at 20+). This only catches the in-range chipper that
-    /// gap misses.</summary>
-    public static float MobHpRegenPctCombat = 0.001f;
+    /// <para>At D = 30,000 a 6M boss heals 200 HP/s, 400 after its 1st enrage and 2,000 after its 2nd
+    /// (<see cref="EnrageRegenMult"/>), so a tank + healer duo takes long enough to reach enrage and
+    /// lose, while a proper party still wins. 🔑 <b>No split by rank</b>: on a 60k elite the same rule is
+    /// 2 HP/s, and <b>a mob with <c>maxHp &lt; D</c> regenerates nothing and is not computed at all</b> —
+    /// his "no in-combat regen for mobs" (as IG) arrives for free. An INT, and the only knob; 0 turns
+    /// engaged regen off everywhere. Idle regen (<see cref="MobRegenPctIdle"/>) is separate.</para></summary>
+    public static int MobRegenDivisor = 30000;
+
+    /// <summary>`BL-278` — the enrage multipliers on engaged regen, HARD-CODED by his ruling (retune the
+    /// divisor to move all three stages; a playtest that shows these wrong gets a new build):
+    /// ×1 calm, ×2 after the 1st enrage, ×10 after the 2nd.</summary>
+    public static float EnrageRegenMult(int enrageStage) =>
+        enrageStage >= 2 ? 10f : enrageStage == 1 ? 2f : 1f;
 
     /// <summary>Fraction of its own pool a mob regenerates per second while NOT engaged: 5%/s, so
     /// anything is back to full 20 seconds after it drops combat. This replaced an instant full heal
@@ -329,8 +337,15 @@ public static class StatCalculator
     /// HP figure — mobs are not meant to be MP-limited (see <see cref="MobMaxMp"/>).</summary>
     public static float MobMpRegenPctCombat = 0.01f;
 
-    public static float MobHpRegenPerSecond(int maxHp, bool engaged) =>
-        maxHp * (engaged ? MobHpRegenPctCombat : MobRegenPctIdle);
+    /// <summary>A mob's HP regen per second. Engaged: <c>maxHp ÷ MobRegenDivisor × EnrageRegenMult</c>,
+    /// and exactly 0 below the divisor (the caller skips the tick, so its 1-HP floor cannot sneak it
+    /// back). Idle: <see cref="MobRegenPctIdle"/> of the pool.</summary>
+    public static float MobHpRegenPerSecond(int maxHp, bool engaged, int enrageStage = 0)
+    {
+        if (!engaged) return maxHp * MobRegenPctIdle;
+        if (MobRegenDivisor <= 0 || maxHp < MobRegenDivisor) return 0f;
+        return (float)maxHp / MobRegenDivisor * EnrageRegenMult(enrageStage);
+    }
 
     public static float MobMpRegenPerSecond(int maxMp, bool engaged) =>
         maxMp * (engaged ? MobMpRegenPctCombat : MobRegenPctIdle);
@@ -1259,12 +1274,18 @@ public static class StatCalculator
     /// both directions since the ±10 rule was built. The exploit BL-98 was raised for is only the
     /// over-levelled half (a high healer propping up a low raid); the under-levelled half costs a
     /// far-below character nothing he could have contributed anyway, and keeping the rule symmetric
-    /// means one number, one sentence to a player, and the same shape as the damage curve.</para></summary>
-    public const int BossJudgmentGap = 9;
+    /// means one number, one sentence to a player, and the same shape as the damage curve.</para>
+    ///
+    /// <para>🔑 <b>8, since 2026-09-23 (`BL-277` §3.11 follow-up)</b> — it was 9 (a gap of exactly 9 still
+    /// inside). His re-ruling: *"I want 8 lvls .. at 9th lvl difference boss start to use judgment and no
+    /// exp/favor grant"*. So a gap of 8 is the last one inside the fight, and the same line now also
+    /// decides who is PAID for the kill: nobody outside it gets EXP/SP (<c>PayKillShare</c>) or, once
+    /// `BL-277` part 3 lands, the Favor grant.</para></summary>
+    public const int BossJudgmentGap = 8;
 
-    /// <summary>Is this level far enough from the boss's to be judged for interfering?
-    /// Strictly further than <see cref="BossJudgmentGap"/> — *"if he is in 9lvl of the boss it
-    /// doesn't prevent him"*, so a gap of exactly 9 is still inside the fight.</summary>
+    /// <summary>Is this level far enough from the boss's to be judged for interfering (and, since
+    /// 2026-09-23, to be paid nothing for its kill)? Strictly further than <see cref="BossJudgmentGap"/>,
+    /// so a gap of exactly 8 is still inside the fight and 9 is out.</summary>
     public static bool BossJudges(int actorLevel, int bossLevel) =>
         System.Math.Abs(actorLevel - bossLevel) > BossJudgmentGap;
 

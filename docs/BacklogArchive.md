@@ -6926,6 +6926,25 @@ hit him"*. This also fixes §102.7 (your Whirlwind without PvP hit a field guard
 
 ---
 
+## `BL-278` ✅ BUILT 2026-09-23 in **0.194.0** — boss regen as a clock
+
+Built as ruled. `StatCalculator.MobHpRegenPctCombat` (float, 0.001) is gone; `MobRegenDivisor` (int,
+30000) replaces it on the admin Tune tab. Engaged HP/s = `maxHp ÷ D × EnrageRegenMult(stage)`, ×1 / ×2 / ×10,
+hard-coded. Below D the tick is **skipped** (the regen loop's 1-HP floor would otherwise hand a point back).
+0 on the panel = no engaged regen at all. Idle 5%/s and the engaged MP rate are untouched.
+
+The entry as it stood:
+
+## `BL-278` ❓ BOSS REGEN AS A CLOCK
+
+§4 of the design doc. The pick: bosses `1/30000`/s, ×2 at the 1st enrage, ×5 at the 2nd; normal mobs
+get no in-combat regen (5%/s idle stays). ❓ Is that one knob today or two?
+✅ **2026-09-23:** one rule for every engaged mob: **HP/s = maxHp ÷ D, D = 30000** (one INT admin knob,
+replacing `MobHpRegenPctCombat`). Bosses ×2 at the 1st enrage, ×10 at the 2nd (200/400/2000 HP/s on 6M).
+No rank split; **maxHp < D → 0, not computed**. The multipliers are hard-coded. Idle 5%/s is unchanged.
+
+---
+
 ## `BL-279` ✅ BUILT 2026-09-23 in **0.192.0** — custom skill delay for auto-hunt
 
 Built to his spec. **The ❓ answered itself:** the delay persists **per skill id, per class**, in the

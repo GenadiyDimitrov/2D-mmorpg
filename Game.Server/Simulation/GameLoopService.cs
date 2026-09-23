@@ -901,7 +901,7 @@ public class GameLoopService : BackgroundService
         _idleCapSeconds, _offlineCapSeconds, _graceSeconds,
         _testSkillPower, _testSkillMod,
         GameConstants.RegenIntervalSeconds, StatCalculator.ConRegenBase,
-        StatCalculator.MobHpRegenPctCombat, StatCalculator.MobRegenPctIdle,
+        StatCalculator.MobRegenDivisor, StatCalculator.MobRegenPctIdle,
         RateConfig.FreeClassChange ? 1f : 0f,
         RateConfig.FreeBuffs ? 1f : 0f);
 
@@ -948,11 +948,11 @@ public class GameLoopService : BackgroundService
             Math.Clamp((int)MathF.Round(c.RegenIntervalSeconds * GameConstants.TickRate), 1, 600);
         StatCalculator.ConRegenBase = Math.Clamp(c.ConRegenBase, 1f, 1.2f);
 
-        // In combat: 0 = mobs never heal in a fight (defensible — the level-gap lockout is the real
-        // anti-underlevelled rule); 0.1 = 10% of the bar per second, faster than most players out-damage.
+        // In combat (`BL-278`): the DIVISOR, HP/s = maxHp ÷ D. 0 (or less) = mobs never heal in a fight;
+        // otherwise floored at 10 (10% of the bar per second, faster than most players out-damage).
         // Idle is floored at 0.001 rather than 0 because ResetMob no longer heals: at exactly 0 a mob
         // that once took a scratch would carry it until something killed it.
-        StatCalculator.MobHpRegenPctCombat = Math.Clamp(c.MobHpRegenPctCombat, 0f, 0.1f);
+        StatCalculator.MobRegenDivisor = c.MobRegenDivisor <= 0 ? 0 : Math.Max(10, c.MobRegenDivisor);
         StatCalculator.MobRegenPctIdle = Math.Clamp(c.MobRegenPctIdle, 0.001f, 1f);
 
         // `BL-118`. Anything non-zero is ON — the panel sends a 0/1 float and a typed "2" should not
@@ -15014,7 +15014,7 @@ public class GameLoopService : BackgroundService
     /// *"if he is in 9lvl of the boss it doesn't prevent him from healing outside from party."*
     /// Inside the band you may help anyone at all, stranger or not; outside it, being in the party
     /// does not buy you a pass.</para></summary>
-    /// <summary>Why someone is being judged. The cause decides whether the ±9 band is even consulted:
+    /// <summary>Why someone is being judged. The cause decides whether the ±8 band is even consulted:
     /// the first two are LEVEL offences, the third is not.</summary>
     private enum JudgmentCause
     {
@@ -15054,7 +15054,7 @@ public class GameLoopService : BackgroundService
     /// *"If you are boss engaged nothing can heal you outside your party … the target is unhelable by
     /// outsiders. If heal/partyheal/areaheal comes for a party member u take the benifit."*
     ///
-    /// <para>🔑 THE GATE IS PARTY MEMBERSHIP, NOT LEVEL — a different rule from `BL-98`'s ±9 band, and
+    /// <para>🔑 THE GATE IS PARTY MEMBERSHIP, NOT LEVEL — a different rule from `BL-98`'s ±8 band, and
     /// the two now divide the world cleanly between them: an OUTSIDER cannot help a raid participant
     /// at all (this), and a PARTY MEMBER can, but is judged if he is far outside the boss's level band
     /// (`BL-98`). Which means the `AidedTheRaid` cause can now only ever fire on a party member.</para>
@@ -16600,6 +16600,10 @@ public class GameLoopService : BackgroundService
         {
             float gap = ExpCurve.LevelGapMultiplier(m.Level - victim.Level);
             if (gap <= 0f) continue;   // 13+ levels out: nothing at all
+            // A raid boss pays nobody its judgment would punish (owner, 2026-09-23: *"at 9th lvl
+            // difference boss start to use judgment and no exp/favor grant"*) — one predicate, so the
+            // fight and the payout can never disagree about who was in it.
+            if (victim.Rank == MobRank.Boss && StatCalculator.BossJudges(m.Level, victim.Level)) continue;
             // Personal amplifiers, applied at the same stage as the level gap (owner): the shared party
             // share × the mob-level gap × this member's own CHARISMA bonus (1.0…1.5).
             float cha = GameConstants.CharismaExpMultiplier(m.Charisma);
@@ -17322,9 +17326,13 @@ public class GameLoopService : BackgroundService
                             * multiplier * entity.HpRegenMult * (1f + hpRegenPct)
                         + entity.HpRegenBonus + hpRegenFlat;
             else
-                regen = StatCalculator.MobHpRegenPerSecond(entity.MaxHp, engaged) * multiplier;
+                regen = StatCalculator.MobHpRegenPerSecond(entity.MaxHp, engaged, entity.EnrageStage)
+                        * multiplier;
 
-            entity.Hp = Math.Min(entity.MaxHp, entity.Hp + Math.Max(1, (int)(regen * period)));
+            // `BL-278`: an engaged mob under the divisor heals NOTHING — skipped here, before the 1-HP
+            // floor below would hand it back one point a tick.
+            if (player || regen > 0f)
+                entity.Hp = Math.Min(entity.MaxHp, entity.Hp + Math.Max(1, (int)(regen * period)));
         }
 
         if (entity.Mp < entity.MaxMp)
