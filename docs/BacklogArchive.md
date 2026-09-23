@@ -6846,3 +6846,27 @@ Your uncommitted edits (2026-09-23), for the code to follow:
   +100% (*"should match a greatsword's"*), and **every AoE off**, skills and passives: everything hits the
   main target only.
 Built with `SkillCsvSeed --check` green, per the CSV rule.
+
+---
+
+## `BL-267` ✅ BUILT 2026-09-23 in **0.188.0** — the lock is per equipment item
+
+Built as the entry's pick: **equipment locks per ITEM, stackables keep the def-id lock.** One flag,
+two keys. The row carries `InventoryItem.Locked` (persisted, a new `ItemRecord.Locked` column);
+the def-id set is unchanged. A pre-`BL-267` def lock on a gear def is still honoured, and unlocking
+that item clears it. The wire did not change: the lock array now carries def ids and InstanceIds side
+by side, and `SetItemLock`'s one string is whichever key the item uses. ⚠ Schema change, so a
+`game.db` delete is needed.
+
+The entry as it stood:
+
+## `BL-267` ❓ THE LOCK IS PER ITEM, NOT PER DEF ID — a re-spec of `BL-239`
+
+**Your words, 2026-09-23:** *"I want [lock] to be per equipment item not per item_ID .. now I have 2
+maul weapons .. and one is +3 .. I lock it and I cannot sell the other maul"*.
+
+`BL-239` (0.157.0) locked the **def id** on purpose, so that a locked potion stack stayed locked after
+it was drunk empty and re-looted. That reason only holds for **stackables**. ❓ **My pick:** lock the
+item INSTANCE for equipment (each maul is its own row, with its own enchant) and keep the def-id lock
+for stackables. One flag, two keys. Or do you want the instance lock for stacks too? Then an emptied
+stack forgets its lock.

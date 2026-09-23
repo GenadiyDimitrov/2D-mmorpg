@@ -392,6 +392,10 @@ public class InventoryItem
     /// <summary>DB instance id, preserved across saves (null = never persisted).</summary>
     public Guid? PersistentInstanceId { get; set; }
 
+    /// <summary>`BL-267` — THIS ROW is locked (equipment locks per item; a stackable's lock is its def
+    /// id in <see cref="Entity.LockedItems"/>). Persisted on the item row.</summary>
+    public bool Locked { get; set; }
+
     /// <summary>Wall-clock expiry for a TIMED item (a war/spell rune). Set when its box is opened; the item is
     /// deleted once <c>DateTime.UtcNow &gt;= ExpiresAtUtc</c>. Wall-clock, so it counts down even offline.
     /// null = never expires (everything that isn't a rune).</summary>

@@ -2086,7 +2086,7 @@ namespace Game.Client
                 // `BL-239` — a LOCKED row says so. Without a mark, a locked item in Del mode is simply
                 // a row whose red button is missing, which reads as a bug rather than as protection.
                 // Plain ASCII on purpose: the TMP atlas is static, so a padlock glyph would draw as a box.
-                if (def != null && Boot.IsLocked(def.Id)) name = "[L] " + name;
+                if (def != null && Boot.IsLocked(def, item)) name = "[L] " + name;
 
                 // QUALITY COLOUR on the bag row. The vendor, warehouse, item details and worn squares
                 // all colour by rarity; the bag — the list you look at most — was the one place still
@@ -2118,7 +2118,7 @@ namespace Game.Client
                 // it away entirely: greying it here would still be a red button on the row under your
                 // thumb, and there is no dialogue behind it to catch the tap.
                 if (_bagFastMode != BagFastMode.Off && !item.Equipped
-                    && !(def != null && Boot.IsLocked(def.Id))
+                    && !(def != null && Boot.IsLocked(def, item))
                     && (def == null || def.Slot != EquipSlot.QuestItem))
                 {
                     bool brake = _bagFastMode == BagFastMode.Brake;

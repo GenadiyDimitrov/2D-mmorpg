@@ -277,7 +277,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-262` | ❓ | THE BOSS MAT PILE TAKES NO RATE KNOB — the same shape `BL-247` fixed in the recipe roll; three ways out, my reading is (2) | items |
 | `BL-263` | 🟡 | **BUFFS ARE WRAPPERS OVER `(family, level)`** — [design/BuffFamilies.md](design/BuffFamilies.md). Duration is out of the conflict rule and the first three racial wrappers are built (0.176.0); per-family group rank DECLINED, and so is the group-vs-single authoring check — a group ALWAYS outranks its singles. Left: the passive check and the racial split, both DEFERRED on your call — the racial split now carries your colour-not-abbreviation rule | skills |
 | `BL-264` | ❓ | **NO CSV SAYS WHICH BUFFS FIGHT EACH OTHER** — from `mage 1st` you cannot tell the three Mights are one family. A generated `FAMILY` + `RANK` column, checked like every other; §2 the RACE cell nothing verifies | skills |
-| `BL-267` | ❓ | THE LOCK IS PER ITEM, NOT PER DEF ID — re-spec of `BL-239` (two mauls, one +3) | items |
 | `BL-268` | 🔴 | Landscape BOTH ways, never portrait | client |
 | `BL-269` | 🔴 | 6/12/18/24 extra skill slots (half or all of a 2nd/3rd bar) | client |
 | `BL-270` | 🔵 | A vertical skill bar, or a wheel, for hand-held play | client |
@@ -2205,17 +2204,6 @@ report a cell that claims a race the code does not register (and a blank cell th
 free — the rogue files are three disciplines, one per race, and would keep the union. Say the word.
 
 ---
-
-## `BL-267` ❓ THE LOCK IS PER ITEM, NOT PER DEF ID — a re-spec of `BL-239`
-
-**Your words, 2026-09-23:** *"I want [lock] to be per equipment item not per item_ID .. now I have 2
-maul weapons .. and one is +3 .. I lock it and I cannot sell the other maul"*.
-
-`BL-239` (0.157.0) locked the **def id** on purpose, so that a locked potion stack stayed locked after
-it was drunk empty and re-looted. That reason only holds for **stackables**. ❓ **My pick:** lock the
-item INSTANCE for equipment (each maul is its own row, with its own enchant) and keep the def-id lock
-for stackables. One flag, two keys. Or do you want the instance lock for stacks too? Then an emptied
-stack forgets its lock.
 
 ## `BL-268` 🔴 LANDSCAPE BOTH WAYS
 

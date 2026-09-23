@@ -358,6 +358,10 @@ public class ItemRecord
     /// come back to it, and without this column the remaining 5 picks would silently become 10 again
     /// on the next login — the box would print scrolls. (Schema change — delete game.db to recreate.)</summary>
     public int? PicksRemaining { get; set; }
+
+    /// <summary>`BL-267` — this row is locked (equipment locks per item, not per def id). ⚠ Schema
+    /// change — delete game.db to recreate.</summary>
+    public bool Locked { get; set; }
 }
 
 

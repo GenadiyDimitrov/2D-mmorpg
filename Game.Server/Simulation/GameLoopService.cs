@@ -2878,7 +2878,7 @@ public class GameLoopService : BackgroundService
 
         // `BL-239` — a locked item is not binned, however the bin was reached: the details window's
         // Bin button, the bag's fast DEL button, or a raw command from an out-of-date client.
-        if (ItemCatalog.Get(item.DefId) is ItemDef lockDef && LockRefuses(player, lockDef, "bin it"))
+        if (ItemCatalog.Get(item.DefId) is ItemDef lockDef && LockRefuses(player, item, lockDef, "bin it"))
             return;
 
         // Runes are DELETE-PROTECTED (owner: can't fat-finger it off, like a buff). To switch one off,
@@ -3020,7 +3020,7 @@ public class GameLoopService : BackgroundService
 
         // `BL-239` — the keeper is one of the five things a lock stops. His word for it was "put in
         // keeper", and he meant both keepers: the account one is gated the same way below.
-        if (ItemCatalog.Get(item.DefId) is ItemDef lockDef && LockRefuses(player, lockDef, "store it"))
+        if (ItemCatalog.Get(item.DefId) is ItemDef lockDef && LockRefuses(player, item, lockDef, "store it"))
             return;
 
         // ...and since `58d`, an INSTANCE may refuse the private bank on its own account. The private
@@ -3167,7 +3167,7 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(player, $"{item.Name(def)} is bound to this character — it can't go in the account warehouse.");
             return;
         }
-        if (LockRefuses(player, def, "store it")) return;   // `BL-239`
+        if (LockRefuses(player, item, def, "store it")) return;   // `BL-239`
 
         var bank = AccountBankOf(player);
         int freeRows = GameConstants.AccountWarehouseSize - bank.Count;
@@ -4827,7 +4827,7 @@ public class GameLoopService : BackgroundService
             // `BL-239` — a locked item is silently dropped from the offer rather than refused loudly:
             // the offer is rebuilt wholesale on every change, so one message per keystroke would spam.
             // The client greys the row, so this is the belt to that braces.
-            if (d is not null && player.LockedItems.Contains(d.Id)) continue;
+            if (d is not null && IsLocked(player, item, d)) continue;
 
             // Clamp the count here rather than trusting the client: only a stackable can be split,
             // and never past what is actually in the stack.
@@ -18042,7 +18042,7 @@ public class GameLoopService : BackgroundService
     {
         SendTo(player, "Inventory", new InventoryUpdate(
             player.Inventory.Select(i => i.ToDto()).ToArray(),
-            player.LockedItems.ToArray(),     // `BL-239` — the lock set rides with the bag it describes
+            LockKeys(player),     // `BL-239`/`BL-267` — the lock set (def ids + locked rows) rides with the bag
             // `BL-241` — and so does the pickup filter, in ItemCatalog.PickupCategories order.
             ItemCatalog.PickupCategories.Select(c => (int)player.PickupMinRarity(c)).ToArray()));
 
@@ -18601,28 +18601,67 @@ public class GameLoopService : BackgroundService
     // keeper long after the other five had it (§39e). A seventh path added later gets the gate by
     // calling this, or it gets it never.
 
-    /// <summary>True if this def is locked for this character, and the player has been told so.
+    // 🔑 `BL-267` (2026-09-23) — …EXCEPT FOR EQUIPMENT, WHICH LOCKS PER ITEM. *"I want [lock] to be per
+    // equipment item not per item_ID .. now I have 2 maul weapons .. and one is +3 .. I lock it and I
+    // cannot sell the other maul"*. The def-id reason only ever held for STACKABLES (a potion stack
+    // drunk empty and re-looted stays locked). Gear is one row per item with its own enchant, so its
+    // lock is a flag ON THE ROW (`InventoryItem.Locked`, persisted with it). One question, two keys:
+    // IsLocked below. A def-id lock on a gear def (from before `BL-267`) is still honoured, and
+    // unlocking that item clears it, so nothing is left locked with no way out.
+
+    /// <summary>Is this row locked? Its own flag (gear) or its def id (stackables, and any legacy gear
+    /// def lock).</summary>
+    private static bool IsLocked(Entity player, InventoryItem item, ItemDef def) =>
+        item.Locked || player.LockedItems.Contains(def.Id);
+
+    /// <summary>True if this item is locked for this character, and the player has been told so.
     /// The message names the item, because the whole point of a lock is that you had forgotten.</summary>
-    private bool LockRefuses(Entity player, ItemDef def, string verb)
+    private bool LockRefuses(Entity player, InventoryItem item, ItemDef def, string verb)
     {
-        if (!player.LockedItems.Contains(def.Id)) return false;
-        SendSystemToEntity(player, $"{def.Name} is locked — unlock it in its details window to {verb}.");
+        if (!IsLocked(player, item, def)) return false;
+        SendSystemToEntity(player, $"{item.Name(def)} is locked — unlock it in its details window to {verb}.");
         return true;
     }
 
-    /// <summary>`BL-239` — lock or unlock an item by def id. Idempotent, and it pushes the bag so the
-    /// client's locked set (which rides on <see cref="InventoryUpdate"/>) is never a frame behind.</summary>
+    /// <summary>What the client is told is locked: every def-id lock, plus the live InstanceId of
+    /// every locked ROW. Both are strings on one array, so the wire did not change.</summary>
+    private static string[] LockKeys(Entity player) =>
+        player.LockedItems
+            .Concat(player.Inventory.Where(i => i.Locked).Select(i => i.InstanceId.ToString()))
+            .ToArray();
+
+    /// <summary>`BL-239` / `BL-267` — lock or unlock an item. The key is a DEF ID for a stackable and a
+    /// row's InstanceId for equipment. Idempotent, and it pushes the bag so the client's locked set
+    /// (which rides on <see cref="InventoryUpdate"/>) is never a frame behind.</summary>
     private void HandleSetItemLock(SetItemLockCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
-        if (ItemCatalog.Get(cmd.DefId) is not ItemDef def) return;
 
-        bool changed = cmd.Locked ? player.LockedItems.Add(def.Id) : player.LockedItems.Remove(def.Id);
+        bool changed;
+        string name;
+        if (Guid.TryParse(cmd.DefId, out var iid))
+        {
+            var row = player.Inventory.FirstOrDefault(i => i.InstanceId == iid);
+            if (row is null || ItemCatalog.Get(row.DefId) is not ItemDef rowDef) return;
+            changed = row.Locked != cmd.Locked;
+            row.Locked = cmd.Locked;
+            // Unlocking the ROW also clears a pre-`BL-267` def lock on it, which would otherwise keep
+            // it locked with no button left that can reach it.
+            if (!cmd.Locked && !rowDef.IsStackable)
+                changed |= player.LockedItems.Remove(rowDef.Id);
+            name = row.Name(rowDef);
+        }
+        else
+        {
+            if (ItemCatalog.Get(cmd.DefId) is not ItemDef def) return;
+            changed = cmd.Locked ? player.LockedItems.Add(def.Id) : player.LockedItems.Remove(def.Id);
+            name = def.Name;
+        }
         if (!changed) return;
 
         SendSystemToEntity(player, cmd.Locked
-            ? $"{def.Name} is locked. It can't be sold, binned, broken down, banked or traded."
-            : $"{def.Name} is unlocked.");
+            ? $"{name} is locked. It can't be sold, binned, broken down, banked or traded."
+            : $"{name} is unlocked.");
         SendInventory(player);
     }
 
@@ -18686,7 +18725,7 @@ public class GameLoopService : BackgroundService
         var item = player.Inventory.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
         if (item is null) return;
         if (ItemCatalog.Get(item.DefId) is not ItemDef def) return;
-        if (LockRefuses(player, def, "break it down")) return;
+        if (LockRefuses(player, item, def, "break it down")) return;
 
         if (item.Equipped)
         {
@@ -20061,7 +20100,7 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(player, "Unequip it before selling.");
             return;
         }
-        if (LockRefuses(player, def, "sell it")) return;   // `BL-239`
+        if (LockRefuses(player, item, def, "sell it")) return;   // `BL-239`
         // Per INSTANCE since `58d`: a copy handed out with sellPrice -1 is refused even though the
         // catalog would happily buy the ordinary version of it.
         if (!item.Sellable(def))
@@ -20138,7 +20177,7 @@ public class GameLoopService : BackgroundService
             if (ItemCatalog.Get(item.DefId) is not ItemDef def) continue;
             if (def.Rarity != cmd.Rarity) continue;
             if (!ItemCatalog.InCategory(cmd.Category, def)) continue;
-            if (player.LockedItems.Contains(def.Id)) continue;   // `BL-239` — the reason that one came first
+            if (IsLocked(player, item, def)) continue;   // `BL-239` — the reason that one came first
             if (!item.Sellable(def)) continue;
             doomed.Add(item);
         }

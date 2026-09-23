@@ -265,7 +265,7 @@ namespace Game.Client
                 // `BL-239` — *"a lock on items NOT TO SHOW IN SELL WINDOW"*. Gone entirely rather than
                 // greyed: the sell list is a list of what you are offering, and a row you cannot pick
                 // is only a row to scroll past.
-                if (Boot.IsLocked(def.Id)) continue;
+                if (Boot.IsLocked(def, item)) continue;
                 if (!InCategory(_vendorTab, def)) continue;
                 any = true;
 
@@ -375,7 +375,7 @@ namespace Game.Client
                     var def = ItemCatalog.Get(item.DefId);
                     if (def == null || def.Rarity != rarity) continue;
                     if (!ItemCatalog.InCategory(_vendorTab, def)) continue;
-                    if (Boot.IsLocked(def.Id)) continue;                       // `BL-239`
+                    if (Boot.IsLocked(def, item)) continue;                       // `BL-239`
                     if (!ItemTag.Sellable(def, item.SellPriceOverride, item.TradableOverride)) continue;
                     int qty = Mathf.Max(1, item.Quantity);
                     rows++;

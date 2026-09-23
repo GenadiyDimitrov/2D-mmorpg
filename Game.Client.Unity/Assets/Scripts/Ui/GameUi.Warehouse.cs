@@ -179,7 +179,7 @@ namespace Game.Client
                 // `BL-239` — same treatment for a LOCKED item on the DEPOSIT side. The withdraw side
                 // is deliberately untouched: getting a locked item OUT of a keeper is the one move a
                 // lock has no reason to stop.
-                if (!withdraw && Boot.IsLocked(def.Id)) continue;
+                if (!withdraw && Boot.IsLocked(def, item)) continue;
                 any = true;
 
                 string label = Coloured(def.Name, def.Rarity) + (item.Quantity > 1 ? "   x" + item.Quantity : "");

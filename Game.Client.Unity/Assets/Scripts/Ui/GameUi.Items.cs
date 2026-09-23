@@ -1130,16 +1130,16 @@ namespace Game.Client
             // every disposal path already refuses one, so a lock on it would be a button that promises
             // to change something and cannot.
             bool lockable = actions && !ItemCatalog.IsQuestItem(def);
-            bool locked = Boot.IsLocked(def.Id);
+            bool locked = Boot.IsLocked(def, item);
             v.Lock.gameObject.SetActive(lockable);
             if (lockable)
             {
                 UiKit.SetButtonText(v.Lock, locked ? "Unlock" : "Lock");
                 v.Lock.targetGraphic.color = locked ? ItemLockedColour : UiKit.PanelLight;
                 v.Lock.onClick.RemoveAllListeners();
-                var defId = def.Id;
+                var lockKey = GameBoot.LockKey(def, item);   // `BL-267`: gear locks per ITEM
                 bool want = !locked;
-                v.Lock.onClick.AddListener(() => Boot.SetItemLock(defId, want));
+                v.Lock.onClick.AddListener(() => Boot.SetItemLock(lockKey, want));
             }
             v.Body.text = ItemStatsText(def, item) + SetInfoText(def);
             // The ContentSizeFitter resizes the body on the NEXT layout pass, and the ScrollRect keeps

@@ -237,7 +237,7 @@ namespace Game.Client
                 if (bagDef != null && (!bagDef.Tradable || ItemCatalog.IsQuestItem(bagDef))) continue;
                 // `BL-239` — and the same for a locked item: HandleTradeOffer drops it from the offer,
                 // so a row here would be one you tap and watch fall off the table with no explanation.
-                if (bagDef != null && Boot.IsLocked(bagDef.Id)) continue;
+                if (bagDef != null && Boot.IsLocked(bagDef, item)) continue;
 
                 int offered = _tradeOffer.TryGetValue(item.InstanceId, out var o) ? o : 0;
                 var id = item.InstanceId;

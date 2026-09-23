@@ -185,6 +185,19 @@ namespace Game.Client
         public bool IsLocked(string defId) =>
             !string.IsNullOrEmpty(defId) && LockedItems.Contains(defId);
 
+        /// <summary>`BL-267` — is THIS ROW locked? Its def id (stackables, and a pre-`BL-267` gear
+        /// lock) or its own InstanceId (equipment locks per item). The server sends both kinds of key
+        /// on the one lock array.</summary>
+        public bool IsLocked(ItemDef def, InventoryItemDto item) =>
+            def != null && (IsLocked(def.Id)
+                            || (item != null && LockedItems.Contains(item.InstanceId.ToString())));
+
+        /// <summary>`BL-267` — the key the Lock button sends: the def id for a stackable (a potion stack
+        /// drunk empty and re-looted stays locked), the row's InstanceId for anything else (two mauls,
+        /// one +3 — lock one, sell the other).</summary>
+        public static string LockKey(ItemDef def, InventoryItemDto item) =>
+            def.IsStackable || item == null ? def.Id : item.InstanceId.ToString();
+
         /// <summary>`BL-241` — the MINIMUM rarity this character picks up, per bag category, indexed by
         /// <see cref="ItemCatalog.PickupCategories"/> (Gear, Use, Mats). Sent with the bag, for the same
         /// reason the lock set is: the buttons live in the bag window.

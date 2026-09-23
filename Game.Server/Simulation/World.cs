@@ -440,7 +440,9 @@ public record RestoreItemCmd(string ConnectionId, int Index) : IGameCommand;
 /// <summary>`BL-239` — lock or unlock an item, BY DEF ID. Owner, 2026-09-16: *"you lock item id ->
 /// every item(stacks) of that item is locked -> you lock one stack of potions .. mobs drop more .. u
 /// get new stack its also locked"*. So the payload is the def id and nothing else: there is no
-/// instance here to lose. <paramref name="Locked"/> false unlocks.</summary>
+/// instance here to lose. <paramref name="Locked"/> false unlocks.
+/// ⚠ `BL-267` (2026-09-23): for EQUIPMENT the string is a row's InstanceId instead — gear locks per
+/// item. The field kept its name so the wire did not change; the handler tells the two apart.</summary>
 public record SetItemLockCmd(string ConnectionId, string DefId, bool Locked) : IGameCommand;
 
 /// <summary>`BL-241` — set the pickup filter for ONE bag category. <paramref name="Category"/> is an

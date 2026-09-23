@@ -7,11 +7,35 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.187.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.188.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-23 (latest) — 0.187.0: his warrior CSV edits, built (`BL-275`)
+## 2026-09-23 (latest) — 0.188.0: equipment locks per ITEM (`BL-267`)
+
+> *"I want [lock] to be per equipment item not per item_ID .. now I have 2 maul weapons .. and one
+> is +3 .. I lock it and I cannot sell the other maul"*
+
+`BL-239` (0.157.0) locked the **def id**, so that a locked potion stack stayed locked after it was
+drunk empty and re-looted. That reason only holds for stackables. Now:
+- **Equipment** (anything that does not stack) locks **the row**: `InventoryItem.Locked`, saved on
+  the item record (`ItemRecord.Locked`). Lock the +3 maul and the other one sells.
+- **Stackables** keep the def-id lock exactly as before.
+- `IsLocked(player, item, def)` is the one question, and all seven disposal paths ask it: sell, sell
+  by rarity, bin, break down, both keepers, trade. `LockRefuses` takes the row and names it
+  (a custom name included).
+- A def-id lock on a gear def left over from before is still honoured, and **unlocking that item
+  clears it**, so nothing is stuck locked with no button that reaches it.
+
+**The wire did not change.** The lock array on `InventoryUpdate` now carries def ids *and* the live
+InstanceIds of locked rows, and `SetItemLock`'s one string is a def id or an InstanceId. The server
+tells them apart with `Guid.TryParse`. The client asks `Boot.IsLocked(def, item)` at all seven UI
+sites and sends `GameBoot.LockKey(def, item)` from the details window.
+
+⚠ **Schema change** (a new column), so `game.db` must be deleted, which was already owed.
+**Needs an APK** (an old APK would still send the def id for gear, so the old behaviour stays).
+
+## 2026-09-23 — 0.187.0: his warrior CSV edits, built (`BL-275`)
 
 > *"saints dance -> target/aoe to target/single"* · *"whirlwind … 2s and 10 hits … the 4s lock the
 > warrior for too long"* · *"need a toggle @20 that disables the 2h blunt and skills aoe"*
