@@ -2262,6 +2262,13 @@ recipe is **20 volcanic ash + 20 volcanic stone → 1 bar**, and a 100% recipe t
 where **elemental + skill stones** sit on the consumable crafting ladder, and the **chest / rune-box /
 exp-box** economy (a sink sketch, to be specced against the held War/Spell Rune and the `BL-01`
 premium runes). Both belong to §2.2 #8, the consumable recipes.
+🔵 **2026-09-23, ESSENCE per tier: PROPOSED, not ruled** (`BL-282` C3, design doc §2.2 #10 open item 4):
+weapon **T52 800 / T61 1200 / T76 1600** (the linear ladder between your 400 and 2000, which your kept times
+were measured with). For the slots: keep your T80 essence ratios (.75/.3/.2/.1), or move essence to the new
+mat fractions (body .6, helm/shield/neck .4, earring .3, gloves/boots .2, ring .1)? My pick: move them.
+✅ **2026-09-23, SLOT FRACTIONS** (every mat of a slot is this share of the 2H recipe): 1H 4/5, body 3/5,
+helmet/shield 2/5, gloves/boots 1/5, necklace 2/5, earring 1.5/5, ring 0.5/5. Rings/earrings use
+Nightsilver + metal; the necklace uses Nightsilk + thread.
 
 ## `BL-274` ❓ PER-MOB DROP TABLES
 
@@ -2314,6 +2321,10 @@ drain in proportion to their EXP, and one night offline (8.3 h at 40/min) is wor
 by their OWN EXP share.** The check he asked for, *"not OP, a catch-up, not 'go offline to farm 3× later'"*:
 8 h offline + 2 h play = ~6.75 h of progress, and 10 h of active farming = 10 h, so active farming always
 wins. ⚠ `360` = the tool's 10 s/kill; the constant needs re-measuring once `BL-282` / the pace numbers move.
+⚠ **2026-09-23, `BL-282` measured the clock: ~66-81 kills/h** at levels 45-85 (M1's calibration, walking
+dominates), not 360. With 360 in the formula a full Favor would last **~9-11 h** of real farming, not the ruled
+2 h. So when this is built, the `360` has to be the measured kills/h at that level (or the ruling changes to
+~10 h). Your call, before the constant is written.
 ✅ **2026-09-23, third round (§3.6-3.9):** **Offline is offline, town is town.** Logging out anywhere
 counts. Offline = **not in the world**: credited at login as `(now − last save) × 40/min`, clamped to
 20,000. A living offline-farmer is in the world and gains nothing; its death or empty budget ends the
@@ -2372,6 +2383,10 @@ T76, heads 1% → 0.1%, targets T40 ~15h / T76 16 days. The tool now SOLVES the 
 from those. T40 mats 16h ✓, T76 226h (18.8 d). ❓ Still owed: the recipe drop rate (my placeholder adds 25h at
 T40), whether 16 days is per success (a 40% recipe makes it 25-27 d), the T52/T61/T80 targets, T80 bars
 (190h), and parts per armour/jewel slot.
+✅ **2026-09-23, second round** (§2.2 #10): recipe rates (1/100-1/250 T40-T61, T76 elite 1/500, T80 elite
+1/1000, boss 80-90%), times = the 100% cost with the recipe on top, bars 40/70, slot fractions of the 2H.
+Per success: T40 17h · T52 28h · T61 59h · T76 246-296h · T80 278-453h. ❓ Owed: the ×0.7-not-×0.6
+curve, T80 elite 20% or 40%, full recipe per small slot, the essence numbers (proposed), the solo ceiling.
 ⚠ The tool uses M1's kill clock, **~66-81 kills/h**, not the `360` that `BL-277`'s Favor drain was set on
 (4-5× off). `BL-277` already says to re-measure its constant.
 
