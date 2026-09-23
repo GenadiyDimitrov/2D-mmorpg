@@ -2379,3 +2379,11 @@ Wayfarer's Blessing fill in whole steps: **+10% per full 100** (0-99 = 0%, 100-1
 123 is still 10%). ❓ Not yet discussed: who may recommend whom, how often, whether current decays (and
 what separates it from lifetime), and whether it does anything besides the Blessing. `BL-277` ships with
 the fill-rate hook at +0%, so this does not block it.
+✅ **2026-09-23:** (1) **Who:** any player may recommend another, but not themselves, not a character
+on the same account, and the giver must be level 20+. (4) **Effects:** the Blessing fill rate, plus a
+**title for the server's #1** (a text title), and nothing else. (5) **Later, with castles:** a clan
+leader holding a castle (a "Noble") gets decay/loss protection or a charisma grant, filed here until
+castles exist. 🔑 **His requirement: a SOLO player must also be able to keep the Blessing up**, so
+there needs to be a non-social source. ❓ Open: the gain/decay model. He offered three: (a) +20 per
+recommendation, one per target per day, −10/day decay, 100 days to full; (b) 3/day × 10 points,
+current = last 30 days, max 900; (c) as (b) but 10/day, full on day 10, skip days and catch up.
