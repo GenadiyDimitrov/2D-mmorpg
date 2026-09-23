@@ -282,7 +282,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-273` | ❓ | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05`/`BL-50` — §2.2; ✅ no profession lock | items |
 | `BL-274` | ❓ | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3 | items |
 | `BL-277` | ❓ | **WAYFARER'S FAVOR + WAYFARER'S BLESSING** (was Vitality + Blessing) — §3; ✅ names, refund = drain, pace = empty, drain in HOURS (a full Favor = 2 h of farming), party drains own share, offline = not in the world (8 h 20 min to full, never ×2 with town), subclass box once per slot, panel ships with it | progression |
-| `BL-278` | ❓ | **BOSS REGEN AS A CLOCK** — 1/30000, ×2 / ×5 on enrage; no in-combat mob regen — §4 | combat |
+| `BL-278` | ❓ | **BOSS REGEN AS A CLOCK** — HP/s = maxHp ÷ 30000 for every engaged mob, ×2 / ×10 on enrage; one INT knob — §4 | combat |
 | `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
 | `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
 | `BL-282` | 🔵 | **`BalanceMatrix --craft-cost`** — kills + hours per crafted T40/52/61/76/80 item under the NEW rules, by recipe %; extends M1-M9 | items |
@@ -2265,6 +2265,11 @@ heads use the plain % (4) or the 30% curve (6)? Does +0→1 give 0%? Per-tier nu
 crafter pays 20 heads per success on every tier. +0→1 is moot, because +0…+3 is 100% safe and the
 first possible shatter is +3→4 = 30%. **The craft types are weapon / armour / JEWELS, not scribe**;
 potions, scrolls/runes and refines raise only the generic level. Still open: the per-tier essence numbers.
+✅ **2026-09-23, craft levels (§2.2 #2, #6):** the success bonus (5% general + 5% type) applies to
+**T76/T80 crafts only**. It reduces losses on high gear and does nothing on a 100% recipe or below T76.
+**General crafter level 1-10:** L1 = 0%, 10 slots; L2-L9 add +0.5% and +5 slots each; L10 adds +1% (5%
+total). **Type levels 0-10:** +0.5% each, % only, no slots. ❓ Slot count at L10: he said 60, but his steps
+give 55 unless L1 starts at 15.
 
 ## `BL-274` ❓ PER-MOB DROP TABLES
 
