@@ -2334,6 +2334,11 @@ against 6.75 h at H = 2).
 `drain/kill = 20000 × (baseExp ÷ sameLevelNormalExp(L)) ÷ (killsPerHour(L) × 2)`, with `killsPerHour(L)` an
 authored per-level table read off `--craft-cost`'s M1 clock (~70/h → ~143 points per same-level kill, ~140
 kills per full Favor). This closes the two ⚠ notes above about the `360`.
+📊 **2026-09-23, the last three numbers MEASURED, waiting on him** (design doc §3 points 10-12): the Blessing
+per kill (0.1% = ~90 min at ×1 with the Favor empty and ~61 while it drains; pick 0.1, and the ×2/×4 multiplies every source);
+the raid-boss grant (a boss = 2,406 normal kills at every level, so IG's formula gives 8.6-19.5k on our EXP;
+corrected to `share ÷ sameLevelNormalExp × P`, P ≈ 11.2 = 3k per 9-man member, flat; ❓ flat or rising,
+grant-not-drain on bosses, the 8-level window); the runes (keep-rune + booster rune; ❓ 1 h and 2 h, or 1 h only).
 ✅ **2026-09-23, third round (§3.6-3.9):** **Offline is offline, town is town.** Logging out anywhere
 counts. Offline = **not in the world**: credited at login as `(now − last save) × 40/min`, clamped to
 20,000. A living offline-farmer is in the world and gains nothing; its death or empty budget ends the
