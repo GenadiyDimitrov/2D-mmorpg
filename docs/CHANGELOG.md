@@ -7,11 +7,29 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.182.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.183.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-23 (latest) — 0.182.0: Fury Sigil and Physical Proficiency proc on basic attacks only (§102.2)
+## 2026-09-23 (latest) — 0.183.0: the warrior's `deflection` is gone (§102.3)
+
+> *"Warrior `deflection` is not in any CSV → remove it, like `evasion_mastery` / `precision`"*
+
+`deflection` (a 15%/30% chance to reflect a physical skill's full damage) was auto-granted to every
+warrior at 40/76 by `SkillCatalog.ReflectPassiveFor`, with no CSV row behind it. The warrior's arm
+is removed the same way the rogue's floor was: the def stays (removing an id reshuffles things) but
+nothing grants it. `ReflectIdFor` still names it, so the existing else-branch in
+`AutoLearnCoreSkills` **strips it from every warrior at login**. No new code, and no `game.db`
+delete needed.
+
+This is also the real cause of the §102.2 report that *"Harmony of Protection reflects skills"*:
+Harmony's reflect was already basic-attack only, and Deflection was what bounced his skills.
+**Saints Blessing's 10% physical-skill reflect is a BUFF field** and is untouched; now it is the
+only skill reflect a warrior has.
+
+Shared + server — **no APK needed** (the skill never appeared in a Learn tab).
+
+## 2026-09-23 — 0.182.0: Fury Sigil and Physical Proficiency proc on basic attacks only (§102.2)
 
 > *"Fury Sigil + Physical Proficiency proc on skills — basic attack only"*
 

@@ -450,7 +450,13 @@ public static partial class SkillCatalog
         if (level < 40) return null;
         return archetype switch
         {
-            Archetype.Warrior => (Deflection, level >= 76 ? 2 : 1),
+            // 🔴 THE WARRIOR'S ARM IS GONE TOO, 2026-09-23 (§102.3): *"Warrior `deflection` is not in
+            // any CSV → remove it, like `evasion_mastery` / `precision`"*. A 15/30% chance to bounce a
+            // physical skill was an auto-grant no file authored — and it is what he saw reflecting
+            // skills and blamed on Harmony of Protection (§102.2), whose reflect is basic-attack only.
+            // Saints Blessing's 10% skill bounce is a BUFF field and is untouched.
+            // ⚠ `ReflectIdFor` still names Deflection ON PURPOSE: with this arm gone the caller's
+            //   else-branch strips it from every warrior on login — the existing code, nothing new.
             // 🔴 THE TANK'S ARM IS GONE, 2026-09-04 — Backlash is BOUGHT now, not granted. His
             // finished `tank 4th.csv` gives it three rungs at 77/80/83 with real SP and gold prices
             // AND a race split (Physical Backlash for Human+Demon, Magical Backlash for the Elf), and
@@ -467,7 +473,7 @@ public static partial class SkillCatalog
     /// grant can remove it below its gate (`BL-143`). Null for an archetype that has none.</summary>
     public static string? ReflectIdFor(Archetype? archetype) => archetype switch
     {
-        Archetype.Warrior => Deflection,
+        Archetype.Warrior => Deflection,   // granted to nobody since §102.3 — named so login strips it
         // (The tank was here until 2026-09-04. Backlash is a learned skill now — see above.)
         _ => null
     };
