@@ -6966,3 +6966,31 @@ The entry as it stood:
 additional skill bars"*. ⚠ **The bar belongs to the SERVER** (CLAUDE.md): the extra slots are extra
 server-owned bar pages, persisted, and auto-placement (`SyncSkillBar`) has to know about them. The
 option picks how many are SHOWN; it must not change what the server stores.
+
+## `BL-05` ⤴ SUPERSEDED 2026-09-23 by `BL-273` — the old crafting's leftovers
+
+Archived on your OK (2026-09-23). The 0.63.0 crafting it described (masters, six levels, the grade
+ladder, the gear roll, the mat costs) is replaced wholesale by the 2026-09-23 rework: `BL-272` rarity
+collapse, `BL-273` crafting, `BL-274` per-mob drops (`docs/design/Rework-2026-09-23.md`). Its two
+consumable-ladder pieces (the stones and the chest/rune-box/exp-box economy) were copied into
+`BL-273`, since the rework's consumable recipes (§2.2 #8) are where they now belong. The two "odd
+numbers" it held (the C rung's 8 Rare mats, the 347 h S character) describe recipes that will no longer
+exist; `BL-282` (`--craft-cost`) prices the new ones.
+
+The entry as it stood:
+
+- `BL-05` 🔵 **Crafting — the two pieces you did NOT rule.** The system itself SHIPPED in 0.63.0
+  (masters, six levels, the freeze, the grade ladder, the gear roll, the mat costs, quitting). What is
+  still owed is only what you left open:
+  - **Where elemental + skill stones sit on the Potion Master's ladder** — *"somwhere and elemental
+    stones + skill stones"*, no rung named. Not invented.
+  - **The chest / rune-box / exp-box economy**, your own *"something like that"*: both consumable
+    masters craft treasure chests of random scroll/potion loot as a sink against the **60kk gap to a
+    Mythic S item**; Potion Master → tradable temporary War/Spell rune boxes (1h/2h), Scribe →
+    tradable temporary EXP/SP boxes (5-30%, 1h/2h). A sketch, deliberately not built — spec it against
+    the held War/Spell Rune and the `BL-01` premium runes, not as a new system.
+  - ⏸ **Two numbers, left as they ship (your call, 2026-08-13):** *"the farm times will work on them
+    leave them as is .. later will decide on them."* Both are measured and both are odd — the **C rung
+    costs 8 Rare mats**, so a C recipe reads cheaper than an E one (the Rare faucet is 0.09/kill against
+    Common's 1.76 while your C target is 5-10h), and a **fully S-geared character is 347 farm hours**.
+    Shipped as-is on purpose; nothing is retuned until you say so. See `docs/balance/CraftingMats.md` §8.

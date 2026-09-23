@@ -26,12 +26,6 @@ only active"*. Ninety-one closed entries — built, declined, and the old texts 
 **Status marks:** 🔴 ready to build · 🟡 gated on another entry here · 🔵 waiting on you (a
 decision, a CSV, a measurement) · ⏸ you put it on hold · ❓ a question of mine, unanswered.
 
-⏸ **CRAFTING IS STILL PARKED, on your instruction (2026-08-14):** *"leave the salvage/mats etc craft
-until I'm able to test it fully — need to increase the drop rate and exp by 100 so I can make chars
-different professions to farm to see who can craft what — and it's a single playtest only for this."*
-So **`BL-05`** and **`BL-50`** are not to be worked on or re-raised until you open that playtest.
-Nothing about them is blocked or broken; they wait on a test only you can run.
-
 ★ **The ones you named most recently (2026-09-16, the playtest):** ten asks, `BL-238`…`BL-247`.
 The twelve BUGS from the same pass are in [testing/Open-Checklist.md](testing/Open-Checklist.md) §100,
 not here — and **nine of those thirteen are fixed** (0.146.1 / 0.147.0 / 0.148.0).
@@ -215,12 +209,11 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 
 ---
 
-## Index — 48 open entries
+## Index — 47 open entries
 
 | id | | what it is | area |
 |---|---|---|---|
 | `BL-02` | 🔵 | The 40+ class kits, 3rd and 4th tier — five files done, the rest wait on your CSVs | classes |
-| `BL-05` | 🔵 | Crafting — the two pieces you did not rule ⏸ parked | items |
 | `BL-09` | 🔵 | A floor under the wrong-weapon magic penalty, bought back by Spellcaster Mastery | combat |
 | `BL-15` | 🟡 | `precision` / `anti_magic` as LEARNABLE passives — gated on the warrior/rogue CSVs | combat |
 | `BL-18` | 🔵 | The nuker-vs-champion measurement — 19% apart, and whether that is wrong | combat |
@@ -234,7 +227,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-44` | 🟡 | "Everything is a skill" — armor sets and weapon specials, the last two pieces | classes |
 | `BL-45` | 🔵 | The presentation pass — sounds, effects, the feel of it | UI |
 | `BL-48` | ⏸ | Instances — one decision open: daily attempts GLOBAL vs PER-INSTANCE | world |
-| `BL-50` | ⏸ | A boss/elite mat pile must obey the party loot rule ⏸ parked with crafting | items |
+| `BL-50` | 🟡 | A boss/elite mat pile must obey the party loot rule — tested when `BL-274` builds boss drops | items |
 | `BL-51` | 🔵 | Castles + vault — needs the siege design first | world |
 | `BL-52` | 🔵 | World expansion toward 1kk+ | world |
 | `BL-60` | 🔵 | Death penalty, resurrection skills, Angel's Protection | systems |
@@ -279,7 +272,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-264` | ❓ | **NO CSV SAYS WHICH BUFFS FIGHT EACH OTHER** — from `mage 1st` you cannot tell the three Mights are one family. A generated `FAMILY` + `RANK` column, checked like every other; §2 the RACE cell nothing verifies | skills |
 | `BL-270` | 🔵 | A vertical skill bar, or a wheel, for hand-held play | client |
 | `BL-272` | ❓ | **RARITY COLLAPSE — Common + Mythic only** for equipment — [design/Rework-2026-09-23.md](design/Rework-2026-09-23.md) §2.1 | items |
-| `BL-273` | ❓ | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05`/`BL-50` — §2.2; ✅ no profession lock | items |
+| `BL-273` | ❓ | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05` (archived) — §2.2; ✅ no profession lock | items |
 | `BL-274` | ❓ | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3 | items |
 | `BL-277` | ❓ | **WAYFARER'S FAVOR + WAYFARER'S BLESSING** (was Vitality + Blessing) — §3; ✅ names, refund = drain, pace = empty, drain in HOURS (a full Favor = 2 h of farming), party drains own share, offline = not in the world (8 h 20 min to full, never ×2 with town), subclass box once per slot, panel ships with it | progression |
 | `BL-278` | ❓ | **BOSS REGEN AS A CLOCK** — HP/s = maxHp ÷ 30000 for every engaged mob, ×2 / ×10 on enrage; one INT knob — §4 | combat |
@@ -321,22 +314,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
     healer's three, so a healer's Mark and a buffer's can never stack.
   - ✅ ~~**Calm Spirit**~~ — SHIPPED with `BL-92` in 0.88.0, the moment the MP-regen question it was
     held behind was answered. Nothing of the nuker's file is outstanding.
-
-- `BL-05` 🔵 **Crafting — the two pieces you did NOT rule.** The system itself SHIPPED in 0.63.0
-  (masters, six levels, the freeze, the grade ladder, the gear roll, the mat costs, quitting). What is
-  still owed is only what you left open:
-  - **Where elemental + skill stones sit on the Potion Master's ladder** — *"somwhere and elemental
-    stones + skill stones"*, no rung named. Not invented.
-  - **The chest / rune-box / exp-box economy**, your own *"something like that"*: both consumable
-    masters craft treasure chests of random scroll/potion loot as a sink against the **60kk gap to a
-    Mythic S item**; Potion Master → tradable temporary War/Spell rune boxes (1h/2h), Scribe →
-    tradable temporary EXP/SP boxes (5-30%, 1h/2h). A sketch, deliberately not built — spec it against
-    the held War/Spell Rune and the `BL-01` premium runes, not as a new system.
-  - ⏸ **Two numbers, left as they ship (your call, 2026-08-13):** *"the farm times will work on them
-    leave them as is .. later will decide on them."* Both are measured and both are odd — the **C rung
-    costs 8 Rare mats**, so a C recipe reads cheaper than an E one (the Rare faucet is 0.09/kill against
-    Common's 1.76 while your C target is 5-10h), and a **fully S-geared character is 347 farm hours**.
-    Shipped as-is on purpose; nothing is retuned until you say so. See `docs/balance/CraftingMats.md` §8.
 
 - `BL-09` 🔵 **A floor under the wrong-weapon magic penalty, bought back by Spellcaster Mastery.**
   ⚠ **Re-marked 🔵 on 2026-08-14 — it contradicts your own CSV.** This asks for five Mastery rungs
@@ -448,9 +425,10 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
   a dungeon is just a `SpawnZone` outside the town ring plus a teleport entrance, near-zero risk,
   and they can ship without instances.
 
-- `BL-50` ⏸ **A boss/elite crafting-mat pile must obey the party loot rule.** Written as *(not
-  tested)* and never tested. **PARKED with the rest of crafting** (see the top of this file) — it can
-  only be verified inside the mat-farming playtest you have reserved.
+- `BL-50` 🟡 **A boss/elite crafting-mat pile must obey the party loot rule.** Written as *(not
+  tested)* and never tested. ✅ **2026-09-23: kept, gated on `BL-274`** (it was parked with the old
+  crafting). After the rework bosses still drop mats + recipes (§2.3 Q5), so the rule still matters and
+  is tested when `BL-274` builds the new boss drops.
 
 - `BL-51` 🔵 **Castles + vault.** Needs the siege design first; consumes the reserved
   `VendorBuyTaxRate` hook.
@@ -2240,7 +2218,7 @@ dedicated shop at price + 2× craft mats). Consumables keep their rarities.
 - ✅ Third round: **essence only, no gold** at the T52 shop; **all three temp armour boxes** (heavy,
   light, robe) include a shield.
 
-## `BL-273` ❓ THE CRAFTING REWORK — supersedes `BL-05` and `BL-50`
+## `BL-273` ❓ THE CRAFTING REWORK — supersedes `BL-05` (archived 2026-09-23)
 
 §2.2 of the design doc. The @40 unlock quest line, craft levels (+slots, +5% overall, +5% per type),
 recipes at 20/40/60/100% (learn one, spend one; mat cost 30/50/70/100%), the refinable metal ladder
@@ -2275,6 +2253,15 @@ refined → rare → refined rare → legendary) are **Nightsilver** (weapons) a
 family. In the note, "darksteel" as a mat = Nightsilver.
 ✅ **2026-09-23, admin path (§2.2 #7):** Debug-window **"Become crafter"** (skips the quest, like the
 debug class-change buttons) + **"Set craft levels"** (general and per-type 0-10).
+✅ **2026-09-23, the VOLCANIC BAR (§2.2):** T76 and T80 recipes need a **Volcanic Bar** on top of
+everything a T61 recipe needs, *"making the t76 and t80 a bit harder than a t61 rcp"*. Its own refine
+recipe is **20 volcanic ash + 20 volcanic stone → 1 bar**, and a 100% recipe takes **50 bars at T76,
+100 at T80** (the note's numbers). The note's "mithril bar" is renamed because of the naming rule, and
+"volcanic dust" is now **volcanic ash**. The bar scales with the recipe % like the other mats.
+📥 **Carried over from `BL-05` when it was archived** (two consumable-ladder pieces nobody ruled):
+where **elemental + skill stones** sit on the consumable crafting ladder, and the **chest / rune-box /
+exp-box** economy (a sink sketch, to be specced against the held War/Spell Rune and the `BL-01`
+premium runes). Both belong to §2.2 #8, the consumable recipes.
 
 ## `BL-274` ❓ PER-MOB DROP TABLES
 
