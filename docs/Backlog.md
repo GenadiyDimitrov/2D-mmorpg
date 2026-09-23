@@ -274,12 +274,13 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-272` | ❓ | **RARITY COLLAPSE — Common + Mythic only** for equipment — [design/Rework-2026-09-23.md](design/Rework-2026-09-23.md) §2.1 | items |
 | `BL-273` | ❓ | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05` (archived) — §2.2; ✅ no profession lock | items |
 | `BL-274` | ❓ | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3 | items |
-| `BL-277` | ❓ | **WAYFARER'S FAVOR + WAYFARER'S BLESSING** (was Vitality + Blessing) — §3; ✅ names, refund = drain, pace = empty, drain in HOURS (a full Favor = 2 h of farming, H = 2 final, ÷ measured kills/h), party drains own share, offline = not in the world (8 h 20 min to full, never ×2 with town), subclass box once per slot, panel ships with it | progression |
+| `BL-277` | 🔵 | **WAYFARER'S FAVOR + WAYFARER'S BLESSING** (was Vitality + Blessing) — §3; ✅ FULLY RULED 2026-09-23 · ✅ names, refund = drain, pace = empty, drain in HOURS (a full Favor = 2 h of farming, H = 2 final, ÷ measured kills/h), party drains own share, offline = not in the world (8 h 20 min to full, never ×2 with town), subclass box once per slot, panel ships with it; 0.1%/kill, modifier × every source; boss grant flat 3k/9-man, grant-only, window 9; four runes | progression |
 | `BL-278` | ❓ | **BOSS REGEN AS A CLOCK** — HP/s = maxHp ÷ 30000 for every engaged mob, ×2 / ×10 on enrage; one INT knob — §4 | combat |
 | `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
 | `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
 | `BL-282` | 🟡 | **`BalanceMatrix --craft-cost`** ✅ built + all inputs ruled; only C5 (consumables) left, waits on §2.2 #8 — kills + hours per crafted T40/52/61/76/80 item under the NEW rules, by recipe %; extends M1-M9 | items |
 | `BL-283` | 🔵 | **CHARISMA** — recommendations/likes; lifetime vs current (cap 1000); +10% Blessing fill per 100 — split out of `BL-277`; ✅ 10 pts/rec, 10/day, 30-day ring, real recs only, ×2 with rune = ×4, title for #1 | social |
+| `BL-284` | 🔵 | **RECURRING RUNE GRANT** — premium/event: a 1 h rune a day + 1-2 2 h runes a week; needs a premium status or events (neither exists) — split out of `BL-277` | progression |
 
 ---
 
@@ -2299,7 +2300,7 @@ bosses drop at least one full item, guaranteed**, plus direct essence of ~1/10 a
 All three kinds (weapon / armour / jewels) stay on bosses. Boss recipe %: T61 100%, T76/T80 60%.
 ✅ **The guaranteed item holds at EVERY tier.** **One daily per NPC/kind**, shared by its T76 and T80 quest (max 3 a day, any tier mix).
 
-## `BL-277` ❓ WAYFARER'S FAVOR + WAYFARER'S BLESSING (was Vitality + Blessing)
+## `BL-277` 🔵 WAYFARER'S FAVOR + WAYFARER'S BLESSING (was Vitality + Blessing)
 
 §3 of the design doc. 20,000 points over 8 stages (+50%…+400% EXP/SP); gained offline and in town
 (40/min, admin-tunable), from raid/world bosses by the EXP share; drained per kill by
@@ -2349,6 +2350,15 @@ slot is filled**. Swapping gives nothing, and neither does removing a subclass a
 this needs a persisted per-slot marker. **The details-panel block ships WITH this entry** (the EXP/SP
 line only differs from the server rate once Favor exists). **Charisma is split out to `BL-283`**; the
 Blessing carries a fill-rate hook at +0% until then.
+✅ **2026-09-23, fifth round (§3.10-3.12): FULLY RULED.** (1) **Blessing: 0.1% per kill at ×1**, and the
+charisma/booster modifier **multiplies every source** (kills, combat minutes, stage drops, level-up), applied
+once where the gauge is added to. (2) **Boss grant: `(yourExpShare ÷ sameLevelNormalExp(L)) × 11.2`, flat**
+(~3k per 9-man member at every level, solo clamps at 20k). **A boss kill only grants, never drains** (*"after
+a Boss fight u probably want to take a break or regroup"*), so it gives no Blessing kill fill either. **No IG
+8-level window: ours is `BossJudgmentGap` (9)**, and a member outside it gets no grant (read off *"ours boss
+penalty it was 9 or 6 lvls"*; the 6 is the damage taper, and changing to it is one line). (3) **Four runes:**
+keep 1 h / 2 h, booster 1 h / 2 h. **The subclass box now holds both 1 h runes** + 4 potions. The
+premium/event daily/weekly grant is **`BL-284`**.
 
 ## `BL-278` ❓ BOSS REGEN AS A CLOCK
 
@@ -2434,3 +2444,12 @@ daily totals per character (one small CSV column). A recommendation adds 10 to t
 reset the oldest slot drops and a new 0 starts, advancing by however many resets passed while offline
 (max 30). The 1000 cap is applied when current is READ, never by refusing a recommendation. Title for #1:
 ranked on **lifetime** (current ties at 1000). That was my pick; he has not objected.
+
+## `BL-284` 🔵 RECURRING RUNE GRANT — PREMIUM / EVENTS
+
+Split out of `BL-277` (2026-09-23, fifth round): *"premium or an event will get u a 1h/day and 1 or 2 -
+2h/week rune"*. One 1 h rune a day and 1-2 2 h runes a week, for a premium account or during an event.
+⚠ **Blocked: neither exists.** Platinum (`BL-257`) is a currency, not a status, so nothing marks an account
+as premium, and there are no events. The four runes ship with `BL-277` (sources: the subclass box and the
+admin grant), so this does not block it. ❓ Open: 1 or 2 a week; which rune (keep or booster) each grant
+gives; whether premium is a time-limited status bought with Platinum.
