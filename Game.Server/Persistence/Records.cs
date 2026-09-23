@@ -165,6 +165,9 @@ public class CharacterRecord
     // `BL-277` part 2 — the Blessing gauge and a running Blessing's seconds left (paused while away).
     public double BlessingPercent { get; set; }
     public int BlessingSecondsLeft { get; set; }
+    // `BL-277` part 3 — the restore potion's wall-clock reuse, and the subclass boxes paid so far.
+    public DateTime? FavorPotionReadyUtc { get; set; }
+    public int SubclassBoxesGiven { get; set; }
 
     /// <summary>WHERE the worn title comes from: a leaderboard category, a staff title id,
     /// <see cref="TitleCatalog.Custom"/>, or "" for none. The SOURCE, not the words — a granted title is

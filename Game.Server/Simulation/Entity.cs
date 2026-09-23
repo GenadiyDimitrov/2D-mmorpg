@@ -744,6 +744,16 @@ public class Entity
     /// <summary>The whole-percent value the client was last sent. Runtime only; -1 = never sent.</summary>
     public int BlessingSentPercent { get; set; } = -1;
 
+    // ----- `BL-277` part 3 — the Wayfarer's items -----
+    /// <summary>When the Favor Restore Potion may be drunk again (wall clock, so a relog does not reset the
+    /// hour). Null = never drunk. Persisted.</summary>
+    public DateTime? FavorPotionReadyUtc { get; set; }
+    /// <summary>How many Wayfarer's Subclass Boxes this character has been GIVEN — one per subclass slot the
+    /// first time it is ever filled (his *"only 1st time when adding and thats it"*). A counter of what was
+    /// PAID, the <see cref="SubclassTicketsEarned"/> shape: a full bag leaves it behind, so the box is
+    /// owed and paid on the next login. Persisted.</summary>
+    public int SubclassBoxesGiven { get; set; }
+
     // ----- Wearable title -----
     /// <summary>WHERE the worn title comes from: a leaderboard category, a staff title id,
     /// <see cref="TitleCatalog.Custom"/> for one the player wrote, or "" for none. Persisted.

@@ -1101,7 +1101,7 @@ favorBonus = 0.5 * stage                           stage 0-8, read BEFORE this k
 blessing  = 1.0 while a Wayfarer's Blessing runs, else 0                        (below, 0.196.0)
 stage tops 500 | 5000 | 6000 | 10000 | 11500 | 15000 | 17000 | 20000         (any point > 0 = stage 1)
 drain     = 20000 * (memberExp / MobExpReward(L)) / (killsPerHour(L) * 2)     L = member level
-            not on a boss kill; not when the kill paid 0 EXP or a rune zeroes EXP
+            not on a boss kill; not when the kill paid 0 EXP or a rune zeroes EXP; not while a Favor keep-rune is held (0.197.0)
 offline   = + (now - last save) minutes * FavorPerMinute, once at login        clamp 20000
 city      = + FavorPerMinute per FULL 60 s in a RegenBoost safe zone            reset: leaving, any fight
 FavorPerMinute = 40 (admin Tune tab)                                           full gauge = 8 h 20 min
@@ -1126,7 +1126,7 @@ FavorPerMinute = 40 (admin Tune tab)                                           f
 
 ```
 fill      = source * fillRate                         applied ONCE, in AddBlessing
-fillRate  = 1                                         hook: charisma (BL-283), booster rune (part 3)
+fillRate  = 2 while a Blessing booster rune is held, else 1   (0.197.0); charisma (BL-283) will MULTIPLY it
 source    kill that paid EXP (not a boss)   +0.1
           each second in combat             +1/60     (1%/min; "in combat" = IsInCombat, 30 s window)
           each Favor stage a drain crosses  +8
@@ -1141,6 +1141,19 @@ ends      gauge = 0
   an offline-farmer is in the world, so for it both fill and clock run.
 - A boss kill neither fills the gauge nor gets the refund; its EXP still pays at the current bonus sum.
 - The buff on the bar is cosmetic and re-asserted every second from the clock; nothing reads it.
+
+### The Wayfarer's items and the raid-boss grant (`BL-277` part 3, 0.197.0)
+
+```
+boss grant  = min(20000 - favor, memberExp / MobExpReward(L) * 11.2)     L = member level, MobRank.Boss only
+              memberExp as above (own share, after split + level gap); nobody BossJudges punishes (gap > 8);
+              0 when a rune zeroes EXP; no drain, no refund, no Blessing fill
+              ~3,000 per 9-man member at every level, ~9,000 per 3-man, a solo kill fills the gauge
+keep-rune   held (1 h / 2 h): a non-boss kill does not drain the Favor (so no stage-loss fill either)
+booster     held (1 h / 2 h): Blessing fillRate x2, every source
+restore pot + 2500 Favor (clamp 20000), refused when full; reuse 3600 s WALL CLOCK, saved on the character
+subclass box  both 1 h runes + 4 restore potions; paid while boxesGiven < subclasses held (once per slot, ever)
+```
 
 ---
 

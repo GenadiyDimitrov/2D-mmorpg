@@ -1231,6 +1231,14 @@ public static class ItemCatalog
     // no vendor price, no 1h/2h/30d ladder. See SkillCatalog.GrandRuneBuff.
     public const string GrandRune        = "rune_grand";
     public const string BoxGrandRune24h  = "box_grand_rune_24h";
+    // `BL-277` part 3 — the Wayfarer's items: four runes (two buffs × 1 h / 2 h), the restore potion,
+    // and the box a subclass slot pays the first time it is ever filled.
+    public const string FavorKeepRune1h      = "rune_favor_keep_1h";
+    public const string FavorKeepRune2h      = "rune_favor_keep_2h";
+    public const string BlessingBoostRune1h  = "rune_blessing_boost_1h";
+    public const string BlessingBoostRune2h  = "rune_blessing_boost_2h";
+    public const string FavorRestorePotion   = "potion_favor_restore";
+    public const string BoxWayfarerSubclass  = "box_wayfarer_subclass";
     // Newbie CHOICE selection-boxes (pick one of two sub-boxes).
     public const string BoxNewbieArmorChoice = "box_newbie_armor_choice";
     public const string BoxNewbieRuneChoice  = "box_newbie_rune_choice";
@@ -1488,6 +1496,37 @@ public static class ItemCatalog
         //    `-1`, which is precisely the platinum-ONLY shape; it is left at 0 because he has not
         //    priced them, and an invented premium price is not ours to author.
         RuneBox(BoxGrandRune24h, "Grand Rune Box (1d)", 1 * D, -1, false, "Opens to a Grand Rune lasting 24 hours. Grand Runes multiply your final PHYSICAL and MAGICAL damage x2, shorten your casts by 30% and raise cast speed - both channels of the War and Spell Runes in one item, each at full strength.");
+
+        // ----- `BL-277` part 3 — THE WAYFARER'S ITEMS. Four held runes on the same machinery as every
+        // rune above (the item's wall clock drives the buff; the kill and the fill rate ask whether the
+        // buff is up), the restore potion and the subclass box. ⚠ NOTHING SELLS ANY OF THEM: his note's
+        // source is event currency and events do not exist (the recurring premium grant is `BL-284`), so
+        // today they come from the subclass box and the admin `/give`. Untradable and unsellable like the
+        // premium reward runes, so the box a subclass pays out cannot be farmed onto the market.
+        void WayfarerRune(string id, string name, string skillId, int seconds, string desc) =>
+            list.Add(new ItemDef(id, name, EquipSlot.Rune, ItemGrade.F, ItemRarity.Mythic,
+                IsRune: true, RuneBuffSkillId: skillId, GrantsRuneSeconds: seconds,
+                Tradable: false, BuyPriceOverride: -1, SellPriceOverride: 0, Value: 0,
+                NoAttributes: true, Description: desc));
+        const string KeepLine = "Held rune: your kills do not drain the Wayfarer's Favor while it is in your bag. Move it to the warehouse to switch it off; it can't be deleted.";
+        const string BoostLine = "Held rune: the Wayfarer's Blessing gauge fills twice as fast (kills, combat time, Favor stages, level-ups) while it is in your bag. Move it to the warehouse to switch it off; it can't be deleted.";
+        WayfarerRune(FavorKeepRune1h, "Favor Keep-Rune (1h)", SkillCatalog.FavorKeepRuneBuff, 1 * H, KeepLine);
+        WayfarerRune(FavorKeepRune2h, "Favor Keep-Rune (2h)", SkillCatalog.FavorKeepRuneBuff, 2 * H, KeepLine);
+        WayfarerRune(BlessingBoostRune1h, "Blessing Booster Rune (1h)", SkillCatalog.BlessingBoostRuneBuff, 1 * H, BoostLine);
+        WayfarerRune(BlessingBoostRune2h, "Blessing Booster Rune (2h)", SkillCatalog.BlessingBoostRuneBuff, 2 * H, BoostLine);
+        // No use-skill: what it does is a number on the character, answered by name in HandleUsePotion
+        // (the Subclass Ticket's shape). Its hour of reuse is WALL-CLOCK on the character, not a
+        // PotionCooldownTicks — those live in memory and a relog would reset them.
+        list.Add(new ItemDef(FavorRestorePotion, "Favor Restore Potion", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Mythic,
+            Tradable: false, BuyPriceOverride: -1, SellPriceOverride: 0, Value: 0, NoAttributes: true,
+            Description: $"Restores {WayfarerFavor.PotionPoints:N0} Wayfarer's Favor. Once per hour."));
+        list.Add(new ItemDef(BoxWayfarerSubclass, "Wayfarer's Subclass Box", EquipSlot.Box,
+            ItemGrade.F, ItemRarity.Mythic,
+            Tradable: false, BuyPriceOverride: -1, SellPriceOverride: 0, Value: 0,
+            Description: "Given the first time each subclass slot is filled. Holds a Favor Keep-Rune (1h), "
+                       + "a Blessing Booster Rune (1h) and 4 Favor Restore Potions. The runes' hours start "
+                       + "when you open it."));
 
         // ----- PREMIUM REWARD RUNES: one item per channel per rung (5 × 11), plus Sinister and
         // Sinners. Same held-rune machinery as the War/Spell runes above — the difference is entirely

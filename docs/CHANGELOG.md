@@ -7,11 +7,46 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.196.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.197.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-24 (latest) — 0.196.0: the Wayfarer's Blessing (`BL-277` part 2)
+## 2026-09-24 (latest) — 0.197.0: the Wayfarer's items and the raid-boss Favor grant (`BL-277` part 3, closes `BL-277`)
+
+> *"We must have the 4 Runes"*
+
+**The four runes, the restore potion, the subclass box, and the Favor a raid boss grants.** `BL-277` is
+done and archived. The numbers are in `Game.Shared/WayfarerFavor.cs`. The items are in `Items.cs` / `Boxes.cs`,
+and their two buffs are in `Skills.Wayfarer.cs`.
+
+- **Favor Keep-Rune (1h / 2h):** while one is held, a kill does not drain the Favor, so no stage is lost and
+  there is no stage-loss Blessing fill either. The +0.1% kill fill and a Blessing's refund still apply.
+- **Blessing Booster Rune (1h / 2h):** ×2 Blessing fill from every source, read in `BlessingFillRate` and
+  nowhere else. Charisma (`BL-283`) will multiply it there (×4 with both). The sheet's fill rate shows it.
+- Both are ordinary held runes: the item's wall clock drives the buff, the warehouse switches them off,
+  and they cannot be deleted. Holding a 1h and a 2h of the same kind does not stack. The later expiry wins.
+- **Favor Restore Potion:** +2,500 Favor, capped at 20,000, and refused (not used up) when the gauge is
+  full. It has an hour of reuse, saved as a **wall-clock time on the character**, so logging out and back in
+  does not reset it (the ordinary potion cooldowns are in memory only). The bar shows the countdown.
+- **Wayfarer's Subclass Box:** both 1h runes + 4 potions. It is given **the first time each subclass slot
+  is filled**, and never again: a swap, a cancel-and-replace, or removing and re-adding a class gives
+  nothing. A new counter (`SubclassBoxesGiven`) records how many boxes were paid, compared against the
+  subclasses held. If the bag is full, the box is paid at the next login. The runes' hours start
+  when you open the box. The `BL-252` 24h Exp/SP rune is still given per subclass created, as before.
+- **Box contents are never lost to a full bag:** any box whose contents are all guaranteed now refuses to
+  open until everything fits. Random boxes are unchanged.
+- **Raid-boss grant:** `min(gauge room, yourExpShare ÷ MobExpReward(L) × 11.2)`, from your own base EXP share
+  (after the party split and level gap). That is ~3,000 per 9-man member at every level, ~9,000 per 3-man, and
+  a full gauge solo. It is **grant-only**: no drain, no refund, no Blessing fill. You get nothing if the boss
+  judges you (gap > 8, the same `BossJudges` that decides the EXP), and nothing if a rune zeroes your EXP.
+- **Nothing sells them.** Events do not exist, and the recurring premium grant is `BL-284`. The sources are
+  the subclass box and the admin `/give`. All six items are untradable and unsellable.
+- The Details sheet's rates are now re-sent whenever a rune comes or goes. Before this, a reward rune's rate
+  change reached the sheet only when something else pushed it.
+- ⚠ **`game.db` delete** (two new character columns). **Needs an APK** (the client builds item and skill
+  names from `Game.Shared`).
+
+## 2026-09-24 — 0.196.0: the Wayfarer's Blessing (`BL-277` part 2)
 
 > *"Once the gauge reaches 100%, the Blessing triggers automatically."*
 

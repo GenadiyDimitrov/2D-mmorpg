@@ -336,6 +336,9 @@ public class GameLoopService : BackgroundService
         // a character who was already 76 with a 4th class before the ladder existed, or whose bag was
         // full the last time one was due. Idempotent, so it is free to ask on every login.
         GrantEarnedSubclassTickets(entity);
+        // `BL-277` part 3 — a subclass box a full bag held back, and the restore potion's bar overlay.
+        GrantSubclassBoxes(entity);
+        RestoreFavorPotionCooldown(entity);
         // …which now recomputes, so the pools it just moved have to be re-filled. PersistenceService
         // fills them to the max it knew BEFORE the auto-granted passives existed; a mage whose
         // Spellcaster Mastery or floor passive raises MaxMp would otherwise log in short of full every
@@ -3928,6 +3931,8 @@ public class GameLoopService : BackgroundService
         if (AddItem(player, SubclassGiftRuneId))
             SendSystemToEntity(player,
                 $"A {ItemCatalog.Get(SubclassGiftRuneId)?.Name ?? "rune"} was placed in your bag — it lasts 24 hours.");
+        // `BL-277` part 3 — and the Wayfarer's box, once per slot EVER (the rune above is per creation).
+        GrantSubclassBoxes(player);
 
         SendInventory(player);
     }
@@ -4476,9 +4481,59 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // `BL-277` part 3 — the Favor Restore Potion: a number on the character, so no use-skill either.
+        if (item.DefId == ItemCatalog.FavorRestorePotion)
+        {
+            UseFavorPotion(player, item);
+            return;
+        }
+
         // §102.5 — a click (bag or bar) on ANY of several identical stacks drinks from the SMALLEST, so
         // 999 + 58 empties the 58 first instead of leaving an odd row behind for ever.
         UsePotion(player, Stacking.SmallestLike(player.Inventory, item), cmd.TargetId);
+    }
+
+    /// <summary>`BL-277` part 3 — drink a Favor Restore Potion: +<see cref="WayfarerFavor.PotionPoints"/>,
+    /// clamped to the gauge, then an hour of reuse. 🔑 The hour is a WALL-CLOCK stamp on the character
+    /// (<see cref="Entity.FavorPotionReadyUtc"/>), not a <c>PotionCooldowns</c> entry: those live in memory,
+    /// so a relog would have made the hour free to skip. The <c>PotionCooldowns</c> entry set here is only
+    /// the bar's countdown overlay. Refused (and not eaten) when the gauge is already full.</summary>
+    private void UseFavorPotion(Entity player, InventoryItem item)
+    {
+        var now = DateTime.UtcNow;
+        if (player.FavorPotionReadyUtc is DateTime ready && ready > now)
+        {
+            int mins = (int)Math.Ceiling((ready - now).TotalMinutes);
+            SendSystemToEntity(player, $"You can drink another Favor Restore Potion in {mins} min.");
+            return;
+        }
+        if (player.FavorPoints >= WayfarerFavor.MaxPoints)
+        {
+            SendSystemToEntity(player, "Your Wayfarer's Favor is already full.");
+            return;
+        }
+
+        double before = player.FavorPoints;
+        player.FavorPoints = Math.Min(WayfarerFavor.MaxPoints, player.FavorPoints + WayfarerFavor.PotionPoints);
+        player.FavorPotionReadyUtc = now.AddSeconds(WayfarerFavor.PotionCooldownSeconds);
+        player.PotionCooldowns[item.DefId] = WayfarerFavor.PotionCooldownSeconds * GameConstants.TickRate;
+        ConsumeOne(player, item);
+
+        SendSystemToEntity(player, $"You regain {(int)Math.Round(player.FavorPoints - before):N0} Wayfarer's Favor.");
+        SendFavor(player);
+        SendInventory(player);
+        SendPotionStatus(player);
+        SendCooldowns(player);
+        SaveEntity(player);
+    }
+
+    /// <summary>Put the restore potion's bar overlay back after a relog, from the saved wall clock.</summary>
+    private static void RestoreFavorPotionCooldown(Entity player)
+    {
+        if (player.FavorPotionReadyUtc is not DateTime ready) return;
+        double left = (ready - DateTime.UtcNow).TotalSeconds;
+        if (left > 0)
+            player.PotionCooldowns[ItemCatalog.FavorRestorePotion] = (int)Math.Ceiling(left * GameConstants.TickRate);
     }
 
     /// <summary>A dead player answered a resurrection offer. Accept → revive (restoring the offered exp);
@@ -11207,14 +11262,17 @@ public class GameLoopService : BackgroundService
     /// <item>Either way the Blessing gets its +0.1% kill fill (a no-op while one is running).</item>
     /// </list>
     /// A boss kill never comes here: it neither drains, refunds nor fills (*"otherwise u will lose all ur
-    /// favor"*) — it GRANTS, which is `BL-277` part 3.</summary>
+    /// favor"*) — it GRANTS (<see cref="FavorOnBossKill"/>).
+    /// <para>`BL-277` part 3 — a held <b>Favor keep-rune</b> stops the drain (*"dont allow vitality to
+    /// decrease"*), and with it the stage-loss fill, since no stage is lost. The kill fill and a Blessing's
+    /// refund are untouched: the rune keeps the gauge, it does not switch the Blessing off.</para></summary>
     private void FavorOnKill(Entity p, double baseExpShare, int level, bool blessed)
     {
         if (baseExpShare <= 0 || p.Runes.Exp <= 0f) return;
         double drain = WayfarerFavor.DrainPerKill(baseExpShare, level);
         if (blessed)
             p.FavorPoints = Math.Min(WayfarerFavor.MaxPoints, p.FavorPoints + drain);
-        else if (p.FavorPoints > 0)
+        else if (p.FavorPoints > 0 && !HasBuff(p, SkillCatalog.FavorKeepRuneBuff))
         {
             int stageBefore = WayfarerFavor.Stage(p.FavorPoints);
             p.FavorPoints = Math.Max(0, p.FavorPoints - drain);
@@ -11227,9 +11285,31 @@ public class GameLoopService : BackgroundService
 
     /// <summary>`BL-277` part 2 — 🔑 **THE ONE FILL-RATE MULTIPLIER** for the Blessing gauge, applied in
     /// exactly one place (<see cref="AddBlessing"/>), so it multiplies EVERY source — kills, combat minutes,
-    /// stage drops and the level-up bump — as he ruled. **×1 today:** charisma's +10%-per-100 (`BL-283`) and
-    /// the booster rune's ×2 (`BL-277` part 3) land HERE and nowhere else.</summary>
-    private static float BlessingFillRate(Entity p) => 1f;
+    /// stage drops and the level-up bump — as he ruled. The booster rune's ×2 (`BL-277` part 3) is here;
+    /// charisma's +10%-per-100 (`BL-283`) lands here too, MULTIPLYING it (×4 with both), and nowhere else.</summary>
+    private static float BlessingFillRate(Entity p) =>
+        HasBuff(p, SkillCatalog.BlessingBoostRuneBuff) ? WayfarerBlessing.BoosterRuneFillRate : 1f;
+
+    private static bool HasBuff(Entity p, string key)
+    {
+        foreach (var b in p.Buffs) if (b.Key == key) return true;
+        return false;
+    }
+
+    /// <summary>`BL-277` part 3 — what a RAID-BOSS kill that paid this member <paramref name="baseExpShare"/>
+    /// of base EXP does to the gauges: it GRANTS <see cref="WayfarerFavor.BossGrant"/> and nothing else — no
+    /// drain, no refund, no Blessing fill (his fifth-round ruling). The caller has already skipped anyone
+    /// the boss judges (the 8-level window), and a rune that zeroes EXP zeroes the grant with it (*"0 exp
+    /// so 0 points"*).</summary>
+    private void FavorOnBossKill(Entity p, double baseExpShare, int level)
+    {
+        if (baseExpShare <= 0 || p.Runes.Exp <= 0f || p.FavorPoints >= WayfarerFavor.MaxPoints) return;
+        double before = p.FavorPoints;
+        p.FavorPoints = Math.Min(WayfarerFavor.MaxPoints, p.FavorPoints + WayfarerFavor.BossGrant(baseExpShare, level));
+        int gained = (int)Math.Round(p.FavorPoints - before);
+        if (gained > 0) SendSystemToEntity(p, $"The fallen boss grants you {gained:N0} Wayfarer's Favor.");
+        PushFavorIfMoved(p);
+    }
 
     /// <summary>Add <paramref name="percent"/> (already the SOURCE's number, ×1) to the Blessing gauge,
     /// scaled once by <see cref="BlessingFillRate"/>. Reaching the top fires the Blessing on the spot. While
@@ -11542,6 +11622,9 @@ public class GameLoopService : BackgroundService
             p.RecomputeDerived();
             PushBuffs(p);
             SendStats(p);
+            // A rune came or went: the sheet's rates (reward runes) and the Blessing fill rate (the
+            // booster rune, `BL-277` part 3) both read the rune buffs.
+            SendFavor(p);
         }
         if (invChanged) SendInventory(p);
         if (whChanged) SendWarehouse(p);
@@ -16783,8 +16866,9 @@ public class GameLoopService : BackgroundService
             AwardExp(m, (long)(memberExp * personal), (long)(shareSp * gap * personal));
             // Each member drains on their OWN share (his ruling). A boss kill never drains (*"otherwise
             // u will lose all ur favor"*), never refunds and never fills the Blessing — it GRANTS
-            // instead, which is `BL-277` part 3.
-            if (victim.Rank != MobRank.Boss) FavorOnKill(m, memberExp, level, blessed);
+            // instead, priced on the same own share (`BL-277` part 3).
+            if (victim.Rank == MobRank.Boss) FavorOnBossKill(m, memberExp, level);
+            else FavorOnKill(m, memberExp, level, blessed);
         }
     }
 
@@ -16999,6 +17083,28 @@ public class GameLoopService : BackgroundService
             player.SubclassTicketsEarned++;
             SendSystemToEntity(player,
                 "You have earned a Subclass Ticket. Use it to open another subclass slot.");
+        }
+    }
+
+    /// <summary>`BL-277` part 3 — pay the Wayfarer's Subclass Box for every subclass slot filled for the
+    /// FIRST time. His rule: *"only 1st time when adding and thats it"*, so a swap, a cancel-and-replace
+    /// or a removed-and-re-added class pays nothing. Same shape as <see cref="GrantEarnedSubclassTickets"/>:
+    /// <see cref="Entity.SubclassBoxesGiven"/> records what was PAID and only moves when the box landed, so
+    /// a full bag leaves it owed until the next login. Because it compares against the count HELD, a class
+    /// that is removed and re-added lands on a number already paid.</summary>
+    private void GrantSubclassBoxes(Entity player)
+    {
+        while (player.SubclassBoxesGiven < SubclassesHeld(player))
+        {
+            if (!AddItem(player, ItemCatalog.BoxWayfarerSubclass))
+            {
+                SendSystemToEntity(player,
+                    "A Wayfarer's Subclass Box is waiting for you but your bag is full — make room and it will be given.");
+                return;
+            }
+            player.SubclassBoxesGiven++;
+            SendSystemToEntity(player,
+                "A Wayfarer's Subclass Box was placed in your bag — two 1-hour Wayfarer runes and 4 Favor Restore Potions.");
         }
     }
 
@@ -19042,6 +19148,27 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // A box whose every entry is GUARANTEED is refused until all of it fits (`BL-277` part 3). The
+        // random-box path below spills what does not fit ("some loot was lost"), which is tolerable for a
+        // roll and not for a fixed payout — the Wayfarer's Subclass Box is given once per slot, ever.
+        if (box.Entries.All(e => e.Chance >= 1f))
+        {
+            int freeRows = GameConstants.InventorySize - player.Inventory.Count(i => !i.Equipped)
+                         + (item.Quantity == 1 ? 1 : 0);   // opening the last box frees its own row
+            int need = 0;
+            foreach (var e in box.Entries)
+            {
+                if (e.ForClass is BaseClass only && player.BaseClass != only) continue;
+                if (ItemCatalog.Get(e.ItemId) is not ItemDef ed) continue;
+                need += ed.IsStackable ? Stacking.RowsNeeded(player.Inventory, ed, e.MaxQty) : e.MaxQty;
+            }
+            if (need > freeRows)
+            {
+                SendSystemToEntity(player, $"Open the box with {need} free inventory slots.");
+                return;   // box NOT consumed
+            }
+        }
+
         // Consume one box (frees a slot for the loot).
         if (item.Quantity > 1) item.Quantity--; else player.Inventory.Remove(item);
 
@@ -19080,6 +19207,7 @@ public class GameLoopService : BackgroundService
             if (full) { SendSystemToEntity(player, "Your inventory is full — some loot was lost."); break; }
         }
 
+        ReconcileTimedItems(player);   // a rune in the loot starts applying its buff at once
         SendInventory(player);
         SaveEntity(player);
         SendSystemToEntity(player, got.Count > 0

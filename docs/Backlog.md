@@ -274,7 +274,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-272` | ❓ | **RARITY COLLAPSE — Common + Mythic only** for equipment — [design/Rework-2026-09-23.md](design/Rework-2026-09-23.md) §2.1 | items |
 | `BL-273` | ❓ | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05` (archived) — §2.2; ✅ no profession lock | items |
 | `BL-274` | ❓ | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3 | items |
-| `BL-277` | 🔵 | **WAYFARER'S FAVOR + WAYFARER'S BLESSING** (was Vitality + Blessing) — §3; 🟢 **part 1 (the Favor gauge) BUILT 0.195.0, part 2 (the Blessing) BUILT 0.196.0**, part 3 owed · ✅ FULLY RULED 2026-09-23 · ✅ names, refund = drain, pace = empty, drain in HOURS (a full Favor = 2 h of farming, H = 2 final, ÷ measured kills/h), party drains own share, offline = not in the world (8 h 20 min to full, never ×2 with town), subclass box once per slot, panel ships with it; 0.1%/kill, modifier × every source; boss grant flat 3k/9-man, grant-only, window 8 (judged + unpaid at 9+, built 0.194.0); four runes, box = both 1 h runes | progression |
 | `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
 | `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
 | `BL-282` | 🟡 | **`BalanceMatrix --craft-cost`** ✅ built + all inputs ruled; only C5 (consumables) left, waits on §2.2 #8 — kills + hours per crafted T40/52/61/76/80 item under the NEW rules, by recipe %; extends M1-M9 | items |
@@ -2299,90 +2298,6 @@ bosses drop at least one full item, guaranteed**, plus direct essence of ~1/10 a
 All three kinds (weapon / armour / jewels) stay on bosses. Boss recipe %: T61 100%, T76/T80 60%.
 ✅ **The guaranteed item holds at EVERY tier.** **One daily per NPC/kind**, shared by its T76 and T80 quest (max 3 a day, any tier mix).
 
-## `BL-277` 🔵 WAYFARER'S FAVOR + WAYFARER'S BLESSING (was Vitality + Blessing)
-
-§3 of the design doc. 20,000 points over 8 stages (+50%…+400% EXP/SP); gained offline and in town
-(40/min, admin-tunable), from raid/world bosses by the EXP share; drained per kill by
-`baseExp/(L²·10)`. The 3-minute +100% Blessing, filled by kills, combat time, stage drops and level-ups.
-The items: keep-rune, restore potion, blessing booster, the subclass box. Charisma speeds up the fill.
-A new block on the details panel.
-✅ **2026-09-23:** (1) **The refund matches the drain.** During the Blessing a kill drains nothing and
-gives back what it would have drained, so each Blessing returns ~3 min of drain (the boss formula stays
-on bosses). (2) **The pace is vitality-EMPTY.** The EXP curve stays, and Vitality is catch-up for less
-active players. 🔴 **New finding:** on our curve `baseExp/(L²·10)` barely drains anything (a full gauge
-lasts ~187 levels of kills at 40), and no single divisor fixes that. Proposal:
-`20000·baseExp/(ExpToNext(L)·G)`, with G still to be measured (§3.3).
-✅ **2026-09-23, second round (§3):** **Names: the 0-20000 gauge is *Wayfarer's Favor*, the 3-minute
-buff is *Wayfarer's Blessing*.** (Declined: *Resolve*/*Vigor*, which read as buffs, and *Timelord's…*,
-because "Time Lord" is Doctor Who's term.) **The drain is measured in HOURS, not levels:** a full Favor
-lasts **H = 2 h** of same-level normal farming at every level:
-`drain/kill = 20000 × (baseExp ÷ sameLevelNormalExp(L)) ÷ (360 × H)`. So elites and x2/x3 zones still
-drain in proportion to their EXP, and one night offline (8.3 h at 40/min) is worth the same at 20 and at
-80. (A G counted in levels would last minutes at 20 and ~150 h at 80.) **A party kill drains each member
-by their OWN EXP share.** The check he asked for, *"not OP, a catch-up, not 'go offline to farm 3× later'"*:
-8 h offline + 2 h play = ~6.75 h of progress, and 10 h of active farming = 10 h, so active farming always
-wins. ⚠ `360` = the tool's 10 s/kill; the constant needs re-measuring once `BL-282` / the pace numbers move.
-⚠ **2026-09-23, `BL-282` measured the clock: ~66-81 kills/h** at levels 45-85 (M1's calibration, walking
-dominates), not 360. With 360 in the formula a full Favor would last **~9-11 h** of real farming, not the ruled
-2 h. So when this is built, the `360` has to be the measured kills/h at that level (or the ruling changes to
-~10 h). Your call, before the constant is written.
-✅ ~~❓ **2026-09-23: H = 2 or 4?**~~ (answered: H = 2, the fourth round below) (design doc §3 point 3, the H table). His test is that 8 h offline + P h of play
-must never beat P + 8 h of non-stop farming. **H = 4 fails it** (8 h off + 4 h play = 13.5 h against 12 h). It
-breaks even at H ≈ 3.4. **My pick: H = 3**, the largest round number that still holds (2 h of play → 8.0 h,
-against 6.75 h at H = 2).
-✅ **2026-09-23, fourth round: H = 2 STAYS** (H = 3 declined), **and `360` → the MEASURED kills/h**:
-`drain/kill = 20000 × (baseExp ÷ sameLevelNormalExp(L)) ÷ (killsPerHour(L) × 2)`, with `killsPerHour(L)` an
-authored per-level table read off `--craft-cost`'s M1 clock (~70/h → ~143 points per same-level kill, ~140
-kills per full Favor). This closes the two ⚠ notes above about the `360`.
-📊 **2026-09-23, the last three numbers MEASURED, waiting on him** (design doc §3 points 10-12): the Blessing
-per kill (0.1% = ~90 min at ×1 with the Favor empty and ~61 while it drains; pick 0.1, and the ×2/×4 multiplies every source);
-the raid-boss grant (a boss = 2,406 normal kills at every level, so IG's formula gives 8.6-19.5k on our EXP;
-corrected to `share ÷ sameLevelNormalExp × P`, P ≈ 11.2 = 3k per 9-man member, flat; ❓ flat or rising,
-grant-not-drain on bosses, the 8-level window); the runes (keep-rune + booster rune; ❓ 1 h and 2 h, or 1 h only).
-✅ **2026-09-23, third round (§3.6-3.9):** **Offline is offline, town is town.** Logging out anywhere
-counts. Offline = **not in the world**: credited at login as `(now − last save) × 40/min`, clamped to
-20,000. A living offline-farmer is in the world and gains nothing; its death or empty budget ends the
-session like a logout. Town is its own online ticker (per full 60 s, reset by leaving town or fighting).
-**Full bar = 8 h 20 min**, and the two sources **never stack** (an offline character cannot be in town).
-**The subclass box** (1× 1 h keep-rune + 4× restore potions) is given **only the first time each subclass
-slot is filled**. Swapping gives nothing, and neither does removing a subclass and adding a new one;
-this needs a persisted per-slot marker. **The details-panel block ships WITH this entry** (the EXP/SP
-line only differs from the server rate once Favor exists). **Charisma is split out to `BL-283`**; the
-Blessing carries a fill-rate hook at +0% until then.
-✅ **2026-09-23, fifth round (§3.10-3.12): FULLY RULED.** (1) **Blessing: 0.1% per kill at ×1**, and the
-charisma/booster modifier **multiplies every source** (kills, combat minutes, stage drops, level-up), applied
-once where the gauge is added to. (2) **Boss grant: `(yourExpShare ÷ sameLevelNormalExp(L)) × 11.2`, flat**
-(~3k per 9-man member at every level, solo clamps at 20k). **A boss kill only grants, never drains** (*"after
-a Boss fight u probably want to take a break or regroup"*), so it gives no Blessing kill fill either. **No IG
-8-level window: ours is `BossJudgmentGap` (9)**, and a member outside it gets no grant (read off *"ours boss
-penalty it was 9 or 6 lvls"*; the 6 is the damage taper, and changing to it is one line). (3) **Four runes:**
-keep 1 h / 2 h, booster 1 h / 2 h. **The subclass box now holds both 1 h runes** + 4 potions. The
-premium/event daily/weekly grant is **`BL-284`**.
-✅ **2026-09-23, sixth round — the window is 8, and the box is confirmed.** *"I want 8 lvls .. at 9th lvl
-difference boss start to use judgment and no exp/favor grant (if it's not like that make it like that)"*. It
-was 9 (a gap of exactly 9 still inside), so **`BossJudgmentGap` is now 8** (built in 0.194.0): a gap of 8 is
-the last one inside the fight, and at 9+ the boss judges you **and pays you nothing** — no EXP/SP from its kill
-(`PayKillShare`, built in 0.194.0 through the same `BossJudges`) and, when part 3 lands, no Favor grant.
-**The subclass box holds both 1 h runes** (keep + booster) + 4 restore potions — his confirmation.
-🟢 **2026-09-23 — PART 1 BUILT in 0.195.0 (the Favor gauge, design doc §7 step 2).** `Game.Shared/WayfarerFavor.cs`:
-the eight stages (+50% each), the drain `20000 × (memberExp ÷ MobExpReward(L)) ÷ (killsPerHour(L) × 2)` on each
-member's own share (never on a boss kill), the `killsPerHour` table authored from the new BalanceMatrix
-`--favor-kph` (59-90/h), the offline credit at load (`FavorStampUtc` = the last save), the city ticker
-(`RegenBoost` safe zones, full 60 s, reset by leaving or any fight), the admin knob (`FavorPerMinute`, 40) and
-the Details tab's "Other" block (Favor, stage, finished Exp/SP/Gold/Drop rates). Two calls made on the way,
-both from his own text: the Favor bonus **adds** to charisma's (*"100 + 400 + 50 = x5.5"*), and it touches
-**kill EXP only** (quest rewards neither pay it nor drain it). **Owed: part 2 (the Blessing), part 3 (items +
-boss grant).**
-🟢 **2026-09-24 — PART 2 BUILT in 0.196.0 (the Blessing, design doc §7 step 3).** `WayfarerBlessing` beside the
-Favor: 0.1%/non-boss kill that paid EXP, 1%/min in combat (by the second, `IsInCombat`), +8% per Favor stage a
-drain crosses, +30% per level earned; one fill-rate multiplier in `AddBlessing` (×1 until `BL-283` / the booster
-rune); at 100 it fires 180 s of +100% (added to `KillExpBonus`) with Protection + refund = the drain; the gauge
-resets to 0 at the end. Boss kills: no fill, no refund. Clock on the character (saved, paused offline), buff icon
-re-asserted from it every second (the `BL-98` pattern). Details "Other" gets the Blessing row. Three calls made
-on the way, none ruled in the doc: **the clock pauses while logged out** (his *"not offline"*); **it survives
-death / a subclass swap / a cleanse** (it is the character's, like the runes); **an offline-farmer fills it**
-(it is in the world and drains the Favor, so it gets both halves). Say if any is wrong. **Owed: part 3.**
-
 ## `BL-280` 🔵 ZONES BY ARCHETYPE, AND NO MOB CLUSTERS
 
 *"anti mage and anti fighter and anti archer mobs need to be in self zones"* — anti-mage zones that
@@ -2440,6 +2355,8 @@ Wayfarer's Blessing fill in whole steps: **+10% per full 100** (0-99 = 0%, 100-1
 123 is still 10%). ❓ Not yet discussed: who may recommend whom, how often, whether current decays (and
 what separates it from lifetime), and whether it does anything besides the Blessing. `BL-277` ships with
 the fill-rate hook at +0%, so this does not block it.
+🟢 **2026-09-24 — the hook is live (0.197.0):** `GameLoopService.BlessingFillRate` returns ×2 while a Blessing booster
+rune is held, else ×1. Charisma's `1 + 0.1 × floor(current / 100)` MULTIPLIES that there (×4 with both), and nowhere else.
 ✅ **2026-09-23:** (1) **Who:** any player may recommend another, but not themselves, not a character
 on the same account, and the giver must be level 20+. (4) **Effects:** the Blessing fill rate, plus a
 **title for the server's #1** (a text title), and nothing else. (5) **Later, with castles:** a clan
@@ -2468,3 +2385,5 @@ Split out of `BL-277` (2026-09-23, fifth round): *"premium or an event will get 
 as premium, and there are no events. The four runes ship with `BL-277` (sources: the subclass box and the
 admin grant), so this does not block it. ❓ Open: 1 or 2 a week; which rune (keep or booster) each grant
 gives; whether premium is a time-limited status bought with Platinum.
+🟢 **2026-09-24 — the four runes exist (0.197.0):** `rune_favor_keep_1h` / `_2h`, `rune_blessing_boost_1h` / `_2h`
+(`ItemCatalog.FavorKeepRune1h` …). The grant this entry owes only has to `AddItem` them; nothing about the runes is left.

@@ -807,6 +807,8 @@ public class PersistenceService
         // `BL-277` part 2 — the Blessing comes back exactly as it left: nothing fills or counts down away.
         entity.BlessingPercent = Math.Clamp(rec.BlessingPercent, 0, WayfarerBlessing.MaxPercent);
         entity.BlessingSecondsLeft = Math.Clamp(rec.BlessingSecondsLeft, 0, WayfarerBlessing.DurationSeconds);
+        entity.FavorPotionReadyUtc = rec.FavorPotionReadyUtc;
+        entity.SubclassBoxesGiven = Math.Clamp(rec.SubclassBoxesGiven, 0, SubclassSlots.MaxSlots);
         // The CHOICE comes back; whether it is still HELD is decided by the loop's title refresh, which
         // is what fills entity.Title. A choice for a board you have since lost simply draws nothing.
         entity.TitleCategory = rec.TitleCategory ?? "";
@@ -1049,6 +1051,7 @@ public class PersistenceService
         int Charisma, long CharismaLifetime, int LikesRemainingToday, string LikeBudgetDay,
         double FavorPoints, DateTime FavorStampUtc,   // `BL-277`: the stamp is the CAPTURE time
         double BlessingPercent, int BlessingSecondsLeft,
+        DateTime? FavorPotionReadyUtc, int SubclassBoxesGiven,
         string TitleCategory, string CustomTitle, string CustomTitleColor, bool MayWriteTitle,
         bool GodMode, bool AdminInvisible,   // `BL-182` — the two staff toggles survive a relog
         int SocialOptions,
@@ -1105,6 +1108,7 @@ public class PersistenceService
                 e.Charisma, e.CharismaLifetime, e.LikesRemainingToday, e.LikeBudgetDay,
                 e.FavorPoints, DateTime.UtcNow,
                 e.BlessingPercent, e.BlessingSecondsLeft,
+                e.FavorPotionReadyUtc, e.SubclassBoxesGiven,
                 e.TitleCategory, e.CustomTitle, e.CustomTitleColor, e.MayWriteTitle,
                 e.GodMode, e.AdminInvisible,
                 (int)e.Social,
@@ -1241,6 +1245,8 @@ public class PersistenceService
         rec.FavorStampUtc = snap.FavorStampUtc;
         rec.BlessingPercent = snap.BlessingPercent;
         rec.BlessingSecondsLeft = snap.BlessingSecondsLeft;
+        rec.FavorPotionReadyUtc = snap.FavorPotionReadyUtc;
+        rec.SubclassBoxesGiven = snap.SubclassBoxesGiven;
         rec.TitleCategory = snap.TitleCategory;
         rec.CustomTitle = snap.CustomTitle;
         rec.CustomTitleColor = snap.CustomTitleColor;

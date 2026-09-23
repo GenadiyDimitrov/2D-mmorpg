@@ -105,6 +105,15 @@ public static class BoxCatalog
                 new BoxEntry(ItemCatalog.BoxSpellRune24h, 1.0f),
             }, PickCount: 1),
 
+            // `BL-277` part 3 — the subclass box: both 1 h runes + 4 restore potions (his sixth-round
+            // confirmation). Every entry is guaranteed, so the open handler refuses it until it all fits.
+            new BoxDef(ItemCatalog.BoxWayfarerSubclass, new[]
+            {
+                new BoxEntry(ItemCatalog.FavorKeepRune1h, 1.0f),
+                new BoxEntry(ItemCatalog.BlessingBoostRune1h, 1.0f),
+                new BoxEntry(ItemCatalog.FavorRestorePotion, 1.0f, 4, 4),
+            }),
+
             // The Apothecary's DAILY favour — the same choice, one hour instead of one day.
             new BoxDef(ItemCatalog.BoxDailyRuneChoice, new[]
             {

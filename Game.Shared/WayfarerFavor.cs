@@ -64,6 +64,33 @@ public static class WayfarerFavor
     public static double Credit(double current, double minutes, int perMinute) =>
         Math.Min(MaxPoints, Math.Max(0, current) + Math.Max(0, minutes) * Math.Max(0, perMinute));
 
+    /// <summary>`BL-277` part 3 — **P**, the Favor a raid-boss kill grants per normal same-level kill's
+    /// worth of EXP the member personally received. His ruling (fifth round): keep the note's shape (grant ∝
+    /// your own EXP share) with OUR denominator, **flat** — a boss pays 2,406 normal kills of EXP at every
+    /// level, so a 9-man member's ~267 kills × 11.2 ≈ 3,000 at 44 and at 85 alike. AUTHORED, never refitted
+    /// live.</summary>
+    public const double BossGrantPerNormalKill = 11.2;
+
+    /// <summary>What a raid-boss kill that paid <paramref name="baseExpShare"/> of BASE EXP (this member's
+    /// own share after the party split and the level gap, before any rate, rune or bonus) GRANTS a level-
+    /// <paramref name="level"/> character:
+    /// <code>grant = (share ÷ sameLevelNormalExp(L)) × 11.2</code>
+    /// A 9-man member ~3,000, a 3-man ~9,000, a solo kill clamps to a full gauge. Grant-only: a boss kill
+    /// never drains, refunds or fills the Blessing (*"after a Boss fight u probably want to take a break or
+    /// regroup"*).</summary>
+    public static double BossGrant(double baseExpShare, int level)
+    {
+        if (baseExpShare <= 0) return 0;
+        return Math.Min(MaxPoints, baseExpShare / ExpCurve.MobExpReward(level) * BossGrantPerNormalKill);
+    }
+
+    /// <summary>The restore potion: +2,500 points (his note verbatim), one per hour.</summary>
+    public const int PotionPoints = 2500;
+
+    /// <summary>The restore potion's reuse — 1 h of WALL-CLOCK, saved on the character, so logging out
+    /// and back in does not reset it.</summary>
+    public const int PotionCooldownSeconds = 3600;
+
     /// <summary>The farm's kills per hour at this level — the clock the drain divides by. Levels past the
     /// table read its last row.</summary>
     public static int KillsPerHour(int level) =>
@@ -123,4 +150,8 @@ public static class WayfarerBlessing
     /// <summary>+100% EXP/SP while active — ADDED to the other personal bonuses (charisma, Favor), his
     /// *"the SP/EXP start to show x3.5"* on a ×2.5 Favor rate.</summary>
     public const float Bonus = 1.0f;
+
+    /// <summary>`BL-277` part 3 — the Blessing booster rune: *"increases the blessing gauge fill up rate
+    /// with 100%"*, so ×2 on every source. Charisma's ×2 (`BL-283`) will MULTIPLY it (×4 with both).</summary>
+    public const float BoosterRuneFillRate = 2f;
 }

@@ -51,6 +51,7 @@ public static partial class SkillCatalog
     /// duplicated on login.</para></summary>
     public static bool IsRuneBuff(string skillId) =>
         skillId == WarRuneBuff || skillId == SpellRuneBuff || skillId == GrandRuneBuff
+        || skillId == FavorKeepRuneBuff || skillId == BlessingBoostRuneBuff
         || (Get(skillId) is SkillDef d && !d.RewardsAt(1).IsNeutral);
     // ---- Class identity "sure" floor passives — now ONE multi-level skill each
     //      (auto-granted at the class-change milestone, level = tier 1/2/3). The floor
