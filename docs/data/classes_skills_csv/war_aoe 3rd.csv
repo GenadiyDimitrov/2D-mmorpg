@@ -104,21 +104,21 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 72,Shocking Shout,shocking_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +3800 power and Stuns around for 5s, Cannot be blocked, Can double;",75,650,,
 74,Shocking Shout,shocking_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +4000 power and Stuns around for 5s, Cannot be blocked, Can double;",78,880,,
 ,,,,,,,,,,,,,,,,,---------------------------Wirlwind----------------------------
-40,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +300 power 20 times over 4s, Cannot be blocked, Can double;",36,28,[]
-43,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +350 power 20 times over 4s, Cannot be blocked, Can double;",40,35,[]
-46,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +400 power 20 times over 4s, Cannot be blocked, Can double;",43,40,[]
-49,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +450 power 20 times over 4s, Cannot be blocked, Can double;",45,50,[]
-52,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +500 power 20 times over 4s, Cannot be blocked, Can double;",47,74,[]
-55,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +550 power 20 times over 4s, Cannot be blocked, Can double;",50,80,[]
-58,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +600 power 20 times over 4s, Cannot be blocked, Can double;",55,88,[]
-60,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +650 power 20 times over 4s, Cannot be blocked, Can double;",56,120,[]
-62,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +700 power 20 times over 4s, Cannot be blocked, Can double;",58,170,[]
-64,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +750 power 20 times over 4s, Cannot be blocked, Can double;",62,190,[]
-66,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +800 power 20 times over 4s, Cannot be blocked, Can double;",65,280,[]
-68,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +850 power 20 times over 4s, Cannot be blocked, Can double;",68,320,[]
-70,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +900 power 20 times over 4s, Cannot be blocked, Can double;",70,390,[]
-72,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +950 power 20 times over 4s, Cannot be blocked, Can double;",75,650,[]
-74,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +1000 power 20 times over 4s, Cannot be blocked, Can double;",78,880,[]
+40,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +300 power 10 times over 2s, Cannot be blocked, Can double;",36,28,[]
+43,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +350 power 10 times over 2s, Cannot be blocked, Can double;",40,35,[]
+46,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +400 power 10 times over 2s, Cannot be blocked, Can double;",43,40,[]
+49,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +450 power 10 times over 2s, Cannot be blocked, Can double;",45,50,[]
+52,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +500 power 10 times over 2s, Cannot be blocked, Can double;",47,74,[]
+55,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +550 power 10 times over 2s, Cannot be blocked, Can double;",50,80,[]
+58,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +600 power 10 times over 2s, Cannot be blocked, Can double;",55,88,[]
+60,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +650 power 10 times over 2s, Cannot be blocked, Can double;",56,120,[]
+62,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +700 power 10 times over 2s, Cannot be blocked, Can double;",58,170,[]
+64,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +750 power 10 times over 2s, Cannot be blocked, Can double;",62,190,[]
+66,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +800 power 10 times over 2s, Cannot be blocked, Can double;",65,280,[]
+68,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +850 power 10 times over 2s, Cannot be blocked, Can double;",68,320,[]
+70,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +900 power 10 times over 2s, Cannot be blocked, Can double;",70,390,[]
+72,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +950 power 10 times over 2s, Cannot be blocked, Can double;",75,650,[]
+74,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1000 power 10 times over 2s, Cannot be blocked, Can double;",78,880,[]
 ,,,,,,,,,,,,,,,,,---------------------------Taunting Shout----------------------------
 52,Taunting Shout,taunting_shout,Physical/Debuf,blunt/2,,0,600,enemy/aoe,1,20,30,"Shouts to do provoke enemies in a large area and make them vunarable to bludgering attacks (10% more dmg from blunts);",50,74,,
 74,Taunting Shout,taunting_shout,Physical/Debuf,blunt/2,,0,800,enemy/aoe,1,20,30,"Shouts to do provoke enemies in a large area and make them vunarable to bludgering attacks (20% more dmg from blunts);",60,74,,

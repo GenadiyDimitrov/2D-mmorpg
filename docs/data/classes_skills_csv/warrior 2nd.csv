@@ -35,3 +35,5 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 36,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +300",0,40000,[],,
 ,,,,,,,,,,,,,,,,----------------------------Overpower----------------------------
 20,Overpower,overpower,passive,,,0,0,self/single,0,0,0,double rate 3% - skills marked [Double] strike for DOUBLE damage that often - scales with ATK - without this passive NO skill can double,0,3400,[]
+,,,,,,,,,,,,,,,,----------------------------Single Mark----------------------------
+20,Single Mark,single_mark,toggle,blunt/2,,0,0,self/single,0,0,0,"Skill power -20%; P.Crit rate +100%; All skills and passive aoe is disabled (attaks and skills hit only the main target);",0,3400,[],crit rate should match a grateswords. Skills should go from 'enemy/aoe' to 'target/single' if thats possible - or atleast use attack only the main target

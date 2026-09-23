@@ -6815,3 +6815,34 @@ file.
 (`BeginSkill` dispatches toggles above the cast machinery), so the 5-second sit-down animation your row
 prices is not charged. Left alone deliberately: it is a separate decision, and `--check` passes because
 the def does carry `CastTicks: 50`. Say the word if a seating toggle should pay its cast.
+
+---
+
+## `BL-275` ✅ BUILT 2026-09-23 in **0.187.0** — the warrior CSV edits of 2026-09-23
+
+All four of his rows are in the code, and the DURR cell is settled the way the entry proposed: his
+DESCR says *"10 times over 2s"*, and the code agreed once it moved, so **DURR is `2`** on all thirty
+Whirlwind rows. `SkillCsvSeed --check` is green. Built:
+- **Saints Sword Dance** — the wrapper and the stroke lose their radius: ten strokes at one body.
+- **Whirlwind** — `ChannelShots` 20 → 10 and `DurationTicks` 40 → 20, the same power per stroke.
+- **Master of Combat** — attack speed +20% → +10%, and −10 evasion (a flat minus on the buff, with
+  `BuffEvasion` added to the mask so it actually applies).
+- **Single Mark** (`single_mark`, new, warrior 2nd @20, 3,400 SP, toggle, 2H blunt, no MP) — ×2 crit
+  rate (blunt 0.40 → a greatsword's 0.80), −20% on both skill-damage channels, and
+  `Entity.SingleTargetOnly`: the skill sweep keeps only the main target (a self-centred ring keeps
+  what you have selected, if it is inside), and the 2H-blunt basic cleave is off.
+
+The entry as it stood:
+
+## `BL-275` 🔴 THE WARRIOR CSV EDITS ALREADY IN THE TREE
+
+Your uncommitted edits (2026-09-23), for the code to follow:
+- `warrior 3rd/4th` **Saints Sword Dance**: `target/aoe` 150 → `target/single` 0.
+- `war_aoe 3rd/4th` **Whirlwind**: *"10 times over 2s"* (was 20 over 4s), same power per hit.
+  ⚠ **The DURR column still says `4`** on every row. I read your DESCR as the truth and DURR as a missed
+  cell, so DURR becomes `2`. Say if not.
+- `war_aoe 4th` **Master of Combat**: Atk.Speed +20% → **+10%**, and a new **−10 evasion**.
+- `warrior 2nd` **Single Mark** (`single_mark`, @20, toggle, blunt/2): skill power −20%, P.Crit rate
+  +100% (*"should match a greatsword's"*), and **every AoE off**, skills and passives: everything hits the
+  main target only.
+Built with `SkillCsvSeed --check` green, per the CSV rule.

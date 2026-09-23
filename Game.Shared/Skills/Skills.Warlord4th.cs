@@ -105,8 +105,8 @@ public static partial class SkillCatalog
         return new SkillDef[]
         {
             // ═══ MASTER OF COMBAT — the Warlord's stance ═════════════════════════════════════════
-            // *"Increase accuracy +10, P.Def with 25%, M.Def with 15%, Atk.Speed +20%, Decrease speed
-            //  with 30%; Consume 30 MP/s"*.
+            // *"Increase accuracy +10, P.Def with 25%, M.Def with 15%, Atk.Speed +10%, Decrease move speed
+            //  with 30% and evasion with 10; Consume 30 MP/s"* (`BL-275`, 2026-09-23: Atk.Speed was +20%).
             // 🔑 THE SPEED CUT IS A MINUS ON THE BUFF, not a Slow debuff — the `BL-237` lesson from
             //    Battle Frenzy's healing penalty, verbatim: **a downside you chose is not a curse
             //    somebody cast on you.** A `Slow` would sit in `AnyDebuff` and `ControlCc`, so a cleanse
@@ -116,7 +116,7 @@ public static partial class SkillCatalog
             //   the RUNG's `MpPerSecond` and not the def's.
             new SkillDef(MasterOfCombat, "Master of Combat", BaseClass.Fighter,
                 SkillEffect.BuffAccuracy | SkillEffect.BuffDef | SkillEffect.BuffMagicDef
-                | SkillEffect.BuffAtkSpeed,
+                | SkillEffect.BuffAtkSpeed | SkillEffect.BuffEvasion,
                 MpCost: 30, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
                 Toggle: true, MpPerSecond: 30, MoveSpeedPenaltyPct: 0.30f,
                 BuffKey: MasterOfCombat, Rank: 1,
@@ -128,15 +128,16 @@ public static partial class SkillCatalog
                     new(SkillEffect.BuffAccuracy, 10f, ModifierMode.Flat),
                     new(SkillEffect.BuffDef, .25f),
                     new(SkillEffect.BuffMagicDef, .15f),
-                    new(SkillEffect.BuffAtkSpeed, .20f),
+                    new(SkillEffect.BuffAtkSpeed, .10f),
+                    new(SkillEffect.BuffEvasion, -10f, ModifierMode.Flat),   // `BL-275`
                 },
                 Description: "A stance of total control: you guard and swing far better, and move far "
                            + "worse. 30 MP a second, and a two-handed blunt.",
                 Levels: new[]
                 {
                     new SkillLevel(MpCost: 30, SpCost: mcSp, GoldCost: mcGold,
-                        Description: "+10 accuracy, +25% P.Def, +15% M.Def and +20% attack speed, "
-                                   + "at −30% move speed and 30 MP a second."),
+                        Description: "+10 accuracy, +25% P.Def, +15% M.Def and +10% attack speed, "
+                                   + "at −30% move speed, −10 evasion and 30 MP a second."),
                 }),
 
             // ═══ SHOCKING JAVELIN — the Shout, thrown ════════════════════════════════════════════

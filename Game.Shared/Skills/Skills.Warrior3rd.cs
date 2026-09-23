@@ -654,7 +654,7 @@ public static partial class SkillCatalog
 
         // ═══ SAINTS SWORD DANCE — the Elf's channel ══════════════════════════════════════════════
         //
-        // *"Deals Physical damage with +150 power 10 times over 2s"*, AOE 150, `target/aoe`. That is a
+        // *"Deals Physical damage with +150 power 10 times over 2s"*, `target/single` since `BL-275`. That is a
         // CHANNEL WRAPPER, the shape he chose for Arrow Barrage and for the same reason: each stroke is
         // a REAL skill execution with its own miss, crit and splash, so nothing is special-cased.
         // 🔑 THE LADDER LIVES ON THE WRAPPER and the stroke authors Power 0 — a channel's shots resolve
@@ -665,15 +665,12 @@ public static partial class SkillCatalog
             MpCost: W3ActiveMp[0], CastTicks: 5, CooldownTicks: 50, Range: 40, Power: W3SwordDancePower[0],
             DurationTicks: 20,
             Category: SkillCategory.Physical, CanDouble: true, BlockAccuracy: 1f,
-            // ⚠ THE WRAPPER CARRIES THE RADIUS TOO, and it is not a duplicate of the stroke's: a
-            //   wrapper resolves nothing, so this never sweeps anything (the offensive sweep sits
-            //   BELOW the channel's early return). What it does is draw the ring at cast time and tell
-            //   `Retarget.FromDef` the skill is an AREA one — his `target/aoe` cell, ruled twice.
-            AreaRadius: 150f, AreaAtTarget: true,
+            // 🔑 `BL-275` (2026-09-23): `target/aoe` 150 → `target/single` 0 — *"saints dance -> target/aoe
+            //    to target/single"*. No radius on the wrapper or the stroke any more: ten strokes at ONE body.
             RequiredWeapon: WeaponType.AnySword, RequiredHands: WeaponHands.Two,
             ChannelSkill: WarriorSwordDanceStroke, ChannelShots: 10, ChannelIntervalTicks: 2,
             SpCost: Warrior3rdSp[0],
-            Description: "Two seconds of blade: ten strokes, each catching everything around your target.",
+            Description: "Two seconds of blade: ten strokes at your target.",
             Levels: Enumerable.Range(0, Warrior3rdLevels.Length).Select(i => new SkillLevel(
                 Power: W3SwordDancePower[i], MpCost: W3ActiveMp[i], SpCost: Warrior3rdSp[i],
                 Description: SwordDanceRungText(W3SwordDancePower[i])))
@@ -682,17 +679,16 @@ public static partial class SkillCatalog
                     Description: SwordDanceRungText(W4SwordDancePower[i])))).ToArray()),
 
         // ONE STROKE. No MP (the wrapper charges once), no power (the wrapper's rung supplies it),
-        // never learned. The AoE lives HERE because it is the stroke that splashes, not the wrapper.
+        // never learned. Single-target since `BL-275`.
         new(WarriorSwordDanceStroke, "Saints Sword Dance", BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 40, Power: 0,
             Category: SkillCategory.Physical, CanDouble: true, BlockAccuracy: 1f,
-            AreaRadius: 150f, AreaAtTarget: true, TargetMode: TargetMode.EnemiesInRadius,
             RequiredWeapon: WeaponType.AnySword, RequiredHands: WeaponHands.Two,
             Description: "One stroke of a sword dance."),
     };
 
     private static string SwordDanceRungText(int power) =>
-        $"Ten strokes over 2s, each for power {power:N0} on everything within 150 of the target. "
+        $"Ten strokes over 2s at your target, each for power {power:N0}. "
       + "Cannot be blocked, can double.";
 
     /// <summary>One of the two two-channel Presences: a ten-minute self-buff on a five-second reuse.

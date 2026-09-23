@@ -103,6 +103,8 @@ public static partial class ClassSkillTables
                 // [Double] skills never double at all (`BL-190`), so this row is the whole mechanic
                 // arriving with the 2nd class change.
                 new ClassSkill(Overpower, 20, SkillLevel: 1),
+                // `BL-275` — Single Mark, the blunt warrior's "no AoE" toggle (his 2026-09-23 row).
+                new ClassSkill(SingleMark, 20, SkillLevel: 1),
                 new ClassSkill(WarriorArmorMastery, 24, SkillLevel: 2),
                 new ClassSkill(WarriorWeaponMastery, 24, SkillLevel: 2),
                 new ClassSkill(Smash, 24, SkillLevel: 2),

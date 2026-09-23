@@ -2659,6 +2659,19 @@ public class Entity
     /// Runtime-only and never persisted — a selection does not survive a logout.</summary>
     public Guid? UiTargetId { get; set; }
 
+    /// <summary>`BL-275` — Single Mark is up: every area skill and the 2H-blunt basic cleave reach the
+    /// MAIN target only. Read off the buff itself rather than folded into a field, so it can never
+    /// outlive the toggle and there is nothing extra to persist.</summary>
+    public bool SingleTargetOnly
+    {
+        get
+        {
+            foreach (var b in Buffs)
+                if (!b.Suppressed && b.Key == SkillCatalog.SingleMark) return true;
+            return false;
+        }
+    }
+
     /// <summary>Signature of the last <c>TargetBuffUpdate</c> sent, so the once-a-second refresh only
     /// pushes when something actually moved. Cleared with the selection.</summary>
     public string LastTargetBuffSig { get; set; } = "";

@@ -223,21 +223,21 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 74,Demonic Smash,demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +15000 power, Cannot be blocked, Can double;",78,880,[],Demon
 ,,,,,,,,,,,,,,,,,============================================= ELF =================================
 ,,,,,,,,,,,,,,,,,---------------------------Demonic Smash----------------------------
-40,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,150,target/aoe,0.5,5,2,"Deals Physical damage with +375 power 10 times over 2s, Cannot be blocked, Can double;",36,28,[],Elf
-43,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,150,target/aoe,0.5,5,2,"Deals Physical damage with +490 power 10 times over 2s, Cannot be blocked, Can double;",40,35,[],Elf
-46,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,150,target/aoe,0.5,5,2,"Deals Physical damage with +600 power 10 times over 2s, Cannot be blocked, Can double;",43,40,[],Elf
-49,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,150,target/aoe,0.5,5,2,"Deals Physical damage with +715 power 10 times over 2s, Cannot be blocked, Can double;",45,50,[],Elf
-52,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,150,target/aoe,0.5,5,2,"Deals Physical damage with +790 power 10 times over 2s, Cannot be blocked, Can double;",47,74,[],Elf
-55,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,150,target/aoe,0.5,5,2,"Deals Physical damage with +900 power 10 times over 2s, Cannot be blocked, Can double;",50,80,[],Elf
-58,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,150,target/aoe,0.5,5,2,"Deals Physical damage with +1015 power 10 times over 2s, Cannot be blocked, Can double;",55,88,[],Elf
-60,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,150,target/aoe,0.5,5,2,"Deals Physical damage with +1125 power 10 times over 2s, Cannot be blocked, Can double;",56,120,[],Elf
-62,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,150,target/aoe,0.5,5,2,"Deals Physical damage with +1240 power 10 times over 2s, Cannot be blocked, Can double;",58,170,[],Elf
-64,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,150,target/aoe,0.5,5,2,"Deals Physical damage with +1350 power 10 times over 2s, Cannot be blocked, Can double;",62,190,[],Elf
-66,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,150,target/aoe,0.5,5,2,"Deals Physical damage with +1465 power 10 times over 2s, Cannot be blocked, Can double;",65,280,[],Elf
-68,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,150,target/aoe,0.5,5,2,"Deals Physical damage with +1540 power 10 times over 2s, Cannot be blocked, Can double;",68,320,[],Elf
-70,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,150,target/aoe,0.5,5,2,"Deals Physical damage with +1650 power 10 times over 2s, Cannot be blocked, Can double;",70,390,[],Elf
-72,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,150,target/aoe,0.5,5,2,"Deals Physical damage with +1765 power 10 times over 2s, Cannot be blocked, Can double;",75,650,[],Elf
-74,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,150,target/aoe,0.5,5,2,"Deals Physical damage with +1875 power 10 times over 2s, Cannot be blocked, Can double;",78,880,[],Elf
+40,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,0,target/single,0.5,5,2,"Deals Physical damage with +375 power 10 times over 2s, Cannot be blocked, Can double;",36,28,[],Elf
+43,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,0,target/single,0.5,5,2,"Deals Physical damage with +490 power 10 times over 2s, Cannot be blocked, Can double;",40,35,[],Elf
+46,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,0,target/single,0.5,5,2,"Deals Physical damage with +600 power 10 times over 2s, Cannot be blocked, Can double;",43,40,[],Elf
+49,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,0,target/single,0.5,5,2,"Deals Physical damage with +715 power 10 times over 2s, Cannot be blocked, Can double;",45,50,[],Elf
+52,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,0,target/single,0.5,5,2,"Deals Physical damage with +790 power 10 times over 2s, Cannot be blocked, Can double;",47,74,[],Elf
+55,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,0,target/single,0.5,5,2,"Deals Physical damage with +900 power 10 times over 2s, Cannot be blocked, Can double;",50,80,[],Elf
+58,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,0,target/single,0.5,5,2,"Deals Physical damage with +1015 power 10 times over 2s, Cannot be blocked, Can double;",55,88,[],Elf
+60,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,0,target/single,0.5,5,2,"Deals Physical damage with +1125 power 10 times over 2s, Cannot be blocked, Can double;",56,120,[],Elf
+62,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,0,target/single,0.5,5,2,"Deals Physical damage with +1240 power 10 times over 2s, Cannot be blocked, Can double;",58,170,[],Elf
+64,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,0,target/single,0.5,5,2,"Deals Physical damage with +1350 power 10 times over 2s, Cannot be blocked, Can double;",62,190,[],Elf
+66,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,0,target/single,0.5,5,2,"Deals Physical damage with +1465 power 10 times over 2s, Cannot be blocked, Can double;",65,280,[],Elf
+68,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,0,target/single,0.5,5,2,"Deals Physical damage with +1540 power 10 times over 2s, Cannot be blocked, Can double;",68,320,[],Elf
+70,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,0,target/single,0.5,5,2,"Deals Physical damage with +1650 power 10 times over 2s, Cannot be blocked, Can double;",70,390,[],Elf
+72,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,0,target/single,0.5,5,2,"Deals Physical damage with +1765 power 10 times over 2s, Cannot be blocked, Can double;",75,650,[],Elf
+74,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,0,target/single,0.5,5,2,"Deals Physical damage with +1875 power 10 times over 2s, Cannot be blocked, Can double;",78,880,[],Elf
 ,,,,,,,,,,,,,,,,,---------------------------Sword Blast----------------------------
 40,Sword Blast,sword_blast,Physical/Active,sword/2,,600,00,target/single,2,3,0,"Deals Physical damage with +2000 power, Cannot be blocked, Can double;",36,28,,Elf
 46,Sword Blast,sword_blast,Physical/Active,sword/2,,600,00,target/single,2,3,0,"Deals Physical damage with +3200 power, Cannot be blocked, Can double;",43,40,,Elf

@@ -69,6 +69,7 @@ public static partial class SkillCatalog
     public const string BattleRegeneration = "battle_regeneration";// self-heal 10% max HP
     public const string BattlePresence = "battle_presence";        // HP<60% stance: +p.Atk
     public const string BattleDefence = "battle_defence";          // HP<60% stance: +p.Def
+    public const string SingleMark = "single_mark";                // `BL-275` toggle: every AoE hits the main target only
     // The two his 2026-09-11 `warrior 2nd.csv` pass added, both continuing into `warrior 3rd.csv`
     // and `war_aoe 3rd.csv`.
     public const string BattleResilience = "battle_resilience";    // self buff: CC + cancel resistance
@@ -352,6 +353,33 @@ public static partial class SkillCatalog
                 BattleStanceRung(0.50f, acc: 4, mp: 0,  sp: 40_000),
                 BattleStanceRung(0.65f, acc: 6, mp: 0,  sp: 80_000),
             }),
+
+        // ═══ SINGLE MARK (`BL-275`, his `warrior 2nd.csv` of 2026-09-23) ═══════════════════════════
+        // *"Skill power -20%; P.Crit rate +100%; All skills and passive aoe is disabled (attacks and
+        //  skills hit only the main target)"* — and his comment: *"crit rate should match a
+        //  greatsword's"*. Why he wants it: *"need a toggle @20 that disables the 2h blunt and skills
+        //  aoe"* — levelling a blunt warrior pulls every mob near the one he is fighting.
+        // 🔑 +100% IS ×2 ON THE MULTIPLICATIVE CRIT CHANNEL, and ×2 is exactly his greatsword: the
+        //    weapon crit factor is 0.40 for a blunt and 0.80 for a sword (StatCalculator.WeaponCritFactor).
+        // 🔑 "Skill power −20%" is the PvE + PvP SKILL-damage channels, the same pair Physical
+        //    Proficiency's surge raises; a basic swing is not a skill and keeps its full power.
+        // 🔑 THE AoE HALF IS NOT A FIELD: `Entity.SingleTargetOnly` asks whether this buff is up, and
+        //    the skill sweep + the 2H-blunt basic cleave both read it. Nothing new to persist.
+        // ⚠ MP 0 and no upkeep — his MP cell is 0.
+        new(SingleMark, "Single Mark", BaseClass.Fighter,
+            SkillEffect.BuffCritRate | SkillEffect.BuffPveSkillDamage | SkillEffect.BuffPvpSkillDamage,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            BuffKey: SingleMark, Rank: 1, Toggle: true, CountsTowardBuffLimit: false,
+            Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly, SpCost: 3400,
+            RequiredWeapon: WeaponType.AnyBlunt, RequiredHands: WeaponHands.Two,
+            Magnitudes: new EffectMagnitude[]
+            {
+                new(SkillEffect.BuffCritRate, 1.00f),
+                new(SkillEffect.BuffPveSkillDamage, -0.20f),
+                new(SkillEffect.BuffPvpSkillDamage, -0.20f),
+            },
+            Description: "Stance. Every attack and every skill strikes only your target — no sweep, no "
+                       + "cleave. Double critical rate, 20% less skill power. Requires a two-handed blunt."),
 
         // Battle Defence — LOW-HP defensive stance (usable only at ≤60% HP): DOUBLE P.Def for
         // 90s. Shares "battle_stance" with Battle Presence (mutually exclusive).

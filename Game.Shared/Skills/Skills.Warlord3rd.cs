@@ -44,7 +44,7 @@ public static partial class SkillCatalog
     public const string ShatteringShout    = "shattering_shout";
     public const string BreakingShout    = "breaking_shout";
     public const string CripplingShout      = "crippling_shout";
-    /// <summary>ONE STROKE of Whirlwind — the sub-skill the wrapper fires twenty times. Never learned,
+    /// <summary>ONE STROKE of Whirlwind — the sub-skill the wrapper fires ten times (twenty until `BL-275`). Never learned,
     /// never on a bar, no MP of its own. Same shape as the Elf's Sword Dance stroke; see
     /// <see cref="SkillDef.ChannelSkill"/>.</summary>
     public const string WaraoeWhirlwindStroke = "waraoe_wirlwind_stroke";
@@ -72,7 +72,7 @@ public static partial class SkillCatalog
     internal static readonly int[] WaraoeShockShoutPower =
         { 1000, 1200, 1400, 1600, 1800, 2000, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800, 4000 };
 
-    /// <summary>ONE STROKE of Whirlwind, twenty of which land over four seconds: <b>300, +50 a rung,
+    /// <summary>ONE STROKE of Whirlwind, ten of which land over two seconds (`BL-275`; twenty over four before): <b>300, +50 a rung,
     /// to 1000</b> — and straight on into `war_aoe 4th.csv`'s 1050 without a step change, which is what
     /// makes it one thirty-rung ladder rather than two.
     ///
@@ -163,15 +163,16 @@ public static partial class SkillCatalog
             fourth: WarlordShockShoutRungs()));
 
         // ═══ WHIRLWIND — four seconds of blade ═══════════════════════════════════════════════════
-        // *"Deals Physical damage with +N power 20 times over 4s"*. A CHANNEL WRAPPER, the shape the
+        // *"Deals Physical damage with +N power 10 times over 2s"* (`BL-275`, 2026-09-23 — was 20 over 4s:
+        // *"the 4s lock the warrior for too long"*; same power per stroke). A CHANNEL WRAPPER, the shape the
         // Elf's Sword Dance and Arrow Barrage already use: each stroke is a REAL execution with its own
         // miss, crit and splash, so nothing about twenty hits is special-cased.
-        // 🔑 20 strokes × 2 ticks = 40 ticks = his 4 seconds, exactly.
+        // 🔑 10 strokes × 2 ticks = 20 ticks = his 2 seconds, exactly.
         // 🔑 THE LADDER IS ON THE WRAPPER and the stroke authors Power 0 — a channel's shots resolve at
         //    the wrapper's level and take its power (Entity.ChannelPower).
         list.Add(new SkillDef(WaraoeWhirlwind, "Whirlwind", BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: W3ActiveMp[0], CastTicks: 5, CooldownTicks: 80, Range: 0,
-            Power: WaraoeWhirlwindPower[0], DurationTicks: 40,
+            Power: WaraoeWhirlwindPower[0], DurationTicks: 20,
             Category: SkillCategory.Physical, CanDouble: true, BlockAccuracy: 1f,
             // The wrapper carries the radius so the ring is DRAWN at cast time and `Retarget.FromDef`
             // knows this is an area skill — it resolves nothing itself. Same note as the Sword Dance.
@@ -183,9 +184,9 @@ public static partial class SkillCatalog
             //   `AreaAtTarget`, so it wants a target either way.
             AreaRadius: 200f, TargetMode: TargetMode.EnemiesInRadius,
             RequiredWeapon: WeaponType.AnyBlunt, RequiredHands: WeaponHands.Two,
-            ChannelSkill: WaraoeWhirlwindStroke, ChannelShots: 20, ChannelIntervalTicks: 2,
+            ChannelSkill: WaraoeWhirlwindStroke, ChannelShots: 10, ChannelIntervalTicks: 2,
             SpCost: Warrior3rdSp[0],
-            Description: "Four seconds of spinning blunt: twenty strokes, each catching everything "
+            Description: "Two seconds of spinning blunt: ten strokes, each catching everything "
                        + "around you. Requires a two-handed blunt.",
             Levels: Enumerable.Range(0, Warrior3rdLevels.Length).Select(i => new SkillLevel(
                 Power: WaraoeWhirlwindPower[i], MpCost: W3ActiveMp[i], SpCost: Warrior3rdSp[i],
@@ -284,7 +285,7 @@ public static partial class SkillCatalog
     }
 
     private static string WhirlwindRungText(int power) =>
-        $"Twenty strokes of power {power:N0} over 4s, each catching everything within 200. "
+        $"Ten strokes of power {power:N0} over 2s, each catching everything within 200. "
       + "Cannot be blocked, can double.";
 
     /// <summary>ONE OF THE WARLORD'S THREE SUPPORTS: the passive that rolls, plus the three payload

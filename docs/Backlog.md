@@ -285,7 +285,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-272` | ❓ | **RARITY COLLAPSE — Common + Mythic only** for equipment — [design/Rework-2026-09-23.md](design/Rework-2026-09-23.md) §2.1 | items |
 | `BL-273` | ❓ | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05`/`BL-50` — §2.2 | items |
 | `BL-274` | ❓ | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3 | items |
-| `BL-275` | 🔴 | THE WARRIOR CSV EDITS already in the tree — Saints Dance single, Whirlwind 10×/2s, Master of Combat, `single_mark` | classes |
 | `BL-276` | 🔴 | Town + field WATCHMEN become NPCs with titles, and fight a PK inside town | world |
 | `BL-277` | ❓ | **VITALITY + BLESSING** (names owed) — §3; ⚠ the Blessing refund as written never empties | progression |
 | `BL-278` | ❓ | **BOSS REGEN AS A CLOCK** — 1/30000, ×2 / ×5 on enrage; no in-combat mob regen — §4 | combat |
@@ -2263,19 +2262,6 @@ first of all: **profession lock or not** (my pick: not).
 wood OR metal OR thread), plus that item's parts, its recipe and a rare Mythic. The refinable-metal
 grades by level band, volcanic mats in 2-3 zones, recipe % by source (normal/elite/boss/quest), daily
 recipe quests.
-
-## `BL-275` 🔴 THE WARRIOR CSV EDITS ALREADY IN THE TREE
-
-Your uncommitted edits (2026-09-23), for the code to follow:
-- `warrior 3rd/4th` **Saints Sword Dance**: `target/aoe` 150 → `target/single` 0.
-- `war_aoe 3rd/4th` **Whirlwind**: *"10 times over 2s"* (was 20 over 4s), same power per hit.
-  ⚠ **The DURR column still says `4`** on every row. I read your DESCR as the truth and DURR as a missed
-  cell, so DURR becomes `2`. Say if not.
-- `war_aoe 4th` **Master of Combat**: Atk.Speed +20% → **+10%**, and a new **−10 evasion**.
-- `warrior 2nd` **Single Mark** (`single_mark`, @20, toggle, blunt/2): skill power −20%, P.Crit rate
-  +100% (*"should match a greatsword's"*), and **every AoE off**, skills and passives: everything hits the
-  main target only.
-Built with `SkillCsvSeed --check` green, per the CSV rule.
 
 ## `BL-276` 🔴 WATCHMEN ARE NPCs, NOT MOBS
 

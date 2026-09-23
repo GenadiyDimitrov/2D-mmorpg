@@ -7,11 +7,42 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.186.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.187.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-23 (latest) — 0.186.0: `/stat patk` reaches basic attacks (§102.6)
+## 2026-09-23 (latest) — 0.187.0: his warrior CSV edits, built (`BL-275`)
+
+> *"saints dance -> target/aoe to target/single"* · *"whirlwind … 2s and 10 hits … the 4s lock the
+> warrior for too long"* · *"need a toggle @20 that disables the 2h blunt and skills aoe"*
+
+The five CSVs he edited on 2026-09-23 are committed with the code that follows them.
+`SkillCsvSeed --check` is **green** (it was 62 discrepancies).
+
+- **Saints Sword Dance** (Elf, warrior 3rd/4th) — `target/aoe` 150 → `target/single` 0. The wrapper
+  and the stroke both lose their radius: ten strokes at one body.
+- **Whirlwind** (war_aoe 3rd/4th) — ten strokes over 2 s (`ChannelShots` 20 → 10, `DurationTicks` 40
+  → 20), same power per stroke, so the skill does half the total damage and locks you for half as
+  long. **The DURR cell still said `4` on all thirty rows; it is now `2`**, reading his DESCR as the
+  truth, as `BL-275` proposed.
+- **Master of Combat** (war_aoe 4th) — attack speed +20% → **+10%**, plus **−10 evasion** as a flat
+  minus on the buff (`BuffEvasion` added to the effect mask, the `BL-214` lesson: without the flag a
+  magnitude never applies).
+- **Single Mark** (`single_mark`) — **new**, warrior 2nd @20, 3,400 SP, a no-MP toggle, 2H blunt.
+  ×2 crit rate (blunt's weapon crit factor 0.40 → 0.80, a greatsword's exactly, per his note), −20%
+  on both SKILL-damage channels (basic swings keep full power), and **every AoE collapses to the
+  main target**. `Entity.SingleTargetOnly` is read off the buff itself, so nothing new persists.
+  Two places honour it: the offensive sweep in `ExecuteSkill` keeps only the main target (the aimed
+  body, or for a self-centred ring whatever you have **selected**, if it is inside the ring), and
+  `ResolveCleave`, the 2H-blunt basic cleave, returns early.
+
+⚠ Whirlwind at 10 strokes is **half the damage per cast** of 0.179–0.186. That is his call, but no
+balance doc has measured it.
+
+**Needs an APK** — a class-skill-table change (Single Mark's Learn row is built by the client from
+the compiled `ClassSkills`).
+
+## 2026-09-23 — 0.186.0: `/stat patk` reaches basic attacks (§102.6)
 
 > *"admins /stat patk 99999 does nothing to basic attacks (at least against bosses) — dmg with 1kk
 > patk was the same 500 .. only skills got affected"*

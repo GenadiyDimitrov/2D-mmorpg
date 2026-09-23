@@ -12583,6 +12583,14 @@ public class GameLoopService : BackgroundService
                 Entity centre = def.AreaAtTarget ? target : caster;
                 swept = swept.OrderBy(f => DistanceSq(centre, f)).Take(def.MaxTargets).ToList();
             }
+            // `BL-275` — SINGLE MARK: the sweep keeps the MAIN target and nothing else. A skill aimed
+            // at a body hits that body; a self-centred ring (whose cast target is the caster himself)
+            // hits what he has SELECTED, if it is inside the ring — and nothing when he has nothing.
+            if (caster.SingleTargetOnly)
+            {
+                Guid? main = target != caster ? target.Id : caster.UiTargetId ?? caster.CombatTargetId;
+                swept = swept.Where(f => f.Id == main).ToList();
+            }
             foreach (var foe in swept)
             {
                 // BL-77: the flag lands on the REACH. Before the hit, so a miss, a zero roll or a
@@ -15393,6 +15401,7 @@ public class GameLoopService : BackgroundService
     {
         int extra = attacker.CleaveTargets - 1;
         if (extra <= 0 || attacker.CleaveRadius <= 0f) return;
+        if (attacker.SingleTargetOnly) return;   // `BL-275` — Single Mark: the swing hits its target only
 
         // ⚠ ToList() before the loop: ResolveBasicSwing can kill, and Kill mutates the grid the
         //   EnemiesInRadius walk is iterating. Same rule every other sweep in this file follows.
