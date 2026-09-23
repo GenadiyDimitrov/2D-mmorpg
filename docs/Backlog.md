@@ -278,7 +278,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-278` | ❓ | **BOSS REGEN AS A CLOCK** — HP/s = maxHp ÷ 30000 for every engaged mob, ×2 / ×10 on enrage; one INT knob — §4 | combat |
 | `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
 | `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
-| `BL-282` | 🔵 | **`BalanceMatrix --craft-cost`** ✅ built, waiting on your inputs (heads, volcanic bar, Nightsilver, targets) — kills + hours per crafted T40/52/61/76/80 item under the NEW rules, by recipe %; extends M1-M9 | items |
+| `BL-282` | 🟡 | **`BalanceMatrix --craft-cost`** ✅ built + all inputs ruled; only C5 (consumables) left, waits on §2.2 #8 — kills + hours per crafted T40/52/61/76/80 item under the NEW rules, by recipe %; extends M1-M9 | items |
 | `BL-283` | 🔵 | **CHARISMA** — recommendations/likes; lifetime vs current (cap 1000); +10% Blessing fill per 100 — split out of `BL-277`; ✅ 10 pts/rec, 10/day, 30-day ring, real recs only, ×2 with rune = ×4, title for #1 | social |
 
 ---
@@ -2262,13 +2262,14 @@ recipe is **20 volcanic ash + 20 volcanic stone → 1 bar**, and a 100% recipe t
 where **elemental + skill stones** sit on the consumable crafting ladder, and the **chest / rune-box /
 exp-box** economy (a sink sketch, to be specced against the held War/Spell Rune and the `BL-01`
 premium runes). Both belong to §2.2 #8, the consumable recipes.
-🔵 **2026-09-23, ESSENCE per tier: PROPOSED, not ruled** (`BL-282` C3, design doc §2.2 #10 open item 4):
-weapon **T52 800 / T61 1200 / T76 1600** (the linear ladder between your 400 and 2000, which your kept times
-were measured with). For the slots: keep your T80 essence ratios (.75/.3/.2/.1), or move essence to the new
-mat fractions (body .6, helm/shield/neck .4, earring .3, gloves/boots .2, ring .1)? My pick: move them.
-✅ **2026-09-23, SLOT FRACTIONS** (every mat of a slot is this share of the 2H recipe): 1H 4/5, body 3/5,
-helmet/shield 2/5, gloves/boots 1/5, necklace 2/5, earring 1.5/5, ring 0.5/5. Rings/earrings use
-Nightsilver + metal; the necklace uses Nightsilk + thread.
+✅ **2026-09-23, ESSENCE per tier and slot — RULED** (design doc §2.2 #10, third round): 2H **400 / 800 /
+1200 / 1600 / 2000** (T40…T80); the slots follow his shares (T80: 1H 1600, body 1200, helm/shield/neck 800,
+earring 600, gloves/boots 400, ring 200). The full table is in the design doc; it replaces his first T80 slot row.
+✅ **2026-09-23, SLOT SHARES ARE A GUIDE, NOT A FORMULA** (*"do not do anything as formula because moving one
+will break all others"*): 1H 4/5, body 3/5, helmet/shield 2/5, gloves/boots 1/5, necklace 2/5, earring 1.5/5,
+ring 0.5/5. Every per-slot number (mats, essence, recipe drop rate) is an **authored table**, one cell per tier
+× slot. Rings/earrings use Nightsilver + metal; the necklace uses Nightsilk + thread. Small-slot recipes drop
+more often at T76/T80 (table in the design doc).
 
 ## `BL-274` ❓ PER-MOB DROP TABLES
 
@@ -2325,6 +2326,10 @@ wins. ⚠ `360` = the tool's 10 s/kill; the constant needs re-measuring once `BL
 dominates), not 360. With 360 in the formula a full Favor would last **~9-11 h** of real farming, not the ruled
 2 h. So when this is built, the `360` has to be the measured kills/h at that level (or the ruling changes to
 ~10 h). Your call, before the constant is written.
+❓ **2026-09-23: H = 2 or 4?** (design doc §3 point 3, the H table). His test is that 8 h offline + P h of play
+must never beat P + 8 h of non-stop farming. **H = 4 fails it** (8 h off + 4 h play = 13.5 h against 12 h). It
+breaks even at H ≈ 3.4. **My pick: H = 3**, the largest round number that still holds (2 h of play → 8.0 h,
+against 6.75 h at H = 2).
 ✅ **2026-09-23, third round (§3.6-3.9):** **Offline is offline, town is town.** Logging out anywhere
 counts. Offline = **not in the world**: credited at login as `(now − last save) × 40/min`, clamped to
 20,000. A living offline-farmer is in the world and gains nothing; its death or empty budget ends the
@@ -2387,6 +2392,9 @@ T40), whether 16 days is per success (a 40% recipe makes it 25-27 d), the T52/T6
 1/1000, boss 80-90%), times = the 100% cost with the recipe on top, bars 40/70, slot fractions of the 2H.
 Per success: T40 17h · T52 28h · T61 59h · T76 246-296h · T80 278-453h. ❓ Owed: the ×0.7-not-×0.6
 curve, T80 elite 20% or 40%, full recipe per small slot, the essence numbers (proposed), the solo ceiling.
+✅ **2026-09-23, third round: ALL ANSWERED** (curve stays, T80 elite 20%/quest 40%, per-slot recipe + essence
+TABLES, solo ceiling fine). 🟡 **Only C5 is left**: consumable recipe cost vs shop price, which waits on §2.2 #8
+(which consumables get recipes). The entry closes when C5 is built.
 ⚠ The tool uses M1's kill clock, **~66-81 kills/h**, not the `360` that `BL-277`'s Favor drain was set on
 (4-5× off). `BL-277` already says to re-measure its constant.
 

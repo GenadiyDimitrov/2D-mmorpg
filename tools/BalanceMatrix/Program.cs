@@ -6309,7 +6309,7 @@ static void CraftCost()
     int[] bars = { 0, 0, 0, 40, 70 };
     int[] nsQty = { 300, 200, 150, 50, 10 };          // NOTE: Nightsilver rung = the tier index (normal … legendary)
     const int Heads = 20;                             // RULED: 20 per 100% recipe, every tier
-    int[] essence = { 400, 800, 1200, 1600, 2000 };   // RULED T40 + T80; T52/T61/T76 PLACEHOLDER (linear) — C3 solves them
+    int[] essence = { 400, 800, 1200, 1600, 2000 };   // 2H at 100%: RULED 2026-09-23 (T40/T80 his, T52/T61/T76 "as u like"); = essBySlot[t][0]
     int[] mythicBreak = { 2000, 2000, 4000, 7000, 10000 }; // RULED T40 (2H ~2000), T52 (~2k), T80 (~10k); T61/T76 PLACEHOLDER
     const double CommonPriceRatio = 20, CommonBreakShare = 0.7; // RULED: a Common is 20x cheaper and breaks for 70%
     const double DirectEssenceVsCommon = 0.5;         // PLACEHOLDER: T76+ essence drops directly, "smaller … than Commons"
@@ -6368,15 +6368,16 @@ static void CraftCost()
     double KphN(int L) => 3600.0 / (overhead + Ttk(L));
     double KphE(int L) => Math.Min(eliteCeil, 3600.0 / (4.0 * Ttk(L) + 10.0));  // M12a: 4x HP, 10 s retarget
 
-    // The essence slot ratios (my §2.4 proposal, weapon = 1). Used to weight what drops, and in C3/C4.
+    // A Common's break value by slot, as a share of the 2H weapon's — his slot shares (2026-09-23), which the
+    // essence table below now follows too. Used ONLY to weight what drops into an essence-per-kill number.
     static double SlotFrac(ItemDef d) => d.Slot switch
     {
         EquipSlot.Weapon => 1.0,
-        EquipSlot.Shield => 0.3,
+        EquipSlot.Shield => 0.4,
         EquipSlot.Armor => d.ArmorSlot switch
-            { ArmorSlot.Body => 0.75, ArmorSlot.Head => 0.3, _ => 0.2 },
+            { ArmorSlot.Body => 0.6, ArmorSlot.Head => 0.4, _ => 0.2 },
         EquipSlot.Jewel => d.JewelType switch
-            { JewelType.Necklace => 0.3, JewelType.Earring => 0.2, _ => 0.1 },
+            { JewelType.Necklace => 0.4, JewelType.Earring => 0.3, _ => 0.1 },
         _ => 0,
     };
     // MEASURED: today's non-Mythic gear drops per kill, weighted by slot. The collapse turns every one of
@@ -6541,64 +6542,73 @@ static void CraftCost()
     Console.WriteLine("  A quest or boss recipe costs no farm hours here: the quest is calendar days, the boss a party kill.");
     Console.WriteLine();
 
-    // C3: the essence numbers. He kept the C1 times as the targets, and those times already carry these
-    // essence numbers — so the per-tier weapon number is proposed AS IS, and the slots follow HIS T80 ratios
-    // (weapon 2000 / body 1500 / shield-helm-neck 600 / gloves-boots-ear 400 / ring 200).
-    var essRatio = new (string Name, double R)[]
-        { ("weapon", 1.0), ("body", 0.75), ("shld/helm/neck", 0.3), ("glov/boot/ear", 0.2), ("ring", 0.1) };
-    Console.WriteLine("=== C3: THE ESSENCE NUMBERS, per tier and slot (100% recipe) — PROPOSED, to be ruled ===");
-    Console.WriteLine($"{"tier",4} " + string.Concat(essRatio.Select(e => $"{e.Name,15}")) + $" | {"weapon ess h",12} {"= Commons",10} {"= items",8}");
+    // 🔑 RULED 2026-09-23 (third round): *"please do not do anything as formula because moving one will break
+    // all others ... The fractions per part are just guidelines not formula locked"*. So every per-slot number
+    // below is an AUTHORED TABLE, one row per tier. His slot shares (1H 4/5, body 3/5, helm/shield/neck 2/5,
+    // earring 1.5/5, gloves/boots 1/5, ring 0.5/5) were the GUIDE they were written from, and any cell can
+    // move alone. The mats of a slot (wood/metal/alloy/heads/bars/Nightsilver) are priced at the guide share
+    // here only because no per-slot mat table exists yet; the real recipes will be authored cell by cell.
+    string[] slotName = { "2H", "1H", "body", "helmet", "shield", "gloves", "boots", "necklace", "earring", "ring" };
+    int[] slotWorn = { 1, 1, 1, 1, 1, 1, 1, 1, 2, 2 };
+    double[] slotGuide = { 1.0, 0.8, 0.6, 0.4, 0.4, 0.2, 0.2, 0.4, 0.3, 0.1 };
+    // ESSENCE per slot at 100% — RULED 2026-09-23 (*"move them as u like to look ok"*): his T40 400 / T80 2000
+    // weapon ladder, and the slots moved onto his mat shares. (Replaces his first T80 row 1500/600/400/200.)
+    int[][] essBySlot =
+    {
+        new[] { 400, 320, 240, 160, 160, 80, 80, 160, 120, 40 },
+        new[] { 800, 640, 480, 320, 320, 160, 160, 320, 240, 80 },
+        new[] { 1200, 960, 720, 480, 480, 240, 240, 480, 360, 120 },
+        new[] { 1600, 1280, 960, 640, 640, 320, 320, 640, 480, 160 },
+        new[] { 2000, 1600, 1200, 800, 800, 400, 400, 800, 600, 200 },
+    };
+    // ONE specific recipe per kill, by slot — the farmable source of each tier. RULED 2026-09-23 that small
+    // slots drop MORE often (*"That can work yes"*); the cells are my PROPOSAL. T40-T61 keep the weapon's
+    // rate on every slot (a recipe is 1-4 h there, not worth a table); T76/T80 elites get their own row.
+    double[][] rcpBySlot =
+    {
+        Enumerable.Repeat(1 / 100.0, 10).ToArray(),
+        Enumerable.Repeat(1 / 175.0, 10).ToArray(),
+        Enumerable.Repeat(1 / 250.0, 10).ToArray(),
+        new[] { 1 / 500.0, 1 / 500.0, 1 / 400.0, 1 / 300.0, 1 / 300.0, 1 / 200.0, 1 / 200.0, 1 / 300.0, 1 / 250.0, 1 / 150.0 },
+        new[] { 1 / 1000.0, 1 / 1000.0, 1 / 800.0, 1 / 600.0, 1 / 600.0, 1 / 400.0, 1 / 400.0, 1 / 600.0, 1 / 500.0, 1 / 300.0 },
+    };
+
+    Console.WriteLine("=== C3: ESSENCE per tier and slot (100% recipe) — RULED 2026-09-23, an authored table ===");
+    Console.WriteLine($"{"tier",4} " + string.Concat(slotName.Select(n => $"{n,9}")) + $" | {"2H ess h",9} {"= Commons",10} {"= items",8}");
     for (int t = 0; t < 5; t++)
     {
         double commonBreak = mythicBreak[t] / CommonPriceRatio * CommonBreakShare;
-        Console.WriteLine($"{tier[t],4} " + string.Concat(essRatio.Select(e => $"{Math.Round(essence[t] * e.R),15:N0}"))
-            + $" | {CS(Essence(t).H * essence[t]),12} {(t < 3 ? $"{essence[t] / commonBreak:0.#}" : "-"),10} "
-            + $"{(double)essence[t] / mythicBreak[t],8:0.##}");
+        Console.WriteLine($"{tier[t],4} " + string.Concat(essBySlot[t].Select(e => $"{e,9:N0}"))
+            + $" | {CS(Essence(t).H * essBySlot[t][0]),9} {(t < 3 ? $"{essBySlot[t][0] / commonBreak:0.#}" : "-"),10} "
+            + $"{(double)essBySlot[t][0] / mythicBreak[t],8:0.##}");
     }
-    Console.WriteLine("  RULED: T40 400, T80 2000 and the T80 slot row. PROPOSED: T52 800 / T61 1200 / T76 1600 (the linear");
-    Console.WriteLine("  ladder C1's times were measured with) and every lower slot at his T80 ratios.");
-    Console.WriteLine("  '= Commons' = weapon Commons broken per weapon craft; '= items' = full (Mythic) items' break value.");
+    Console.WriteLine("  '= Commons' = 2H Commons broken per 2H craft; '= items' = full items' break value.");
     Console.WriteLine();
 
-    // C4: a full character. RULED 2026-09-23 (second round): every slot is a FRACTION of the 2H craft — *"main
-    // body is about 3/5 of the base ... Helmet/shield is 2/5 and boots and gloves each is 1/5 .. Neclase is 2/5
-    // earrings are 1.5/5 and rings are 0.5/5 ... 1h weapon is 4/5"*. The fraction applies to every mat but
-    // essence (which keeps his own T80 slot ratios, C3). Rings/earrings use Nightsilver + metal, the necklace
-    // Nightsilk + thread; both lines cost the same in this model, so the swap changes nothing here.
-    var slots = new (string Name, int Worn, double Frac, double Ess)[]
-    {
-        ("2H", 1, 1.0, 1.0), ("1H", 1, 0.8, 1.0),
-        ("body", 1, 0.6, 0.75), ("helmet", 1, 0.4, 0.3), ("shield", 1, 0.4, 0.3),
-        ("gloves", 1, 0.2, 0.2), ("boots", 1, 0.2, 0.2),
-        ("necklace", 1, 0.4, 0.3), ("earring", 2, 0.3, 0.2), ("ring", 2, 0.1, 0.1),
-    };
     (int Pct, string Src, double PerKill) Headline(int t) => sources[t].Where(s => s.Src is "normal" or "elite")
         .OrderByDescending(s => s.Pct).First();
-    Console.WriteLine("=== C4: A FULL CHARACTER per tier — his slot fractions, per SUCCESS, farmable recipe, novice ===");
-    Console.WriteLine($"{"tier",4} {"rcp",5} " + string.Concat(slots.Select(s => $"{(s.Worn > 1 ? s.Name + " x2" : s.Name),11}"))
+    Console.WriteLine("=== C4: A FULL CHARACTER per tier — per SUCCESS, farmable recipe, novice (per-slot recipe rates) ===");
+    Console.WriteLine($"{"tier",4} {"rcp",5} " + string.Concat(slotName.Select((n, i) => $"{(slotWorn[i] > 1 ? n + " x2" : n),11}"))
         + $" | {"FULL 2H",15} {"FULL 1H+shld",15}");
     for (int t = 0; t < 5; t++)
     {
         int L = farmL[t];
-        var (pct, src, pk) = Headline(t);
+        var (pct, src, _) = Headline(t);
         var p = Parts(t);
         double tries = 100.0 / pct, curve = Curve(pct);
         double scaledNoEss = p.Where(x => x.Scales && x.Name != "essence").Sum(x => x.Cost.H);
-        double ess = p.First(x => x.Name == "essence").Cost.H;
         double ns = p.Where(x => !x.Scales).Sum(x => x.Cost.H);
-        double rcp = Recipe(L, src, pk).H;
-        double SlotH((string Name, int Worn, double Frac, double Ess) s) =>
-            tries * (curve * (s.Frac * scaledNoEss + s.Ess * ess) + s.Frac * ns + rcp);
-        var cells = slots.Select(s => SlotH(s)).ToArray();
-        double Sum(Func<string, bool> pick) => slots.Select((s, i) => (s, i)).Where(x => pick(x.s.Name))
-            .Sum(x => x.s.Worn * cells[x.i]);
-        double armour = Sum(n => n is "body" or "helmet" or "gloves" or "boots");
-        double jewels = Sum(n => n is "necklace" or "earring" or "ring");
+        double essUnit = Essence(t).H;
+        var cells = Enumerable.Range(0, 10).Select(i =>
+            tries * (curve * (slotGuide[i] * scaledNoEss + essBySlot[t][i] * essUnit)
+                     + slotGuide[i] * ns + Recipe(L, src, rcpBySlot[t][i]).H)).ToArray();
+        double Sum(params string[] names) => names.Sum(n => slotWorn[Array.IndexOf(slotName, n)] * cells[Array.IndexOf(slotName, n)]);
+        double armourJewels = Sum("body", "helmet", "gloves", "boots", "necklace", "earring", "ring");
         Console.WriteLine($"{tier[t],4} {pct + "%",5} " + string.Concat(cells.Select(h => $"{CS(h),11}"))
-            + $" | {CH(cells[0] + armour + jewels),15} {CH(cells[1] + cells[4] + armour + jewels),15}");
+            + $" | {CH(cells[0] + armourJewels),15} {CH(Sum("1H", "shield") + armourJewels),15}");
     }
-    Console.WriteLine("  A full armour set is 7/5 of a 2H and the jewels 6/5 (his arithmetic), so a character is ~3.6 weapons.");
-    Console.WriteLine("  Each slot also burns ONE recipe per attempt, at the weapon's drop rate (the same for every slot).");
+    Console.WriteLine("  Each slot burns ONE recipe per attempt, at its own row of rcpBySlot. Slot mats are priced at his");
+    Console.WriteLine("  guide shares until per-slot recipes are authored.");
     Console.WriteLine();
     Console.WriteLine("  C5 (consumable recipe cost vs shop price, §2.2 #8) is NOT here: no consumable recipe exists under");
     Console.WriteLine("  the new rules yet. It is added once the list of consumables that get recipes is ruled.");
