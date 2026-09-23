@@ -1517,3 +1517,19 @@ recorded here so the playtest starts from a known symptom instead of discovering
 section; if the three still fail, the first thing to establish is whether the bag is full at the sixtieth
 pass (a test defect) or the first attempt already refuses (an engine defect). Those are different bugs and
 the current output cannot tell them apart.
+
+## §102 — YOUR NOTE OF 2026-09-23, the BUGS (eight; none fixed yet)
+
+Your note is verbatim in [design/Rework-2026-09-23.md](../design/Rework-2026-09-23.md); its asks are
+`BL-267`…`BL-281`. These are the defects in it.
+
+| # | bug | your words / the rule |
+|---|---|---|
+| 102.1 | **Auto-potion window**: the MP-potion value bars run out of the window | MP rows go BELOW the HP rows |
+| 102.2 | **Fury Sigil** and **Physical Proficiency** proc on skills; **Harmony of Protection** reflects skills | all three: **basic attack only**. **Saints reflect** = 30% of the damage of 100% of basic hits · 15% chance to reflect a debuff · 10% chance to reflect physical-skill damage. A reflect whose description does not say otherwise is basic-attack only |
+| 102.3 | Warrior **`deflection`** (`Skills.Common.cs`, *"15/30% chance to reflect a physical skill"*) is in NO CSV | remove it, as `evasion_mastery` and `precision` were |
+| 102.4 | **A consumed item is not spent on click**: cancel the Scroll of Return and it is still in the bag, so you can spam it until it succeeds. Same for skill/holy stones | spent at cast START; an interrupt or cancel loses it |
+| 102.5 | **Stacks**: with 999 + 58 potions, drinking takes the 999. Buying 850 with 200 held makes 850 + 200. Ten stacks of 80 take ten slots | drink from the SMALLEST stack first; buying and looting top up the partial stack to 999 first |
+| 102.6 | **`/stat patk 99999` does nothing to basic attacks** (1kk P.Atk still hit a boss for ~500); only skills changed | the admin override must reach the basic-attack path |
+| 102.7 | With PvP OFF, your Whirlwind hit a **lvl-90 field guard**, and it killed you | fixed by `BL-276` (watchmen become NPCs) |
+| 102.8 | ⏸ Self-centred harmful AoE can be cast **inside town**; it does nothing there (tested every combination) | deferred by you; a refusal at cast time is enough |

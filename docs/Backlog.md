@@ -277,6 +277,21 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-262` | ❓ | THE BOSS MAT PILE TAKES NO RATE KNOB — the same shape `BL-247` fixed in the recipe roll; three ways out, my reading is (2) | items |
 | `BL-263` | 🟡 | **BUFFS ARE WRAPPERS OVER `(family, level)`** — [design/BuffFamilies.md](design/BuffFamilies.md). Duration is out of the conflict rule and the first three racial wrappers are built (0.176.0); per-family group rank DECLINED, and so is the group-vs-single authoring check — a group ALWAYS outranks its singles. Left: the passive check and the racial split, both DEFERRED on your call — the racial split now carries your colour-not-abbreviation rule | skills |
 | `BL-264` | ❓ | **NO CSV SAYS WHICH BUFFS FIGHT EACH OTHER** — from `mage 1st` you cannot tell the three Mights are one family. A generated `FAMILY` + `RANK` column, checked like every other; §2 the RACE cell nothing verifies | skills |
+| `BL-267` | ❓ | THE LOCK IS PER ITEM, NOT PER DEF ID — re-spec of `BL-239` (two mauls, one +3) | items |
+| `BL-268` | 🔴 | Landscape BOTH ways, never portrait | client |
+| `BL-269` | 🔴 | 6/12/18/24 extra skill slots (half or all of a 2nd/3rd bar) | client |
+| `BL-270` | 🔵 | A vertical skill bar, or a wheel, for hand-held play | client |
+| `BL-271` | 🔴 | Quest rewards printed in the combat channel (exp/sp/gold/items) | quests |
+| `BL-272` | ❓ | **RARITY COLLAPSE — Common + Mythic only** for equipment — [design/Rework-2026-09-23.md](design/Rework-2026-09-23.md) §2.1 | items |
+| `BL-273` | ❓ | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05`/`BL-50` — §2.2 | items |
+| `BL-274` | ❓ | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3 | items |
+| `BL-275` | 🔴 | THE WARRIOR CSV EDITS already in the tree — Saints Dance single, Whirlwind 10×/2s, Master of Combat, `single_mark` | classes |
+| `BL-276` | 🔴 | Town + field WATCHMEN become NPCs with titles, and fight a PK inside town | world |
+| `BL-277` | ❓ | **VITALITY + BLESSING** (names owed) — §3; ⚠ the Blessing refund as written never empties | progression |
+| `BL-278` | ❓ | **BOSS REGEN AS A CLOCK** — 1/30000, ×2 / ×5 on enrage; no in-combat mob regen — §4 | combat |
+| `BL-279` | 🔴 | CUSTOM SKILL DELAY for auto-hunt (exact / added), lost before it was ever filed | client |
+| `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
+| `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
 
 ---
 
@@ -1992,6 +2007,28 @@ never-scheduled design note. This is the **live** one, because four things now d
 ⚠ **Until this is answered, do not let a fifth thing depend on it.** Each of the four above was a
 one-line "…when the summoner ships"; that is cheap once and a trap four more times.
 
+### Your answers, 2026-09-23 ([design/Rework-2026-09-23.md](design/Rework-2026-09-23.md), verbatim in its appendix)
+- **Q1 leans to "a DISCIPLINE of the mage":** *"a nuker 2nd will get new skills for summoned creatures
+  … each row in nuker 2nd / summoner 3rd/4th will tell what summon it gives"*. So the summoner hangs
+  off the nuker 2nd, with its own 3rd/4th files. ❓ Still open: a new **path** (so a mage can subclass
+  into it) or a second discipline on the nuker's path? `BL-255` makes that the load-bearing half.
+- **Q3 answered — a controlled second body**, authored in two NEW files, the same shape as the whisps:
+  - `summoned_creatures.csv`: per creature (pets of normal classes too): level, base HP/MP,
+    P.Def/P.Atk/M.Def/M.Atk…, skills + rank. **Always naked** (no weapon, no shield); raised later by
+    buffs, pet buffs and the master's passives.
+  - `summon_skills.csv`: rank / mana / cd, like the whisp skills. **Auto-use is a PASSIVE** (100%
+    chance + a cooldown), never a mob-style AI damage skill, *"so a summon does not spend its MP when
+    the master does not want it to"*. Chance passives allowed (a cat's scratch → bleed). Actives and
+    buffs are fired by the master: a pet window, a pet skill bar, or the master's own bar.
+  - **Master commands:** `pet_basic_attack` (until stopped or one dies) · `pet_stop` (stops everything)
+    · `pet_follow` (toggle stay/follow; only while the pet is idle; in follow the pet returns to the master
+    after a command) · `pet_dismiss` (frees the slot). **One slot for now**, maybe more later; with
+    several, one attack command drives them all.
+- **Q4** (does a pet break "a class grants no stats") is **answered by construction**: the pet has its
+  OWN authored stats, raised by the master's passives. That is a kit, not a stat bonus on the class.
+- ❓ **Not answered yet:** Q2 (three race names), the XP split, and threat inheritance (does a mob
+  hit by the pet aggro the master?).
+
 ---
 
 
@@ -2167,3 +2204,122 @@ was green the whole time.
 **Cheap to close**: for a spec that names ONE discipline, compare per race instead of per union, and
 report a cell that claims a race the code does not register (and a blank cell the code splits). Not
 free — the rogue files are three disciplines, one per race, and would keep the union. Say the word.
+
+---
+
+## `BL-267` ❓ THE LOCK IS PER ITEM, NOT PER DEF ID — a re-spec of `BL-239`
+
+**Your words, 2026-09-23:** *"I want [lock] to be per equipment item not per item_ID .. now I have 2
+maul weapons .. and one is +3 .. I lock it and I cannot sell the other maul"*.
+
+`BL-239` (0.157.0) locked the **def id** on purpose, so that a locked potion stack stayed locked after
+it was drunk empty and re-looted. That reason only holds for **stackables**. ❓ **My pick:** lock the
+item INSTANCE for equipment (each maul is its own row, with its own enchant) and keep the def-id lock
+for stackables. One flag, two keys. Or do you want the instance lock for stacks too? Then an emptied
+stack forgets its lock.
+
+## `BL-268` 🔴 LANDSCAPE BOTH WAYS
+
+*"default game is landscape mode but I want to rotate on both sides (both landscapes only, no
+portrait)"* — Unity `autorotateToLandscapeLeft/Right = true`, portrait both false. Needs an APK.
+
+## `BL-269` 🔴 EXTRA SKILL SLOTS — 6 / 12 / 18 / 24
+
+*"need option to add more 6/12/18/24 skill slots (half of or full the 2nd and 3rd skill bars) - like
+additional skill bars"*. ⚠ **The bar belongs to the SERVER** (CLAUDE.md): the extra slots are extra
+server-owned bar pages, persisted, and auto-placement (`SyncSkillBar`) has to know about them. The
+option picks how many are SHOWN; it must not change what the server stores.
+
+## `BL-270` 🔵 A VERTICAL BAR, OR A WHEEL
+
+*"need option to rotate verticaly the skill bar or some sort of wheel .. now the 12 slots are ok-ish
+but need options to make it different and esier for hand-held"*. Client-only; it is a layout option
+over the same 12 (+`BL-269`) slots. ❓ Which one first? A vertical column is cheap; a thumb wheel
+is a real UI piece.
+
+## `BL-271` 🔴 QUEST REWARDS IN THE COMBAT CHANNEL
+
+*"receiving reward from quest should be shown in the combat channel .. exp/sp/reward .. if its written
+a player can see and decide if that quest is worth repeating"* — one line per reward on quest
+completion: EXP, SP, gold, each item × qty.
+
+## `BL-272` ❓ RARITY COLLAPSE — Common + Mythic only for equipment
+
+[design/Rework-2026-09-23.md](design/Rework-2026-09-23.md) §2.1 holds the spec and five questions.
+In short: Common (T40-T61 only, Mythic stats, no enchant/attribute/set, drop 0.5% normal / 2%
+elite, sold cheap) and Mythic (T1/T20 in shops at a real price; T40+ out of shops; T40 in a
+dedicated shop at price + 2× craft mats). Consumables keep their rarities.
+
+## `BL-273` ❓ THE CRAFTING REWORK — supersedes `BL-05` and `BL-50`
+
+§2.2 of the design doc. The @40 unlock quest line, craft levels (+slots, +5% overall, +5% per type),
+recipes at 20/40/60/100% (learn one, spend one; mat cost 30/50/70/100%), the refinable metal ladder
+(10:1), MP per craft, un-droppable learned recipes for scrolls/potions/runes. Eight questions, and
+first of all: **profession lock or not** (my pick: not).
+
+## `BL-274` ❓ PER-MOB DROP TABLES
+
+§2.3 of the design doc. Each mob drops a few things (1-3 weapon types, or body armour, or small armour;
+wood OR metal OR thread), plus that item's parts, its recipe and a rare Mythic. The refinable-metal
+grades by level band, volcanic mats in 2-3 zones, recipe % by source (normal/elite/boss/quest), daily
+recipe quests.
+
+## `BL-275` 🔴 THE WARRIOR CSV EDITS ALREADY IN THE TREE
+
+Your uncommitted edits (2026-09-23), for the code to follow:
+- `warrior 3rd/4th` **Saints Sword Dance**: `target/aoe` 150 → `target/single` 0.
+- `war_aoe 3rd/4th` **Whirlwind**: *"10 times over 2s"* (was 20 over 4s), same power per hit.
+  ⚠ **The DURR column still says `4`** on every row. I read your DESCR as the truth and DURR as a missed
+  cell, so DURR becomes `2`. Say if not.
+- `war_aoe 4th` **Master of Combat**: Atk.Speed +20% → **+10%**, and a new **−10 evasion**.
+- `warrior 2nd` **Single Mark** (`single_mark`, @20, toggle, blunt/2): skill power −20%, P.Crit rate
+  +100% (*"should match a greatsword's"*), and **every AoE off**, skills and passives: everything hits the
+  main target only.
+Built with `SkillCsvSeed --check` green, per the CSV rule.
+
+## `BL-276` 🔴 WATCHMEN ARE NPCs, NOT MOBS
+
+*"can town watchman and field watchman be NPCs? not mobs .. now they look like scary mobs red
+aggressive lvl 90 .. they must be npc with titles and just fighting 'script' .. also they must be
+allowed to fight inside the town - when a pk is inside a town and they lock on they should be able to
+hit him"*. This also fixes §102.7 (your Whirlwind without PvP hit a field guard, and it killed you).
+
+## `BL-277` ❓ VITALITY + BLESSING (names owed)
+
+§3 of the design doc. 20,000 points over 8 stages (+50%…+400% EXP/SP); gained offline and in town
+(40/min, admin-tunable), from raid/world bosses by the EXP share; drained per kill by
+`baseExp/(L²·10)`. The 3-minute +100% Blessing, filled by kills, combat time, stage drops and level-ups.
+The items: keep-rune, restore potion, blessing booster, the subclass box. Charisma speeds up the fill.
+A new block on the details panel. 🔴 **The Blessing refund as written is ~111× the drain and never
+empties.** That has to be settled first.
+
+## `BL-278` ❓ BOSS REGEN AS A CLOCK
+
+§4 of the design doc. The pick: bosses `1/30000`/s, ×2 at the 1st enrage, ×5 at the 2nd; normal mobs
+get no in-combat regen (5%/s idle stays). ❓ Is that one knob today or two?
+
+## `BL-279` 🔴 CUSTOM SKILL DELAY FOR AUTO-HUNT
+
+**Lost once already**; it is in no file in the repo. Your spec, 2026-09-23:
+- Holding a bar skill → its context menu gains **"Delay: ON/OFF"** and **"Custom delay"** under "Auto on".
+- "Custom delay" opens the numpad picker. The value is 1-9999 s, used by auto-hunt only, per skill.
+- Where the picker has "max", it gets an **exact / added** switch:
+  - **added** — the delay runs AFTER the skill's own reuse: 0.4 s reuse + 1 s = every 1.4 s.
+  - **exact** — the skill fires every N s from use to use: the live reuse (it is dynamic) is subtracted
+    at use time, and N can never go below the skill's real reuse.
+- OK sets **Delay: ON** and puts a clock icon on the slot; the toggle switches between the default and
+  the custom delay without losing the number.
+❓ Where does it persist — with the server-owned bar (per character, per slot), or per skill id?
+
+## `BL-280` 🔵 ZONES BY ARCHETYPE, AND NO MOB CLUSTERS
+
+*"anti mage and anti fighter and anti archer mobs need to be in self zones"* — anti-mage zones that
+are weak to fighters and the reverse; some zones at half HP (less exp, easier). **For now:** pull the
+anti-type mobs out so 1-40 levels the same for every archetype, and space mobs so a nuker is not
+pulling clusters. The rest comes with the map work (`BL-281`).
+
+## `BL-281` ⏸ MODELS, ANIMATIONS, MAP ORDER, ROADS, LINE OF SIGHT
+
+*"we need new model+animations and to start to think of expanding and ordering (fixing mob positions)
+the map and adding real paths/roads visually like terrain + the Line of sight etc."* Noted, deferred
+by you.
