@@ -286,7 +286,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
 | `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
 | `BL-282` | 🔵 | **`BalanceMatrix --craft-cost`** — kills + hours per crafted T40/52/61/76/80 item under the NEW rules, by recipe %; extends M1-M9 | items |
-| `BL-283` | 🔵 | **CHARISMA** — recommendations/likes; lifetime vs current (cap 1000); +10% Blessing fill per 100 — split out of `BL-277` | social |
+| `BL-283` | 🔵 | **CHARISMA** — recommendations/likes; lifetime vs current (cap 1000); +10% Blessing fill per 100 — split out of `BL-277`; ✅ 10 pts/rec, 10/day, 30-day ring, real recs only, ×2 with rune = ×4, title for #1 | social |
 
 ---
 
@@ -2387,3 +2387,14 @@ castles exist. 🔑 **His requirement: a SOLO player must also be able to keep t
 there needs to be a non-social source. ❓ Open: the gain/decay model. He offered three: (a) +20 per
 recommendation, one per target per day, −10/day decay, 100 days to full; (b) 3/day × 10 points,
 current = last 30 days, max 900; (c) as (b) but 10/day, full on day 10, skip days and catch up.
+✅ **2026-09-23, the model is (c):** a recommendation = **10 points**, you receive at most **10 a day**,
+one per giver per day. **Current = the last 30 days' sum, capped at 1000** (full on day 10, and up to
+20 missed days cost nothing). **Lifetime** = everything ever received. **Only REAL recommendations count;
+there is no solo/NPC source** (the daily-quest source was declined). A solo player's answer is the booster
+rune, or a second account (*"there are ways if I want to invest time and energy"*). Rule 1 blocks only
+the SAME account, and that is deliberate. 🔑 **Charisma and the booster rune MULTIPLY:** full charisma
+×2 × rune ×2 = **×4** Blessing fill; a solo player with the rune gets ×2. **Storage:** a 30-slot ring of
+daily totals per character (one small CSV column). A recommendation adds 10 to today's slot. At the daily
+reset the oldest slot drops and a new 0 starts, advancing by however many resets passed while offline
+(max 30). The 1000 cap is applied when current is READ, never by refusing a recommendation. Title for #1:
+ranked on **lifetime** (current ties at 1000). That was my pick; he has not objected.
