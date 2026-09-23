@@ -2223,8 +2223,9 @@ dedicated shop at price + 2× craft mats). Consumables keep their rarities.
 - **Disassembly gives ESSENCE only** (see `BL-273`). The 20% head/mats/recipe roll is gone.
 - ✅ Second round: the temp armour boxes include the shield; temp gear is untradeable and **ticks
   only while worn** (needs an **empty saved gear preset** to unequip everything); **no temp jewellery**.
-  The **T52 shop costs essence, no mats**: 500 T52 + ~5-10k T40 (¾ of the worth). ❓ Is there gold
-  on top? Light box has a shield too?
+  The **T52 shop costs essence, no mats**: 500 T52 + ~5-10k T40 (¾ of the worth).
+- ✅ Third round: **essence only, no gold** at the T52 shop; **all three temp armour boxes** (heavy,
+  light, robe) include a shield.
 
 ## `BL-273` ❓ THE CRAFTING REWORK — supersedes `BL-05` and `BL-50`
 
@@ -2234,7 +2235,7 @@ recipes at 20/40/60/100% (learn one, spend one; mat cost 30/50/70/100%), the ref
 first of all: **profession lock or not** (my pick: not).
 ✅ **2026-09-23: NO professions and NO lock.** The quest makes you a crafter for good. Recipes can be
 forgotten to free slots. Progression only goes up: every craft raises the generic craft level AND that
-type's level (weapon / armour / scribe). ❓ Is the type list exactly those three?
+type's level (weapon / armour / jewels, corrected in the third round below).
 ✅ **2026-09-23: ESSENCE** (design doc §2.4). Breaking a Common or Mythic gives its grade's essence,
 **authored once per item from its price** (never a live formula). A Mythic gives 100%, a Common 70%.
 Recipes need essence as well as mats; at 100% a T80 weapon needs 2000, a T40 weapon 400, a T80 body
@@ -2247,6 +2248,10 @@ Mythic breaks for ~10k; **no essence refinement**. A **shattered enchant +N→N+
 break value (+15→16 = 150%), and enchanting up to break is intended. **No vendor sells essence.** Essence
 scales with the recipe %; **refined mats don't**; 20 heads per 100% recipe, scaled (20% → 4). ❓ Open:
 heads use the plain % (4) or the 30% curve (6)? Does +0→1 give 0%? Per-tier numbers.
+✅ **2026-09-23, third round:** heads follow the **mat curve** (20% → 6, 100% → 20), so a maxed
+crafter pays 20 heads per success on every tier. +0→1 is moot, because +0…+3 is 100% safe and the
+first possible shatter is +3→4 = 30%. **The craft types are weapon / armour / JEWELS, not scribe**;
+potions, scrolls/runes and refines raise only the generic level. Still open: the per-tier essence numbers.
 
 ## `BL-274` ❓ PER-MOB DROP TABLES
 
@@ -2254,6 +2259,15 @@ heads use the plain % (4) or the 30% curve (6)? Does +0→1 give 0%? Per-tier nu
 wood OR metal OR thread), plus that item's parts, its recipe and a rare Mythic. The refinable-metal
 grades by level band, volcanic mats in 2-3 zones, recipe % by source (normal/elite/boss/quest), daily
 recipe quests.
+✅ **2026-09-23 (§2.3 answers):** (1) The gear specialty is a **generator rule** (deterministic from the
+mob id, flavoured by category), dumped to a **readable CSV**. Change the rule, not the rows. The mats
+half already exists (`MatFlavor`). There are **four specialties**: weapons (1-3 types), body, small
+armour (helm/gloves/boots + **shield**), and **jewellery on fewer mobs**. (2) The rare full-item drop
+has its **own drop group** (own `/droprate` knob), separate from Common gear; still through
+`EffectiveRate`, and the global `DropChanceRate` multiplies it like every drop. (3) Volcanic
+dust/stone, **for now**, goes on some normal mobs at 76/80/85, on top of their own mats; real volcanic
+places come with the map rework (`BL-281`). **Naming: equipment "Mythic" becomes plain
+items; the reduced ones are "Common" items** (a `BL-272` text change).
 
 ## `BL-277` ❓ VITALITY + BLESSING (names owed)
 
