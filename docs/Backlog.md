@@ -2273,6 +2273,8 @@ slots). **Type levels 0-10:** +0.5% each, % only, no slots.
 Adamantine / Soulcrystal Essence). The refinable mats (one weapon line, one armour line, normal →
 refined → rare → refined rare → legendary) are **Nightsilver** (weapons) and **Nightsilk** (armour), one
 family. In the note, "darksteel" as a mat = Nightsilver.
+✅ **2026-09-23, admin path (§2.2 #7):** Debug-window **"Become crafter"** (skips the quest, like the
+debug class-change buttons) + **"Set craft levels"** (general and per-type 0-10).
 
 ## `BL-274` ❓ PER-MOB DROP TABLES
 
