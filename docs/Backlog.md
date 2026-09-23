@@ -2367,6 +2367,11 @@ the results (design doc §2.2 #10) show three of the note's numbers carrying alm
 T76's 50 refined-rare is 50,000 normal, not the note's 5,000,000). ❓ Owed: the head chance, the bar lever,
 whether Nightsilver should be a sink, and whether your 2026-08-13 hour targets still stand. The open
 essence numbers (C3) can't be solved until those four land.
+✅ **2026-09-23, your first inputs** (design doc §2.2 #10): Nightsilver = wood+metal+alloy time, bars ~100h at
+T76, heads 1% → 0.1%, targets T40 ~15h / T76 16 days. The tool now SOLVES the Nightsilver and volcanic rates
+from those. T40 mats 16h ✓, T76 226h (18.8 d). ❓ Still owed: the recipe drop rate (my placeholder adds 25h at
+T40), whether 16 days is per success (a 40% recipe makes it 25-27 d), the T52/T61/T80 targets, T80 bars
+(190h), and parts per armour/jewel slot.
 ⚠ The tool uses M1's kill clock, **~66-81 kills/h**, not the `360` that `BL-277`'s Favor drain was set on
 (4-5× off). `BL-277` already says to re-measure its constant.
 

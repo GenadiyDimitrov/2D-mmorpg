@@ -6318,13 +6318,20 @@ static void CraftCost()
         0.2 + 1.3 * Math.Clamp((L - 40) / 50.0, 0, 1);
     const double BaseEliteMul = 10;                   // NOTE: @90 elites 10-20 vs normals 1-2
     const double GemIronShare = 0.5;                  // NOTE: gems/iron "twice as hard"
-    static double NsNormalPerKill(int L) =>           // NOTE: normal Nightsilver 1-2 @35 → 70-100 @76
-        L < 35 ? 0 : 1.5 + 83.5 * Math.Clamp((L - 35) / 41.0, 0, 1);
+    // 🔑 RULED 2026-09-23: *"only nightsilver need to cost the time of metal+wood+alloy"* (T40 ~+4h, T61 ~9h,
+    // T76 ~11h). So the normal Nightsilver drop is NOT an input any more — it is SOLVED per tier below
+    // (nsNormal[t]) from that rule, and printed in C0 as the rate the drop table has to carry. (The note's
+    // own curve, 1-2 @35 → 70-100 @76, made the whole ladder cost minutes.)
+    var nsNormal = new double[5];
     int[] nsGateNormal = { 35, 62, 76, 80, 999 };     // NOTE: the level each rung starts dropping from normals
     int[] nsGateElite = { 35, 50, 60, 76, 80 };       // NOTE: … and from elites
     const double NsHigherPerKill = 0.01;              // NOTE: "1/100" for every rung above normal
-    const double HeadPerKill = 0.001;                 // NOTE: "0.1% or something"
-    const double VolcanicPerKill = 0.003;             // NOTE: 0.1-0.5%, normals 76+ only, ash and stone each
+    // RULED 2026-09-23: *"start at 1% for t40 and go as low as t80 at 0.1%"*; T76 stays at 0.1% (~100 h,
+    // which he took as the reference). T52/T61 PLACEHOLDER, halving per tier.
+    double[] headChance = { 0.01, 0.005, 0.0025, 0.001, 0.001 };
+    // RULED 2026-09-23: *"the bars should take like a heads farm about ~100h"* at T76. SOLVED below
+    // (volcanicPerKill) from that target; the note's 0.1-0.5% made T76 a year of farming. Ash and stone each.
+    const double BarTargetHoursT76 = 100;
     const double RecipePerKill = 0.0005;              // PLACEHOLDER: one SPECIFIC recipe, "as low as the common type"
     const double EliteMul = 4;                        // NOTE: "elit x4" — applied to every per-kill number but base mats
     const double MaxBonus = 0.10;                     // RULED: 5% general + 5% type, T76/T80 only
@@ -6338,9 +6345,10 @@ static void CraftCost()
         new[] { (20, "normal"), (40, "elite"), (40, "quest"), (60, "boss") },
         new[] { (20, "elite"), (40, "quest"), (60, "boss") },
     };
-    // His 2026-08-13 per-weapon targets (M8's hisCurve), by grade. Set under the OLD system: a reference
-    // line to read against, not a rule.
-    var target = new (double Lo, double Hi)[] { (3, 5), (5, 10), (12, 24), (12, 36), (84, 168) };
+    // His NEW per-item targets (2026-09-23), farm hours per success. *"decreasing time for a single craft at t40
+    // from 55h to ~15h seems fair"* and *"a t76 of solo farming with 12h a day farming gets u at 16 days witch
+    // is OK"*. T52/T61/T80 not given yet (NaN = no target). The old 2026-08-13 curve (D 3-5h … S 7-14 d) is retired.
+    double[] targetH = { 15, double.NaN, double.NaN, 16 * 12, double.NaN };
 
     // ------------------------------------------------------------------------------------------------
     //  The clock: M1's calibration (walking dominates the farm) and M12a's elite camp.
@@ -6402,8 +6410,21 @@ static void CraftCost()
         var gi = Unit(L, BaseMatPerKill(L) * GemIronShare, BaseMatPerKill(L) * GemIronShare * BaseEliteMul);
         return Mul(gi, 40);                                      // 20 gems + 20 iron
     }
-    (double H, double K) Bar(int L) => Mul(Unit(L, L >= 76 ? VolcanicPerKill : 0, 0), 40);  // 20 ash + 20 stone
-    (double H, double K) Head(int L) => Unit(L, HeadPerKill, HeadPerKill * EliteMul);
+    // The two SOLVES. Linear in the rate, so exact: hours = units / (rate x kills/h).
+    //  • Volcanic: T76's bars (normals only) in BarTargetHoursT76.
+    //  • Nightsilver: tier t needs nsQty x 10^t normal-equivalents (the 10:1 ladder), in the hours that tier's
+    //    wood+metal+alloy take, farmed wherever a normal-drop unit is cheapest (elite camp x EliteMul or not).
+    double volcanicPerKill = 40.0 * bars[3] / (BarTargetHoursT76 * KphN(farmL[3]));
+    for (int t = 0; t < 5; t++)
+    {
+        int L = farmL[t];
+        double wmaH = 2 * bulk[t] * BaseMat(L).H + alloy[t] * Alloy(L).H;
+        nsNormal[t] = nsQty[t] * Math.Pow(10, t) / (wmaH * Math.Max(KphN(L), EliteMul * KphE(L)));
+    }
+    double NsNormalPerKill(int L) => nsNormal[Array.IndexOf(farmL, L)];
+
+    (double H, double K) Bar(int L) => Mul(Unit(L, L >= 76 ? volcanicPerKill : 0, 0), 40);  // 20 ash + 20 stone
+    (double H, double K) Head(int t) => Unit(farmL[t], headChance[t], headChance[t] * EliteMul);
     (double H, double K) Nightsilver(int L, int rung)
     {
         double n = rung == 0 ? NsNormalPerKill(L) : L >= nsGateNormal[rung] ? NsHigherPerKill : 0;
@@ -6437,18 +6458,18 @@ static void CraftCost()
     Console.WriteLine();
 
     Console.WriteLine("=== C0: the INPUTS (NOTE = his note, RULED = a later answer, PH = placeholder) and the clock ===");
-    Console.WriteLine($"{"tier",4} {"farm L",6} {"kills/h N",9} {"E",5} | {"base/kill",9} {"NS/kill",8} {"ess/kill",9} | "
+    Console.WriteLine($"{"tier",4} {"farm L",6} {"kills/h N",9} {"E",5} | {"base/kill",9} {"NS solved",9} {"ess/kill",9} | "
         + $"{"wood+metal",10} {"alloy",6} {"bars",5} {"Nightsilver",16} {"heads",5} {"essence",8} {"breaks",7}");
     string[] nsName = { "normal", "refined", "rare", "ref.rare", "legend." };
     for (int t = 0; t < 5; t++)
     {
         int L = farmL[t];
         Console.WriteLine($"{tier[t],4} {L,6} {KphN(L),9:F0} {KphE(L),5:F0} | {BaseMatPerKill(L),9:0.###} "
-            + $"{NsNormalPerKill(L),8:0.#} {EssencePerKill(t),9:0.##} | {bulk[t] + "+" + bulk[t],10} {alloy[t],6} {bars[t],5} "
+            + $"{NsNormalPerKill(L),9:0.###} {EssencePerKill(t),9:0.##} | {bulk[t] + "+" + bulk[t],10} {alloy[t],6} {bars[t],5} "
             + $"{nsQty[t] + " " + nsName[t],16} {Heads,5} {essence[t],8} {mythicBreak[t],7}");
     }
-    Console.WriteLine($"  per kill (normal): head {HeadPerKill:0.####}, higher Nightsilver rungs {NsHigherPerKill}, ash/stone "
-        + $"{VolcanicPerKill} (76+), one specific recipe {RecipePerKill} (PH); elite x{EliteMul} (base mats x{BaseEliteMul}).");
+    Console.WriteLine($"  per kill (normal): head {string.Join("/", headChance.Select(h => $"{h:0.##%}"))} (RULED), higher Nightsilver rungs {NsHigherPerKill},"
+        + $" ash/stone {volcanicPerKill:0.###} each (SOLVED: T76 bars in {BarTargetHoursT76}h), one specific recipe {RecipePerKill} (PH); elite x{EliteMul} (base mats x{BaseEliteMul}).");
     Console.WriteLine($"  kills/h: N = M1's walk-dominated clock ({overhead:F0}s loop overhead + TTK), E = M12a's elite camp.");
     Console.WriteLine("  'ess/kill' is MEASURED: today's non-Mythic gear drops, slot-weighted, as Commons breaking for");
     Console.WriteLine($"  break/{CommonPriceRatio} x {CommonBreakShare:P0}. At T76/T80 it is the direct essence drop (PH: x{DirectEssenceVsCommon} of that).");
@@ -6463,7 +6484,7 @@ static void CraftCost()
             ("wood+metal", Mul(BaseMat(L), 2 * bulk[t]), true),
             ("alloy", Mul(Alloy(L), alloy[t]), true),
             ("bars", bars[t] == 0 ? (0.0, 0.0) : Mul(Bar(L), bars[t]), true),
-            ("heads", Mul(Head(L), Heads), true),
+            ("heads", Mul(Head(t), Heads), true),
             ("essence", Mul(Essence(t), essence[t]), true),
             ("Nightsilver", Mul(Nightsilver(L, t), nsQty[t]), false),   // RULED: refined mats do NOT scale
         };
@@ -6484,7 +6505,7 @@ static void CraftCost()
 
     Console.WriteLine("=== C2: THE MAIN TABLE — per SUCCESS, by recipe %, novice vs maxed crafter (+10%, T76/T80 only) ===");
     Console.WriteLine($"{"tier",4} {"rcp",4} {"from",6} {"chance",11} {"tries",10} | {"kills nov",11} {"hours nov",15} "
-        + $"{"hours max",15} {"recipe wait",12} | {"his target",11} {"x target",9}");
+        + $"{"hours max",15} {"recipe wait",12} | {"target",8} {"x target",9}");
     for (int t = 0; t < 5; t++)
     {
         int L = farmL[t];
@@ -6503,17 +6524,17 @@ static void CraftCost()
                 "boss" => "boss only",
                 _ => "in kills",
             };
-            double mid = (target[t].Lo + target[t].Hi) / 2;
+            double mid = targetH[t];
             Console.WriteLine($"{tier[t],4} {pct + "%",4} {src,6} {$"{cNov:P0}/{cMax:P0}",11} {$"{1 / cNov:0.#}/{1 / cMax:0.#}",10} | "
                 + $"{CK(nov.K),11} {CH(nov.H),15} {CH(hMax),15} {wait,12} | "
-                + $"{grade[t] + " " + target[t].Lo + "-" + target[t].Hi + "h",11} {nov.H / mid,8:0.#}x");
+                + (double.IsNaN(mid) ? $"{"-",8} {"-",9}" : $"{mid + "h",8} {nov.H / mid,8:0.#}x"));
         }
     }
     Console.WriteLine("  'tries' = attempts per success = recipes BURNED per success (the recipe goes on a fail too).");
     Console.WriteLine("  Every attempt pays the scaled mats x the curve (30/50/70/100%) + the full Nightsilver + one recipe.");
     Console.WriteLine("  'recipe wait' is the calendar: a quest recipe is 1 a day rolled 1/8, so its tries become DAYS,");
     Console.WriteLine("  on top of the hours. 'boss only' prices the mats and leaves the recipe out.");
-    Console.WriteLine("  'x target' = novice hours vs the MIDDLE of his 2026-08-13 range for that grade (old system).");
+    Console.WriteLine("  'x target' = novice hours vs his 2026-09-23 target (T40 ~15h, T76 16 farm days); '-' = none given yet.");
     Console.WriteLine();
 
     // C3: the essence number that lands each tier's headline recipe on target. Linear in essence, so solved.
@@ -6531,12 +6552,12 @@ static void CraftCost()
         double essH = Essence(t).H;
         double rest = tries * (curve * p.Where(x => x.Scales && x.Name != "essence").Sum(x => x.Cost.H)
                                + p.Where(x => !x.Scales).Sum(x => x.Cost.H) + Recipe(L, src).H);
-        double mid = (target[t].Lo + target[t].Hi) / 2;
+        double mid = targetH[t];
         double solved = (mid - rest) / (tries * curve * essH);
         double commonBreak = mythicBreak[t] / CommonPriceRatio * CommonBreakShare;
-        string solvedTxt = solved <= 0 ? "none fits" : $"{solved:N0}";
-        Console.WriteLine($"{tier[t],4} {pct + "% " + src,11} {CH(rest),15} {CH(100 * essH),12} {mid,7:0.#}h | {solvedTxt,11} "
-            + $"{essence[t],6} {CS(tries * curve * essH * essence[t]),10} {(t < 3 ? $"{Math.Max(0, solved) / commonBreak:0.#}" : "-"),10} {Math.Max(0, solved) / mythicBreak[t],8:0.##}");
+        string solvedTxt = double.IsNaN(mid) ? "no target" : solved <= 0 ? "none fits" : $"{solved:N0}";
+        Console.WriteLine($"{tier[t],4} {pct + "% " + src,11} {CH(rest),15} {CH(100 * essH),12} {(double.IsNaN(mid) ? "-" : mid + "h"),8} | {solvedTxt,11} "
+            + $"{essence[t],6} {CS(tries * curve * essH * essence[t]),10} {(t < 3 ? $"{(double.IsNaN(solved) ? 0 : Math.Max(0, solved)) / commonBreak:0.#}" : "-"),10} {(double.IsNaN(solved) ? 0 : Math.Max(0, solved)) / mythicBreak[t],8:0.##}");
     }
     Console.WriteLine("  'rest of it' = everything but essence, per success. 'none fits' = the rest ALONE is over target, so no");
     Console.WriteLine("  essence number can land the tier until another input moves (C1 says which).");
@@ -6572,7 +6593,7 @@ static void CraftCost()
             double mats = BaseMat(L).H * (s.Metal + s.Leather + s.Thread + s.Wood) * scale
                 + Alloy(L).H * s.Alloy * scale
                 + (bars[t] == 0 ? 0 : Bar(L).H * bars[t] * s.Frac)
-                + Head(L).H * Heads
+                + Head(t).H * Heads
                 + Essence(t).H * essence[t] * s.Frac;
             double ns = Nightsilver(L, t).H * nsQty[t] * s.Frac;   // Nightsilk mirrors the ladder (ASSUMED)
             return tries * (curve * mats + ns + Recipe(L, src).H);
