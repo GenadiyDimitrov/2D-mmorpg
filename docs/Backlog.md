@@ -274,7 +274,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-272` | ❓ | **RARITY COLLAPSE — Common + Mythic only** for equipment — [design/Rework-2026-09-23.md](design/Rework-2026-09-23.md) §2.1 | items |
 | `BL-273` | ❓ | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05` (archived) — §2.2; ✅ no profession lock | items |
 | `BL-274` | ❓ | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3 | items |
-| `BL-277` | ❓ | **WAYFARER'S FAVOR + WAYFARER'S BLESSING** (was Vitality + Blessing) — §3; ✅ names, refund = drain, pace = empty, drain in HOURS (a full Favor = 2 h of farming), party drains own share, offline = not in the world (8 h 20 min to full, never ×2 with town), subclass box once per slot, panel ships with it | progression |
+| `BL-277` | ❓ | **WAYFARER'S FAVOR + WAYFARER'S BLESSING** (was Vitality + Blessing) — §3; ✅ names, refund = drain, pace = empty, drain in HOURS (a full Favor = 2 h of farming, H = 2 final, ÷ measured kills/h), party drains own share, offline = not in the world (8 h 20 min to full, never ×2 with town), subclass box once per slot, panel ships with it | progression |
 | `BL-278` | ❓ | **BOSS REGEN AS A CLOCK** — HP/s = maxHp ÷ 30000 for every engaged mob, ×2 / ×10 on enrage; one INT knob — §4 | combat |
 | `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
 | `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
@@ -2326,10 +2326,14 @@ wins. ⚠ `360` = the tool's 10 s/kill; the constant needs re-measuring once `BL
 dominates), not 360. With 360 in the formula a full Favor would last **~9-11 h** of real farming, not the ruled
 2 h. So when this is built, the `360` has to be the measured kills/h at that level (or the ruling changes to
 ~10 h). Your call, before the constant is written.
-❓ **2026-09-23: H = 2 or 4?** (design doc §3 point 3, the H table). His test is that 8 h offline + P h of play
+✅ ~~❓ **2026-09-23: H = 2 or 4?**~~ (answered: H = 2, the fourth round below) (design doc §3 point 3, the H table). His test is that 8 h offline + P h of play
 must never beat P + 8 h of non-stop farming. **H = 4 fails it** (8 h off + 4 h play = 13.5 h against 12 h). It
 breaks even at H ≈ 3.4. **My pick: H = 3**, the largest round number that still holds (2 h of play → 8.0 h,
 against 6.75 h at H = 2).
+✅ **2026-09-23, fourth round: H = 2 STAYS** (H = 3 declined), **and `360` → the MEASURED kills/h**:
+`drain/kill = 20000 × (baseExp ÷ sameLevelNormalExp(L)) ÷ (killsPerHour(L) × 2)`, with `killsPerHour(L)` an
+authored per-level table read off `--craft-cost`'s M1 clock (~70/h → ~143 points per same-level kill, ~140
+kills per full Favor). This closes the two ⚠ notes above about the `360`.
 ✅ **2026-09-23, third round (§3.6-3.9):** **Offline is offline, town is town.** Logging out anywhere
 counts. Offline = **not in the world**: credited at login as `(now − last save) × 40/min`, clamped to
 20,000. A living offline-farmer is in the world and gains nothing; its death or empty budget ends the
