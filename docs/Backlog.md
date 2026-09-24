@@ -279,6 +279,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-282` | 🟡 | **`BalanceMatrix --craft-cost`** ✅ built + all inputs ruled; only C5 (consumables) left, waits on §2.2 #8 — kills + hours per crafted T40/52/61/76/80 item under the NEW rules, by recipe %; extends M1-M9 | items |
 | `BL-284` | 🔵 | **RECURRING RUNE GRANT** — premium/event: a 1 h rune a day + 1-2 2 h runes a week; needs a premium status or events (neither exists) — split out of `BL-277` | progression |
 | `BL-286` | ⏸ | **CASTLE "NOBLE" CHARISMA** — a castle-holding clan leader gets charisma decay/loss protection or a grant; split out of `BL-283`; waits on castles | social |
+| `BL-287` | ✅ | **PRICES + ESSENCE, IG-SHAPED** — sell 50%, Common 0.05, T1 ×2.2 / T20 ×0.65 / T40-52 ×0.5, break = 40% at essence sell 1500…25000, per-slot Common drops, elite ×2, no healing potions above 40; ruled, build 0.201.0 | items |
 
 ---
 
@@ -2383,3 +2384,32 @@ with castles*, a clan leader holding a castle (a "Noble") gets charisma decay/lo
 grant. ⏸ **Blocked: castles do not exist.** ❓ Open when they do: protection (the 30-day ring does not age
 while he holds it? penalties spare lifetime?) or a grant (how much, how often), and whether it covers the
 leader only or the clan.
+
+## `BL-287` ✅ PRICES + ESSENCE, IG-SHAPED — reworks 0.200.0's tables (ruled 2026-09-24)
+
+Reopened right after 0.200.0 was built. His model, from IG: *"breaking it down gives less than its actual sell
+price"*, and *"one common item or 2 [must] not allow me to craft an item"*. Design doc §2.5 has the table and
+the measurement. **Every number below is RULED unless marked (mine).**
+1. **Everything with a price SELLS FOR HALF** its buy price (gear was Mythic ÷10 and Common Mythic ÷200;
+   materials and healing potions 30%; buff potions ÷10). Items authored to sell for 0 (premium, runes) stay at 0.
+2. **A Common costs 0.05 × its Mythic** (was 0.225), so it sells for 2.5% of the Mythic.
+3. **Mythic prices move:** T1 **×2.2** (2H ~190k), T20 **×0.65** (2H 1.4M), T40 and T52 **×0.5** (2H 4.29M /
+   13.5M), T61 / T76 / T80 unchanged (60M / 120M / 600M). Every slot of a tier moves by the same factor.
+4. **Breaking returns 40% of the item's price as essence at its sell price** (selling returns 50%, so breaking
+   costs you ~20% of the gold). Essence SELLS for **1500 / 4500 / 7500 / 12500 / 25000** (D…S); its value
+   (yardstick, never a shop price) is twice that. **Break = 0.4 × buy price ÷ essence sell**, Mythic and Common
+   alike (**a Common breaks for 100%** of its own price; the 70% is gone). A 2H breaks for **1143 / 1200 / 3200 /
+   3840 / 9600** (Mythic) and 57 / 60 / 160 (Common). Written into the code as literals, generated once.
+5. **The recipe essence amounts stay** (2H 400 / 800 / 1200 / 1600 / 2000). A 2H craft = 7 / 13 / 7.5 Commons.
+6. **Common drops: each SLOT rolls its own chance**, ring > earring/boots/gloves > helm/shield/necklace > body
+   > weapon, inside **T40 1-2%, T52 0.2-1%, T61 0.05-0.3%**. The cells in between are (mine): linear over the
+   five ranks (T40: ring 2%, ear/boots/gloves 1.75%, helm/shield/neck 1.5%, body 1.25%, weapon 1%). An
+   **elite rolls ×2**. *"not everything set in stone"*: splitting which mob drops which slot is `BL-274`.
+7. **No healing-potion drop above level 40** (normals, elites, bosses). *"go town buy potions"*.
+8. **The step-8 temporary boxes cost the Common price** (a T40 temporary 2H = 214k). T1/T20 stay unbreakable.
+
+📊 Measured before ruling (scratch model at the normal farm levels 45 / 56 / 68): a Common every 7 / 17 / 59
+kills; Common gold ~13-14× the coin (~400k / 434k / 496k an hour); essence for a 2H craft **1.9h / 10.4h /
+22.7h** (0.200.0: 3.2 / 2.8 / 3.1), so the settled per-success times move to about T40 16h, **T52 ~36h, T61
+~79h**. He accepted that (*"essence amount stays"*); a playtest judges it.
+**Build: 0.201.0, before step 8** (step 7b in design doc §7).
