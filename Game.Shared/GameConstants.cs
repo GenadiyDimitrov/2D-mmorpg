@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.203.0";
+    public const string GameVersion = "0.204.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -219,7 +219,7 @@ public static class GameConstants
     /// hub lost `JoinProfession` / `QuitProfession` / `DebugSetProfession` and gained `ForgetRecipe`,
     /// `DebugBecomeCrafter` and `DebugSetCraftLevels`; `Craft` takes the recipe % used. Positional records
     /// changed shape, so an old client mis-reads the crafting push. ⚠ A NEW APK IS WANTED.
-    public const int ProtocolVersion = 48;   // 48: becoming a crafter (`BL-273` part 2)
+    public const int ProtocolVersion = 49;   // 49: the crafter-points model + step 9b (`BL-273`)
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means

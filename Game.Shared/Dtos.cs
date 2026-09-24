@@ -1469,13 +1469,15 @@ public record SocialOptionsUpdate(int Options);
 /// <item><see cref="KnownRecipes"/>: one entry per learned recipe (= one slot), as <c>"recipeId:percent"</c>;
 ///   generic recipes are always <c>:100</c>. The quest's own hammer recipe is listed while held but takes
 ///   no slot.</item>
-/// <item>The four craft levels (0-10) with their raw POINTS, so the window can draw progress bars:
-///   generic, weapon, armour, jewels (<see cref="Crafting.PointsForLevel"/>).</item>
+/// <item><see cref="GenericPoints"/>: the raw generic points (the level and its progress bar derive from
+///   <see cref="Crafting.PointsForLevel"/>). <see cref="TypeLevels"/>: the five SPENT type levels, indexed by
+///   <see cref="CraftType"/> (slot 0 unused); <see cref="FreePoints"/> unspent; <see cref="Respecs"/> used of
+///   <see cref="Crafting.MaxRespecs"/> (the crafter-points model, 0.204.0).</item>
 /// <item><see cref="Slots"/>: how many slots the generic level gives (10 + 5/level).</item>
 /// <item><see cref="AtMaster"/>: standing at a Master Crafter — the craft buttons go live. Away from one
 ///   the window opens in BROWSE mode; learning and forgetting work anywhere.</item>
 /// </list></summary>
 public record CraftingUpdate(
     bool IsCrafter, string[] KnownRecipes,
-    int GenericPoints = 0, int WeaponPoints = 0, int ArmourPoints = 0, int JewelsPoints = 0,
+    int GenericPoints = 0, int[]? TypeLevels = null, int FreePoints = 0, int Respecs = 0,
     int Slots = 0, bool AtMaster = false);

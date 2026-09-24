@@ -83,9 +83,11 @@ public class CharacterRecord
     /// `Game.Server/game.db` (+ `-shm`/`-wal`) delete-and-recreate.</summary>
     public bool IsCrafter { get; set; }
     public int CraftPoints { get; set; }
-    public int CraftPointsWeapon { get; set; }
-    public int CraftPointsArmour { get; set; }
-    public int CraftPointsJewels { get; set; }
+    /// <summary>0.204.0, the crafter-points model: the SPENT type levels as <c>"weapon,armour,jewels,apothecary,scribe"</c>
+    /// (indexed like <see cref="Game.Shared.CraftType"/> from 1), and the lifetime respec count. Replaced the three
+    /// per-type point columns. ⚠ Same `game.db` delete-and-recreate.</summary>
+    public string CraftTypeLevelsCsv { get; set; } = "";
+    public int CraftRespecs { get; set; }
 
     public int Level { get; set; } = 1;
     public long Exp { get; set; }

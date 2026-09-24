@@ -732,9 +732,8 @@ public class PersistenceService
             AccountId = rec.AccountId,
             IsCrafter = rec.IsCrafter,
             CraftPoints = rec.CraftPoints,
-            CraftPointsWeapon = rec.CraftPointsWeapon,
-            CraftPointsArmour = rec.CraftPointsArmour,
-            CraftPointsJewels = rec.CraftPointsJewels
+            CraftTypeLevels = Entity.ParseCraftTypeLevels(rec.CraftTypeLevelsCsv),
+            CraftRespecs = rec.CraftRespecs
         };
 
         // ---- CLASSES. The subclass rows are the source of truth for anything class-level. A
@@ -1050,7 +1049,7 @@ public class PersistenceService
     public sealed record CharacterSnapshot(
         int CharacterId, Race Race, BaseClass BaseClass, int Level, long Exp, long Gold,
         int SecondClass, int ThirdClass, int FourthClass, int SkillPoints, bool IsCrafter,
-        int CraftPoints, int CraftPointsWeapon, int CraftPointsArmour, int CraftPointsJewels,
+        int CraftPoints, string CraftTypeLevelsCsv, int CraftRespecs,
         int Con, int Atk, int Wit, int Agi, int Spt, float X, float Y,
         string LearnedSkillsCsv, string CompletedQuestsCsv, string ActiveQuestsJson,
         string KnownRecipesCsv, string LockedItemsCsv, string PickupFiltersCsv,
@@ -1100,7 +1099,7 @@ public class PersistenceService
             return new CharacterSnapshot(
                 id, e.Race, e.BaseClass, e.Level, e.Exp, e.Gold,
                 e.SecondClass, e.ThirdClass, e.FourthClass, e.SkillPoints, e.IsCrafter,
-                e.CraftPoints, e.CraftPointsWeapon, e.CraftPointsArmour, e.CraftPointsJewels,
+                e.CraftPoints, string.Join(',', e.CraftTypeLevels.Skip(1)), e.CraftRespecs,
                 e.Con, e.AtkStat, e.Wit, e.Agi, e.Spt, e.X, e.Y,
                 string.Join(',', e.LearnedSkills.Select(kv => $"{kv.Key}:{kv.Value}")),
                 string.Join(',', e.CompletedQuests),
@@ -1249,9 +1248,8 @@ public class PersistenceService
         rec.Gold = snap.Gold;
         rec.IsCrafter = snap.IsCrafter;
         rec.CraftPoints = snap.CraftPoints;
-        rec.CraftPointsWeapon = snap.CraftPointsWeapon;
-        rec.CraftPointsArmour = snap.CraftPointsArmour;
-        rec.CraftPointsJewels = snap.CraftPointsJewels;
+        rec.CraftTypeLevelsCsv = snap.CraftTypeLevelsCsv;
+        rec.CraftRespecs = snap.CraftRespecs;
         rec.CompletedQuestsCsv = snap.CompletedQuestsCsv;
         rec.ActiveQuestsJson = snap.ActiveQuestsJson;
         rec.KnownRecipesCsv = snap.KnownRecipesCsv;

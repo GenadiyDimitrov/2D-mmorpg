@@ -813,11 +813,29 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
-    /// <summary>Admin: set the generic and the three type craft levels (0-10 each).</summary>
-    public Task DebugSetCraftLevels(int generic, int weapon, int armour, int jewels)
+    /// <summary>Admin: set the generic level and the five type levels (0-10 each: weapon, armour, jewels,
+    /// apothecary, scribe).</summary>
+    public Task DebugSetCraftLevels(int generic, int weapon, int armour, int jewels, int apothecary, int scribe)
     {
         if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
-        _world.Commands.Enqueue(new DebugSetCraftLevelsCmd(Context.ConnectionId, generic, weapon, armour, jewels));
+        _world.Commands.Enqueue(new DebugSetCraftLevelsCmd(Context.ConnectionId, generic,
+            new[] { weapon, armour, jewels, apothecary, scribe }));
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Spend one free crafting point on a type (1 weapon … 5 scribe).</summary>
+    public Task SpendCraftPoint(int type)
+    {
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
+        _world.Commands.Enqueue(new SpendCraftPointCmd(Context.ConnectionId, (CraftType)type));
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Respec the crafting points at a Master Crafter.</summary>
+    public Task RespecCraft(Guid npcEntityId)
+    {
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
+        _world.Commands.Enqueue(new RespecCraftCmd(Context.ConnectionId, npcEntityId));
         return Task.CompletedTask;
     }
 

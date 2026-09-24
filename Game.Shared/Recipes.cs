@@ -16,12 +16,16 @@ public record RecipeInput(string ItemId, int Qty);
 ///   such item at or below the learned %. The attempt succeeds at the used %, plus the T76/T80 crafter
 ///   bonus, and every input is scaled by it (<see cref="Crafting.ScaledQty"/>).
 ///   <see cref="SuccessChance"/> is unused for gear.</item>
-/// <item><b>Generic</b> (potions, scrolls, refines). Bought at the Master for <see cref="LearnPrice"/>
-///   once the crafter's generic level reaches <see cref="UnlockLevel"/>; no recipe item per craft; rolls
-///   <see cref="SuccessChance"/>; may also cost <see cref="GoldCost"/> gold per attempt.</item>
+/// <item><b>Generic</b> (potions, scrolls, refines). Bought at the Master for <see cref="LearnPrice"/>; no
+///   recipe item per craft; always succeeds (step 9b, 2026-09-24); costs <see cref="GoldAt"/> gold a batch.</item>
 /// </list>
-/// <para><see cref="LearnLevel"/> is the CHARACTER level needed to learn it (*"i cannot learn T52 rcp
-/// @50"*). ⚠ The generic numbers (unlock level, price, costs) are placeholders until step 9b's table.</para>
+/// <para><see cref="UnlockLevel"/> is the <see cref="Type"/> LEVEL needed to learn AND to craft it (the
+/// crafter-points model, 0.204.0): a recipe whose type level is gone after a respec stays in its slot, LOCKED,
+/// and crafts again once the level is back. For <see cref="CraftType.General"/> it reads the generic level.
+/// <see cref="LearnLevel"/> is the CHARACTER level (*"i cannot learn T52 rcp @50"*).</para>
+/// <para><see cref="BatchValue"/> (Scribe / Apothecary only) is what the batch costs to BUY. The crafter pays
+/// <see cref="Crafting.PriceFactor"/> of it in all, the fixed inputs counted at their vendor sell price and
+/// gold making up the rest: <see cref="GoldAt"/>.</para>
 /// </summary>
 public record Recipe(
     string Id,
@@ -35,8 +39,23 @@ public record Recipe(
     int LearnPrice = 0,
     int GoldCost = 0,
     int GearItemLevel = 0,
-    bool QuestOnly = false)
+    bool QuestOnly = false,
+    int BatchValue = 0)
 {
+    /// <summary>The gold one batch costs a crafter at this type level. A recipe without a
+    /// <see cref="BatchValue"/> charges its flat <see cref="GoldCost"/>. A Scribe/Apothecary one charges
+    /// <c>PriceFactor(level) × BatchValue</c> minus its inputs at their vendor sell price, rounded to 10 and
+    /// never below 10 (*"all need some amount of gold"*).</summary>
+    public int GoldAt(int typeLevel)
+    {
+        if (BatchValue <= 0) return GoldCost;
+        double inputs = 0;
+        foreach (var i in Inputs)
+            if (ItemCatalog.Get(i.ItemId) is ItemDef d) inputs += (double)i.Qty * ItemCatalog.SellPrice(d);
+        double gold = Crafting.PriceFactor(typeLevel) * BatchValue - inputs;
+        return System.Math.Max(10, (int)System.Math.Round(gold / 10.0) * 10);
+    }
+
     /// <summary>A gear recipe: learned from and spent as a recipe ITEM, and rolled at that item's %.</summary>
     public bool IsGear => GearItemLevel > 0;
 }
@@ -65,17 +84,14 @@ public static class RecipeCatalog
         return dict;
     }
 
-    /// <summary>A generic recipe's shape from the crafting RUNG (1-6) it sat on under `BL-05`: the Master
-    /// sells it from generic level <see cref="Crafting.GenericUnlockLevel"/>, and it needs character level 40
-    /// (the crafter quest's own level) or 76 for the old top two rungs. ⚠ Placeholders until step 9b.</summary>
-    private static Recipe Generic(string id, string output, RecipeInput[] inputs, int oldRung,
-                                  int qty = 1, float chance = 1f)
+    /// <summary>An OLD material refine, kept on its 0.203.0 gate until step 10 deletes it: General, so the gate
+    /// reads the GENERIC level (refining is open to every crafter), unlocked at 2·(rung − 1).</summary>
+    private static Recipe Refine(string id, string output, RecipeInput[] inputs, int oldRung)
     {
-        int unlock = Crafting.GenericUnlockLevel(oldRung);
+        int unlock = System.Math.Clamp(2 * (oldRung - 1), 0, Crafting.MaxCraftLevel);
         return new Recipe(id, CraftType.General, output, inputs,
-            OutputQty: qty, SuccessChance: chance,
             LearnLevel: oldRung >= 5 ? 76 : Crafting.CrafterQuestLevel,
-            UnlockLevel: unlock, LearnPrice: Crafting.GenericLearnPrice(unlock));
+            UnlockLevel: unlock, LearnPrice: Crafting.LearnPriceLadder[unlock]);
     }
 
     /// <summary>The crafter quest's Blacksmith's Hammer (*"at least 20 quest wood and at least 20 iron …
@@ -120,7 +136,7 @@ public static class RecipeCatalog
         {
             var (a, b) = Cross[type];
             foreach (var (low, high) in Steps)
-                yield return Generic(
+                yield return Refine(
                     $"refine_{type}_{high}".ToLowerInvariant(),
                     Crafting.MaterialId(type, high),
                     new[]
@@ -295,219 +311,116 @@ public static class RecipeCatalog
             // The success % is the recipe ITEM's, not the recipe's (see Recipe): SuccessChance is unused here.
             yield return new Recipe(
                 $"craft_{d.Id}", Crafting.TypeOf(d), d.Id, inputs.ToArray(),
-                LearnLevel: d.ItemLevel, GearItemLevel: d.ItemLevel);
+                LearnLevel: d.ItemLevel, UnlockLevel: Crafting.TierGate(d.ItemLevel), GearItemLevel: d.ItemLevel);
         }
     }
 
     // =====================================================================================
-    //  CONSUMABLE recipes — the Potion Master's and the Scroll Scribe's ladders, as the owner
-    //  authored them on 2026-08-13 (docs/design/CraftingProfessions.md §5d).
+    //  STEP 9b — THE GENERIC-RECIPE TABLE (owner, 2026-09-24; design doc §2.2 "Your answers" and
+    //  "The crafter-points model"). Every number below is AUTHORED, one literal per row.
     //
-    //  🔑 These two are the ONLY recipes in the game with an AUTHORED crafting rung. Everything
-    //  else derives its rung from what it makes; these cannot, because he deliberately offset
-    //  both ladders from rarity:
-    //    • the Scribe's L1 is *"nothing gear related"*, which pushes his gear service to D on L2
-    //      and lets five grades D→S fill five rungs L2→L6 exactly;
-    //    • the Potion Master alternates an HP line and a buff line on a TWO-rung stride, so his
-    //      Common buff potions sit at L2 while his Common HP potion sits at L1 — the same rarity
-    //      on two different rungs, which no derivation can express.
-    //  The rung IS the design here, so it is passed in and the derivation is skipped.
+    //  • TYPE LEVEL (UnlockLevel): commons are open to every crafter at L0 (*"all can do T40 crafts + common
+    //    scrolls common buff pots and common regen pots"*). An uncommon needs the type and its tier's gate:
+    //    T40 L1 · T52 L2 · T61 L4 (the smiths' gate, and L1 at T40 because the type must be learned at all).
+    //    Runes 1h L7 / 2h L10; rare HP L7 / rare MP L10 (*"apoth … adds rare pots at the end"*).
+    //  • A BUFF's tier is its class skill's LAST rung (*"if a skill is learned at 40 but last lvl is at 52
+    //    that s T52"*), measured 2026-09-24 over every class table: T40 = Might, Bulwark, Alacrity, Swift;
+    //    T52 = Aim, Force, Ward, Fury, Agility, Focus, Ferocity, Frenzy, Vigor, Serenity; T61 = Body, Soul,
+    //    Resolve, Insight, Vampirism. The tier sets the character level, the gate and the essence (D/C/B).
+    //  • PRICE: BatchValue is what the batch costs to buy (shelf price; HP/MP 60/120 · 250/500 · 5000/10000,
+    //    buff potions 1,500 / 5,000, buff scrolls 36,000, rune boxes 150k / 280k). The crafter pays
+    //    ×0.9 → ×0.55 of it by type level (Crafting.PriceFactor); essence and mats are fixed, gold floats.
+    //  • LEARN PRICE: the ladder of the rung each line was ruled on (Crafting.LearnPriceLadder).
+    //  • OUT, by his ruling: stones, Return/Resurrection (+ Ultimates), every Dash, the Instant potion, and
+    //    enchant + attribute scrolls (never craftable).
     // =====================================================================================
     private static IEnumerable<Recipe> ConsumableRecipes()
     {
-        // 🔴 `BL-40` — THE INPUT RARITY IS NOT AUTHORED. It is read off the OUTPUT item, so a recipe
-        // cannot be cheaper than the thing it makes. (2026-08-12.)
-        //
-        // The bug this closes, in his words: *"A lvl 30 Potion Crafter had crafted 450 uncommon potions …
-        // A lvl 30 Scroll crafter had crafted 690 uncommon attri scrolls."* Every consumable recipe except
-        // the ten buff potions was authored EXACTLY ONE RARITY RUNG TOO CHEAP — `potion_healing` is an
-        // Uncommon item and took Common mats; `attrscroll_legendary` is Legendary and took Rare, two rungs
-        // off. Refining costs 7-in-1-out, so a rung is a 7× subsidy (49× for the two-rung one): one common
-        // mat became one uncommon potion, while the refiner beside him paid seven for a single uncommon
-        // MAT. Nothing was looping and nothing was batching — the ratio was simply wrong, everywhere.
-        //
-        // Deriving it also makes the fix permanent. The old signature invited the mistake by asking the
-        // author to restate a rarity the item already knows, and it was got wrong 8 times out of 18.
-        //
-        // ⚠ The INPUT rarity is still the OUTPUT's own rarity — it is only the RUNG that is authored.
-        // A Common buff potion filed at L2 is still made of Common mats: moving it up a rung is a
-        // statement about who may make it, not a licence to charge Uncommon mats for a Common good.
-        static ItemRarity RarityOf(string itemId) => ItemCatalog.Get(itemId)?.Rarity ?? ItemRarity.Common;
+        static RecipeInput M(MaterialType t, int n) => new(Crafting.MaterialId(t, ItemRarity.Common), n);
+        static RecipeInput E(int grade, int n) => new(Crafting.EssenceIds[grade], n);
+        static RecipeInput V(string id, int n) => new(id, n);
 
-        // ⚠ `BL-273` part 2: these are GENERIC recipes now. The old rung sets where the Master offers them
-        // (generic level 0-10) and the learn level; the costs are the old ones, placeholders until step 9b.
+        Recipe R(CraftType type, string output, int qty, int charLevel, int gate, int ladder, int batchValue,
+                 params RecipeInput[] inputs) =>
+            new($"craft_{output}", type, output, inputs,
+                OutputQty: qty, LearnLevel: charLevel, UnlockLevel: gate,
+                LearnPrice: Crafting.LearnPriceLadder[ladder], BatchValue: batchValue);
 
-        Recipe Potion(string output, int rung, int qty)
+        const CraftType Apo = CraftType.Apothecary, Scr = CraftType.Scribe;
+        const int Gem = 0, Wood = 1, Iron = 2, Leather = 3;
+        static RecipeInput Mat(int k, int n) => M(k switch
         {
-            var r = RarityOf(output);
-            return Generic($"craft_{output}", output,
-                new[]
-                {
-                    new RecipeInput(Crafting.MaterialId(MaterialType.Wood, r), 3),
-                    new RecipeInput(Crafting.MaterialId(MaterialType.Thread, r), 1),
-                    new RecipeInput(Crafting.MaterialId(MaterialType.Gem, r), 1),
-                },
-                oldRung: rung, qty: qty, chance: 0.9f);
+            0 => MaterialType.Gem, 1 => MaterialType.Wood, 2 => MaterialType.Ingot, _ => MaterialType.Leather,
+        }, n);
+
+        // ---- HP / MP ------------------------------------------------------------------------------------
+        //                                   batch  char gate ladder  batch value    inputs
+        yield return R(Apo, ItemCatalog.MinorPotion,       100, 40, 0, 0,   6_000,   Mat(Gem, 5),  E(0, 1));
+        yield return R(Apo, ItemCatalog.MinorManaPotion,   100, 40, 0, 0,  12_000,   Mat(Gem, 10), E(0, 2));
+        yield return R(Apo, ItemCatalog.HealingPotion,      50, 52, 2, 2,  12_500,   Mat(Gem, 10), E(1, 1));
+        yield return R(Apo, ItemCatalog.ManaPotion,         50, 52, 2, 2,  25_000,   Mat(Gem, 20), E(1, 2));
+        // Rare: *"they are not rly sold anywhere so crafting is the only way"*. Unreachable until the volcanic
+        // ash/stone drop in step 11.
+        yield return R(Apo, ItemCatalog.GreaterPotion,      10, 76, 7, 5,  50_000,   Mat(Gem, 10), E(2, 1),
+                       V(ItemCatalog.VolcanicAsh, 1), V(ItemCatalog.VolcanicStone, 1));
+        yield return R(Apo, ItemCatalog.GreaterManaPotion,  10, 76, 10, 5, 100_000,  Mat(Gem, 20), E(2, 2),
+                       V(ItemCatalog.VolcanicAsh, 2), V(ItemCatalog.VolcanicStone, 2));
+
+        // ---- BUFF POTIONS: x6. Common = gems + wood, open to all (ladder L1); Uncommon adds the tier's
+        //      essence behind the Apothecary gate (ladder L3). (common, uncommon, the family's tier)
+        foreach (var (c, u, tier) in new[]
+        {
+            (ItemCatalog.MightPotionC,   ItemCatalog.MightPotionU,   40),
+            (ItemCatalog.BulwarkPotionC, ItemCatalog.BulwarkPotionU, 40),
+            (ItemCatalog.CastPotionC,    ItemCatalog.CastPotionU,    40),
+            (ItemCatalog.SpeedPotionC,   ItemCatalog.SpeedPotionU,   40),
+            (ItemCatalog.AimPotionC,     ItemCatalog.AimPotionU,     52),
+            (ItemCatalog.ForcePotionC,   ItemCatalog.ForcePotionU,   52),
+            (ItemCatalog.WardPotionC,    ItemCatalog.WardPotionU,    52),
+            (ItemCatalog.AtkPotionC,     ItemCatalog.AtkPotionU,     52),
+            (ItemCatalog.EvaPotionC,     ItemCatalog.EvaPotionU,     52),
+        })
+        {
+            yield return R(Apo, c, 6, tier, 0, 1, 9_000, Mat(Gem, 3), Mat(Wood, 3));
+            yield return tier >= 52
+                ? R(Apo, u, 6, tier, 2, 3, 30_000, Mat(Gem, 5), Mat(Wood, 5), E(1, 1))
+                : R(Apo, u, 6, tier, 1, 3, 30_000, Mat(Gem, 5), Mat(Wood, 5), E(0, 2));
         }
 
-        Recipe Scroll(string output, int rung, int qty)
+        // ---- BUFF SCROLLS: x2, leather + iron. The nine "basic" ones count as the common line (open to
+        //      all, ladder L2); the ten "other" ones are the uncommon line: the Scribe gate + the tier's
+        //      essence (ladder L4).
+        foreach (var (id, tier) in new[]
         {
-            var r = RarityOf(output);
-            return Generic($"craft_{output}", output,
-                new[]
-                {
-                    new RecipeInput(Crafting.MaterialId(MaterialType.Thread, r), 3),
-                    new RecipeInput(Crafting.MaterialId(MaterialType.Wood, r), 1),
-                    new RecipeInput(Crafting.MaterialId(MaterialType.Gem, r), 1),
-                },
-                oldRung: rung, qty: qty, chance: 0.8f);
-        }
-
-        // =================================================================================
-        //  POTION MASTER — *"L1 - common hp pots + dash, l2 - common buff pots + unc-dash, l3 -
-        //  uncommon hp pots + rare-dash, l4 - uncommon buff pots + epic-dash, l5 - rare hp pots +
-        //  legend-dash, l6 - rare/mythic wahtever is the strongest buff pots + mytic dash"*
-        //
-        //  A two-stride alternation: the HP line and the buff line take turns, each advancing a rarity
-        //  every SECOND rung, while DASH advances every single rung and is the one line that reaches
-        //  Mythic. The six Dash rarities already exist in Items.cs and map to the six rungs exactly —
-        //  that is not a coincidence to lean on, it is why he picked dash as the spine.
-        // =================================================================================
-        var buffPotionsC = new[]
+            (ItemCatalog.MightScrollR, 40), (ItemCatalog.BulwarkScrollR, 40), (ItemCatalog.CastScrollR, 40),
+            (ItemCatalog.SpeedScrollR, 40), (ItemCatalog.AimScrollR, 52), (ItemCatalog.ForceScrollR, 52),
+            (ItemCatalog.WardScrollR, 52), (ItemCatalog.AtkScrollR, 52), (ItemCatalog.EvaScrollR, 52),
+        })
+            yield return R(Scr, id, 2, tier, 0, 2, 72_000, Mat(Leather, 3), Mat(Iron, 3));
+        foreach (var (id, tier) in new[]
         {
-            ItemCatalog.SpeedPotionC, ItemCatalog.CastPotionC, ItemCatalog.AtkPotionC,
-            ItemCatalog.EvaPotionC, ItemCatalog.MightPotionC, ItemCatalog.BulwarkPotionC,
-            ItemCatalog.ForcePotionC, ItemCatalog.WardPotionC, ItemCatalog.AimPotionC,
-        };
-        var buffPotionsU = new[]
-        {
-            ItemCatalog.SpeedPotionU, ItemCatalog.CastPotionU, ItemCatalog.AtkPotionU,
-            ItemCatalog.EvaPotionU, ItemCatalog.MightPotionU, ItemCatalog.BulwarkPotionU,
-            ItemCatalog.ForcePotionU, ItemCatalog.WardPotionU, ItemCatalog.AimPotionU,
-        };
+            (ItemCatalog.FocusScrollM, 52), (ItemCatalog.FerocityScrollM, 52), (ItemCatalog.FrenzyScrollM, 52),
+            (ItemCatalog.VigorScrollM, 52), (ItemCatalog.SerenityScrollM, 52),
+            (ItemCatalog.BodyScrollM, 61), (ItemCatalog.SoulScrollM, 61), (ItemCatalog.ResolveScrollM, 61),
+            (ItemCatalog.InsightScrollM, 61), (ItemCatalog.VampScrollM, 61),
+        })
+            yield return tier >= 61
+                ? R(Scr, id, 2, tier, 4, 4, 72_000, Mat(Leather, 5), Mat(Iron, 5), E(2, 2))
+                : R(Scr, id, 2, tier, 2, 4, 72_000, Mat(Leather, 5), Mat(Iron, 5), E(1, 2));
 
-        // L1 — Common HP + Common dash. `potion_minor` is also `BL-57`'s answer for this profession:
-        // without a rung-1 recipe a fresh Apothecary could never earn his way off L1 at all.
-        yield return Potion(ItemCatalog.MinorPotion, 1, 5);
-        yield return Potion(ItemCatalog.DashPotionC, 1, 3);
-        // L2 — the nine Common buff potions + Uncommon dash.
-        foreach (var id in buffPotionsC) yield return Potion(id, 2, 3);
-        yield return Potion(ItemCatalog.DashPotionU, 2, 3);
-        // L3 — Uncommon HP + Rare dash.
-        yield return Potion(ItemCatalog.HealingPotion, 3, 5);
-        yield return Potion(ItemCatalog.DashPotionR, 3, 3);
-        // L4 — the nine Uncommon buff potions + Epic dash.
-        foreach (var id in buffPotionsU) yield return Potion(id, 4, 3);
-        yield return Potion(ItemCatalog.DashPotionE, 4, 3);
-        // L5 — Rare HP + Legendary dash.
-        yield return Potion(ItemCatalog.GreaterPotion, 5, 5);
-        // The RARE MANA potion sits beside it, on the same rung (owner, 2026-08-27: *"only shop
-        // common/uncommon - rare apothecary crafter"*). Same rarity, same rung, same input rarity —
-        // the mana line's top is the HP line's top, not a new stride. The Common and Uncommon mana
-        // potions are deliberately NOT here: those are the shop's, and mana potions do not drop at
-        // all, so the Potion Master is the only source of the strong one.
-        yield return Potion(ItemCatalog.GreaterManaPotion, 5, 5);
-        yield return Potion(ItemCatalog.DashPotionL, 5, 3);
-        // L6 — Mythic dash, plus the Instant (panic) potion as the top of the HP line.
-        //
-        // ⚠ HIS L6 SAYS *"rare/mythic wahtever is the strongest buff pots"* AND THERE IS NO SUCH THING.
-        // The buff-POTION ladder stops at Uncommon by his own playtest-17 `E3` ruling — above it sits the
-        // buff SCROLL, one per buff, Rare, and that is the Scribe's line (L3/L5 below), not this one.
-        // So this rung takes the strongest thing the Potion Master actually has. If he wants a Mythic
-        // buff potion it is a new ITEM first and a recipe second; inventing one here would re-open the
-        // exact "six colours for one effect" wall E3 closed. Flagged, not faked.
-        yield return Potion(ItemCatalog.InstantPotion, 6, 3);
-        yield return Potion(ItemCatalog.DashPotionM, 6, 3);
-
-        // =================================================================================
-        //  SCROLL SCRIBE — *"l1-20lvl can craft common resurection scrols, scrols of return; (nothing
-        //  gear related) L2- scrol enchant common(D), attri uncommon(D); L3- atri rare, scrolls rare ..
-        //  anytign for C grade + basic scrolls for buffs; l4 - anything for B grade; L5 - any scrolls
-        //  (anything) for A grade + other buff scrolls; L6 - S grade stuff + ultimate escape +
-        //  ultimate resurect"*
-        //
-        //  🔑 His ladder is offset ONE RUNG from the smiths': gear service starts at D (L2), not E (L1).
-        //  That offset is what buys the non-gear L1 and it makes five grades D→S fill five rungs L2→L6
-        //  exactly, with no rung empty and no invented recipe. It is also how `BL-57` was answered
-        //  without compromising either of his two prior rulings (see §6 of the design doc).
-        // =================================================================================
-
-        // L1 — nothing gear-related, exactly as he ruled. Both scrolls are utility.
-        // ⚠ `scroll_resurrect` is an UNCOMMON item sitting on rung 1, which is the one place the
-        // "input rarity = output rarity" rule bites: it costs Uncommon mats at a rung whose character
-        // floor is 20. That is intended — the rung says who may make it, the mats say what it is worth —
-        // but it does mean a fresh Scribe will level on Scrolls of Return and buy into the other later.
-        yield return Scroll(ItemCatalog.ScrollReturn, 1, 3);
-        yield return Scroll(ItemCatalog.ScrollResurrect, 1, 3);
-
-        // L2-L6 — the enchant ladder, one normal scroll per grade, D→S.
-        //
-        // ⚠ HIS LABEL AND THE ITEM ID DISAGREE, and the ID is right: he writes *"scrol enchant
-        // common(D)"*, and `scroll_common` is the **E**-band scroll while `scroll_uncommon` is the D one.
-        // He named the D GRADE and reached for the rarity word next to it. D is what L2 gets.
-        //
-        // ⚠ Greater and Safe scrolls stay uncraftable at every rung — they are the elite/boss reward
-        // that makes an enchant worth attempting, and he has not moved that.
-        //
-        // 🔑 The A and S rungs are NEW, and the measurement argues for them: `M10` shows the normal-mob
-        // enchant faucet closing at 80 by design (`D1`), so the S band drops **zero** enchant scrolls
-        // per hour. At the exact level the crafting ladder needs its top rung, the drop it would be
-        // priced against does not exist — which makes the Scribe the *intended* A/S supply rather than
-        // a convenience.
-        yield return Scroll(ItemCatalog.ScrollNormalD, 2, 5);
-        yield return Scroll(ItemCatalog.ScrollNormalC, 3, 5);
-        yield return Scroll(ItemCatalog.ScrollNormalB, 4, 5);
-        yield return Scroll(ItemCatalog.ScrollNormalA, 5, 5);
-        yield return Scroll(ItemCatalog.ScrollNormalS, 6, 5);
-
-        // Attribute scrolls, on the same grade ladder.
-        // ⚠ The Common (entry) scroll and the S-grade MYTHIC one are still NOT craftable, and that is a
-        // prior ruling of his, not an omission of this one: the attribute economy keeps a faucet the
-        // scribe cannot flood at either end. His *"L6 - S grade stuff"* is served by the S enchant
-        // scroll and the two ultimates below.
-        yield return Scroll(ItemCatalog.AttrScrollUncommon, 2, 3);
-        yield return Scroll(ItemCatalog.AttrScrollRare, 3, 3);
-        yield return Scroll(ItemCatalog.AttrScrollEpic, 5, 3);
-        yield return Scroll(ItemCatalog.AttrScrollLegendary, 5, 3);
-
-        // Buff scrolls — *"L3 … + basic scrolls for buffs"*, *"L5 … + other buff scrolls"*.
-        //
-        // 🔑 THIS SUPERSEDES playtest-17 `E3`'s *"box-only"*, and only because he said so here. E3 made a
-        // buff scroll one-per-buff, top rung, out of the Apothecary's Blessing Box **or nowhere**; §5d
-        // gives the Scribe two rungs of them. The split follows his two words: the NINE families that
-        // also have a potion line are the *"basic"* ones (L3), and the EIGHT scroll-only families —
-        // which are the NPC buffer's own value — are the *"other"* ones (L5).
-        //
-        // ⚠ The scrolls are `Tradable: false` as items, so a crafted one cannot be sold. That is E3's
-        // rule and it is what keeps this from being a gold faucet: the Scribe crafts for himself and his
-        // party, which is the determinism `M10` says is the real reason to craft a consumable at all
-        // (potion uptime already runs 193-231 buff-min/h against his 60/h parity target — 3-4× OVER).
-        foreach (var id in new[]
-        {
-            ItemCatalog.SpeedScrollR, ItemCatalog.CastScrollR, ItemCatalog.AtkScrollR,
-            ItemCatalog.EvaScrollR, ItemCatalog.MightScrollR, ItemCatalog.BulwarkScrollR,
-            ItemCatalog.ForceScrollR, ItemCatalog.WardScrollR, ItemCatalog.AimScrollR,
-        }) yield return Scroll(id, 3, 3);
-        foreach (var id in new[]
-        {
-            ItemCatalog.BodyScrollM, ItemCatalog.SoulScrollM, ItemCatalog.VigorScrollM,
-            ItemCatalog.SerenityScrollM, ItemCatalog.FocusScrollM, ItemCatalog.FerocityScrollM,
-            ItemCatalog.InsightScrollM, ItemCatalog.FrenzyScrollM,
-            // `BL-149` — Vampirism and Resolve join the L5 half: they are scroll-only families, which
-            // is exactly the test that put the other eight here rather than at L3.
-            ItemCatalog.VampScrollM, ItemCatalog.ResolveScrollM,
-        }) yield return Scroll(id, 5, 3);
-
-        // L6 — *"ultimate escape + ultimate resurect"*. Both are untradable Rare consumables that had
-        // no source at all outside the finisher box; the top of the Scribe's ladder is where he asked
-        // them to live.
-        yield return Scroll(ItemCatalog.ScrollReturnUltimate, 6, 1);
-        yield return Scroll(ItemCatalog.ScrollResurrectUltimate, 6, 1);
+        // ---- RUNE BOXES: x3 (*"1h from shop cost 450k … 2h x3 shop cost 840"*). The 2h is unreachable until
+        //      the Volcanic Bar refine (step 10) and its ash/stone (step 11) exist.
+        foreach (var box in new[] { ItemCatalog.BoxWarRune1h, ItemCatalog.BoxSpellRune1h })
+            yield return R(Scr, box, 3, 70, 7, 7, 450_000, Mat(Iron, 10), Mat(Gem, 10), Mat(Wood, 10), E(2, 8));
+        foreach (var box in new[] { ItemCatalog.BoxWarRune2h, ItemCatalog.BoxSpellRune2h })
+            yield return R(Scr, box, 3, 80, 10, 10, 840_000, V(ItemCatalog.VolcanicBar, 2), E(4, 4));
     }
 
     public static Recipe? Get(string id) => id is null ? null : _byId.GetValueOrDefault(id);
     public static IEnumerable<Recipe> All => _byId.Values;
-    /// <summary>The recipes the Master SELLS to learn (generic, not the quest's own), cheapest first.</summary>
+    /// <summary>The recipes the Master SELLS to learn (generic, not the quest's own): by type, then gate,
+    /// then character level.</summary>
     public static IEnumerable<Recipe> GenericForSale => _byId.Values
-        .Where(r => !r.IsGear && !r.QuestOnly).OrderBy(r => r.UnlockLevel).ThenBy(r => r.Id);
+        .Where(r => !r.IsGear && !r.QuestOnly)
+        .OrderBy(r => r.Type).ThenBy(r => r.UnlockLevel).ThenBy(r => r.LearnLevel).ThenBy(r => r.Id);
 }

@@ -34,7 +34,7 @@ namespace Game.Client
         /// because "how many Rare Ingots do I have" is asked on its own, away from any one recipe.</summary>
         private enum CraftTab { Craft = 0, Learn = 1, Slots = 2, Materials = 3 }
         private CraftTab _craftTab = CraftTab.Craft;
-        private static readonly string[] CraftTabNames = { "Craft", "Learn", "Slots", "Mats" };
+        private static readonly string[] CraftTabNames = { "Craft", "Learn", "Points", "Mats" };
 
         // ----- `BL-245`: the keeper's shelf counts too ---------------------------------------------
         //
@@ -127,7 +127,7 @@ namespace Game.Client
                                          : Array.Empty<InventoryItemDto>();
             int revision = (int)_craftTab * 104729 + (Boot.IsCrafter ? 31513 : 0)
                          + SelfLevel() * 613 + Boot.CraftPoints * 65537
-                         + Boot.CraftPointsWeapon * 7 + Boot.CraftPointsArmour * 11 + Boot.CraftPointsJewels * 13
+                         + Boot.CraftTypeLevels.Aggregate(0, (h, v) => h * 11 + v) * 7 + Boot.CraftRespecs * 13
                          + Boot.CraftSlots * 17 + (int)(Boot.Gold % 1000003)
                          + (Boot.AtCraftMaster ? 1046527 : 0) + (Boot.DialogNpcId != Guid.Empty ? 3 : 0)
                          + (_craftUseKeeper ? 15485863 : 0);
@@ -190,9 +190,8 @@ namespace Game.Client
                 : Tinted("browsing — craft at a Master Crafter", false);
             if (!Boot.IsCrafter) return "The Master's Trial   " + where;
             return "Crafting L" + Boot.CraftLevel
-                 + "  (weapon " + Boot.CraftTypeLevel(CraftType.Weapon)
-                 + " · armour " + Boot.CraftTypeLevel(CraftType.Armour)
-                 + " · jewels " + Boot.CraftTypeLevel(CraftType.Jewels) + ")"
+                 + (Boot.CraftPointsFree > 0 ? "  <color=#E6C35C>" + Boot.CraftPointsFree + " point(s) to spend</color>" : "")
+                 + "  (" + string.Join(" · ", Crafting.SpendableTypes.Select(t => TypeShort(t) + " " + Boot.CraftTypeLevel(t))) + ")"
                  + "   slots " + Boot.CraftSlotsUsed + "/" + Boot.CraftSlots + "   " + where;
         }
 
@@ -222,8 +221,7 @@ namespace Game.Client
                 foreach (int pct in Crafting.RecipePercentsFor(recipe.GearItemLevel))
                 {
                     if (pct > learned) continue;
-                    float bonus = Crafting.SuccessBonus(recipe.GearItemLevel, Boot.CraftLevel,
-                                                        Boot.CraftTypeLevel(recipe.Type));
+                    float bonus = Crafting.GearSuccessBonus(Boot.CraftTypeLevel(recipe.Type));
                     float chance = Mathf.Min(1f, pct / 100f + bonus);
                     BuildOneRow(recipe, title + "  <size=13>(learned " + learned + "%)</size>", name,
                                 pct, chance, ItemCatalog.RecipeBookId(recipe.Id, pct), counts);
@@ -259,15 +257,20 @@ namespace Game.Client
                 haveAll &= ok;
                 parts.Add(Tinted("Recipe " + pct + "% " + have + "/1", ok));
             }
-            if (recipe.GoldCost > 0)
+            int gold = recipe.GoldAt(Boot.CraftTypeLevel(recipe.Type));
+            if (gold > 0)
             {
-                bool ok = Boot.Gold >= recipe.GoldCost;
+                bool ok = Boot.Gold >= gold;
                 haveAll &= ok;
-                parts.Add(Tinted(recipe.GoldCost.ToString("N0") + " " + GameConstants.CurrencyName, ok));
+                parts.Add(Tinted(gold.ToString("N0") + " " + GameConstants.CurrencyName, ok));
             }
 
             int shown = Mathf.RoundToInt(chance * 100f);
-            string status = chance >= 1f ? Tinted("Guaranteed", true) : Tinted(shown + "% success", true);
+            // LOCKED after a respec (0.204.0): the recipe keeps its slot but will not craft below its gate.
+            bool locked = !recipe.QuestOnly && Boot.CraftTypeLevel(recipe.Type) < recipe.UnlockLevel;
+            string status = locked ? Tinted("Locked: " + GateName(recipe), false)
+                : chance >= 1f ? Tinted("Guaranteed", true) : Tinted(shown + "% success", true);
+            haveAll &= !locked;
 
             // ⚠ AWAY FROM THE MASTER every row is dead — the browse mode. The have/need colouring is the
             // whole point of reading this in the field.
@@ -309,10 +312,10 @@ namespace Game.Client
                              + (recipe.OutputQty > 1 ? "  x" + recipe.OutputQty : "");
                 bool known = Boot.KnownRecipes.ContainsKey(recipe.Id);
                 bool lvlOk = SelfLevel() >= recipe.LearnLevel;
-                bool craftOk = Boot.CraftLevel >= recipe.UnlockLevel;
+                bool craftOk = Boot.CraftTypeLevel(recipe.Type) >= recipe.UnlockLevel;
                 bool goldOk = Boot.Gold >= recipe.LearnPrice;
                 string status = known ? Tinted("known", true)
-                    : !craftOk ? Tinted("Crafting L" + recipe.UnlockLevel, false)
+                    : !craftOk ? Tinted(GateName(recipe), false)
                     : !lvlOk ? Tinted("Needs level " + recipe.LearnLevel, false)
                     : !slotFree ? Tinted("No free slot", false)
                     : Tinted(recipe.LearnPrice.ToString("N0") + " " + GameConstants.CurrencyName, goldOk);
@@ -328,9 +331,44 @@ namespace Game.Client
 
         // ---- the Slots page: forget a recipe --------------------------------------------------------
 
-        /// <summary>Every learned recipe, one slot each; tap one to forget it (anywhere, nothing refunded).</summary>
+        /// <summary>The crafter-points model (0.204.0): spend the generic level's points on the five types, respec
+        /// at a Master, then every learned recipe, one slot each; tap one to forget it (anywhere, nothing
+        /// refunded).</summary>
         private void BuildSlotsPage()
         {
+            int free = Boot.CraftPointsFree;
+            CraftNote("Each crafting level gives one point to spend on a type (" + free + " free). Smiths: T52 needs L2, "
+                    + "T61 L4, T76 L6, T80 L8; L9 and L10 add +5% each. Scribe and Apothecary unlock their uncommon "
+                    + "lines by the same tiers and craft cheaper each level (x0.90 down to x0.55).");
+            foreach (var type in Crafting.SpendableTypes)
+            {
+                var t = type;                        // captured per row
+                int lvl = Boot.CraftTypeLevel(t);
+                bool can = free > 0 && lvl < Crafting.MaxCraftLevel;
+                CraftRow(TypeName(t) + "  L" + lvl + "   <size=13>" + (can ? "tap to spend a point" : "") + "</size>",
+                         can, () => Ask("Spend a point on " + TypeName(t) + " (L" + lvl + " -> L" + (lvl + 1) + ")?"
+                                        + "\n\n<size=15>Points only come back with a respec at a Master Crafter.</size>",
+                                        "Spend", () => Boot.SpendCraftPoint(t)));
+            }
+            int used = Boot.CraftRespecs;
+            bool anySpent = Crafting.SpendableTypes.Any(t => Boot.CraftTypeLevel(t) > 0);
+            bool atMaster = Boot.AtCraftMaster && Boot.DialogNpcId != Guid.Empty;
+            if (used < Crafting.MaxRespecs)
+            {
+                long price = Crafting.RespecPrices[used];
+                string why = !anySpent ? "nothing spent" : !atMaster ? "at a Master Crafter"
+                           : price.ToString("N0") + " " + GameConstants.CurrencyName;
+                CraftRow("Respec (" + used + "/" + Crafting.MaxRespecs + " used)   <size=13>"
+                         + Tinted(why, anySpent && atMaster && Boot.Gold >= price) + "</size>",
+                         anySpent && atMaster && Boot.Gold >= price,
+                         () => Ask("Respec your crafting points for " + price.ToString("N0") + " "
+                                   + GameConstants.CurrencyName + "?\n\n<size=15>Every point comes back. Recipes above "
+                                   + "your new levels stay in their slots, LOCKED, until you reach them again. You get "
+                                   + Crafting.MaxRespecs + " respecs a lifetime.</size>",
+                                   "Respec", () => Boot.RespecCraft()));
+            }
+            else CraftNote("All " + Crafting.MaxRespecs + " respecs used.");
+
             CraftNote("Slots " + Boot.CraftSlotsUsed + "/" + Boot.CraftSlots + ". Each crafting level adds "
                     + Crafting.SlotsPerLevel + ". Forgetting a recipe frees its slot and refunds nothing.");
             foreach (var kv in Boot.KnownRecipes.OrderBy(k => k.Key, StringComparer.Ordinal))
@@ -373,6 +411,29 @@ namespace Game.Client
         }
 
         // ---- helpers ---------------------------------------------------------------------------------
+
+        private static string TypeName(CraftType t) => t switch
+        {
+            CraftType.Weapon => "Weaponsmith",
+            CraftType.Armour => "Armoursmith",
+            CraftType.Jewels => "Jeweler",
+            CraftType.Apothecary => "Apothecary",
+            CraftType.Scribe => "Scribe",
+            _ => "Crafting",
+        };
+
+        private static string TypeShort(CraftType t) => t switch
+        {
+            CraftType.Weapon => "weapon",
+            CraftType.Armour => "armour",
+            CraftType.Jewels => "jewels",
+            CraftType.Apothecary => "apothecary",
+            CraftType.Scribe => "scribe",
+            _ => "generic",
+        };
+
+        /// <summary>What a recipe's gate reads, e.g. "Scribe L7" (or "Crafting L3" for a refine).</summary>
+        private static string GateName(Recipe recipe) => TypeName(recipe.Type) + " L" + recipe.UnlockLevel;
 
         /// <summary>Everything a craft may spend, summed by item id: the bag, plus the private
         /// warehouse when [Keeper] is on (`BL-245`). Materials stack, but a stack can still be split

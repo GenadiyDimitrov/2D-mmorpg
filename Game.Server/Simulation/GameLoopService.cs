@@ -232,6 +232,8 @@ public class GameLoopService : BackgroundService
                 case CraftCmd c: HandleCraft(c); break;
                 case ForgetRecipeCmd c: HandleForgetRecipe(c); break;
                 case LearnRecipeAtMasterCmd c: HandleLearnRecipeAtMaster(c); break;
+                case SpendCraftPointCmd c: HandleSpendCraftPoint(c); break;
+                case RespecCraftCmd c: HandleRespecCraft(c); break;
                 case DebugBecomeCrafterCmd c: HandleDebugBecomeCrafter(c); break;
                 case DebugSetCraftLevelsCmd c: HandleDebugSetCraftLevels(c); break;
                 case DebugSecondClassCmd c: HandleDebugSecondClass(c); break;
@@ -3417,8 +3419,8 @@ public class GameLoopService : BackgroundService
     /// <summary>Craft a recipe (`BL-273` part 2, 0.203.0): a crafter, at a Master Crafter, holding a
     /// learned recipe, its inputs and — for gear — ONE recipe item at or below the learned %.
     ///
-    /// <para>Two kinds of roll. GEAR rolls the % of the recipe item it spends, plus the crafter bonus on
-    /// T76/T80 only (<see cref="Crafting.SuccessBonus"/>), and every input is scaled by that % on the mat
+    /// <para>Two kinds of roll. GEAR rolls the % of the recipe item it spends, plus the smith's L9/L10
+    /// bonus (<see cref="Crafting.GearSuccessBonus"/>), and every input is scaled by that % on the mat
     /// curve (<see cref="Crafting.ScaledQty"/>). A GENERIC recipe (potion, scroll, refine) spends no recipe
     /// item and rolls its own <see cref="Recipe.SuccessChance"/>. Either way a fail eats everything spent,
     /// the recipe item included (*"if one that is used fails u need to go gather more mats and more rcps"*).</para>
@@ -3453,6 +3455,11 @@ public class GameLoopService : BackgroundService
         if (!player.KnownRecipes.TryGetValue(recipe.Id, out int learnedPct))
         {
             SendSystemToEntity(player, "You haven't learned that recipe.");
+            return;
+        }
+        if (!trial && CraftGateRefusal(player, recipe) is string gate)
+        {
+            SendSystemToEntity(player, gate + " It stays in its slot, locked, until then.");
             return;
         }
         // ⚠ THE MASTER IS THE WORKSHOP (owner, 2026-09-24: *"crafts happen only at a Master (u need the place
@@ -3501,9 +3508,11 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(player, $"You need a {pct}% recipe to spend on the attempt.");
             return;
         }
-        if (recipe.GoldCost > 0 && player.Gold < recipe.GoldCost)
+        // Scribe/Apothecary gold floats with the type level (×0.9 → ×0.55); the rest charge a flat GoldCost.
+        int goldCost = recipe.GoldAt(player.CraftTypeLevel(recipe.Type));
+        if (goldCost > 0 && player.Gold < goldCost)
         {
-            SendSystemToEntity(player, $"Not enough {GameConstants.CurrencyName} (need {recipe.GoldCost:N0}).");
+            SendSystemToEntity(player, $"Not enough {GameConstants.CurrencyName} (need {goldCost:N0}).");
             return;
         }
 
@@ -3512,9 +3521,9 @@ public class GameLoopService : BackgroundService
             tookFromWarehouse |= CraftConsume(player, inp.ItemId, inp.Qty, useWh);
         if (recipeItemId != null)
             tookFromWarehouse |= CraftConsume(player, recipeItemId, 1, useWh);
-        if (recipe.GoldCost > 0)
+        if (goldCost > 0)
         {
-            player.Gold -= recipe.GoldCost;
+            player.Gold -= goldCost;
             SendGold(player);
         }
         // The keeper's shelf is PUSHED state on this client, so a craft that spent from it MUST say so.
@@ -3522,8 +3531,7 @@ public class GameLoopService : BackgroundService
 
         // ---- THE ROLL.
         float chance = recipe.IsGear
-            ? pct / 100f + Crafting.SuccessBonus(recipe.GearItemLevel, player.CraftLevel,
-                                                 player.CraftTypeLevel(recipe.Type))
+            ? pct / 100f + Crafting.GearSuccessBonus(player.CraftTypeLevel(recipe.Type))
             : recipe.SuccessChance;
         bool made = _rng.NextDouble() < chance;
         if (made)
@@ -3560,47 +3568,109 @@ public class GameLoopService : BackgroundService
     }
 
     /// <summary>Craft points for one ATTEMPT (his pick, 2026-09-24: tier-weighted, and a FAIL counts, since
-    /// the materials are spent either way). The generic pot always; the type pot for gear. Each pot stops at
-    /// L10's mark.</summary>
+    /// the materials are spent either way). They feed the GENERIC level only (the crafter-points model,
+    /// 0.204.0): each generic level gives one point, and the player spends it on a type himself.</summary>
     private void AwardCraftPoints(Entity player, Recipe recipe)
     {
         int pts = recipe.IsGear ? Crafting.CraftPoints(recipe.GearItemLevel) : 1;
         int cap = Crafting.PointsForLevel(Crafting.MaxCraftLevel);
         int genBefore = player.CraftLevel;
-        int typeBefore = player.CraftTypeLevel(recipe.Type);
-
         player.CraftPoints = Math.Min(cap, player.CraftPoints + pts);
-        switch (recipe.Type)
-        {
-            case CraftType.Weapon: player.CraftPointsWeapon = Math.Min(cap, player.CraftPointsWeapon + pts); break;
-            case CraftType.Armour: player.CraftPointsArmour = Math.Min(cap, player.CraftPointsArmour + pts); break;
-            case CraftType.Jewels: player.CraftPointsJewels = Math.Min(cap, player.CraftPointsJewels + pts); break;
-        }
-
-        bool levelled = false;
         if (player.CraftLevel > genBefore)
         {
             SendSystemToEntity(player,
-                $"Your crafting level reached {player.CraftLevel} ({player.RecipeSlots} recipe slots).");
-            levelled = true;
+                $"Your crafting level reached {player.CraftLevel} ({player.RecipeSlots} recipe slots). "
+                + $"You have {player.CraftPointsFree} crafting point(s) to spend.");
+            SaveEntity(player);                // a level is worth not trusting to the 60s autosave
         }
-        if (recipe.Type != CraftType.General && player.CraftTypeLevel(recipe.Type) > typeBefore)
-        {
-            SendSystemToEntity(player,
-                $"Your {CraftTypeName(recipe.Type)} crafting reached level {player.CraftTypeLevel(recipe.Type)}.");
-            levelled = true;
-        }
-        if (levelled) SaveEntity(player);      // a level is worth not trusting to the 60s autosave
         SendCrafting(player);
     }
 
     private static string CraftTypeName(CraftType t) => t switch
     {
-        CraftType.Weapon => "weapon",
-        CraftType.Armour => "armour",
-        CraftType.Jewels => "jewel",
-        _ => "generic",
+        CraftType.Weapon => "Weaponsmith",
+        CraftType.Armour => "Armoursmith",
+        CraftType.Jewels => "Jeweler",
+        CraftType.Apothecary => "Apothecary",
+        CraftType.Scribe => "Scribe",
+        _ => "crafting",
     };
+
+    /// <summary>The refusal for a recipe whose TYPE level is too low, or null if it is high enough. The one
+    /// gate learning (item or Master) and crafting all read: after a respec a learned recipe stays in its
+    /// slot, LOCKED, and crafts again once the level is back (*"never crafted if not that lvl of that type
+    /// even if lvl is suficient"*).</summary>
+    private static string? CraftGateRefusal(Entity player, Recipe recipe) =>
+        player.CraftTypeLevel(recipe.Type) >= recipe.UnlockLevel ? null
+        : recipe.Type == CraftType.General
+            ? $"That recipe needs crafting level {recipe.UnlockLevel}."
+            : $"That recipe needs {CraftTypeName(recipe.Type)} L{recipe.UnlockLevel} "
+              + $"(you are L{player.CraftTypeLevel(recipe.Type)}).";
+
+    /// <summary>Spend one free point on a type (the crafter-points model, 0.204.0): *"each generic gives 1
+    /// "skill" point .. u then deside where to put this point into"*. Anywhere; permanent until a respec.</summary>
+    private void HandleSpendCraftPoint(SpendCraftPointCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player))
+            return;
+        if (!player.IsCrafter || Array.IndexOf(Crafting.SpendableTypes, cmd.Type) < 0)
+            return;
+        if (player.CraftPointsFree <= 0)
+        {
+            SendSystemToEntity(player, "You have no crafting points to spend. Each crafting level gives one.");
+            return;
+        }
+        int t = (int)cmd.Type;
+        if (player.CraftTypeLevels[t] >= Crafting.MaxCraftLevel)
+        {
+            SendSystemToEntity(player, $"{CraftTypeName(cmd.Type)} is already L{Crafting.MaxCraftLevel}.");
+            return;
+        }
+        player.CraftTypeLevels[t]++;
+        SendSystemToEntity(player, $"{CraftTypeName(cmd.Type)} is now L{player.CraftTypeLevels[t]}.");
+        SendCrafting(player);
+        SaveEntity(player);
+    }
+
+    /// <summary>Respec at a Master Crafter: every spent point comes back. 5 a lifetime, each dearer
+    /// (<see cref="Crafting.RespecPrices"/>). Nothing is forgotten: recipes above the new levels stay in their
+    /// slots, locked (<see cref="CraftGateRefusal"/>), and the player may forget them by hand.</summary>
+    private void HandleRespecCraft(RespecCraftCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player))
+            return;
+        if (NpcRefusesService(player, "The Master Crafter will not serve you")) return;
+        if (!CraftMasterAt(player, cmd.NpcEntityId)) return;
+        if (!player.IsCrafter) return;
+        if (player.CraftRespecs >= Crafting.MaxRespecs)
+        {
+            SendSystemToEntity(player, $"You have used all {Crafting.MaxRespecs} of your crafting respecs.");
+            return;
+        }
+        if (player.CraftTypeLevels.Sum() == 0)
+        {
+            SendSystemToEntity(player, "You have no spent crafting points to take back.");
+            return;
+        }
+        long price = Crafting.RespecPrices[player.CraftRespecs];
+        if (player.Gold < price)
+        {
+            SendSystemToEntity(player, $"Not enough {GameConstants.CurrencyName} (need {price:N0}).");
+            return;
+        }
+        player.Gold -= price;
+        player.CraftRespecs++;
+        Array.Clear(player.CraftTypeLevels);
+        int locked = player.KnownRecipes.Keys.Count(id =>
+            RecipeCatalog.Get(id) is Recipe r && CraftGateRefusal(player, r) != null);
+        SendGold(player);
+        SendSystemToEntity(player,
+            $"Your crafting points are yours to spend again ({player.CraftPointsFree} free). "
+            + $"Respecs used: {player.CraftRespecs}/{Crafting.MaxRespecs}."
+            + (locked > 0 ? $" {locked} recipe(s) are locked until you reach their level again." : ""));
+        SendCrafting(player);
+        SaveEntity(player);
+    }
 
     /// <summary>The trial is done: a crafter for good, generic and every type at L0, 10 slots (*"7. u are
     /// crafter (10 slots - L0 on generic and typed)"*). The trial's hammer recipe is forgotten; it has no
@@ -3662,9 +3732,9 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(player, $"You must be level {recipe.LearnLevel} to learn it.");
             return;
         }
-        if (player.CraftLevel < recipe.UnlockLevel)
+        if (CraftGateRefusal(player, recipe) is string gate)
         {
-            SendSystemToEntity(player, $"The Master teaches that at crafting level {recipe.UnlockLevel}.");
+            SendSystemToEntity(player, gate);
             return;
         }
         if (player.RecipeSlotsUsed >= player.RecipeSlots)
@@ -3746,20 +3816,27 @@ public class GameLoopService : BackgroundService
         BecomeCrafter(player);
     }
 
-    /// <summary>DEBUG: set the four craft levels (0-10) by setting each pot to that level's first point.</summary>
+    /// <summary>DEBUG: set the generic level (to that level's first point) and the five spent type levels.
+    /// The generic level is raised to at least their total, so the budget can never be negative.</summary>
     private void HandleDebugSetCraftLevels(DebugSetCraftLevelsCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player))
             return;
-        static int P(int lvl) => Crafting.PointsForLevel(Math.Clamp(lvl, 0, Crafting.MaxCraftLevel));
-        player.CraftPoints = P(cmd.Generic);
-        player.CraftPointsWeapon = P(cmd.Weapon);
-        player.CraftPointsArmour = P(cmd.Armour);
-        player.CraftPointsJewels = P(cmd.Jewels);
+        var types = Crafting.SpendableTypes;
+        for (int i = 0; i < types.Length; i++)
+            player.CraftTypeLevels[(int)types[i]] =
+                i < cmd.Types.Length ? Math.Clamp(cmd.Types[i], 0, Crafting.MaxCraftLevel) : 0;
+        int generic = Math.Clamp(Math.Max(cmd.Generic, player.CraftTypeLevels.Sum()), 0, Crafting.MaxCraftLevel);
+        if (player.CraftTypeLevels.Sum() > generic)
+        {
+            SendSystemToEntity(player, $"[DEBUG] Those type levels total more than {Crafting.MaxCraftLevel} points.");
+            Array.Clear(player.CraftTypeLevels);
+        }
+        player.CraftPoints = Crafting.PointsForLevel(generic);
         SendSystemToEntity(player,
-            $"[DEBUG] Craft levels: generic {player.CraftLevel} ({player.RecipeSlots} slots), weapon "
-            + $"{player.CraftTypeLevel(CraftType.Weapon)}, armour {player.CraftTypeLevel(CraftType.Armour)}, "
-            + $"jewels {player.CraftTypeLevel(CraftType.Jewels)}.");
+            $"[DEBUG] Craft levels: generic {player.CraftLevel} ({player.RecipeSlots} slots, "
+            + $"{player.CraftPointsFree} free), "
+            + string.Join(", ", types.Select(t => $"{CraftTypeName(t)} {player.CraftTypeLevel(t)}")) + ".");
         SendCrafting(player);
         SaveEntity(player);
     }
@@ -4134,7 +4211,7 @@ public class GameLoopService : BackgroundService
     private void SendCrafting(Entity p) =>
         SendTo(p, "Crafting", new CraftingUpdate(
             p.IsCrafter, p.KnownRecipes.Select(kv => $"{kv.Key}:{kv.Value}").ToArray(),
-            p.CraftPoints, p.CraftPointsWeapon, p.CraftPointsArmour, p.CraftPointsJewels,
+            p.CraftPoints, (int[])p.CraftTypeLevels.Clone(), p.CraftPointsFree, p.CraftRespecs,
             p.RecipeSlots, AtMaster: MasterNpcNear(p) is not null));
 
     private void SendSubclasses(Entity p) =>
@@ -19030,6 +19107,11 @@ public class GameLoopService : BackgroundService
         if (player.Level < recipe.LearnLevel)
         {
             SendSystemToEntity(player, $"You must be level {recipe.LearnLevel} to learn this recipe.");
+            return;
+        }
+        if (!trial && CraftGateRefusal(player, recipe) is string gate)
+        {
+            SendSystemToEntity(player, gate);
             return;
         }
         string outName = ItemCatalog.Get(recipe.OutputId)?.Name ?? recipe.OutputId;

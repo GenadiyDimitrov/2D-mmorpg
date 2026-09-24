@@ -502,9 +502,16 @@ public record LearnRecipeAtMasterCmd(string ConnectionId, Guid NpcEntityId, stri
 /// <summary>DEBUG-only: become a crafter without the trial (the class-change precedent, §2.2 #7).</summary>
 public record DebugBecomeCrafterCmd(string ConnectionId) : IAdminCommand;
 
-/// <summary>DEBUG-only: set the four craft levels (0-10) directly, so the T76/T80 bonus and the 60-slot cap
-/// can be tested without hundreds of crafts. Sets each pot to the level's first point.</summary>
-public record DebugSetCraftLevelsCmd(string ConnectionId, int Generic, int Weapon, int Armour, int Jewels) : IAdminCommand;
+/// <summary>Spend one free generic-level point on a type (the crafter-points model, 0.204.0). Anywhere.</summary>
+public record SpendCraftPointCmd(string ConnectionId, CraftType Type) : IGameCommand;
+
+/// <summary>Respec: every spent point comes back, for gold, at a Master Crafter; 5 a lifetime (0.204.0).</summary>
+public record RespecCraftCmd(string ConnectionId, Guid NpcEntityId) : IGameCommand;
+
+/// <summary>DEBUG-only: set the generic level and the five type levels (0-10) directly, so the tier gates,
+/// the L9/L10 bonus and the 60-slot cap can be tested without hundreds of crafts. The generic level is raised
+/// to cover the type levels' total, so the budget never goes negative.</summary>
+public record DebugSetCraftLevelsCmd(string ConnectionId, int Generic, int[] Types) : IAdminCommand;
 
 /// <summary>Debug: become a 2nd CLASS directly, skipping the quest and level gates the real
 /// class-change path enforces.</summary>

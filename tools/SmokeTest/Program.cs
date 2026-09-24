@@ -384,9 +384,30 @@ Check("server pushed the warehouse on login", a.Ware is not null);
     Check("craft points per attempt: T40 1 · T52 2 · T61 3 · T76 5 · T80 8",
           Crafting.CraftPoints(40) == 1 && Crafting.CraftPoints(52) == 2 && Crafting.CraftPoints(61) == 3
           && Crafting.CraftPoints(76) == 5 && Crafting.CraftPoints(80) == 8);
-    Check("🔑 the crafter bonus (0.5%/level, generic + type) counts on T76/T80 ONLY",
-          Crafting.SuccessBonus(61, 10, 10) == 0f && Math.Abs(Crafting.SuccessBonus(76, 10, 10) - 0.10f) < 1e-6
-          && Math.Abs(Crafting.SuccessBonus(80, 4, 0) - 0.02f) < 1e-6);
+    // 0.204.0 — THE CRAFTER-POINTS MODEL (his Idea-1) + step 9b.
+    Check("🔑 a smith's L9 / L10 add +5% each, and nothing below",
+          Crafting.GearSuccessBonus(8) == 0f && Math.Abs(Crafting.GearSuccessBonus(9) - 0.05f) < 1e-6
+          && Math.Abs(Crafting.GearSuccessBonus(10) - 0.10f) < 1e-6);
+    Check("🔑 tier gates: T40 L0 · T52 L2 · T61 L4 · T76 L6 · T80 L8, and every gear recipe carries its own",
+          Crafting.TierGate(40) == 0 && Crafting.TierGate(52) == 2 && Crafting.TierGate(61) == 4
+          && Crafting.TierGate(76) == 6 && Crafting.TierGate(80) == 8
+          && RecipeCatalog.All.Where(r => r.IsGear).All(r => r.UnlockLevel == Crafting.TierGate(r.GearItemLevel)));
+    Check("🔑 Scribe/Apothecary price: x0.90 at L0 → x0.55 at L10, and every batch still costs gold",
+          Math.Abs(Crafting.PriceFactor(0) - 0.9f) < 1e-6 && Math.Abs(Crafting.PriceFactor(10) - 0.55f) < 1e-6
+          && RecipeCatalog.All.Where(r => r.BatchValue > 0).All(r => r.GoldAt(10) >= 10
+              && r.GoldAt(0) > r.GoldAt(10)));
+    var nine = RecipeCatalog.All.Where(r => r.Type is CraftType.Apothecary or CraftType.Scribe).ToList();
+    Check("🔑 step 9b: every Scribe/Apothecary recipe succeeds 100% and is priced; the OUT list has no recipe",
+          nine.Count > 0 && nine.All(r => r.SuccessChance == 1f && r.BatchValue > 0 && r.LearnPrice > 0 && r.LearnLevel >= 40)
+          && new[] { ItemCatalog.SkillStone, ItemCatalog.ElementalStone, ItemCatalog.ScrollReturn, ItemCatalog.ScrollResurrect,
+                     ItemCatalog.ScrollReturnUltimate, ItemCatalog.ScrollResurrectUltimate, ItemCatalog.InstantPotion,
+                     ItemCatalog.DashPotionC, ItemCatalog.DashPotionM, ItemCatalog.ScrollNormalD, ItemCatalog.AttrScrollRare }
+                 .All(id => !RecipeCatalog.All.Any(r => r.OutputId == id)),
+          $"{nine.Count} recipes");
+    Check("step 9b rows: minor HP x100 @40 L0 · rare MP x10 @76 Apothecary L10 · 2h rune x3 @80 Scribe L10",
+          RecipeCatalog.Get("craft_" + ItemCatalog.MinorPotion) is { OutputQty: 100, LearnLevel: 40, UnlockLevel: 0, Type: CraftType.Apothecary }
+          && RecipeCatalog.Get("craft_" + ItemCatalog.GreaterManaPotion) is { OutputQty: 10, LearnLevel: 76, UnlockLevel: 10 }
+          && RecipeCatalog.Get("craft_" + ItemCatalog.BoxWarRune2h) is { OutputQty: 3, LearnLevel: 80, UnlockLevel: 10, Type: CraftType.Scribe });
     Check("🔑 the mat curve: 20 → 30%, 40 → 50%, 60 → 70%, 100 → 100% (20 heads at 20% = 6)",
           Crafting.ScaledQty(20, 20) == 6 && Crafting.ScaledQty(20, 40) == 10 && Crafting.ScaledQty(20, 60) == 14
           && Crafting.ScaledQty(20, 100) == 20 && Crafting.ScaledQty(1, 20) == 1);
@@ -1496,7 +1517,8 @@ b.MyId = entered2.EntityId;
         await b.Settle();
         var cu5 = b.Crafting;
         Check("🔴 THE TRIAL COMPLETES — a crafter by PLAYING it: 10 slots, generic and types at L0",
-              cu5 is { IsCrafter: true, Slots: 10, GenericPoints: 0, WeaponPoints: 0 }
+              cu5 is { IsCrafter: true, Slots: 10, GenericPoints: 0, FreePoints: 0, Respecs: 0 }
+              && (cu5.TypeLevels?.All(v => v == 0) ?? false)
               && (b.Quests?.Completed.Contains(trial) ?? false),
               $"crafter {cu5?.IsCrafter}, slots {cu5?.Slots}, completed={b.Quests?.Completed.Contains(trial)}");
         Check("...he took the hammer, and the trial's recipe is forgotten (it held no slot anyway)",
@@ -1517,7 +1539,8 @@ b.MyId = entered2.EntityId;
 //     deterministic is the bookkeeping, so that is what is checked:
 //       • learning takes ONE slot at the item's %; a higher % overrides in place, a lower one is refused,
 //       • every attempt spends ONE recipe item and the inputs SCALED by its % (pass or fail),
-//       • every attempt pays tier-weighted points (T76 = 5) to generic AND weapon, fail included,
+//       • 0.204.0: a T76 recipe needs Weaponsmith L6, bought with generic points; every attempt pays
+//         tier-weighted points (T76 = 5) to the GENERIC level only, fail included; a respec locks, never forgets,
 //       • a % above the learned one is refused; away from a Master is refused,
 //       • forgetting frees the slot; the debug levels move the slot count (10 → 60),
 //       • the Master sells a T40 100% recipe at 10% of the piece, and teaches a generic recipe for gold.
@@ -1542,6 +1565,21 @@ b.MyId = entered2.EntityId;
         await b.Hub.SendAsync("DebugGive", r40, 4);
         await b.Hub.SendAsync("DebugGive", r60, 1);
         await b.Settle();
+
+        await Learn(r40);
+        Check("🔑 0.204.0: a T76 recipe is refused below Weaponsmith L6 (it is kept)",
+              !Known().Any(k => k.StartsWith(recipeId + ":")) && Count(r40) == 4, $"r40 {Count(r40)}");
+        await b.Hub.SendAsync("DebugSetCraftLevels", 6, 0, 0, 0, 0, 0);
+        await b.Settle();
+        Check("generic L6 = 6 free points, nothing spent", b.Crafting is { FreePoints: 6 }, $"free {b.Crafting?.FreePoints}");
+        for (int i = 0; i < 6; i++) { await b.Hub.SendAsync("SpendCraftPoint", (int)CraftType.Weapon); await b.Settle(); }
+        await b.Hub.SendAsync("SpendCraftPoint", (int)CraftType.Scribe);
+        await b.Settle();
+        Check("🔑 spending: six points make Weaponsmith L6, and a seventh with none free is refused",
+              b.Crafting is { FreePoints: 0 } cp && cp.TypeLevels?[(int)CraftType.Weapon] == 6
+              && cp.TypeLevels?[(int)CraftType.Scribe] == 0,
+              $"free {b.Crafting?.FreePoints}, levels [{string.Join(",", b.Crafting?.TypeLevels ?? Array.Empty<int>())}]");
+        int genBase = b.Crafting?.GenericPoints ?? 0;
 
         await Learn(r40);
         Check("learning a 40% recipe fills ONE slot at 40%", Known().Contains($"{recipeId}:40") && Count(r40) == 3,
@@ -1580,15 +1618,15 @@ b.MyId = entered2.EntityId;
         Check("🔑 each attempt spends ONE 40% recipe and the inputs scaled to 50%, pass or fail",
               Count(r40) == 3 - attempts && Count(scaled[0].ItemId) == mat0 - attempts * scaled[0].Qty,
               $"r40 {Count(r40)}, {scaled[0].ItemId} {Count(scaled[0].ItemId)} (expected {mat0 - attempts * scaled[0].Qty})");
-        Check("🔑 every attempt pays T76 points (5) to generic AND weapon — a fail too",
-              b.Crafting is { } cu && cu.GenericPoints == 5 * attempts && cu.WeaponPoints == 5 * attempts && cu.ArmourPoints == 0,
-              $"generic {b.Crafting?.GenericPoints}, weapon {b.Crafting?.WeaponPoints}");
+        Check("🔑 every attempt pays T76 points (5) to the GENERIC level only — a fail too",
+              b.Crafting is { } cu && cu.GenericPoints == genBase + 5 * attempts && cu.TypeLevels?[(int)CraftType.Weapon] == 6,
+              $"generic {b.Crafting?.GenericPoints} (from {genBase}), weapon L{b.Crafting?.TypeLevels?[(int)CraftType.Weapon]}");
         Console.WriteLine($"  (info) {Count(recipe.OutputId) - made0} of {attempts} 40% attempts succeeded");
 
-        await b.Hub.SendAsync("DebugSetCraftLevels", 10, 0, 0, 0);
+        await b.Hub.SendAsync("DebugSetCraftLevels", 10, 6, 0, 0, 0, 0);
         await b.Settle();
         Check("debug craft levels: generic 10 = 60 slots", b.Crafting is { Slots: 60 }, $"slots {b.Crafting?.Slots}");
-        await b.Hub.SendAsync("DebugSetCraftLevels", 0, 0, 0, 0);
+        await b.Hub.SendAsync("DebugSetCraftLevels", 0, 0, 0, 0, 0, 0);
         await b.Settle();
         Check("...and generic 0 = 10 slots", b.Crafting is { Slots: 10, GenericPoints: 0 }, $"slots {b.Crafting?.Slots}");
 
@@ -1633,8 +1671,33 @@ b.MyId = entered2.EntityId;
         await b.Settle();
         Check("a generic craft spends its inputs (no recipe item) and pays 1 GENERIC point, no type point",
               Count(generic.Inputs[0].ItemId) == gIn0 - generic.Inputs[0].Qty
-              && b.Crafting is { GenericPoints: 1, WeaponPoints: 0 },
+              && b.Crafting is { GenericPoints: 1 },
               $"input {gIn0}->{Count(generic.Inputs[0].ItemId)}, generic {b.Crafting?.GenericPoints}");
+
+        // 0.204.0 — A RESPEC LOCKS, IT NEVER FORGETS (*"each repec locks the recipies … only can be removed by
+        // hand to free up slot - never crafted if not that lvl of that type"*).
+        await b.Hub.SendAsync("DebugSetCraftLevels", 10, 6, 0, 0, 0, 0);
+        await b.Hub.SendAsync("DebugGive", r20, 2);
+        await b.Hub.SendAsync("DebugGold", 5_000_000L);
+        await b.Settle();
+        await Learn(r20);
+        Check("a Weaponsmith L6 learns the T76 recipe again (at 20%)", Known().Contains($"{recipeId}:20"),
+              $"known [{string.Join(",", Known())}]");
+        long gold2 = b.Gold;
+        await b.Hub.SendAsync("RespecCraft", masterId);
+        await b.Settle();
+        Check("🔑 RESPEC at the Master: every point back, 1M, 1 of 5 used — and the recipe is KEPT",
+              b.Crafting is { FreePoints: 10, Respecs: 1 } rs && (rs.TypeLevels?.All(v => v == 0) ?? false)
+              && b.Gold == gold2 - Crafting.RespecPrices[0] && Known().Contains($"{recipeId}:20"),
+              $"free {b.Crafting?.FreePoints}, respecs {b.Crafting?.Respecs}, gold {gold2}->{b.Gold}, "
+              + $"known [{string.Join(",", Known())}]");
+        foreach (var inp in recipe.Inputs) await b.Hub.SendAsync("DebugGive", inp.ItemId, Crafting.ScaledQty(inp.Qty, 20));
+        await b.Settle();
+        int r20Before = Count(r20);
+        await b.Hub.SendAsync("Craft", recipeId, false, 20);
+        await b.Settle();
+        Check("🔑 ...and a LOCKED recipe will not craft below its gate (nothing spent)", Count(r20) == r20Before && r20Before > 0,
+              $"r20 {r20Before}->{Count(r20)}");
     }
 }
 

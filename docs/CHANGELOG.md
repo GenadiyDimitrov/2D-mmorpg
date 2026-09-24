@@ -7,12 +7,50 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.203.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.204.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-24 (latest) — 0.203.0: becoming a crafter (`BL-273` part 2, step 9 of the rework order)
+## 2026-09-24 (latest) — 0.204.0: the crafter-points model + the generic-recipe table (`BL-273`, step 9b)
+
+> *"when u craft u lvl up generic .. each generic gives 1 "skill" point .. u then deside where to put this point into"*
+
+**Crafting a type is now a choice.** Every generic level gives one point, 10 in all, and you spend them on
+**Weaponsmith / Armoursmith / Jeweler / Apothecary / Scribe**. Types no longer level by crafting. The potion,
+scroll and rune recipes are the ones you ruled for step 9b. ⚠ `game.db` delete (columns changed).
+⚠ Protocol 49: **a new APK is needed.**
+
+- **Tier gates.** T52 gear needs the type at **L2**, T61 **L4**, T76 **L6**, T80 **L8**. **L9 and L10 add +5%
+  each** to a gear recipe (a 60% one ends at 70%); that replaces the old +0.5%/level at T76/T80. So a T80 smith
+  has 2 points left for anything else, and nobody makes top gear in two types.
+- **Everyone at L0** crafts T40 gear, the common HP/MP potions, the common buff potions and the nine basic buff
+  scrolls. **Apothecary / Scribe** unlock the uncommon lines by the same tier gates (T40 = L1). They also unlock
+  the 1h/2h rune boxes at **Scribe L7/L10**, and the rare HP/MP potions at **Apothecary L7/L10**.
+- **Scribe/Apothecary crafts cost ×0.90 of the batch's buy price at L0, falling to ×0.55 at L10.** The
+  essence and mats are fixed and the gold makes up the rest, so every batch costs some gold. Crafting then
+  vendoring is always 0 or a small loss (`--craft-cost` C5b checks every row at L0, its gate and L10).
+- **Respec** at a Master Crafter: every point back, **5 a lifetime** at 1M / 2M / 4M / 8M / 16M (⚠ the prices
+  are placeholders). **Recipes are never forgotten by a respec.** One above your new levels stays in its slot,
+  **locked**, until you reach it again, or until you forget it by hand. The Crafting window's **Points** tab
+  (was Slots) spends and respecs.
+- **The table (all 100% success):**
+  - HP/MP potions: common **x100 **, uncommon **x50 **, rare **x10 **. They take gems + D/C/B
+    essence, and the rare ones also take volcanic ash/stone.
+  - Buff potions **x6** (gems + wood, and essence for the uncommon ones).
+  - Buff scrolls **x2** (leather + iron, and essence for the ten "other" ones).
+  - War/Spell rune boxes **x3**: 1h  with B essence, 2h  with Volcanic Bars + S essence.
+  - A buff's tier is its class skill's **last** rung (*"if a skill is learned at 40 but last lvl is at 52 that
+    s T52"*): Might/Bulwark/Alacrity/Swift are T40, the next ten T52, and Body/Soul/Resolve/Insight/Vampirism T61.
+  - Learn prices come from the agreed ladder, 20k (L0) … 4M (L10).
+- **Removed recipes:** stones, Return/Resurrection and the Ultimates, every Dash, the Instant potion, and the
+  enchant + attribute scrolls (**never craftable**).
+- **Rare potion Values** are now **5,000 / 10,000** (were 1,500 / 3,000), his base prices.
+- **New items: Volcanic Ash, Volcanic Stone, Volcanic Bar.** Nothing gives them yet: the ash and stone drop in
+  step 11, and the bar refine comes in step 10. So the rare potions and 2h rune boxes cannot be crafted until then.
+- Debug: "Set craft levels" rows for the five types. SmokeTest: 12 new checks (gates, spending, respec locks).
+
+## 2026-09-24 — 0.203.0: becoming a crafter (`BL-273` part 2, step 9 of the rework order)
 
 > *"As we remove the professions we have no lock and no way to disable crafting once the quest is done"*
 

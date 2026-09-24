@@ -1044,28 +1044,34 @@ namespace Game.Client
                             () => Boot.Debug(n => n.DebugFourthClassAsync(), "4th class"));
 
             // CRAFTING (`BL-273` part 2, §2.2 #7): "Become crafter" skips the Master's trial, the way the class
-            // rows skip class quests; "Set craft levels" jumps the generic and the three type levels so the
-            // T76/T80 bonus and the 60-slot cap can be tested without hundreds of crafts.
+            // rows skip class quests; "Set craft levels" jumps the generic and the five type levels so the
+            // tier gates, the L9/L10 bonus and the 60-slot cap can be tested without hundreds of crafts.
             DebugHeader("Crafting (L" + Boot.CraftLevel + " · w" + Boot.CraftTypeLevel(CraftType.Weapon)
                         + " a" + Boot.CraftTypeLevel(CraftType.Armour) + " j" + Boot.CraftTypeLevel(CraftType.Jewels)
+                        + " p" + Boot.CraftTypeLevel(CraftType.Apothecary) + " s" + Boot.CraftTypeLevel(CraftType.Scribe)
+                        + " · " + Boot.CraftPointsFree + " free"
                         + (Boot.IsCrafter ? "" : " · not a crafter") + ")");
             if (!Boot.IsCrafter)
                 DebugAction("Become crafter", () => Boot.Debug(n => n.DebugBecomeCrafterAsync(), "become crafter"));
-            foreach (var (label, g, w, a, j) in new[]
+            // The five type levels spend the generic level's points (0.204.0), so they can total 10 at most.
+            foreach (var (label, g, t) in new[]
             {
-                ("Craft levels: all 0", 0, 0, 0, 0),
-                ("Craft levels: all 5", 5, 5, 5, 5),
-                ("Craft levels: all 10", 10, 10, 10, 10),
-                ("Craft levels: generic 10, types 0", 10, 0, 0, 0),
-                ("Craft levels: generic 0, weapon 10", 0, 10, 0, 0),
+                ("Craft levels: all 0", 0, new[] { 0, 0, 0, 0, 0 }),
+                ("Craft levels: generic 10, none spent", 10, new[] { 0, 0, 0, 0, 0 }),
+                ("Craft levels: weapon 10", 10, new[] { 10, 0, 0, 0, 0 }),
+                ("Craft levels: armour 8 + scribe 2", 10, new[] { 0, 8, 0, 0, 2 }),
+                ("Craft levels: apothecary 10", 10, new[] { 0, 0, 0, 10, 0 }),
+                ("Craft levels: scribe 5 + apothecary 5", 10, new[] { 0, 0, 0, 5, 5 }),
+                ("Craft levels: all five L2", 10, new[] { 2, 2, 2, 2, 2 }),
             })
             {
-                int gg = g, ww = w, aa = a, jj = j;
-                DebugAction(label, () => Boot.Debug(n => n.DebugSetCraftLevelsAsync(gg, ww, aa, jj), "craft levels"));
+                int gg = g; var tt = t;
+                DebugAction(label, () => Boot.Debug(n => n.DebugSetCraftLevelsAsync(gg, tt[0], tt[1], tt[2], tt[3], tt[4]), "craft levels"));
             }
             DebugAction("Generic craft level +1", () => { int lv = Math.Min(Crafting.MaxCraftLevel, Boot.CraftLevel + 1);
                 Boot.Debug(n => n.DebugSetCraftLevelsAsync(lv, Boot.CraftTypeLevel(CraftType.Weapon),
-                    Boot.CraftTypeLevel(CraftType.Armour), Boot.CraftTypeLevel(CraftType.Jewels)), "craft levels"); });
+                    Boot.CraftTypeLevel(CraftType.Armour), Boot.CraftTypeLevel(CraftType.Jewels),
+                    Boot.CraftTypeLevel(CraftType.Apothecary), Boot.CraftTypeLevel(CraftType.Scribe)), "craft levels"); });
 
             // The owner's real test loop: swap class on the spot to compare two builds in the SAME
             // gear, instead of relogging onto another character. Each class keeps its own level, XP,

@@ -1067,6 +1067,13 @@ public static class ItemCatalog
     public const string CrafterHammer = "quest_crafter_hammer";
     public static string CrafterQuestRecipe => RecipeBookId(Crafting.HammerRecipeId, Crafting.HammerRecipePercent);
 
+    // ----- VOLCANIC (`BL-273` part 3 / `BL-274`): ash + stone drop on some 76/80/85 normals (step 11), and
+    //       20 + 20 refine into one Volcanic Bar (step 10). Defined in 0.204.0 because step 9b's rare potions
+    //       and 2h rune boxes already name them; until those steps land nothing gives one.
+    public const string VolcanicAsh = "mat_volcanic_ash";
+    public const string VolcanicStone = "mat_volcanic_stone";
+    public const string VolcanicBar = "mat_volcanic_bar";
+
     public const string MarkOfFaith = "quest_mark_of_faith";
     public const string ClericsProof = "quest_clerics_proof";
 
@@ -1455,7 +1462,7 @@ public static class ItemCatalog
             UseSkillId: SkillCatalog.PotHeal, PotionCooldownTicks: 100, Value: 250));
         list.Add(new ItemDef(GreaterPotion, "Rare Healing Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Rare,
-            UseSkillId: SkillCatalog.PotHealGreater, PotionCooldownTicks: 200, Value: 1500));
+            UseSkillId: SkillCatalog.PotHealGreater, PotionCooldownTicks: 200, Value: 5000));
         // The instant panic potion: +30% max HP, 60s cooldown, rare quality. (Meant for the future
         // boss/challenge-point shop; a gold value stands in until that exists.)
         list.Add(new ItemDef(InstantPotion, "Instant Healing Potion", EquipSlot.Consumable,
@@ -1468,7 +1475,7 @@ public static class ItemCatalog
         //
         //       🔑 THE LADDER MIRRORS HEALING, THE PRICE IS DOUBLE IT (owner, 2026-08-27: *"so
         //       healing are 20/70/150 and we match that just 15/30 cycle … and price is double of
-        //       the healing"*). Healing is 60 / 250 / 1500, so mana is 120 / 500 / 3000. ⚠ This
+        //       the healing"*). Healing is 60 / 250 / 1500, so mana is 120 / 500 / 3000. (0.204.0: the Rares are 5,000 / 10,000, his step-9b base price.) ⚠ This
         //       SUPERSEDES his earlier *"500 common, 1500 uncommon"* — newest ruling wins, and the
         //       Rare is no longer my invention either: it is 2x the Rare healing potion like the
         //       other two. His own check on the middle rung: *"60k/hour for uncommon is ok"*
@@ -1478,7 +1485,7 @@ public static class ItemCatalog
         //       healing potions are dropped so u dont spend there … u need to buy mp pots"*. Mana
         //       potions do NOT drop anywhere in the game — the price pays for the missing faucet,
         //       not for potency. Rare stays off the shelf for the same reason the Rare healing
-        //       potion does — it is the Potion Master's L5 recipe, and the ONLY way to get one;
+        //       potion does — it is the Apothecary's L7/L10 recipe (0.204.0), and the ONLY way to get one;
         //       *"its raiding support item that is economy player trade only"*.
         list.Add(new ItemDef(MinorManaPotion, "Common Mana Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Common,
@@ -1490,7 +1497,7 @@ public static class ItemCatalog
             Description: "Restores 70 MP per second for 15s. Cannot be drunk while flagged for PvP."));
         list.Add(new ItemDef(GreaterManaPotion, "Rare Mana Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Rare,
-            UseSkillId: SkillCatalog.PotManaGreater, PotionCooldownTicks: 300, PveOnly: true, Value: 3000,
+            UseSkillId: SkillCatalog.PotManaGreater, PotionCooldownTicks: 300, PveOnly: true, Value: 10000,
             Description: "Restores 150 MP per second for 15s. Cannot be drunk while flagged for PvP."));
 
         // ----- RUNES + their boxes. The rune is HELD (not equipped/consumed): while it's in the main
@@ -2159,6 +2166,7 @@ public static class ItemCatalog
         list.AddRange(CommonCopies(tieredGear));
         list.AddRange(Materials());
         list.AddRange(Essences());
+        list.AddRange(VolcanicMaterials());
         list.AddRange(RecipeBooks(tieredGear));
         // The tutorial chain's BOUND copies — the 30-day Newbie loaner kit and the completion
         // consumables. Generated last, off the finished list, so a clone always mirrors the real
@@ -2202,6 +2210,18 @@ public static class ItemCatalog
     /// so the ordinary half-price sell rule pays exactly his 1500 … 25000 with no override.
     /// ⚠ Rarity is Common for all five: it is a grade material, not a rarity ladder. When essence starts to
     /// DROP (`BL-274` step 12), a pickup filter set above Common would skip it; decide that there.</summary>
+    /// <summary>The three volcanic materials (see <see cref="VolcanicAsh"/>). ⚠ Values are placeholders until
+    /// step 11 measures the drop: ash and stone 5,000, the bar 200,000 (its 20 + 20 inputs at cost).</summary>
+    private static IEnumerable<ItemDef> VolcanicMaterials()
+    {
+        yield return new ItemDef(VolcanicAsh, "Volcanic Ash", EquipSlot.Material, ItemGrade.F, ItemRarity.Rare,
+            Value: 5_000, NoAttributes: true, Description: "Found on creatures of the fire lands (76+).");
+        yield return new ItemDef(VolcanicStone, "Volcanic Stone", EquipSlot.Material, ItemGrade.F, ItemRarity.Rare,
+            Value: 5_000, NoAttributes: true, Description: "Found on creatures of the fire lands (76+).");
+        yield return new ItemDef(VolcanicBar, "Volcanic Bar", EquipSlot.Material, ItemGrade.F, ItemRarity.Epic,
+            Value: 200_000, NoAttributes: true, Description: "Refined from volcanic ash and stone. T76/T80 crafting.");
+    }
+
     private static IEnumerable<ItemDef> Essences()
     {
         for (int g = 0; g < Crafting.EssenceIds.Length; g++)

@@ -514,8 +514,12 @@ namespace Game.Client
         /// <summary>Become a crafter without the Master's trial (`BL-273` part 2).</summary>
         public Task DebugBecomeCrafterAsync() => _connection.SendAsync("DebugBecomeCrafter");
         /// <summary>Set the generic and the three type craft levels (0-10 each).</summary>
-        public Task DebugSetCraftLevelsAsync(int generic, int weapon, int armour, int jewels) =>
-            _connection.SendAsync("DebugSetCraftLevels", generic, weapon, armour, jewels);
+        public Task DebugSetCraftLevelsAsync(int generic, int weapon, int armour, int jewels, int apothecary, int scribe) =>
+            _connection.SendAsync("DebugSetCraftLevels", generic, weapon, armour, jewels, apothecary, scribe);
+
+        public Task SpendCraftPointAsync(int type) => _connection.SendAsync("SpendCraftPoint", type);
+
+        public Task RespecCraftAsync(Guid npcEntityId) => _connection.SendAsync("RespecCraft", npcEntityId);
 
         /// <summary>Become a 2nd CLASS directly (ClassCatalog id), skipping the quest/level gates.</summary>
         public Task DebugSecondClassAsync(int classId) =>

@@ -467,16 +467,16 @@ namespace Game.Client
         /// <summary>The learned recipes, one slot each, mapped to the % learned (generic ones are 100).</summary>
         public Dictionary<string, int> KnownRecipes { get; private set; } = new Dictionary<string, int>();
 
-        /// <summary>The raw craft POINTS the server sent; the LEVELS are read off them with
-        /// <see cref="Crafting.LevelForPoints"/>, the same table the server uses.</summary>
+        /// <summary>The raw GENERIC craft points the server sent (the level derives with
+        /// <see cref="Crafting.LevelForPoints"/>), and the crafter-points model's spent TYPE levels (0.204.0),
+        /// indexed by <see cref="CraftType"/>; General reads the generic level, exactly as the server does.</summary>
         public int CraftPoints { get; private set; }
-        public int CraftPointsWeapon { get; private set; }
-        public int CraftPointsArmour { get; private set; }
-        public int CraftPointsJewels { get; private set; }
+        public int[] CraftTypeLevels { get; private set; } = new int[6];
+        public int CraftPointsFree { get; private set; }
+        public int CraftRespecs { get; private set; }
         public int CraftLevel => Crafting.LevelForPoints(CraftPoints);
-        public int CraftTypeLevel(CraftType t) => Crafting.LevelForPoints(
-            t == CraftType.Weapon ? CraftPointsWeapon : t == CraftType.Armour ? CraftPointsArmour
-            : t == CraftType.Jewels ? CraftPointsJewels : 0);
+        public int CraftTypeLevel(CraftType t) =>
+            t == CraftType.General ? CraftLevel : (int)t < CraftTypeLevels.Length ? CraftTypeLevels[(int)t] : 0;
 
         /// <summary>Recipe slots the generic level gives, and how many are used (the trial's hammer recipe
         /// takes none).</summary>
@@ -510,6 +510,22 @@ namespace Game.Client
             if (Phase != ClientPhase.InWorld) return;
             try { await _net.ForgetRecipeAsync(recipeId); }
             catch (Exception ex) { ClientLog.Warn("ForgetRecipe: " + ex.Message); }
+        }
+
+        /// <summary>Spend one free crafting point on a type (anywhere).</summary>
+        public async void SpendCraftPoint(CraftType type)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.SpendCraftPointAsync((int)type); }
+            catch (Exception ex) { ClientLog.Warn("SpendCraftPoint: " + ex.Message); }
+        }
+
+        /// <summary>Respec the crafting points at the Master whose dialog is open.</summary>
+        public async void RespecCraft()
+        {
+            if (Phase != ClientPhase.InWorld || DialogNpcId == Guid.Empty) return;
+            try { await _net.RespecCraftAsync(DialogNpcId); }
+            catch (Exception ex) { ClientLog.Warn("RespecCraft: " + ex.Message); }
         }
 
         /// <summary>Buy and learn a generic recipe at the Master Crafter whose dialog is open.</summary>
@@ -1458,9 +1474,9 @@ namespace Game.Client
                 }
                 KnownRecipes = known;
                 CraftPoints = c.GenericPoints;
-                CraftPointsWeapon = c.WeaponPoints;
-                CraftPointsArmour = c.ArmourPoints;
-                CraftPointsJewels = c.JewelsPoints;
+                CraftTypeLevels = c.TypeLevels != null && c.TypeLevels.Length >= 6 ? c.TypeLevels : new int[6];
+                CraftPointsFree = c.FreePoints;
+                CraftRespecs = c.Respecs;
                 CraftSlots = c.Slots;
                 AtCraftMaster = c.AtMaster;
                 Ui?.RefreshCraftingWindow();

@@ -271,7 +271,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-263` | 🟡 | **BUFFS ARE WRAPPERS OVER `(family, level)`** — [design/BuffFamilies.md](design/BuffFamilies.md). Duration is out of the conflict rule and the first three racial wrappers are built (0.176.0); per-family group rank DECLINED, and so is the group-vs-single authoring check — a group ALWAYS outranks its singles. Left: the passive check and the racial split, both DEFERRED on your call — the racial split now carries your colour-not-abbreviation rule | skills |
 | `BL-264` | ❓ | **NO CSV SAYS WHICH BUFFS FIGHT EACH OTHER** — from `mage 1st` you cannot tell the three Mights are one family. A generated `FAMILY` + `RANK` column, checked like every other; §2 the RACE cell nothing verifies | skills |
 | `BL-270` | 🔵 | A vertical skill bar, or a wheel, for hand-held play | client |
-| `BL-273` | 🟡 | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05` (archived) — §2.2; ✅ no profession lock; 🟢 part 1 (essence) built 0.200.0; 🟢 part 2 (becoming a crafter) built 0.203.0; ✅ 9b (generic-recipe table) RULED 2026-09-24; 💬 the crafter-points model (generic level = points spent on types) in discussion before 9b is built | items |
+| `BL-273` | 🟡 | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05` (archived) — §2.2; ✅ no profession lock; 🟢 part 1 (essence) built 0.200.0; 🟢 part 2 (becoming a crafter) built 0.203.0; 🟢 9b (generic-recipe table) + the crafter-points model (5 types, a points budget, 5 respecs) built 0.204.0; next: step 10 (part 3, the materials) | items |
 | `BL-274` | ❓ | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3 | items |
 | `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
 | `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
@@ -2300,6 +2300,15 @@ Common/Uncommon mana potions would reverse your 2026-08-27 shop-only ruling; gen
 
 🔴 **Build ON HOLD:** he asked to discuss the crafter-points model first (generic level = points spent on types, i.e.
 IG-style interlocking professions). See §2.2, "The crafter-points model".
+🟢 **2026-09-24: BUILT 0.204.0.** The crafter-points model ruled as his Idea-1:
+- 1 point per generic level, spent on Weapon / Armour / Jewels / Apothecary / Scribe.
+- Tier gates L2/L4/L6/L8, and a smith's L9/L10 adds +5% each.
+- Scribe/Apothecary crafts cost ×0.9 → ×0.55 of the batch's buy price.
+- 5 respecs a lifetime. A respec locks recipes, it never forgets them.
+
+9b itself is built as ruled: a buff's tier is its class skill's LAST rung. ⚠ Open placeholders: the respec prices
+(1M doubling), the volcanic Values, and rare HP at L7 vs rare MP at L10. **Next: step 10.** Its Q7 (the refine
+unlocks) is unruled.
 
 ## `BL-274` ❓ PER-MOB DROP TABLES
 

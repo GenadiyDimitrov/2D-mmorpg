@@ -1,11 +1,12 @@
 namespace Game.Shared;
 
-/// <summary>The three crafting TYPES (`BL-273` part 2, 0.203.0) plus the generic bucket. There are NO
-/// professions any more (owner, 2026-09-23: *"As we remove the professions we have no lock and no way to
-/// disable crafting once the quest is done"*): anyone who finishes the level-40 crafter quest crafts
-/// everything, and the TYPE levels are what tell a weaponsmith from an armorer. Potions, scrolls and
-/// refines are <see cref="General"/>: they raise only the generic level.</summary>
-public enum CraftType { General = 0, Weapon = 1, Armour = 2, Jewels = 3 }
+/// <summary>The five crafting TYPES plus the generic bucket (`BL-273`, the crafter-points model, 0.204.0).
+/// There is no profession lock (owner, 2026-09-23): anyone who finishes the level-40 crafter quest is a
+/// crafter. Crafting raises the GENERIC level, and each generic level gives one POINT, which the crafter
+/// spends on a type (*"at L10 generic u are a L10 single type or L2 on 5types"*). The type level is what
+/// tells a weaponsmith from an apothecary. <see cref="General"/> is the refines and the trial's hammer; its
+/// "type level" is the generic level itself.</summary>
+public enum CraftType { General = 0, Weapon = 1, Armour = 2, Jewels = 3, Apothecary = 4, Scribe = 5 }
 
 /// <summary>The 5 crafting material types. Every rarity DROPS from mobs, and anyone who has the refine
 /// recipe can refine it. ⚠ Replaced by Nightsilver / Nightsilk in `BL-273` part 3 (step 10).</summary>
@@ -45,30 +46,52 @@ public static class Crafting
     /// Only the GENERIC level gives slots; the type levels give % only.</summary>
     public const int BaseSlots = 10, SlotsPerLevel = 5;
 
-    /// <summary>+0.5% success per level, generic and type alike, so a maxed crafter carries +10% on his
-    /// own type (5% + 5%).</summary>
-    public const float BonusPerLevel = 0.005f;
-
-    /// <summary>The bonus counts ONLY on crafts at or above this item level (T76/T80): *"u need alot of
-    /// grinding to get to that bonus so a 100% rcp don't get u anything it's a more of a decrease of
-    /// losses when crafting high gear"*.</summary>
-    public const int BonusFromItemLevel = 76;
-
     /// <summary>Recipe slots at a generic level.</summary>
     public static int Slots(int genericLevel) =>
         BaseSlots + SlotsPerLevel * System.Math.Clamp(genericLevel, 0, MaxCraftLevel);
 
-    /// <summary>The success bonus a crafter adds to a recipe's own %: (generic + type) × 0.5%, and only on
-    /// T76/T80 gear. Generic recipes have no type level, so pass 0 for it.</summary>
-    public static float SuccessBonus(int itemLevel, int genericLevel, int typeLevel) =>
-        itemLevel >= BonusFromItemLevel
-            ? BonusPerLevel * (System.Math.Clamp(genericLevel, 0, MaxCraftLevel)
-                               + System.Math.Clamp(typeLevel, 0, MaxCraftLevel))
-            : 0f;
+    // ----- THE CRAFTER-POINTS MODEL (owner, 2026-09-24, his "Idea-1"; design doc §2.2) ------------------
+
+    /// <summary>The five types a point can be spent on, in window order.</summary>
+    public static readonly CraftType[] SpendableTypes =
+        { CraftType.Weapon, CraftType.Armour, CraftType.Jewels, CraftType.Apothecary, CraftType.Scribe };
+
+    /// <summary>Points a generic level gives: one per level, so 10 at L10.</summary>
+    public static int PointsAtGenericLevel(int genericLevel) => System.Math.Clamp(genericLevel, 0, MaxCraftLevel);
+
+    /// <summary>The TYPE level a gear tier needs (*"an armor smith need L2 for T52 L4 61 L6 76 L8 80"*). The
+    /// same gate serves the Scribe's and the Apothecary's uncommon lines, one tier per row.</summary>
+    public static int TierGate(int itemLevel) => itemLevel switch
+    {
+        >= 80 => 8,
+        >= 76 => 6,
+        >= 61 => 4,
+        >= 52 => 2,
+        _ => 0,
+    };
+
+    /// <summary>What a smith's L9 and L10 add to a gear recipe's %: *"L9 and L10 adds 5% craft chance (so 70%
+    /// at the end)"*. Replaces 0.203.0's +0.5%/level at T76/T80.</summary>
+    public static float GearSuccessBonus(int typeLevel) =>
+        typeLevel >= 10 ? 0.10f : typeLevel >= 9 ? 0.05f : 0f;
+
+    /// <summary>What a Scribe/Apothecary batch costs as a fraction of its base price: ×0.9 at L0, falling
+    /// 0.035 a level to ×0.55 at L10 (*"all scribe/apoth crafts are x0.9 of base and going to x0.55 at
+    /// L10"*). The floor stays above the vendor's 50%, so crafting to vendor is 0 or a small loss.</summary>
+    public static float PriceFactor(int typeLevel) =>
+        0.9f - 0.035f * System.Math.Clamp(typeLevel, 0, MaxCraftLevel);
+
+    /// <summary>Respecs a character gets in a lifetime (*"a char can respec only 5 times/lifetime with
+    /// increasing cost"*).</summary>
+    public const int MaxRespecs = 5;
+
+    /// <summary>The gold price of the Nth respec (0-based). ⚠ A placeholder ladder (1M doubling); he ruled
+    /// "increasing", not the numbers.</summary>
+    public static readonly long[] RespecPrices = { 1_000_000, 2_000_000, 4_000_000, 8_000_000, 16_000_000 };
 
     /// <summary>Craft points one ATTEMPT is worth (his pick, 2026-09-24: tier-weighted, and a FAIL counts).
     /// Gear by its tier: T40 1 · T52 2 · T61 3 · T76 5 · T80 8. A generic recipe (potion, scroll, refine) is
-    /// 1 and feeds the generic level only. ⚠ Playtest placeholders.</summary>
+    /// 1 a BATCH. Every attempt feeds the generic level only; type levels are bought with its points. ⚠ Playtest placeholders.</summary>
     public static int CraftPoints(int gearItemLevel) => gearItemLevel switch
     {
         >= 80 => 8,
@@ -149,13 +172,11 @@ public static class Crafting
     /// <summary>The gear tiers whose 100% recipe the Master sells (*"master can sell t40 and t52"*).</summary>
     public static bool MasterSellsRecipeFor(int itemLevel) => itemLevel is 40 or 52;
 
-    /// <summary>The generic level at which the Master offers a generic recipe for sale, mapped from the old
-    /// crafting rung 1-6 it used to sit on (1 → 0, 2 → 2 … 6 → 10). ⚠ A placeholder until step 9b's table.</summary>
-    public static int GenericUnlockLevel(int oldRung) => System.Math.Clamp(2 * (oldRung - 1), 0, MaxCraftLevel);
-
-    /// <summary>What learning a generic recipe costs at the Master: 20,000 × (1 + its unlock level).
-    /// ⚠ A placeholder until step 9b's table.</summary>
-    public static int GenericLearnPrice(int unlockLevel) => 20_000 * (1 + unlockLevel);
+    /// <summary>What learning a generic recipe costs at the Master, by the rung it was ruled on (step 9b,
+    /// owner 2026-09-24: *"i agree on rcp buy price that you wrote"*): L0 20k · L1 50k · L2 100k · L3 200k ·
+    /// L4 400k · L5 700k · L6 1M · L7 1.5M · L8 2M · L9 3M · L10 4M. Each recipe names its rung explicitly.</summary>
+    public static readonly int[] LearnPriceLadder =
+        { 20_000, 50_000, 100_000, 200_000, 400_000, 700_000, 1_000_000, 1_500_000, 2_000_000, 3_000_000, 4_000_000 };
 
     // ----- THE CRAFTER QUEST'S OWN RECIPE --------------------------------------------------------------
 

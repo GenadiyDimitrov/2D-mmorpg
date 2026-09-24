@@ -1102,25 +1102,37 @@ public class Entity
     /// is no quitting (*"no way to disable crafting once the quest is done"*).</summary>
     public bool IsCrafter { get; set; }
 
-    /// <summary>Raw craft POINTS, generic and per type (weapon / armour / jewels). The LEVELS are not
-    /// stored: each is <see cref="Crafting.LevelForPoints"/> of its points, so a stored level can never
-    /// disagree with the points beside it. Every attempt (a fail too) pays the generic pot, and a gear
-    /// attempt also pays its type's.</summary>
+    /// <summary>Raw GENERIC craft points. Every attempt (a fail too) pays them; the generic LEVEL is derived
+    /// (<see cref="Crafting.LevelForPoints"/>), never stored.</summary>
     public int CraftPoints { get; set; }
-    public int CraftPointsWeapon { get; set; }
-    public int CraftPointsArmour { get; set; }
-    public int CraftPointsJewels { get; set; }
 
     public int CraftLevel => Crafting.LevelForPoints(CraftPoints);
 
-    /// <summary>The type level a craft of this type reads (0 for General).</summary>
-    public int CraftTypeLevel(CraftType type) => Crafting.LevelForPoints(type switch
+    /// <summary>The crafter-points model (0.204.0): the type levels BOUGHT with generic-level points,
+    /// indexed by <see cref="CraftType"/> (slot 0, General, is unused). They do not rise by crafting.</summary>
+    public int[] CraftTypeLevels { get; set; } = new int[6];
+
+    /// <summary>Respecs used, out of <see cref="Crafting.MaxRespecs"/> a lifetime.</summary>
+    public int CraftRespecs { get; set; }
+
+    /// <summary>The level a recipe of this type is gated on: the spent type level, or the GENERIC level for
+    /// <see cref="CraftType.General"/> (the refines and the trial's hammer).</summary>
+    public int CraftTypeLevel(CraftType type) =>
+        type == CraftType.General ? CraftLevel : CraftTypeLevels[(int)type];
+
+    /// <summary>Generic-level points not yet spent on a type.</summary>
+    public int CraftPointsFree =>
+        Crafting.PointsAtGenericLevel(CraftLevel) - CraftTypeLevels.Sum();
+
+    /// <summary>Parses the persisted <c>"w,a,j,apo,scr"</c> column; blanks and junk read as 0.</summary>
+    public static int[] ParseCraftTypeLevels(string? csv)
     {
-        CraftType.Weapon => CraftPointsWeapon,
-        CraftType.Armour => CraftPointsArmour,
-        CraftType.Jewels => CraftPointsJewels,
-        _ => 0,
-    });
+        var levels = new int[6];
+        var parts = (csv ?? "").Split(',');
+        for (int i = 0; i < parts.Length && i + 1 < levels.Length; i++)
+            if (int.TryParse(parts[i], out int v)) levels[i + 1] = Math.Clamp(v, 0, Crafting.MaxCraftLevel);
+        return levels;
+    }
 
     /// <summary>Recipe slots the generic level gives (10 + 5 per level).</summary>
     public int RecipeSlots => Crafting.Slots(CraftLevel);
