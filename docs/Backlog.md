@@ -269,7 +269,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-263` | 🟡 | **BUFFS ARE WRAPPERS OVER `(family, level)`** — [design/BuffFamilies.md](design/BuffFamilies.md). Duration is out of the conflict rule and the first three racial wrappers are built (0.176.0); per-family group rank DECLINED, and so is the group-vs-single authoring check — a group ALWAYS outranks its singles. Left: the passive check and the racial split, both DEFERRED on your call — the racial split now carries your colour-not-abbreviation rule | skills |
 | `BL-264` | ❓ | **NO CSV SAYS WHICH BUFFS FIGHT EACH OTHER** — from `mage 1st` you cannot tell the three Mights are one family. A generated `FAMILY` + `RANK` column, checked like every other; §2 the RACE cell nothing verifies | skills |
 | `BL-270` | 🔵 | A vertical skill bar, or a wheel, for hand-held play | client |
-| `BL-273` | 🟡 | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05` (archived) — §2.2; ✅ no profession lock; 🟢 part 1 (essence) built 0.200.0; 🟢 part 2 (becoming a crafter) built 0.203.0; 🟢 9b (generic-recipe table) + the crafter-points model (5 types, a points budget, 5 respecs) built 0.204.0; 🟢 part 3 (step 10, the materials: Nightsilver/Nightsilk, parts, refines, per-slot tables) built 0.205.0; open = placeholder confirmations only | items |
+| `BL-273` | 🟡 | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05` (archived) — §2.2; ✅ no profession lock; 🟢 part 1 (essence) built 0.200.0; 🟢 part 2 (becoming a crafter) built 0.203.0; 🟢 9b (generic-recipe table) + the crafter-points model (5 types, a points budget, 5 respecs) built 0.204.0; 🟢 part 3 (step 10, the materials: Nightsilver/Nightsilk, parts, refines, per-slot tables) built 0.205.0; open = placeholder confirmations only (§8: keep all five?) | items |
 | `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
 | `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
 | `BL-282` | 🟡 | **`BalanceMatrix --craft-cost`** ✅ built + all inputs ruled; only C5 (consumables) left, waits on §2.2 #8 — kills + hours per crafted T40/52/61/76/80 item under the NEW rules, by recipe %; extends M1-M9 | items |
@@ -2268,7 +2268,7 @@ old Uncommon…Mythic mat ladder is deleted with its drop rows; Nightsilver / Ni
 parts are new; every gear recipe is an authored per-tier × per-slot table; MP per craft; a **count** on non-gear
 crafts. ⚠ **Nightsilver, Nightsilk, parts and volcanic ash/stone have no source until step 11 (`BL-274`)**, so no
 gear can be crafted in between.
-⚠ **Still open, all placeholders for you to confirm** (nothing else in `BL-273` is unbuilt):
+⚠ **Still open, all placeholders for you to confirm** (nothing else in `BL-273` is unbuilt). ❓ **2026-09-24: my picks + the numbers are in design doc §8 (keep all five):**
 - respec prices (1M doubling);
 - rare HP at Apothecary L7, rare MP at L10;
 - the nine "basic" buff scrolls = the common line;
