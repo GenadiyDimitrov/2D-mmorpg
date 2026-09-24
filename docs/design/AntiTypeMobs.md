@@ -3,6 +3,34 @@
 > *"anti mage and anti fighter and anti archer mobs need to be in self zones"* … **for now:** pull the anti-type
 > mobs out so 1-40 levels the same for every archetype.
 
+## ✅ Your ruling, 2026-09-24 (supersedes the questions and picks below)
+
+> My idea of anti mobs is to have zones:
+> 1. Zone with
+>   - one type mobs that have +60% bow resistance and -20% resist to blunt/sword/fangs
+>   - other tyoe mobs with +50% mRes and  -20% to blunt/sword/fangs
+> 2. another zone
+>   -  mobs with +60% res to blunt/sword/fangs and -20% mres
+>   - other mobs with +60% res to blunt/sowrd/fangs and -20% to bow
+> 3. Third zone with mobs with a 1/2hp passive and more clustered so an aoe to gather easier and aoe kill
+>
+> Those all zones can repeat @55~60,@75~80 - they are more prof of concept.
+>
+> Current resistance mobs to be removed from current zones.
+>
+> Agressive mobs to be removed from normal zones .. Only zones 80+ and any dungeon are all aggressive and maybe near a
+> field boss
+
+**How it reads against the engine** (a note for building it, not open questions):
+- "Fangs" = daggers, which are duals (`WeaponType.Dual`). Sword and dual share **one** coefficient today
+  (`MobMod.PierceResist`), and blunt has its own (`BluntResist`). So "blunt/sword/fangs" = both, set to the same value.
+- A weapon resist is a **P.Def coefficient** (`WeaponDefenceCoef`); mRes is a **damage divisor** (`MagicDefCoef`).
+  So "+60% bow" = `BowDefResist 1.6` and "−20% blunt/sword" = `0.8`; "+50% mRes" = `MagicResist +0.50`.
+  Check them with `--antitype` after authoring: zone 1's bow kind should read about bow ×1.6 and melee ×0.8.
+- These are **new mob ids** in new zones. The eight measured below lose their skew or leave the roster. ⚠ Either
+  way, `shield_skeleton`'s class-change hunt must keep an in-band target.
+- The aggression rule touches `WorldPlan`'s `AggressiveRamp`/`PickAggressive` for every generated camp below 80.
+
 Nobody had ever listed which mobs are "anti-type". This is that list, **measured, not read off the passives**:
 
 ```

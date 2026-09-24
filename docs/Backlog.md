@@ -269,7 +269,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-263` | 🟡 | **BUFFS ARE WRAPPERS OVER `(family, level)`** — [design/BuffFamilies.md](design/BuffFamilies.md). Duration is out of the conflict rule and the first three racial wrappers are built (0.176.0); per-family group rank DECLINED, and so is the group-vs-single authoring check — a group ALWAYS outranks its singles. Left: the passive check and the racial split, both DEFERRED on your call — the racial split now carries your colour-not-abbreviation rule | skills |
 | `BL-264` | ❓ | **NO CSV SAYS WHICH BUFFS FIGHT EACH OTHER** — from `mage 1st` you cannot tell the three Mights are one family. A generated `FAMILY` + `RANK` column, checked like every other; §2 the RACE cell nothing verifies | skills |
 | `BL-270` | 🔵 | A vertical skill bar, or a wheel, for hand-held play | client |
-| `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters. ❓ **2026-09-24: the measured anti-type list + 5 questions → `docs/design/AntiTypeMobs.md`** (8 of 79 are anti-type, 2 in 1-40) | world |
+| `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters. ❓ **2026-09-24: the measured anti-type list + 5 questions → `docs/design/AntiTypeMobs.md`** (8 of 79 are anti-type, 2 in 1-40). ✅ **his design ruled same day: 3 proof-of-concept zones @55-60 + @75-80, current resist mobs out, aggression only 80+ / dungeons / near field bosses** | world |
 | `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
 | `BL-282` | 🟡 | **`BalanceMatrix --craft-cost`** ✅ built + all inputs ruled; only C5 (consumables) left, waits on §2.2 #8 — kills + hours per crafted T40/52/61/76/80 item under the NEW rules, by recipe %; extends M1-M9 | items |
 | `BL-284` | 🔵 | **RECURRING RUNE GRANT** — premium/event: a 1 h rune a day + 1-2 2 h runes a week; needs a premium status or events (neither exists) — split out of `BL-277` | progression |
@@ -2168,6 +2168,16 @@ pulling clusters. The rest comes with the map work (`BL-281`).
 anti-type (4 anti-mage, 4 anti-physical, no pure anti-archer); only `shield_skeleton` (20) and `watcher_eye` (26) are in
 1-40, and `shield_skeleton` is the Tank/Healer/Nuker class-change hunt. My pick: neutralise those two now, leave the
 41-90 six until `BL-281`. The cluster half is not measured yet.
+✅ **2026-09-24, his design (verbatim in `docs/design/AntiTypeMobs.md` "Your ruling"), which supersedes my picks:**
+three **proof-of-concept zones**, repeated at **~55-60** and **~75-80**:
+1. **Anti-archer / anti-mage zone:** one kind at **+60% bow resist, −20% to blunt/sword/fangs**; the other at **+50%
+   mRes, −20% to blunt/sword/fangs**.
+2. **Anti-melee zone:** one kind at **+60% to blunt/sword/fangs, −20% mRes**; the other at **+60% to blunt/sword/fangs,
+   −20% to bow**.
+3. **AoE zone:** a **½-HP passive** and **denser camps**, so an AoE gathers and kills.
+- **The current resist mobs leave the current zones** (all 8 in the measured list, not only the 1-40 two).
+- **Aggression:** aggressive mobs leave the normal zones. **Only 80+ zones and every dungeon are all-aggressive**,
+  plus maybe the ground around a field boss.
 
 ## `BL-281` ⏸ MODELS, ANIMATIONS, MAP ORDER, ROADS, LINE OF SIGHT
 
