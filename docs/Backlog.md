@@ -277,8 +277,8 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
 | `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
 | `BL-282` | 🟡 | **`BalanceMatrix --craft-cost`** ✅ built + all inputs ruled; only C5 (consumables) left, waits on §2.2 #8 — kills + hours per crafted T40/52/61/76/80 item under the NEW rules, by recipe %; extends M1-M9 | items |
-| `BL-283` | 🔵 | **CHARISMA** — recommendations/likes; lifetime vs current (cap 1000); +10% Blessing fill per 100 — split out of `BL-277`; ✅ 10 pts/rec, 10/day, 30-day ring, real recs only, ×2 with rune = ×4, title for #1 | social |
 | `BL-284` | 🔵 | **RECURRING RUNE GRANT** — premium/event: a 1 h rune a day + 1-2 2 h runes a week; needs a premium status or events (neither exists) — split out of `BL-277` | progression |
+| `BL-286` | ⏸ | **CASTLE "NOBLE" CHARISMA** — a castle-holding clan leader gets charisma decay/loss protection or a grant; split out of `BL-283`; waits on castles | social |
 
 ---
 
@@ -2347,36 +2347,6 @@ TABLES, solo ceiling fine). 🟡 **Only C5 is left**: consumable recipe cost vs 
 ⚠ The tool uses M1's kill clock, **~66-81 kills/h**, not the `360` that `BL-277`'s Favor drain was set on
 (4-5× off). `BL-277` already says to re-measure its constant.
 
-## `BL-283` 🔵 CHARISMA — RECOMMENDATIONS / LIKES
-
-Split out of `BL-277` on your call (2026-09-23). From the note: players recommend/like each other;
-the panel shows **`Charisma: lifetime (current)`**, and current caps at **1000**. It speeds up the
-Wayfarer's Blessing fill in whole steps: **+10% per full 100** (0-99 = 0%, 100-199 = 10% … 1000 = +100%;
-123 is still 10%). ❓ Not yet discussed: who may recommend whom, how often, whether current decays (and
-what separates it from lifetime), and whether it does anything besides the Blessing. `BL-277` ships with
-the fill-rate hook at +0%, so this does not block it.
-🟢 **2026-09-24 — the hook is live (0.197.0):** `GameLoopService.BlessingFillRate` returns ×2 while a Blessing booster
-rune is held, else ×1. Charisma's `1 + 0.1 × floor(current / 100)` MULTIPLIES that there (×4 with both), and nowhere else.
-✅ **2026-09-23:** (1) **Who:** any player may recommend another, but not themselves, not a character
-on the same account, and the giver must be level 20+. (4) **Effects:** the Blessing fill rate, plus a
-**title for the server's #1** (a text title), and nothing else. (5) **Later, with castles:** a clan
-leader holding a castle (a "Noble") gets decay/loss protection or a charisma grant, filed here until
-castles exist. 🔑 **His requirement: a SOLO player must also be able to keep the Blessing up**, so
-there needs to be a non-social source. ❓ Open: the gain/decay model. He offered three: (a) +20 per
-recommendation, one per target per day, −10/day decay, 100 days to full; (b) 3/day × 10 points,
-current = last 30 days, max 900; (c) as (b) but 10/day, full on day 10, skip days and catch up.
-✅ **2026-09-23, the model is (c):** a recommendation = **10 points**, you receive at most **10 a day**,
-one per giver per day. **Current = the last 30 days' sum, capped at 1000** (full on day 10, and up to
-20 missed days cost nothing). **Lifetime** = everything ever received. **Only REAL recommendations count;
-there is no solo/NPC source** (the daily-quest source was declined). A solo player's answer is the booster
-rune, or a second account (*"there are ways if I want to invest time and energy"*). Rule 1 blocks only
-the SAME account, and that is deliberate. 🔑 **Charisma and the booster rune MULTIPLY:** full charisma
-×2 × rune ×2 = **×4** Blessing fill; a solo player with the rune gets ×2. **Storage:** a 30-slot ring of
-daily totals per character (one small CSV column). A recommendation adds 10 to today's slot. At the daily
-reset the oldest slot drops and a new 0 starts, advancing by however many resets passed while offline
-(max 30). The 1000 cap is applied when current is READ, never by refusing a recommendation. Title for #1:
-ranked on **lifetime** (current ties at 1000). That was my pick; he has not objected.
-
 ## `BL-284` 🔵 RECURRING RUNE GRANT — PREMIUM / EVENTS
 
 Split out of `BL-277` (2026-09-23, fifth round): *"premium or an event will get u a 1h/day and 1 or 2 -
@@ -2387,3 +2357,11 @@ admin grant), so this does not block it. ❓ Open: 1 or 2 a week; which rune (ke
 gives; whether premium is a time-limited status bought with Platinum.
 🟢 **2026-09-24 — the four runes exist (0.197.0):** `rune_favor_keep_1h` / `_2h`, `rune_blessing_boost_1h` / `_2h`
 (`ItemCatalog.FavorKeepRune1h` …). The grant this entry owes only has to `AddItem` them; nothing about the runes is left.
+
+## `BL-286` ⏸ CASTLE "NOBLE" CHARISMA
+
+Split out of `BL-283` when it was built (0.198.0, 2026-09-24). His point 5 of the 2026-09-23 ruling: *later,
+with castles*, a clan leader holding a castle (a "Noble") gets charisma decay/loss protection or a charisma
+grant. ⏸ **Blocked: castles do not exist.** ❓ Open when they do: protection (the 30-day ring does not age
+while he holds it? penalties spare lifetime?) or a grant (how much, how often), and whether it covers the
+leader only or the clan.

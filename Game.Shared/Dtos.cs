@@ -1123,9 +1123,11 @@ public record DebugConfigDto(
 /// the sheet shows exactly what a kill pays and never re-derives it. Pushed on login, whenever the gauge's
 /// whole-point value moves (a kill, a town minute), and beside every Stats push (runes change the rates).
 /// `BL-277` part 2 adds the Wayfarer's Blessing: the gauge's whole percent, the fill rate that multiplies
-/// every source (his "98/100 (x4)"), and whether one is running (the rates above already include its +100%).</summary>
+/// every source (his "98/100 (x4)"), and whether one is running (the rates above already include its +100%).
+/// `BL-283` adds charisma for his *"Charisma: lifetime (current)"* line — current is already capped at 1000.</summary>
 public record FavorUpdate(int Points, int Stage, float ExpRate, float SpRate, float GoldRate, float DropRate,
-                          int BlessingPercent = 0, float BlessingFillRate = 1f, bool BlessingActive = false);
+                          int BlessingPercent = 0, float BlessingFillRate = 1f, bool BlessingActive = false,
+                          long CharismaLifetime = 0, int CharismaCurrent = 0);
 
 /// <summary>One member row in the party window. Debuffs = the names of the debuffs currently on this
 /// member, so a healer sees at a glance who to cleanse without selecting each one.</summary>

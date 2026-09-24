@@ -582,12 +582,17 @@ public record FriendCmd(string ConnectionId, string Action, string Name) : IGame
 /// <summary>Ignore list: Action = block / unblock / list.</summary>
 public record BlockCmd(string ConnectionId, string Action, string Name) : IGameCommand;
 
-/// <summary>Give a player +1 charisma (from your daily like budget).</summary>
+/// <summary>`BL-283` — RECOMMEND a player (+10 charisma, from your daily budget). "Like" on the wire.</summary>
 public record LikeCmd(string ConnectionId, string Name) : IGameCommand;
 
-/// <summary>SERVER-internal: apply a charisma change to a character by NAME (online or offline) on the tick
-/// thread. Enqueued by the moderation callbacks (which run on worker threads). Zero=true wipes both values.</summary>
-public record CharismaAdjustCmd(string Name, int PoolDelta, long LifetimeDelta, bool Zero = false) : IGameCommand;
+/// <summary>SERVER-internal: an OFFLINE recommendation was refused by the DB-side rules, so hand the giver
+/// back the budget point spent on it — if it is still the same UTC day (<paramref name="Day"/>).</summary>
+public record LikeRefundCmd(string GiverName, string Day) : IGameCommand;
+
+/// <summary>SERVER-internal: apply a LIFETIME charisma change to a character by NAME (online or offline) on
+/// the tick thread. Enqueued by the moderation callbacks (which run on worker threads). Penalties never
+/// touch the 30-day ring (`BL-283`); Zero=true (a ban) wipes lifetime AND the ring.</summary>
+public record CharismaAdjustCmd(string Name, long LifetimeDelta, bool Zero = false) : IGameCommand;
 
 /// <summary>FOLLOW a player: walk toward them each tick until cancelled. TargetId null = stop following.</summary>
 public record FollowCmd(string ConnectionId, Guid? TargetId) : IGameCommand;

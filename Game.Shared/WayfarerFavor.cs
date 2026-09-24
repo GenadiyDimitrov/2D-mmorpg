@@ -147,11 +147,11 @@ public static class WayfarerBlessing
     /// while logged out — *"not offline"*).</summary>
     public const int DurationSeconds = 180;
 
-    /// <summary>+100% EXP/SP while active — ADDED to the other personal bonuses (charisma, Favor), his
+    /// <summary>+100% EXP/SP while active — ADDED to the Favor's bonus (charisma has none since `BL-283`), his
     /// *"the SP/EXP start to show x3.5"* on a ×2.5 Favor rate.</summary>
     public const float Bonus = 1.0f;
 
     /// <summary>`BL-277` part 3 — the Blessing booster rune: *"increases the blessing gauge fill up rate
-    /// with 100%"*, so ×2 on every source. Charisma's ×2 (`BL-283`) will MULTIPLY it (×4 with both).</summary>
+    /// with 100%"*, so ×2 on every source. Charisma's up-to-×2 (`BL-283`, <see cref="Charisma.FillMultiplier"/>) MULTIPLIES it (×4 with both).</summary>
     public const float BoosterRuneFillRate = 2f;
 }

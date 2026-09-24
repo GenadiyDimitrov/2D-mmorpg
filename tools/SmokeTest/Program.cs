@@ -576,26 +576,59 @@ Check("/flist shows a MUTUAL friend's online state",
       string.Join(" | ", a.SystemChat));
 
 // -------------------------------------------------------------------------------------------
-// 4a. CHARISMA — /like gives +1 from a 20/day budget; it ranks on the charisma board.
+// 4a. CHARISMA (`BL-283`) — a RECOMMENDATION ("Like" on the wire) is +10 from a 20/day budget; the giver
+// must be level 20+, never the same account; a target receives one per giver per day, 10 a day.
+// It ranks on the charisma board by LIFETIME.
 // -------------------------------------------------------------------------------------------
+friend.SystemChat.Clear();
+a.SystemChat.Clear();
+await a.Hub.SendAsync("Like", "Test2");   // the protagonist is still level 1 here
+await a.Settle();
+Check("a giver below level 20 cannot recommend (`BL-283` rule 1)",
+      a.SystemChat.Any(s => s.Contains("must be level 20")), string.Join(" | ", a.SystemChat));
+// Lift both givers to 20 for this section only, and put them back after, so the levelling maths
+// below (the protagonist lands on 81) and every later Test2 check see the level they always did.
+await a.Hub.SendAsync("DebugLevel", 10);   // the hub clamps a step to ±10
+await a.Hub.SendAsync("DebugLevel", 9);
+await a.Hub.SendAsync("AdminCommand", "lvl", "Test2 20");
+await a.Settle();
 friend.SystemChat.Clear();
 a.SystemChat.Clear();
 await a.Hub.SendAsync("Like", "Test2");
 await a.Settle();
-Check("liking a player raised their charisma",
-      friend.SystemChat.Any(s => s.Contains("liked you") && s.Contains("charisma")),
-      string.Join(" | ", friend.SystemChat));
-Check("the liker spent one from the daily budget",
-      a.SystemChat.Any(s => s.Contains("likes left today")));
+// Test2 is a SEEDED character that persists between runs, so on the 11th run of one UTC day it has
+// already received its 10 — that refusal is the rule working, not a failure.
+bool test2Full = a.SystemChat.Any(s => s.Contains("already received 10"));
+Check("recommending a player raised their charisma",
+      test2Full || friend.SystemChat.Any(s => s.Contains("recommended you") && s.Contains("charisma")),
+      test2Full ? "Test2 already had 10 today" : string.Join(" | ", friend.SystemChat));
+Check("the giver spent one from the daily budget",
+      test2Full || a.SystemChat.Any(s => s.Contains("left today")));
 a.SystemChat.Clear();
-await a.Hub.SendAsync("Like", name);   // can't like yourself
+await a.Hub.SendAsync("Like", "Test2");   // the same giver, the same day
 await a.Settle();
-Check("you can't like yourself", a.SystemChat.Any(s => s.Contains("can't like yourself")));
-// Test2 likes the VICTIM (offline — Like resolves offline targets in the DB), so the later jail has
-// charisma to drain. It used to like the protagonist, which stopped working the moment the protagonist
-// became an admin: STAFF ARE EXCLUDED FROM THE LEADERBOARDS, which is the answer to the owner's
-// playtest-13 puzzle — "my ranking board was never updated ... aaa, my chars are admins".
+Check("one recommendation per giver per target per day",
+      a.SystemChat.Any(s => s.Contains("already recommended Test2 today") || s.Contains("already received 10")),
+      string.Join(" | ", a.SystemChat));
+a.SystemChat.Clear();
+await a.Hub.SendAsync("Like", name);   // can't recommend yourself
+await a.Settle();
+Check("you can't recommend yourself", a.SystemChat.Any(s => s.Contains("can't recommend yourself")));
+a.SystemChat.Clear();
+await a.Hub.SendAsync("Like", victimName);   // offline, and on the protagonist's OWN account
+for (int attempt = 0; attempt < 10 && !a.SystemChat.Any(s => s.Contains("own account")); attempt++)
+    await Task.Delay(300);   // the offline rules run in the DB on a worker
+Check("an OFFLINE same-account recommendation is refused by the DB-side rules",
+      a.SystemChat.Any(s => s.Contains("own account")), string.Join(" | ", a.SystemChat));
+// Test2 recommends the VICTIM (offline — resolved in the DB), so the later jail has charisma to drain.
+// It used to like the protagonist, which stopped working the moment the protagonist became an admin:
+// STAFF ARE EXCLUDED FROM THE LEADERBOARDS, which is the answer to the owner's playtest-13 puzzle —
+// "my ranking board was never updated ... aaa, my chars are admins".
 await friend.Hub.SendAsync("Like", victimName);
+await a.Settle();
+await a.Hub.SendAsync("DebugLevel", -10);
+await a.Hub.SendAsync("DebugLevel", -9);
+await a.Hub.SendAsync("AdminCommand", "lvl", "Test2 1");
 await a.Settle();
 LeaderboardDto chBoard = null!;
 for (int attempt = 0; attempt < 10; attempt++)
@@ -605,10 +638,11 @@ for (int attempt = 0; attempt < 10; attempt++)
     await Task.Delay(300);   // the offline like lands via a background DB write
 }
 Check("the liked player reached the charisma board",
-      chBoard.Entries.Any(e => e.Name == "Test2" && e.Value >= 1),
+      chBoard.Entries.Any(e => e.Name == "Test2" && e.Value >= 10),
       string.Join(",", chBoard.Entries.Select(e => $"{e.Name}:{e.Value}")));
-Check("an offline like reached the board too (the victim)",
-      chBoard.Entries.Any(e => e.Name == victimName && e.Value >= 1));
+Check("an offline recommendation reached the board too, at +10 (the victim)",
+      chBoard.Entries.Any(e => e.Name == victimName && e.Value == 10),
+      string.Join(",", chBoard.Entries.Select(e => $"{e.Name}:{e.Value}")));
 Check("an ADMIN character is kept OFF the leaderboard (staff don't compete)",
       chBoard.Entries.All(e => e.Name != name));
 
@@ -1400,7 +1434,7 @@ await v.Settle();
 bool atJail = WorldDomain.Jail.Contains(v.MyX, v.MyY);
 Check("jailing a player teleports them to jail (live)", atJail, $"at ({v.MyX:0},{v.MyY:0})");
 
-// The 60-min jail also DRAINED the player's charisma (−200) below the +1 they'd been liked for → off the board.
+// The 60-min jail also DRAINED the player's LIFETIME charisma (−200) below the +10 they'd been recommended for → off the board.
 //
 // POLLED, not read once. The leaderboard comes from the DATABASE, and the charisma drain reaches it via
 // a background save (RunSave is fire-and-forget), so a single read races that write — this check failed

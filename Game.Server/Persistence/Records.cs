@@ -149,8 +149,12 @@ public class CharacterRecord
     /// further schema change. (Schema change — delete game.db to recreate.)</summary>
     public int SocialOptions { get; set; }
 
-    // ----- Charisma (reputation). Schema change — delete game.db to recreate. -----
-    public int Charisma { get; set; }
+    // ----- Charisma (reputation, `BL-283`). Schema change — delete game.db to recreate. -----
+    /// <summary>The 30-slot daily ring, newest first, as CSV (<see cref="Charisma.FormatRing"/>).</summary>
+    public string CharismaRingCsv { get; set; } = "";
+    public int CharismaRingDay { get; set; }
+    /// <summary>Who recommended this character on <see cref="CharismaRingDay"/>, as CSV of names.</summary>
+    public string CharismaGiversCsv { get; set; } = "";
     public long CharismaLifetime { get; set; }
     public int LikesRemainingToday { get; set; } = GameConstants.DailyLikeBudget;
     public string LikeBudgetDay { get; set; } = "";

@@ -228,12 +228,14 @@ namespace Game.Client
             t.AppendLine();
 
             // `BL-277` — his "Other" block: the Wayfarer's Favor gauge and the FINISHED rates (server
-            // rate × runes × charisma + Favor), sent by the server so the sheet never re-derives them.
-            // The Charisma line joins it when `BL-283` is built.
+            // rate × runes × Favor), sent by the server so the sheet never re-derives them.
             var f = Boot.Favor;
             if (f != null)
             {
                 t.AppendLine(Head("Other"));
+                // `BL-283` — his "Charisma: 12345678 (1000)" = lifetime (current). Current is the last 30
+                // days, capped at 1000; it is what speeds the Blessing fill below.
+                t.AppendLine(Row2("Charisma", f.CharismaLifetime.ToString("N0") + " (" + f.CharismaCurrent + ")", "", ""));
                 t.AppendLine(Row2("Favor", f.Points.ToString("N0") + " / " + WayfarerFavor.MaxPoints.ToString("N0"),
                                   "Stage", f.Stage + "  (+" + (WayfarerFavor.BonusPerStage * f.Stage * 100f).ToString("0") + "%)"));
                 // `BL-277` part 2 — his "Our_Blessing: 98/100 (x4)": current progress and the fill rate.

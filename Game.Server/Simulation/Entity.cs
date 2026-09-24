@@ -709,11 +709,18 @@ public class Entity
     /// <see cref="GameConstants.RestoreSlots"/>, newest last. <c>UnitPrice</c> is always 0.</summary>
     public List<BuyBackEntry> Restorable { get; } = new();
 
-    // ----- Charisma (reputation). Two values, neither below 0 (see GameConstants). -----
-    /// <summary>The 0–<see cref="GameConstants.CharismaPoolCap"/> bonus POOL — drives the exp/sp bonus.</summary>
-    public int Charisma { get; set; }
-    /// <summary>Uncapped LIFETIME charisma — what the ranking board uses. Likes raise it; kills (and later
-    /// moderation) lower it, so a griefer can't top the board.</summary>
+    // ----- Charisma (reputation, `BL-283`; the rules are in Game.Shared/Charisma.cs) -----
+    /// <summary>The 30-slot ring of daily RECEIVED totals, newest first (slot 0 = <see cref="CharismaRingDay"/>).
+    /// Current charisma = its sum, capped at 1000 when read — the one thing current does is speed the Blessing.</summary>
+    public int[] CharismaRing { get; set; } = new int[Charisma.WindowDays];
+    /// <summary>UTC day number of slot 0 (<see cref="Charisma.Today"/>).</summary>
+    public int CharismaRingDay { get; set; }
+    /// <summary>Who recommended this character on <see cref="CharismaRingDay"/> (one per giver, 10 a day).</summary>
+    public List<string> CharismaGiversToday { get; set; } = new();
+    /// <summary>The current value last put on the details sheet, so a kill re-sends it only when it moved.</summary>
+    public int CharismaSentCurrent { get; set; } = -1;
+    /// <summary>Uncapped LIFETIME charisma — what the ranking board and the #1 title use. Recommendations
+    /// raise it; PK kills and moderation lower it (floored at 0), so a griefer can't top the board.</summary>
     public long CharismaLifetime { get; set; }
     /// <summary>Likes left to GIVE today (budget, resets daily). </summary>
     public int LikesRemainingToday { get; set; } = GameConstants.DailyLikeBudget;

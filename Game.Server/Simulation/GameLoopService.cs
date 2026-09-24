@@ -181,6 +181,7 @@ public class GameLoopService : BackgroundService
                 case FriendCmd c: HandleFriend(c); break;
                 case BlockCmd c: HandleBlock(c); break;
                 case LikeCmd c: HandleLike(c); break;
+                case LikeRefundCmd c: HandleLikeRefund(c); break;
                 case FollowCmd c: HandleFollow(c); break;
                 case AssistCmd c: HandleAssist(c); break;
                 case LeaveCommand c: HandleLeave(c); break;
@@ -1147,10 +1148,10 @@ public class GameLoopService : BackgroundService
             killer.Karma += gain;
             killer.ConsecutivePk++;
             killer.PkCount++;
-            // PKing costs REPUTATION: drain both charisma values by karma × 0.01 (persisted by the
+            // PKing costs REPUTATION: drain LIFETIME charisma by karma × 0.01 (persisted by the
             // SaveEntity(killer) at the end of this method). A griefer can't sit atop the charisma board.
-            GrantCharisma(killer, -(int)Math.Round(gain * GameConstants.CharismaKillPenaltyPerKarma),
-                                  -(long)Math.Round(gain * GameConstants.CharismaKillPenaltyPerKarma));
+            // The 30-day ring (the Blessing speed) is untouched — penalties are lifetime-only (`BL-283`).
+            AdjustCharismaLifetime(killer, -(long)Math.Round(gain * GameConstants.CharismaKillPenaltyPerKarma));
             SendSystemToEntity(killer, $"You killed an innocent — Karma +{gain} (now {killer.Karma:N0}). You are now a PK.");
         }
         else
@@ -7595,7 +7596,7 @@ public class GameLoopService : BackgroundService
                     await _db.SetKickAsync(canonical, until);
                     // Remove them on the TICK thread — this is world state, and we're on a worker here.
                     _world.Commands.Enqueue(new ForceRemoveCmd(canonical, $"Kicked by staff ({minutes}m)."));
-                    _world.Commands.Enqueue(new CharismaAdjustCmd(canonical, -kickPen, -kickPen));
+                    _world.Commands.Enqueue(new CharismaAdjustCmd(canonical, -kickPen));
                 });
                 break;
             }
@@ -7610,7 +7611,7 @@ public class GameLoopService : BackgroundService
                 {
                     await _db.BanAccountByCharacterNameAsync(canonical, until);
                     _world.Commands.Enqueue(new ForceRemoveCmd(canonical, $"Account banned ({minutes}m)."));
-                    _world.Commands.Enqueue(new CharismaAdjustCmd(canonical, 0, 0, Zero: true));   // a ban zeroes reputation
+                    _world.Commands.Enqueue(new CharismaAdjustCmd(canonical, 0, Zero: true));   // a ban zeroes reputation
                 });
                 break;
             }
@@ -7637,7 +7638,7 @@ public class GameLoopService : BackgroundService
                 {
                     await _db.SetJailAsync(canonical, until);
                     _world.Commands.Enqueue(new JailNowCmd(canonical, until, minutes));
-                    _world.Commands.Enqueue(new CharismaAdjustCmd(canonical, -jailPen, -jailPen));
+                    _world.Commands.Enqueue(new CharismaAdjustCmd(canonical, -jailPen));
                 });
                 break;
             }
@@ -7665,7 +7666,7 @@ public class GameLoopService : BackgroundService
                 {
                     await _db.SetChatBanAsync(canonical, until);
                     _world.Commands.Enqueue(new ChatBanNowCmd(canonical, until, minutes));
-                    _world.Commands.Enqueue(new CharismaAdjustCmd(canonical, -cbPen, -cbPen));
+                    _world.Commands.Enqueue(new CharismaAdjustCmd(canonical, -cbPen));
                 });
                 break;
             }
@@ -9186,12 +9187,15 @@ public class GameLoopService : BackgroundService
 
     // ----- Charisma (reputation) -----
 
-    /// <summary>Move a charisma delta onto a LIVE entity: pool clamped [0,cap], lifetime floored at 0.</summary>
-    private static void GrantCharisma(Entity target, int poolDelta, long lifetimeDelta)
-    {
-        target.Charisma = Math.Clamp(target.Charisma + poolDelta, 0, GameConstants.CharismaPoolCap);
-        target.CharismaLifetime = Math.Max(0, target.CharismaLifetime + lifetimeDelta);
-    }
+    /// <summary>`BL-283` — CURRENT charisma: the last 30 days of recommendations received, capped at 1000.
+    /// Read without advancing the ring, so the sheet and the fill rate never mutate anything.</summary>
+    private static int CharismaCurrent(Entity p) =>
+        Charisma.Current(p.CharismaRing, p.CharismaRingDay, Charisma.Today());
+
+    /// <summary>Move LIFETIME charisma on a LIVE entity (floored at 0) — the penalty path. The ring is a
+    /// record of recommendations received and no penalty edits it (his call, 2026-09-24).</summary>
+    private static void AdjustCharismaLifetime(Entity target, long delta) =>
+        target.CharismaLifetime = Math.Max(0, target.CharismaLifetime + delta);
 
     /// <summary>Apply a charisma change to a character by name on the tick thread (online → live entity;
     /// offline → DB). Enqueued by the worker-thread moderation callbacks.</summary>
@@ -9199,16 +9203,31 @@ public class GameLoopService : BackgroundService
     {
         if (FindOnlinePlayer(cmd.Name) is Entity online)
         {
-            if (cmd.Zero) { online.Charisma = 0; online.CharismaLifetime = 0; }
-            else GrantCharisma(online, cmd.PoolDelta, cmd.LifetimeDelta);
+            if (cmd.Zero)
+            {
+                online.CharismaLifetime = 0;
+                Array.Clear(online.CharismaRing);
+                online.CharismaGiversToday.Clear();
+            }
+            else AdjustCharismaLifetime(online, cmd.LifetimeDelta);
             SaveEntity(online);
+            SendFavor(online);   // the sheet's Charisma line
             return;
         }
         _ = Task.Run(async () =>
         {
             if (cmd.Zero) await _db.ZeroCharismaAsync(cmd.Name);
-            else await _db.AddCharismaAsync(cmd.Name, cmd.PoolDelta, cmd.LifetimeDelta);
+            else await _db.AddCharismaLifetimeAsync(cmd.Name, cmd.LifetimeDelta);
         });
+    }
+
+    /// <summary>An offline recommendation was refused by the DB-side rules: give the point back, if the
+    /// giver is still online and it is still the day it was spent.</summary>
+    private void HandleLikeRefund(LikeRefundCmd cmd)
+    {
+        if (FindOnlinePlayer(cmd.GiverName) is not Entity p || p.LikeBudgetDay != cmd.Day) return;
+        p.LikesRemainingToday = Math.Min(GameConstants.DailyLikeBudget, p.LikesRemainingToday + 1);
+        SaveEntity(p);
     }
 
     /// <summary>Refill the daily like budget if it's a new UTC day.</summary>
@@ -9222,7 +9241,10 @@ public class GameLoopService : BackgroundService
         }
     }
 
-    /// <summary>Give a player +1 charisma from your daily budget. Works on an offline target (DB write).</summary>
+    /// <summary>`BL-283` — RECOMMEND a player (the "Like" action): +10 to today's slot of their ring and +10
+    /// lifetime, from your daily budget of 20. His rules: not yourself, not a character on your own account,
+    /// and you must be level 20+; they receive at most 10 a day, one per giver. Works on an offline target
+    /// (the same rules, run against the DB row).</summary>
     private void HandleLike(LikeCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var p)) return;
@@ -9230,39 +9252,67 @@ public class GameLoopService : BackgroundService
         if (name.Length == 0) return;
         if (string.Equals(name, p.Name, StringComparison.OrdinalIgnoreCase))
         {
-            SendSystemToEntity(p, "You can't like yourself.");
+            SendSystemToEntity(p, "You can't recommend yourself.");
+            return;
+        }
+        if (p.Level < Charisma.MinGiverLevel)
+        {
+            SendSystemToEntity(p, $"You must be level {Charisma.MinGiverLevel} to recommend other players.");
             return;
         }
 
         RefreshLikeBudget(p);
         if (p.LikesRemainingToday <= 0)
         {
-            SendSystemToEntity(p, "You've used all your likes today. They refresh at midnight (UTC).");
+            SendSystemToEntity(p, "You've used all your recommendations today. They refresh at midnight (UTC).");
             return;
         }
+
+        int today = Charisma.Today();
 
         // Online target: apply on the tick thread (safe entity mutation).
         if (FindOnlinePlayer(name) is Entity online)
         {
+            if (online.AccountId == p.AccountId)
+            {
+                SendSystemToEntity(p, "You can't recommend a character on your own account.");
+                return;
+            }
+            int day = online.CharismaRingDay;
+            var refusal = Charisma.TryReceive(online.CharismaRing, ref day, online.CharismaGiversToday, p.Name, today);
+            online.CharismaRingDay = day;
+            if (refusal != Charisma.Refusal.None)
+            {
+                SendSystemToEntity(p, Charisma.RefusalText(refusal, online.Name));
+                return;
+            }
             p.LikesRemainingToday--;
-            GrantCharisma(online, 1, 1);
+            online.CharismaLifetime += Charisma.PointsPerRecommendation;
             SaveEntity(p);
             SaveEntity(online);
-            SendSystemToEntity(p, $"You liked {online.Name}. ({p.LikesRemainingToday} likes left today)");
-            SendSystemToEntity(online, $"{p.Name} liked you — charisma is now {online.Charisma}.");
+            SendSystemToEntity(p, $"You recommended {online.Name}. ({p.LikesRemainingToday} left today)");
+            SendSystemToEntity(online, $"{p.Name} recommended you — charisma {online.CharismaLifetime:N0} ({CharismaCurrent(online)}).");
+            SendFavor(online);   // the Charisma line and the Blessing fill rate
             return;
         }
 
-        // Offline target: spend the like, then resolve + apply in the DB on a worker (no live entity to race).
-        // A typo'd offline name simply costs the like — no off-tick refund (keeps the single-writer rule).
+        // Offline target: spend the point now (the budget lives on the tick thread), run the rules in the DB
+        // on a worker, and hand the point back through the queue if they refuse it — a typo included.
         p.LikesRemainingToday--;
+        int left = p.LikesRemainingToday;
+        string giver = p.Name, budgetDay = p.LikeBudgetDay;
+        int giverAccount = p.AccountId;
         SaveEntity(p);
         _ = Task.Run(async () =>
         {
-            string? canonical = await _db.ResolveCharacterNameAsync(name);
-            if (canonical is null) { SendSystemToEntity(p, $"No character '{name}'."); return; }
-            await _db.AddCharismaAsync(canonical, 1, 1);
-            SendSystemToEntity(p, $"You liked {canonical} (offline). ({p.LikesRemainingToday} likes left today)");
+            var (canonical, refusal) = await _db.RecommendOfflineAsync(name, giver, giverAccount, today);
+            if (refusal.Length > 0)
+            {
+                _world.Commands.Enqueue(new LikeRefundCmd(giver, budgetDay));
+                SendSystemToEntity(p, refusal);
+                return;
+            }
+            SendSystemToEntity(p, $"You recommended {canonical} (offline). ({left} left today)");
         });
     }
 
@@ -11285,10 +11335,11 @@ public class GameLoopService : BackgroundService
 
     /// <summary>`BL-277` part 2 — 🔑 **THE ONE FILL-RATE MULTIPLIER** for the Blessing gauge, applied in
     /// exactly one place (<see cref="AddBlessing"/>), so it multiplies EVERY source — kills, combat minutes,
-    /// stage drops and the level-up bump — as he ruled. The booster rune's ×2 (`BL-277` part 3) is here;
-    /// charisma's +10%-per-100 (`BL-283`) lands here too, MULTIPLYING it (×4 with both), and nowhere else.</summary>
+    /// stage drops and the level-up bump — as he ruled. The booster rune's ×2 (`BL-277` part 3) and
+    /// charisma's +10% per full 100 current (`BL-283`, 1.0 … 2.0) MULTIPLY here (×4 with both), and nowhere else.</summary>
     private static float BlessingFillRate(Entity p) =>
-        HasBuff(p, SkillCatalog.BlessingBoostRuneBuff) ? WayfarerBlessing.BoosterRuneFillRate : 1f;
+        (HasBuff(p, SkillCatalog.BlessingBoostRuneBuff) ? WayfarerBlessing.BoosterRuneFillRate : 1f)
+        * Charisma.FillMultiplier(CharismaCurrent(p));
 
     private static bool HasBuff(Entity p, string key)
     {
@@ -11376,14 +11427,14 @@ public class GameLoopService : BackgroundService
         PushFavorIfMoved(p);
     }
 
-    /// <summary>The FINISHED personal EXP/SP multiplier for mob kills: 1 + charisma's bonus + the Favor's
-    /// + the Blessing's +100% while one runs. ADDITIVE, his arithmetic (*"100 base % + 400% + 50% =
-    /// x5.5"*, and *"when blessing activates the SP/EXP start to show x3.5"* on a ×2.5); the server rate and
-    /// runes multiply it later, in <see cref="AwardExp"/>. The one place this sum is made — the kill and the
-    /// sheet both read it.</summary>
+    /// <summary>The FINISHED personal EXP/SP multiplier for mob kills: 1 + the Favor's bonus + the
+    /// Blessing's +100% while one runs. ADDITIVE, his arithmetic (*"when blessing activates the SP/EXP start
+    /// to show x3.5"* on a ×2.5); the server rate and runes multiply it later, in <see cref="AwardExp"/>. The
+    /// one place this sum is made — the kill and the sheet both read it.
+    /// ⚠ Charisma's old +0-50% term is GONE (`BL-283`, ruling 4 *"nothing else"*, confirmed 2026-09-24): his
+    /// note's *"+ 400% + 50% = x5.5"* counted it, and the ruling that came after it removed it. Max is ×5 (×6).</summary>
     private static float KillExpBonus(Entity p) =>
-        GameConstants.CharismaExpMultiplier(p.Charisma) + WayfarerFavor.Bonus(p.FavorPoints)
-        + (p.BlessingActive ? WayfarerBlessing.Bonus : 0f);
+        1f + WayfarerFavor.Bonus(p.FavorPoints) + (p.BlessingActive ? WayfarerBlessing.Bonus : 0f);
 
     /// <summary>The whole-point value the sheet shows. Ceiling, so a gauge holding 0.3 reads 1 — it IS
     /// paying stage 1, and "0" beside a +50% would read as a bug.</summary>
@@ -11394,11 +11445,15 @@ public class GameLoopService : BackgroundService
 
     private void PushFavorIfMoved(Entity p)
     {
-        if (FavorShown(p) != p.FavorSentPoints || BlessingShown(p) != p.BlessingSentPercent) SendFavor(p);
+        // Charisma is compared too: its current value can fall at a UTC midnight with nothing else moving,
+        // and the next second of combat is what puts the lower number (and fill rate) on the sheet.
+        if (FavorShown(p) != p.FavorSentPoints || BlessingShown(p) != p.BlessingSentPercent
+            || CharismaCurrent(p) != p.CharismaSentCurrent) SendFavor(p);
     }
 
     /// <summary>`BL-277` — the gauge and the four FINISHED rates for the details sheet (server rate ×
-    /// runes × <see cref="KillExpBonus"/>), so the sheet prints what a kill actually pays.</summary>
+    /// runes × <see cref="KillExpBonus"/>), so the sheet prints what a kill actually pays. `BL-283` adds
+    /// his *"Charisma: lifetime (current)"* line.</summary>
     private void SendFavor(Entity p)
     {
         if (p.Kind != EntityKind.Player) return;
@@ -11406,9 +11461,11 @@ public class GameLoopService : BackgroundService
         float bonus = KillExpBonus(p);
         p.FavorSentPoints = FavorShown(p);
         p.BlessingSentPercent = BlessingShown(p);
+        p.CharismaSentCurrent = CharismaCurrent(p);
         SendTo(p, "Favor", new FavorUpdate(p.FavorSentPoints, WayfarerFavor.Stage(p.FavorPoints),
             rates.Exp * bonus, rates.Sp * bonus, rates.Gold, rates.DropChance,
-            p.BlessingSentPercent, BlessingFillRate(p), p.BlessingActive));
+            p.BlessingSentPercent, BlessingFillRate(p), p.BlessingActive,
+            p.CharismaLifetime, p.CharismaSentCurrent));
     }
 
     // (The old RuneBuffKeys array is gone: SkillCatalog.IsRuneBuff answers the same question from the

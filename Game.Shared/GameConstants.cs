@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.197.0";
+    public const string GameVersion = "0.198.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -852,26 +852,17 @@ public static class GameConstants
     /// now (playtest-18 Q1) and a client with a different idea of the cap would draw a lie.</summary>
     public const int MaxTrackedQuests = 5;
 
-    // ----- Charisma (reputation) -----
-    /// <summary>Likes a player may GIVE per day (a budget, freely distributed; resets at UTC midnight).</summary>
+    // ----- Charisma (reputation) — the ring, the caps and the Blessing fill live in Charisma.cs (`BL-283`) -----
+    /// <summary>Recommendations a player may GIVE per day (a budget, freely distributed; resets at UTC
+    /// midnight). Kept at 20 when `BL-283` capped the RECEIVING side at 10 (his call, 2026-09-24).</summary>
     public const int DailyLikeBudget = 20;
-    /// <summary>Charisma POOL cap. Every <see cref="CharismaPerBonusPercent"/> of pool = +1% exp/sp, so the
-    /// cap is +50%. The pool is drained by kills (and, later, moderation); the lifetime value (uncapped)
-    /// is what the ranking board uses.</summary>
-    public const int CharismaPoolCap = 1000;
-    /// <summary>Pool points per +1% exp/sp. 20 → cap 1000 gives +50%.</summary>
-    public const int CharismaPerBonusPercent = 20;
-    /// <summary>A kill drains this × the karma gained from it, off BOTH charisma values (200 karma → −2,
-    /// 15 000 → −150). Bad behaviour costs reputation.</summary>
+    /// <summary>A PK kill drains this × the karma gained from it off LIFETIME charisma (200 karma → −2,
+    /// 15 000 → −150), so a griefer can't top the board. The 30-day ring is not touched (`BL-283`).</summary>
     public const double CharismaKillPenaltyPerKarma = 0.01;
 
-    /// <summary>Exp/sp multiplier from a character's charisma pool (1.0 … 1.5).</summary>
-    public static float CharismaExpMultiplier(int pool) =>
-        1f + Math.Clamp(pool, 0, CharismaPoolCap) / (float)(CharismaPerBonusPercent * 100);
-
     // Moderation charisma penalties (per STARTED hour-band): a chatban costs 20, a jail 100, a kick 250,
-    // scaling by the duration tier (&lt;1h ×1, &lt;2h ×2, …). A ban zeroes both values. All drain BOTH the
-    // pool and the lifetime — a griefer can't top the ranking board and just eat the punishments.
+    // scaling by the duration tier (&lt;1h ×1, &lt;2h ×2, …). They drain LIFETIME only (`BL-283`); a ban
+    // zeroes lifetime AND the 30-day ring — a griefer can't top the ranking board and just eat the punishments.
     public const int CharismaChatBanPenaltyPerHour = 20;
     public const int CharismaJailPenaltyPerHour = 100;
     public const int CharismaKickPenaltyPerHour = 250;

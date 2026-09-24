@@ -7,11 +7,41 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.197.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.198.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-24 (latest) — 0.197.0: the Wayfarer's items and the raid-boss Favor grant (`BL-277` part 3, closes `BL-277`)
+## 2026-09-24 (latest) — 0.198.0: Charisma (`BL-283`, closes step 5 of the rework order)
+
+> *"player recomendetions/likes/charisma points increase the gauge fill up rate as well"*
+
+**Recommending another player now speeds up their Wayfarer's Blessing.** The rules are in
+`Game.Shared/Charisma.cs`. The action is still called "Like" in the action bar and on the wire.
+
+- **A recommendation is +10**, taken from the giver's budget of 20 a day. It is refused if you recommend
+  yourself, a character on your own account, or someone you already recommended today. It is also refused if
+  you are below level 20, or if the target has already received 10 today. The same rules apply to a logged-off
+  target (they run in the database), and a refused offline recommendation, a typo included, gives the budget
+  point back.
+- **Current vs lifetime:** current is the last 30 days, kept as 30 daily totals, and capped at 1000 when read.
+  Ten a day fills it on day 10, and up to 20 missed days cost nothing. Lifetime is everything ever received,
+  and the Charisma board and its #1 title (**Beloved**) rank on it.
+- **The effect:** Blessing fill × (1 + 0.1 × floor(current ÷ 100)), multiplied with the booster rune, so ×4
+  with both at full. 123 is still +10%.
+- 🔴 **Charisma no longer gives EXP/SP.** The old +0-50% bonus is removed (ruling 4: the Blessing and the
+  title, *"nothing else"*). Your note's *"+ 400% + 50% = x5.5"* counted it, so the top personal sum is now
+  **×5** (×6 during a Blessing).
+- **Penalties drain lifetime only:** a PK kill (karma × 0.01), and a chatban, jail or kick. They leave the
+  30-day ring alone. A ban still zeroes everything.
+- The details sheet shows **Charisma: lifetime (current)** at the top of *Other*. It refreshes when you are
+  recommended, and after midnight when current drops.
+- The castle "Noble" point is filed as `BL-286`, because castles don't exist yet.
+- SmokeTest's charisma section now checks the new rules (level 20, one per giver per day, same account on the
+  offline path, +10 on the board).
+- ⚠ **`game.db` delete** (the pool column became the ring and the givers columns). **Needs an APK** (a new
+  DTO field, and the sheet line).
+
+## 2026-09-24 — 0.197.0: the Wayfarer's items and the raid-boss Favor grant (`BL-277` part 3, closes `BL-277`)
 
 > *"We must have the 4 Runes"*
 

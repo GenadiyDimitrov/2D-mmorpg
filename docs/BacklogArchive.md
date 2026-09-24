@@ -7144,3 +7144,55 @@ on the way, none ruled in the doc: **the clock pauses while logged out** (his *"
 death / a subclass swap / a cleanse** (it is the character's, like the runes); **an offline-farmer fills it**
 (it is in the world and drains the Favor, so it gets both halves). Say if any is wrong. **Owed: part 3.**
 
+---
+
+## `BL-283` ✅ BUILT 2026-09-24 — Charisma (**0.198.0**)
+
+Built as ruled (model (c)). `Game.Shared/Charisma.cs` holds the rules; `GameLoopService.HandleLike` runs them
+online and `PersistenceService.RecommendOfflineAsync` runs the same rules against the DB row for a logged-off
+target. A **recommendation** (still "Like" on the wire and in the action bar) is **+10** to today's slot of the
+target's **30-slot ring** plus +10 **lifetime**, from the giver's daily budget. Refused: yourself, a character on
+your own account, a giver below level 20, a giver who already recommended that target today, and a target
+who has already received 10 today. An offline refusal (a typo included) hands the budget point back.
+**Current** = the ring's sum, capped at 1000 when read; each UTC midnight drops the oldest slot. Its one effect
+is the Blessing fill: `BlessingFillRate = rune × (1 + 0.1 × floor(current/100))`, ×4 with both at full. The
+**#1 title** "Beloved" and the board already ranked on lifetime, so they were kept. The details sheet shows
+*"Charisma: lifetime (current)"* at the top of **Other**.
+Three calls ruled while building (2026-09-24): **(a)** the old **+0-50% EXP/SP bonus is REMOVED** (ruling 4,
+*"nothing else"*; his note's *"+ 400% + 50% = x5.5"* had counted it), so the top personal sum is ×5 (×6 during a
+Blessing); **(b)** PK and moderation penalties drain **lifetime only** (a ban still zeroes lifetime and the
+ring); **(c)** the giver keeps a budget of **20 a day**. The old pool column `Charisma` is gone (a `game.db` delete).
+Not built: the castle "Noble" protection/grant (point 5) waits for castles and is now its own entry, `BL-286`.
+
+The entry as it stood:
+
+## `BL-283` 🔵 CHARISMA — RECOMMENDATIONS / LIKES
+
+Split out of `BL-277` on your call (2026-09-23). From the note: players recommend/like each other;
+the panel shows **`Charisma: lifetime (current)`**, and current caps at **1000**. It speeds up the
+Wayfarer's Blessing fill in whole steps: **+10% per full 100** (0-99 = 0%, 100-199 = 10% … 1000 = +100%;
+123 is still 10%). ❓ Not yet discussed: who may recommend whom, how often, whether current decays (and
+what separates it from lifetime), and whether it does anything besides the Blessing. `BL-277` ships with
+the fill-rate hook at +0%, so this does not block it.
+🟢 **2026-09-24 — the hook is live (0.197.0):** `GameLoopService.BlessingFillRate` returns ×2 while a Blessing booster
+rune is held, else ×1. Charisma's `1 + 0.1 × floor(current / 100)` MULTIPLIES that there (×4 with both), and nowhere else.
+✅ **2026-09-23:** (1) **Who:** any player may recommend another, but not themselves, not a character
+on the same account, and the giver must be level 20+. (4) **Effects:** the Blessing fill rate, plus a
+**title for the server's #1** (a text title), and nothing else. (5) **Later, with castles:** a clan
+leader holding a castle (a "Noble") gets decay/loss protection or a charisma grant, filed here until
+castles exist. 🔑 **His requirement: a SOLO player must also be able to keep the Blessing up**, so
+there needs to be a non-social source. ❓ Open: the gain/decay model. He offered three: (a) +20 per
+recommendation, one per target per day, −10/day decay, 100 days to full; (b) 3/day × 10 points,
+current = last 30 days, max 900; (c) as (b) but 10/day, full on day 10, skip days and catch up.
+✅ **2026-09-23, the model is (c):** a recommendation = **10 points**, you receive at most **10 a day**,
+one per giver per day. **Current = the last 30 days' sum, capped at 1000** (full on day 10, and up to
+20 missed days cost nothing). **Lifetime** = everything ever received. **Only REAL recommendations count;
+there is no solo/NPC source** (the daily-quest source was declined). A solo player's answer is the booster
+rune, or a second account (*"there are ways if I want to invest time and energy"*). Rule 1 blocks only
+the SAME account, and that is deliberate. 🔑 **Charisma and the booster rune MULTIPLY:** full charisma
+×2 × rune ×2 = **×4** Blessing fill; a solo player with the rune gets ×2. **Storage:** a 30-slot ring of
+daily totals per character (one small CSV column). A recommendation adds 10 to today's slot. At the daily
+reset the oldest slot drops and a new 0 starts, advancing by however many resets passed while offline
+(max 30). The 1000 cap is applied when current is READ, never by refusing a recommendation. Title for #1:
+ranked on **lifetime** (current ties at 1000). That was my pick; he has not objected.
+

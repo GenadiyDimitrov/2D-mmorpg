@@ -792,7 +792,9 @@ public class PersistenceService
         foreach (var bn in rec.BlockedCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
             entity.Blocked.Add(bn);
         entity.Social = (SocialOptions)rec.SocialOptions;
-        entity.Charisma = rec.Charisma;
+        entity.CharismaRing = Charisma.ParseRing(rec.CharismaRingCsv);
+        entity.CharismaRingDay = rec.CharismaRingDay;
+        entity.CharismaGiversToday = Charisma.ParseGivers(rec.CharismaGiversCsv);
         entity.CharismaLifetime = rec.CharismaLifetime;
         entity.LikesRemainingToday = rec.LikesRemainingToday;
         entity.LikeBudgetDay = rec.LikeBudgetDay;
@@ -1048,7 +1050,8 @@ public class PersistenceService
         DateTime? JailedUntilUtc, DateTime? ChatBannedUntilUtc,
         int BossJudgmentRung, DateTime? BossJudgmentUntilUtc,
         long TotalOnlineSeconds,
-        int Charisma, long CharismaLifetime, int LikesRemainingToday, string LikeBudgetDay,
+        string CharismaRingCsv, int CharismaRingDay, string CharismaGiversCsv,
+        long CharismaLifetime, int LikesRemainingToday, string LikeBudgetDay,
         double FavorPoints, DateTime FavorStampUtc,   // `BL-277`: the stamp is the CAPTURE time
         double BlessingPercent, int BlessingSecondsLeft,
         DateTime? FavorPotionReadyUtc, int SubclassBoxesGiven,
@@ -1105,7 +1108,8 @@ public class PersistenceService
                 e.Karma, e.PkCount, e.PvpCount, e.ConsecutivePk, e.DiedWhileAway,
                 e.JailedUntil, e.ChatBannedUntil,
                 e.BossJudgmentRung, e.BossJudgmentUntil, e.TotalOnlineSeconds,
-                e.Charisma, e.CharismaLifetime, e.LikesRemainingToday, e.LikeBudgetDay,
+                Charisma.FormatRing(e.CharismaRing), e.CharismaRingDay, Charisma.FormatGivers(e.CharismaGiversToday),
+                e.CharismaLifetime, e.LikesRemainingToday, e.LikeBudgetDay,
                 e.FavorPoints, DateTime.UtcNow,
                 e.BlessingPercent, e.BlessingSecondsLeft,
                 e.FavorPotionReadyUtc, e.SubclassBoxesGiven,
@@ -1237,7 +1241,9 @@ public class PersistenceService
         rec.FriendsCsv = snap.FriendsCsv;
         rec.BlockedCsv = snap.BlockedCsv;
         rec.SocialOptions = snap.SocialOptions;
-        rec.Charisma = snap.Charisma;
+        rec.CharismaRingCsv = snap.CharismaRingCsv;
+        rec.CharismaRingDay = snap.CharismaRingDay;
+        rec.CharismaGiversCsv = snap.CharismaGiversCsv;
         rec.CharismaLifetime = snap.CharismaLifetime;
         rec.LikesRemainingToday = snap.LikesRemainingToday;
         rec.LikeBudgetDay = snap.LikeBudgetDay;
@@ -1650,30 +1656,56 @@ public class PersistenceService
         return true;
     }
 
-    /// <summary>Apply a charisma delta to a possibly-OFFLINE character by name (pool clamped [0,cap],
-    /// lifetime floored at 0). For liking a logged-off player. Returns their new lifetime, or null if no
-    /// such character. If they are ONLINE, the caller must update the live Entity instead (this write
-    /// would be overwritten by their next autosave).</summary>
-    public async Task<long?> AddCharismaAsync(string characterName, int poolDelta, long lifetimeDelta)
+    /// <summary>Move a possibly-OFFLINE character's LIFETIME charisma (floored at 0) — the PK/moderation
+    /// penalty path; the 30-day ring is never touched by a penalty (`BL-283`). If they are ONLINE, the caller
+    /// must update the live Entity instead (this write would be overwritten by their next autosave).</summary>
+    public async Task<bool> AddCharismaLifetimeAsync(string characterName, long lifetimeDelta)
     {
         await using var db = await _factory.CreateDbContextAsync();
         var lower = characterName.ToLower();
         var c = await db.Characters.FirstOrDefaultAsync(ch => ch.Name.ToLower() == lower);
-        if (c is null) return null;
-        c.Charisma = Math.Clamp(c.Charisma + poolDelta, 0, GameConstants.CharismaPoolCap);
+        if (c is null) return false;
         c.CharismaLifetime = Math.Max(0, c.CharismaLifetime + lifetimeDelta);
         await db.SaveChangesAsync();
-        return c.CharismaLifetime;
+        return true;
     }
 
-    /// <summary>Wipe BOTH charisma values of a possibly-offline character (a ban zeroes reputation).</summary>
+    /// <summary>`BL-283` — recommend a logged-off character: the same rules as the online path, run against
+    /// the DB row (not same account as the giver, one per giver per day, 10 received a day). Returns the
+    /// canonical name and "" on success, or the refusal text (Name null = no such character).</summary>
+    public async Task<(string? Name, string Refusal)> RecommendOfflineAsync(
+        string targetName, string giverName, int giverAccountId, int today)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var lower = targetName.ToLower();
+        var c = await db.Characters.FirstOrDefaultAsync(ch => ch.Name.ToLower() == lower);
+        if (c is null) return (null, $"No character '{targetName}'.");
+        if (c.AccountId == giverAccountId) return (c.Name, "You can't recommend a character on your own account.");
+
+        var ring = Charisma.ParseRing(c.CharismaRingCsv);
+        var givers = Charisma.ParseGivers(c.CharismaGiversCsv);
+        int day = c.CharismaRingDay;
+        var refusal = Charisma.TryReceive(ring, ref day, givers, giverName, today);
+        if (refusal != Charisma.Refusal.None) return (c.Name, Charisma.RefusalText(refusal, c.Name));
+
+        c.CharismaRingCsv = Charisma.FormatRing(ring);
+        c.CharismaRingDay = day;
+        c.CharismaGiversCsv = Charisma.FormatGivers(givers);
+        c.CharismaLifetime += Charisma.PointsPerRecommendation;
+        await db.SaveChangesAsync();
+        return (c.Name, "");
+    }
+
+    /// <summary>Wipe ALL charisma of a possibly-offline character — lifetime, the ring and today's givers
+    /// (a ban zeroes reputation).</summary>
     public async Task<bool> ZeroCharismaAsync(string characterName)
     {
         await using var db = await _factory.CreateDbContextAsync();
         var lower = characterName.ToLower();
         var c = await db.Characters.FirstOrDefaultAsync(ch => ch.Name.ToLower() == lower);
         if (c is null) return false;
-        c.Charisma = 0;
+        c.CharismaRingCsv = "";
+        c.CharismaGiversCsv = "";
         c.CharismaLifetime = 0;
         await db.SaveChangesAsync();
         return true;

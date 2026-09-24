@@ -1096,7 +1096,7 @@ group fires, never what the other members pay.
 
 ```
 memberExp = mobValue * roll * partyBonus(n) * damageShare / n * levelGap(member - mob)
-paid      = memberExp * (charismaMult + favorBonus + blessing) * serverRate * runes   (SP: the same)
+paid      = memberExp * (1 + favorBonus + blessing) * serverRate * runes   (SP: the same; no charisma term since 0.198.0)
 favorBonus = 0.5 * stage                           stage 0-8, read BEFORE this kill's drain
 blessing  = 1.0 while a Wayfarer's Blessing runs, else 0                        (below, 0.196.0)
 stage tops 500 | 5000 | 6000 | 10000 | 11500 | 15000 | 17000 | 20000         (any point > 0 = stage 1)
@@ -1107,9 +1107,10 @@ city      = + FavorPerMinute per FULL 60 s in a RegenBoost safe zone            
 FavorPerMinute = 40 (admin Tune tab)                                           full gauge = 8 h 20 min
 ```
 
-- 🔑 **The bonuses ADD, the rates MULTIPLY** — his *"100 base % + 400% + 50% = x5.5"*. Charisma
-  (`1 … 1.5`) and the Favor stage sum into one personal multiplier (`KillExpBonus`); the server rate and
-  the runes multiply the result as before. The sheet's *Exp rate* is that finished product.
+- 🔑 **The bonuses ADD, the rates MULTIPLY** — his *"100 base % + 400% + 50% = x5.5"*. The base 1, the
+  Favor stage and a running Blessing sum into one personal multiplier (`KillExpBonus`); the server rate and
+  the runes multiply the result as before. The sheet's *Exp rate* is that finished product. ⚠ His "+50%"
+  was charisma's old EXP term, removed in 0.198.0 (`BL-283`, ruling 4), so the top is **×5 (×6)**.
 - 🔑 **A full gauge lasts `H = 2` hours of farming at EVERY level**, because the drain divides by the
   same-level normal mob's EXP and the measured kills/h, never by IG's `L²·10` (which swings ~2000× on
   our curve). `killsPerHour(L)` is an **authored table** (59-90/h), read off BalanceMatrix M1's clock
@@ -1126,7 +1127,9 @@ FavorPerMinute = 40 (admin Tune tab)                                           f
 
 ```
 fill      = source * fillRate                         applied ONCE, in AddBlessing
-fillRate  = 2 while a Blessing booster rune is held, else 1   (0.197.0); charisma (BL-283) will MULTIPLY it
+fillRate  = rune * charismaFill                         (BlessingFillRate; x4 with both at full)
+rune      = 2 while a Blessing booster rune is held, else 1                            (0.197.0)
+charismaFill = 1 + 0.1 * floor(currentCharisma / 100)       1.0 ... 2.0                (0.198.0, below)
 source    kill that paid EXP (not a boss)   +0.1
           each second in combat             +1/60     (1%/min; "in combat" = IsInCombat, 30 s window)
           each Favor stage a drain crosses  +8
@@ -1153,6 +1156,22 @@ keep-rune   held (1 h / 2 h): a non-boss kill does not drain the Favor (so no st
 booster     held (1 h / 2 h): Blessing fillRate x2, every source
 restore pot + 2500 Favor (clamp 20000), refused when full; reuse 3600 s WALL CLOCK, saved on the character
 subclass box  both 1 h runes + 4 restore potions; paid while boxesGiven < subclasses held (once per slot, ever)
+```
+
+### Charisma (`BL-283`, 0.198.0)
+
+`Game.Shared/Charisma.cs` + `GameLoopService.HandleLike` / `CharismaCurrent`.
+
+```
+recommend   +10 to the target's ring slot for today, +10 lifetime; from the giver's budget of 20/day
+            refused: yourself, same account, giver level < 20, that giver already gave today,
+                     target already received 10 today        (an offline refusal refunds the point)
+ring        30 daily totals, newest first; each UTC midnight drops the oldest (catch-up max 30)
+current     = min(1000, sum of the ring)         capped when READ, never by refusing   full on day 10
+lifetime    = everything received, minus penalties, floor 0        the board + the #1 title "Beloved"
+effect      Blessing charismaFill above, and nothing else (no EXP/SP term)
+penalties   LIFETIME only: PK kill -karma*0.01; chatban 20 / jail 100 / kick 250 per started hour
+            a ban zeroes lifetime AND the ring
 ```
 
 ---
