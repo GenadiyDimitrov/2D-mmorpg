@@ -7,11 +7,48 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.199.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.200.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-24 (latest) — 0.199.0: the rarity collapse (`BL-272` part 1, step 6 of the rework order)
+## 2026-09-24 (latest) — 0.200.0: essence (`BL-273` part 1, step 7 of the rework order)
+
+> *"breaking common or even mythic darksteel gives you 'Darksteel essence' ... acquired only by breaking full
+> items -> so not mindlessly selling in the vendor"*
+
+**Breaking gear now gives its grade's ESSENCE, and nothing else.** There are five: **Darksteel / Cobalt /
+Bloodsteel / Adamantine / Soulcrystal Essence** (T40 / T52 / T61 / T76 / T80). The old `BL-22` roll (rarity →
+material rarity, grade → quantity) is deleted, and that closes 0.199.0's hole where a shop-bought Mythic broke
+into Mythic materials.
+
+- **The amount is an authored table, one cell per tier × slot, never computed from a price** (*"changing prices
+  later should not change the essence amount"*). A **Mythic** breaks for its full price-worth: the 2H is **2000 /
+  2000 / 4000 / 7000 / 10000** (T61 and T76 ruled today from the `--craft-cost` placeholders), and every other
+  slot follows its price share (T40: 1H 1800, body 1200, necklace 1000, helm/shield 667, gloves/boots 400,
+  earring 333, ring 167). A **Common** breaks for **70% of its own price**, ruled today: its price is ×0.225, so
+  a T40 Common 2H gives **315** and a ring 26. The full table is in `docs/Formulas.md`.
+- **T1 and T20 gear cannot be broken** (ruled today): the essences start at D. Their Break button is gone.
+- **A shattered enchant leaves essence.** A Normal scroll that fails `+N → N+1` returns **N × 10%** of the
+  item's break value (+3 = 30%, +10 = 100%, +15 = 150%). Greater and Safe scrolls never destroy the item, so
+  they never pay. A bound (unsellable) piece pays nothing, the same rule breaking has.
+- **No vendor sells essence.** It sells for 1/25 of the gold it stands for: D 171, C 540, B 600, A 685, S 2,400
+  (a T40 Mythic 2H sells for 857k, breaks into 2000 essence, and that essence sells for 342k).
+- Nothing uses essence yet. Recipes start asking for it in step 10, the T52 essence shop is step 8, and the
+  direct T76/T80 essence drop is step 12.
+- Fixed on the way: when the bag was too full to hold the result of a break, the piece was put back as a
+  **fresh** item, losing its enchant, attribute and lock. The same row is put back now.
+
+📊 **Measured (`--craft-cost`, before → after):** essence for a T40 2H craft costs **13.8h → 3.2h** (T52 11.9 →
+2.8, T61 13.5 → 3.1), because a Common now breaks for its real price instead of the "20× cheaper" guess. That
+brings the per-success times back to **exactly the numbers you settled in §2.2 #10**: T40 **17h**, T52 **28h**,
+T61 **59h**; a full character 70h / 116h / 241h. T76/T80 still read "never" (no essence source until step 12).
+BalanceMatrix's **M13** (the `BL-22` salvage budget) is deleted: it measured a faucet that no longer exists.
+
+No `game.db` delete for this version (no new column); the one owed since 0.199.0 still stands. **New APK
+needed** (the Break button, its label and the dialog read the shared table). SmokeTest: 7 new checks pass,
+including a real break on the server (315 essence); the same 3 pre-existing crafting FAILs.
+
+## 2026-09-24 — 0.199.0: the rarity collapse (`BL-272` part 1, step 6 of the rework order)
 
 > *"equipment will have common equip items and normal (current mythic) items -> no longer in between"*
 

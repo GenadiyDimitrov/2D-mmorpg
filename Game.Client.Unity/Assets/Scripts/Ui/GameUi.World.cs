@@ -2235,7 +2235,7 @@ namespace Game.Client
                 // confirmation (owner). Never for quest items, nor WORN gear (unequip it first).
                 //
                 // `BL-244` — two modes share this slot. DEL bins; BRAKE breaks down, and is offered
-                // only on a piece `Crafting.Disassemble` actually salvages: a Brake button on a potion
+                // only on a piece `Crafting.BreakYield` actually breaks: a Brake button on a potion
                 // would be a tap that does nothing, which is the same foot-gun as one that does the
                 // wrong thing. A row with no salvage simply shows no fast button in Brake mode.
                 // `BL-239` closes `BL-244`'s open clause — *"a locked item ignores both"*. The fast
@@ -2247,7 +2247,7 @@ namespace Game.Client
                     && (def == null || def.Slot != EquipSlot.QuestItem))
                 {
                     bool brake = _bagFastMode == BagFastMode.Brake;
-                    bool canBrake = def != null && Crafting.Disassemble(def) != null;
+                    bool canBrake = def != null && Crafting.BreakYield(def) != null;
                     if (!brake || canBrake)
                     {
                         var act = brake

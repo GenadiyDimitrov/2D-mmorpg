@@ -256,6 +256,24 @@ Check("server pushed the warehouse on login", a.Ware is not null);
               Math.Abs(GroupSum(MobCatalog.GearDrops(L, MobRank.Boss), MobCatalog.GroupBossGear) - 1f) < 1e-5
               && MobCatalog.GearDrops(L, MobRank.Boss).All(r => ItemCatalog.Get(r.ItemId) is { Rarity: ItemRarity.Mythic })));
 
+    // `BL-273` part 1 (0.200.0): breaking gives the GRADE's essence from an AUTHORED table. A Mythic breaks
+    // for its full price-worth, a Common for 70% of its own price; T1/T20 cannot be broken.
+    Check("a T40 2H Mythic breaks for 2000 Darksteel Essence, its Common for 315",
+          Crafting.BreakYield(ItemCatalog.Get("sword2h_t40")) is { EssenceId: "essence_d", Qty: 2000 }
+          && Crafting.BreakYield(ItemCatalog.Get("sword2h_t40_common")) is { EssenceId: "essence_d", Qty: 315 });
+    Check("a T80 2H Mythic breaks for 10000 Soulcrystal Essence",
+          Crafting.BreakYield(ItemCatalog.Get($"sword2h_t{ItemCatalog.SGradeLevel}")) is { EssenceId: "essence_s", Qty: 10000 });
+    Check("T1 and T20 gear cannot be broken (no essence below D)",
+          Crafting.BreakYield(ItemCatalog.Get("sword2h_t20")) is null && Crafting.BreakYield(ItemCatalog.Get(ItemCatalog.NewbieSword1H)) is null);
+    Check("every T40+ gear piece breaks into something",
+          ItemCatalog.AllItems.Where(d => Crafting.IsGearSlot(d.Slot) && d.ItemLevel >= 40).All(d => Crafting.BreakYield(d) is not null));
+    Check("a shattered +3 returns 30% of the break value, a +15 150%",
+          Crafting.ShatterYield(ItemCatalog.Get("sword2h_t40"), 3)?.Qty == 600
+          && Crafting.ShatterYield(ItemCatalog.Get("sword2h_t40"), 15)?.Qty == 3000);
+    Check("essence is unbuyable and sells for 1/25 of its worth",
+          Crafting.EssenceIds.All(id => ItemCatalog.Get(id) is { BuyPriceOverride: -1 } e
+              && e.SellPriceOverride == e.Value / Crafting.EssenceSellDivisor));
+
     // The "(Lesser)" line is GONE — it became the low QUALITIES of the real ladder.
     int lesser = ItemCatalog.AllItems.Count(d => d.Name.Contains("(Lesser)")
                                                  && d.Slot is EquipSlot.Weapon or EquipSlot.Armor
@@ -877,6 +895,22 @@ if (matStack is not null)
     Check("two deposits of one material MERGE into a single bank row", matRows == 1, $"rows {matRows}");
     Check("the merged bank row keeps the full quantity", matTotal >= 8, $"qty {matTotal}");
 }
+
+// `BL-273` part 1: BREAK a real piece on the server and get its essence back.
+await a.Hub.SendAsync("DebugGive", "sword2h_t40_common", 1);
+await a.Settle();
+var toBreak = a.Inv?.Items.FirstOrDefault(i => i.DefId == "sword2h_t40_common" && !i.Equipped);
+int essBefore = a.Inv?.Items.Where(i => i.DefId == "essence_d").Sum(i => i.Quantity) ?? 0;
+if (toBreak is not null)
+{
+    await a.Hub.SendAsync("DisassembleItem", toBreak.InstanceId);
+    await a.Settle();
+}
+int essAfter = a.Inv?.Items.Where(i => i.DefId == "essence_d").Sum(i => i.Quantity) ?? 0;
+Check("breaking a T40 Common 2H on the server gives 315 Darksteel Essence and consumes it",
+      toBreak is not null && essAfter - essBefore == 315
+      && a.Inv?.Items.Any(i => i.InstanceId == toBreak.InstanceId) == false,
+      $"essence {essBefore} -> {essAfter}");
 
 // -------------------------------------------------------------------------------------------
 // 4d. BUFFS BEFORE THE RELOG. Buffs used to die on every logout because nothing saved them

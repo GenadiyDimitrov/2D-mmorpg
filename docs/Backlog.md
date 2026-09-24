@@ -272,7 +272,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-264` | ❓ | **NO CSV SAYS WHICH BUFFS FIGHT EACH OTHER** — from `mage 1st` you cannot tell the three Mights are one family. A generated `FAMILY` + `RANK` column, checked like every other; §2 the RACE cell nothing verifies | skills |
 | `BL-270` | 🔵 | A vertical skill bar, or a wheel, for hand-held play | client |
 | `BL-272` | 🟡 | **RARITY COLLAPSE — Common + Mythic only** for equipment (part 1 built 0.199.0; shops = part 2) — [design/Rework-2026-09-23.md](design/Rework-2026-09-23.md) §2.1 | items |
-| `BL-273` | ❓ | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05` (archived) — §2.2; ✅ no profession lock | items |
+| `BL-273` | 🟡 | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05` (archived) — §2.2; ✅ no profession lock; 🟢 part 1 (essence) built 0.200.0 | items |
 | `BL-274` | ❓ | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3 | items |
 | `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
 | `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
@@ -2276,6 +2276,17 @@ will break all others"*): 1H 4/5, body 3/5, helmet/shield 2/5, gloves/boots 1/5,
 ring 0.5/5. Every per-slot number (mats, essence, recipe drop rate) is an **authored table**, one cell per tier
 × slot. Rings/earrings use Nightsilver + metal; the necklace uses Nightsilk + thread. Small-slot recipes drop
 more often at T76/T80 (table in the design doc).
+
+🟢 **Part 1 BUILT, 0.200.0 (2026-09-24, step 7 of §7): ESSENCE.** Breaking gear gives its grade's essence only
+(Darksteel / Cobalt / Bloodsteel / Adamantine / Soulcrystal); the `BL-22` mats roll is deleted. Amounts are
+authored literals (`Crafting.MythicBreak` / `CommonBreak`, table in `docs/Formulas.md`). A shattered +N (Normal
+scroll) pays N×10%; essence is unbuyable and sells at worth ÷ 25. ✅ **Ruled while building (2026-09-24):**
+T61 / T76 Mythic 2H break for **4000 / 7000**; a Common breaks for **70% of its OWN price** (×0.225 × 0.7 of the
+Mythic cell, so a T40 Common 2H = 315, not the "20× cheaper" 70); **T1/T20 gear cannot be broken**. Measured:
+`--craft-cost` per success is back on T40 17h / T52 28h / T61 59h. ⚠ Essence is rarity **Common**, so once it
+DROPS (step 12) a material pickup filter above Common would skip it; decide it there.
+**Still open: part 2 = step 9** (becoming a crafter, recipe %, slots) **and part 3 = step 10** (Nightsilver /
+Nightsilk, the Volcanic Bar, the per-tier × per-slot recipe tables, where recipes start to spend essence).
 
 ## `BL-274` ❓ PER-MOB DROP TABLES
 

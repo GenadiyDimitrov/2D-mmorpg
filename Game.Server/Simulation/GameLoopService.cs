@@ -2806,6 +2806,16 @@ public class GameLoopService : BackgroundService
                 player.Inventory.Remove(target);
                 destroyed = true;
                 outcome = $"{targetDef.Name} shattered!";
+                // `BL-273`: a shattered +N leaves N × 10% of its break value as essence. Only an item a
+                // vendor would buy pays out, the same gate breaking has, so a bound piece is not laundered.
+                if (target.Sellable(targetDef)
+                    && Crafting.ShatterYield(targetDef, target.Enchant) is Crafting.EssenceYield shards)
+                {
+                    string essName = ItemCatalog.Get(shards.EssenceId)?.Name ?? shards.EssenceId;
+                    outcome += AddItem(player, shards.EssenceId, shards.Qty, rollAttributes: false)
+                        ? $" Recovered {shards.Qty} x {essName}."
+                        : $" No room for the {essName}; it is lost.";
+                }
                 break;
             case EnchantResult.Reset:
                 target.Enchant = 0;
@@ -18957,22 +18967,6 @@ public class GameLoopService : BackgroundService
         SaveEntity(player);
     }
 
-    /// <summary>Break one piece of gear down into crafting materials (`BL-22`).
-    ///
-    /// <para>His spec is two clauses and both are in <see cref="Crafting.Disassemble"/>, not here:
-    /// *"rarity for mats rarity, grade for mats ammount"*. This method is only the transaction —
-    /// what may be broken, and what the player loses by doing it.</para>
-    ///
-    /// <para>🔑 **"U give up gold to get mats."** That is the entire economic design, and it needs no
-    /// code: the item is consumed, and it is the same item that would otherwise have been sold. Nothing
-    /// pays gold here, and nothing should — the moment salvage also paid something, it would stop being
-    /// a choice and become the strictly better option.</para>
-    ///
-    /// <para>⚠ The gates are deliberately the SELLING gates, not new ones. If a vendor would not buy it,
-    /// this will not eat it: an EQUIPPED piece, and anything the instance itself marks unsellable (a
-    /// bound newbie loaner, the Rune of Sinners). Otherwise "unsellable" would have become a loophole
-    /// that launders a bound item into tradable materials, which is the one thing those tags exist to
-    /// prevent. His *"trash"* means gear you were going to vendor.</para></summary>
     // ===== `BL-239`: THE ITEM LOCK =================================================================
     //
     // Owner, 2026-09-16: *"we need a lock on items not to show in sell window nor their del/dismantle
@@ -19106,6 +19100,18 @@ public class GameLoopService : BackgroundService
         SendInventory(player);
     }
 
+    /// <summary>Break one piece of gear into its grade's ESSENCE (`BL-273` part 1). What and how much is
+    /// <see cref="Crafting.BreakYield"/>'s authored table; this method is only the transaction. (Until
+    /// 0.200.0 it paid crafting materials by rarity, the `BL-22` roll, which is gone.)
+    ///
+    /// <para>🔑 **Breaking and selling are different choices**: *"selling items to make money / breaking to
+    /// craft"*. Nothing pays gold here, and nothing should.</para>
+    ///
+    /// <para>⚠ The gates are deliberately the SELLING gates, not new ones. If a vendor would not buy it,
+    /// this will not eat it: an EQUIPPED piece, and anything the instance itself marks unsellable (a
+    /// bound newbie loaner, the Rune of Sinners). Otherwise "unsellable" would become a loophole that
+    /// launders a bound item into tradable essence, which is the one thing those tags exist to
+    /// prevent.</para></summary>
     private void HandleDisassembleItem(DisassembleItemCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
@@ -19124,33 +19130,32 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(player, $"{item.Name(def)} can't be broken down.");
             return;
         }
-        if (Crafting.Disassemble(def) is not Crafting.Salvage salvage)
+        if (Crafting.BreakYield(def) is not Crafting.EssenceYield yield)
         {
-            SendSystemToEntity(player, $"{item.Name(def)} yields no materials.");
+            SendSystemToEntity(player, $"{item.Name(def)} yields no essence.");
             return;
         }
 
-        string matId = Crafting.MaterialId(salvage.Type, salvage.Rarity);
-        string matName = Crafting.MaterialName(salvage.Type, salvage.Rarity);
+        string essName = ItemCatalog.Get(yield.EssenceId)?.Name ?? yield.EssenceId;
 
-        // Consume ONE first, so the freed slot is available to the materials. Gear is never stackable,
+        // Consume ONE first, so the freed slot is available to the essence. Gear is never stackable,
         // so this is a row removal; the Quantity branch is defensive, matching every other consumer.
-        if (item.Quantity > 1) item.Quantity--; else player.Inventory.Remove(item);
+        bool rowRemoved = item.Quantity <= 1;
+        if (rowRemoved) player.Inventory.Remove(item); else item.Quantity--;
 
-        if (!AddItem(player, matId, salvage.Qty, rollAttributes: false))
+        if (!AddItem(player, yield.EssenceId, yield.Qty, rollAttributes: false))
         {
-            // The bag was full even after the piece came out of it — the materials are a different
-            // stack. Put the item back rather than destroying it for nothing.
-            AddItem(player, item.DefId, 1, rollAttributes: false);
-            SendSystemToEntity(player, "Not enough room for the materials.");
+            // The bag was full even after the piece came out of it. Put the SAME row back (a fresh
+            // AddItem by def id would drop its enchant, attribute and lock).
+            if (rowRemoved) player.Inventory.Add(item); else item.Quantity++;
+            SendSystemToEntity(player, "Not enough room for the essence.");
             SendInventory(player);
             return;
         }
 
         SendInventory(player);
         SaveEntity(player);
-        SendSystemToEntity(player,
-            $"Broke down {item.Name(def)} into {salvage.Qty} x {matName}.");
+        SendSystemToEntity(player, $"Broke down {item.Name(def)} into {yield.Qty} x {essName}.");
     }
 
     private void HandleOpenBox(OpenBoxCmd cmd)

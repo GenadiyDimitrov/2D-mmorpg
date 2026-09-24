@@ -1451,9 +1451,9 @@ public static class ItemCatalog
         // `ItemRarity.Mythic`, with no exception**, and `RewardRune` no longer takes a rarity.
         // What tells a +10% SP rune from a +100% one is its NAME and its rung, which is what he meant
         // by "different" — not the colour of the line in the bag.
-        // ⚠ Safe to sweep: rarity feeds crafting recipes, salvage and the shop ladder, but all three
+        // ⚠ Safe to sweep: rarity feeds crafting recipes, breaking and the shop ladder, but all three
         // gate on `ItemLevel > 0` and a GEAR slot first (`Recipes.FinishedItemRecipes`,
-        // `Crafting.Disassemble`, `ShopCatalog`), and a rune has ItemLevel 0. Pricing is pinned by
+        // `Crafting.BreakYield`, `ShopCatalog`), and a rune has ItemLevel 0. Pricing is pinned by
         // `BuyPriceOverride: -1` / `SellPriceOverride: 0` / `Value: 0`, so `RarityPriceMul` never runs
         // on one. The change is display and sort order only. ⚠ The **Rune of Tincture** is NOT swept:
         // it is `EquipSlot.Consumable` with a real 40 000 `Value`, so raising it would move its vendor
@@ -2082,6 +2082,7 @@ public static class ItemCatalog
         list.AddRange(tieredGear);
         list.AddRange(CommonCopies(tieredGear));
         list.AddRange(Materials());
+        list.AddRange(Essences());
         list.AddRange(RecipeBooks(tieredGear));
         // The tutorial chain's BOUND copies — the 30-day Newbie loaner kit and the completion
         // consumables. Generated last, off the finished list, so a clone always mirrors the real
@@ -2115,6 +2116,27 @@ public static class ItemCatalog
                     Crafting.MaterialName(type, rarity),
                     EquipSlot.Material, ItemGrade.F, rarity,
                     Value: MaterialValue(rarity), NoAttributes: true);
+    }
+
+    /// <summary>The five grade ESSENCES (`BL-273` part 1): what breaking gear gives
+    /// (<see cref="Crafting.BreakYield"/>). Stackable and tradable; <b>no vendor sells one</b> (*"no vendor
+    /// sells essence"*, so it is unbuyable), and a vendor buys it back at 1/25 of its gold worth, the worst
+    /// of the three things a broken item could have become.
+    /// ⚠ Rarity is Common for all five: it is a grade material, not a rarity ladder. When essence starts to
+    /// DROP (`BL-274` step 12), a pickup filter set above Common would skip it; decide that there.</summary>
+    private static IEnumerable<ItemDef> Essences()
+    {
+        for (int g = 0; g < Crafting.EssenceIds.Length; g++)
+        {
+            int worth = Crafting.EssenceGoldWorth[g];
+            yield return new ItemDef(Crafting.EssenceIds[g],
+                $"{GradeTheme(Crafting.EssenceItemLevels[g])} Essence",
+                EquipSlot.Material, ItemGrade.F, ItemRarity.Common,
+                Value: worth, BuyPriceOverride: -1, SellPriceOverride: worth / Crafting.EssenceSellDivisor,
+                NoAttributes: true,
+                Description: $"Broken down from {TierLetter(Crafting.EssenceItemLevels[g])}-grade gear. "
+                           + "The grade's crafting essence; no merchant sells it.");
+        }
     }
 
     /// <summary>Roughly ×5 a rung, which is the shape of the refine cost (7 mats in, 1 out) plus a margin.

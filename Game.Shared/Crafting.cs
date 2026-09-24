@@ -222,76 +222,126 @@ public static class Crafting
     }
 
     // =====================================================================================
-    //  DISASSEMBLY (`BL-22`) — trash becomes crafting materials instead of gold.
+    //  ESSENCE (`BL-273` part 1, 0.200.0) — breaking gear gives its GRADE's essence, nothing else.
     // =====================================================================================
+    //
+    // His rule (2026-09-23, design doc §2.4): *"breaking common or even mythic darksteel gives you
+    // 'Darksteel essence' ... and crafting to require also this essence that is aquired only by breaking
+    // full items -> so not mindlessly selling in the vendor"*. It replaced the `BL-22` disassembly roll
+    // (rarity → material rarity, grade → quantity), which is deleted outright, not kept beside it.
+    //
+    // 🔑 THE AMOUNT IS AUTHORED, NEVER COMPUTED. *"changing prices later should not change the essence
+    //    amount"*. The tables below were written ONCE (0.200.0) from the prices of that day
+    //    (`ItemCatalog.TieredGearBasePrice`) and are literals on purpose: retuning a price must not move a
+    //    single cell here. Nothing reads a price to produce them.
+    //
+    // How they were written, so the next cell can be written the same way:
+    //   * a Mythic 2H is the anchor per grade: T40 2000 / T52 2000 / T80 10000 are his; T61 4000 / T76
+    //     7000 are the `--craft-cost` placeholders, ruled 2026-09-24;
+    //   * every other slot is that anchor × its price share inside the grade (1H .9, body .6, helm/shield
+    //     1/3, gloves/boots .2, necklace .5, earring 1/6, ring 1/12), rounded half away from zero;
+    //   * a COMMON breaks for 70% of ITS OWN price (ruled 2026-09-24), and its price is 0.225 × the Mythic,
+    //     so a Common cell is the Mythic cell × 0.1575. T76/T80 have no Commons (their essence DROPS, step 12).
+    //
+    // ⚠ F and E gear (T1 / T20) CANNOT be broken (ruled 2026-09-24): the five essences are D..S, and a
+    //   Ferrite or Electrum piece is sold, not broken.
 
-    /// <summary>What one item breaks down into, or null if it cannot be broken down at all.</summary>
-    public readonly record struct Salvage(MaterialType Type, ItemRarity Rarity, int Qty);
+    /// <summary>The five grade essences, index 0 = D (Darksteel) … 4 = S (Soulcrystal). The id is stable;
+    /// the display name is "{GradeTheme} Essence".</summary>
+    public static readonly string[] EssenceIds =
+        { "essence_d", "essence_c", "essence_b", "essence_a", "essence_s" };
 
-    /// <summary>How many materials a piece of gear yields, indexed by its crafting rung
-    /// (<see cref="GearCraftLevel"/>): index 0 = F, then E · D · C · B · A · S.
-    ///
-    /// 🔑 This is his *"grade for mats ammount"* half, and it is the ONLY knob that sets how much
-    /// disassembly is worth. The rarity half is free (an item's rarity IS the material's rarity), so
-    /// every question about whether `BL-22` is too generous is a question about this one array.
-    ///
-    /// ⚠ THE BUDGET IS THE CONSTRAINT, not the shape of the curve. His ruling: *"now as 347h for fully
-    /// geared if we add the disassembly this should not go to 20h .. 10~20% decrease in time should be
-    /// ok"*. These numbers were TUNED against `tools/BalanceMatrix` M13, not derived; changing one
-    /// means re-running the matrix, not re-reasoning. As measured (2026-08-14):
-    /// <code>
-    ///   E  -3%   D  -10%   C  -18%   B  -0%   A  -0%   S  -0%
-    /// </code>
-    ///
-    /// <para>🔴 **S DOES NOT MOVE, AND NO VALUE IN THIS ARRAY CAN MAKE IT.** His mapping is "rarity for
-    /// mats rarity", so salvage only ever pays the rarity of the gear that DROPS — and gear rarity is
-    /// capped at **Epic** for both normal mobs and elites (<c>MobCatalog.EliteGearRates</c>); only a
-    /// BOSS drops Legendary or Mythic gear, at 0.09 kills/h. The A and S recipes bind on **Legendary**,
-    /// which salvage therefore never produces. Measured rather than argued: at a uniform 20 here, E/D/C
-    /// collapse to -24/-39/-72% while A and S still move 0.00%. It is the RARITY mapping that binds,
-    /// not the quantity. M13 prints the finding and his three options; option 1 (accept it — a mid-game
-    /// feature) is what ships, because the other two change things he did not ask to change.</para></summary>
-    public static readonly int[] SalvageQtyByRung = { 0, 2, 3, 2, 3, 4, 6 };
+    /// <summary>The item level each essence is named after (its <see cref="ItemCatalog.GradeTheme"/>).</summary>
+    public static readonly int[] EssenceItemLevels = { 40, 52, 61, 76, 80 };
 
-    /// <summary>Which material a piece of gear is "made of". Deliberately the same flavor the crafting
-    /// professions already use (<see cref="RefinerOf"/>) rather than a new table: a smith's blade comes
-    /// apart into Ingots, an armourer's plate into Leather, a jeweler's ring into Gems. Taking a thing
-    /// apart should return the stuff its own maker works in.</summary>
-    private static MaterialType? SalvageTypeOf(ItemDef def) => def.Slot switch
+    /// <summary>The GOLD one essence is worth: the yardstick the break tables were authored against (a
+    /// Mythic 2H's price ÷ its break amount, 0.200.0 prices). It is the essence's <c>Value</c>, and it is
+    /// never a shop price: *"no vendor sells essence"*. It sells for <see cref="EssenceSellDivisor"/>th of
+    /// this, which makes selling the essence the worst of the three things a broken item could become.</summary>
+    public static readonly int[] EssenceGoldWorth = { 4_286, 13_500, 15_000, 17_143, 60_000 };
+
+    /// <summary>*"essence sells at /25"*.</summary>
+    public const int EssenceSellDivisor = 25;
+
+    /// <summary>Which essence grade an item level breaks into, or -1 for F/E (no essence).</summary>
+    public static int EssenceGrade(int itemLevel) => itemLevel switch
     {
-        EquipSlot.Weapon => MaterialType.Ingot,
-        EquipSlot.Shield => MaterialType.Ingot,
-        EquipSlot.Armor  => def.Weight == ArmorWeight.Robe ? MaterialType.Thread : MaterialType.Leather,
-        EquipSlot.Jewel  => MaterialType.Gem,
-        _ => null,
+        >= 80 => 4, >= 76 => 3, >= 61 => 2, >= 52 => 1, >= 40 => 0, _ => -1,
     };
 
-    /// <summary>Break one item down into crafting materials (`BL-22`) — *"rarity for mats rarity, grade
-    /// for mats ammount"*. Returns null for anything that cannot be salvaged.
-    ///
-    /// <para>🔑 **You give up gold to get mats.** His words, and the whole shape of the feature: this is
-    /// an ALTERNATIVE to selling, not a bonus on top of one. The item is consumed either way; the
-    /// choice is which currency you take. That is also why nothing here scales with the item's Value —
-    /// pricing salvage against gold would make the better-selling piece also the better salvage, and
-    /// there would be no decision left to make.</para>
-    ///
-    /// <para>The RARITY mapping is one-to-one and needs no table: a Rare sword yields Rare Ingots. It
-    /// is what makes the feature self-balancing at the top — Mythic materials come only from Mythic
-    /// gear, which is exactly as scarce as Mythic gear is.</para>
-    ///
-    /// <para>⚠ F-grade gear (rung 0) yields NOTHING, on the same rule that makes F uncraftable
-    /// (<see cref="GearItemLevels"/>): the newbie kit is not raw material. Untiered gear — anything
-    /// with no ItemLevel, i.e. the quest and debug one-offs — is likewise not salvage.</para></summary>
-    public static Salvage? Disassemble(ItemDef? def)
+    // Column order of the two tables: 2H, 1H, body, helm/shield, gloves/boots, necklace, earring, ring.
+    private static readonly int[][] MythicBreak =
     {
-        if (def is null) return null;
-        if (SalvageTypeOf(def) is not MaterialType type) return null;
-        if (def.ItemLevel <= 0) return null;
-        int rung = GearCraftLevel(def.ItemLevel);
-        if (rung <= 0) return null;                       // F is not raw material
-        int qty = SalvageQtyByRung[Math.Clamp(rung, 0, SalvageQtyByRung.Length - 1)];
-        if (qty <= 0) return null;
-        return new Salvage(type, def.Rarity, qty);
+        new[] {  2000, 1800, 1200,  667,  400, 1000,  333, 167 },   // T40 Darksteel
+        new[] {  2000, 1800, 1200,  667,  400, 1000,  333, 167 },   // T52 Cobalt
+        new[] {  4000, 3600, 2400, 1333,  800, 2000,  667, 333 },   // T61 Bloodsteel
+        new[] {  7000, 6300, 4200, 2333, 1400, 3500, 1167, 583 },   // T76 Adamantine
+        new[] { 10000, 9000, 6000, 3333, 2000, 5000, 1667, 833 },   // T80 Soulcrystal
+    };
+
+    private static readonly int[][] CommonBreak =
+    {
+        new[] { 315, 284, 189, 105,  63, 158,  53, 26 },   // T40
+        new[] { 315, 284, 189, 105,  63, 158,  53, 26 },   // T52
+        new[] { 630, 567, 378, 210, 126, 315, 105, 53 },   // T61
+    };
+
+    /// <summary>Which column of the break tables a piece of gear reads, or -1 if it is not gear.</summary>
+    private static int BreakColumn(ItemDef def) => def.Slot switch
+    {
+        EquipSlot.Weapon => def.WeaponType.IsTwoHanded() ? 0 : 1,
+        EquipSlot.Shield => 3,
+        EquipSlot.Armor => def.ArmorSlot switch
+        {
+            ArmorSlot.Body => 2,
+            ArmorSlot.Head => 3,
+            ArmorSlot.Gloves or ArmorSlot.Boots => 4,
+            _ => -1,
+        },
+        EquipSlot.Jewel => def.JewelType switch
+        {
+            JewelType.Necklace => 5,
+            JewelType.Earring => 6,
+            JewelType.Ring => 7,
+            _ => -1,
+        },
+        _ => -1,
+    };
+
+    /// <summary>What breaking an item gives: an essence id and how many.</summary>
+    public readonly record struct EssenceYield(string EssenceId, int Qty);
+
+    /// <summary>The authored essence a piece of gear breaks into (`BL-273`), or null if it cannot be
+    /// broken: not gear, untiered (quest/debug one-offs), F/E grade, or a rarity the tables do not
+    /// hold. Mythic reads <c>MythicBreak</c>, Common reads <c>CommonBreak</c>; there is no third rung.
+    /// Server and client both ask this, so the Break button can never offer what the server refuses.</summary>
+    public static EssenceYield? BreakYield(ItemDef? def)
+    {
+        if (def is null || def.ItemLevel <= 0) return null;
+        int grade = EssenceGrade(def.ItemLevel);
+        int col = BreakColumn(def);
+        if (grade < 0 || col < 0) return null;
+        int[][] table = def.Rarity switch
+        {
+            ItemRarity.Mythic => MythicBreak,
+            ItemRarity.Common => CommonBreak,
+            _ => Array.Empty<int[]>(),
+        };
+        if (grade >= table.Length) return null;
+        int qty = table[grade][col];
+        return qty > 0 ? new EssenceYield(EssenceIds[grade], qty) : null;
+    }
+
+    /// <summary>What a SHATTERED enchant leaves behind (`BL-273`, second round): failing +N → N+1 with a
+    /// Normal scroll returns <b>N × 10%</b> of the item's break value (+3→4 = 30%, +10→11 = 100%,
+    /// +15→16 = 150%). *"if u invest in safe enchants just to break it .. good for u"* — enchanting up to
+    /// break is intended. Only a Normal scroll destroys the item, so only that path calls this; Commons
+    /// cannot be enchanted, so in practice it is Mythic only. Rounded down.</summary>
+    public static EssenceYield? ShatterYield(ItemDef? def, int enchantBefore)
+    {
+        if (BreakYield(def) is not EssenceYield y || enchantBefore <= 0) return null;
+        int qty = y.Qty * enchantBefore / 10;
+        return qty > 0 ? y with { Qty = qty } : null;
     }
 
     /// <summary>The odds of one gear craft attempt. Sums to 1: a craft lands on the (Mythic) piece, or

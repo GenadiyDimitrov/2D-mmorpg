@@ -1106,6 +1106,39 @@ group fires, never what the other members pay.
 
 ---
 
+## Breaking gear into essence (`BL-273` part 1, 0.200.0)
+
+Breaking a piece gives its **grade's essence** and nothing else. The amount is an **authored literal**
+(`Crafting.MythicBreak` / `CommonBreak`), written once from the 0.200.0 prices; a later price change moves
+no cell. Columns: 2H · 1H · body · helm/shield · gloves/boots · necklace · earring · ring.
+
+```
+            essence      2H     1H   body  helm/sh  glv/bts  neck  earring  ring
+Mythic T40  Darksteel   2000   1800  1200    667     400    1000    333    167
+Mythic T52  Cobalt      2000   1800  1200    667     400    1000    333    167
+Mythic T61  Bloodsteel  4000   3600  2400   1333     800    2000    667    333
+Mythic T76  Adamantine  7000   6300  4200   2333    1400    3500   1167    583
+Mythic T80  Soulcrystal 10000  9000  6000   3333    2000    5000   1667    833
+Common T40 / T52         315    284   189    105      63     158     53     26
+Common T61               630    567   378    210     126     315    105     53
+```
+
+How the cells were written: the Mythic 2H is the anchor per grade; every other slot = anchor × its price
+share inside the grade (1H .9, body .6, helm/shield ⅓, gloves/boots .2, neck .5, earring ⅙, ring 1/12);
+a Common = 70% of **its own** price = Mythic cell × 0.225 × 0.7. Rounded half away from zero.
+**T1 / T20 (F/E) cannot be broken.** Same gates as selling (not worn, sellable, not locked).
+
+```
+shattered enchant (Normal scroll, +N → N+1 fails)   essence = ⌊ break × N / 10 ⌋     (+3 = 30%, +15 = 150%)
+essence gold worth (its Value, never a shop price)  D 4,286 · C 13,500 · B 15,000 · A 17,143 · S 60,000
+essence sell price                                  worth ÷ 25            (D 171 · C 540 · B 600 · A 685 · S 2,400)
+```
+
+Greater and Safe scrolls never destroy the item, so they never pay essence. No vendor stocks essence.
+`Crafting.BreakYield` · `ShatterYield` · `EssenceGoldWorth`.
+
+---
+
 ## Kill EXP and the Wayfarer's Favor (`BL-277`, 0.195.0)
 
 `GameLoopService.PayKillShare` + `Game.Shared/WayfarerFavor.cs`. Per member of a kill:

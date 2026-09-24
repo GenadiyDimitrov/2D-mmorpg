@@ -1222,17 +1222,17 @@ namespace Game.Client
                 buttons.Add(("Use", () => BeginScrollUse(item, def)));
             }
 
-            // BREAK DOWN (`BL-22`) — *"rarity for mats rarity, grade for mats ammount"*, and *"u give
-            // up gold to get mats"*. Offered on any unworn piece the server would actually accept, and
-            // the label names what you GET, because that is the decision: this or the vendor's gold,
-            // never both. Crafting.Disassemble is the same call the server makes, so the button cannot
-            // promise a yield the handler then refuses.
+            // BREAK DOWN (`BL-273`) — the piece becomes its grade's ESSENCE (*"selling items to make money /
+            // breaking to craft"*). Offered on any unworn piece the server would actually accept, and the
+            // label names what you GET, because that is the decision: this or the vendor's gold, never
+            // both. Crafting.BreakYield is the same call the server makes, so the button cannot promise a
+            // yield the handler then refuses.
             //
             // `BL-239` — when the item is LOCKED both this and Bin stay on the row and do nothing:
             // *"its delete/dismantle button to be [in]active"*. Hiding them would make a locked item
             // look like an item that can't be broken down at all, which is a different statement.
-            if (!item.Equipped && Crafting.Disassemble(def) is Crafting.Salvage salv)
-                buttons.Add(($"Break down ({salv.Qty} {salv.Rarity} {salv.Type})",
+            if (!item.Equipped && Crafting.BreakYield(def) is Crafting.EssenceYield salv)
+                buttons.Add(($"Break down ({salv.Qty} {EssenceName(salv)})",
                              locked ? (Action)(() => SayLocked(def)) : () => ConfirmDisassemble(item, def, salv)));
 
             // Runes and QUEST ITEMS can't be binned (the server refuses both) — don't offer it. B4:
@@ -1548,19 +1548,20 @@ namespace Game.Client
             }
         }
 
-        /// <summary>Confirm breaking a piece down (`BL-22`). It ASKS, like the bin does, because it is
+        /// <summary>Confirm breaking a piece down (`BL-273`). It ASKS, like the bin does, because it is
         /// equally irreversible — there is no buy-back list for something that was never sold — and the
-        /// prompt states the gold being given up, which is the half of his *"u give up gold to get
-        /// mats"* that the player cannot see from the yield alone.</summary>
-        private void ConfirmDisassemble(InventoryItemDto item, ItemDef def, Crafting.Salvage salv)
+        /// prompt states the gold being given up, which the player cannot see from the yield alone.</summary>
+        private void ConfirmDisassemble(InventoryItemDto item, ItemDef def, Crafting.EssenceYield salv)
         {
             var id = item.InstanceId;
             long gold = ItemTag.SellPrice(def, item.SellPriceOverride);
             string cost = gold > 0 ? $"  You give up {gold:N0} {GameConstants.CurrencyName}." : "";
-            Ask($"Break {def.Name} into {salv.Qty} x {Crafting.MaterialName(salv.Type, salv.Rarity)}?{cost}",
+            Ask($"Break {def.Name} into {salv.Qty} x {EssenceName(salv)}?{cost}",
                 "Break down",
                 () => { Boot.DisassembleItem(id); CloseAllItemViews(); });
         }
+
+        private static string EssenceName(Crafting.EssenceYield y) => ItemCatalog.Get(y.EssenceId)?.Name ?? y.EssenceId;
 
         /// <summary>One window now, so closing is one call — but the compare column is collapsed on the
         /// way out so the next item opens at the narrow shape.</summary>
