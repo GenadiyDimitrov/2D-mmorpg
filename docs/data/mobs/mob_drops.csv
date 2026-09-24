@@ -1,0 +1,80 @@
+ID,Name,Level,Type,Specialty,Drops (Common / rare / recipe / part),Base mats (primary / secondary),Metal,Volcanic,Common per kill %,Recipe per kill (normal)
+ridgeback_pup,Ridgeback Pup,1,Animal,-,,,,,,
+fox,Fox,4,Animal,-,,,,,,
+goblin_scout,Goblin Scout,8,Humanoid,-,,,,,,
+ashen_wolf,Ashen Wolf,10,Animal,-,,,,,,
+werewolf,Werewolf,12,Humanoid,-,,,,,,
+hook_spider,Hook Spider,14,Insect,-,,,,,,
+orc_archer,Orc Archer,16,Humanoid,-,,,,,,
+skeleton_grunt,Skeleton Grunt,18,Undead,-,,,,,,
+shield_skeleton,Shield Skeleton,20,Undead,-,,,,,,
+grizzly_bear,Grizzly Bear,22,Animal,-,,,,,,
+cinder_imp,Cinder Imp,24,Demon,-,,,,,,
+watcher_eye,Watcher Eye,26,MagicCreature,-,,,,,,
+lizardman_warrior,Lizardman Warrior,28,Humanoid,-,,,,,,
+marauder_recruit,Marauder Recruit,30,Humanoid,-,,,,,,
+grave_robber_fighter,Grave Robber Fighter,32,Humanoid,-,,,,,,
+mantis_worker,Mantis Worker,32,Insect,-,,,,,,
+medusa,Medusa,34,Humanoid,-,,,,,,
+plunder_beetle,Plunder Beetle,34,Insect,-,,,,,,
+wyrm,Wyrm,35,Dragon,-,,Iron / Gem,,,,
+marsh_mantis_soldier,Marsh Mantis Soldier,37,Insect,-,,Thread / Leather,,,,
+fen_lizardman_archer,Fen Lizardman Archer,39,Humanoid,-,,Iron / Thread,,,,
+dune_orc_archer,Dune Orc Archer,40,Humanoid,Weapons,bow / wand,Iron / Thread,Nightsilver,,1,100% 1/100
+harpy,Harpy,42,Humanoid,SmallArmour,helm / gloves / boots / shield,Iron / Thread,Nightsilk,,6.5,100% 1/100
+ridge_orc_overlord,Ridge Orc Overlord,42,Humanoid,Weapons,blunt1h / duals,Iron / Thread,Nightsilver,,1,100% 1/100
+grave_lich,Grave Lich,44,Undead,SmallArmour,helm / gloves / boots / shield,Thread / Gem,Nightsilk,,6.5,100% 1/100
+fomor_brute,Fomor Brute,45,Humanoid,Weapons,blunt2h,Iron / Thread,Nightsilver,,1,100% 1/100
+marsh_marauder,Marsh Marauder,46,Humanoid,SmallArmour,helm / gloves / boots / shield,Iron / Thread,Nightsilk,,6.5,100% 1/100
+warped_drake,Warped Drake,47,Dragon,Jewellery,necklace / ring / earring,Iron / Gem,Nightsilver,,5.25,100% 1/100
+amber_basilisk,Amber Basilisk,48,Animal,Body,heavy / light / robe,Leather / Wood,Nightsilk,,1.25,100% 1/100
+wildhorn_grunt,Wildhorn Grunt,48,Humanoid,Weapons,sword2h,Iron / Thread,Nightsilver,,1,100% 1/100
+mantis_follower,Mantis Follower,50,Insect,Body,heavy / light / robe,Thread / Leather,Nightsilk,,1.25,100% 1/100
+ravener,Ravener,50,Demon,Jewellery,necklace / ring / earring,Iron / Gem,Nightsilver,,5.25,100% 1/100
+marauder_warrior,Marauder Warrior,51,Humanoid,Weapons,sword1h / staff,Iron / Thread,Nightsilver,,1,100% 1/100
+fallen_angel,Fallen Angel,52,Demon,Weapons,sword1h / duals,Iron / Gem,Nightsilver,,0.2,100% 1/175
+thornback,Thornback,53,Animal,Body,heavy / light / robe,Leather / Wood,Nightsilk,,0.4,100% 1/175
+gaze_hound,Gaze Hound,54,Animal,Body,heavy / light / robe,Leather / Wood,Nightsilk,,0.4,100% 1/175
+ash_orc_soldier,Ash Orc Soldier,55,Humanoid,SmallArmour,helm / gloves / boots / shield,Iron / Thread,Nightsilk,,2.8,100% 1/175
+mirror_ghost,Mirror Ghost,56,Undead,Weapons,sword2h / bow,Thread / Gem,Nightsilver,,0.2,100% 1/175
+mirror_wraith,Hall of Mirrors Wraith,56,Undead,Jewellery,necklace / ring / earring,Thread / Gem,Nightsilver,,2.4,100% 1/175
+dune_orc_porter,Dune Orc Porter,57,Humanoid,Weapons,blunt2h / staff,Iron / Thread,Nightsilver,,0.2,100% 1/175
+aether_wisp,Aether Wisp,58,MagicCreature,Jewellery,necklace / ring / earring,Gem / Wood,Nightsilver,,2.4,100% 1/175
+hollow_one,Hollow One,58,Humanoid,Weapons,blunt1h / wand,Iron / Thread,Nightsilver,,0.2,100% 1/175
+sand_ratman,Sand Ratman,60,Humanoid,SmallArmour,helm / gloves / boots / shield,Iron / Thread,Nightsilk,,2.8,100% 1/175
+valley_treant,Valley Treant,60,Plant,SmallArmour,helm / gloves / boots / shield,Wood / Leather,Nightsilk,,2.8,100% 1/175
+cursed_blade,Cursed Blade,61,Undead,Weapons,sword1h,Thread / Gem,Nightsilver,,0.05,60% 1/250
+bogwood,Bogwood,62,Plant,SmallArmour,helm / gloves / boots / shield,Wood / Leather,Nightsilk,,0.825,60% 1/250
+fen_lizardman,Fen Lizardman,62,Humanoid,Weapons,blunt2h,Iron / Thread,Nightsilver,,0.05,60% 1/250
+obsidian_knight,Obsidian Knight,63,Humanoid,Weapons,duals,Iron / Thread,Nightsilver,,0.05,60% 1/250
+crimson_drake,Crimson Drake,64,Dragon,Jewellery,necklace / ring / earring,Iron / Gem,Nightsilver,,0.713,60% 1/250
+wildhorn_scout,Wildhorn Scout,64,Humanoid,SmallArmour,helm / gloves / boots / shield,Iron / Thread,Nightsilk,,0.825,60% 1/250
+dread_knight,Dread Knight,65,Undead,Jewellery,necklace / ring / earring,Thread / Gem,Nightsilver,,0.713,60% 1/250
+spiteful_ghost,Spiteful Ghost,66,Undead,Jewellery,necklace / ring / earring,Thread / Gem,Nightsilver,,0.713,60% 1/250
+wildhorn_elder,Wildhorn Elder,66,Humanoid,SmallArmour,helm / gloves / boots / shield,Iron / Thread,Nightsilk,,0.825,60% 1/250
+highland_kookaburra,Highland Kookaburra,67,Animal,Body,heavy / light / robe,Leather / Wood,Nightsilk,,0.113,60% 1/250
+highland_buffalo,Highland Buffalo,68,Animal,Body,heavy / light / robe,Leather / Wood,Nightsilk,,0.113,60% 1/250
+highland_buffalo_tamed,Highland Buffalo (Tamed),68,Animal,Body,heavy / light / robe,Leather / Wood,Nightsilk,,0.113,60% 1/250
+dread_archer,Dread Archer,69,Undead,Weapons,bow,Thread / Gem,Nightsilver,,0.05,60% 1/250
+dire_beast,Dire Beast,70,Animal,Body,heavy / light / robe,Leather / Wood,Nightsilk,,0.113,60% 1/250
+revenant_minion,Revenant Minion,71,Demon,SmallArmour,helm / gloves / boots / shield,Iron / Gem,Nightsilk,,0.825,60% 1/250
+redhorn_footman,Redhorn Footman,72,Humanoid,Weapons,wand,Iron / Thread,Nightsilver,,0.05,60% 1/250
+redhorn_elite,Redhorn Elite,73,Humanoid,SmallArmour,helm / gloves / boots / shield,Iron / Thread,Nightsilk,,0.825,60% 1/250
+sunland_orc_scout,Sunland Orc Scout,73,Humanoid,Weapons,blunt1h,Iron / Thread,Nightsilver,,0.05,60% 1/250
+redhorn_recruit,Redhorn Recruit,74,Humanoid,Weapons,sword2h,Iron / Thread,Nightsilver,,0.05,60% 1/250
+sunland_orc_warrior,Sunland Orc Warrior,75,Humanoid,Weapons,staff,Iron / Thread,Nightsilver,,0.05,60% 1/250
+redhorn_soldier,Redhorn Soldier,76,Humanoid,Weapons,sword2h / blunt1h / duals / wand,Iron / Thread,Nightsilver,ash + stone,,20% 1/1000
+sunland_orc_commander,Sunland Orc Commander,76,Humanoid,SmallArmour,helm / gloves / boots / shield,Iron / Thread,Nightsilk,ash + stone,,20% 1/600 / 20% 1/400
+sunland_orc_captain,Sunland Orc Captain,77,Humanoid,Body,heavy / light / robe,Iron / Thread,Nightsilk,,,20% 1/800
+redhorn_general,Redhorn General,78,Humanoid,Weapons,sword1h / blunt2h / bow / staff,Iron / Thread,Nightsilver,,,20% 1/1000
+emberwyrm_drake,Emberwyrm Drake,79,Dragon,Jewellery,necklace / ring / earring,Iron / Gem,Nightsilver,,,20% 1/600 / 20% 1/300 / 20% 1/500
+scarlet_mantis,Scarlet Mantis,80,Insect,Body,heavy / light / robe,Thread / Leather,Nightsilk,ash + stone,,
+wrathborn_demon,Wrathborn Demon,80,Demon,Weapons,sword1h / bow,Iron / Gem,Nightsilver,ash + stone,,
+radiant_scout,Radiant Scout,81,Angel,Weapons,sword2h / wand,Gem / Wood,Nightsilver,,,
+radiant_berserker,Radiant Berserker,82,Angel,Weapons,blunt2h / staff,Gem / Wood,Nightsilver,,,
+radiant_mage,Radiant Mage,82,Angel,Jewellery,necklace / ring / earring,Gem / Wood,Nightsilver,,,
+splinter_mantis_drone,Splinter Mantis Drone,83,Insect,SmallArmour,helm / gloves / boots / shield,Thread / Leather,Nightsilk,,,
+needle_mantis_overseer,Needle Mantis Overseer,84,Insect,SmallArmour,helm / gloves / boots / shield,Thread / Leather,Nightsilk,,,
+splinter_mantis_walker,Splinter Mantis Walker,84,Insect,SmallArmour,helm / gloves / boots / shield,Thread / Leather,Nightsilk,,,
+disciple_of_the_dawn,Disciple of the Dawn,85,Humanoid,Weapons,blunt1h / duals,Iron / Thread,Nightsilver,ash + stone,,
+drake_leader,Drake Leader,85,Dragon,Body,heavy / light / robe,Iron / Gem,Nightsilk,ash + stone,,

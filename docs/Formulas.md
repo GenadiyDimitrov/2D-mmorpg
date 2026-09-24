@@ -1079,31 +1079,58 @@ boss kill     boss group    1.0   × rates   one Mythic piece, any tier group "b
 ```
 
 A Common has the Mythic piece's stats, **no set, no attribute, no enchant**, and costs 0.05 × its Mythic
-(prices below). Below T40 and from T76 up, a normal or elite mob drops **no equipment** until `BL-274`.
-`MobCatalog.GearDrops` · `CommonGearSlotChance` / `CommonGearEliteMul` / `BossGuaranteedPiece`.
+(prices below). Below T40 no creature drops equipment; T76+ has no Commons (it drops essence instead).
+`MobCatalog.CommonGearSlotChance` / `CommonGearEliteMul` / `BossGuaranteedPiece`.
 
 **Healing potions** drop (group "always") only from mobs **level ≤ 40** (`BL-287`,
 `MobCatalog.HealingPotionDropMaxLevel`): Minor 2% + Minor/Healing 1% (Healing from 40). Above that, buy them.
 
-⚠ A template's `Drops` is **not the whole table**. RANK is a property of the spawn, not the template,
-so five layers are added at kill time (`GameLoopService.RollDrop`, mirrored by target-inspect and by
-`DropIndex`): `GearDrops` *replaces* the gear groups, and `EnchantScrollDrops`, `UtilityScrollDrops`
-(return / resurrection, `BL-174`) and `EliteMatDrops` *add* for elites and bosses. Two of them are not
-`DropEntry`s at all and live as tables in `MobCatalog` since `BL-253`:
+**Per-mob drop tables (`BL-274` part 1, 0.206.0).** Every roster creature of 40+ has ONE dealt specialty
+(`MobCatalog.AssignDropProfiles`; readable: `docs/data/mobs/mob_drops.csv`, `--dump-drop-csv`):
 
-* **`RecipeRolls`** — the recipe-book roll. One roll picks one book out of a pool, which no drop group
-  expresses. Since `BL-247` it takes the same `EffectiveRate` × level-gap product as everything above,
-  and its authored numbers are **divided by the `other` group's ×3**, exactly as `EliteMatDrops`
-  authors its rungs, so what they state is the delivered chance at ×1.
-* **`BossPile`** — the guaranteed handful of materials every elite and boss pays, flavoured by
-  `MatFlavor(category).Primary`. 🔴 **It takes NO rate knob** — not the global, not the group, not a
-  Rune of Drop, not the level gap. That is the shape the recipe roll had before `BL-247`; whether it
-  should stay that way is **`BL-262`**.
+```
+deal, per band 40-51 / 52-60 / 61-75 / 76-79 / 80+   jewellery max(1, round(n/7)) · weapons max(3, round(0.4n))
+                                                     (≥1 body and ≥1 small kept) · rest body / small
+who takes what      category affinity first, then FNV hash of id; a weapon carrier takes the line it holds
+weapons             1-3 of the 8 lines (four each in the 5-creature 76-79 band); boot fails on an unsourced kind
+kinds               weapons: its lines · body: heavy/light/robe · small: helm/gloves/boots/shield
+                    · jewellery: necklace/ring/earring
+```
 
-🔑 **`MatFlavor` is the one category → (primary, secondary) material map**, and **only the PRIMARY
-climbs**: both types pay at Uncommon (30+), the primary alone at Rare (60+) and Epic (76+). A type
-that is nobody's primary is therefore unfindable above Uncommon anywhere in the world — which is what
-happened to Wood until `BL-254` gave it to Plant.
+Per kill, what `MobCatalog.CreatureDrops(type, level, rank)` gives (normal; elite multiplier after `|`):
+
+```
+Common (T40-T61)    the slot % above, only its kinds; weapon % ÷ ITS lines, body % ÷ 3       | ×2   group common
+rare full item      1/10,000 a kill, split over its kinds (T40-T61)                           | ×2   group rare
+recipe, per kind    T40 100% 1/100 · T52 100% 1/175 · T61 60% 1/250 · T76 20% slot table B
+                    | T40 1/50 · T52 1/88 · T61 100% 1/250 · T76 40% table A · T80 40% table B  group recipe
+                    table A (2H,1H,body,helm,shield,gloves,boots,neck,earring,ring) 1/500,500,400,300,300,200,200,300,250,150
+                    table B                                                 1/1000,1000,800,600,600,400,400,600,500,300
+part, per kind      1% · 0.5% · 0.25% · 0.1% · 0.1%  (T40…T80)                               | ×4   group mats
+Nightsilver (weapons, jewellery) / Nightsilk (armour), plain rung
+                    0.155 · 0.96 · 7.25 · 23.2 · 42.8  (T40…T80)                             | ×4   group mats
+  higher rungs      1% each: Refined 62+ | 50+ · Rare 76+ | 60+ · Refined Rare 80+ | 76+ · Legendary – | 80+
+base mats (35+)     primary 0.2 + 1.3·clamp((L−40)/50, 0, 1); secondary ×0.5; Iron/Gem ×0.5 | ×10  group mats
+volcanic            ash 0.3 + stone 0.3, the creatures of level exactly 76 / 80 / 85, normals only   group mats
+direct essence      T76 1% × 30-50 A · T80 0.5% × 30-50 S                                    | ×2   group essence
+```
+
+A rate above 1 is a quantity band around it with the chance corrected so chance × mean qty = rate
+(`RateEntry`). **A boss** keeps its category mats, `GearDrops`' guaranteed piece, `BossPile` and
+`RecipeRolls` until step 12; none of the specialty.
+
+⚠ A template's `Drops` is **not the whole table**: `MobCatalog.KillTable(type, level, rank)` is, and it is
+the ONE function the kill roll, target-inspect and `DropIndex` all call. It drops every creature-group row
+and rebuilds `CreatureDrops` at the spawn's own level and rank, then adds `EnchantScrollDrops` and
+`UtilityScrollDrops` (return / resurrection, `BL-174`) for elites and bosses. Two boss layers are not
+`DropEntry`s and live in the kill path:
+
+* **`RecipeRolls`** — the BOSS recipe-book roll (one book out of a pool). It takes the same `EffectiveRate`
+  × level-gap product as everything else, its authored numbers **divided by the `other` group's ×3**.
+* **`BossPile`** — the boss's guaranteed materials, flavoured by `MatFlavor(category).Primary`. 🔴 **It takes
+  NO rate knob** (`BL-262`).
+
+`MatFlavor` is the one category → (primary, secondary) material map.
 
 🔎 **To ask where something drops, don't read these tables** — in game it is the **Drops** window
 (menu → Drops, with predictions, a Type/Rarity/Grade filter tree and a sortable table) or
@@ -1230,8 +1257,9 @@ count            a non-gear craft repeats up to Count (1 … 1000) and stops at 
                  gear is always 1
 recipe items     T40 / T52: 100 · T61: 60, 100 · T76: 20, 40, 60 · T80: 40, 60
 spent per craft  one recipe item of % ≤ learned (gear), pass or fail
-shop recipe      Master sells T40/T52 100% at round(0.10 × piece price)        ⚠ placeholder
-recipe drops     T76/T80: boss 60%, elite 40% (rates are still §3's until BL-274)
+recipe price     round(0.10 × piece price × pct/100): 100% → 10%, 60% → 6%, 20% → 2% (Crafting.RecipePrice);
+                 the Master sells T40/T52 100% at it; vendor pays half
+recipe drops     by specialty (see "Per-mob drop tables"); bosses: 60% at T76/T80 (step 12 retunes)
 generic learn    authored per recipe from the ladder L0 20k · L1 50k · L2 100k · L3 200k · L4 400k · L5 700k · L6 1M
                  · L7 1.5M · L8 2M · L9 3M · L10 4M; char level = the item's tier (a buff's = its class skill's LAST rung)
 learn level      gear: the piece's own item level (T52 recipe at 52)
@@ -1251,7 +1279,7 @@ refine           10 of rung r → 1 of r+1; gate (generic L / char L): →1 L0/4
                  MP 50 · 100 · 150 · 200; no gold; 0 craft points
 alloy            20 gem + 20 iron → 1 (L0/40, MP 50, Value 200)
 volcanic bar     20 ash + 20 stone → 1 (L7/76, MP 200)
-parts            one per KIND per tier (18 × 5 = 90), "{grade} {part}"; Value = the kind's Common price
+parts            one per KIND per tier (18 × 5 = 90), "{grade} {part}"; Value = 1% of the full item's price (Crafting.PartPriceFraction)
 gear 2H @100%    wood + iron 400·(t+1) each · alloy 10·(t+1) · parts 20 · Nightsilver 300/200/150/50/10 ·
                  bars 0/0/0/40/70 · essence 400·(t+1)        (t = 0 … 4 for T40 … T80)
 other slots      authored cells, written from the guide shares 1H 0.8 · body 0.6 · helmet/shield/necklace 0.4 ·

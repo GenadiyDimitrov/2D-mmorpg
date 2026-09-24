@@ -129,6 +129,8 @@ public static class RateConfig
             // groups at x1, because his numbers for them (0.5% / 2% / one piece) are DELIVERED chances.
             ["armor"] = 0.075f, ["accessory"] = 0.075f, ["weapon"] = 0.075f, ["jewel"] = 0.075f,
             ["common"] = 1f, ["boss"] = 1f,
+            // `BL-274` part 1: the rare full item (Q2: its own knob), the recipes and T76/T80 direct essence.
+            ["rare"] = 1f, ["recipe"] = 1f, ["essence"] = 1f,
             ["mats"] = 1f, ["scrolls"] = 1f, ["always"] = 1f, ["other"] = 3f,
         };
 

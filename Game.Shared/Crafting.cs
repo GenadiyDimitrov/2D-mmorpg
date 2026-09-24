@@ -242,9 +242,18 @@ public static class Crafting
     /// tables start at T40.</summary>
     public const int MinCraftedGearLevel = 40;
 
-    /// <summary>What the Master charges for a T40/T52 100% recipe, as a fraction of the item's own buy
-    /// price. ⚠ A placeholder (he ruled that the master sells them, not the price).</summary>
+    /// <summary>A 100% recipe book's price (the Master's T40/T52 shelf, and so its 50% vendor sale) as a fraction
+    /// of its item's own buy price; a lower-% book costs its SHARE of that (owner, 2026-09-24, `BL-274` part 1:
+    /// *"Recipe 100% can be a 10% of its prise .. So a 20% recipe will cost 2%"*). See <see cref="RecipePrice"/>.</summary>
     public const float ShopRecipePriceFraction = 0.10f;
+
+    /// <summary>A recipe book's Value: 10% of its item's price × its own % (100% → 10%, 60% → 6%, 20% → 2%).</summary>
+    public static int RecipePrice(int itemPrice, int percent) =>
+        Math.Max(1, (int)Math.Round(itemPrice * (double)ShopRecipePriceFraction * percent / 100.0));
+
+    /// <summary>A PART's price as a fraction of its full item's buy price (`BL-274` part 1, same reason and same
+    /// pick; owner 2026-09-24: *"Mats should sell for alot less than an actual crafted weapon"*): 20 parts sell for 10% of the item, so selling the heads never beats crafting with them.</summary>
+    public const double PartPriceFraction = 0.01;
 
     /// <summary>The gear tiers whose 100% recipe the Master sells (*"master can sell t40 and t52"*).</summary>
     public static bool MasterSellsRecipeFor(int itemLevel) => itemLevel is 40 or 52;

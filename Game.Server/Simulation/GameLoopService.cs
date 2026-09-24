@@ -16408,27 +16408,12 @@ public class GameLoopService : BackgroundService
         if (mobType.Drops is null || mobType.Drops.Length == 0)
             return;
 
-        // Only entries valid at this mob's level. Independent entries roll on their own; entries
-        // sharing a GroupId > 0 form a mutually-exclusive group (roll once, pick one weighted).
-        var applicable = mobType.Drops.Where(e => e.AppliesAtLevel(mob.Level)).ToList();
-
-        // ELITE and BOSS kills REPLACE the gear half of the table with their own rank row (playtest-14
-        // §3) — the elite column has no Common rung at all, and the boss column is Epic/Legendary/Mythic.
-        // Rank is a property of the SPAWN (the zone assigns it), not of the template, so it can only be
-        // applied here; mats, scrolls and the always-group are untouched and still roll.
-        if (mob.Rank != MobRank.Normal)
-        {
-            applicable.RemoveAll(e => MobCatalog.IsGearGroup(e.GroupId));
-            applicable.AddRange(MobCatalog.GearDrops(mob.Level, mob.Rank));
-            // The enchant-scroll layer ADDS rather than replaces (0.49.0 D1): an elite still rolls the
-            // ordinary scrolls group, and the Greater/Safe types exist nowhere else.
-            applicable.AddRange(MobCatalog.EnchantScrollDrops(mob.Level, mob.Rank));
-            // Same shape, same reason, for the RETURN and RESURRECTION scrolls (`BL-174`): they left
-            // every ordinary creature's always-group and are now authored once against the rank that
-            // earns them. ⚠ These carry GroupAlways, so they JOIN that group rather than adding a new
-            // one — which is what keeps their authored chance an absolute per-kill chance.
-            applicable.AddRange(MobCatalog.UtilityScrollDrops(mob.Level, mob.Rank));
-        }
+        // THE table this kill rolls: the template's level-valid rows, with everything the creature drops
+        // because of what it is REBUILT at the spawn's own level and rank (`BL-274` part 1), plus the rank
+        // layers. ONE function (MobCatalog.KillTable) for the roll, the inspect list and the drop index.
+        // Independent entries roll on their own; entries sharing a GroupId > 0 form a mutually-exclusive
+        // group (roll once, pick one weighted).
+        var applicable = MobCatalog.KillTable(mobType, mob.Level, mob.Rank);
 
         // Everyone who received something this kill (refresh their inventory once at the end).
         var touched = new HashSet<Entity>();
@@ -19918,14 +19903,7 @@ public class GameLoopService : BackgroundService
         string[]? drops = null;
         if (cmd.WithDrops && isMob && t.MobTypeId is not null && MobCatalog.Get(t.MobTypeId).Drops is { } table)
         {
-            var rows = table.Where(d => d.AppliesAtLevel(t.Level)).ToList();
-            if (t.Rank != MobRank.Normal)
-            {
-                rows.RemoveAll(d => MobCatalog.IsGearGroup(d.GroupId));
-                rows.AddRange(MobCatalog.GearDrops(t.Level, t.Rank));
-                rows.AddRange(MobCatalog.EnchantScrollDrops(t.Level, t.Rank));
-                rows.AddRange(MobCatalog.UtilityScrollDrops(t.Level, t.Rank));
-            }
+            var rows = MobCatalog.KillTable(MobCatalog.Get(t.MobTypeId), t.Level, t.Rank);
             string ItemLine(DropEntry d)
             {
                 string name = ItemCatalog.Get(d.ItemId)?.Name ?? d.ItemId;

@@ -272,7 +272,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-264` | ❓ | **NO CSV SAYS WHICH BUFFS FIGHT EACH OTHER** — from `mage 1st` you cannot tell the three Mights are one family. A generated `FAMILY` + `RANK` column, checked like every other; §2 the RACE cell nothing verifies | skills |
 | `BL-270` | 🔵 | A vertical skill bar, or a wheel, for hand-held play | client |
 | `BL-273` | 🟡 | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05` (archived) — §2.2; ✅ no profession lock; 🟢 part 1 (essence) built 0.200.0; 🟢 part 2 (becoming a crafter) built 0.203.0; 🟢 9b (generic-recipe table) + the crafter-points model (5 types, a points budget, 5 respecs) built 0.204.0; 🟢 part 3 (step 10, the materials: Nightsilver/Nightsilk, parts, refines, per-slot tables) built 0.205.0; open = placeholder confirmations only | items |
-| `BL-274` | ❓ | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3 | items |
+| `BL-274` | 🟡 | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3; 🟢 part 1 (step 11, the per-mob tables) built 0.206.0; open = step 12 bosses, step 13 daily recipe quests | items |
 | `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
 | `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
 | `BL-282` | 🟡 | **`BalanceMatrix --craft-cost`** ✅ built + all inputs ruled; only C5 (consumables) left, waits on §2.2 #8 — kills + hours per crafted T40/52/61/76/80 item under the NEW rules, by recipe %; extends M1-M9 | items |
@@ -2322,10 +2322,11 @@ gear can be crafted in between.
 - the nine "basic" buff scrolls = the common line;
 - the volcanic Values (ash/stone 5k, bar 200k);
 - the Nightsilver/Nightsilk Values (20 × 10^rung);
-- a part = its item's Common price. This comes from your note, and step 11 measures what it pays as coin.
+- ~~a part = its item's Common price~~ ✅ **settled in step 11 (0.206.0): a part = 1% of its full item's price**, and a recipe
+  = 10% × its % (your ruling: *"a 20% recipe will cost 2%"*).
 
 
-## `BL-274` ❓ PER-MOB DROP TABLES
+## `BL-274` 🟡 PER-MOB DROP TABLES
 
 §2.3 of the design doc. Each mob drops a few things (1-3 weapon types, or body armour, or small armour;
 wood OR metal OR thread), plus that item's parts, its recipe and a rare Mythic. The refinable-metal
@@ -2356,6 +2357,12 @@ All three kinds (weapon / armour / jewels) stay on bosses. Boss recipe %: T61 10
 shop 100%; T52 shop 100%, normals a low chance, elites higher, **bosses every kill + an item**; T61 normal **60%**,
 elite/boss **100%**; T76 normal **20%**, elite **40%**, boss **60%**, quest **40%**; T80 elite **40%** (was 20%),
 boss **60%**, quest **40%**. Design doc §2.2, 0.203.0 answers #6.
+🟢 **PART 1 (step 11) BUILT 0.206.0** (design doc §2.3 "Step 11 proposal" + "Your answers ... step 11"): the dealt
+specialty (`MobCatalog.AssignDropProfiles`, readable `docs/data/mobs/mob_drops.csv`), `CreatureDrops` (Commons by
+specialty, the rare item 1/10,000 in group "rare", recipes by source in group "recipe", parts, Nightsilver/
+Nightsilk, base mats from 35, volcanic on the 76/80/85 creatures, T76/T80 direct essence 1% / 0.5% × 30-50 in
+group "essence"), and `KillTable`, the one table the roll, inspect and `DropIndex` read. **Open: step 12 (bosses)
+and step 13 (daily recipe quests).**
 
 ## `BL-280` 🔵 ZONES BY ARCHETYPE, AND NO MOB CLUSTERS
 

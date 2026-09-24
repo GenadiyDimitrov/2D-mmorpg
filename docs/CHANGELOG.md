@@ -7,12 +7,42 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.205.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.206.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-24 (latest) — 0.205.0: the crafting materials and the gear recipe tables (`BL-273` part 3, step 10)
+## 2026-09-24 (latest) — 0.206.0: per-mob drop tables (`BL-274` part 1, step 11)
+
+> *"mobs should have own drop tables .. not all to drop all items"*
+
+**Every creature of level 40+ now drops ONE kind of gear, and the crafting mats finally have a source.** Each
+tier's band of creatures is dealt a specialty (weapons, body armour, small armour or jewellery), flavoured by
+what the creature is, and it drops that specialty's Commons, the rare full item, recipes and parts, plus
+Nightsilver (weapons, jewellery) or Nightsilk (armour). The readable table is `docs/data/mobs/mob_drops.csv`.
+⚠ `game.db` delete still owed from 0.205.0. The version moved, so **a new APK is needed** (no DTO changed).
+
+- **Dealt, not authored.** Jewellery goes to ~1 creature in 7, weapons to ~40% (1-3 lines each; an archer drops
+  bows, a caster staves), the rest to body and small armour. The 76-79 band has only five creatures, so its two
+  weapon carriers drop four lines each. The server refuses to start if any gear kind has no source in a band.
+- **Commons** keep your per-slot %, but only on the creatures of that slot, so the world's Commons fall ~4×.
+  **The rare full item**: 1 in 10,000 kills, its own `/droprate rare` knob.
+- **Recipes** by source: T40 100% 1/100 · T52 100% 1/175 · T61 60% 1/250 (elite 100%) · T76 20% (elite 40%) · T80
+  elite 40%, per kind, rarer for big slots at T76/T80. Knob: `/droprate recipe`.
+- **Parts** 1% / 0.5% / 0.25% / 0.1% / 0.1% per kind; **Nightsilver/Nightsilk** 0.155 / 0.96 / 7.25 / 23.2 / 42.8
+  a kill with the higher rungs at 1%; **base mats** from level 35 (primary 0.2 → 1.5, secondary half, iron and gems
+  half again); **ash + stone** 0.3 each on the six creatures at level 76, 80 and 85; **T76/T80 essence** drops
+  directly: 1% for 30-50 A, 0.5% for 30-50 S (`/droprate essence`). Elites: Commons, rare and essence ×2, parts
+  and Nightsilver ×4, base mats ×10. The elite mat pile and the elite's 0.1% recipe roll are gone.
+- **Prices (your ruling):** a recipe costs **10% of its item × its %** (a 20% recipe = 2%); a part costs **1% of
+  its item**. Coin a kill, band average: T40 4.9k · T52 8.3k · T61 13k · T76 11.2k · T80 11.6k.
+- **Bosses are unchanged** until step 12.
+- One function, `MobCatalog.KillTable`, is now the table the kill rolls, the target-inspect list shows and the
+  Drops window indexes. They used to rebuild the rank layer three times.
+- `--craft-cost` (2H at 100%, best creature): T40 15.9h · T52 36h · T61 82h · T76 240h · T80 316h. New tools:
+  `--dump-drop-csv`, `--drop-value`.
+
+## 2026-09-24 — 0.205.0: the crafting materials and the gear recipe tables (`BL-273` part 3, step 10)
 
 > *"we need new mats -> like any weapon/armor need main crafting mat for itself"*
 

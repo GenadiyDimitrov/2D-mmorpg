@@ -2558,6 +2558,86 @@ if (args.Length > 0 && args[0] == "--goldflow")
 // answer knows about RANK, which is where half the top-end faucets live. See DropFinder.cs.
 if (args.Length > 0 && args[0] == "--drops") { DropFinder.Run(args); return; }
 
+// `--dump-drop-csv` (`BL-274` part 1) — WRITES `docs/data/mobs/mob_drops.csv`, the READABLE per-mob drop table:
+// every roster creature's dealt specialty, the gear kinds it drops, its base mats and its refinable metal. It is
+// regenerated FROM the code (MobCatalog.AssignDropProfiles), never edited: *"change the rule, never the rows"*.
+if (args.Length > 0 && args[0] == "--dump-drop-csv")
+{
+    string outPath = args.Length > 1 && !args[1].StartsWith("--") ? args[1] : "docs/data/mobs/mob_drops.csv";
+    var rows = new List<string>
+    {
+        "ID,Name,Level,Type,Specialty,Drops (Common / rare / recipe / part),Base mats (primary / secondary),"
+        + "Metal,Volcanic,Common per kill %,Recipe per kill (normal)"
+    };
+    var countBy = new Dictionary<(int, MobSpecialty), int>();
+    foreach (var m in MobCatalog.Templates.Where(m => !m.Dummy && !m.HandPlaced && !m.Guard && m.Drops is not null))
+    {
+        var p = m.Profile;
+        var (pri, sec) = MobCatalog.MatFlavor(m.Category);
+        bool mats = m.Level >= MobCatalog.BaseMatMinLevel;
+        int tier = MobCatalog.CraftTier(m.Level);
+        string metal = p is null ? "" : p.Kind is MobSpecialty.Weapons or MobSpecialty.Jewellery ? "Nightsilver" : "Nightsilk";
+        double commonPct = MobCatalog.CreatureDrops(m, m.Level, MobRank.Normal)
+            .Where(e => e.GroupId == MobCatalog.GroupCommonGear).Sum(e => (double)e.Chance) * 100;
+        string recipe = p is null ? "" : string.Join(" / ", p.Keys
+            .Select(k => MobCatalog.RecipeDrop(tier, MobRank.Normal, k) is { } r ? $"{r.Pct}% 1/{1 / r.Chance:0}" : "")
+            .Where(s => s.Length > 0).Distinct());
+        if (p is not null) countBy[(tier, p.Kind)] = countBy.GetValueOrDefault((tier, p.Kind)) + 1;
+        rows.Add(string.Join(",", m.Id, m.Name.Replace(",", ""),
+            m.Level, m.Category, p?.Kind.ToString() ?? "-", p is null ? "" : string.Join(" / ", p.Keys),
+            mats ? $"{pri} / {sec}" : "", metal, MobCatalog.DropsVolcanic(m) ? "ash + stone" : "",
+            commonPct > 0 ? $"{commonPct:0.###}" : "", recipe));
+    }
+    File.WriteAllLines(outPath, rows);
+    Console.WriteLine($"Wrote {rows.Count - 1} creatures to {outPath}.");
+    foreach (int t in Crafting.GearTiers)
+        Console.WriteLine($"  T{t}: " + string.Join("  ", Enum.GetValues<MobSpecialty>().Skip(1)
+            .Select(k => $"{k} {countBy.GetValueOrDefault((t, k))}")));
+    return;
+}
+
+// `--drop-value` (`BL-274` part 1) — WHAT A KILL IS WORTH AT THE VENDOR, split by drop GROUP (the `/droprate` word),
+// averaged over every roster creature of each tier's band (the world's faucet) and for the richest one. Every drop
+// sold at ItemCatalog.SellPrice, x1 rates; 'coin' is the gold drop itself. Kills/h is M1's clock (as --craft-cost).
+if (args.Length > 0 && args[0] == "--drop-value")
+{
+    var groups = new[] { "common", "rare", "recipe", "essence", "mats", "scrolls", "always", "other" };
+    Console.WriteLine($"{"band",8} {"n",3} " + string.Concat(groups.Select(g => $"{g,9}")) + $" {"coin",7} {"TOTAL",8} | {"best",8}  best creature");
+    foreach (var (lo, hi) in new[] { (35, 39), (40, 51), (52, 60), (61, 75), (76, 79), (80, 90) })
+    {
+        var band = MobCatalog.Templates.Where(m => !m.Dummy && !m.HandPlaced && !m.Guard && m.Drops is not null
+            && m.Level >= lo && m.Level <= hi).ToList();
+        var per = band.Select(m =>
+        {
+            var byGroup = groups.ToDictionary(g => g, _ => 0.0);
+            foreach (var (e, ch) in Marginals(m.Drops!, m.Level))
+                if (ItemCatalog.Get(e.ItemId) is ItemDef def)
+                    byGroup[MobCatalog.GroupName(e.GroupId) is var g && byGroup.ContainsKey(g) ? g : "other"]
+                        += ch * (e.MinQty + e.MaxQty) / 2.0 * RateConfig.World.DropAmount * ItemCatalog.SellPrice(def);
+            return (m, byGroup, coin: (double)StatCalculator.MobGoldReward(m.Level) * RateConfig.World.Gold);
+        }).ToList();
+        double Avg(string g) => per.Average(p => p.byGroup[g]);
+        var best = per.OrderByDescending(p => p.byGroup.Values.Sum() + p.coin).First();
+        Console.WriteLine($"{lo + "-" + hi,8} {band.Count,3} " + string.Concat(groups.Select(g => $"{Avg(g),9:N0}"))
+            + $" {per.Average(p => p.coin),7:N0} {per.Average(p => p.byGroup.Values.Sum() + p.coin),8:N0} | "
+            + $"{best.byGroup.Values.Sum() + best.coin,8:N0}  {best.m.Name} ({best.m.Profile?.Kind})");
+    }
+    Console.WriteLine();
+    Console.WriteLine("Vendor SELL price of one drop (x1):");
+    foreach (int t in Crafting.GearTiers)
+    {
+        int ti = Array.IndexOf(Crafting.GearTiers, t);
+        string Sell(string id) => ItemCatalog.Get(id) is { } d ? $"{ItemCatalog.SellPrice(d):N0}" : "-";
+        var pct = Crafting.RecipePercentsFor(t);
+        Console.WriteLine($"  T{t}: recipe 2H {string.Join("/", pct.Select(p => Sell(ItemCatalog.RecipeBookId($"craft_sword2h_t{t}", p))))}"
+            + $" · recipe ring {Sell(ItemCatalog.RecipeBookId($"craft_ring_t{t}", pct[0]))}"
+            + $" · part 2H {Sell(Crafting.PartId("sword2h", t))} · part ring {Sell(Crafting.PartId("ring", t))}"
+            + $" · Nightsilver {Sell(Crafting.NightsilverId(0))}..{Sell(Crafting.NightsilverId(4))}"
+            + $" · essence {Sell(Crafting.EssenceIds[ti])} · Common 2H {Sell($"sword2h_t{t}_common")} · full 2H {Sell($"sword2h_t{t}")}");
+    }
+    return;
+}
+
 // `--craft-cost` — WHAT ONE CRAFTED ITEM COSTS under the 2026-09-23 rework (`BL-282`). Inputs at the top of
 // CraftCost(); everything the code already has (kill clock, gear-drop rate) is measured.
 if (args.Length > 0 && args[0] == "--craft-cost") { CraftCost(); return; }
@@ -5621,30 +5701,31 @@ static void CraftCost()
         .Select(L => Crafting.BreakYield(ItemCatalog.Get($"sword2h_t{L}"))?.Qty ?? 0).ToArray();
     int[] commonBreak = new[] { 40, 52, 61, 76, 80 }
         .Select(L => Crafting.BreakYield(ItemCatalog.Get($"sword2h_t{L}_common"))?.Qty ?? 0).ToArray();
-    const double DirectEssenceVsCommon = 0.5;         // PLACEHOLDER: T76+ essence drops directly, "smaller … than Commons"
     static double Curve(int pct) => pct switch { 20 => 0.3, 40 => 0.5, 60 => 0.7, _ => 1.0 }; // RULED
 
     // Per NORMAL kill, on a mob that drops the thing (per-mob tables: you farm the right creature).
-    static double BaseMatPerKill(int L) =>            // NOTE: wood/metal/leather/thread, ~0.2 @40 → 1-2 @90
-        0.2 + 1.3 * Math.Clamp((L - 40) / 50.0, 0, 1);
-    const double BaseEliteMul = 10;                   // NOTE: @90 elites 10-20 vs normals 1-2
+    // 🔑 BUILT in 0.206.0 (`BL-274` part 1): every per-kill rate below is READ from MobCatalog, the numbers the
+    // kill roll uses, so this table measures the game rather than a copy of it.
+    static double BaseMatPerKill(int L) => MobCatalog.BaseMatPerKill(L);   // NOTE: ~0.2 @40 → 1-2 @90
+    const double BaseEliteMul = MobCatalog.BaseMatEliteMul;                 // NOTE: @90 elites 10-20 vs 1-2
     const double GemIronShare = 0.5;                  // NOTE: gems/iron "twice as hard"
     // 🔑 RULED 2026-09-23: *"only nightsilver need to cost the time of metal+wood+alloy"* (T40 ~+4h, T61 ~9h,
     // T76 ~11h). So the normal Nightsilver drop is NOT an input any more — it is SOLVED per tier below
     // (nsNormal[t]) from that rule, and printed in C0 as the rate the drop table has to carry. (The note's
     // own curve, 1-2 @35 → 70-100 @76, made the whole ladder cost minutes.)
     var nsNormal = new double[5];
-    int[] nsGateNormal = { 35, 62, 76, 80, 999 };     // NOTE: the level each rung starts dropping from normals
-    int[] nsGateElite = { 35, 50, 60, 76, 80 };       // NOTE: … and from elites
-    const double NsHigherPerKill = 0.01;              // NOTE: "1/100" for every rung above normal
+    var nsSolved = new double[5];
+    int[] nsGateNormal = Enumerable.Range(0, 5).Select(r => r == 0 ? 40 : MobCatalog.NightGate(r, false)).ToArray();
+    int[] nsGateElite = Enumerable.Range(0, 5).Select(r => r == 0 ? 40 : MobCatalog.NightGate(r, true)).ToArray();
+    const double NsHigherPerKill = MobCatalog.NightHigherPerKill;   // NOTE: "1/100" for every rung above plain
     // RULED 2026-09-23: *"start at 1% for t40 and go as low as t80 at 0.1%"*; T76 stays at 0.1% (~100 h,
     // which he took as the reference). T52/T61 PLACEHOLDER, halving per tier.
-    double[] headChance = { 0.01, 0.005, 0.0025, 0.001, 0.001 };
+    double[] headChance = Enumerable.Range(0, 5).Select(MobCatalog.PartChance).ToArray();
     // Ash and stone per normal kill (76+), each. SOLVED once from his first ruling (*"the bars should take like a
     // heads farm about ~100h"*, i.e. T76's then-50 bars in 100h) and now FIXED, so the bar COUNTS above are the
     // knob — the note's 0.1-0.5% made T76 a year of farming.
-    const double VolcanicPerKill = 0.3;
-    const double EliteMul = 4;                        // NOTE: "elit x4" — applied to every per-kill number but base mats
+    const double VolcanicPerKill = MobCatalog.VolcanicPerKill;
+    const double EliteMul = MobCatalog.EliteMatMul;                        // NOTE: "elit x4" — applied to every per-kill number but base mats
     const double MaxBonus = 0.10;                     // RULED: 5% general + 5% type, T76/T80 only
     const int QuestDaysPerRecipe = 8;                 // RULED: 1 weapon-kind quest a day, rolled 1/8
     // Where each recipe % comes from, and the chance of ONE specific recipe per kill at that source (for a
@@ -5653,13 +5734,19 @@ static void CraftCost()
     // chance and t80 elits if they drop 40% at all I can't remember 1/1000 and boss same 80~90%"*.
     // ⚠ The note's T76 20%-from-normals row is gone (T76 = quest/boss/elite). T80's elite recipe is 20% in the
     // note and "40% if at all" in his answer — kept at the note's 20% until he looks.
+    // 🔑 0.206.0: the normal/elite rows are READ from MobCatalog.RecipeDrop (the 2H cell), the 0.203.0 source
+    // table: T61 normal 60% / elite 100%, T76 normal 20% / elite 40%, T80 elite 40%. Quest and boss stay here.
+    (int, string, double)[] Farmed(int tier) => new[] { MobRank.Normal, MobRank.Elite }
+        .Select(r => (r, d: MobCatalog.RecipeDrop(tier, r, "sword2h")))
+        .Where(x => x.d is not null && !(x.r == MobRank.Elite && tier < 61))
+        .Select(x => (x.d!.Value.Pct, x.r == MobRank.Elite ? "elite" : "normal", x.d.Value.Chance)).ToArray();
     var sources = new (int Pct, string Src, double PerKill)[][]
     {
-        new[] { (100, "normal", 1 / 100.0) },
-        new[] { (100, "normal", 1 / 175.0) },
-        new[] { (60, "normal", 1 / 250.0), (100, "elite", 1 / 250.0) },
-        new[] { (40, "elite", 1 / 500.0), (40, "quest", 0.0), (60, "boss", 0.85) },
-        new[] { (20, "elite", 1 / 1000.0), (40, "quest", 0.0), (60, "boss", 0.85) },
+        Farmed(40),
+        Farmed(52),
+        Farmed(61),
+        Farmed(76).Concat(new[] { (40, "quest", 0.0), (60, "boss", 0.85) }).ToArray(),
+        Farmed(80).Concat(new[] { (40, "quest", 0.0), (60, "boss", 0.85) }).ToArray(),
     };
     // 🔑 RULED 2026-09-23 (second round): *"Keep the times as is and add the rcp times on top. Those times are
     // for a 100%"* — the C1 totals ARE the targets now; a lower-% recipe is a cheaper ATTEMPT plus luck.
@@ -5684,18 +5771,26 @@ static void CraftCost()
     {
         if (essCache.TryGetValue((L, grade), out var g)) return g;
         double s = 0;
-        var near = MobsNear(L);
-        foreach (var mob in near)
-            foreach (var (e, ch) in Marginals(mob.Drops ?? Array.Empty<DropEntry>(), L))
+        // 🔑 0.206.0 (`BL-274`): per-mob tables, so you farm the BEST creature of the tier within 6 levels, not
+        // an average of whatever stands nearest (that average was the old ~1/3 dilution).
+        int tierL = MobCatalog.CraftTier(L);
+        foreach (var mob in MobCatalog.Templates.Where(m => !m.Dummy && !m.HandPlaced && m.Profile is not null
+                     && MobCatalog.CraftTier(m.Level) == tierL && Math.Abs(m.Level - L) <= 6))
+        {
+            double one = 0;
+            foreach (var (e, ch) in Marginals(mob.Drops ?? Array.Empty<DropEntry>(), mob.Level))
                 if (MobCatalog.IsGearGroup(e.GroupId)
                     && ItemCatalog.Get(e.ItemId) is { Rarity: ItemRarity.Common } d
                     && Crafting.EssenceGrade(d.ItemLevel) == grade
                     && Crafting.BreakYield(d) is { } y)
-                    s += ch * (e.MinQty + e.MaxQty) / 2.0 * RateConfig.World.DropAmount * y.Qty / near.Length;
+                    one += ch * (e.MinQty + e.MaxQty) / 2.0 * RateConfig.World.DropAmount * y.Qty;
+            s = Math.Max(s, one);
+        }
         return essCache[(L, grade)] = s;
     }
-    double EssencePerKill(int t) =>
-        BrokenEssencePerKill(farmL[t], t) * (t >= 3 ? DirectEssenceVsCommon : 1.0);
+    // T76/T80 have no Commons: their essence DROPS (MobCatalog.DirectEssence, 0.206.0), chance x mean amount.
+    static double DirectPerKill(int t) { var (c, lo, hi) = MobCatalog.DirectEssence(Crafting.GearTiers[t]); return c * (lo + hi) / 2.0; }
+    double EssencePerKill(int t) => t >= 3 ? DirectPerKill(t) : BrokenEssencePerKill(farmL[t], t);
 
     // Cost of ONE unit: the cheaper of a normal farm and an elite camp. (hours, kills)
     (double H, double K) Unit(int L, double perKillN, double perKillE)
@@ -5720,7 +5815,8 @@ static void CraftCost()
     {
         int L = farmL[t];
         double wmaH = 2 * bulk[t] * BaseMat(L).H + alloy[t] * Alloy(L).H;
-        nsNormal[t] = nsQty[t] * Math.Pow(10, t) / (wmaH * Math.Max(KphN(L), EliteMul * KphE(L)));
+        nsSolved[t] = nsQty[t] * Math.Pow(10, t) / (wmaH * Math.Max(KphN(L), EliteMul * KphE(L)));
+        nsNormal[t] = MobCatalog.NightPerKill(t);   // BUILT 0.206.0 from the solve; the solve stays as a check
     }
     double NsNormalPerKill(int L) => nsNormal[Array.IndexOf(farmL, L)];
 
@@ -5761,7 +5857,7 @@ static void CraftCost()
     Console.WriteLine();
 
     Console.WriteLine("=== C0: the INPUTS (NOTE = his note, RULED = a later answer, PH = placeholder) and the clock ===");
-    Console.WriteLine($"{"tier",4} {"farm L",6} {"kills/h N",9} {"E",5} | {"base/kill",9} {"NS solved",9} {"ess/kill",9} | "
+    Console.WriteLine($"{"tier",4} {"farm L",6} {"kills/h N",9} {"E",5} | {"base/kill",9} {"NS/kill",9} {"ess/kill",9} | "
         + $"{"wood+metal",10} {"alloy",6} {"bars",5} {"Nightsilver",16} {"heads",5} {"essence",8} {"breaks",7}");
     string[] nsName = { "normal", "refined", "rare", "ref.rare", "legend." };
     for (int t = 0; t < 5; t++)
@@ -5775,7 +5871,8 @@ static void CraftCost()
         + $" ash/stone {VolcanicPerKill} each (76+), recipes per C2; elite x{EliteMul} (base mats x{BaseEliteMul}).");
     Console.WriteLine($"  kills/h: N = M1's walk-dominated clock ({overhead:F0}s loop overhead + TTK), E = M12a's elite camp.");
     Console.WriteLine("  'ess/kill' is MEASURED: today's Common gear drops broken at the AUTHORED table (Crafting.BreakYield).");
-    Console.WriteLine($"  At T76/T80 it is the direct essence drop (PH: x{DirectEssenceVsCommon} of that; none exists before step 12).");
+    Console.WriteLine("  At T76/T80 it is the DIRECT essence drop (MobCatalog.DirectEssence). 'NS/kill' is BUILT (0.206.0); the solve it");
+    Console.WriteLine("  came from reads, today: " + string.Join(" / ", nsSolved.Select(x => $"{x:0.###}")));
     Console.WriteLine();
 
     // One attempt's ingredients at 100%, split, so the table can show which one owns the clock.

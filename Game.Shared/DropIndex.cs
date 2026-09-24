@@ -99,17 +99,8 @@ public static class DropIndex
 
         for (int lvl = lo; lvl <= hi; lvl++)
         {
-            var rows = new List<DropEntry>();
-            if (type.Drops is not null)
-                rows.AddRange(type.Drops.Where(e => e.AppliesAtLevel(lvl)));
-
-            if (zone.Rank != MobRank.Normal)
-            {
-                rows.RemoveAll(e => MobCatalog.IsGearGroup(e.GroupId));
-                rows.AddRange(MobCatalog.GearDrops(lvl, zone.Rank));
-                rows.AddRange(MobCatalog.EnchantScrollDrops(lvl, zone.Rank));
-                rows.AddRange(MobCatalog.UtilityScrollDrops(lvl, zone.Rank));
-            }
+            // The SAME table the kill rolls (MobCatalog.KillTable) — no rank layer is rebuilt here any more.
+            var rows = MobCatalog.KillTable(type, lvl, zone.Rank);
 
             foreach (var e in rows)
                 Offer(new DropSource(e.ItemId, mobId, type.Name, lo, hi, lvl, zone.Rank, where,

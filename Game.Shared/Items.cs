@@ -2218,8 +2218,9 @@ public static class ItemCatalog
     }
 
     /// <summary>The PARTS (the note's "heads", step 10): one per gear KIND per crafted tier, 18 a tier, e.g.
-    /// "Darksteel Maul Head". A part's Value is its item's COMMON price (the note: *"the head costs same as the
-    /// common item"*), so T76/T80 parts are priced as the Common those tiers do not have.</summary>
+    /// "Darksteel Maul Head". A part's Value is <see cref="Crafting.PartPriceFraction"/> (1%) of its full item's
+    /// price since `BL-274` part 1. It was the Common's price (the note: *"the head costs same as the common
+    /// item"*), which assumed a 0.1% drop; at the ruled 1% it made 20 heads outsell the finished item.</summary>
     private static IEnumerable<ItemDef> Parts(IEnumerable<ItemDef> tiered)
     {
         foreach (var d in tiered)
@@ -2230,7 +2231,7 @@ public static class ItemCatalog
             if (!Crafting.PartNames.TryGetValue(kind, out var noun)) continue;
             yield return new ItemDef(Crafting.PartId(kind, d.ItemLevel), $"{GradeTheme(d.ItemLevel)} {noun}",
                 EquipSlot.Material, d.Grade, ItemRarity.Rare,
-                Value: DefaultValue(d with { Rarity = ItemRarity.Common, Value = 0 }), NoAttributes: true,
+                Value: Math.Max(1, (int)Math.Round(DefaultValue(d) * Crafting.PartPriceFraction)), NoAttributes: true,
                 Description: $"The main part of a {d.Name}. Every {GradeTheme(d.ItemLevel)} recipe of its kind takes some.");
         }
     }
@@ -2341,8 +2342,8 @@ public static class ItemCatalog
     /// from the tiered gear here, NOT from RecipeCatalog, to avoid a circular static-init with the recipe
     /// catalog, which itself reads ItemCatalog.AllItems. Tradable: recipes are what crafters buy and sell.
     ///
-    /// <para>Priced at <see cref="Crafting.ShopRecipePriceFraction"/> of the piece's own buy price (a
-    /// placeholder); only the Master's T40/T52 100% shelf actually sells them.</para></summary>
+    /// <para>Priced by <see cref="Crafting.RecipePrice"/>: 10% of the piece's own buy price × its % (owner,
+    /// 2026-09-24: *"a 20% recipe will cost 2%"*); only the Master's T40/T52 100% shelf actually sells them.</para></summary>
     private static IEnumerable<ItemDef> RecipeBooks(IEnumerable<ItemDef> tiered)
     {
         foreach (var d in tiered)
@@ -2353,11 +2354,10 @@ public static class ItemCatalog
             // ⚠ d.Value is still 0 here: tiered gear is priced by the Value pass AFTER the list is built, so
             // ask DefaultValue directly (BoundCopies does the same, for the same reason).
             int piece = d.Value > 0 ? d.Value : DefaultValue(d);
-            int value = Math.Max(1, (int)Math.Round(piece * (double)Crafting.ShopRecipePriceFraction));
             foreach (int pct in Crafting.RecipePercentsFor(d.ItemLevel))
                 yield return new ItemDef(RecipeBookId(recipeId, pct), $"Recipe: {d.Name} ({pct}%)",
                     EquipSlot.Box, d.Grade, ItemRarity.Common,
-                    Value: value, TeachesRecipeId: recipeId, RecipePercent: pct, ItemLevel: 0,
+                    Value: Crafting.RecipePrice(piece, pct), TeachesRecipeId: recipeId, RecipePercent: pct, ItemLevel: 0,
                     Description: $"Use it to learn the {d.Name} recipe at {pct}% (it takes a recipe slot). "
                                + "Each craft at a Master spends one recipe of this % or lower.");
         }

@@ -285,7 +285,18 @@ public record MobType(
     bool Guard = false,
     // Per-template aggro radius, overriding the global GameConstants.MobAggroRange. 0 = the global.
     // His guard numbers are 400 melee / 600 archer — the archer notices you from where it can shoot.
-    float AggroRange = 0f);
+    float AggroRange = 0f,
+    // `BL-274` part 1: WHAT THIS CREATURE DROPS in gear terms (its specialty and the gear kinds it
+    // carries). Never authored per template — MobCatalog.AssignDropProfiles DEALS it from the roster.
+    MobDropProfile? Profile = null);
+
+/// <summary>A creature's gear SPECIALTY (`BL-274` part 1, design doc §2.3 Q1/Q1b). Four, and a creature has
+/// exactly one: weapons (1-3 lines), body armour, small armour (helm/gloves/boots + shield) or jewellery.</summary>
+public enum MobSpecialty { None, Weapons, Body, SmallArmour, Jewellery }
+
+/// <summary>The dealt drop profile of one template: its specialty and the gear KINDS (keys like "sword1h",
+/// "heavy", "ring") it drops Commons, rare items, recipes and parts of.</summary>
+public sealed record MobDropProfile(MobSpecialty Kind, string[] Keys);
 
 /// <summary>
 /// THE place to manage mobs. Each entry is a creature template with its own drop
@@ -562,6 +573,9 @@ public static class MobCatalog
         GroupAlways => "always",
         GroupCommonGear => "common",
         GroupBossGear => "boss",
+        GroupRareGear => "rare",
+        GroupRecipe => "recipe",
+        GroupEssence => "essence",
         // Parenthesised on purpose: without them `a / 10 switch {…}` parses as `a / (10 switch {…})`.
         _ when IsGearGroup(groupId) => ((groupId - 10) / 10) switch
         {
@@ -829,7 +843,8 @@ public static class MobCatalog
     /// anything else.</para></summary>
     public static IEnumerable<RecipeRoll> RecipeRolls(int level, MobRank rank)
     {
-        if (rank is not (MobRank.Boss or MobRank.Elite)) yield break;
+        // `BL-274` part 1: an ELITE's recipes are its specialty's now (CreatureDrops); only the boss rolls here.
+        if (rank != MobRank.Boss) yield break;
         int tier = RecipeTier(level);
         if (tier < 76) yield break;
         // `BL-273` part 2: the S tier drops its own recipes too (they were never rolled before).
@@ -846,17 +861,9 @@ public static class MobCatalog
             return ids;
         }
 
-        if (rank == MobRank.Boss)
-        {
-            yield return new RecipeRoll(0.50f, Books("heavy", "light", "robe", "helm", "gloves", "boots", "shield"));
-            yield return new RecipeRoll(0.40f, Books("sword1h", "sword2h", "blunt1h", "blunt2h", "duals", "bow", "wand", "staff"));
-            yield return new RecipeRoll(0.60f, Books("necklace", "ring", "earring"));
-        }
-        else
-        {
-            yield return new RecipeRoll(0.001f, Books("heavy", "light", "robe", "sword1h", "sword2h", "bow", "wand",
-                                                     "necklace", "ring", "earring"));
-        }
+        yield return new RecipeRoll(0.50f, Books("heavy", "light", "robe", "helm", "gloves", "boots", "shield"));
+        yield return new RecipeRoll(0.40f, Books("sword1h", "sword2h", "blunt1h", "blunt2h", "duals", "bow", "wand", "staff"));
+        yield return new RecipeRoll(0.60f, Books("necklace", "ring", "earring"));
     }
 
     /// <summary>The "other" group's x3, which the authored §3 numbers in <see cref="RecipeRolls"/> already
@@ -892,12 +899,12 @@ public static class MobCatalog
     /// here are what a x100 server pays, unchanged. Whether that is intended is `BL-262`.</para></summary>
     public static IEnumerable<PileRow> BossPile(int level, MobRank rank, MobCategory cat)
     {
-        if (rank is not (MobRank.Boss or MobRank.Elite)) yield break;
-        bool boss = rank == MobRank.Boss;
+        // `BL-274` part 1: an ELITE's pile became its ×10 base mats and ×4 parts/Nightsilver (CreatureDrops).
+        if (rank != MobRank.Boss) yield break;
         var primary = MatFlavor(cat).Primary;
 
-        yield return new PileRow(primary, 1f, boss ? 6 : 2, boss ? 10 : 3);
-        yield return new PileRow(MaterialType.Gem, 1f, boss ? 4 : 1, boss ? 7 : 2);
+        yield return new PileRow(primary, 1f, 6, 10);
+        yield return new PileRow(MaterialType.Gem, 1f, 4, 7);
     }
 
     public static IEnumerable<DropEntry> GearDrops(int level, MobRank rank)
@@ -941,6 +948,344 @@ public static class MobCatalog
                     yield return new DropEntry($"{key}_t{tier}_common", each, GroupId: GroupCommonGear);
             }
         }
+    }
+
+    // ===================================================================
+    //  PER-MOB DROP TABLES (`BL-274` part 1, 0.206.0; design doc §2.3 "Step 11 proposal")
+    // ===================================================================
+    // *"mobs should have own drop tables .. not all to drop all items"*. Every creature of level 40+ has ONE
+    // gear SPECIALTY — weapons (1-3 lines), body armour, small armour (helm/gloves/boots + shield) or
+    // jewellery — and drops the Commons, the rare full item, the recipes and the parts of THAT specialty's
+    // kinds only. Its base mats stay by CATEGORY (MatFlavor, ruled Q3b), and its Nightsilver/Nightsilk by
+    // specialty (weapons + jewellery take Nightsilver, armour takes Nightsilk).
+    //
+    // 🔑 THE SPECIALTY IS DEALT, NEVER AUTHORED (Q1: *"change the rule, never the rows"*). AssignDropProfiles
+    // deals each gear tier's level band like a hand of cards: jewellery to ~1 in 7 (Q1b: "fewer mobs"),
+    // weapons to ~40% (never fewer than three, so eight lines fit in 1-3 each), the rest split body / small.
+    // Which creature takes which is its CATEGORY's affinity (humanoids lean to weapons, beasts to armour),
+    // ties broken by a stable hash of its id. A pure per-mob hash was rejected: the T76 band has SIX
+    // templates, and a hash leaves whole gear kinds with no source there — a wall, not a rarity. The boot
+    // throws if any band leaves a kind unsourced. ⚠ Adding a template to a band can re-deal that band.
+
+    /// <summary>The RARE full item off a creature that drops its Common (Q2: its own group, tuning name
+    /// "rare", still through <see cref="EffectiveRate"/> and the global rate).</summary>
+    public const int GroupRareGear = 62;
+    /// <summary>Gear RECIPE items dropped by specialty (tuning name "recipe").</summary>
+    public const int GroupRecipe = 5;
+    /// <summary>T76/T80 DIRECT essence (§2.4 second round #1: no T76+ Commons, "a essence drop" instead).</summary>
+    public const int GroupEssence = 6;
+
+    /// <summary>Every group <see cref="CreatureDrops"/> emits — the ones a kill REBUILDS at the spawn's own
+    /// level and rank instead of reading off the template's baked normal-rank table.</summary>
+    public static bool IsCreatureGroup(int groupId) =>
+        IsGearGroup(groupId) || groupId is GroupMats or GroupRecipe or GroupEssence;
+
+    /// <summary>The crafted gear tier a creature of this level drops the parts, recipes and mats of:
+    /// 40 / 52 / 61 / 76 / 80, or 0 below 40.</summary>
+    public static int CraftTier(int level) =>
+        level >= 80 ? 80 : level >= 76 ? 76 : level >= 61 ? 61 : level >= 52 ? 52 : level >= 40 ? 40 : 0;
+
+    private static string[] WeaponKeys => new[] { "sword1h", "sword2h", "blunt1h", "blunt2h", "duals", "bow", "wand", "staff" };
+    private static string[] BodyKeys => new[] { "heavy", "light", "robe" };
+    private static string[] SmallKeys => new[] { "helm", "gloves", "boots", "shield" };
+    private static string[] JewelKeys => new[] { "necklace", "ring", "earring" };
+
+    /// <summary>The level bands a specialty is dealt across, one per crafted tier.</summary>
+    private static (int Lo, int Hi)[] ProfileBands => new[] { (40, 51), (52, 60), (61, 75), (76, 79), (80, 999) };
+
+    /// <summary>Share of a band dealt jewellery (at least one) and weapons (at least three).</summary>
+    public const double JewelleryShare = 1 / 7.0, WeaponShare = 0.4;
+
+    /// <summary>How much a category LEANS to a specialty (higher = first pick). Humanoids and the armed dead
+    /// carry weapons, beasts wear hides, magic things hold trinkets. MINE (Q1 only said "flavoured").</summary>
+    private static int Affinity(MobType m, MobSpecialty kind)
+    {
+        int a = (m.Category, kind) switch
+        {
+            (MobCategory.Humanoid, MobSpecialty.Weapons) => 3, (MobCategory.Humanoid, MobSpecialty.SmallArmour) => 2,
+            (MobCategory.Undead, MobSpecialty.Weapons) => 3, (MobCategory.Undead, MobSpecialty.SmallArmour) => 2,
+            (MobCategory.Undead, MobSpecialty.Jewellery) => 2,
+            (MobCategory.Demon, MobSpecialty.Weapons) => 3, (MobCategory.Demon, MobSpecialty.Jewellery) => 2,
+            (MobCategory.Angel, MobSpecialty.Jewellery) => 3, (MobCategory.Angel, MobSpecialty.Weapons) => 2,
+            (MobCategory.Angel, MobSpecialty.SmallArmour) => 2,
+            (MobCategory.Animal, MobSpecialty.Body) => 3, (MobCategory.Animal, MobSpecialty.SmallArmour) => 2,
+            (MobCategory.Insect, MobSpecialty.SmallArmour) => 3, (MobCategory.Insect, MobSpecialty.Body) => 2,
+            (MobCategory.Dragon, MobSpecialty.Body) => 3, (MobCategory.Dragon, MobSpecialty.Jewellery) => 2,
+            (MobCategory.Plant, MobSpecialty.Body) => 2, (MobCategory.Plant, MobSpecialty.SmallArmour) => 2,
+            (MobCategory.MagicCreature, MobSpecialty.Jewellery) => 3,
+            (_, MobSpecialty.Weapons) => 0,
+            _ => 1,
+        };
+        // An archer holds a bow and a caster a staff: both are weapon carriers whatever their family.
+        if (kind == MobSpecialty.Weapons && m.Role is MobRole.Archer or MobRole.Mage) a += 2;
+        return a;
+    }
+
+    /// <summary>The weapon line a creature visibly HOLDS, dealt to it first when it is a weapon carrier:
+    /// an archer drops bows, a caster staves, a club-wielding goblin 1H blunts.</summary>
+    private static string? HeldWeaponKey(MobType m)
+    {
+        if (m.Role == MobRole.Mage) return "staff";
+        var w = m.Role == MobRole.Archer ? WeaponType.Bow
+            : m.Mod?.Weapon is { } mw && mw != WeaponType.None ? mw : DefaultWeaponFor(m.Category);
+        return w switch
+        {
+            WeaponType.Sword => "sword1h", WeaponType.Blunt => "blunt1h",
+            WeaponType.TwoHandedSword => "sword2h", WeaponType.TwoHandedBlunt => "blunt2h",
+            WeaponType.Dual => "duals", WeaponType.Bow => "bow",
+            _ => null,
+        };
+    }
+
+    /// <summary>FNV-1a: a hash that never changes between runs or machines (string.GetHashCode does).</summary>
+    private static uint StableHash(string s)
+    {
+        uint h = 2166136261;
+        foreach (char c in s) { h ^= c; h *= 16777619; }
+        return h;
+    }
+
+    /// <summary>DEALS every roster template of level 40+ its <see cref="MobDropProfile"/>, then appends its
+    /// normal-rank <see cref="CreatureDrops"/> to its table. Runs once, at the end of Build(), because a
+    /// band's hand needs the whole band. Throws if a band leaves any of the 18 gear kinds unsourced.</summary>
+    private static void AssignDropProfiles(Dictionary<string, MobType> dict)
+    {
+        var roster = dict.Values.Where(m => !m.Dummy && !m.HandPlaced && !m.Guard && m.Drops is not null).ToList();
+        var profiles = new Dictionary<string, MobDropProfile>(StringComparer.OrdinalIgnoreCase);
+        var holes = new List<string>();
+        foreach (var (lo, hi) in ProfileBands)
+        {
+            var band = roster.Where(m => m.Level >= lo && m.Level <= hi)
+                .OrderBy(m => m.Level).ThenBy(m => m.Id, StringComparer.Ordinal).ToList();
+            int n = band.Count;
+            if (n == 0) { holes.Add($"band {lo}-{hi}: no creatures"); continue; }
+            int nJ = Math.Max(1, (int)Math.Round(n * JewelleryShare));
+            // Body and small armour each get at least one creature; weapons take the rest up to their share. In
+            // a band thinner than seven (the 76-79 band has FIVE) that leaves two carriers at four lines each —
+            // the one place "1-3 lines" bends, because the alternative is a gear kind nothing drops.
+            int nW = Math.Max(1, Math.Min(n - nJ - 2, Math.Max(3, (int)Math.Round(n * WeaponShare))));
+            int nB = (n - nJ - nW) / 2;
+
+            var left = new List<MobType>(band);
+            List<MobType> Take(MobSpecialty kind, int count)
+            {
+                var pick = left.OrderByDescending(m => Affinity(m, kind))
+                    .ThenBy(m => StableHash(m.Id + "/" + kind)).Take(count).ToList();
+                foreach (var m in pick) left.Remove(m);
+                return pick;
+            }
+            foreach (var m in Take(MobSpecialty.Jewellery, nJ)) profiles[m.Id] = new(MobSpecialty.Jewellery, JewelKeys);
+            var weapons = Take(MobSpecialty.Weapons, nW);
+            foreach (var m in Take(MobSpecialty.Body, nB)) profiles[m.Id] = new(MobSpecialty.Body, BodyKeys);
+            foreach (var m in left) profiles[m.Id] = new(MobSpecialty.SmallArmour, SmallKeys);
+
+            // The eight weapon lines: each carrier first takes the line it HOLDS (if nobody has it yet), then
+            // the rest go one at a time to whoever holds the fewest, in a stable shuffled order.
+            var lines = weapons.ToDictionary(m => m.Id, _ => new List<string>());
+            var undealt = new List<string>(WeaponKeys);
+            var order = weapons.OrderBy(m => StableHash(m.Id + "/lines")).ToList();
+            foreach (var m in order)
+                if (HeldWeaponKey(m) is { } held && undealt.Remove(held))
+                    lines[m.Id].Add(held);
+            foreach (var key in undealt)
+                lines[order.OrderBy(m => lines[m.Id].Count).First().Id].Add(key);
+            foreach (var m in order.Where(m => lines[m.Id].Count == 0))
+                lines[m.Id].Add(WeaponKeys[StableHash(m.Id + "/extra") % 8]);
+            foreach (var m in weapons)
+                profiles[m.Id] = new(MobSpecialty.Weapons, WeaponKeys.Where(lines[m.Id].Contains).ToArray());
+
+            var sourced = band.SelectMany(m => profiles[m.Id].Keys).ToHashSet();
+            foreach (var key in WeaponKeys.Concat(BodyKeys).Concat(SmallKeys).Concat(JewelKeys))
+                if (!sourced.Contains(key)) holes.Add($"band {lo}-{hi}: nothing drops '{key}'");
+        }
+        if (holes.Count > 0)
+            throw new InvalidOperationException("BL-274 drop profiles leave gear unsourced:\n  " + string.Join("\n  ", holes));
+
+        foreach (var id in dict.Keys.ToList())
+        {
+            var m = dict[id];
+            if (m.Drops is null) continue;
+            if (profiles.TryGetValue(id, out var p)) m = m with { Profile = p };
+            dict[id] = m with { Drops = m.Drops.Concat(CreatureDrops(m, m.Level, MobRank.Normal)).ToArray() };
+        }
+    }
+
+    // ---- The numbers. Each is from `--craft-cost`'s solve or a ruling, tagged; tier index 0-4 = T40-T80. ----
+
+    /// <summary>Base mats per NORMAL kill of the creature's PRIMARY type (the note: ~0.2 @40 → 1-2 @90, the
+    /// `--craft-cost` C0 curve). The secondary drops half; Iron and Gem are "twice as hard" (×0.5).</summary>
+    public static double BaseMatPerKill(int level) => 0.2 + 1.3 * Math.Clamp((level - 40) / 50.0, 0, 1);
+    /// <summary>The note: *"wood/metal can be dropped from 35~90"*. Below it a creature drops no mats.</summary>
+    public const int BaseMatMinLevel = 35;
+    /// <summary>The note: *"@90 can drop 10-20 from elits ... normal 1-2"*.</summary>
+    public const double BaseMatEliteMul = 10;
+    /// <summary>Everything else an elite drops by the note's *"elit x4"*: parts and Nightsilver/Nightsilk.</summary>
+    public const double EliteMatMul = 4;
+    private static double HardMat(MaterialType t) => t is MaterialType.Iron or MaterialType.Gem ? 0.5 : 1.0;
+
+    /// <summary>One part of each kind the creature drops, per kill (RULED 2026-09-23: *"1% for t40 ... t80 at
+    /// 0.1%"*; T52/T61 halve per tier).</summary>
+    public static double PartChance(int tierIndex) => tierIndex switch { 0 => 0.01, 1 => 0.005, 2 => 0.0025, _ => 0.001 };
+
+    /// <summary>Plain Nightsilver/Nightsilk per NORMAL kill — `--craft-cost`'s SOLVE of *"nightsilver costs
+    /// what that tier's wood+metal+alloy cost"* (2026-09-23).</summary>
+    public static double NightPerKill(int tierIndex) => tierIndex switch
+    { 0 => 0.155, 1 => 0.96, 2 => 7.25, 3 => 23.2, _ => 42.8 };
+    /// <summary>Every rung above plain drops directly at 1/100 (the note), from these levels.</summary>
+    public const double NightHigherPerKill = 0.01;
+    public static int NightGate(int rung, bool elite) => (rung, elite) switch
+    {
+        (1, false) => 62, (2, false) => 76, (3, false) => 80,
+        (1, true) => 50, (2, true) => 60, (3, true) => 76, (4, true) => 80,
+        _ => int.MaxValue,   // Legendary never drops off a normal creature
+    };
+
+    /// <summary>The RARE full item per kill of a creature that drops its Common: *"1/10000~20000"*.
+    /// PROPOSAL shape: ONE roll a kill, split across the creature's kinds.</summary>
+    public const double RareGearPerKill = 1 / 10000.0;
+
+    /// <summary>Volcanic Ash and Stone per kill, each, on the creatures of levels 76 / 80 / 85 (RULED: 0.3).</summary>
+    public const double VolcanicPerKill = 0.3;
+    public static bool DropsVolcanic(MobType t) => t.Level is 76 or 80 or 85;
+
+    /// <summary>T76/T80 direct essence: (chance per kill, min, max). PROPOSAL until he rules it.</summary>
+    public static (double Chance, int Min, int Max) DirectEssence(int tier) =>
+        tier >= 80 ? (0.005, 30, 50) : (0.01, 30, 50);
+
+    /// <summary>The recipe-rate COLUMN of a gear kind: 2H, 1H, body, helm, shield, gloves, boots, necklace,
+    /// earring, ring (the order of the ruled T76/T80 tables). Duals, bows and staves are two-handed.</summary>
+    private static int RecipeColumn(string key) => key switch
+    {
+        "sword2h" or "blunt2h" or "duals" or "bow" or "staff" => 0,
+        "sword1h" or "blunt1h" or "wand" => 1,
+        "heavy" or "light" or "robe" => 2,
+        "helm" => 3, "shield" => 4, "gloves" => 5, "boots" => 6,
+        "necklace" => 7, "earring" => 8, _ => 9,
+    };
+
+    /// <summary>ONE specific recipe per kill: its % and chance by tier, source and slot (design doc §2.2, second
+    /// and third rounds + the 0.203.0 source table). Elite T40/T52 and normal T76 are MINE (proposal).</summary>
+    public static (int Pct, double Chance)? RecipeDrop(int tier, MobRank rank, string key)
+    {
+        bool elite = rank == MobRank.Elite;
+        int c = RecipeColumn(key);
+        int[] t76Elite = { 500, 500, 400, 300, 300, 200, 200, 300, 250, 150 };     // RULED (40%)
+        int[] t80Elite = { 1000, 1000, 800, 600, 600, 400, 400, 600, 500, 300 };   // RULED (for 20%; 40% since 0.203.0)
+        return tier switch
+        {
+            40 => elite ? (100, 1 / 50.0) : (100, 1 / 100.0),
+            52 => elite ? (100, 1 / 88.0) : (100, 1 / 175.0),
+            61 => elite ? (100, 1 / 250.0) : (60, 1 / 250.0),
+            76 => elite ? (40, 1.0 / t76Elite[c]) : (20, 1.0 / t80Elite[c]),
+            80 => elite ? (40, 1.0 / t80Elite[c]) : null,
+            _ => null,
+        };
+    }
+
+    /// <summary>A per-kill RATE as a drop entry with the same mean: below 1 a chance at one, above it a
+    /// quantity band around the rate whose chance is corrected so chance × mean quantity == rate exactly.</summary>
+    private static DropEntry RateEntry(string itemId, double rate, int groupId)
+    {
+        if (rate <= 1) return new DropEntry(itemId, (float)rate, 1, 1, GroupId: groupId);
+        int lo = Math.Max(1, (int)Math.Floor(rate * 0.6));
+        int hi = Math.Max(lo, (int)Math.Ceiling(rate * 1.4));
+        return new DropEntry(itemId, (float)(rate / ((lo + hi) / 2.0)), lo, hi, GroupId: groupId);
+    }
+
+    /// <summary>EVERYTHING A CREATURE DROPS BECAUSE OF WHAT IT IS, at one level and rank: base mats by
+    /// category; then, by its dealt specialty, the Commons, the rare full item, the recipes, the parts and the
+    /// Nightsilver/Nightsilk; T76/T80 direct essence; and volcanic ash/stone on the 76/80/85 creatures.
+    /// Baked into the template at its natural level (normal rank) and REBUILT at kill time for the spawn's own
+    /// level and rank, so an elite, or a creature a zone forces to another level, drops what it is there.
+    ///
+    /// <para>⚠ A BOSS keeps its pre-`BL-274` shape until step 12: its category mats, its guaranteed piece
+    /// (<see cref="GearDrops"/>) and, in the kill path, its pile and recipe rolls. None of the specialty.</para></summary>
+    public static IEnumerable<DropEntry> CreatureDrops(MobType t, int level, MobRank rank)
+    {
+        bool elite = rank == MobRank.Elite;
+        var list = new List<DropEntry>();
+
+        if (level >= BaseMatMinLevel)
+        {
+            double r = BaseMatPerKill(level) * (elite ? BaseMatEliteMul : 1);
+            var (pri, sec) = MatFlavor(t.Category);
+            list.Add(RateEntry(Crafting.MaterialId(pri), r * HardMat(pri), GroupMats));
+            list.Add(RateEntry(Crafting.MaterialId(sec), r * 0.5 * HardMat(sec), GroupMats));
+        }
+        if (rank == MobRank.Boss)
+        {
+            list.AddRange(GearDrops(level, rank));
+            return list;
+        }
+
+        int tier = CraftTier(level);
+        int ti = Array.IndexOf(Crafting.GearTiers, tier);
+        double mul = elite ? EliteMatMul : 1;
+        if (t.Profile is { } p && ti >= 0)
+        {
+            if (ItemCatalog.HasCommonTier(tier))
+            {
+                // A slot's chance is the `BL-287` table's; the body splits it over its three weights and the
+                // weapon slot over the lines THIS creature carries (not all eight).
+                float cm = elite ? CommonGearEliteMul : 1f;
+                int lines = p.Keys.Count(k => CommonSlotRank(k) == 5);
+                foreach (var key in p.Keys)
+                {
+                    int rk = CommonSlotRank(key);
+                    float each = CommonGearSlotChance(tier, rk) * cm / (rk == 4 ? 3 : rk == 5 ? lines : 1);
+                    list.Add(new DropEntry($"{key}_t{tier}_common", each, GroupId: GroupCommonGear));
+                }
+                float rare = (float)(RareGearPerKill * cm / p.Keys.Length);
+                foreach (var key in p.Keys)
+                    list.Add(new DropEntry($"{key}_t{tier}", rare, GroupId: GroupRareGear));
+            }
+            foreach (var key in p.Keys)
+                if (RecipeDrop(tier, rank, key) is { } rd)
+                    list.Add(new DropEntry(ItemCatalog.RecipeBookId($"craft_{key}_t{tier}", rd.Pct), (float)rd.Chance,
+                        GroupId: GroupRecipe));
+            foreach (var key in p.Keys)
+                list.Add(new DropEntry(Crafting.PartId(key, tier), (float)(PartChance(ti) * mul), GroupId: GroupMats));
+
+            bool silver = p.Kind is MobSpecialty.Weapons or MobSpecialty.Jewellery;
+            string Metal(int rung) => silver ? Crafting.NightsilverId(rung) : Crafting.NightsilkId(rung);
+            list.Add(RateEntry(Metal(0), NightPerKill(ti) * mul, GroupMats));
+            for (int rung = 1; rung <= 4; rung++)
+                if (level >= NightGate(rung, elite))
+                    list.Add(new DropEntry(Metal(rung), (float)(NightHigherPerKill * mul), GroupId: GroupMats));
+        }
+
+        if (tier >= 76)
+        {
+            var (ch, lo, hi) = DirectEssence(tier);
+            list.Add(new DropEntry(Crafting.EssenceIds[ti], (float)(ch * (elite ? CommonGearEliteMul : 1f)), lo, hi,
+                GroupId: GroupEssence));
+        }
+        if (!elite && DropsVolcanic(t) && level >= 76)
+        {
+            list.Add(RateEntry(ItemCatalog.VolcanicAsh, VolcanicPerKill, GroupMats));
+            list.Add(RateEntry(ItemCatalog.VolcanicStone, VolcanicPerKill, GroupMats));
+        }
+        return list;
+    }
+
+    /// <summary>THE TABLE A KILL ROLLS, and the only copy of it: the template's rows valid at this level, with
+    /// every <see cref="IsCreatureGroup"/> row REBUILT by <see cref="CreatureDrops"/> for the spawn's own level
+    /// and rank, plus the elite/boss scroll layers (<see cref="EnchantScrollDrops"/>, which ADDS to the ordinary
+    /// scrolls group, and <see cref="UtilityScrollDrops"/>, which JOINS the always group). Three readers — the
+    /// kill roll, the target-inspect list and <see cref="DropIndex"/> — used to each rebuild the rank layer by
+    /// hand; `BL-274` part 1 made them one call, so the number shown is the number rolled. A dropless template
+    /// (demo creatures, guards) stays dropless.</summary>
+    public static List<DropEntry> KillTable(MobType type, int level, MobRank rank)
+    {
+        if (type.Drops is null || type.Drops.Length == 0) return new List<DropEntry>();
+        var rows = type.Drops.Where(e => e.AppliesAtLevel(level) && !IsCreatureGroup(e.GroupId)).ToList();
+        rows.AddRange(CreatureDrops(type, level, rank));
+        if (rank != MobRank.Normal)
+        {
+            rows.AddRange(EnchantScrollDrops(level, rank));
+            rows.AddRange(UtilityScrollDrops(level, rank));
+        }
+        return rows;
     }
 
     /// <summary>MATS-PRIMARY drop table (docs/design/Crafting.md): every mob drops crafting materials
@@ -987,30 +1332,11 @@ public static class MobCatalog
 
     private static DropEntry[] StandardDrops(int level, MobCategory cat, string id)
     {
-        // Family-flavored primary mat types (+ Gem is universal). The mats keep their category flavor —
-        // only the GEAR families were randomised (owner, §4); what a wolf is made of is not a slot roll.
-        //
-        // 🔑 A IS THE **PRIMARY** AND ONLY THE PRIMARY REACHES RARE AND EPIC (the rungs below gate B at
-        // Uncommon and stop). That is what made Rare Wood unobtainable anywhere in the world: Wood was
-        // every category's SECONDARY and nobody's primary, so no Rare rung could ever name it
-        // (`BL-254`). The owner's fix, 2026-09-17: *"make wood drop as lether .. primary/secondary ->
-        // animals: leather/wood, plants: wood/leather"* — so the two categories MIRROR each other
-        // rather than sharing one row, and a Plant is now the creature you farm for wood.
-        // ⚠ Do not re-merge these two cases. Their sharing one line is exactly the bug.
-        var mats = MatFlavor(cat);
-        string Mat(MaterialType type) => Crafting.MaterialId(type);
-
+        // ⚠ NO MATS AND NO GEAR HERE since `BL-274` part 1 (0.206.0). Everything a creature drops BECAUSE
+        // OF WHAT IT IS (base mats by category, and the gear half by its dealt specialty) is built by
+        // CreatureDrops and appended by AssignDropProfiles once the whole roster exists, because the
+        // specialty is dealt ACROSS a level band and no single template can know its own.
         var drops = new List<DropEntry>();
-
-        // ---- MATS (§4): every kill yields exactly one material stack, and THE ROLL IS THE AMOUNT
-        //      (owner: "roll the material and let rarity BE the amount"). 50% -> 1, 40% -> 2, 9% -> 4,
-        //      1% -> 10, authored as one member per (type, amount) so the existing weighted group picks
-        //      both in a single roll. The three types share the weight, so the group totals exactly 1.0.
-        var matRungs = new (int Qty, float Weight)[] { (1, 0.50f), (2, 0.40f), (4, 0.09f), (10, 0.01f) };
-        var matTypes = new[] { mats.Primary, mats.Secondary, MaterialType.Gem };
-        foreach (var type in matTypes)
-            foreach (var (qty, w) in matRungs)
-                drops.Add(new(Mat(type), w / matTypes.Length, qty, qty, GroupId: GroupMats));
 
         // ---- SCROLLS (§4): one per trigger at C 40 / U 20 / R 10 — half an enchant scroll of the grade,
         //      half a BUFF potion (never a healing one; those are the Always group's job). The rungs
@@ -1241,8 +1567,6 @@ public static class MobCatalog
         //      used to be the level 1-5 accessory line are gone from here — §1 makes the F Common jewels
         //      (necklace/ring/earring_t1_common) that line, and the Jewel group drops them from level 1.
         //      The broken pieces stay in the catalog and on the starter vendor's shelf.
-        drops.AddRange(GearDrops(level, MobRank.Normal));
-
         // ---- ATTRIBUTE SCROLLS. Each is banded to the gear grade it can touch (D-C-B / A / S),
         //      so a mob only drops the scrolls that are useful against the gear at its own level.
         //      These are the ONLY source of attributes now, which is why the entry scroll of each
@@ -1570,6 +1894,7 @@ public static class MobCatalog
         foreach (var m in list)
             if (!dict.TryAdd(m.Id, m))
                 throw new InvalidOperationException($"Duplicate mob id '{m.Id}'.");
+        AssignDropProfiles(dict);
         return dict;
     }
 

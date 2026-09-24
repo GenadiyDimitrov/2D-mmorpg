@@ -395,9 +395,29 @@ Check("server pushed the warehouse on login", a.Ware is not null);
           && ItemCatalog.AllItems.Count(d => d.Id.StartsWith("part_")) == 90
           && ItemCatalog.Get("part_blunt2h_t40")?.Name == "Darksteel Maul Head",
           $"{ItemCatalog.AllItems.Count(d => d.Id.StartsWith("part_"))} parts");
-    Check("🔑 a part is worth its item's Common price (T40 Maul Head = the T40 Common maul)",
-          ItemCatalog.Get("part_blunt2h_t40")?.Value == ItemCatalog.Get("blunt2h_t40_common")?.Value,
-          $"{ItemCatalog.Get("part_blunt2h_t40")?.Value} vs {ItemCatalog.Get("blunt2h_t40_common")?.Value}");
+    // `BL-274` part 1 (0.206.0), his rulings: a part = 1% of its full item; a recipe = 10% of its item x its %.
+    Check("🔑 a part is worth 1% of its full item (T40 Maul Head = 1% of the T40 maul)",
+          ItemCatalog.Get("part_blunt2h_t40")?.Value == (int)Math.Round(ItemCatalog.Get("blunt2h_t40")!.Value * 0.01),
+          $"{ItemCatalog.Get("part_blunt2h_t40")?.Value} vs {ItemCatalog.Get("blunt2h_t40")?.Value}");
+    Check("🔑 a recipe costs 10% of its item x its % (T61 maul: 100% = 10%, 60% = 6%)",
+          ItemCatalog.Get(ItemCatalog.RecipeBookId("craft_blunt2h_t61", 100))?.Value == Crafting.RecipePrice(ItemCatalog.Get("blunt2h_t61")!.Value, 100)
+          && ItemCatalog.Get(ItemCatalog.RecipeBookId("craft_blunt2h_t61", 60))?.Value * 10 == ItemCatalog.Get(ItemCatalog.RecipeBookId("craft_blunt2h_t61", 100))?.Value * 6,
+          $"{ItemCatalog.Get(ItemCatalog.RecipeBookId("craft_blunt2h_t61", 100))?.Value} / {ItemCatalog.Get(ItemCatalog.RecipeBookId("craft_blunt2h_t61", 60))?.Value}");
+    {
+        var roster = MobCatalog.Templates.Where(m => !m.Dummy && !m.HandPlaced && !m.Guard && m.Drops is not null && m.Level >= 40).ToList();
+        Check("🔑 BL-274: every roster creature of 40+ has a dealt specialty, and every one drops gear of it only",
+              roster.All(m => m.Profile is not null)
+              && roster.All(m => MobCatalog.KillTable(m, m.Level, MobRank.Normal)
+                     .Where(e => e.GroupId == MobCatalog.GroupCommonGear)
+                     .All(e => m.Profile!.Keys.Any(k => e.ItemId.StartsWith(k + "_t")))),
+              $"{roster.Count} creatures");
+        var elite = roster.First(m => m.Profile!.Kind == MobSpecialty.Weapons && m.Level is >= 40 and < 52);
+        double Part(MobRank r) => MobCatalog.KillTable(elite, elite.Level, r).Where(e => e.ItemId.StartsWith("part_")).Sum(e => (double)e.Chance);
+        Check("🔑 BL-274: an elite drops its parts x4, and a T76 normal drops 20% recipes",
+              Math.Abs(Part(MobRank.Elite) - 4 * Part(MobRank.Normal)) < 1e-6
+              && MobCatalog.RecipeDrop(76, MobRank.Normal, "sword2h")?.Pct == 20,
+              $"{elite.Id}: {Part(MobRank.Normal):0.####} -> {Part(MobRank.Elite):0.####}");
+    }
     {
         var t40 = RecipeCatalog.Get("craft_sword2h_t40")!;
         int Q(Recipe r, string id) => r.Inputs.FirstOrDefault(i => i.ItemId == id)?.Qty ?? 0;
