@@ -369,52 +369,23 @@ public static class WorldMap
         // errand — you sell, you stash, you buy — so they belong in one stop.
         new("warehouse_brackenford", "Keeper Bram",   25450, 24650, NpcRole.Warehouse),
 
-        // --- THE CRAFTING QUARTER (`BL-05`, 2026-08-13). Five masters, one per profession: each hands
-        //     out his own joining quest, grants his profession on completion, takes it back if you quit,
-        //     and is the ONLY place his recipes can actually be made (owner: *"better at NPC — and craft
-        //     happens with their respected masters … u compleate the quest and u can take his
-        //     proffesion"*). The window still OPENS anywhere, in browse mode.
+        // --- THE MASTER CRAFTER (`BL-273` part 2, 0.203.0). ONE per town: he gives the level-40 crafter
+        //     quest, sells the T40/T52 gear recipes and the generic recipes, and is the ONLY place a craft
+        //     can be made (owner, 2026-09-24: *"crafts happen only at a Master (u need the place and tools
+        //     to craft)"*). Learning and forgetting recipes happens anywhere. Replaces `BL-05`'s five
+        //     profession masters; he stands where the Master Smith stood.
         //
-        //     🔑 In EVERY town, not just here. His playtest-19 M11 complaint about the hunting contracts
-        //     — *"i have no way to go back to the 1st town just to take it"* — is the same shape, and a
-        //     level-80 flying to the starter town to make one S sword would be a worse version of it.
-        //     The ring towns' five are generated in RingTownServices; these are Brackenford's, hand-placed
-        //     because its own west side is already full of class masters.
-        //
-        //     SOUTH-WEST of town, on the diagonal staircase rule (⚠ above): no two share a Y, and none is
-        //     within 200 Y of the Spirit Helper or the Mindwright they stand near.
-        new("craft_weaponsmith",  "Master Smith Gorran",     22200, 25850, NpcRole.CraftMaster),
-        new("craft_armorsmith",   "Master Armorer Halvard",  22350, 26150, NpcRole.CraftMaster),
-        new("craft_jeweler",      "Master Jeweler Ysolde",   22500, 26450, NpcRole.CraftMaster),
-        new("craft_potionmaster", "Master Apothecary Roderic", 22650, 25250, NpcRole.CraftMaster),
-        new("craft_scribe",       "Master Scribe Alden",     22800, 25000, NpcRole.CraftMaster),
+        //     🔑 In EVERY town (playtest-19 M11: *"i have no way to go back to the 1st town just to take
+        //     it"*). The ring towns' copies are generated in RingTownServices.
+        new(CraftMasterId, "Master Crafter Gorran", 22200, 25850, NpcRole.CraftMaster),
     }.Concat(RingTownServices()).ToArray();
 
-    /// <summary>The NPC id of a profession's master (the STARTER town's copy — every town's copy answers
-    /// to it through <see cref="IsSameService"/>). Empty for <see cref="Profession.None"/>.</summary>
-    public static string CraftMasterId(Profession p) => p switch
-    {
-        Profession.WeaponSmith   => "craft_weaponsmith",
-        Profession.ArmorSmith    => "craft_armorsmith",
-        Profession.Jeweler       => "craft_jeweler",
-        Profession.PotionMaster  => "craft_potionmaster",
-        Profession.ScrollScribe  => "craft_scribe",
-        _ => "",
-    };
+    /// <summary>The Master Crafter's NPC id (the STARTER town's copy — every town's copy answers to it
+    /// through <see cref="IsSameService"/>).</summary>
+    public const string CraftMasterId = "craft_master";
 
-    /// <summary>The profession a craft-master NPC teaches, or <see cref="Profession.None"/> if the id is
-    /// not a master's. Accepts every town's copy (<c>craft_jeweler_frostmere</c> as well as
-    /// <c>craft_jeweler</c>), which is what makes joining and crafting town-agnostic.</summary>
-    public static Profession CraftMasterProfession(string npcId)
-    {
-        foreach (Profession p in new[]
-        {
-            Profession.WeaponSmith, Profession.ArmorSmith, Profession.Jeweler,
-            Profession.PotionMaster, Profession.ScrollScribe,
-        })
-            if (IsSameService(CraftMasterId(p), npcId)) return p;
-        return Profession.None;
-    }
+    /// <summary>Is this NPC id a Master Crafter (any town's copy)?</summary>
+    public static bool IsCraftMaster(string npcId) => IsSameService(CraftMasterId, npcId);
 
     /// <summary>Every MAIN town carries the same service set (owner, 2026-07-29): a buffer, a
     /// warehouse keeper, the THREE vendors and a gatekeeper. A town you cannot resupply in is a town
@@ -460,26 +431,13 @@ public static class WorldMap
             // Brackenford Huntmaster for why he stands on the way OUT of town.
             yield return new NpcDef($"hunter_{t.Key}",           t.Hunter,  t.X - 700, t.Y - 650, NpcRole.QuestGiver);
 
-            // The CRAFTING QUARTER (`BL-05`), west, clear of the east shopping cluster by more than the
-            // label guard's 1500 so only the buffer, the hunter and the gatekeeper constrain the Y
-            // staircase. The westernmost master takes the SMALLEST Y offset so every one of the five
-            // stays inside the ring towns' 2000 radius (worst case here is 1803).
-            var masters = new (string Key, Profession Prof, float Dx, float Dy)[]
-            {
-                ("weaponsmith",  Profession.WeaponSmith,  -1400,  -150),
-                ("armorsmith",   Profession.ArmorSmith,   -1300,   150),
-                // +650 rather than the staircase's +450: GREYMARSH alone carries a sixth NPC on this side
-                // (Grandmaster Thorne, at +400), and the boot-time label guard caught the 50-unit clash.
-                ("jeweler",      Profession.Jeweler,      -1200,   650),
-                ("potionmaster", Profession.PotionMaster, -1100,  1200),
-                ("scribe",       Profession.ScrollScribe, -1000,  1500),
-            };
-            foreach (var (key, prof, dx, dy) in masters)
-                yield return new NpcDef(
-                    $"craft_{key}_{t.Key}", CraftMasterName(prof, t.Key), t.X + dx, t.Y + dy,
-                    NpcRole.CraftMaster);
+            // The MASTER CRAFTER (`BL-273` part 2), west, clear of the east shopping cluster by more than
+            // the label guard's 1500. One per town since 0.203.0: the five profession masters are gone. He
+            // stands where the Master Smith stood.
+            yield return new NpcDef(
+                $"{CraftMasterId}_{t.Key}", CraftMasterName(t.Key), t.X - 1400, t.Y - 150,
+                NpcRole.CraftMaster);
         }
-
         // The 3rd-class master lives in GREYMARSH (band 34-46) — the first town whose levels reach the
         // level-40 discipline change (owner). He stands on the WEST side, mirroring Brackenford's
         // "services east, class business west" split, and this is where the other 3rd-class quest NPCs
@@ -509,36 +467,15 @@ public static class WorldMap
         yield return new NpcDef("sp_broker", "Ledgerkeep Mora", 10800, 14600, NpcRole.SpExchange);
     }
 
-    /// <summary>A ring town's craft master's display name. The five are one ORDER with a chapter in every
-    /// town, so the TITLE is constant and only the given name changes — which is also what tells a player
-    /// that the Master Smith in Frostmere is the same service as the one in Brackenford.</summary>
-    private static string CraftMasterName(Profession prof, string townKey)
+    /// <summary>A ring town's Master Crafter's display name. One ORDER with a chapter in every town, so the
+    /// TITLE is constant and only the given name changes (the old Master Smiths' names, kept).</summary>
+    private static string CraftMasterName(string townKey) => "Master Crafter " + townKey switch
     {
-        string title = prof switch
-        {
-            Profession.WeaponSmith  => "Master Smith",
-            Profession.ArmorSmith   => "Master Armorer",
-            Profession.Jeweler      => "Master Jeweler",
-            Profession.PotionMaster => "Master Apothecary",
-            _                       => "Master Scribe",
-        };
-        // One given name per (profession, town). Invented, generic, no trademarks — see the naming rule
-        // in CLAUDE.md.
-        string given = (prof, townKey) switch
-        {
-            (Profession.WeaponSmith,  "stonewatch") => "Bern",  (Profession.WeaponSmith,  "greymarsh") => "Kell",
-            (Profession.WeaponSmith,  "ironreach")  => "Odric", (Profession.WeaponSmith,  _)           => "Fenn",
-            (Profession.ArmorSmith,   "stonewatch") => "Ruve",  (Profession.ArmorSmith,   "greymarsh") => "Marek",
-            (Profession.ArmorSmith,   "ironreach")  => "Sten",  (Profession.ArmorSmith,   _)           => "Ilka",
-            (Profession.Jeweler,      "stonewatch") => "Perrin",(Profession.Jeweler,      "greymarsh") => "Alys",
-            (Profession.Jeweler,      "ironreach")  => "Corvin",(Profession.Jeweler,      _)           => "Runa",
-            (Profession.PotionMaster, "stonewatch") => "Hesper",(Profession.PotionMaster, "greymarsh") => "Odal",
-            (Profession.PotionMaster, "ironreach")  => "Wren",  (Profession.PotionMaster, _)           => "Sable",
-            (_,                       "stonewatch") => "Quill", (_,                       "greymarsh") => "Tamsin",
-            (_,                       "ironreach")  => "Ovid",  (_, _)                                 => "Yorick",
-        };
-        return $"{title} {given}";
-    }
+        "stonewatch" => "Bern",
+        "greymarsh" => "Kell",
+        "ironreach" => "Odric",
+        _ => "Fenn",
+    };
 
     /// <summary>Startup guard for the ⚠ rule above: no two NPCs standing near each other may share a
     /// screen line. Two NPCs at the same Y draw their name plates at the same height, and one long name

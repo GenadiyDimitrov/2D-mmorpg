@@ -271,7 +271,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-263` | 🟡 | **BUFFS ARE WRAPPERS OVER `(family, level)`** — [design/BuffFamilies.md](design/BuffFamilies.md). Duration is out of the conflict rule and the first three racial wrappers are built (0.176.0); per-family group rank DECLINED, and so is the group-vs-single authoring check — a group ALWAYS outranks its singles. Left: the passive check and the racial split, both DEFERRED on your call — the racial split now carries your colour-not-abbreviation rule | skills |
 | `BL-264` | ❓ | **NO CSV SAYS WHICH BUFFS FIGHT EACH OTHER** — from `mage 1st` you cannot tell the three Mights are one family. A generated `FAMILY` + `RANK` column, checked like every other; §2 the RACE cell nothing verifies | skills |
 | `BL-270` | 🔵 | A vertical skill bar, or a wheel, for hand-held play | client |
-| `BL-273` | 🟡 | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05` (archived) — §2.2; ✅ no profession lock; 🟢 part 1 (essence) built 0.200.0 | items |
+| `BL-273` | 🟡 | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05` (archived) — §2.2; ✅ no profession lock; 🟢 part 1 (essence) built 0.200.0; 🟢 part 2 (becoming a crafter) built 0.203.0; next 9b (generic-recipe table) | items |
 | `BL-274` | ❓ | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3 | items |
 | `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
 | `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
@@ -2271,6 +2271,20 @@ DROPS (step 12) a material pickup filter above Common would skip it; decide it t
 **Still open: part 2 = step 9** (becoming a crafter, recipe %, slots) **and part 3 = step 10** (Nightsilver /
 Nightsilk, the Volcanic Bar, the per-tier × per-slot recipe tables, where recipes start to spend essence).
 
+🟢 **Part 2 BUILT, 0.203.0 (2026-09-24, step 9): BECOMING A CRAFTER.** Professions deleted. One Master Crafter per
+town; his level-40 trial (gather wood/iron, gems, 2 recipes at 40% + a hammer head → learn → forge the Blacksmith's
+Hammer, a fail back to step 1) makes you a crafter for good: 10 slots, generic + weapon/armour/jewels L0. Crafting
+only at a Master; learning/forgetting anywhere. Gear recipes are items at 20/40/60/100% (spent per craft, inputs
+scaled 30/50/70/100%, bonus on T76/T80 only). Formulas in `docs/Formulas.md`. ✅ **Ruled while building
+(2026-09-24, design doc §2.2 "0.203.0" answers):** points tier-weighted and a fail counts (T40 1 … T80 8, level N
+= 20·N); his trial steps verbatim; the Master sells T40/T52 100% recipes; generic recipes are bought at the Master
+(unlock at generic level X + grade level, gold/essence/mats cost, batch output, ~50-60% of shop price); the recipe %
+by source per tier (now in `BL-274`). ⚠ **Placeholders to tune:** the trial's mobs and drop chances, the points,
+the 10% shop recipe price, and every generic-recipe number.
+**Still open — step 9b:** the generic-recipe TABLE (which potions/scrolls/refines, batch size, gold + essence + mats,
+unlock level, learn price) against his *"~50-60% of their shop price"* and *"not y > x"* (craft cost vs break+sell),
+measured by `--craft-cost` C5, proposed in the design doc for his ruling. Then **step 10** (part 3).
+
 ## `BL-274` ❓ PER-MOB DROP TABLES
 
 §2.3 of the design doc. Each mob drops a few things (1-3 weapon types, or body armour, or small armour;
@@ -2298,6 +2312,10 @@ recipes + new mats replacing the Common rolls; Commons/essence come from normals
 bosses drop at least one full item, guaranteed**, plus direct essence of ~1/10 an item's break value.
 All three kinds (weapon / armour / jewels) stay on bosses. Boss recipe %: T61 100%, T76/T80 60%.
 ✅ **The guaranteed item holds at EVERY tier.** **One daily per NPC/kind**, shared by its T76 and T80 quest (max 3 a day, any tier mix).
+✅ **2026-09-24 (while building 0.203.0): the recipe % BY SOURCE, per tier** (supersedes the second-round rows): T40
+shop 100%; T52 shop 100%, normals a low chance, elites higher, **bosses every kill + an item**; T61 normal **60%**,
+elite/boss **100%**; T76 normal **20%**, elite **40%**, boss **60%**, quest **40%**; T80 elite **40%** (was 20%),
+boss **60%**, quest **40%**. Design doc §2.2, 0.203.0 answers #6.
 
 ## `BL-280` 🔵 ZONES BY ARCHETYPE, AND NO MOB CLUSTERS
 

@@ -1199,6 +1199,31 @@ a temp piece  = its Common piece's stats; 7200 s of WEARING (ticks 1/s only whil
 
 ---
 
+## Becoming a crafter: levels, slots, recipe % (`BL-273` part 2, 0.203.0)
+
+Read off `Crafting` (Game.Shared/Crafting.cs). ⚠ The points, the placeholders marked below and every
+generic-recipe number are **playtest placeholders**.
+
+```
+crafter          the Master's Trial, level 40 (for good; no quitting)
+slots            10 + 5 × genericLevel                     (L0 10 … L10 60; type levels give no slots)
+points/attempt   gear: T40 1 · T52 2 · T61 3 · T76 5 · T80 8   generic recipe: 1     (a FAIL pays too)
+                 gear pays generic + its type (weapon | armour+shield | jewels); generic pays generic only
+level from pts   level N starts at 10·N·(N+1)              (L1 20 · L2 60 · L5 300 · L10 1100), max 10
+success (gear)   recipe item % / 100 + bonus
+bonus            itemLevel ≥ 76 ? 0.005 × (genericLevel + typeLevel) : 0      (max +10%)
+success (generic) the recipe's own SuccessChance            (trial hammer 40%)
+inputs (gear)    ScaledQty(q, %) = % ≥ 100 ? q : max(1, round_half_away(q × f(%)))
+                 f: 20 → 0.30 · 40 → 0.50 · 60 → 0.70 · 100 → 1.00          (the trial's hammer is unscaled)
+recipe items     T40 / T52: 100 · T61: 60, 100 · T76: 20, 40, 60 · T80: 40, 60
+spent per craft  one recipe item of % ≤ learned (gear), pass or fail
+shop recipe      Master sells T40/T52 100% at round(0.10 × piece price)        ⚠ placeholder
+recipe drops     T76/T80: boss 60%, elite 40% (rates are still §3's until BL-274)
+generic learn    unlock generic level = 2 × (oldRung − 1)  (0, 2, 4, 6, 8, 10)   ⚠ placeholder
+                 price = 20,000 × (1 + unlock)   char level 40 (76 for old rungs 5-6)   ⚠ placeholder
+learn level      gear: the piece's own item level (T52 recipe at 52)
+```
+
 ## Kill EXP and the Wayfarer's Favor (`BL-277`, 0.195.0)
 
 `GameLoopService.PayKillShare` + `Game.Shared/WayfarerFavor.cs`. Per member of a kill:

@@ -1364,23 +1364,13 @@ public record SpExchangeInfo(
     long YourGold,
     bool CanAfford);
 
-/// <summary>Server -> client: what a CRAFTING MASTER offers this character right now (`BL-05`).
-///
-/// <para>Four mutually-exclusive states, and the DTO is shaped so the client never has to work out
-/// which: <see cref="CanOpenWorkshop"/> (he is your master — craft here), <see cref="CanRejoin"/> (you
-/// did his quest before, he will take you back at level 1), <see cref="CanQuit"/> (he is your master and
-/// will release you), or none of the three, in which case his joining quest is in the normal Offered
-/// list like any other quest.</para>
-///
-/// <para><see cref="CurrentLevel"/> is the level a quit would DESTROY — sent so the confirmation can
-/// spell the loss out in numbers, the way the Mindwriter and the stat basket do, rather than saying
-/// "are you sure".</para></summary>
+/// <summary>Server -> client: what the MASTER CRAFTER offers this character right now (`BL-273` part 2).
+/// <see cref="IsCrafter"/> false means his trial quest is in the normal Offered list; true opens the
+/// workshop (crafting happens only here) and his recipe shelf. <see cref="GenericLevel"/> is what the
+/// shelf's generic recipes unlock against, sent so the client can grey out the locked ones.</summary>
 public record CraftMasterInfo(
-    int Profession,
-    bool CanOpenWorkshop,
-    bool CanRejoin,
-    bool CanQuit,
-    int CurrentLevel);
+    bool IsCrafter,
+    int GenericLevel);
 
 /// <summary>Server -> client: the skills a reset NPC can un-learn — the permanent, mutually-
 /// exclusive picks (the level-40 stat swaps). Removing is FREE, but the gold you spent is NOT
@@ -1471,28 +1461,21 @@ public record QuestLog(QuestSummary[] Active, string[] Completed, QuestEntry[] E
 /// window draws the server's answer rather than a guess it made when you tapped.</summary>
 public record SocialOptionsUpdate(int Options);
 
-/// <summary>Server -&gt; owning client: this character's CRAFTING state. Deliberately TINY — the
-/// recipes themselves live in <see cref="RecipeCatalog"/>, which is compiled into the client, so the
-/// only things that have to travel are the two the SERVER owns: the one permanent
-/// <see cref="Profession"/> (0 = not chosen yet) and the <c>DropOnly</c> recipes this character has
-/// unlocked from a blueprint. Everything else the crafting window shows — inputs, costs, level gates,
-/// success chance — it computes locally from the same catalog the server crafts from, so the two can
-/// never disagree about what a recipe costs.
-///
-/// Pushed on login and after every change (join a master, craft, learn a recipe, quit, the admin
-/// override).
-///
-/// <para><see cref="Exp"/> is the RAW internal exp (12 points per same-level craft — see
-/// <see cref="Crafting.CraftExpPerCraft"/>), not the owner's 0/5/15/30/50/100 display scale, and the
-/// client divides. <see cref="BandCap"/> is the highest rung this character's PROGRESSION allows right
-/// now (20 → 2, 40+3rd → 4, 76 → 6): sending it rather than recomputing it client-side is what lets the
-/// window say *"frozen at L2 until level 40"* without the client having to know the third-class rule.
-/// <see cref="Level"/> is already clamped by it, so `Level == BandCap` **is** the frozen state.</para>
-///
-/// <para>⚠ At a master, <see cref="AtMaster"/> is true and the craft buttons go live. Away from one the
-/// same window opens in BROWSE mode — every recipe, every have/need count — with the buttons dead
-/// (owner: *"better at NPC — and craft happens with their respected masters"*, softened by the
-/// have/need colouring being useful precisely where you decide what to farm).</para></summary>
+/// <summary>Server -&gt; owning client: this character's CRAFTING state (`BL-273` part 2, 0.203.0).
+/// Deliberately small — the recipes themselves live in <see cref="RecipeCatalog"/>, compiled into the
+/// client, so only what the SERVER owns travels:
+/// <list type="bullet">
+/// <item><see cref="IsCrafter"/>: the level-40 trial is done (for good; there is no quitting).</item>
+/// <item><see cref="KnownRecipes"/>: one entry per learned recipe (= one slot), as <c>"recipeId:percent"</c>;
+///   generic recipes are always <c>:100</c>. The quest's own hammer recipe is listed while held but takes
+///   no slot.</item>
+/// <item>The four craft levels (0-10) with their raw POINTS, so the window can draw progress bars:
+///   generic, weapon, armour, jewels (<see cref="Crafting.PointsForLevel"/>).</item>
+/// <item><see cref="Slots"/>: how many slots the generic level gives (10 + 5/level).</item>
+/// <item><see cref="AtMaster"/>: standing at a Master Crafter — the craft buttons go live. Away from one
+///   the window opens in BROWSE mode; learning and forgetting work anywhere.</item>
+/// </list></summary>
 public record CraftingUpdate(
-    int Profession, string[] KnownRecipes,
-    int Level = 0, int Exp = 0, int BandCap = 0, bool AtMaster = false);
+    bool IsCrafter, string[] KnownRecipes,
+    int GenericPoints = 0, int WeaponPoints = 0, int ArmourPoints = 0, int JewelsPoints = 0,
+    int Slots = 0, bool AtMaster = false);

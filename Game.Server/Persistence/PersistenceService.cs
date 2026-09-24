@@ -730,8 +730,11 @@ public class PersistenceService
             Gold = rec.Gold,
             PersistentId = rec.Id,
             AccountId = rec.AccountId,
-            Profession = (Profession)rec.Profession,
-            CraftExp = rec.CraftExp
+            IsCrafter = rec.IsCrafter,
+            CraftPoints = rec.CraftPoints,
+            CraftPointsWeapon = rec.CraftPointsWeapon,
+            CraftPointsArmour = rec.CraftPointsArmour,
+            CraftPointsJewels = rec.CraftPointsJewels
         };
 
         // ---- CLASSES. The subclass rows are the source of truth for anything class-level. A
@@ -766,8 +769,15 @@ public class PersistenceService
         foreach (var qid in rec.CompletedQuestsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
             entity.CompletedQuests.Add(qid);
 
-        foreach (var rid in rec.KnownRecipesCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
-            entity.KnownRecipes.Add(rid);
+        // `BL-273` part 2: "recipeId:percent". A recipe the catalog no longer has is dropped, so a stale
+        // row can never hold a slot nobody can see.
+        foreach (var entry in rec.KnownRecipesCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
+        {
+            int colon = entry.LastIndexOf(':');
+            string rid = colon > 0 ? entry[..colon] : entry;
+            int pct = colon > 0 && int.TryParse(entry[(colon + 1)..], out var p) ? p : 100;
+            if (RecipeCatalog.Get(rid) is not null) entity.KnownRecipes[rid] = pct;
+        }
 
         // `BL-239` — the item locks. A def id that no longer exists in the catalog is dropped on the
         // way in rather than kept: the set is a filter, and a dead id in it can only ever be noise.
@@ -1039,7 +1049,8 @@ public class PersistenceService
     /// state travels in <see cref="Subclasses"/>, which is the source of truth.</summary>
     public sealed record CharacterSnapshot(
         int CharacterId, Race Race, BaseClass BaseClass, int Level, long Exp, long Gold,
-        int SecondClass, int ThirdClass, int FourthClass, int SkillPoints, int Profession, int CraftExp,
+        int SecondClass, int ThirdClass, int FourthClass, int SkillPoints, bool IsCrafter,
+        int CraftPoints, int CraftPointsWeapon, int CraftPointsArmour, int CraftPointsJewels,
         int Con, int Atk, int Wit, int Agi, int Spt, float X, float Y,
         string LearnedSkillsCsv, string CompletedQuestsCsv, string ActiveQuestsJson,
         string KnownRecipesCsv, string LockedItemsCsv, string PickupFiltersCsv,
@@ -1088,12 +1099,13 @@ public class PersistenceService
 
             return new CharacterSnapshot(
                 id, e.Race, e.BaseClass, e.Level, e.Exp, e.Gold,
-                e.SecondClass, e.ThirdClass, e.FourthClass, e.SkillPoints, (int)e.Profession, e.CraftExp,
+                e.SecondClass, e.ThirdClass, e.FourthClass, e.SkillPoints, e.IsCrafter,
+                e.CraftPoints, e.CraftPointsWeapon, e.CraftPointsArmour, e.CraftPointsJewels,
                 e.Con, e.AtkStat, e.Wit, e.Agi, e.Spt, e.X, e.Y,
                 string.Join(',', e.LearnedSkills.Select(kv => $"{kv.Key}:{kv.Value}")),
                 string.Join(',', e.CompletedQuests),
                 JsonSerializer.Serialize(e.ActiveQuests.Values.ToList()),
-                string.Join(',', e.KnownRecipes),
+                string.Join(',', e.KnownRecipes.Select(kv => $"{kv.Key}:{kv.Value}")),
                 string.Join(',', e.LockedItems),
                 string.Join(',', e.PickupFilters.Select(kv => $"{kv.Key}:{kv.Value}")),
                 string.Join(',', e.Friends),
@@ -1235,8 +1247,11 @@ public class PersistenceService
         // ---- CHARACTER-level: shared by every class this character owns.
         rec.Race = snap.Race;               // can change via DEBUG character reset
         rec.Gold = snap.Gold;
-        rec.Profession = snap.Profession;
-        rec.CraftExp = snap.CraftExp;
+        rec.IsCrafter = snap.IsCrafter;
+        rec.CraftPoints = snap.CraftPoints;
+        rec.CraftPointsWeapon = snap.CraftPointsWeapon;
+        rec.CraftPointsArmour = snap.CraftPointsArmour;
+        rec.CraftPointsJewels = snap.CraftPointsJewels;
         rec.CompletedQuestsCsv = snap.CompletedQuestsCsv;
         rec.ActiveQuestsJson = snap.ActiveQuestsJson;
         rec.KnownRecipesCsv = snap.KnownRecipesCsv;

@@ -6171,13 +6171,16 @@ static (double Main, double Solo, string Binds) RecipeHoursDetail(Recipe r, doub
     return (Math.Max(biggestBulk, accents), worst, binds);
 }
 
+// The `BL-05` grade floors E..S these old-rules tables are indexed by (E is no longer crafted, so its row is empty).
+int[] OldGearItemLevels = { 20, 40, 52, 61, 76, 80 };
+
 Console.WriteLine("=== M12b: every authored WEAPON recipe, per rung — attempt, finished, vs his target ===");
 Console.WriteLine($"{"rung",5} {"bulk",22} {"accent",18} | {"per attempt",12} {"attempts",9} "
     + $"{"per finished",13} {"his target",13}  verdict");
 foreach (var (grade, lo, hi) in hisCurve)
 {
     int rung = Array.FindIndex(hisCurve, c => c.Grade == grade) + 1;
-    int itemLevel = Crafting.GearItemLevels[rung - 1];
+    int itemLevel = OldGearItemLevels[rung - 1];
     bool elite = rung >= 3;                      // C and up: the accent mats only exist at an elite camp
     var band = gradeBands.First(b => b.Name == grade);
     double kph = elite ? EliteKillsPerHour(band.Top) : KillsPerHour(band.Top);
@@ -6186,13 +6189,14 @@ foreach (var (grade, lo, hi) in hisCurve)
     // The representative WEAPON of the rung: his curve is authored per weapon and every other slot is a
     // fraction of it, so pricing one weapon prices the whole rung.
     var recipe = RecipeCatalog.All
-        .Where(r => r.CraftLevel == rung
+        .Where(r => r.GearItemLevel == itemLevel
                     && ItemCatalog.Get(r.OutputId) is { Slot: EquipSlot.Weapon } d && d.ItemLevel == itemLevel)
         .OrderBy(r => r.Id).FirstOrDefault();
     if (recipe is null) { Console.WriteLine($"{grade,5}  (no weapon recipe at this rung)"); continue; }
 
-    var odds = Crafting.GearCraftOdds(rung);
-    double attempts = 1.0 / Math.Max(0.01f, 1f - odds.Fail);
+    // `BL-273` part 2 (0.203.0): the old per-grade odds table is gone; a craft rolls its RECIPE's %. These
+    // old-rules tables price a 100% recipe (one attempt); the recipe-% economics live in --craft-cost.
+    double attempts = 1.0;
     var (perAttempt, soloAttempt, binds) = RecipeHoursDetail(recipe, perHour);
     double finished = perAttempt * attempts;
     string bulkTxt = string.Join(" + ", recipe.Inputs.Take(recipe.Inputs.Length - 1)
@@ -6217,18 +6221,18 @@ Console.WriteLine($"{"rung",5} {"weapon",10} {"body",9} {"helmet",9} {"shield",9
 foreach (var (grade, lo, hi) in hisCurve)
 {
     int rung = Array.FindIndex(hisCurve, c => c.Grade == grade) + 1;
-    int itemLevel = Crafting.GearItemLevels[rung - 1];
+    int itemLevel = OldGearItemLevels[rung - 1];
     bool elite = rung >= 3;
     var band = gradeBands.First(b => b.Name == grade);
     double kph = elite ? EliteKillsPerHour(band.Top) : KillsPerHour(band.Top);
     var perHour = MatsPerHourByType(band.Floor, band.Top, elite, kph);
-    double attempts = 1.0 / Math.Max(0.01f, 1f - Crafting.GearCraftOdds(rung).Fail);
+    double attempts = 1.0;   // a 100% recipe; see M12b
 
     // One representative recipe per SLOT SHAPE at this grade, priced from what actually shipped.
     double Slot(Func<ItemDef, bool> pick)
     {
         var r = RecipeCatalog.All
-            .Where(x => x.CraftLevel == rung
+            .Where(x => x.GearItemLevel == itemLevel
                         && ItemCatalog.Get(x.OutputId) is { } d && d.ItemLevel == itemLevel && pick(d))
             .OrderBy(x => x.Id).FirstOrDefault();
         return r is null ? 0 : RecipeHours(r, perHour) * attempts;

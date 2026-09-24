@@ -897,9 +897,8 @@ public static class MobCatalog
     /// out of a pool per copy, which no drop group expresses — so the two readers could only ever agree
     /// by both being edited. Now there is one list and three callers.</para>
     ///
-    /// <para>⚠ Books only EXIST from A grade up: every recipe below 76 is learned by LEVEL, not found
-    /// (`RecipeCatalog.DropOnly`), so there is nothing to drop below that tier. That is a gap in the item
-    /// catalogue, not in this table.</para>
+    /// <para>⚠ Only T76/T80 recipes DROP today. T40-T61 recipe items exist (`BL-273` part 2) but their
+    /// drops are `BL-274` (step 11); until then T40/T52 are sold by the Master and T61 has no source.</para>
     ///
     /// <para>The DELIVERED number is what a x1 server pays. A reader that wants a per-ITEM chance divides
     /// by <see cref="RecipeOtherGroupRate"/> (the "other" group's x3, which the authored numbers already
@@ -910,12 +909,17 @@ public static class MobCatalog
         if (rank is not (MobRank.Boss or MobRank.Elite)) yield break;
         int tier = RecipeTier(level);
         if (tier < 76) yield break;
+        // `BL-273` part 2: the S tier drops its own recipes too (they were never rolled before).
+        if (level >= ItemCatalog.SGradeLevel) tier = ItemCatalog.SGradeLevel;
+        // The recipe % by source (owner, 2026-09-24, design doc §2.2 0.203.0 #6): a boss gives 60%, an
+        // elite 40%, at T76 and T80 alike. The RATES are still §3's; `BL-274` retunes them in step 11.
+        int pct = rank == MobRank.Boss ? 60 : 40;
 
         string[] Books(params string[] keys)
         {
             var ids = new string[keys.Length];
             for (int i = 0; i < keys.Length; i++)
-                ids[i] = ItemCatalog.RecipeBookId($"craft_{keys[i]}_t{tier}");
+                ids[i] = ItemCatalog.RecipeBookId($"craft_{keys[i]}_t{tier}", pct);
             return ids;
         }
 

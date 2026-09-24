@@ -475,15 +475,18 @@ namespace Game.Client
         /// <summary>`BL-245` — <paramref name="useWarehouse"/> is the crafting window's [keeper]
         /// toggle. The server spends from the private warehouse only when it is on, so the flag has to
         /// travel with the craft rather than being a setting the two sides remember separately.</summary>
-        public Task CraftAsync(string recipeId, bool useWarehouse) =>
-            _connection.SendAsync("Craft", recipeId, useWarehouse);
+        /// `BL-273` part 2: <paramref name="recipePercent"/> is the % of the recipe item a GEAR craft spends
+        /// (0 for a generic recipe, which spends none).
+        public Task CraftAsync(string recipeId, bool useWarehouse, int recipePercent) =>
+            _connection.SendAsync("Craft", recipeId, useWarehouse, recipePercent);
 
-        /// <summary>Pick the character's ONE PERMANENT crafting profession. Refused if already set.</summary>
-        public Task JoinProfessionAsync(Guid npcEntityId) =>
-            _connection.SendAsync("JoinProfession", npcEntityId);
+        /// <summary>Forget a learned recipe to free its slot (anywhere; refunds nothing).</summary>
+        public Task ForgetRecipeAsync(string recipeId) =>
+            _connection.SendAsync("ForgetRecipe", recipeId);
 
-        public Task QuitProfessionAsync(Guid npcEntityId) =>
-            _connection.SendAsync("QuitProfession", npcEntityId);
+        /// <summary>Buy and learn a generic recipe at the Master Crafter standing in front of you.</summary>
+        public Task LearnRecipeAtMasterAsync(Guid npcEntityId, string recipeId) =>
+            _connection.SendAsync("LearnRecipeAtMaster", npcEntityId, recipeId);
 
         /// <summary>Buy one SP Bottle at an SP broker: 1kkk SP + 100kk gold. The broker has exactly
         /// one trade, so there is nothing to pass but the NPC.</summary>
@@ -508,9 +511,11 @@ namespace Game.Client
         public Task DebugGiveAsync(string defId, int quantity) =>
             _connection.SendAsync("DebugGive", defId, quantity);
         public Task DebugKarmaAsync(int delta) => _connection.SendAsync("DebugKarma", delta);
-        /// <summary>The CRAFTING profession (WeaponSmith … ScrollScribe) — not the class.</summary>
-        public Task DebugSetProfessionAsync(int profession) =>
-            _connection.SendAsync("DebugSetProfession", profession);
+        /// <summary>Become a crafter without the Master's trial (`BL-273` part 2).</summary>
+        public Task DebugBecomeCrafterAsync() => _connection.SendAsync("DebugBecomeCrafter");
+        /// <summary>Set the generic and the three type craft levels (0-10 each).</summary>
+        public Task DebugSetCraftLevelsAsync(int generic, int weapon, int armour, int jewels) =>
+            _connection.SendAsync("DebugSetCraftLevels", generic, weapon, armour, jewels);
 
         /// <summary>Become a 2nd CLASS directly (ClassCatalog id), skipping the quest/level gates.</summary>
         public Task DebugSecondClassAsync(int classId) =>

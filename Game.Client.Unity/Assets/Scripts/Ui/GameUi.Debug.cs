@@ -687,7 +687,7 @@ namespace Game.Client
 
             foreach (var type in Crafting.MaterialTypes)
             {
-                DebugHeader($"{type} — refined by {Crafting.RefinerOf(type)}");
+                DebugHeader($"{type}");
                 foreach (var rarity in Crafting.MaterialRarities)
                 {
                     string id = Crafting.MaterialId(type, rarity);
@@ -962,7 +962,7 @@ namespace Game.Client
             if (_debugAddDiscView) { BuildDebugAddDiscipline(); return; }
             if (_debugResetView) { BuildDebugReset(); return; }
 
-            _debugTitle.text = "Profession, subclasses and reset";
+            _debugTitle.text = "Classes, crafting, subclasses and reset";
 
             // `BL-127` — LEVEL LIVES HERE NOW, and first, because every row below it is level-gated:
             // a discipline needs 40, a subclass its own floor, the 4th class 76. One round trip per
@@ -974,7 +974,7 @@ namespace Game.Client
             DebugAction("Level -1", () => Boot.Debug(n => n.DebugLevelAsync(-1), "level"));
             DebugAction("Level -10", () => Boot.Debug(n => n.DebugLevelAsync(-10), "level"));
 
-            DebugHeader("Profession & skills");
+            DebugHeader("Skills");
             DebugAction("Give all skills (to my level)",
                         () => Boot.Debug(n => n.DebugLearnAllAsync(), "learn all"));
 
@@ -1043,15 +1043,29 @@ namespace Game.Client
                 DebugAction($"Ascend -> {next.Name}",
                             () => Boot.Debug(n => n.DebugFourthClassAsync(), "4th class"));
 
-            // The CRAFTING profession is a separate axis (it gates which recipes you can craft) and now
-            // has its own rows, instead of being the accidental target of the class list above.
-            DebugHeader("Crafting profession");
-            foreach (Profession prof in Enum.GetValues(typeof(Profession)))
+            // CRAFTING (`BL-273` part 2, §2.2 #7): "Become crafter" skips the Master's trial, the way the class
+            // rows skip class quests; "Set craft levels" jumps the generic and the three type levels so the
+            // T76/T80 bonus and the 60-slot cap can be tested without hundreds of crafts.
+            DebugHeader("Crafting (L" + Boot.CraftLevel + " · w" + Boot.CraftTypeLevel(CraftType.Weapon)
+                        + " a" + Boot.CraftTypeLevel(CraftType.Armour) + " j" + Boot.CraftTypeLevel(CraftType.Jewels)
+                        + (Boot.IsCrafter ? "" : " · not a crafter") + ")");
+            if (!Boot.IsCrafter)
+                DebugAction("Become crafter", () => Boot.Debug(n => n.DebugBecomeCrafterAsync(), "become crafter"));
+            foreach (var (label, g, w, a, j) in new[]
             {
-                Profession p = prof;
-                DebugAction(p.ToString(),
-                            () => Boot.Debug(n => n.DebugSetProfessionAsync((int)p), "crafting profession"));
+                ("Craft levels: all 0", 0, 0, 0, 0),
+                ("Craft levels: all 5", 5, 5, 5, 5),
+                ("Craft levels: all 10", 10, 10, 10, 10),
+                ("Craft levels: generic 10, types 0", 10, 0, 0, 0),
+                ("Craft levels: generic 0, weapon 10", 0, 10, 0, 0),
+            })
+            {
+                int gg = g, ww = w, aa = a, jj = j;
+                DebugAction(label, () => Boot.Debug(n => n.DebugSetCraftLevelsAsync(gg, ww, aa, jj), "craft levels"));
             }
+            DebugAction("Generic craft level +1", () => { int lv = Math.Min(Crafting.MaxCraftLevel, Boot.CraftLevel + 1);
+                Boot.Debug(n => n.DebugSetCraftLevelsAsync(lv, Boot.CraftTypeLevel(CraftType.Weapon),
+                    Boot.CraftTypeLevel(CraftType.Armour), Boot.CraftTypeLevel(CraftType.Jewels)), "craft levels"); });
 
             // The owner's real test loop: swap class on the spot to compare two builds in the SAME
             // gear, instead of relogging onto another character. Each class keeps its own level, XP,

@@ -7,12 +7,54 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.202.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.203.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-24 (latest) — 0.202.0: the shops (`BL-272` part 2, step 8 of the rework order)
+## 2026-09-24 (latest) — 0.203.0: becoming a crafter (`BL-273` part 2, step 9 of the rework order)
+
+> *"As we remove the professions we have no lock and no way to disable crafting once the quest is done"*
+
+**The five professions are gone. One trial at level 40 makes you a crafter for good.** Crafting now has
+recipe slots, a generic level plus three type levels, and recipes at 20/40/60/100%. ⚠ `game.db` delete
+(new columns). ⚠ Protocol 48: **a new APK is needed.**
+
+- **The Master Crafter**, one per town (he stands where the Master Smith stood). He gives **The Master's
+  Trial** (level 40): gather 20 Seasoned Hardwood + 20 Raw Iron (Dune Orc Archers), 20 Rough Gems
+  (Harpies), 2 hammer recipes (40%) + 1 Hammer Head (Marsh Marauders), bring them back, learn one recipe
+  from the bag, and try to forge the **Blacksmith's Hammer** at his anvil. **A fail sends you back to step
+  1** (the mats and the used recipe are gone). Give him the hammer: you are a crafter with **10 slots,
+  generic and every type at L0**. ⚠ Mobs and drop chances (50/50/50/15/10%) are placeholders.
+- **Crafting happens only at a Master; learning and forgetting happen anywhere** (the window browses
+  elsewhere). One slot per recipe; **forgetting** frees it and refunds nothing.
+- **Levels:** generic 0-10 (+5 slots each, 60 at L10) and weapon / armour / jewels 0-10. Every ATTEMPT,
+  a fail too, pays tier-weighted points: **T40 1 · T52 2 · T61 3 · T76 5 · T80 8**, and 1 for a generic
+  recipe (generic level only). Level N costs 20·N points (1,100 to L10). ⚠ Placeholders for a playtest.
+- **The bonus** (+0.5% per generic level + 0.5% per type level) counts on **T76/T80 crafts only**.
+- **Gear recipes are ITEMS with a %** (T40/T52 100 · T61 60/100 · T76 20/40/60 · T80 40/60). Learning
+  one fills its slot at that %; a higher % overrides the slot in place, while a lower one is refused and
+  kept. **Each craft spends one recipe item** at or below the learned %, rolls at that %, and scales every
+  input 30/50/70/100%. F/E (T1/T20) gear is no longer crafted. A recipe needs the grade's character level
+  to learn.
+- **The Master's shelf** sells the T40/T52 100% recipes at **10% of the piece** (placeholder). T76/T80
+  bosses now drop **60%** recipes and elites **40%** (T80 recipes drop too now); the rates stay until
+  `BL-274`. T61 recipes have no source until step 11.
+- **Generic recipes** (potions, scrolls, refines) are **bought at the Master** to learn: unlocked at
+  generic level 0/2/4/6/8/10 (from their old rung), 20,000 × (1 + unlock level) gold, level 40 (76 for the
+  old top rungs). No recipe item per craft. ⚠ All placeholders: **step 9b** writes the real table (his
+  50-60%-of-shop rule, `--craft-cost` C5).
+- **Debug window:** "Become crafter", and "Craft levels" presets (all 0 / 5 / 10, generic 10, weapon 10,
+  generic +1). The old profession rows are gone.
+- **Deleted:** `Profession`, craft EXP and the L1-L6 bands, the five joining quests, join/quit, the
+  per-grade gear odds table, `DropOnly` blueprints.
+- **Quest engine:** a collect step can be `PaidAtHandIn: false` (the craft spends it), and consecutive
+  satisfied steps now walk in one pass.
+- SmokeTest: 5a plays the trial for real (including the fail→step 1 path when the dice give it), 5b
+  covers recipe %, slots, points, forgetting, the shelf and a generic recipe; section 1 gains 11
+  catalogue checks. The three old crafting FAILs are gone with the sections they lived in.
+
+## 2026-09-24 — 0.202.0: the shops (`BL-272` part 2, step 8 of the rework order)
 
 > *"so breaking like crazy T40 can get u a t52"* … *"the 2 hours tick only while WORN"*
 

@@ -486,27 +486,25 @@ public record DebugCancelAttrCmd(string ConnectionId, int Index) : IAdminCommand
 /// <summary>`BL-245` — <paramref name="UseWarehouse"/> lets the craft spend materials sitting in the
 /// PRIVATE warehouse as well as the bag. It rides the command rather than being a server-side always-on
 /// rule because the window has a toggle for it: a craft that silently ate the bank when the checkbox
-/// said otherwise would be the same class of surprise as one that refused after saying it could.</summary>
-public record CraftCmd(string ConnectionId, string RecipeId, bool UseWarehouse) : IGameCommand;
+/// said otherwise would be the same class of surprise as one that refused after saying it could.
+/// <para>`BL-273` part 2: <paramref name="RecipePercent"/> is the % of the recipe ITEM a gear craft spends
+/// (at or below the learned %); the attempt rolls at it and the inputs scale by it. Ignored for generic
+/// recipes, which spend no recipe item.</para></summary>
+public record CraftCmd(string ConnectionId, string RecipeId, bool UseWarehouse, int RecipePercent) : IGameCommand;
 
-/// <summary>Take a master's profession WITHOUT re-doing his joining quest — open only to someone who has
-/// completed it once before (`BL-05`). Addressed by the master's live ENTITY id and range-checked, like
-/// every other NPC service: the profession is granted at the man, not from a menu.</summary>
-public record JoinProfessionCmd(string ConnectionId, Guid NpcEntityId) : IGameCommand;
+/// <summary>Forget a learned recipe to free its slot (`BL-273` part 2). Anywhere; refunds nothing.</summary>
+public record ForgetRecipeCmd(string ConnectionId, string RecipeId) : IGameCommand;
 
-/// <summary>Quit the character's profession at his own master, losing every crafting level (`BL-05`).</summary>
-public record QuitProfessionCmd(string ConnectionId, Guid NpcEntityId) : IGameCommand;
+/// <summary>Buy a GENERIC recipe (potion, scroll, refine) from the Master Crafter and learn it into a slot
+/// (`BL-273` part 2). Addressed by the master's live entity id and range-checked.</summary>
+public record LearnRecipeAtMasterCmd(string ConnectionId, Guid NpcEntityId, string RecipeId) : IGameCommand;
 
-/// <summary>DEBUG-only: set the player's crafting profession (until level-based assignment lands).</summary>
-/// <summary>Set the CRAFTING profession (WeaponSmith … ScrollScribe). Not the class — see
-/// <see cref="DebugSecondClassCmd"/>. The two were confused in the debug UI, which sent a 2nd-class id
-/// (1-18) here, where it was clamped into the 5-value crafting enum and silently became ScrollScribe.</summary>
-public record DebugSetProfessionCmd(string ConnectionId, int Profession) : IAdminCommand;
+/// <summary>DEBUG-only: become a crafter without the trial (the class-change precedent, §2.2 #7).</summary>
+public record DebugBecomeCrafterCmd(string ConnectionId) : IAdminCommand;
 
-/// <summary>DEBUG-only: jump straight to a crafting LEVEL (1-6), skipping the exp grind (`BL-05`).
-/// The band freeze still applies — a level-20 character set to L6 reads as L2, which is the point:
-/// this is for testing the ladder, not for stepping over it.</summary>
-public record DebugSetCraftLevelCmd(string ConnectionId, int Level) : IAdminCommand;
+/// <summary>DEBUG-only: set the four craft levels (0-10) directly, so the T76/T80 bonus and the 60-slot cap
+/// can be tested without hundreds of crafts. Sets each pot to the level's first point.</summary>
+public record DebugSetCraftLevelsCmd(string ConnectionId, int Generic, int Weapon, int Armour, int Jewels) : IAdminCommand;
 
 /// <summary>Debug: become a 2nd CLASS directly, skipping the quest and level gates the real
 /// class-change path enforces.</summary>

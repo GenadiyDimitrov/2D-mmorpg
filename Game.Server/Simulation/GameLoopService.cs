@@ -100,8 +100,8 @@ public class GameLoopService : BackgroundService
             EnchantCmd c => c.ConnectionId,
             RerollAttributesCmd c => c.ConnectionId,
             CraftCmd c => c.ConnectionId,
-            JoinProfessionCmd c => c.ConnectionId,
-            QuitProfessionCmd c => c.ConnectionId,
+            ForgetRecipeCmd c => c.ConnectionId,
+            LearnRecipeAtMasterCmd c => c.ConnectionId,
             BuyItemCmd c => c.ConnectionId,
             SellItemCmd c => c.ConnectionId,
             InstantSellCmd c => c.ConnectionId,   // `BL-240` — a jailed player sells nothing, fast or slow
@@ -230,10 +230,10 @@ public class GameLoopService : BackgroundService
                 case DebugGiveCmd c: HandleDebugGive(c); break;
                 case DebugCancelAttrCmd c: HandleDebugCancelAttr(c); break;
                 case CraftCmd c: HandleCraft(c); break;
-                case JoinProfessionCmd c: HandleJoinProfession(c); break;
-                case QuitProfessionCmd c: HandleQuitProfession(c); break;
-                case DebugSetProfessionCmd c: HandleDebugSetProfession(c); break;
-                case DebugSetCraftLevelCmd c: HandleDebugSetCraftLevel(c); break;
+                case ForgetRecipeCmd c: HandleForgetRecipe(c); break;
+                case LearnRecipeAtMasterCmd c: HandleLearnRecipeAtMaster(c); break;
+                case DebugBecomeCrafterCmd c: HandleDebugBecomeCrafter(c); break;
+                case DebugSetCraftLevelsCmd c: HandleDebugSetCraftLevels(c); break;
                 case DebugSecondClassCmd c: HandleDebugSecondClass(c); break;
                 case DebugLevelCmd c: HandleDebugLevel(c); break;
                 case DebugLearnAllCmd c: HandleDebugLearnAll(c); break;
@@ -365,7 +365,7 @@ public class GameLoopService : BackgroundService
         SendLearned(entity);   // sends the skill BAR with it, in the right order — see SendLearned
         SendCooldowns(entity); // after the bar: the overlay has nothing to sit on before it exists
         SendSubclasses(entity);
-        SendCrafting(entity);  // profession + unlocked blueprints; the craft window is empty without it
+        SendCrafting(entity);  // crafter state + learned recipes; the craft window is empty without it
         SendQuestLog(entity);
         SendGold(entity);
         SendAutoHuntConfig(entity);   // restore the saved auto-hunt settings in the client UI
@@ -3414,14 +3414,17 @@ public class GameLoopService : BackgroundService
         SendStats(player);
     }
 
-    /// <summary>Craft a recipe: check profession + master + crafting rung + character level + inputs,
-    /// consume the inputs, roll the outcome, and award crafting exp (`BL-05`).
+    /// <summary>Craft a recipe (`BL-273` part 2, 0.203.0): a crafter, at a Master Crafter, holding a
+    /// learned recipe, its inputs and — for gear — ONE recipe item at or below the learned %.
     ///
-    /// <para>Two kinds of roll live here. A material or consumable recipe rolls its own
-    /// <see cref="Recipe.SuccessChance"/> — succeed or lose the mats. A GEAR recipe rolls the owner's
-    /// table instead (<see cref="Crafting.GearCraftOdds"/>): the piece, or a failure that eats the
-    /// materials. (It was three-way until `BL-272` deleted the Legendary rung; that share is a fail
-    /// now, his interim ruling until the `BL-273` recipe rework.)</para></summary>
+    /// <para>Two kinds of roll. GEAR rolls the % of the recipe item it spends, plus the crafter bonus on
+    /// T76/T80 only (<see cref="Crafting.SuccessBonus"/>), and every input is scaled by that % on the mat
+    /// curve (<see cref="Crafting.ScaledQty"/>). A GENERIC recipe (potion, scroll, refine) spends no recipe
+    /// item and rolls its own <see cref="Recipe.SuccessChance"/>. Either way a fail eats everything spent,
+    /// the recipe item included (*"if one that is used fails u need to go gather more mats and more rcps"*).</para>
+    ///
+    /// <para>The one recipe a NON-crafter may use is the trial's hammer, and only while the trial sits on
+    /// its craft step. Its fail sends the quest back to the first gather step (his *"fail go to 1"*).</para></summary>
     private void HandleCraft(CraftCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player))
@@ -3431,284 +3434,287 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(player, "Unknown recipe.");
             return;
         }
-        if (recipe.Profession != Profession.None && player.Profession != recipe.Profession)
+        bool trial = recipe.QuestOnly;
+        if (trial)
         {
-            SendSystemToEntity(player, $"Requires the {recipe.Profession} profession.");
-            return;
-        }
-        // ⚠ THE MASTER IS THE WORKSHOP (owner: *"better at NPC — and craft happens with their respected
-        // masters"*). The window still opens anywhere, in browse mode, because the have/need colouring
-        // is what tells you WHAT TO FARM and that is a decision made in the field — but nothing is made
-        // away from the man who taught you.
-        if (MasterNpcNear(player) is null)
-        {
-            SendSystemToEntity(player,
-                $"You must be with your master to craft. ({ProfessionMasterWhere(player.Profession)})");
-            return;
-        }
-
-        int rung = player.CraftLevel;
-        if (rung <= 0)
-        {
-            SendSystemToEntity(player, "You have no crafting profession.");
-            return;
-        }
-        // The crafting-level gate, which is a SECOND gate and not the character one below: everything at
-        // or below your rung, plus exactly one rung above (*"L5 should not be available"* to an L3).
-        if (!Crafting.CanCraftAt(recipe.CraftLevel, rung))
-        {
-            SendSystemToEntity(player,
-                $"That is a level {recipe.CraftLevel} recipe — you are level {rung}. "
-                + (recipe.CraftLevel == rung + 2
-                    ? "You can only attempt one level above your own."
-                    : "Craft your way up to it."));
-            return;
-        }
-        // DropOnly recipes (A-grade sets) must be learned from a dropped recipe BOOK; auto-known
-        // recipes just need the level gate.
-        if (recipe.DropOnly)
-        {
-            if (!player.KnownRecipes.Contains(recipe.Id))
+            if (!player.ActiveQuests.TryGetValue(QuestCatalog.QuestBecomeCrafter, out var qs)
+                || qs.StepIndex != QuestCatalog.CrafterQuestCraftStep)
             {
-                SendSystemToEntity(player, "You haven't learned that recipe — unlock it with its blueprint first.");
+                SendSystemToEntity(player, "That recipe is only for the Master's trial, once you reach its craft step.");
                 return;
             }
         }
-        else if (player.Level < recipe.LearnLevel)
+        else if (!player.IsCrafter)
         {
-            SendSystemToEntity(player, $"You must be level {recipe.LearnLevel} to craft this.");
+            SendSystemToEntity(player,
+                $"You are not a crafter yet. The Master Crafter's trial comes first (level {Crafting.CrafterQuestLevel}).");
+            return;
+        }
+        if (!player.KnownRecipes.TryGetValue(recipe.Id, out int learnedPct))
+        {
+            SendSystemToEntity(player, "You haven't learned that recipe.");
+            return;
+        }
+        // ⚠ THE MASTER IS THE WORKSHOP (owner, 2026-09-24: *"crafts happen only at a Master (u need the place
+        // and tools to craft)"*). The window still opens anywhere, in browse mode — the have/need colouring
+        // is what tells you what to farm — but nothing is made away from an anvil.
+        if (MasterNpcNear(player) is null)
+        {
+            SendSystemToEntity(player, "Crafting happens at a Master Crafter's workshop, in any town.");
             return;
         }
 
-        // Endgame (DropOnly) recipes ALSO consume ONE BLUEPRINT per craft — the very item that unlocked the
-        // recipe (owner's design: 1 blueprint to learn + 1 every craft, so the first craft costs 2). The
-        // blueprint is the recipe's own book item, which always exists for a DropOnly (A-grade) recipe.
-        string? blueprintId = recipe.DropOnly ? ItemCatalog.RecipeBookId(recipe.Id) : null;
-        if (blueprintId != null && ItemCatalog.Get(blueprintId) is null) blueprintId = null;
+        // ---- The recipe ITEM spent on the attempt (gear and the trial only).
+        int pct = 100;
+        string? recipeItemId = null;
+        if (recipe.IsGear || trial)
+        {
+            pct = trial ? Crafting.HammerRecipePercent : cmd.RecipePercent;
+            if (!trial && (Array.IndexOf(Crafting.RecipePercents, pct) < 0 || pct > learnedPct))
+            {
+                SendSystemToEntity(player, $"You know this recipe at {learnedPct}%: craft with a recipe of {learnedPct}% or lower.");
+                return;
+            }
+            recipeItemId = ItemCatalog.RecipeBookId(recipe.Id, pct);
+            if (ItemCatalog.Get(recipeItemId) is null)
+            {
+                SendSystemToEntity(player, $"There is no {pct}% recipe for that item.");
+                return;
+            }
+        }
 
-        // `BL-245` — THE KEEPER'S SHELF IS A SECOND PANTRY (owner: *"crafter should see mats in private
-        // wharehouse"*). ⚠ The half that had to be decided is whether the warehouse only COUNTS toward a
-        // recipe or is actually SPENT, and it is spent: a window that says you can craft and then refuses
-        // is worse than one that never offered. So the gate and the spend walk the same two containers,
-        // in the same order, behind the same flag — split them and the gate could pass on a total the
-        // spend cannot reach.
+        // `BL-245` — THE KEEPER'S SHELF IS A SECOND PANTRY: the gate and the spend walk the same two
+        // containers, in the same order, behind the same flag, so the gate can never pass on a total the
+        // spend cannot reach. Gear inputs are scaled by the % spent; the trial and generic recipes are not.
         bool useWh = cmd.UseWarehouse;
-        foreach (var inp in recipe.Inputs)
+        var inputs = recipe.IsGear
+            ? recipe.Inputs.Select(i => i with { Qty = Crafting.ScaledQty(i.Qty, pct) }).ToArray()
+            : recipe.Inputs;
+        foreach (var inp in inputs)
             if (CraftCount(player, inp.ItemId, useWh) < inp.Qty)
             {
                 SendSystemToEntity(player, "You don't have the required materials.");
                 return;
             }
-        if (blueprintId != null && CraftCount(player, blueprintId, useWh) < 1)
+        if (recipeItemId != null && CraftCount(player, recipeItemId, useWh) < 1)
         {
-            SendSystemToEntity(player, "You need a blueprint to craft this — one is consumed each time.");
+            SendSystemToEntity(player, $"You need a {pct}% recipe to spend on the attempt.");
             return;
         }
+        if (recipe.GoldCost > 0 && player.Gold < recipe.GoldCost)
+        {
+            SendSystemToEntity(player, $"Not enough {GameConstants.CurrencyName} (need {recipe.GoldCost:N0}).");
+            return;
+        }
+
         bool tookFromWarehouse = false;
-        foreach (var inp in recipe.Inputs)
+        foreach (var inp in inputs)
             tookFromWarehouse |= CraftConsume(player, inp.ItemId, inp.Qty, useWh);
-
-        // ---- THE ROLL. Gear takes the owner's success-or-fail table; everything else its own SuccessChance.
-        var outDef = ItemCatalog.Get(recipe.OutputId);
-        bool isGear = outDef is not null && Crafting.IsGearSlot(outDef.Slot);
-        string? madeId = null;
-        if (isGear)
+        if (recipeItemId != null)
+            tookFromWarehouse |= CraftConsume(player, recipeItemId, 1, useWh);
+        if (recipe.GoldCost > 0)
         {
-            // A fail eats the mats, which is the crafting economy's first real sink.
-            if (_rng.NextDouble() < Crafting.GearCraftOdds(recipe.CraftLevel).Success)
-                madeId = recipe.OutputId;                     // the authored piece
+            player.Gold -= recipe.GoldCost;
+            SendGold(player);
         }
-        else if (_rng.NextDouble() < recipe.SuccessChance)
-        {
-            madeId = recipe.OutputId;
-        }
-
-        // The BLUEPRINT is spent on a SUCCESS only. The owner's fail rule names the MATERIALS —
-        // *"a fail consumes the materials and produces nothing"* — and a blueprint is not one: it is the
-        // recipe itself, dropped at 0.1% off an A-grade boss. Burning it on a 75% failure would make an
-        // S craft cost four boss blueprints per item and put the top rung out of reach of the drop rate
-        // that feeds it.
-        if (madeId != null && blueprintId != null)
-            tookFromWarehouse |= CraftConsume(player, blueprintId, 1, useWh);
-
-        // The keeper's shelf is PUSHED state on this client, not something it re-asks for — it travels
-        // with login (SendWarehouse at EnterWorld) so the crafting window can count it without a town
-        // trip. Which means a craft that spent from it MUST say so, or the window goes on offering
-        // materials that are already gone.
+        // The keeper's shelf is PUSHED state on this client, so a craft that spent from it MUST say so.
         if (tookFromWarehouse) SendWarehouse(player);
 
-        if (madeId != null)
+        // ---- THE ROLL.
+        float chance = recipe.IsGear
+            ? pct / 100f + Crafting.SuccessBonus(recipe.GearItemLevel, player.CraftLevel,
+                                                 player.CraftTypeLevel(recipe.Type))
+            : recipe.SuccessChance;
+        bool made = _rng.NextDouble() < chance;
+        if (made)
         {
-            AddItem(player, madeId, recipe.OutputQty);
-            string madeName = ItemCatalog.Get(madeId)?.Name ?? madeId;
+            AddItem(player, recipe.OutputId, recipe.OutputQty);
+            string madeName = ItemCatalog.Get(recipe.OutputId)?.Name ?? recipe.OutputId;
             SendSystemToEntity(player, $"Crafted {madeName}"
                 + (recipe.OutputQty > 1 ? $" x{recipe.OutputQty}." : "."));
         }
         else
         {
-            SendSystemToEntity(player, "Craft failed — the materials were lost.");
+            SendSystemToEntity(player, recipeItemId != null
+                ? "Craft failed — the materials and the recipe were lost."
+                : "Craft failed — the materials were lost.");
         }
 
-        AwardCraftExp(player, recipe.CraftLevel);
+        if (trial)
+        {
+            // *"5.1. fail go to 1"* — back to the first gather step. Leftovers still count: the collect
+            // re-check that SendInventory runs below moves the quest straight on past anything still held.
+            if (!made && player.ActiveQuests.TryGetValue(QuestCatalog.QuestBecomeCrafter, out var qs))
+            {
+                player.ActiveQuests[QuestCatalog.QuestBecomeCrafter] =
+                    qs with { StepIndex = QuestCatalog.CrafterQuestGatherStep, Counter = 0 };
+                SendSystemToEntity(player, "The Master's Trial: gather the materials again.");
+                SendQuestLog(player);
+            }
+        }
+        else
+        {
+            AwardCraftPoints(player, recipe);
+        }
         SendInventory(player);
     }
 
-    /// <summary>Crafting exp for one ATTEMPT, capped at the band the character has earned (`BL-05`).
-    ///
-    /// 🔑 **Paid on a FAILURE too.** His spec counts *"crafts"* (*"x10 crafts per difference of same
-    /// level"*) and the materials are spent either way, so a failed attempt is work done — the levels
-    /// are practice, which is exactly why quitting a profession loses them. Paying only on success would
-    /// also make the A and S rungs level 2× and 4× slower than the numbers he wrote, purely as a side
-    /// effect of a table he authored for a different purpose. One line to flip if he disagrees.
-    ///
-    /// ⚠ The cap NEVER LOWERS stored exp. <see cref="Crafting.CapExp"/> is a clamp, and a clamp applied
-    /// to an already-high total would delete progress the moment a character's band appeared to shrink.
-    /// <see cref="Entity.CraftBandCap"/> reads the best subclass precisely so that cannot happen, and
-    /// this is the second guard on the same silent, hours-destroying failure.</summary>
-    private void AwardCraftExp(Entity player, int recipeLevel)
+    /// <summary>Craft points for one ATTEMPT (his pick, 2026-09-24: tier-weighted, and a FAIL counts, since
+    /// the materials are spent either way). The generic pot always; the type pot for gear. Each pot stops at
+    /// L10's mark.</summary>
+    private void AwardCraftPoints(Entity player, Recipe recipe)
     {
-        int gain = Crafting.CraftExp(recipeLevel, player.CraftLevel);
-        if (gain <= 0) return;                       // -2 rungs and below pay nothing, by his rule
+        int pts = recipe.IsGear ? Crafting.CraftPoints(recipe.GearItemLevel) : 1;
+        int cap = Crafting.PointsForLevel(Crafting.MaxCraftLevel);
+        int genBefore = player.CraftLevel;
+        int typeBefore = player.CraftTypeLevel(recipe.Type);
 
-        int before = player.CraftLevel;
-        int capped = Crafting.CapExpToBand(player.CraftExp + gain, player.CraftBandCap);
-        if (capped <= player.CraftExp) return;       // frozen at the band's mark — nothing to say
-        player.CraftExp = capped;
-
-        int after = player.CraftLevel;
-        if (after > before)
+        player.CraftPoints = Math.Min(cap, player.CraftPoints + pts);
+        switch (recipe.Type)
         {
-            SendSystemToEntity(player, $"Your {player.Profession} skill reached level {after}.");
-            SaveEntity(player);                      // a level is worth not trusting to the 60s autosave
+            case CraftType.Weapon: player.CraftPointsWeapon = Math.Min(cap, player.CraftPointsWeapon + pts); break;
+            case CraftType.Armour: player.CraftPointsArmour = Math.Min(cap, player.CraftPointsArmour + pts); break;
+            case CraftType.Jewels: player.CraftPointsJewels = Math.Min(cap, player.CraftPointsJewels + pts); break;
         }
+
+        bool levelled = false;
+        if (player.CraftLevel > genBefore)
+        {
+            SendSystemToEntity(player,
+                $"Your crafting level reached {player.CraftLevel} ({player.RecipeSlots} recipe slots).");
+            levelled = true;
+        }
+        if (recipe.Type != CraftType.General && player.CraftTypeLevel(recipe.Type) > typeBefore)
+        {
+            SendSystemToEntity(player,
+                $"Your {CraftTypeName(recipe.Type)} crafting reached level {player.CraftTypeLevel(recipe.Type)}.");
+            levelled = true;
+        }
+        if (levelled) SaveEntity(player);      // a level is worth not trusting to the 60s autosave
         SendCrafting(player);
     }
 
-    /// <summary>Grant a profession and start it at L1, 0% — *"After quest u become l1"*. Shared by the
-    /// joining-quest completion and the re-join path (a master who has already taught you takes you
-    /// straight back), so both can never disagree about what joining does.</summary>
-    private void GrantProfession(Entity player, Profession prof)
+    private static string CraftTypeName(CraftType t) => t switch
     {
-        player.Profession = prof;
-        player.CraftExp = 0;
+        CraftType.Weapon => "weapon",
+        CraftType.Armour => "armour",
+        CraftType.Jewels => "jewel",
+        _ => "generic",
+    };
+
+    /// <summary>The trial is done: a crafter for good, generic and every type at L0, 10 slots (*"7. u are
+    /// crafter (10 slots - L0 on generic and typed)"*). The trial's hammer recipe is forgotten; it has no
+    /// use afterwards and must not sit in a slot.</summary>
+    private void BecomeCrafter(Entity player)
+    {
+        player.IsCrafter = true;
+        player.KnownRecipes.Remove(Crafting.HammerRecipeId);
         SendSystemToEntity(player,
-            $"You are now a {prof} — crafting level 1. Your master's workshop is where you make things.");
+            $"You are a crafter: {player.RecipeSlots} recipe slots. Learn recipes anywhere; craft at any Master Crafter.");
         SendCrafting(player);
         SaveEntity(player);
     }
 
-    /// <summary>Join a master's profession WITHOUT re-doing his quest (`BL-05`).
-    ///
-    /// 🔑 His ruling, 2026-08-12: *"Skip the quest if it's once done, but still lose levels if switching.
-    /// Like a mix from both."* So this path is open only to someone who has already completed THIS
-    /// master's joining quest, and it still starts them at L1, 0% — the quest is knowledge and cannot be
-    /// un-known; the levels are practice and are lost by walking away. It needs no new storage: joining
-    /// quests are ordinary quests and <c>CompletedQuests</c> already persists.</summary>
-    private void HandleJoinProfession(JoinProfessionCmd cmd)
+    /// <summary>Forget a learned recipe to free its slot (`BL-273` part 2) — anywhere, and it refunds
+    /// nothing (*"U can remove learned recipes to free up slots"*).</summary>
+    private void HandleForgetRecipe(ForgetRecipeCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player))
             return;
-        if (NpcRefusesService(player, "No master will take you on")) return;
-        if (CraftMasterAt(player, cmd.NpcEntityId) is not Profession prof)
-            return;
-        if (player.Profession == prof)
+        if (!player.KnownRecipes.Remove(cmd.RecipeId))
         {
-            SendSystemToEntity(player, $"You are already a {prof}.");
+            SendSystemToEntity(player, "You don't know that recipe.");
             return;
         }
-        if (player.Level < QuestCatalog.ProfessionJoinLevel)
-        {
-            SendSystemToEntity(player,
-                $"A master takes no apprentice below level {QuestCatalog.ProfessionJoinLevel}.");
-            return;
-        }
-        // Never done his quest → he has not made his pitch yet, and the pitch is the point.
-        if (QuestCatalog.JoiningQuestFor(prof) is not string qid || !player.CompletedQuests.Contains(qid))
-        {
-            SendSystemToEntity(player, "Take his apprenticeship quest first.");
-            return;
-        }
-        // ⚠ Switching AWAY from a profession you still hold destroys its levels. The client confirms
-        // with the number spelled out; this is the server refusing to do it silently.
-        if (player.Profession != Profession.None)
-        {
-            SendSystemToEntity(player,
-                $"Quit your {player.Profession} at his own master first — his levels do not carry over.");
-            return;
-        }
-        GrantProfession(player, prof);
-    }
-
-    /// <summary>Quit the character's profession at his OWN master, losing every crafting level
-    /// (`BL-05`) — *"if some1 desides that he dont like the proffesion can go to his master and quits
-    /// (losing all his levels) → then he can go to the other master and start the quests and at lvl
-    /// 0."*
-    ///
-    /// ⚠ This is the one destructive action in the feature. The confirmation with the loss spelled out
-    /// in numbers is the CLIENT's job (same as the Mindwriter and the stat basket); the server's job is
-    /// to refuse it at the wrong NPC, so a mis-sent command can never cost someone L5.</summary>
-    private void HandleQuitProfession(QuitProfessionCmd cmd)
-    {
-        if (!TryGetPlayer(cmd.ConnectionId, out var player))
-            return;
-        if (player.Profession == Profession.None)
-        {
-            SendSystemToEntity(player, "You have no profession to quit.");
-            return;
-        }
-        if (CraftMasterAt(player, cmd.NpcEntityId) != player.Profession)
-        {
-            SendSystemToEntity(player, "Only your own master can release you.");
-            return;
-        }
-        var was = player.Profession;
-        int wasLevel = player.CraftLevel;
-        player.Profession = Profession.None;
-        player.CraftExp = 0;
-        SendSystemToEntity(player,
-            $"You are no longer a {was}. Crafting level {wasLevel} is gone — a new master starts you at 1.");
+        string name = RecipeCatalog.Get(cmd.RecipeId) is Recipe r
+            ? ItemCatalog.Get(r.OutputId)?.Name ?? r.OutputId : cmd.RecipeId;
+        SendSystemToEntity(player, $"Forgot the {name} recipe.");
         SendCrafting(player);
         SaveEntity(player);
     }
 
-    /// <summary>The nearby NPC entity with this npc id (any town's copy of the same service), or null.
-    /// Uses the same interaction range every other NPC service does.</summary>
-    /// <summary>The profession taught by the craft master this player is standing at, or null with the
-    /// refusal already sent. Same shape as every other NPC service: resolve the LIVE entity, check its
-    /// role, check the range — which together mean a join or a quit can only be aimed at a master who
-    /// really is spawned and really is in front of you.</summary>
-    private Profession? CraftMasterAt(Entity player, Guid npcEntityId)
+    /// <summary>Buy and learn a GENERIC recipe at the Master Crafter (`BL-273` part 2): *"the other rcps like
+    /// potions and stuff are bought from master to learn (they also can follow grade to be learned, but
+    /// master unlocks them for buying at generic lvlX)"*. ⚠ Unlock level and price are placeholders.</summary>
+    private void HandleLearnRecipeAtMaster(LearnRecipeAtMasterCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player))
+            return;
+        if (NpcRefusesService(player, "The Master Crafter will not teach you")) return;
+        if (!CraftMasterAt(player, cmd.NpcEntityId)) return;
+        if (RecipeCatalog.Get(cmd.RecipeId) is not Recipe recipe || recipe.IsGear || recipe.QuestOnly)
+        {
+            SendSystemToEntity(player, "The Master does not teach that recipe.");
+            return;
+        }
+        if (!player.IsCrafter)
+        {
+            SendSystemToEntity(player, "Only a crafter can learn recipes. Take the Master's trial first.");
+            return;
+        }
+        if (player.KnownRecipes.ContainsKey(recipe.Id))
+        {
+            SendSystemToEntity(player, "You already know that recipe.");
+            return;
+        }
+        if (player.Level < recipe.LearnLevel)
+        {
+            SendSystemToEntity(player, $"You must be level {recipe.LearnLevel} to learn it.");
+            return;
+        }
+        if (player.CraftLevel < recipe.UnlockLevel)
+        {
+            SendSystemToEntity(player, $"The Master teaches that at crafting level {recipe.UnlockLevel}.");
+            return;
+        }
+        if (player.RecipeSlotsUsed >= player.RecipeSlots)
+        {
+            SendSystemToEntity(player,
+                $"No free recipe slot ({player.RecipeSlotsUsed}/{player.RecipeSlots}). Forget one first.");
+            return;
+        }
+        if (player.Gold < recipe.LearnPrice)
+        {
+            SendSystemToEntity(player, $"Not enough {GameConstants.CurrencyName} (need {recipe.LearnPrice:N0}).");
+            return;
+        }
+        player.Gold -= recipe.LearnPrice;
+        player.KnownRecipes[recipe.Id] = 100;
+        SendGold(player);
+        SendSystemToEntity(player,
+            $"Learned the {ItemCatalog.Get(recipe.OutputId)?.Name ?? recipe.OutputId} recipe.");
+        SendCrafting(player);
+        SaveEntity(player);
+    }
+
+    /// <summary>Is the NPC this player addressed a Master Crafter, spawned and in range? Sends the refusal
+    /// itself. Same shape as every other NPC service.</summary>
+    private bool CraftMasterAt(Entity player, Guid npcEntityId)
     {
         if (!_world.Entities.TryGetValue(npcEntityId, out var npc)
-            || npc.Kind != EntityKind.Npc || npc.NpcRole != NpcRole.CraftMaster
-            || WorldMap.CraftMasterProfession(npc.NpcId ?? "") is var taught
-                && taught == Profession.None)
+            || npc.Kind != EntityKind.Npc || npc.NpcRole != NpcRole.CraftMaster)
         {
-            SendSystemToEntity(player, "That is not a crafting master.");
-            return null;
+            SendSystemToEntity(player, "That is not a Master Crafter.");
+            return false;
         }
         float dx = npc.X - player.X, dy = npc.Y - player.Y;
         if (dx * dx + dy * dy > GameConstants.TalkRange * GameConstants.TalkRange)
         {
             SendSystemToEntity(player, $"{npc.Name} is too far away.");
-            return null;
+            return false;
         }
-        return WorldMap.CraftMasterProfession(npc.NpcId ?? "");
+        return true;
     }
 
-    /// <summary>The npc id of the craft master this player is standing at, if it is THEIR OWN master —
-    /// the gate on actually making anything (owner: *"craft happens with their respected masters"*).
-    /// Null everywhere else, which is what puts the crafting window into browse mode.</summary>
-    /// ⚠ Reads the STATIC WorldMap table, not the live entity dictionary. NPCs never move, and this is
-    /// called once a second for every player who holds a profession — scanning every entity in the world
-    /// for that would be the most expensive thing in the tick. Five rows, five distance checks.
+    /// <summary>The npc id of a Master Crafter this player is standing at, or null — the gate on actually
+    /// making anything, and what puts the crafting window into browse mode elsewhere.
+    /// ⚠ Reads the STATIC WorldMap table, not the live entity dictionary: NPCs never move, and this runs
+    /// once a second for every crafter.</summary>
     private static string? MasterNpcNear(Entity player)
     {
-        if (player.Profession == Profession.None) return null;
         foreach (var n in WorldMap.Npcs)
         {
             if (n.Role != NpcRole.CraftMaster) continue;
-            if (WorldMap.CraftMasterProfession(n.Id) != player.Profession) continue;
             float dx = n.X - player.X, dy = n.Y - player.Y;
             if (dx * dx + dy * dy <= GameConstants.TalkRange * GameConstants.TalkRange)
                 return n.Id;
@@ -3716,57 +3722,46 @@ public class GameLoopService : BackgroundService
         return null;
     }
 
-    /// <summary>Once a second: has this crafter walked into (or out of) his master's range? If so push
-    /// the crafting state so the window's Craft buttons go live or dead on their own.
-    ///
-    /// 🔑 A LATCH, not a poll of the client. It pushes only on the EDGE, so standing in the workshop
-    /// costs one message rather than one a second, and the whole rest of the world costs nothing but the
-    /// five distance checks in <see cref="MasterNpcNear"/>. The alternative — leaving the client to guess
-    /// — was rejected because "browse vs craft" is the SERVER's rule (owner: *"craft happens with their
-    /// respected masters"*) and a client that guesses it wrong shows a live button that refuses.</summary>
+    /// <summary>Once a second: has this crafter (or trial-taker) walked into or out of a Master's range? If
+    /// so push the crafting state so the window's Craft buttons go live or dead on their own. A LATCH: it
+    /// pushes only on the EDGE.</summary>
     private void TickCraftMasterProximity(Entity player)
     {
-        if (player.Profession == Profession.None) return;
+        if (!player.IsCrafter && !player.ActiveQuests.ContainsKey(QuestCatalog.QuestBecomeCrafter)) return;
         bool atMaster = MasterNpcNear(player) is not null;
         if (atMaster == player.AtCraftMaster) return;
         player.AtCraftMaster = atMaster;
         SendCrafting(player);
     }
 
-    /// <summary>Where to go to craft, for the "you must be with your master" refusal.</summary>
-    private static string ProfessionMasterWhere(Profession prof) => prof switch
-    {
-        Profession.WeaponSmith  => "the Master Smith, in any town",
-        Profession.ArmorSmith   => "the Master Armorer, in any town",
-        Profession.Jeweler      => "the Master Jeweler, in any town",
-        Profession.PotionMaster => "the Master Apothecary, in any town",
-        Profession.ScrollScribe => "the Master Scribe, in any town",
-        _ => "a crafting master",
-    };
-
-
-    private void HandleDebugSetProfession(DebugSetProfessionCmd cmd)
+    /// <summary>DEBUG: become a crafter without the trial (§2.2 #7, the class-change precedent). A trial in
+    /// progress is closed as completed, so the Master stops offering it.</summary>
+    private void HandleDebugBecomeCrafter(DebugBecomeCrafterCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player))
             return;
-        player.Profession = (Profession)Math.Clamp(cmd.Profession, 0, (int)Profession.ScrollScribe);
-        if (player.Profession == Profession.None) player.CraftExp = 0;
-        SendSystemToEntity(player, $"[DEBUG] Crafting profession set to {player.Profession}.");
-        SendCrafting(player);
+        if (player.ActiveQuests.Remove(QuestCatalog.QuestBecomeCrafter)) SendQuestLog(player);
+        player.CompletedQuests.Add(QuestCatalog.QuestBecomeCrafter);
+        SendSystemToEntity(player, "[DEBUG] Crafter status granted.");
+        BecomeCrafter(player);
     }
 
-    /// <summary>DEBUG: jump to a crafting level by setting the exp to that level's mark. The BAND still
-    /// clamps it — a level-20 character set to L6 still reads L2 — because the freeze is the half of the
-    /// ladder most worth being able to test.</summary>
-    private void HandleDebugSetCraftLevel(DebugSetCraftLevelCmd cmd)
+    /// <summary>DEBUG: set the four craft levels (0-10) by setting each pot to that level's first point.</summary>
+    private void HandleDebugSetCraftLevels(DebugSetCraftLevelsCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player))
             return;
-        int lvl = Math.Clamp(cmd.Level, 1, Crafting.MaxCraftLevel);
-        player.CraftExp = Crafting.CraftLevelMarks[lvl - 1];
+        static int P(int lvl) => Crafting.PointsForLevel(Math.Clamp(lvl, 0, Crafting.MaxCraftLevel));
+        player.CraftPoints = P(cmd.Generic);
+        player.CraftPointsWeapon = P(cmd.Weapon);
+        player.CraftPointsArmour = P(cmd.Armour);
+        player.CraftPointsJewels = P(cmd.Jewels);
         SendSystemToEntity(player,
-            $"[DEBUG] Crafting exp set to level {lvl} — in force: {player.CraftLevel} (band cap {player.CraftBandCap}).");
+            $"[DEBUG] Craft levels: generic {player.CraftLevel} ({player.RecipeSlots} slots), weapon "
+            + $"{player.CraftTypeLevel(CraftType.Weapon)}, armour {player.CraftTypeLevel(CraftType.Armour)}, "
+            + $"jewels {player.CraftTypeLevel(CraftType.Jewels)}.");
         SendCrafting(player);
+        SaveEntity(player);
     }
 
     /// <summary>Debug: become a 2nd CLASS on the spot, skipping the quest and level gates the NPC path
@@ -4133,13 +4128,14 @@ public class GameLoopService : BackgroundService
         SaveEntity(player);
     }
 
-    /// <summary>The crafting window's whole server-side input: the one permanent profession and the
-    /// blueprints this character has unlocked. Everything else it draws comes from the shared
-    /// RecipeCatalog, so this is deliberately two fields — see <see cref="CraftingUpdate"/>.</summary>
+    /// <summary>The crafting window's whole server-side input (`BL-273` part 2): the crafter flag, the
+    /// learned recipes with their %, the four point pots and the slot count. Everything else it draws comes
+    /// from the shared RecipeCatalog — see <see cref="CraftingUpdate"/>.</summary>
     private void SendCrafting(Entity p) =>
         SendTo(p, "Crafting", new CraftingUpdate(
-            (int)p.Profession, p.KnownRecipes.ToArray(),
-            p.CraftLevel, p.CraftExp, p.CraftBandCap, AtMaster: MasterNpcNear(p) is not null));
+            p.IsCrafter, p.KnownRecipes.Select(kv => $"{kv.Key}:{kv.Value}").ToArray(),
+            p.CraftPoints, p.CraftPointsWeapon, p.CraftPointsArmour, p.CraftPointsJewels,
+            p.RecipeSlots, AtMaster: MasterNpcNear(p) is not null));
 
     private void SendSubclasses(Entity p) =>
         SendTo(p, "Subclasses", new SubclassListDto(p.Subclasses
@@ -16597,10 +16593,9 @@ public class GameLoopService : BackgroundService
         // E 0.2; boss E 70 / L 40 / M 2) across all four slot families. What stays here is the mat pile
         // above and the RECIPE roll below, neither of which is a per-slot rarity roll.
 
-        // RECIPE BOOKS (§3: boss armor 50% / weapon 40% / jewel 60%, elite 0.1%). Books only EXIST from
-        // A grade up — every recipe below 76 is learned by LEVEL, not found (RecipeCatalog.DropOnly), so
-        // there is no item to drop for the owner's "below level 74 also drop a recipe at 0.1%". That rung
-        // needs recipe books authored for the lower grades first; flagged, not faked.
+        // RECIPE ITEMS (§3: boss armor 50% / weapon 40% / jewel 60%, elite 0.1%) at T76/T80, boss 60% and
+        // elite 40% recipes (`BL-273` part 2). T40-T61 recipe items exist now, but their drops are `BL-274`
+        // (step 11); until then only the Master sells T40/T52.
         //
         // 🔑 THE RATE KNOBS APPLY HERE (`BL-247`, owner 2026-09-16: *"fix the blueprints to take the
         // rates multiplier"*). This was a raw `_rng.NextDouble() < chance` that NO multiplier reached —
@@ -19004,8 +18999,11 @@ public class GameLoopService : BackgroundService
     /// <summary>Open a box/chest: consume one and roll each loot entry independently
     /// (chance 0..1). Gear arrives with rolled attributes. The box is consumed first so
     /// at least one slot is free for the loot.</summary>
-    /// <summary>Learn the recipe a recipe-book item teaches (adds it to the char's KnownRecipes,
-    /// which unlocks the DropOnly recipes). Consumes the book; a duplicate is refused (kept).</summary>
+    /// <summary>Learn the recipe a recipe item teaches (`BL-273` part 2) — from the bag, ANYWHERE (*"u
+    /// understand and know how to craft the items - like memorizing blueprints"*). One slot per recipe; a
+    /// HIGHER % overrides the slot in place, an equal or lower one is refused and kept (it is what you
+    /// craft with). The item is consumed on learning. Needs the crafter status (the trial's own recipe
+    /// excepted), a free slot, and the grade's character level (*"i cannot learn T52 rcp @50"*).</summary>
     private void HandleLearnRecipe(Entity player, InventoryItem item, ItemDef def)
     {
         string recipeId = def.TeachesRecipeId;
@@ -19014,21 +19012,55 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(player, "This recipe is no longer valid.");
             return;
         }
-        if (player.KnownRecipes.Contains(recipeId))
+        int pct = def.RecipePercent > 0 ? def.RecipePercent : 100;
+        bool trial = recipe.QuestOnly;
+        if (trial)
         {
-            SendSystemToEntity(player, "You already know that recipe.");
+            if (!player.ActiveQuests.ContainsKey(QuestCatalog.QuestBecomeCrafter))
+            {
+                SendSystemToEntity(player, "This recipe belongs to the Master's trial.");
+                return;
+            }
+        }
+        else if (!player.IsCrafter)
+        {
+            SendSystemToEntity(player, "Only a crafter can learn recipes. Take the Master Crafter's trial first.");
             return;
         }
-        player.KnownRecipes.Add(recipeId);
-        if (item.Quantity > 1) item.Quantity--; else player.Inventory.Remove(item);
-
+        if (player.Level < recipe.LearnLevel)
+        {
+            SendSystemToEntity(player, $"You must be level {recipe.LearnLevel} to learn this recipe.");
+            return;
+        }
         string outName = ItemCatalog.Get(recipe.OutputId)?.Name ?? recipe.OutputId;
-        // The blueprint is spent to UNLOCK, and each craft spends one more — tell the player up front.
-        SendSystemToEntity(player,
-            $"Unlocked the blueprint for {outName}. Each craft consumes another blueprint" +
-            (recipe.Profession != Profession.None ? $" and needs the {recipe.Profession} profession." : "."));
+        if (player.KnownRecipes.TryGetValue(recipeId, out int known))
+        {
+            if (known >= pct)
+            {
+                SendSystemToEntity(player,
+                    $"You already know {outName} at {known}%. Keep this recipe to craft with.");
+                return;
+            }
+            player.KnownRecipes[recipeId] = pct;
+            SendSystemToEntity(player, $"Your {outName} recipe is now {pct}% (was {known}%).");
+        }
+        else
+        {
+            if (!trial && player.RecipeSlotsUsed >= player.RecipeSlots)
+            {
+                SendSystemToEntity(player,
+                    $"No free recipe slot ({player.RecipeSlotsUsed}/{player.RecipeSlots}). Forget one first.");
+                return;
+            }
+            player.KnownRecipes[recipeId] = pct;
+            SendSystemToEntity(player, recipe.IsGear || trial
+                ? $"Learned the {outName} recipe at {pct}%. Each craft spends one recipe of {pct}% or lower."
+                : $"Learned the {outName} recipe.");
+        }
+        if (item.Quantity > 1) item.Quantity--; else player.Inventory.Remove(item);
+        if (trial) AdvanceActionQuests(player, QuestActions.LearnRecipe);
         SendInventory(player);
-        SendCrafting(player);   // the craft window lists a DropOnly recipe only once it is known
+        SendCrafting(player);
         SaveEntity(player);
     }
 
@@ -20448,7 +20480,7 @@ public class GameLoopService : BackgroundService
     {
         npc = null!;
         if (!_world.Entities.TryGetValue(npcEntityId, out var e)
-            || e.Kind != EntityKind.Npc || e.NpcRole != NpcRole.Vendor)
+            || e.Kind != EntityKind.Npc || e.NpcRole is not (NpcRole.Vendor or NpcRole.CraftMaster))
             return false;
 
         float dx = e.X - player.X, dy = e.Y - player.Y;
@@ -21766,9 +21798,9 @@ public class GameLoopService : BackgroundService
             }
         }
 
-        // Vendor wares (only for vendor NPCs).
+        // Vendor wares (vendor NPCs, and the Master Crafter's recipe shelf).
         ShopInfo? shop = null;
-        if (npc.NpcRole == NpcRole.Vendor && ShopCatalog.Get(npcId) is ShopDef shopDef)
+        if (npc.NpcRole is (NpcRole.Vendor or NpcRole.CraftMaster) && ShopCatalog.Get(npcId) is ShopDef shopDef)
         {
             var items = shopDef.ItemIds
                 .Select(id => ItemCatalog.Get(id))
@@ -21822,28 +21854,14 @@ public class GameLoopService : BackgroundService
         if (npc.NpcRole == NpcRole.SkillReset)
             reset = new SkillResetInfo(ResettableSkillsOf(player).OrderBy(s => s.Name).ToArray());
 
-        // Crafting master (`BL-05`): his three buttons, or none of them if his joining quest is simply
-        // on offer above like anyone else's.
+        // The MASTER CRAFTER (`BL-273` part 2): the workshop for a crafter, and his trial (in the normal
+        // Offered list above) for everyone else. His recipe SHELF rides the ordinary vendor ShopInfo.
         CraftMasterInfo? craft = null;
-        if (npc.NpcRole == NpcRole.CraftMaster
-            && WorldMap.CraftMasterProfession(npcId) is var taught && taught != Profession.None)
+        if (npc.NpcRole == NpcRole.CraftMaster)
         {
-            bool isMine = player.Profession == taught;
-            bool doneHisQuest = QuestCatalog.JoiningQuestFor(taught) is string jq
-                                && player.CompletedQuests.Contains(jq);
-            craft = new CraftMasterInfo(
-                (int)taught,
-                CanOpenWorkshop: isMine,
-                // Re-join is only offered when you are free to take it: holding another profession, you
-                // must quit at ITS master first, which is his ruling that the levels are lost every time
-                // rather than traded away at whichever counter you happen to be standing at.
-                CanRejoin: !isMine && doneHisQuest
-                           && player.Profession == Profession.None
-                           && player.Level >= QuestCatalog.ProfessionJoinLevel,
-                CanQuit: isMine,
-                CurrentLevel: isMine ? player.CraftLevel : 0);
+            craft = new CraftMasterInfo(player.IsCrafter, player.CraftLevel);
             // Standing here IS the workshop, and the window may already be open from the menu.
-            if (isMine && !player.AtCraftMaster)
+            if (!player.AtCraftMaster)
             {
                 player.AtCraftMaster = true;
                 SendCrafting(player);
@@ -22162,7 +22180,7 @@ public class GameLoopService : BackgroundService
         for (int i = 0; i < def.Steps.Length; i++)
         {
             var s = def.Steps[i];
-            if (s.Type != QuestStepType.CollectItem || s.TargetId is null) continue;
+            if (s.Type != QuestStepType.CollectItem || s.TargetId is null || !s.PaidAtHandIn) continue;
             int need = Math.Max(1, s.Count);
             if (CountItem(player, s.TargetId) >= need) continue;
             SendSystemToEntity(player,
@@ -22173,7 +22191,7 @@ public class GameLoopService : BackgroundService
             return;
         }
         foreach (var s in def.Steps)
-            if (s.Type == QuestStepType.CollectItem && s.TargetId is not null)
+            if (s.Type == QuestStepType.CollectItem && s.TargetId is not null && s.PaidAtHandIn)
                 ConsumeItem(player, s.TargetId, Math.Max(1, s.Count));
 
         // Grant rewards. The gathered tokens are cashed FIRST so their exp joins the quest's own in one
@@ -22242,12 +22260,10 @@ public class GameLoopService : BackgroundService
         // the offer filter ignores that record (QuestClosed) — not a missing entry.
         else player.CompletedQuests.Add(questId);
 
-        // A MASTER'S JOINING QUEST grants his profession the moment it completes (`BL-05`) — *"u
-        // compleate the quest and u can take his proffesion"*. Done here rather than in a separate
-        // "accept apprenticeship" step because the quest IS the acceptance; a second confirmation
-        // after a three-beat chain would be a dialog asking whether you meant the thing you just did.
-        if (QuestCatalog.ProfessionGrantedBy(questId) is var granted && granted != Profession.None)
-            GrantProfession(player, granted);
+        // THE MASTER'S TRIAL makes you a crafter the moment it completes (`BL-273` part 2) — *"give him the
+        // hammer -> u are crafter"*. The quest IS the acceptance; there is no second confirmation.
+        if (questId == QuestCatalog.QuestBecomeCrafter)
+            BecomeCrafter(player);
 
         SendSystemToEntity(player, $"Quest complete: {def.Name}!");
         SendInventory(player);
@@ -22563,22 +22579,41 @@ public class GameLoopService : BackgroundService
             var state = player.ActiveQuests[qid];
             if (def is null || state.Completed) continue;
 
-            var step = def.Steps[state.StepIndex];
-            if (step.Type != QuestStepType.CollectItem || step.TargetId is null) continue;
-            onCollectStep = true;
-            if (CountItem(player, step.TargetId) < Math.Max(1, step.Count)) continue;
+            // 🔑 WALKS every satisfied step in one pass (`BL-273` part 2). The crafter trial has five collect
+            // steps in a row, and a player who farmed them in any order, or who comes back to step 1 after
+            // a failed craft still holding the leftovers, must not need five separate bag changes to move.
+            while (true)
+            {
+                var step = def.Steps[state.StepIndex];
+                bool satisfied;
+                if (step.Type == QuestStepType.CollectItem && step.TargetId is not null)
+                {
+                    onCollectStep = true;
+                    satisfied = CountItem(player, step.TargetId) >= Math.Max(1, step.Count);
+                }
+                else
+                {
+                    // The trial's "learn the recipe" beat, when the recipe is ALREADY known — after a
+                    // failed craft the quest comes back round, and a learned recipe cannot be relearned.
+                    satisfied = step.Type == QuestStepType.DoAction && step.TargetId == QuestActions.LearnRecipe
+                                && player.KnownRecipes.ContainsKey(Crafting.HammerRecipeId);
+                }
+                if (!satisfied) break;
 
-            if (state.StepIndex < def.Steps.Length - 1)
-            {
-                player.ActiveQuests[qid] = state with { StepIndex = state.StepIndex + 1, Counter = 0 };
-                SendSystemToEntity(player, $"{def.Name}: {def.Steps[state.StepIndex + 1].Text}");
+                changed = true;
+                if (state.StepIndex < def.Steps.Length - 1)
+                {
+                    state = state with { StepIndex = state.StepIndex + 1, Counter = 0 };
+                    player.ActiveQuests[qid] = state;
+                    SendSystemToEntity(player, $"{def.Name}: {def.Steps[state.StepIndex].Text}");
+                }
+                else
+                {
+                    // Last step: park the counter at its target, the shape a finished kill step ends in.
+                    player.ActiveQuests[qid] = state with { Counter = Math.Max(1, step.Count) };
+                    break;
+                }
             }
-            else
-            {
-                // Last step: park the counter at its target, the shape a finished kill step ends in.
-                player.ActiveQuests[qid] = state with { Counter = Math.Max(1, step.Count) };
-            }
-            changed = true;
         }
         // Same reason as in AdvanceTalkStep: a collect step can hand over to a "reach level N" step the
         // player already satisfies, and only a level-up would otherwise re-check it.

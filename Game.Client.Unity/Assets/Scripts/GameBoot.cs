@@ -461,44 +461,63 @@ namespace Game.Client
         /// Never written optimistically on a tap — the window redraws when the push comes back.</summary>
         public SocialOptions Social { get; private set; } = SocialOptions.None;
 
-        /// <summary>The character's ONE permanent crafting profession, as the server states it.
-        /// <see cref="Profession.None"/> until it has been picked.</summary>
-        public Profession CraftProfession { get; private set; } = Profession.None;
+        /// <summary>`BL-273` part 2 — has this character finished the Master Crafter's trial? For good.</summary>
+        public bool IsCrafter { get; private set; }
 
-        /// <summary>The DropOnly recipes unlocked from a blueprint. Auto-known recipes are NOT in here —
-        /// those are gated on character level and the window works that out from the catalog.</summary>
-        public HashSet<string> KnownRecipes { get; private set; } = new HashSet<string>();
+        /// <summary>The learned recipes, one slot each, mapped to the % learned (generic ones are 100).</summary>
+        public Dictionary<string, int> KnownRecipes { get; private set; } = new Dictionary<string, int>();
 
-        /// <summary>The crafting LEVEL in force (1-6, 0 with no profession), the RAW crafting exp behind
-        /// it, and the highest rung this character's progression currently allows (`BL-05`).
-        ///
-        /// <para>All three come from the server and none is recomputed here: the band depends on the
-        /// third class and on every subclass, and a client that worked it out for itself would be a
-        /// second implementation of the freeze rule that could disagree with the one enforcing it.</para></summary>
-        public int CraftLevel { get; private set; }
-        public int CraftExp { get; private set; }
-        public int CraftBandCap { get; private set; }
+        /// <summary>The raw craft POINTS the server sent; the LEVELS are read off them with
+        /// <see cref="Crafting.LevelForPoints"/>, the same table the server uses.</summary>
+        public int CraftPoints { get; private set; }
+        public int CraftPointsWeapon { get; private set; }
+        public int CraftPointsArmour { get; private set; }
+        public int CraftPointsJewels { get; private set; }
+        public int CraftLevel => Crafting.LevelForPoints(CraftPoints);
+        public int CraftTypeLevel(CraftType t) => Crafting.LevelForPoints(
+            t == CraftType.Weapon ? CraftPointsWeapon : t == CraftType.Armour ? CraftPointsArmour
+            : t == CraftType.Jewels ? CraftPointsJewels : 0);
 
-        /// <summary>Is the character standing at HIS OWN master right now? The craft buttons are live
+        /// <summary>Recipe slots the generic level gives, and how many are used (the trial's hammer recipe
+        /// takes none).</summary>
+        public int CraftSlots { get; private set; }
+        public int CraftSlotsUsed
+        {
+            get
+            {
+                int n = 0;
+                foreach (var id in KnownRecipes.Keys) if (id != Crafting.HammerRecipeId) n++;
+                return n;
+            }
+        }
+
+        /// <summary>Is the character standing at a Master Crafter right now? The craft buttons are live
         /// only here — away from him the same window is a read-only browse of what to farm.</summary>
         public bool AtCraftMaster { get; private set; }
 
         /// <summary>Craft one unit. Same rule as every other action: nothing is applied locally — the
-        /// inventory push that follows is what tells us it happened.</summary>
-        public async void Craft(string recipeId, bool useWarehouse)
+        /// inventory push that follows is what tells us it happened. <paramref name="recipePercent"/> is the
+        /// recipe item a gear craft spends (0 for a generic recipe).</summary>
+        public async void Craft(string recipeId, bool useWarehouse, int recipePercent)
         {
-            try { await _net.CraftAsync(recipeId, useWarehouse); }
+            try { await _net.CraftAsync(recipeId, useWarehouse, recipePercent); }
             catch (Exception ex) { ClientLog.Warn("Craft: " + ex.Message); }
         }
 
-        /// <summary>Re-take a master's profession you have already been taught (`BL-05`). A FIRST
-        /// profession comes from finishing his joining quest, never from here — the server refuses this
-        /// unless the quest is already in <c>CompletedQuests</c>.</summary>
-        public async void JoinProfession()
+        /// <summary>Forget a learned recipe to free its slot.</summary>
+        public async void ForgetRecipe(string recipeId)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.ForgetRecipeAsync(recipeId); }
+            catch (Exception ex) { ClientLog.Warn("ForgetRecipe: " + ex.Message); }
+        }
+
+        /// <summary>Buy and learn a generic recipe at the Master Crafter whose dialog is open.</summary>
+        public async void LearnRecipeAtMaster(string recipeId)
         {
             if (Phase != ClientPhase.InWorld || DialogNpcId == Guid.Empty) return;
-            try { await _net.JoinProfessionAsync(DialogNpcId); }
-            catch (Exception ex) { ClientLog.Warn("JoinProfession: " + ex.Message); }
+            try { await _net.LearnRecipeAtMasterAsync(DialogNpcId, recipeId); }
+            catch (Exception ex) { ClientLog.Warn("LearnRecipeAtMaster: " + ex.Message); }
         }
 
         /// <summary>Buy one SP Bottle at an SP broker. The server re-checks SP, gold and inventory
@@ -526,14 +545,6 @@ namespace Game.Client
             if (Phase != ClientPhase.InWorld) return;
             try { await _net.BuySubclassTicketAsync(); }
             catch (Exception ex) { ClientLog.Warn("BuySubclassTicket: " + ex.Message); }
-        }
-
-        /// <summary>Quit your profession at your own master. Every crafting level is lost.</summary>
-        public async void QuitProfession()
-        {
-            if (Phase != ClientPhase.InWorld || DialogNpcId == Guid.Empty) return;
-            try { await _net.QuitProfessionAsync(DialogNpcId); }
-            catch (Exception ex) { ClientLog.Warn("QuitProfession: " + ex.Message); }
         }
 
         public async void Like(string name)
@@ -1436,11 +1447,21 @@ namespace Game.Client
             _net.CraftingReceived += c => Main(() =>
             {
                 if (c == null) return;
-                CraftProfession = (Profession)c.Profession;
-                KnownRecipes = new HashSet<string>(c.KnownRecipes ?? new string[0]);
-                CraftLevel = c.Level;
-                CraftExp = c.Exp;
-                CraftBandCap = c.BandCap;
+                IsCrafter = c.IsCrafter;
+                var known = new Dictionary<string, int>();
+                foreach (var entry in c.KnownRecipes ?? new string[0])
+                {
+                    int colon = entry.LastIndexOf(':');
+                    int pct;
+                    if (colon > 0 && int.TryParse(entry.Substring(colon + 1), out pct)) known[entry.Substring(0, colon)] = pct;
+                    else known[entry] = 100;
+                }
+                KnownRecipes = known;
+                CraftPoints = c.GenericPoints;
+                CraftPointsWeapon = c.WeaponPoints;
+                CraftPointsArmour = c.ArmourPoints;
+                CraftPointsJewels = c.JewelsPoints;
+                CraftSlots = c.Slots;
                 AtCraftMaster = c.AtMaster;
                 Ui?.RefreshCraftingWindow();
             });

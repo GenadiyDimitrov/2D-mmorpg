@@ -40,6 +40,12 @@ public static class QuestActions
     /// <para>⚠ Credited from <c>SetSkillBar</c>, which the client sends ONLY when the player edits the
     /// bar — see the skill-bar rule in CLAUDE.md. A server-authored bar push can never credit it.</para></summary>
     public const string AssignBar = "assign_bar";
+
+    /// <summary>Learn a recipe from the bag (`BL-273` part 2: the crafter quest's "learn the recipe" beat).
+    /// ⚠ Also credited on its own when the step comes round and the recipe is ALREADY known — after a
+    /// failed craft the quest goes back to its first gather step, and a learned recipe cannot be learned
+    /// twice.</summary>
+    public const string LearnRecipe = "learn_recipe";
 }
 
 /// <summary>One ordered step of a quest.</summary>
@@ -64,7 +70,12 @@ public record QuestStep(
     //       re-entering the step, relogging, or talking to the giver again can never hand over a
     //       second one. Props must therefore be worthless — the tutorial's are untradable and sell
     //       for 0 — because a player can always destroy one to be given another.
-    string[]? SupplyItemIds = null);
+    string[]? SupplyItemIds = null,
+    // ----- PAID AT HAND-IN (CollectItem only). True: the giver takes the items when the quest completes,
+    //       and a missing pile sends you back to its step. False: something ELSE spends them before the
+    //       hand-in (the crafter quest's mats are eaten by its craft, `BL-273` part 2), so the final talk
+    //       neither re-checks nor takes them.
+    bool PaidAtHandIn = true);
 
 /// <summary>What the player gets on completion. ItemIds grants quest items.</summary>
 public record QuestReward(int Exp = 0, int SkillPoints = 0, string[]? ItemIds = null, int Gold = 0);

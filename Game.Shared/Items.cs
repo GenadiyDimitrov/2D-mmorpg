@@ -698,6 +698,9 @@ public record ItemDef(
     // Recipe BOOK: the recipe id this item teaches when "opened" ("" = not a book). A book is an
     // EquipSlot.Box so the client's open flow reuses; opening adds the id to the char's KnownRecipes.
     string TeachesRecipeId = "",
+    // ----- RECIPE % (`BL-273` part 2): the success % a gear recipe item carries (20/40/60/100), 0 = not
+    // a gear recipe. Learning it fills a slot at this %; crafting spends one and rolls at this %. -----
+    int RecipePercent = 0,
     // ----- RUNE (soul/spell rune). A held, non-equipped item that grants a timed buff while it's in the
     // MAIN inventory and not expired (wall-clock ExpiresAtUtc lives on the item INSTANCE, not here). The
     // buff is the named skill. Delete-protected (see the bin handler). Not equipped, not consumed. -----
@@ -1054,6 +1057,16 @@ public static class ItemCatalog
     public const string AttrScrollLegendary = "attrscroll_legendary";
     public const string AttrScrollEpic = "attrscroll_epic";
     public const string AttrScrollMythic = "attrscroll_mythic";
+    // ----- THE CRAFTER QUEST (`BL-273` part 2, 0.203.0): the gathered tokens, the hammer head, and the
+    //       Blacksmith's Hammer the quest recipe makes. The quest recipe item itself is
+    //       RecipeBookId(Crafting.HammerRecipeId, Crafting.HammerRecipePercent).
+    public const string CrafterQuestWood = "quest_crafter_wood";
+    public const string CrafterQuestIron = "quest_crafter_iron";
+    public const string CrafterQuestGem = "quest_crafter_gem";
+    public const string CrafterHammerHead = "quest_crafter_hammer_head";
+    public const string CrafterHammer = "quest_crafter_hammer";
+    public static string CrafterQuestRecipe => RecipeBookId(Crafting.HammerRecipeId, Crafting.HammerRecipePercent);
+
     public const string MarkOfFaith = "quest_mark_of_faith";
     public const string ClericsProof = "quest_clerics_proof";
 
@@ -2074,6 +2087,24 @@ public static class ItemCatalog
         list.Add(new ItemDef(ClericsProof, "Cleric's Proof", EquipSlot.QuestItem,
             ItemGrade.F, ItemRarity.Epic));
 
+        // ----- THE CRAFTER QUEST (`BL-273` part 2): four gathered materials, the hammer they make, and the
+        //       40% quest recipe. The recipe is a Box (the bag's Use button learns it, like any recipe) but
+        //       untradable and worthless: it teaches only the quest's own recipe.
+        list.Add(new ItemDef(CrafterQuestWood, "Seasoned Hardwood", EquipSlot.QuestItem, ItemGrade.F, ItemRarity.Common,
+            Description: "Quest wood for the Master's trial."));
+        list.Add(new ItemDef(CrafterQuestIron, "Raw Iron", EquipSlot.QuestItem, ItemGrade.F, ItemRarity.Common,
+            Description: "Quest iron for the Master's trial."));
+        list.Add(new ItemDef(CrafterQuestGem, "Rough Gem", EquipSlot.QuestItem, ItemGrade.F, ItemRarity.Common,
+            Description: "A quest gem for the Master's trial."));
+        list.Add(new ItemDef(CrafterHammerHead, "Hammer Head", EquipSlot.QuestItem, ItemGrade.F, ItemRarity.Rare,
+            Description: "The head of the hammer you must make for the Master."));
+        list.Add(new ItemDef(CrafterHammer, "Blacksmith's Hammer", EquipSlot.QuestItem, ItemGrade.F, ItemRarity.Rare,
+            Description: "Your first craft. Give it to the Master to become a crafter."));
+        list.Add(new ItemDef(CrafterQuestRecipe, "Recipe: Blacksmith's Hammer (40%)", EquipSlot.Box,
+            ItemGrade.F, ItemRarity.Common, TeachesRecipeId: Crafting.HammerRecipeId,
+            RecipePercent: Crafting.HammerRecipePercent, Tradable: false, SellPriceOverride: 0,
+            Description: "The Master's trial recipe. Learn one and spend the other on the craft."));
+
         // ----- GATHERING TOKENS: the trophies the repeatable hunt quests collect. One token per
         //       creature, so the Huntmaster can pay a different QuestItemRewardModifier for each
         //       (see Quests.Repeatable.cs). Common rarity — they are proof of work, not treasure, and
@@ -2268,22 +2299,31 @@ public static class ItemCatalog
         return tail.Length > 0 && tail.All(char.IsDigit);
     }
 
-    /// <summary>Recipe BOOKS for the DropOnly recipes — the A-grade (level-76) SET pieces, whose
-    /// craft recipe (`craft_&lt;id&gt;`) is DropOnly (see RecipeCatalog.FinishedItemRecipes). Each book
-    /// is an EquipSlot.Box (reuses the client open flow) that teaches its recipe. Derived from the
-    /// tiered gear here (NOT from RecipeCatalog) to avoid a circular static-init with the recipe
-    /// catalog, which itself reads ItemCatalog.AllItems.</summary>
+    /// <summary>Gear RECIPE items (`BL-273` part 2, 0.203.0): one per craftable gear piece (T40-T80 Mythic)
+    /// and per recipe % that something gives out at its tier (<see cref="Crafting.RecipePercentsFor"/>).
+    /// Using one from the bag LEARNS it into a slot (anywhere); crafting at a Master SPENDS one. Derived
+    /// from the tiered gear here, NOT from RecipeCatalog, to avoid a circular static-init with the recipe
+    /// catalog, which itself reads ItemCatalog.AllItems. Tradable: recipes are what crafters buy and sell.
+    ///
+    /// <para>Priced at <see cref="Crafting.ShopRecipePriceFraction"/> of the piece's own buy price (a
+    /// placeholder); only the Master's T40/T52 100% shelf actually sells them.</para></summary>
     private static IEnumerable<ItemDef> RecipeBooks(IEnumerable<ItemDef> tiered)
     {
         foreach (var d in tiered)
         {
-            // A- and S-grade SET pieces (the authored tier item, which is the Mythic rung).
-            if (d.ItemLevel < 76 || d.Rarity != ItemRarity.Mythic) continue;
-            if (d.Slot is not (EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield or EquipSlot.Jewel)) continue;
+            if (d.ItemLevel < Crafting.MinCraftedGearLevel || d.Rarity != ItemRarity.Mythic) continue;
+            if (!Crafting.IsGearSlot(d.Slot)) continue;
             string recipeId = $"craft_{d.Id}";
-            yield return new ItemDef(RecipeBookId(recipeId), $"Blueprint: {d.Name}",
-                EquipSlot.Box, ItemGrade.A, ItemRarity.Epic,
-                TeachesRecipeId: recipeId);
+            // ⚠ d.Value is still 0 here: tiered gear is priced by the Value pass AFTER the list is built, so
+            // ask DefaultValue directly (BoundCopies does the same, for the same reason).
+            int piece = d.Value > 0 ? d.Value : DefaultValue(d);
+            int value = Math.Max(1, (int)Math.Round(piece * (double)Crafting.ShopRecipePriceFraction));
+            foreach (int pct in Crafting.RecipePercentsFor(d.ItemLevel))
+                yield return new ItemDef(RecipeBookId(recipeId, pct), $"Recipe: {d.Name} ({pct}%)",
+                    EquipSlot.Box, d.Grade, ItemRarity.Common,
+                    Value: value, TeachesRecipeId: recipeId, RecipePercent: pct, ItemLevel: 0,
+                    Description: $"Use it to learn the {d.Name} recipe at {pct}% (it takes a recipe slot). "
+                               + "Each craft at a Master spends one recipe of this % or lower.");
         }
     }
 
@@ -2963,8 +3003,8 @@ public static class ItemCatalog
     /// <summary>A recipe BOOK — opening it teaches its recipe (see TeachesRecipeId).</summary>
     public static bool IsRecipeBook(ItemDef def) => def.TeachesRecipeId.Length > 0;
 
-    /// <summary>The item id of the recipe book that teaches a given recipe.</summary>
-    public static string RecipeBookId(string recipeId) => $"recipe_{recipeId}";
+    /// <summary>The item id of the recipe item that teaches a recipe at a given % (`BL-273` part 2).</summary>
+    public static string RecipeBookId(string recipeId, int percent) => $"recipe_{recipeId}_{percent}";
 
     /// <summary>How many jewels of a given sub-type can be worn at once.</summary>
     public static int MaxOfJewelType(JewelType t) => t switch

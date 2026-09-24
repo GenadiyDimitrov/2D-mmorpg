@@ -181,6 +181,15 @@ public static class ShopCatalog
                 .Where(d => Crafting.EssenceShopPrice(d) is not null)
                 .OrderBy(d => d.Slot).ThenBy(d => d.Name)
                 .Select(d => d.Id).ToArray(), EssenceOnly: true),
+
+            // `BL-273` part 2 — THE MASTER CRAFTER'S RECIPE SHELF: the T40 and T52 100% gear recipes (*"master can
+            // sell t40 and t52"*), at a placeholder 10% of the piece's price. Generic recipes are not items; he
+            // teaches those directly (LearnRecipeAtMaster).
+            new ShopDef(WorldMap.CraftMasterId, "Master Crafter — Recipes", ItemCatalog.AllItems
+                .Where(d => d.RecipePercent == 100 && d.TeachesRecipeId.Length > 0
+                    && RecipeCatalog.Get(d.TeachesRecipeId) is { IsGear: true } r && Crafting.MasterSellsRecipeFor(r.GearItemLevel))
+                .OrderBy(d => RecipeCatalog.Get(d.TeachesRecipeId)!.GearItemLevel).ThenBy(d => d.Name)
+                .Select(d => d.Id).ToArray()),
         };
 
         var dict = new Dictionary<string, ShopDef>(StringComparer.OrdinalIgnoreCase);
@@ -193,7 +202,7 @@ public static class ShopCatalog
         // selling last month's catalogue. Anything town-specific later just overrides its own key.
         foreach (var npc in WorldMap.Npcs)
         {
-            if (npc.Role != NpcRole.Vendor || dict.ContainsKey(npc.Id)) continue;
+            if (npc.Role is not (NpcRole.Vendor or NpcRole.CraftMaster) || dict.ContainsKey(npc.Id)) continue;
             int cut = npc.Id.LastIndexOf('_');
             if (cut <= 0) continue;
             string baseId = npc.Id.Substring(0, cut);

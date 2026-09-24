@@ -4,33 +4,42 @@ namespace Game.Shared;
 public record RecipeInput(string ItemId, int Qty);
 
 /// <summary>
-/// A crafting recipe: a <see cref="Profession"/> turns <see cref="Inputs"/> into
-/// <see cref="OutputId"/> ×<see cref="OutputQty"/>, succeeding with <see cref="SuccessChance"/>
-/// (a failed craft consumes the mats — the risk). Auto-known once the crafter's char level reaches
-/// <see cref="LearnLevel"/>, UNLESS <see cref="DropOnly"/> (the recipe itself must be found/bought,
-/// e.g. the A-grade sets). See docs/design/Crafting.md.
+/// A crafting recipe (`BL-273` part 2, 0.203.0): turns <see cref="Inputs"/> into <see cref="OutputId"/>
+/// ×<see cref="OutputQty"/>. Anyone who has finished the crafter quest may hold it, in one of their
+/// recipe SLOTS. There are no professions: <see cref="Type"/> only says which type level an attempt
+/// raises (weapon / armour / jewels), and General recipes raise the generic level alone.
 ///
-/// <para><see cref="CraftLevel"/> is the CRAFTING level rung (1-6, `BL-05`) — a second, independent gate
-/// from <see cref="LearnLevel"/>, which stays a CHARACTER level. Both must be satisfied: the owner's rule
-/// is *"crafts need char level + crafting lvl"*.
-///
-/// **Leave it 0 and it is DERIVED** from what the recipe makes (a material's own rarity, a gear piece's
-/// GRADE), which is how all 173 mat/gear recipes are filed — a recipe cannot then sit under a rung that
-/// disagrees with its output. A non-zero value is an AUTHORED rung, and exactly two things use that: the
-/// Scroll Scribe's and the Potion Master's ladders, which the owner deliberately offset from rarity
-/// (§5d — his Scribe's L1 is *"nothing gear related"*, and his Potion Master alternates HP and buff lines
-/// on a two-rung stride). For those two the rung IS the design and cannot be read off the output.</para>
+/// <para>Two kinds, told apart by <see cref="IsGear"/>:</para>
+/// <list type="bullet">
+/// <item><b>Gear</b> (T40-T80 weapons, armour, shields, jewels). Learned from a recipe ITEM
+///   (<see cref="ItemCatalog.RecipeBookId"/>) that carries a % (20/40/60/100), and every attempt SPENDS one
+///   such item at or below the learned %. The attempt succeeds at the used %, plus the T76/T80 crafter
+///   bonus, and every input is scaled by it (<see cref="Crafting.ScaledQty"/>).
+///   <see cref="SuccessChance"/> is unused for gear.</item>
+/// <item><b>Generic</b> (potions, scrolls, refines). Bought at the Master for <see cref="LearnPrice"/>
+///   once the crafter's generic level reaches <see cref="UnlockLevel"/>; no recipe item per craft; rolls
+///   <see cref="SuccessChance"/>; may also cost <see cref="GoldCost"/> gold per attempt.</item>
+/// </list>
+/// <para><see cref="LearnLevel"/> is the CHARACTER level needed to learn it (*"i cannot learn T52 rcp
+/// @50"*). ⚠ The generic numbers (unlock level, price, costs) are placeholders until step 9b's table.</para>
 /// </summary>
 public record Recipe(
     string Id,
-    Profession Profession,
+    CraftType Type,
     string OutputId,
     RecipeInput[] Inputs,
     int OutputQty = 1,
     float SuccessChance = 1f,
     int LearnLevel = 1,
-    bool DropOnly = false,
-    int CraftLevel = 0);
+    int UnlockLevel = 0,
+    int LearnPrice = 0,
+    int GoldCost = 0,
+    int GearItemLevel = 0,
+    bool QuestOnly = false)
+{
+    /// <summary>A gear recipe: learned from and spent as a recipe ITEM, and rolled at that item's %.</summary>
+    public bool IsGear => GearItemLevel > 0;
+}
 
 public static class RecipeCatalog
 {
@@ -47,37 +56,44 @@ public static class RecipeCatalog
         list.AddRange(RefinementRecipes());
         list.AddRange(FinishedItemRecipes());
         list.AddRange(ConsumableRecipes());
+        list.Add(HammerRecipe());
 
         var dict = new Dictionary<string, Recipe>();
         foreach (var r in list)
-            if (!dict.TryAdd(r.Id, r.CraftLevel > 0 ? r : r with { CraftLevel = DeriveCraftLevel(r) }))
+            if (!dict.TryAdd(r.Id, r))
                 throw new InvalidOperationException($"Duplicate recipe id '{r.Id}'.");
         return dict;
     }
 
-    /// <summary>The crafting-level rung a recipe belongs to, read off WHAT IT MAKES (`BL-05`).
-    ///
-    /// 🔑 Derived in one place rather than authored on 173 recipes, because the rung and the output are
-    /// the same fact stated twice, and the moment they can disagree the ladder stops meaning anything.
-    /// The two cases are genuinely different, and the owner's rule names both:
-    /// *"at level N you craft goods of rarity N-1, and refine up to rarity N"*.
-    ///   • A MATERIAL output is a refine — refining INTO rarity R is level R (L1 makes Uncommon mats).
-    ///   • GEAR is filed by its GRADE, not its rarity (owner, 2026-08-13: *"just the idea is grade based
-    ///     not as much as rarity based"*). This is not a nuance — every craftable gear recipe outputs the
-    ///     authored MYTHIC piece, so reading the rung off rarity filed all 135 of them at L6 and left a
-    ///     fresh smith able to reach 2 recipes out of 67. Grade spreads them E→S across L1→L6 exactly.
-    ///   • Anything else is goods — making rarity R is level R+1 (L2 makes Uncommon potions).
-    /// An unknown output id falls back to L1 rather than throwing: the catalogs are cross-checked at
-    /// boot, and a startup crash inside a static constructor is the least debuggable failure there is.</summary>
-    private static int DeriveCraftLevel(Recipe r) =>
-        ItemCatalog.Get(r.OutputId) is not { } def ? 1
-        : def.Slot == EquipSlot.Material ? (int)def.Rarity
-        : Crafting.IsGearSlot(def.Slot) ? Math.Max(1, Crafting.GearCraftLevel(def.ItemLevel))
-        : Crafting.CraftLevelOf(def.Rarity);
+    /// <summary>A generic recipe's shape from the crafting RUNG (1-6) it sat on under `BL-05`: the Master
+    /// sells it from generic level <see cref="Crafting.GenericUnlockLevel"/>, and it needs character level 40
+    /// (the crafter quest's own level) or 76 for the old top two rungs. ⚠ Placeholders until step 9b.</summary>
+    private static Recipe Generic(string id, string output, RecipeInput[] inputs, int oldRung,
+                                  int qty = 1, float chance = 1f)
+    {
+        int unlock = Crafting.GenericUnlockLevel(oldRung);
+        return new Recipe(id, CraftType.General, output, inputs,
+            OutputQty: qty, SuccessChance: chance,
+            LearnLevel: oldRung >= 5 ? 76 : Crafting.CrafterQuestLevel,
+            UnlockLevel: unlock, LearnPrice: Crafting.GenericLearnPrice(unlock));
+    }
 
-    // Each material type upgrades using 5 of itself (one rarity lower) + 2 CROSS mats from two
-    // DIFFERENT professions' types (also the lower rarity) → forces trade. Refinement is guaranteed
-    // (the 5+2 cost is the gate); it's known once the crafter reaches the rarity's level gate.
+    /// <summary>The crafter quest's Blacksmith's Hammer (*"at least 20 quest wood and at least 20 iron …
+    /// 20 quest gems … 1 hammer head"*). Unscaled: the quest's 40% recipe is a lesson, not a discount.</summary>
+    private static Recipe HammerRecipe() => new(
+        Crafting.HammerRecipeId, CraftType.General, ItemCatalog.CrafterHammer,
+        new[]
+        {
+            new RecipeInput(ItemCatalog.CrafterQuestWood, 20),
+            new RecipeInput(ItemCatalog.CrafterQuestIron, 20),
+            new RecipeInput(ItemCatalog.CrafterQuestGem, 20),
+            new RecipeInput(ItemCatalog.CrafterHammerHead, 1),
+        },
+        SuccessChance: Crafting.HammerRecipePercent / 100f,
+        LearnLevel: Crafting.CrafterQuestLevel, QuestOnly: true);
+
+    // Each material type upgrades using 5 of itself (one rarity lower) + 2 CROSS mats of two other
+    // types (also the lower rarity). Refinement is guaranteed (the 5+2 cost is the gate).
     private static readonly Dictionary<MaterialType, (MaterialType A, MaterialType B)> Cross = new()
     {
         [MaterialType.Gem]     = (MaterialType.Ingot,  MaterialType.Wood),
@@ -87,9 +103,6 @@ public static class RecipeCatalog
         [MaterialType.Wood]    = (MaterialType.Ingot,  MaterialType.Thread),
     };
 
-    /// <summary>⚠ The Legendary→Mythic rung was added 2026-08-12 with `BL-05` — the material ladder now
-    /// runs the full six rarities so the top crafting level has mats of its own rung to eat. See
-    /// Crafting.MaterialRarities.</summary>
     private static readonly (ItemRarity Low, ItemRarity High)[] Steps =
     {
         (ItemRarity.Common, ItemRarity.Uncommon),
@@ -99,30 +112,16 @@ public static class RecipeCatalog
         (ItemRarity.Legendary, ItemRarity.Mythic),
     };
 
-    /// <summary>Char level a crafter can refine INTO a given rarity.
-    ///
-    /// 🔑 Derived from the CRAFTING level that refines into this rarity (`BL-05`), not hand-listed, so
-    /// the character gate and the crafting gate cannot drift apart — the owner's rule is *"crafts need
-    /// char level + crafting lvl"*, and two independently-authored ladders is exactly how that becomes a
-    /// lie. Refining into rarity R is crafting level R (L1 makes Uncommon), and each crafting level
-    /// carries its own character floor of 20/40/76.
-    ///
-    /// ⚠ This MOVED the Epic and Legendary rungs: they were hand-set to 61 and 76 and are now 40 and 40,
-    /// because refining into Epic is L3 and into Legendary is L4, and both of those sit in the 40+3rd-class
-    /// band. The real gate did not loosen — a level-40 character still has to have *reached* L3 and L4,
-    /// which is 1800 and 3600 crafting exp away.</summary>
-    private static int RefineLearnLevel(ItemRarity high) =>
-        Crafting.CharLevelFor((int)high);
-
+    /// <summary>The old material refines, now GENERIC recipes: refining into rarity R sat on rung R.
+    /// ⚠ Replaced by the Nightsilver / Nightsilk ladder in `BL-273` part 3.</summary>
     private static IEnumerable<Recipe> RefinementRecipes()
     {
         foreach (var type in Crafting.MaterialTypes)
         {
             var (a, b) = Cross[type];
             foreach (var (low, high) in Steps)
-                yield return new Recipe(
+                yield return Generic(
                     $"refine_{type}_{high}".ToLowerInvariant(),
-                    Crafting.RefinerOf(type),
                     Crafting.MaterialId(type, high),
                     new[]
                     {
@@ -130,10 +129,20 @@ public static class RecipeCatalog
                         new RecipeInput(Crafting.MaterialId(a, low), 1),
                         new RecipeInput(Crafting.MaterialId(b, low), 1),
                     },
-                    SuccessChance: 1f,
-                    LearnLevel: RefineLearnLevel(high));
+                    oldRung: (int)high);
         }
     }
+
+    /// <summary>The input-table index a gear tier reads (T40 → 1 … T80 → 5; the old E rung at 0 is gone).</summary>
+    private static int GearRung(int itemLevel) => itemLevel switch
+    {
+        >= 80 => 5,
+        >= 76 => 4,
+        >= 61 => 3,
+        >= 52 => 2,
+        >= 40 => 1,
+        _ => 0,
+    };
 
     // =====================================================================================
     //  GEAR RECIPE COSTS — the owner's 2026-08-13 target curve, solved against the measured
@@ -164,7 +173,7 @@ public static class RecipeCatalog
     /// *"2-3h of farming for E grade per weapon craft, 3-5h per D grade, 5-10 C, 12-1d B, 1-3d A, 7-14d S
     /// … 1d of farming to mean the full 12h (auto+offline)"* — so E 2-3h · D 3-5h · C 5-10h · B 12-24h ·
     /// A 12-36h · S 84-168h. Divide the midpoint by the attempts a success costs
-    /// (<see cref="Crafting.GearCraftOdds"/>) to get a per-ATTEMPT budget, then buy the owner's own
+    /// (the old `BL-05` odds table) to get a per-ATTEMPT budget, then buy the owner's own
     /// 100-bulk-to-1-accent shape with it at the measured drop rates.
     ///
     /// ⚠ **Where this disagrees with the ranges he first wrote, the TARGET CURVE won.** Those ranges came
@@ -218,14 +227,6 @@ public static class RecipeCatalog
         _ => 0.5f
     };
 
-    private static Profession ProfOf(ItemDef d) => d.Slot switch
-    {
-        EquipSlot.Weapon => Profession.WeaponSmith,
-        EquipSlot.Armor or EquipSlot.Shield => Profession.ArmorSmith,
-        EquipSlot.Jewel => Profession.Jeweler,
-        _ => Profession.None
-    };
-
     private static (MaterialType Type, float Frac)[] Composition(ItemDef d)
     {
         switch (d.Slot)
@@ -263,24 +264,20 @@ public static class RecipeCatalog
             // null for a known id.
             if (d.Rarity != ItemRarity.Mythic) continue;
             if (!Crafting.IsGearSlot(d.Slot)) continue;
-            var prof = ProfOf(d);
-            if (prof == Profession.None) continue;
-
-            // F GEAR IS NOT CRAFTABLE (owner, 2026-08-13): *"rly no point to craft F grade … its mostly
-            // to get you to 20 (as u get free mytic @10/15)"*. It is also what makes the ladder exact —
-            // seven grades minus F is six, against six crafting rungs.
-            int rung = Crafting.GearCraftLevel(d.ItemLevel);
-            if (rung <= 0) continue;
+            // F AND E GEAR ARE NOT CRAFTED (`BL-273` part 2): the rework's recipe tables start at T40. The
+            // input tables below are still the `BL-05` ones, read at T40..T80 until part 3 replaces the mats.
+            if (d.ItemLevel < Crafting.MinCraftedGearLevel) continue;
+            int rung = GearRung(d.ItemLevel);
 
             float slot = SlotFraction(d);
-            int bulk   = System.Math.Max(1, (int)System.Math.Round(GearBulk[rung - 1] * slot));
+            int bulk   = System.Math.Max(1, (int)System.Math.Round(GearBulk[rung] * slot));
             // The accent ROUNDS DOWN and may reach zero, and that is deliberate: a ring is a tenth of a
             // weapon, so at rungs where the weapon takes a single accent mat the ring genuinely takes
             // none. Flooring it up to 1 instead would have made the smallest slots the most expensive
             // per point of stat — a Mythic accent mat is 44 farm hours by itself at the top.
-            int accent = (int)(GearAccent[rung - 1] * slot);
-            var bulkR   = GearBulkRarity[rung - 1];
-            var accentR = GearAccentRarity[rung - 1];
+            int accent = (int)(GearAccent[rung] * slot);
+            var bulkR   = GearBulkRarity[rung];
+            var accentR = GearAccentRarity[rung];
 
             var inputs = new List<RecipeInput>();
             var comp = Composition(d);
@@ -295,15 +292,10 @@ public static class RecipeCatalog
             if (accent > 0 && comp.Length > 0)
                 inputs.Add(new RecipeInput(Crafting.MaterialId(comp[0].Type, accentR), accent));
 
+            // The success % is the recipe ITEM's, not the recipe's (see Recipe): SuccessChance is unused here.
             yield return new Recipe(
-                $"craft_{d.Id}", prof, d.Id, inputs.ToArray(),
-                // ⚠ NOT the roll the server makes. A gear craft is three-way — Mythic / Legendary / fail
-                // (Crafting.GearCraftOdds) — and HandleCraft rolls that table directly. This field is the
-                // chance the attempt yields ANYTHING, which is what the recipe list shows the player and
-                // what every non-gear recipe means by SuccessChance.
-                SuccessChance: 1f - Crafting.GearCraftOdds(rung).Fail,
-                LearnLevel: d.ItemLevel,
-                DropOnly: d.ItemLevel >= 76);      // A/S recipes come from bosses/trade
+                $"craft_{d.Id}", Crafting.TypeOf(d), d.Id, inputs.ToArray(),
+                LearnLevel: d.ItemLevel, GearItemLevel: d.ItemLevel);
         }
     }
 
@@ -342,35 +334,33 @@ public static class RecipeCatalog
         // statement about who may make it, not a licence to charge Uncommon mats for a Common good.
         static ItemRarity RarityOf(string itemId) => ItemCatalog.Get(itemId)?.Rarity ?? ItemRarity.Common;
 
-        // The CHARACTER-level floor a crafting rung carries anyway (20 / 20 / 40 / 40 / 76 / 76). Used as
-        // the consumables' LearnLevel so the two gates cannot drift: hand-listing a character level beside
-        // an authored rung is exactly how the refine ladder went wrong before it was derived.
-        static int CharFloor(int rung) => Crafting.CharLevelFor(rung);
+        // ⚠ `BL-273` part 2: these are GENERIC recipes now. The old rung sets where the Master offers them
+        // (generic level 0-10) and the learn level; the costs are the old ones, placeholders until step 9b.
 
         Recipe Potion(string output, int rung, int qty)
         {
             var r = RarityOf(output);
-            return new($"craft_{output}", Profession.PotionMaster, output,
+            return Generic($"craft_{output}", output,
                 new[]
                 {
                     new RecipeInput(Crafting.MaterialId(MaterialType.Wood, r), 3),
                     new RecipeInput(Crafting.MaterialId(MaterialType.Thread, r), 1),
                     new RecipeInput(Crafting.MaterialId(MaterialType.Gem, r), 1),
                 },
-                OutputQty: qty, SuccessChance: 0.9f, LearnLevel: CharFloor(rung), CraftLevel: rung);
+                oldRung: rung, qty: qty, chance: 0.9f);
         }
 
         Recipe Scroll(string output, int rung, int qty)
         {
             var r = RarityOf(output);
-            return new($"craft_{output}", Profession.ScrollScribe, output,
+            return Generic($"craft_{output}", output,
                 new[]
                 {
                     new RecipeInput(Crafting.MaterialId(MaterialType.Thread, r), 3),
                     new RecipeInput(Crafting.MaterialId(MaterialType.Wood, r), 1),
                     new RecipeInput(Crafting.MaterialId(MaterialType.Gem, r), 1),
                 },
-                OutputQty: qty, SuccessChance: 0.8f, LearnLevel: CharFloor(rung), CraftLevel: rung);
+                oldRung: rung, qty: qty, chance: 0.8f);
         }
 
         // =================================================================================
@@ -517,5 +507,7 @@ public static class RecipeCatalog
 
     public static Recipe? Get(string id) => id is null ? null : _byId.GetValueOrDefault(id);
     public static IEnumerable<Recipe> All => _byId.Values;
-    public static IEnumerable<Recipe> ForProfession(Profession p) => _byId.Values.Where(r => r.Profession == p);
+    /// <summary>The recipes the Master SELLS to learn (generic, not the quest's own), cheapest first.</summary>
+    public static IEnumerable<Recipe> GenericForSale => _byId.Values
+        .Where(r => !r.IsGear && !r.QuestOnly).OrderBy(r => r.UnlockLevel).ThenBy(r => r.Id);
 }

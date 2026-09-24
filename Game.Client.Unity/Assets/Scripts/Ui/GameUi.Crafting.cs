@@ -11,22 +11,17 @@ namespace Game.Client
     /// <summary>
     /// GameUi, continued: CRAFTING — the window the whole crafting system was missing.
     ///
-    /// The server has been able to craft since 2026-07-06: professions, refinement, finished-item and
-    /// consumable recipes, blueprints, and a mats-primary drop table all shipped then. None of it was
-    /// reachable, because the phone had no window and the debug panel's profession rows were the only
-    /// thing that ever touched it. That is why crafting has sat at the top of the "content blocker"
-    /// list through four playtests while being, in code, already built.
+    /// `BL-273` part 2 (0.203.0): there are no professions. A character becomes a crafter through the
+    /// Master Crafter's trial at level 40 and then crafts everything; the window shows the LEARNED recipes
+    /// (one slot each, gear at a %), the Master's generic recipes to learn, the slots to forget, and the mats.
     ///
     /// The split of responsibilities is the important part:
-    ///   • The SERVER owns the profession and the unlocked blueprints, and re-checks every rule on the
-    ///     Craft call. It pushes those two things as <see cref="CraftingUpdate"/> and nothing else.
-    ///   • This window reads the RECIPES out of <see cref="RecipeCatalog"/>, which is compiled into the
-    ///     client from Game.Shared. So the costs, level gates and success chances it draws are the very
-    ///     same values the server crafts from — they cannot drift, and no recipe list has to travel.
+    ///   • The SERVER owns the crafter flag, the learned recipes, the craft points and the slot count, and
+    ///     re-checks every rule on the Craft call. It pushes those as <see cref="CraftingUpdate"/>.
+    ///   • This window reads the RECIPES out of <see cref="RecipeCatalog"/>, compiled into the client from
+    ///     Game.Shared, so the costs, % scaling and chances it draws are the ones the server crafts from.
     ///
-    /// Rows are deliberately "what it makes" over "what it costs, and what I have": the question a
-    /// crafter actually has is never "what is the recipe", it is "can I make this yet", and that is a
-    /// comparison the window can do for you. Red on an ingredient means that one is what is stopping you.
+    /// Red on an ingredient means that one is what is stopping you.
     /// </summary>
     public partial class GameUi : MonoBehaviour
     {
@@ -37,9 +32,9 @@ namespace Game.Client
 
         /// <summary>Which page of the window is showing. Materials is a page rather than a section
         /// because "how many Rare Ingots do I have" is asked on its own, away from any one recipe.</summary>
-        private enum CraftTab { Refine = 0, Gear = 1, Goods = 2, Materials = 3 }
-        private CraftTab _craftTab = CraftTab.Refine;
-        private static readonly string[] CraftTabNames = { "Refine", "Gear", "Goods", "Mats" };
+        private enum CraftTab { Craft = 0, Learn = 1, Slots = 2, Materials = 3 }
+        private CraftTab _craftTab = CraftTab.Craft;
+        private static readonly string[] CraftTabNames = { "Craft", "Learn", "Slots", "Mats" };
 
         // ----- `BL-245`: the keeper's shelf counts too ---------------------------------------------
         //
@@ -103,35 +98,40 @@ namespace Game.Client
             _craftPanel.gameObject.SetActive(false);
         }
 
-        public void OpenCraftingWindow()
+        public void OpenCraftingWindow() => OpenCraftingWindow(_craftTab);
+
+        /// <summary>Open on a given page — the Master's "Learn" row lands on the Learn tab.</summary>
+        private void OpenCraftingWindow(CraftTab tab)
         {
+            _craftTab = tab;
             _craftRevision = -1;
             OpenWindow(_craftPanel);
         }
 
-        /// <summary>Called by GameBoot when the server pushes new crafting state — a profession pick or
-        /// a blueprint unlock has to be visible without waiting for something else to change.</summary>
+        /// <summary>Called by GameBoot when the server pushes new crafting state — a learned recipe or a
+        /// level has to be visible without waiting for something else to change.</summary>
         public void RefreshCraftingWindow() => _craftRevision = -1;
 
-        /// <summary>Rebuild when anything the list DEPENDS on changed: the tab, the profession, the
-        /// blueprints, your level, or the bag (which decides every red/green ingredient). Revision-gated
-        /// like the vendor and warehouse — these rows carry captured recipe ids and a per-frame rebuild
-        /// would re-register every listener.</summary>
+        /// <summary>Rebuild when anything the list DEPENDS on changed: the tab, the crafter state, the
+        /// learned recipes, your level and gold, or the bag (which decides every red/green ingredient).
+        /// Revision-gated like the vendor and warehouse — these rows carry captured recipe ids and a
+        /// per-frame rebuild would re-register every listener.</summary>
         private void RefreshCraftingList()
         {
             if (_craftPanel == null || !_craftPanel.gameObject.activeSelf) return;
 
             var bag = Boot.Inventory ?? Array.Empty<InventoryItemDto>();
-            // `BL-245`: the KEEPER is an input to every red/green ingredient now, so both the toggle
-            // and the warehouse's own contents belong in the stamp. Leave the shelf out and a
-            // withdrawal (or a craft that just spent from it) would leave the rows lying.
+            // `BL-245`: the KEEPER is an input to every red/green ingredient, so both the toggle and the
+            // warehouse's own contents belong in the stamp.
             var keeper = _craftUseKeeper ? (Boot.Warehouse ?? Array.Empty<InventoryItemDto>())
                                          : Array.Empty<InventoryItemDto>();
-            int revision = (int)_craftTab * 104729 + (int)Boot.CraftProfession * 31513
-                         + Boot.KnownRecipes.Count * 7919 + SelfLevel() * 613
-                         + Boot.CraftLevel * 65537 + Boot.CraftExp * 3
-                         + (Boot.AtCraftMaster ? 1046527 : 0)
+            int revision = (int)_craftTab * 104729 + (Boot.IsCrafter ? 31513 : 0)
+                         + SelfLevel() * 613 + Boot.CraftPoints * 65537
+                         + Boot.CraftPointsWeapon * 7 + Boot.CraftPointsArmour * 11 + Boot.CraftPointsJewels * 13
+                         + Boot.CraftSlots * 17 + (int)(Boot.Gold % 1000003)
+                         + (Boot.AtCraftMaster ? 1046527 : 0) + (Boot.DialogNpcId != Guid.Empty ? 3 : 0)
                          + (_craftUseKeeper ? 15485863 : 0);
+            foreach (var kv in Boot.KnownRecipes) revision = revision * 29 + kv.Key.GetHashCode() + kv.Value;
             foreach (var it in bag) revision = revision * 31 + it.DefId.GetHashCode() + it.Quantity;
             foreach (var it in keeper) revision = revision * 37 + it.DefId.GetHashCode() + it.Quantity;
             if (revision == _craftRevision) return;
@@ -140,12 +140,12 @@ namespace Game.Client
             UiKit.SetButtonText(_craftKeeperToggle, _craftUseKeeper ? "Keeper: ON" : "Keeper: off");
             _craftKeeperToggle.targetGraphic.color = _craftUseKeeper ? UiKit.TabActive : UiKit.PanelLight;
 
-            // The tabs are hidden until a profession exists: every page behind them is defined BY the
-            // profession, so before the choice they are four buttons that all lead to the same chooser.
-            bool chosen = Boot.CraftProfession != Profession.None;
+            // The tabs are hidden until the trial is done — except while the trial's own recipe is held,
+            // because its craft happens in this window too.
+            bool open = Boot.IsCrafter || Boot.KnownRecipes.ContainsKey(Crafting.HammerRecipeId);
             for (int i = 0; i < _craftTabButtons.Count; i++)
             {
-                _craftTabButtons[i].gameObject.SetActive(chosen);
+                _craftTabButtons[i].gameObject.SetActive(open);
                 _craftTabButtons[i].targetGraphic.color =
                     (int)_craftTab == i ? UiKit.TabActive : UiKit.PanelLight;
             }
@@ -153,153 +153,198 @@ namespace Game.Client
             for (int i = _craftList.childCount - 1; i >= 0; i--)
                 Destroy(_craftList.GetChild(i).gameObject);
 
-            if (!chosen) { BuildProfessionInvitation(); return; }
+            if (!open) { BuildCrafterInvitation(); return; }
 
             var counts = MaterialCounts(bag, keeper);
-            if (_craftTab == CraftTab.Materials) { BuildMaterialsPage(counts); return; }
-
             _craftTitle.text = CraftHeader();
+            switch (_craftTab)
+            {
+                case CraftTab.Materials: BuildMaterialsPage(counts); return;
+                case CraftTab.Learn: BuildLearnPage(); return;
+                case CraftTab.Slots: BuildSlotsPage(); return;
+            }
 
-            var recipes = RecipeCatalog.ForProfession(Boot.CraftProfession)
-                .Where(r => TabOf(r) == _craftTab)
-                .OrderBy(r => r.CraftLevel)
-                .ThenBy(r => r.LearnLevel)
+            var recipes = Boot.KnownRecipes.Keys
+                .Select(RecipeCatalog.Get)
+                .Where(r => r != null)
+                .OrderBy(r => r.IsGear ? 0 : 1)
+                .ThenBy(r => r.GearItemLevel)
                 .ThenBy(r => OutputName(r), StringComparer.Ordinal)
                 .ToList();
-
             if (recipes.Count == 0)
             {
-                CraftNote(_craftTab == CraftTab.Gear
-                    ? "A " + ProfessionName(Boot.CraftProfession) + " makes no equipment."
-                    : "Nothing here for a " + ProfessionName(Boot.CraftProfession) + ".");
+                CraftNote("You know no recipes yet. Use a recipe item from your bag to learn it (anywhere), "
+                        + "or learn potion, scroll and refine recipes from a Master Crafter (the Learn tab).");
                 return;
             }
-
-            foreach (var recipe in recipes) BuildRecipeRow(recipe, counts);
+            foreach (var recipe in recipes) BuildRecipeRows(recipe, counts);
         }
 
-        // ---- the header, and the invitation before you have a profession -------------------------
+        // ---- the header, and the invitation before you are a crafter -----------------------------
 
-        /// <summary>The one line that has to carry three facts at once: who you are, how far up the
-        /// ladder, and whether the buttons below are live.</summary>
+        /// <summary>Who you are as a crafter, how many slots, and whether the buttons below are live.</summary>
         private string CraftHeader()
         {
-            int lvl = Boot.CraftLevel;
-            int pct = Mathf.RoundToInt(Crafting.LevelProgress(Boot.CraftExp, Mathf.Max(1, lvl)) * 100f);
-            bool frozen = lvl >= Boot.CraftBandCap && lvl < Crafting.MaxCraftLevel;
             string where = Boot.AtCraftMaster
-                ? "<color=#8CD98C>at your master — you can craft here</color>"
-                : Tinted("browsing — visit " + ProfessionName(Boot.CraftProfession) + "'s master to craft", false);
-
-            string ladder = "L" + lvl + " " + pct + "%";
-            if (frozen)
-                ladder += Tinted("  (frozen — reach character level "
-                                 + Crafting.CharLevelFor(lvl + 1) + " to go on)", false);
-
-            return ProfessionName(Boot.CraftProfession) + "  " + ladder + "   " + where;
+                ? "<color=#8CD98C>at the anvil</color>"
+                : Tinted("browsing — craft at a Master Crafter", false);
+            if (!Boot.IsCrafter) return "The Master's Trial   " + where;
+            return "Crafting L" + Boot.CraftLevel
+                 + "  (weapon " + Boot.CraftTypeLevel(CraftType.Weapon)
+                 + " · armour " + Boot.CraftTypeLevel(CraftType.Armour)
+                 + " · jewels " + Boot.CraftTypeLevel(CraftType.Jewels) + ")"
+                 + "   slots " + Boot.CraftSlotsUsed + "/" + Boot.CraftSlots + "   " + where;
         }
 
-        /// <summary>No profession yet. There is nothing to CHOOSE here any more (`BL-05`) — a
-        /// profession comes from a master's joining quest, and the whole point of that quest is that he
-        /// makes his pitch before you commit. This page just says where the five of them stand.</summary>
-        private void BuildProfessionInvitation()
+        /// <summary>Not a crafter yet (`BL-273` part 2): there are no professions, just one trial.</summary>
+        private void BuildCrafterInvitation()
         {
-            _craftTitle.text = "You have no profession — the masters in any town will each take an apprentice.";
-
-            foreach (Profession p in new[]
-            {
-                Profession.WeaponSmith, Profession.ArmorSmith, Profession.Jeweler,
-                Profession.PotionMaster, Profession.ScrollScribe
-            })
-            {
-                string body = "<size=13><color=#AEB4BE>Refines " + MaterialWord(RefinedTypeOf(p))
-                            + ".  Crafts " + MakesWord(p) + ".</color></size>";
-                // Not a button: nothing here commits you. Take his quest at the man himself.
-                CraftNoteRow(ProfessionName(p) + "\n" + body);
-            }
-
-            CraftNote("Take a master's quest at level " + QuestCatalog.ProfessionJoinLevel
-                    + " and he makes you his apprentice at crafting level 1. You can quit at your own "
-                    + "master later and join another — but every crafting level is lost when you do, and "
-                    + "the new master starts you at 1.");
+            _craftTitle.text = "You are not a crafter yet.";
+            CraftNote("Every town's Master Crafter gives a trial at level " + Crafting.CrafterQuestLevel
+                    + ": gather materials, learn a recipe, and forge a hammer at his anvil. Finish it and "
+                    + "you craft everything — weapons, armour, jewels, potions and scrolls — with "
+                    + Crafting.BaseSlots + " recipe slots, growing with your crafting level.");
         }
 
-        // ---- a recipe row ------------------------------------------------------------------------
+        // ---- the Craft page: one row per learned recipe (and per usable recipe %) -----------------
 
-        private void BuildRecipeRow(Recipe recipe, Dictionary<string, int> counts)
+        private void BuildRecipeRows(Recipe recipe, Dictionary<string, int> counts)
         {
             var outDef = ItemCatalog.Get(recipe.OutputId);
             string name = outDef?.Name ?? recipe.OutputId;
             string title = outDef != null ? Coloured(name, outDef.Rarity) : name;
             if (recipe.OutputQty > 1) title += "  x" + recipe.OutputQty;
+            int learned = Boot.KnownRecipes.TryGetValue(recipe.Id, out var l) ? l : 100;
 
-            // Three ways a recipe can be closed to you, and they want different words: too low a level,
-            // a blueprint you have not found, or simply missing materials.
-            bool levelLocked = !recipe.DropOnly && SelfLevel() < recipe.LearnLevel;
-            bool needsBlueprint = recipe.DropOnly && !Boot.KnownRecipes.Contains(recipe.Id);
+            if (recipe.IsGear)
+            {
+                // One row per recipe % you may spend: every % its tier has, at or below the learned one.
+                foreach (int pct in Crafting.RecipePercentsFor(recipe.GearItemLevel))
+                {
+                    if (pct > learned) continue;
+                    float bonus = Crafting.SuccessBonus(recipe.GearItemLevel, Boot.CraftLevel,
+                                                        Boot.CraftTypeLevel(recipe.Type));
+                    float chance = Mathf.Min(1f, pct / 100f + bonus);
+                    BuildOneRow(recipe, title + "  <size=13>(learned " + learned + "%)</size>", name,
+                                pct, chance, ItemCatalog.RecipeBookId(recipe.Id, pct), counts);
+                }
+                return;
+            }
+            if (recipe.QuestOnly)
+            {
+                BuildOneRow(recipe, title + "  <size=13>(the trial)</size>", name, Crafting.HammerRecipePercent,
+                            recipe.SuccessChance, ItemCatalog.CrafterQuestRecipe, counts);
+                return;
+            }
+            BuildOneRow(recipe, title, name, 0, recipe.SuccessChance, null, counts);
+        }
 
-            // A DropOnly recipe ALSO spends one blueprint per craft (the owner's rule: one to unlock,
-            // one every time after) — so it is listed as an ingredient, not just a gate.
-            string blueprintId = recipe.DropOnly ? ItemCatalog.RecipeBookId(recipe.Id) : null;
-            if (blueprintId != null && ItemCatalog.Get(blueprintId) == null) blueprintId = null;
-
+        private void BuildOneRow(Recipe recipe, string title, string name, int pct, float chance,
+                                 string recipeItemId, Dictionary<string, int> counts)
+        {
             var parts = new List<string>();
             bool haveAll = true;
             foreach (var input in recipe.Inputs)
             {
+                int need = recipe.IsGear ? Crafting.ScaledQty(input.Qty, pct) : input.Qty;
                 int have = counts.TryGetValue(input.ItemId, out var c) ? c : 0;
-                bool ok = have >= input.Qty;
+                bool ok = have >= need;
                 haveAll &= ok;
-                parts.Add(Tinted(ShortItemName(input.ItemId) + " " + have + "/" + input.Qty, ok));
+                parts.Add(Tinted(ShortItemName(input.ItemId) + " " + have + "/" + need, ok));
             }
-            if (blueprintId != null)
+            if (recipeItemId != null)
             {
-                int have = counts.TryGetValue(blueprintId, out var c) ? c : 0;
+                int have = counts.TryGetValue(recipeItemId, out var c) ? c : 0;
                 bool ok = have >= 1;
                 haveAll &= ok;
-                parts.Add(Tinted("Blueprint " + have + "/1", ok));
+                parts.Add(Tinted("Recipe " + pct + "% " + have + "/1", ok));
+            }
+            if (recipe.GoldCost > 0)
+            {
+                bool ok = Boot.Gold >= recipe.GoldCost;
+                haveAll &= ok;
+                parts.Add(Tinted(recipe.GoldCost.ToString("N0") + " " + GameConstants.CurrencyName, ok));
             }
 
-            // The CRAFTING-LEVEL gate is a second, independent gate from the character one, and it is
-            // the one a player will hit constantly (`BL-05`): everything at or below your rung, plus
-            // exactly one rung above.
-            bool rungLocked = !Crafting.CanCraftAt(recipe.CraftLevel, Boot.CraftLevel);
-            bool isGear = outDef != null && Crafting.IsGearSlot(outDef.Slot);
-            var odds = Crafting.GearCraftOdds(recipe.CraftLevel);
+            int shown = Mathf.RoundToInt(chance * 100f);
+            string status = chance >= 1f ? Tinted("Guaranteed", true) : Tinted(shown + "% success", true);
 
-            string second = string.Join("   ", parts);
-            string status =
-                rungLocked ? Tinted("Crafting L" + recipe.CraftLevel, false)
-                : levelLocked ? Tinted("Needs level " + recipe.LearnLevel, false)
-                : needsBlueprint ? Tinted("Blueprint not learned", false)
-                // A gear craft is the piece or nothing (the Legendary rung went with `BL-272`).
-                : isGear ? Tinted(Mathf.RoundToInt(odds.Success * 100f) + "% success  "
-                                  + Mathf.RoundToInt(odds.Fail * 100f) + "% fail", true)
-                : recipe.SuccessChance >= 1f ? Tinted("Guaranteed", true)
-                : Tinted(Mathf.RoundToInt(recipe.SuccessChance * 100f) + "% success", true);
-
-            // ⚠ AWAY FROM THE MASTER every row is dead, and that is the browse mode the owner asked for
-            // — the have/need colouring above is the whole point of being able to read this in the
-            // field, because "what do I still need to farm" is decided out there, not in town.
-            bool enabled = !rungLocked && !levelLocked && !needsBlueprint && haveAll && Boot.AtCraftMaster;
-            string label = title + "   <size=13>" + status + "</size>\n<size=13>" + second + "</size>";
+            // ⚠ AWAY FROM THE MASTER every row is dead — the browse mode. The have/need colouring is the
+            // whole point of reading this in the field.
+            bool enabled = haveAll && Boot.AtCraftMaster;
+            string label = title + "   <size=13>" + status + "</size>\n<size=13>" + string.Join("   ", parts) + "</size>";
 
             string id = recipe.Id;                 // captured per row
-            float chance = recipe.SuccessChance;
-            string oddsLine = isGear
-                ? Mathf.RoundToInt(odds.Success * 100f) + "% success, "
-                  + Mathf.RoundToInt(odds.Fail * 100f) + "% failure"
-                : Mathf.RoundToInt(chance * 100f) + "% chance to succeed";
+            int usePct = pct;
+            bool spendsRecipe = recipeItemId != null;
             CraftRow(label, enabled, () =>
             {
                 // A guaranteed craft goes straight through; anything that can fail names the odds first,
-                // because failure eats the materials and that is not something to discover by tapping.
+                // because failure eats the materials (and the recipe) and that is not something to learn
+                // by tapping.
                 bool keeperOn = _craftUseKeeper;    // captured, so the tap spends what the row promised
-                if (!isGear && chance >= 1f) { Boot.Craft(id, keeperOn); return; }
-                Ask("Craft " + name + "?\n\n<size=15>" + oddsLine
-                    + ". A failure still consumes the materials.</size>",
-                    "Craft", () => Boot.Craft(id, keeperOn));
+                if (chance >= 1f) { Boot.Craft(id, keeperOn, usePct); return; }
+                Ask("Craft " + name + "?\n\n<size=15>" + shown + "% chance to succeed. A failure still consumes "
+                    + (spendsRecipe ? "the materials and the recipe." : "the materials.") + "</size>",
+                    "Craft", () => Boot.Craft(id, keeperOn, usePct));
             });
+        }
+
+        // ---- the Learn page: the Master's generic recipes -----------------------------------------
+
+        /// <summary>The potion, scroll and refine recipes a Master Crafter teaches for gold (`BL-273` part
+        /// 2). Listed everywhere so a crafter can plan; the Learn buttons are live only with the Master's
+        /// dialog open. ⚠ Unlock levels and prices are placeholders until step 9b's table.</summary>
+        private void BuildLearnPage()
+        {
+            bool atMaster = Boot.AtCraftMaster && Boot.DialogNpcId != Guid.Empty;
+            if (!Boot.IsCrafter) { CraftNote("Only a crafter can learn recipes."); return; }
+            if (!atMaster) CraftNote("Talk to a Master Crafter to learn these.");
+            bool slotFree = Boot.CraftSlotsUsed < Boot.CraftSlots;
+            foreach (var recipe in RecipeCatalog.GenericForSale)
+            {
+                var outDef = ItemCatalog.Get(recipe.OutputId);
+                string name = outDef?.Name ?? recipe.OutputId;
+                string title = (outDef != null ? Coloured(name, outDef.Rarity) : name)
+                             + (recipe.OutputQty > 1 ? "  x" + recipe.OutputQty : "");
+                bool known = Boot.KnownRecipes.ContainsKey(recipe.Id);
+                bool lvlOk = SelfLevel() >= recipe.LearnLevel;
+                bool craftOk = Boot.CraftLevel >= recipe.UnlockLevel;
+                bool goldOk = Boot.Gold >= recipe.LearnPrice;
+                string status = known ? Tinted("known", true)
+                    : !craftOk ? Tinted("Crafting L" + recipe.UnlockLevel, false)
+                    : !lvlOk ? Tinted("Needs level " + recipe.LearnLevel, false)
+                    : !slotFree ? Tinted("No free slot", false)
+                    : Tinted(recipe.LearnPrice.ToString("N0") + " " + GameConstants.CurrencyName, goldOk);
+                bool enabled = atMaster && !known && lvlOk && craftOk && goldOk && slotFree;
+                string id = recipe.Id;
+                int price = recipe.LearnPrice;
+                CraftRow(title + "   <size=13>" + status + "</size>", enabled, () =>
+                    Ask("Learn the " + name + " recipe for " + price.ToString("N0") + " "
+                        + GameConstants.CurrencyName + "?\n\n<size=15>It takes one recipe slot.</size>",
+                        "Learn", () => Boot.LearnRecipeAtMaster(id)));
+            }
+        }
+
+        // ---- the Slots page: forget a recipe --------------------------------------------------------
+
+        /// <summary>Every learned recipe, one slot each; tap one to forget it (anywhere, nothing refunded).</summary>
+        private void BuildSlotsPage()
+        {
+            CraftNote("Slots " + Boot.CraftSlotsUsed + "/" + Boot.CraftSlots + ". Each crafting level adds "
+                    + Crafting.SlotsPerLevel + ". Forgetting a recipe frees its slot and refunds nothing.");
+            foreach (var kv in Boot.KnownRecipes.OrderBy(k => k.Key, StringComparer.Ordinal))
+            {
+                if (kv.Key == Crafting.HammerRecipeId) continue;
+                var recipe = RecipeCatalog.Get(kv.Key);
+                if (recipe == null) continue;
+                string name = OutputName(recipe);
+                string id = kv.Key;
+                CraftRow(name + "   <size=13>" + (recipe.IsGear ? kv.Value + "%" : "generic") + " — tap to forget</size>",
+                         true, () => Ask("Forget the " + name + " recipe?\n\n<size=15>Nothing is refunded; you "
+                                         + "would have to learn it again from a new recipe.</size>",
+                                         "Forget", () => Boot.ForgetRecipe(id)));
+            }
         }
 
         // ---- the materials page --------------------------------------------------------------------
@@ -323,8 +368,7 @@ namespace Game.Client
                              + (have > 0 ? have.ToString() : "<color=#8A9099>0</color>"));
                 }
 
-                string owner = Crafting.RefinerOf(type) == Boot.CraftProfession ? "   (yours)" : "";
-                CraftNoteRow(MaterialWord(type) + owner + "\n<size=14>" + string.Join("    ", line) + "</size>");
+                CraftNoteRow(MaterialWord(type) + "\n<size=14>" + string.Join("    ", line) + "</size>");
             }
         }
 
@@ -357,15 +401,6 @@ namespace Game.Client
 
         private int SelfLevel() => Boot.ActiveClass?.Level ?? 1;
 
-        private static CraftTab TabOf(Recipe r)
-        {
-            if (r.Id.StartsWith("refine_", StringComparison.Ordinal)) return CraftTab.Refine;
-            var def = ItemCatalog.Get(r.OutputId);
-            return def != null && def.Slot is EquipSlot.Weapon or EquipSlot.Armor
-                                          or EquipSlot.Shield or EquipSlot.Jewel
-                ? CraftTab.Gear : CraftTab.Goods;
-        }
-
         private static string OutputName(Recipe r) => ItemCatalog.Get(r.OutputId)?.Name ?? r.OutputId;
 
         /// <summary>An ingredient's name, short enough for a phone row. A material is "Rare Ingot"
@@ -379,15 +414,6 @@ namespace Game.Client
         private static string Tinted(string text, bool ok) =>
             "<color=#" + ColorUtility.ToHtmlStringRGB(ok ? UiKit.Good : UiKit.Bad) + ">" + text + "</color>";
 
-        private static MaterialType RefinedTypeOf(Profession p) => p switch
-        {
-            Profession.WeaponSmith => MaterialType.Ingot,
-            Profession.ArmorSmith => MaterialType.Leather,
-            Profession.Jeweler => MaterialType.Gem,
-            Profession.PotionMaster => MaterialType.Wood,
-            _ => MaterialType.Thread,
-        };
-
         private static string MaterialWord(MaterialType t) => t switch
         {
             MaterialType.Ingot => "Ingots",
@@ -395,26 +421,6 @@ namespace Game.Client
             MaterialType.Gem => "Gems",
             MaterialType.Wood => "Wood",
             _ => "Thread",
-        };
-
-        private static string MakesWord(Profession p) => p switch
-        {
-            Profession.WeaponSmith => "weapons",
-            Profession.ArmorSmith => "armour and shields",
-            Profession.Jeweler => "jewellery",
-            Profession.PotionMaster => "potions",
-            _ => "enchant and attribute scrolls",
-        };
-
-        /// <summary>"WeaponSmith" reads as one word on a button; split it for prose.</summary>
-        private static string ProfessionName(Profession p) => p switch
-        {
-            Profession.WeaponSmith => "Weapon Smith",
-            Profession.ArmorSmith => "Armour Smith",
-            Profession.PotionMaster => "Potion Master",
-            Profession.ScrollScribe => "Scroll Scribe",
-            Profession.Jeweler => "Jeweler",
-            _ => "None",
         };
 
         // ---- row primitives ---------------------------------------------------------------------

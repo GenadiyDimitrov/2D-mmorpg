@@ -75,16 +75,17 @@ public class CharacterRecord
     public int SecondClass { get; set; }
     public int ThirdClass { get; set; }
     /// <summary>⚠ NEW COLUMN 2026-08-17 (4th classes) — needs the `game.db` delete-and-recreate
-    /// described on <see cref="CraftExp"/> below.</summary>
+    /// described on <see cref="CraftPoints"/> below.</summary>
     public int FourthClass { get; set; }
-    public int Profession { get; set; }   // crafting profession (0 = none)
-
-    /// <summary>RAW crafting exp (`BL-05`), 12 points per same-level craft. The crafting LEVEL is
-    /// derived from this and the character's own band, never stored — one number cannot disagree with
-    /// itself. Zeroed when the profession is quit.
-    /// ⚠ NEW COLUMN 2026-08-13: `EnsureCreated()` does not ALTER an existing table, so this needs the
-    /// usual `Game.Server/game.db` (+ `-shm`/`-wal`) delete-and-recreate.</summary>
-    public int CraftExp { get; set; }
+    /// <summary>`BL-273` part 2 (0.203.0): the crafter flag and the raw craft POINTS, generic and per type.
+    /// Levels are derived from the points, never stored. Replaced `BL-05`'s Profession + CraftExp.
+    /// ⚠ NEW COLUMNS: `EnsureCreated()` does not ALTER an existing table, so this needs the usual
+    /// `Game.Server/game.db` (+ `-shm`/`-wal`) delete-and-recreate.</summary>
+    public bool IsCrafter { get; set; }
+    public int CraftPoints { get; set; }
+    public int CraftPointsWeapon { get; set; }
+    public int CraftPointsArmour { get; set; }
+    public int CraftPointsJewels { get; set; }
 
     public int Level { get; set; } = 1;
     public long Exp { get; set; }
@@ -124,7 +125,7 @@ public class CharacterRecord
     /// <summary>Completed quest ids, comma-separated.</summary>
     public string CompletedQuestsCsv { get; set; } = "";
 
-    /// <summary>Recipe ids learned from drops (DropOnly recipes), comma-separated.</summary>
+    /// <summary>Learned recipes as "recipeId:percent", comma-separated (`BL-273` part 2: one slot each).</summary>
     public string KnownRecipesCsv { get; set; } = "";
 
     /// <summary>`BL-239` — item DEF ids this character has locked against sell/bin/break/bank/trade,
@@ -288,7 +289,7 @@ public class SubclassRecord
     public int SecondClass { get; set; }
     public int ThirdClass { get; set; }
     /// <summary>0 = none; a FourthClassCatalog id (201-236). ⚠ NEW COLUMN 2026-08-17 — see the
-    /// EnsureCreated note on CharacterRecord.CraftExp: delete `game.db` (+ `-shm`/`-wal`).</summary>
+    /// EnsureCreated note on CharacterRecord.CraftPoints: delete `game.db` (+ `-shm`/`-wal`).</summary>
     public int FourthClass { get; set; }
 
     public int Level { get; set; } = 1;

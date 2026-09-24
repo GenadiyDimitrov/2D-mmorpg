@@ -780,50 +780,44 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
-    /// <summary>Craft a recipe by id (consume inputs → roll the outcome → produce output).
-    /// ⚠ The session check was MISSING here and on the old ChooseProfession, alone among the crafting
-    /// methods — closed 2026-08-13 with `BL-05`. It is not what caused `BL-40` (that was a ratio, not a
-    /// loop), but it is why a craft could be tapped as fast as the phone could send.</summary>
-    public Task Craft(string recipeId, bool useWarehouse = true)
+    /// <summary>Craft a recipe by id (consume inputs → roll the outcome → produce output). A gear craft
+    /// names the % of the recipe item it spends (`BL-273` part 2); a generic craft passes 0.</summary>
+    public Task Craft(string recipeId, bool useWarehouse = true, int recipePercent = 0)
     {
         if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
-        _world.Commands.Enqueue(new CraftCmd(Context.ConnectionId, recipeId, useWarehouse));
+        _world.Commands.Enqueue(new CraftCmd(Context.ConnectionId, recipeId, useWarehouse, recipePercent));
         return Task.CompletedTask;
     }
 
-    /// <summary>Re-take a master's profession you have already been taught (skips his quest, still
-    /// starts at level 1). A FIRST profession comes from finishing his joining quest, not from here.</summary>
-    public Task JoinProfession(Guid npcEntityId)
+    /// <summary>Forget a learned recipe to free its slot. Anywhere; refunds nothing.</summary>
+    public Task ForgetRecipe(string recipeId)
     {
         if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
-        _world.Commands.Enqueue(new JoinProfessionCmd(Context.ConnectionId, npcEntityId));
+        _world.Commands.Enqueue(new ForgetRecipeCmd(Context.ConnectionId, recipeId));
         return Task.CompletedTask;
     }
 
-    /// <summary>Quit your profession at your own master, losing every crafting level.</summary>
-    public Task QuitProfession(Guid npcEntityId)
+    /// <summary>Buy and learn a generic recipe at the Master Crafter.</summary>
+    public Task LearnRecipeAtMaster(Guid npcEntityId, string recipeId)
     {
         if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
-        _world.Commands.Enqueue(new QuitProfessionCmd(Context.ConnectionId, npcEntityId));
+        _world.Commands.Enqueue(new LearnRecipeAtMasterCmd(Context.ConnectionId, npcEntityId, recipeId));
         return Task.CompletedTask;
     }
 
-    /// <summary>Admin: set the CRAFTING profession (0=None..5=ScrollScribe). For the 2nd CLASS use
-    /// <see cref="DebugSecondClass"/> — the admin panel used to send class ids here, and they were
-    /// clamped into this 5-value enum.</summary>
-    public Task DebugSetProfession(int profession)
+    /// <summary>Admin: become a crafter without the trial quest.</summary>
+    public Task DebugBecomeCrafter()
     {
         if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
-        _world.Commands.Enqueue(new DebugSetProfessionCmd(Context.ConnectionId, profession));
+        _world.Commands.Enqueue(new DebugBecomeCrafterCmd(Context.ConnectionId));
         return Task.CompletedTask;
     }
 
-    /// <summary>Admin: jump to a crafting LEVEL (1-6) without the exp grind. The character-level band
-    /// still clamps it — testing the freeze is most of what this is for.</summary>
-    public Task DebugSetCraftLevel(int level)
+    /// <summary>Admin: set the generic and the three type craft levels (0-10 each).</summary>
+    public Task DebugSetCraftLevels(int generic, int weapon, int armour, int jewels)
     {
         if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
-        _world.Commands.Enqueue(new DebugSetCraftLevelCmd(Context.ConnectionId, level));
+        _world.Commands.Enqueue(new DebugSetCraftLevelsCmd(Context.ConnectionId, generic, weapon, armour, jewels));
         return Task.CompletedTask;
     }
 

@@ -375,6 +375,49 @@ Check("server pushed the warehouse on login", a.Ware is not null);
               && e.Value == 2 * Crafting.EssenceSellPrice[x.g] && ItemCatalog.SellPrice(e) == Crafting.EssenceSellPrice[x.g])
           && Crafting.EssenceSellPrice.SequenceEqual(new[] { 1500, 4500, 7500, 12500, 25000 }));
 
+    // `BL-273` part 2 (0.203.0): BECOMING A CRAFTER — the arithmetic and the catalogue, no server needed.
+    Check("craft slots: L0 = 10, +5 per generic level, L10 = 60",
+          Crafting.Slots(0) == 10 && Crafting.Slots(1) == 15 && Crafting.Slots(10) == 60);
+    Check("craft levels: level N costs 20·N points (L1 at 20, L10 at 1100)",
+          Crafting.LevelForPoints(19) == 0 && Crafting.LevelForPoints(20) == 1 && Crafting.LevelForPoints(60) == 2
+          && Crafting.LevelForPoints(1099) == 9 && Crafting.LevelForPoints(1100) == 10 && Crafting.LevelForPoints(99999) == 10);
+    Check("craft points per attempt: T40 1 · T52 2 · T61 3 · T76 5 · T80 8",
+          Crafting.CraftPoints(40) == 1 && Crafting.CraftPoints(52) == 2 && Crafting.CraftPoints(61) == 3
+          && Crafting.CraftPoints(76) == 5 && Crafting.CraftPoints(80) == 8);
+    Check("🔑 the crafter bonus (0.5%/level, generic + type) counts on T76/T80 ONLY",
+          Crafting.SuccessBonus(61, 10, 10) == 0f && Math.Abs(Crafting.SuccessBonus(76, 10, 10) - 0.10f) < 1e-6
+          && Math.Abs(Crafting.SuccessBonus(80, 4, 0) - 0.02f) < 1e-6);
+    Check("🔑 the mat curve: 20 → 30%, 40 → 50%, 60 → 70%, 100 → 100% (20 heads at 20% = 6)",
+          Crafting.ScaledQty(20, 20) == 6 && Crafting.ScaledQty(20, 40) == 10 && Crafting.ScaledQty(20, 60) == 14
+          && Crafting.ScaledQty(20, 100) == 20 && Crafting.ScaledQty(1, 20) == 1);
+    var gearRecipes = RecipeCatalog.All.Where(r => r.IsGear).ToList();
+    Check("gear recipes start at T40 (no F/E crafting) and carry their tier + type",
+          gearRecipes.Count > 0 && gearRecipes.All(r => r.GearItemLevel >= 40 && r.Type != CraftType.General)
+          && RecipeCatalog.Get("craft_sword1h_t20") is null,
+          $"{gearRecipes.Count} gear recipes");
+    Check("🔑 every gear recipe has a recipe ITEM at exactly its tier's %s (T40/T52 100 · T61 60/100 · T76 20/40/60 · T80 40/60)",
+          gearRecipes.All(r => Crafting.RecipePercents.All(p =>
+              (ItemCatalog.Get(ItemCatalog.RecipeBookId(r.Id, p)) is { } d && d.RecipePercent == p && d.TeachesRecipeId == r.Id)
+              == Crafting.RecipePercentsFor(r.GearItemLevel).Contains(p))));
+    var shelfIds = ShopCatalog.Get(WorldMap.CraftMasterId)?.ItemIds ?? Array.Empty<string>();
+    Check("🔑 the Master Crafter's shelf sells the T40 and T52 100% gear recipes, and nothing else",
+          shelfIds.Length > 0 && shelfIds.All(id => ItemCatalog.Get(id) is { RecipePercent: 100 } d
+              && RecipeCatalog.Get(d.TeachesRecipeId) is { GearItemLevel: 40 or 52 })
+          && shelfIds.Contains(ItemCatalog.RecipeBookId("craft_sword2h_t52", 100)),
+          $"{shelfIds.Length} rows");
+    Check("generic recipes: learned at the Master (unlock 0-10, a price), no recipe item; the trial's hammer is not for sale",
+          RecipeCatalog.GenericForSale.Any() && RecipeCatalog.GenericForSale.All(r => !r.IsGear && !r.QuestOnly
+              && r.UnlockLevel is >= 0 and <= 10 && r.LearnPrice > 0 && r.LearnLevel >= 40)
+          && RecipeCatalog.Get(Crafting.HammerRecipeId) is { QuestOnly: true, SuccessChance: 0.4f }
+          && !RecipeCatalog.GenericForSale.Any(r => r.Id == Crafting.HammerRecipeId));
+    Check("ONE Master Crafter per town (the five profession masters are gone)",
+          WorldMap.Npcs.Count(n => n.Role == NpcRole.CraftMaster) == 5
+          && WorldMap.Npcs.Where(n => n.Role == NpcRole.CraftMaster).All(n => WorldMap.IsCraftMaster(n.Id)),
+          $"{WorldMap.Npcs.Count(n => n.Role == NpcRole.CraftMaster)} masters");
+    Check("T76/T80 bosses drop 60% recipes and elites 40%, and every id they roll exists",
+          MobCatalog.RecipeRolls(78, MobRank.Boss).SelectMany(r => r.BookIds).All(id => id.EndsWith("_60") && ItemCatalog.Get(id) is not null)
+          && MobCatalog.RecipeRolls(82, MobRank.Elite).SelectMany(r => r.BookIds).All(id => id.EndsWith("_40") && id.Contains("_t80") && ItemCatalog.Get(id) is not null));
+
     // The "(Lesser)" line is GONE — it became the low QUALITIES of the real ladder.
     int lesser = ItemCatalog.AllItems.Count(d => d.Name.Contains("(Lesser)")
                                                  && d.Slot is EquipSlot.Weapon or EquipSlot.Armor
@@ -1314,233 +1357,284 @@ Check("SUBCLASS's bar survived the relog too",
 b.MyId = entered2.EntityId;
 
 // -------------------------------------------------------------------------------------------
-// 5a. A COLLECT STEP MUST ACTUALLY COUNT (0.67.1). Playtest-23, his first finding: *"the smiths quests
-//     (bring common ingots) dont count the ingots as items .. i kill mobs they drop or i added 200 with
-//     admin command - didnt increase the quest count 0/20 still"*.
+// 5a. BECOMING A CRAFTER (`BL-273` part 2, 0.203.0) — the Master Crafter's trial, PLAYED FOR REAL.
 //
-//     `QuestStepType.CollectItem` was in the enum, drawn by the quest window and saved in
-//     `CharacterQuestState.Counter` — and NOTHING in the server ever incremented it. All five crafting
-//     professions are gated behind such a step, so `BL-05` was unreachable by normal play from the day
-//     it shipped.
-//
-//     🔑 THIS IS WHY THE JOINING QUEST IS PLAYED HERE FOR REAL. Section 5b below debug-grants the
-//     profession (`DebugSetProfession`) and then proves a craft works — which is precisely how a whole
-//     crafting suite stayed green while nobody in the game could become a crafter. 5b proves a smith can
-//     forge; only this proves anyone can BECOME a smith.
+//     🔑 Why it is played and not debug-granted: 0.67.1 found the old profession quests unreachable by
+//     normal play (a collect step that never counted) while the whole crafting suite stayed green on a
+//     debug-granted profession. So the trial walks every beat through the real protocol: accept, the
+//     pitch, the five gathered piles (the collect steps walk in ONE pass), the talk back, LEARNING the
+//     recipe from the bag, the craft at the anvil — and, when the 40% roll fails, his *"fail go to 1"*,
+//     checked on the wire — then the hand-in that makes you a crafter.
+//     The 0.67.1 collect-count assertions live on here too: a partial pile must move the counter.
 // -------------------------------------------------------------------------------------------
 {
-    const Profession prof = Profession.WeaponSmith;
-    string joinQuest = QuestCatalog.JoiningQuestFor(prof)!;
-    string ingot = Crafting.MaterialId(MaterialType.Ingot, ItemRarity.Common);
-    var masterNpc = WorldMap.Npcs.First(n => n.Id == WorldMap.CraftMasterId(prof));
-
+    string trial = QuestCatalog.QuestBecomeCrafter;
+    var masterNpc = WorldMap.Npcs.First(n => n.Id == WorldMap.CraftMasterId);
     int Held(string defId) => b.Inv?.Items.Where(i => i.DefId == defId).Sum(i => i.Quantity) ?? 0;
-    QuestSummary? Q() => b.Quests?.Active.FirstOrDefault(q => q.Id == joinQuest);
+    QuestSummary? Q() => b.Quests?.Active.FirstOrDefault(q => q.Id == trial);
+    async Task GiveTrialMats()
+    {
+        foreach (var (id, n) in new[]
+        {
+            (ItemCatalog.CrafterQuestWood, 20), (ItemCatalog.CrafterQuestIron, 20), (ItemCatalog.CrafterQuestGem, 20),
+            (ItemCatalog.CrafterQuestRecipe, 2), (ItemCatalog.CrafterHammerHead, 1),
+        })
+        {
+            int missing = Math.Max(0, n - Held(id));
+            if (missing > 0) await b.Hub.SendAsync("DebugGive", id, missing);
+        }
+        await b.Settle();
+    }
 
-    // ⚠ Section 5 signs off standing on the level-5 SUBCLASS, and no master takes an apprentice below
-    // 20. Back to the level-81 main — the level a player joining a profession would actually be at.
+    // ⚠ Section 5 signs off standing on the level-5 SUBCLASS, and the trial is level 40. Back to the
+    // level-81 main.
     await b.Hub.SendAsync("SwitchSubclass", mainSlot);
     await b.Settle();
 
-    // Stand at the master: the protocol addresses an NPC by its runtime Guid and nothing else, and the
-    // turn-in is refused anywhere but in front of him.
-    // ⚠ A spawn carries the BARE name ("Gorran"); the catalogue's is the full "Master Smith Gorran",
-    // with the title split off into the entity's Title field. Match on the given name.
+    // A GEAR RECIPE CANNOT BE LEARNED BY A NON-CRAFTER: the trial comes first.
+    string t40Recipe = ItemCatalog.RecipeBookId("craft_sword1h_t40", 100);
+    await b.Hub.SendAsync("DebugGive", t40Recipe, 1);
+    await b.Settle();
+    var t40Row = b.Inv?.Items.FirstOrDefault(i => i.DefId == t40Recipe);
+    if (t40Row is not null) { await b.Hub.SendAsync("OpenBox", t40Row.InstanceId); await b.Settle(); }
+    Check("🔑 a non-crafter cannot learn a gear recipe (the item is kept)",
+          Held(t40Recipe) == 1 && !(b.Crafting?.KnownRecipes ?? Array.Empty<string>()).Any(k => k.StartsWith("craft_sword1h_t40:"))
+          && b.Crafting is { IsCrafter: false },
+          $"held {Held(t40Recipe)}, known [{string.Join(",", b.Crafting?.KnownRecipes ?? Array.Empty<string>())}]");
+
+    // Stand at the Master. ⚠ A spawn carries the BARE name ("Gorran"); the title is split off.
     string masterGivenName = masterNpc.Name.Split(' ')[^1];
     await b.Hub.SendAsync("DebugTeleport", masterNpc.X, masterNpc.Y);
-    // 🔑 Poll, never sleep: a teleport re-runs interest management on the SERVER's tick, so whether the
-    // master's spawn lands inside a flat 500 ms is a coin flip (the WaitFor lesson, found again).
+    // 🔑 Poll, never sleep: interest management runs on the SERVER's tick.
     await b.WaitFor(() => b.EntityNames.Any(kv => kv.Value == masterGivenName));
     var masterId = b.EntityNames.FirstOrDefault(kv => kv.Value == masterGivenName).Key;
-    Check($"the {prof} master ({masterNpc.Name}) is in view", masterId != Guid.Empty,
+    Check($"the Master Crafter ({masterNpc.Name}) is in view", masterId != Guid.Empty,
           $"saw [{string.Join(", ", b.EntityNames.Values.Distinct().Take(12))}]");
 
     if (masterId != Guid.Empty)
     {
-        // Beat 1 (the pitch) is a TalkTo, so accepting alone leaves you on step 0 — talking moves you
-        // onto the collect step, which is the one that was broken.
-        await b.Hub.SendAsync("QuestAction", "accept", joinQuest, masterId);
+        await b.Hub.SendAsync("QuestAction", "accept", trial, masterId);
         await b.Settle();
         await b.Hub.SendAsync("TalkToNpc", masterId);
         await b.Settle();
-
-        int carried = Held(ingot);      // 4c banked its mats, but never assume an empty bag
         var q = Q();
-        Check("the joining quest is active, and his pitch hands over to the COLLECT step",
-              q is { StepIndex: 1, CounterNeeded: 20 },
+        Check("the trial is active, and his pitch hands over to the first GATHER step",
+              q is { StepIndex: QuestCatalog.CrafterQuestGatherStep, CounterNeeded: 20 },
               q is null ? "quest not active at all" : $"step {q.StepIndex}, needs {q.CounterNeeded}");
-        Check("🔑 the collect counter reads the BAG, not a tally that starts at zero",
-              q is not null && q.Counter == Math.Min(20, carried),
-              $"counter {q?.Counter}, carrying {carried}");
 
-        // THE BUG, EXACTLY AS HE HIT IT: hand over ingots, watch the number. A PARTIAL pile must move
-        // the counter and must NOT advance the step — "20/20 or nothing" would have passed a test that
-        // only ever granted the full amount.
-        await b.Hub.SendAsync("DebugGive", ingot, 7);
+        // 0.67.1's bug, kept: a PARTIAL pile moves the counter and does not advance the step.
+        await b.Hub.SendAsync("DebugGive", ItemCatalog.CrafterQuestWood, 7);
         await b.Settle();
         q = Q();
-        Check("🔴 ingots arriving in the bag MOVE the counter (0/20 forever was the bug)",
-              q is { StepIndex: 1 } && q.Counter == Math.Min(20, carried + 7),
-              $"step {q?.StepIndex}, counter {q?.Counter} (expected {Math.Min(20, carried + 7)})");
+        Check("🔴 quest wood arriving in the bag MOVES the counter (0/20 forever was the 0.67.1 bug)",
+              q is { StepIndex: QuestCatalog.CrafterQuestGatherStep, Counter: 7 },
+              $"step {q?.StepIndex}, counter {q?.Counter}");
 
-        // Top up to the full twenty. He hit this with `/give` and with drops; both land through the same
-        // inventory push, which is where the credit is hung.
-        int missing = Math.Max(0, 20 - Held(ingot));
-        if (missing > 0) { await b.Hub.SendAsync("DebugGive", ingot, missing); await b.Settle(); }
+        // All five piles at once: the collect steps WALK in one pass (wood, iron, gems, recipes, head).
+        await GiveTrialMats();
         q = Q();
-        Check("holding all twenty advances to the hand-in step",
-              q is { CanComplete: true } && q.StepIndex == 2,
-              $"step {q?.StepIndex}, canComplete {q?.CanComplete}");
+        Check("🔑 holding all five piles walks every gather step in ONE pass, to the talk-back",
+              q is { StepIndex: 6 }, $"step {q?.StepIndex}");
+        Check("nothing was consumed in the field — the mats are still carried",
+              Held(ItemCatalog.CrafterQuestWood) >= 20 && Held(ItemCatalog.CrafterQuestRecipe) >= 2,
+              $"wood {Held(ItemCatalog.CrafterQuestWood)}, recipes {Held(ItemCatalog.CrafterQuestRecipe)}");
 
-        // A HOLD, NOT A CONFISCATION: the mats must still be in the bag out in the field. The master
-        // takes them at the counter, not the instant the twentieth one drops.
-        int atHandIn = Held(ingot);
-        Check("🔑 nothing was consumed in the field — the ingots are still carried",
-              atHandIn >= 20, $"carrying {atHandIn}");
+        // Crafting BEFORE the craft step is refused (the hammer recipe is not even learned yet).
+        await b.Hub.SendAsync("Craft", Crafting.HammerRecipeId, true, Crafting.HammerRecipePercent);
+        await b.Settle();
+        Check("a hammer craft before the craft step is refused, and costs nothing",
+              Held(ItemCatalog.CrafterHammer) == 0 && Held(ItemCatalog.CrafterQuestWood) >= 20,
+              $"hammer {Held(ItemCatalog.CrafterHammer)}, wood {Held(ItemCatalog.CrafterQuestWood)}");
 
-        // ...and the turn-in re-checks the hold, so binning the pile on the way in cannot buy a free
-        // profession. Throw them away, try to hand in, and expect to be put back on the collect step.
-        var ingotStack = b.Inv?.Items.FirstOrDefault(i => i.DefId == ingot);
-        if (ingotStack is not null)
+        await b.Hub.SendAsync("TalkToNpc", masterId);
+        await b.Settle();
+        q = Q();
+        Check("bringing the mats back hands over to the LEARN step", q is { StepIndex: 7 }, $"step {q?.StepIndex}");
+
+        // Learn one quest recipe from the bag (anywhere; here, at the Master).
+        var rRow = b.Inv?.Items.FirstOrDefault(i => i.DefId == ItemCatalog.CrafterQuestRecipe);
+        if (rRow is not null) { await b.Hub.SendAsync("OpenBox", rRow.InstanceId); await b.Settle(); }
+        q = Q();
+        Check("🔑 learning the hammer recipe from the bag credits the learn step, and takes NO slot",
+              q is { StepIndex: QuestCatalog.CrafterQuestCraftStep }
+              && (b.Crafting?.KnownRecipes ?? Array.Empty<string>()).Contains($"{Crafting.HammerRecipeId}:{Crafting.HammerRecipePercent}")
+              && Held(ItemCatalog.CrafterQuestRecipe) == 1,
+              $"step {q?.StepIndex}, known [{string.Join(",", b.Crafting?.KnownRecipes ?? Array.Empty<string>())}], "
+              + $"recipes held {Held(ItemCatalog.CrafterQuestRecipe)}");
+
+        // Try the craft until the hammer lands. 40% a try, so a fail is LIKELY and is checked when it
+        // happens; the cap is a runaway guard. After a fail: back to step 1, mats and the used recipe
+        // gone; re-supply, talk back (the learn step then passes on its own), and try again.
+        int tries = 0, fails = 0;
+        bool failPathOk = true;
+        while (Held(ItemCatalog.CrafterHammer) == 0 && tries < 25)
         {
-            await b.Hub.SendAsync("RemoveItem", ingotStack.InstanceId, true, 0);
+            tries++;
+            await b.Hub.SendAsync("Craft", Crafting.HammerRecipeId, true, Crafting.HammerRecipePercent);
             await b.Settle();
-        }
-        if (Held(ingot) == 0)
-        {
-            await b.Hub.SendAsync("QuestAction", "complete", joinQuest, masterId);
-            await b.Settle();
+            if (Held(ItemCatalog.CrafterHammer) > 0) break;
+            fails++;
             q = Q();
-            Check("🔑 handing in without the mats is refused, and puts you back on the collect step",
-                  q is { StepIndex: 1 } && (b.Crafting?.Profession ?? 0) != (int)prof,
-                  $"step {q?.StepIndex}, profession {b.Crafting?.Profession}");
-            await b.Hub.SendAsync("DebugGive", ingot, 20);
+            failPathOk &= q is { StepIndex: QuestCatalog.CrafterQuestGatherStep }
+                          && Held(ItemCatalog.CrafterQuestWood) == 0 && Held(ItemCatalog.CrafterHammerHead) == 0;
+            await GiveTrialMats();
+            await b.Hub.SendAsync("TalkToNpc", masterId);
             await b.Settle();
+            failPathOk &= Q() is { StepIndex: QuestCatalog.CrafterQuestCraftStep };
         }
+        Check("the hammer is forged at the anvil", Held(ItemCatalog.CrafterHammer) == 1,
+              $"{tries} tries, {fails} fails");
+        if (fails > 0)
+            Check($"🔑 a FAILED hammer ({fails}x) sends the trial back to step 1 with the mats gone, and the "
+                  + "learn step passes on its own the second time round", failPathOk);
+        else
+            Console.WriteLine("  (info) the hammer landed first try, so the fail path was not exercised this run");
+        q = Q();
+        Check("the forged hammer hands over to the last step", q is { CanComplete: true }, $"step {q?.StepIndex}");
 
-        // The real hand-in.
-        int before = Held(ingot);
-        await b.Hub.SendAsync("QuestAction", "complete", joinQuest, masterId);
+        await b.Hub.SendAsync("QuestAction", "complete", trial, masterId);
         await b.Settle();
-        Check("🔴 THE QUEST COMPLETES — the profession is granted by PLAYING it, not by a debug command",
-              (b.Crafting?.Profession ?? 0) == (int)prof
-                  && (b.Quests?.Completed.Contains(joinQuest) ?? false),
-              $"profession {b.Crafting?.Profession} (want {(int)prof}), "
-              + $"completed={b.Quests?.Completed.Contains(joinQuest)}");
-        Check("...and the master TOOK the twenty ingots",
-              Held(ingot) == before - 20, $"{before} -> {Held(ingot)}, expected {before - 20}");
+        var cu5 = b.Crafting;
+        Check("🔴 THE TRIAL COMPLETES — a crafter by PLAYING it: 10 slots, generic and types at L0",
+              cu5 is { IsCrafter: true, Slots: 10, GenericPoints: 0, WeaponPoints: 0 }
+              && (b.Quests?.Completed.Contains(trial) ?? false),
+              $"crafter {cu5?.IsCrafter}, slots {cu5?.Slots}, completed={b.Quests?.Completed.Contains(trial)}");
+        Check("...he took the hammer, and the trial's recipe is forgotten (it held no slot anyway)",
+              Held(ItemCatalog.CrafterHammer) == 0
+              && !(cu5?.KnownRecipes ?? Array.Empty<string>()).Any(k => k.StartsWith(Crafting.HammerRecipeId + ":")),
+              $"hammer {Held(ItemCatalog.CrafterHammer)}, known [{string.Join(",", cu5?.KnownRecipes ?? Array.Empty<string>())}]");
     }
 
-    // ⚠ Leave the character AWAY FROM THE WEAPONSMITH: 5b's first assertion is that a craft away from
-    // your master is refused, and this section parked him right on top of him. The Armorer is a real,
-    // deterministic "somewhere else" — a different master, in the same town.
-    var elsewhere = WorldMap.Npcs.First(n => n.Id == WorldMap.CraftMasterId(Profession.ArmorSmith));
-    await b.Hub.SendAsync("DebugTeleport", elsewhere.X, elsewhere.Y);
+    // Leave the Master: 5b's first assertion is that a craft away from an anvil is refused.
+    await b.Hub.SendAsync("DebugTeleport", masterNpc.X + 3000, masterNpc.Y);
     await b.Settle();
 }
 
 // -------------------------------------------------------------------------------------------
-// 5b. CRAFTING — the master, the level gate, the three-way gear roll and the blueprint (`BL-05`).
+// 5b. CRAFTING AS A CRAFTER (`BL-273` part 2) — recipe %, slots, points, forgetting, the shelf.
 //
-//     Crafting had NEVER been exercised end-to-end, which hid a static-init crash (RecipeCatalog threw
-//     on first access). It is worth more now than it was then, because `BL-05` gave a craft three gates
-//     that a human playtest cannot easily tell apart when one of them silently fails: you must be AT
-//     your master, you must hold the crafting LEVEL, and a gear craft rolls success-or-fail.
-//
-//     ⚠ NOTHING HERE ASSERTS "the item appeared". A gear craft is the piece or a FAIL, and at the
-//     A rung it fails half the time — an assertion on the outcome would be a coin flip dressed as a test.
-//     What IS deterministic is the bookkeeping, so that is what is checked:
-//       • mats are consumed on EVERY attempt (his fail rule: *"a fail consumes the materials"*),
-//       • a blueprint is consumed on SUCCESS ONLY, so `items made == blueprints spent`, exactly,
-//       • no blueprint → the craft is refused and the mats are still there,
-//       • away from the master → refused,
-//       • below the rung → refused.
+//     ⚠ NOTHING HERE ASSERTS "the item appeared" for a < 100% craft — that is a coin flip. What IS
+//     deterministic is the bookkeeping, so that is what is checked:
+//       • learning takes ONE slot at the item's %; a higher % overrides in place, a lower one is refused,
+//       • every attempt spends ONE recipe item and the inputs SCALED by its % (pass or fail),
+//       • every attempt pays tier-weighted points (T76 = 5) to generic AND weapon, fail included,
+//       • a % above the learned one is refused; away from a Master is refused,
+//       • forgetting frees the slot; the debug levels move the slot count (10 → 60),
+//       • the Master sells a T40 100% recipe at 10% of the piece, and teaches a generic recipe for gold.
 // -------------------------------------------------------------------------------------------
 {
-    const string recipeId = "craft_sword1h_t76";      // A-grade, DropOnly → exercises the blueprint too
+    const string recipeId = "craft_sword1h_t76";      // T76: recipes exist at 20 / 40 / 60 %
     var recipe = RecipeCatalog.Get(recipeId);
     Check("RecipeCatalog initialises without throwing (the static-init bug is fixed)", recipe is not null);
     if (recipe is not null)
     {
-        string bpId = ItemCatalog.RecipeBookId(recipeId);
-        int Count(Session s, string defId) => s.Inv?.Items.Where(i => i.DefId == defId).Sum(i => i.Quantity) ?? 0;
-        // The roll lands on the authored piece or fails (the Legendary face went with `BL-272`).
-        int Made(Session s) => Count(s, recipe.OutputId);
-
-        await b.Hub.SendAsync("DebugSetProfession", (int)recipe.Profession);
-        await b.Hub.SendAsync("DebugSetCraftLevel", recipe.CraftLevel);
-        await b.Hub.SendAsync("DebugGive", bpId, 6);     // one to learn, five to spend
-        await b.Settle();
-        Check("got the blueprints", Count(b, bpId) == 6, $"have {Count(b, bpId)}");
-
-        // UNLOCK: open one blueprint to learn the recipe (consumes it → 5 left).
-        var oneBp = b.Inv!.Items.First(i => i.DefId == bpId);
-        await b.Hub.SendAsync("OpenBox", oneBp.InstanceId);
-        await b.Settle();
-        Check("unlocking the recipe consumed ONE blueprint (5 of 6 left)", Count(b, bpId) == 5,
-              $"have {Count(b, bpId)}");
-
-        // AWAY FROM THE MASTER the craft must be refused outright — mats and blueprint both untouched.
-        foreach (var inp in recipe.Inputs) await b.Hub.SendAsync("DebugGive", inp.ItemId, inp.Qty);
-        await b.Settle();
-        int matsBefore = Count(b, recipe.Inputs[0].ItemId);
-        await b.Hub.SendAsync("Craft", recipeId);
-        await b.Settle();
-        Check("🔑 a craft AWAY FROM THE MASTER is refused, and costs nothing",
-              Made(b) == 0 && Count(b, recipe.Inputs[0].ItemId) == matsBefore && Count(b, bpId) == 5,
-              $"made {Made(b)}, mats {Count(b, recipe.Inputs[0].ItemId)}/{matsBefore}, bp {Count(b, bpId)}");
-
-        // Walk to his master. Every town has one; the starter town's is the one with the bare id.
-        var master = WorldMap.Npcs.First(n => n.Id == WorldMap.CraftMasterId(recipe.Profession));
-        await b.Hub.SendAsync("DebugTeleport", master.X, master.Y);
-        await b.Settle();
-
-        // BELOW THE RUNG: an L1 smith may attempt L2 and no higher (*"L5 should not be available"*).
-        await b.Hub.SendAsync("DebugSetCraftLevel", 1);
-        await b.Settle();
-        await b.Hub.SendAsync("Craft", recipeId);
-        await b.Settle();
-        Check("🔑 a recipe more than ONE rung above your crafting level is refused",
-              Made(b) == 0 && Count(b, recipe.Inputs[0].ItemId) == matsBefore,
-              $"made {Made(b)}, mats {Count(b, recipe.Inputs[0].ItemId)}/{matsBefore}");
-
-        // At the master, at the rung: keep attempting until the five blueprints are gone. The COUNT of
-        // attempts is not fixed and cannot be — a blueprint only burns on a success, so at A's 50% it
-        // takes about ten. The cap is a runaway guard, not an expectation.
-        await b.Hub.SendAsync("DebugSetCraftLevel", recipe.CraftLevel);
-        await b.Settle();
-        // ⚠ The two refusal checks above deliberately left their materials in the bag — that WAS the
-        // assertion. So the loop's invariant is "the bag is unchanged", not "the bag is empty": each
-        // pass adds exactly one recipe's worth and each attempt consumes exactly one, pass or fail.
-        int leftover = Count(b, recipe.Inputs[0].ItemId);
-        int attempts = 0;
-        while (Count(b, bpId) > 0 && attempts < 60)
+        int Count(string defId) => b.Inv?.Items.Where(i => i.DefId == defId).Sum(i => i.Quantity) ?? 0;
+        string[] Known() => b.Crafting?.KnownRecipes ?? Array.Empty<string>();
+        string r20 = ItemCatalog.RecipeBookId(recipeId, 20), r40 = ItemCatalog.RecipeBookId(recipeId, 40),
+               r60 = ItemCatalog.RecipeBookId(recipeId, 60);
+        async Task Learn(string itemId)
         {
-            foreach (var inp in recipe.Inputs) await b.Hub.SendAsync("DebugGive", inp.ItemId, inp.Qty);
-            await b.Settle();
-            await b.Hub.SendAsync("Craft", recipeId);
-            await b.Settle();
-            attempts++;
+            var row = b.Inv?.Items.FirstOrDefault(i => i.DefId == itemId);
+            if (row is not null) { await b.Hub.SendAsync("OpenBox", row.InstanceId); await b.Settle(); }
         }
-        int made = Made(b), bpSpent = 5 - Count(b, bpId);
-        Check("attempts at the master resolve, and every one consumes its materials",
-              attempts > 0 && Count(b, recipe.Inputs[0].ItemId) == leftover,
-              $"{attempts} attempts, {Count(b, recipe.Inputs[0].ItemId)} mats (expected {leftover})");
-        Check("🔑 the blueprint is spent on SUCCESS ONLY — items made == blueprints spent",
-              made == bpSpent && bpSpent == 5, $"made {made}, blueprints spent {bpSpent} of 5, {attempts} attempts");
-        Check("...and crafting EXP was awarded for the attempts", (b.Crafting?.Exp ?? 0) > 0,
-              $"exp {b.Crafting?.Exp ?? -1}");
 
-        // With the recipe still LEARNED and mats re-supplied but NO blueprint left, the craft is blocked.
-        foreach (var inp in recipe.Inputs) await b.Hub.SendAsync("DebugGive", inp.ItemId, inp.Qty);
+        await b.Hub.SendAsync("DebugGive", r20, 1);
+        await b.Hub.SendAsync("DebugGive", r40, 4);
+        await b.Hub.SendAsync("DebugGive", r60, 1);
         await b.Settle();
-        int madeBefore = Made(b);
-        await b.Hub.SendAsync("Craft", recipeId);
+
+        await Learn(r40);
+        Check("learning a 40% recipe fills ONE slot at 40%", Known().Contains($"{recipeId}:40") && Count(r40) == 3,
+              $"known [{string.Join(",", Known())}], r40 {Count(r40)}");
+        await Learn(r20);
+        Check("🔑 a LOWER % is refused and KEPT (it is what you craft with)",
+              Known().Contains($"{recipeId}:40") && Count(r20) == 1, $"r20 {Count(r20)}");
+        await Learn(r60);
+        Check("🔑 a HIGHER % overrides the slot IN PLACE (still one slot)",
+              Known().Contains($"{recipeId}:60") && Known().Count(k => k.StartsWith(recipeId + ":")) == 1 && Count(r60) == 0,
+              $"known [{string.Join(",", Known())}]");
+
+        var scaled = recipe.Inputs.Select(i => (i.ItemId, Qty: Crafting.ScaledQty(i.Qty, 40))).ToArray();
+        foreach (var (id, qty) in scaled) await b.Hub.SendAsync("DebugGive", id, qty * 3);
         await b.Settle();
-        Check("a craft with no blueprint is blocked, and the mats survive",
-              Made(b) == madeBefore && Count(b, recipe.Inputs[0].ItemId) == leftover + recipe.Inputs[0].Qty,
-              $"made {Made(b)}/{madeBefore}, mats {Count(b, recipe.Inputs[0].ItemId)} "
-              + $"(expected {leftover + recipe.Inputs[0].Qty})");
+        int mat0 = Count(scaled[0].ItemId);
+
+        await b.Hub.SendAsync("Craft", recipeId, false, 40);
+        await b.Settle();
+        Check("🔑 a craft AWAY FROM A MASTER is refused, and costs nothing",
+              Count(r40) == 3 && Count(scaled[0].ItemId) == mat0, $"r40 {Count(r40)}, mats {Count(scaled[0].ItemId)}/{mat0}");
+
+        var master = WorldMap.Npcs.First(n => n.Id == WorldMap.CraftMasterId);
+        await b.Hub.SendAsync("DebugTeleport", master.X, master.Y);
+        await b.WaitFor(() => b.Crafting is { AtMaster: true });
+        Check("the crafting push says AT MASTER once you stand at one", b.Crafting is { AtMaster: true });
+
+        await b.Hub.SendAsync("Craft", recipeId, false, 100);
+        await b.Settle();
+        Check("a % ABOVE the learned one (or one that does not exist at this tier) is refused",
+              Count(r40) == 3 && Count(scaled[0].ItemId) == mat0);
+
+        int made0 = Count(recipe.OutputId);
+        for (int i = 0; i < 2; i++) { await b.Hub.SendAsync("Craft", recipeId, false, 40); await b.Settle(); }
+        int attempts = 2;
+        Check("🔑 each attempt spends ONE 40% recipe and the inputs scaled to 50%, pass or fail",
+              Count(r40) == 3 - attempts && Count(scaled[0].ItemId) == mat0 - attempts * scaled[0].Qty,
+              $"r40 {Count(r40)}, {scaled[0].ItemId} {Count(scaled[0].ItemId)} (expected {mat0 - attempts * scaled[0].Qty})");
+        Check("🔑 every attempt pays T76 points (5) to generic AND weapon — a fail too",
+              b.Crafting is { } cu && cu.GenericPoints == 5 * attempts && cu.WeaponPoints == 5 * attempts && cu.ArmourPoints == 0,
+              $"generic {b.Crafting?.GenericPoints}, weapon {b.Crafting?.WeaponPoints}");
+        Console.WriteLine($"  (info) {Count(recipe.OutputId) - made0} of {attempts} 40% attempts succeeded");
+
+        await b.Hub.SendAsync("DebugSetCraftLevels", 10, 0, 0, 0);
+        await b.Settle();
+        Check("debug craft levels: generic 10 = 60 slots", b.Crafting is { Slots: 60 }, $"slots {b.Crafting?.Slots}");
+        await b.Hub.SendAsync("DebugSetCraftLevels", 0, 0, 0, 0);
+        await b.Settle();
+        Check("...and generic 0 = 10 slots", b.Crafting is { Slots: 10, GenericPoints: 0 }, $"slots {b.Crafting?.Slots}");
+
+        await b.Hub.SendAsync("ForgetRecipe", recipeId);
+        await b.Settle();
+        Check("🔑 forgetting frees the slot", !Known().Any(k => k.StartsWith(recipeId + ":")),
+              $"known [{string.Join(",", Known())}]");
+        int r40Before = Count(r40);
+        await b.Hub.SendAsync("Craft", recipeId, false, 40);
+        await b.Settle();
+        Check("...and a forgotten recipe cannot be crafted", Count(r40) == r40Before);
+
+        // THE SHELF: the Master sells the T40 100% recipe at 10% of the piece.
+        string masterGiven = master.Name.Split(' ')[^1];
+        await b.WaitFor(() => b.EntityNames.Any(kv => kv.Value == masterGiven));
+        var masterId = b.EntityNames.FirstOrDefault(kv => kv.Value == masterGiven).Key;
+        string shelf = ItemCatalog.RecipeBookId("craft_sword1h_t40", 100);
+        int price = ItemCatalog.BuyPrice(ItemCatalog.Get(shelf)!);
+        await b.Hub.SendAsync("DebugGold", 5_000_000L);
+        await b.Settle();
+        long gold0 = b.Gold;
+        int held0 = Count(shelf);
+        await b.Hub.SendAsync("BuyItem", masterId, shelf, 1);
+        await b.Settle();
+        Check("🔑 the Master Crafter SELLS the T40 100% recipe, at 10% of the piece",
+              Count(shelf) == held0 + 1 && b.Gold == gold0 - price
+              && price > 1 && ItemCatalog.Get(shelf)!.Value == Math.Max(1, (int)Math.Round(ItemCatalog.Get("sword1h_t40")!.Value * 0.10)),
+              $"held {held0}->{Count(shelf)}, gold {gold0}->{b.Gold}, price {price}");
+
+        // A GENERIC recipe, taught for gold, crafted with no recipe item, paying 1 generic point only.
+        var generic = RecipeCatalog.GenericForSale.First(r => r.UnlockLevel == 0 && r.Id.StartsWith("craft_"));
+        long gold1 = b.Gold;
+        await b.Hub.SendAsync("LearnRecipeAtMaster", masterId, generic.Id);
+        await b.Settle();
+        Check($"🔑 the Master TEACHES a generic recipe ({generic.Id}) for gold, into a slot at 100%",
+              Known().Contains($"{generic.Id}:100") && b.Gold == gold1 - generic.LearnPrice,
+              $"known [{string.Join(",", Known())}], gold {gold1}->{b.Gold} (price {generic.LearnPrice})");
+        foreach (var inp in generic.Inputs) await b.Hub.SendAsync("DebugGive", inp.ItemId, inp.Qty);
+        await b.Settle();
+        int gIn0 = Count(generic.Inputs[0].ItemId);
+        await b.Hub.SendAsync("Craft", generic.Id, false, 0);
+        await b.Settle();
+        Check("a generic craft spends its inputs (no recipe item) and pays 1 GENERIC point, no type point",
+              Count(generic.Inputs[0].ItemId) == gIn0 - generic.Inputs[0].Qty
+              && b.Crafting is { GenericPoints: 1, WeaponPoints: 0 },
+              $"input {gIn0}->{Count(generic.Inputs[0].ItemId)}, generic {b.Crafting?.GenericPoints}");
     }
 }
 
