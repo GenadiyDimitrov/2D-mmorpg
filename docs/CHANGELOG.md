@@ -12,7 +12,13 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-24 (latest) — 0.208.0: the daily recipe quests (`BL-274` part 3, step 13; closes `BL-274`)
+## 2026-09-24 (latest) — `BL-273` closed: the crafting rework's five placeholders confirmed (no code)
+
+The rework design doc §8 was answered: respec 1M-16M, rare HP/MP at Apothecary L7/L10, the nine basic buff scrolls
+= the common line, volcanic ash/stone 5,000 and bar 200,000, and Nightsilver/Nightsilk 20 × 10^rung all **stay as
+built**. `BL-273` is archived (built across 0.200.0-0.205.0). The 0.208.0 APK was delivered for the playtest.
+
+## 2026-09-24 — 0.208.0: the daily recipe quests (`BL-274` part 3, step 13; closes `BL-274`)
 
 > *"talk to 2-3 ppl, each asks 5-10 kills"*
 

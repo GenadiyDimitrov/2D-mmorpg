@@ -7384,3 +7384,129 @@ parts and both metals ×10, T76/T80 essence 1/10 of a 2H's break. All table rows
 **Open: step 13 (daily recipe quests), ✅ RULED 2026-09-24** (design doc §2.3 "Step 13 proposal" + answers: three
 Frostmere givers, the other two as contacts at 8 kills each on the kind's own carriers, the 40% book only).
 
+
+## `BL-273` ✅ CLOSED 2026-09-24: the crafting rework (steps 7, 9, 9b, 10; built 0.200.0-0.205.0)
+
+All four parts were built in 0.200.0 (essence), 0.203.0 (becoming a crafter), 0.204.0 (the generic-recipe table
++ the crafter-points model) and 0.205.0 (the materials). The five placeholders left open were **confirmed as they
+stand** on 2026-09-24 (design doc §8, your pick: keep all five): respec 1M · 2M · 4M · 8M · 16M, rare HP/MP at
+Apothecary L7/L10, the nine basic buff scrolls = the common line, volcanic ash/stone 5,000 and bar 200,000,
+Nightsilver/Nightsilk 20 × 10^rung. A playtest may reopen any one of them. The entry as it stood:
+
+### `BL-273` ❓ THE CRAFTING REWORK (as it stood) — supersedes `BL-05` (archived 2026-09-23)
+
+§2.2 of the design doc. The @40 unlock quest line, craft levels (+slots, +5% overall, +5% per type),
+recipes at 20/40/60/100% (learn one, spend one; mat cost 30/50/70/100%), the refinable metal ladder
+(10:1), MP per craft, un-droppable learned recipes for scrolls/potions/runes. Eight questions, and
+first of all: **profession lock or not** (my pick: not).
+✅ **2026-09-23: NO professions and NO lock.** The quest makes you a crafter for good. Recipes can be
+forgotten to free slots. Progression only goes up: every craft raises the generic craft level AND that
+type's level (weapon / armour / jewels, corrected in the third round below).
+✅ **2026-09-23: ESSENCE** (design doc §2.4). Breaking a Common or Mythic gives its grade's essence,
+**authored once per item from its price** (never a live formula). A Mythic gives 100%, a Common 70%.
+Recipes need essence as well as mats; at 100% a T80 weapon needs 2000, a T40 weapon 400, a T80 body
+1500, gloves/boots/earring 400, shield/helm/necklace 600, rings 200. 🔴 Open: T76+ essence has
+almost no source (Commons stop at T61), so a T80 craft may cost a whole T80 item. Also open: does a
+shattered enchant give essence; does a vendor sell essence; does the recipe % scale essence; the
+T52/T61/T76 numbers.
+✅ **2026-09-23, second round (§2.4):** T76+ **essence drops directly** (no T76+ Commons); a T80
+Mythic breaks for ~10k; **no essence refinement**. A **shattered enchant +N→N+1 gives N×10%** of the
+break value (+15→16 = 150%), and enchanting up to break is intended. **No vendor sells essence.** Essence
+scales with the recipe %; **refined mats don't**; 20 heads per 100% recipe, scaled (20% → 4). ❓ Open:
+heads use the plain % (4) or the 30% curve (6)? Does +0→1 give 0%? Per-tier numbers.
+✅ **2026-09-23, third round:** heads follow the **mat curve** (20% → 6, 100% → 20), so a maxed
+crafter pays 20 heads per success on every tier. +0→1 is moot, because +0…+3 is 100% safe and the
+first possible shatter is +3→4 = 30%. **The craft types are weapon / armour / JEWELS, not scribe**;
+potions, scrolls/runes and refines raise only the generic level. Still open: the per-tier essence numbers.
+✅ **2026-09-23, craft levels (§2.2 #2, #6):** the success bonus (5% general + 5% type) applies to
+**T76/T80 crafts only**. It reduces losses on high gear and does nothing on a 100% recipe or below T76.
+**General crafter level 0-10:** L0 = 0%, 10 slots; each level adds +0.5% and +5 slots (L10 = 5%, 60
+slots). **Type levels 0-10:** +0.5% each, % only, no slots.
+✅ **2026-09-23, names (§2.2 #4):** essence carries the **grade** name (Darksteel / Cobalt / Bloodsteel /
+Adamantine / Soulcrystal Essence). The refinable mats (one weapon line, one armour line, normal →
+refined → rare → refined rare → legendary) are **Nightsilver** (weapons) and **Nightsilk** (armour), one
+family. In the note, "darksteel" as a mat = Nightsilver.
+✅ **2026-09-23, admin path (§2.2 #7):** Debug-window **"Become crafter"** (skips the quest, like the
+debug class-change buttons) + **"Set craft levels"** (general and per-type 0-10).
+✅ **2026-09-23, the VOLCANIC BAR (§2.2):** T76 and T80 recipes need a **Volcanic Bar** on top of
+everything a T61 recipe needs, *"making the t76 and t80 a bit harder than a t61 rcp"*. Its own refine
+recipe is **20 volcanic ash + 20 volcanic stone → 1 bar**, and a 100% recipe takes **50 bars at T76,
+100 at T80** (the note's numbers). The note's "mithril bar" is renamed because of the naming rule, and
+"volcanic dust" is now **volcanic ash**. The bar scales with the recipe % like the other mats.
+📥 **Carried over from `BL-05` when it was archived** (two consumable-ladder pieces nobody ruled):
+where **elemental + skill stones** sit on the consumable crafting ladder, and the **chest / rune-box /
+exp-box** economy (a sink sketch, to be specced against the held War/Spell Rune and the `BL-01`
+premium runes). Both belong to §2.2 #8, the consumable recipes.
+✅ **2026-09-23, ESSENCE per tier and slot — RULED** (design doc §2.2 #10, third round): 2H **400 / 800 /
+1200 / 1600 / 2000** (T40…T80); the slots follow his shares (T80: 1H 1600, body 1200, helm/shield/neck 800,
+earring 600, gloves/boots 400, ring 200). The full table is in the design doc; it replaces his first T80 slot row.
+✅ **2026-09-23, SLOT SHARES ARE A GUIDE, NOT A FORMULA** (*"do not do anything as formula because moving one
+will break all others"*): 1H 4/5, body 3/5, helmet/shield 2/5, gloves/boots 1/5, necklace 2/5, earring 1.5/5,
+ring 0.5/5. Every per-slot number (mats, essence, recipe drop rate) is an **authored table**, one cell per tier
+× slot. Rings/earrings use Nightsilver + metal; the necklace uses Nightsilk + thread. Small-slot recipes drop
+more often at T76/T80 (table in the design doc).
+
+🟢 **Part 1 BUILT, 0.200.0 (2026-09-24, step 7 of §7): ESSENCE.** Breaking gear gives its grade's essence only
+(Darksteel / Cobalt / Bloodsteel / Adamantine / Soulcrystal); the `BL-22` mats roll is deleted. Amounts are
+authored literals (`Crafting.MythicBreak` / `CommonBreak`, table in `docs/Formulas.md`). A shattered +N (Normal
+scroll) pays N×10%; essence is unbuyable and sells at worth ÷ 25. ✅ **Ruled while building (2026-09-24):**
+T61 / T76 Mythic 2H break for **4000 / 7000**; a Common breaks for **70% of its OWN price** (×0.225 × 0.7 of the
+Mythic cell, so a T40 Common 2H = 315, not the "20× cheaper" 70); **T1/T20 gear cannot be broken**. Measured:
+`--craft-cost` per success is back on T40 17h / T52 28h / T61 59h. ⚠ Essence is rarity **Common**, so once it
+DROPS (step 12) a material pickup filter above Common would skip it; decide it there.
+**Still open: part 2 = step 9** (becoming a crafter, recipe %, slots) **and part 3 = step 10** (Nightsilver /
+Nightsilk, the Volcanic Bar, the per-tier × per-slot recipe tables, where recipes start to spend essence).
+
+🟢 **Part 2 BUILT, 0.203.0 (2026-09-24, step 9): BECOMING A CRAFTER.** Professions deleted. One Master Crafter per
+town; his level-40 trial (gather wood/iron, gems, 2 recipes at 40% + a hammer head → learn → forge the Blacksmith's
+Hammer, a fail back to step 1) makes you a crafter for good: 10 slots, generic + weapon/armour/jewels L0. Crafting
+only at a Master; learning/forgetting anywhere. Gear recipes are items at 20/40/60/100% (spent per craft, inputs
+scaled 30/50/70/100%, bonus on T76/T80 only). Formulas in `docs/Formulas.md`. ✅ **Ruled while building
+(2026-09-24, design doc §2.2 "0.203.0" answers):** points tier-weighted and a fail counts (T40 1 … T80 8, level N
+= 20·N); his trial steps verbatim; the Master sells T40/T52 100% recipes; generic recipes are bought at the Master
+(unlock at generic level X + grade level, gold/essence/mats cost, batch output, ~50-60% of shop price); the recipe %
+by source per tier (now in `BL-274`). ⚠ **Placeholders to tune:** the trial's mobs and drop chances, the points,
+the 10% shop recipe price, and every generic-recipe number.
+**Still open — step 9b:** the generic-recipe TABLE (which potions/scrolls/refines, batch size, gold + essence + mats,
+unlock level, learn price) against his *"~50-60% of their shop price"* and *"not y > x"* (craft cost vs break+sell),
+measured by `--craft-cost` C5, proposed in the design doc for his ruling. Then **step 10** (part 3).
+❓ **2026-09-24: step 9b PROPOSED, waiting on you:** design doc §2.2, "Step 9b proposal" (`--craft-cost` C5a census,
+C5b table, C5c deferred). One batch = gold + essence at **52%** of its buy price + Common mats worth ~5% in farm time
+(**~57%** in all); `y <= x` holds on every row. Eight questions, the big one: **enchant + attribute scrolls deferred to
+after `BL-274`** (a D scroll is Valued 60g but farms at ~4M; my pick is no recipe until step 11). Also: crafting the
+Common/Uncommon mana potions would reverse your 2026-08-27 shop-only ruling; generic recipes at 100%; batches of
+10 / 5 for buff scrolls, rune boxes and Ultimates; 1 point per batch; the step-10 refine unlocks.
+✅ **2026-09-24: 9b RULED** (design doc §2.2, "Your answers").
+- **OUT:** the Ultimates, all stones, Return/Resurrection, all Dash potions and the Instant potion. Enchant and
+  attribute scrolls are **never** craftable.
+- **IN:** HP and mana potions at x100 @40, x50 @52 and rare x10 @76. They take gems + D/C/B essence, and the rare
+  ones also take volcanic ash/stone. Buff potions come x6 (L1/L3) and buff scrolls x2 (L2/L4), both at the buff's
+  class-skill level. Rune boxes come **x3**: 1h @70 for ~400k, and 2h @80 for ~800k with Volcanic Bars + S.
+- Every recipe succeeds 100% and costs ~80-90% of the shop price. The 20k…4M learn ladder is agreed.
+
+🔴 **Build ON HOLD:** he asked to discuss the crafter-points model first (generic level = points spent on types, i.e.
+IG-style interlocking professions). See §2.2, "The crafter-points model".
+🟢 **2026-09-24: BUILT 0.204.0.** The crafter-points model ruled as his Idea-1:
+- 1 point per generic level, spent on Weapon / Armour / Jewels / Apothecary / Scribe.
+- Tier gates L2/L4/L6/L8, and a smith's L9/L10 adds +5% each.
+- Scribe/Apothecary crafts cost ×0.9 → ×0.55 of the batch's buy price.
+- 5 respecs a lifetime. A respec locks recipes, it never forgets them.
+
+9b itself is built as ruled: a buff's tier is its class skill's LAST rung. ⚠ Open placeholders: the respec prices
+(1M doubling), the volcanic Values, and rare HP at L7 vs rare MP at L10. **Next: step 10.** Its Q7 (the refine
+unlocks) is unruled.
+🟢 **2026-09-24: part 3 (step 10) BUILT 0.205.0: the materials.** Step 10 was ruled first (design doc §2.2, "Step 10
+proposal" + "Your answers"): the refine ladder L0/40 · L3/52 · L5/61 · L8/76 (bar L7/76, alloy L0/40); refines pay
+**0** points; **one base mat, Iron** (the note's metal and iron); **one part per item kind** (18 a tier). Built: the
+old Uncommon…Mythic mat ladder is deleted with its drop rows; Nightsilver / Nightsilk (5 rungs, 10:1), Alloy and 90
+parts are new; every gear recipe is an authored per-tier × per-slot table; MP per craft; a **count** on non-gear
+crafts. ⚠ **Nightsilver, Nightsilk, parts and volcanic ash/stone have no source until step 11 (`BL-274`)**, so no
+gear can be crafted in between.
+⚠ **Still open, all placeholders for you to confirm** (nothing else in `BL-273` is unbuilt). ❓ **2026-09-24: my picks + the numbers are in design doc §8 (keep all five):**
+- respec prices (1M doubling);
+- rare HP at Apothecary L7, rare MP at L10;
+- the nine "basic" buff scrolls = the common line;
+- the volcanic Values (ash/stone 5k, bar 200k);
+- the Nightsilver/Nightsilk Values (20 × 10^rung);
+- ~~a part = its item's Common price~~ ✅ **settled in step 11 (0.206.0): a part = 1% of its full item's price**, and a recipe
+  = 10% × its % (your ruling: *"a 20% recipe will cost 2%"*).

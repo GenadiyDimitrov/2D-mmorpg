@@ -1514,6 +1514,100 @@ if (args.Length > 0 && args[0] == "--mcrit")
 if (args.Length > 0 && args[0] == "--ccland") { CcLand(args); return; }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
+//  `--antitype [maxLevel]` — `BL-280`: WHICH MOBS ARE "ANTI-MAGE", "ANTI-FIGHTER", "ANTI-ARCHER".
+//  *"anti mage and anti fighter and anti archer mobs need to be in self zones"* — and nobody had ever
+//  listed which ones those are. Per rostered template: the kill time of a Magus-line nuker, a 2H-sword
+//  warrior and a bow rogue, each at the mob's own level in its own tier's gear, divided by the same
+//  attacker's kill time on a PLAIN mob of that level (no template, no passives). 1.00 = neutral.
+//  🔑 The per-hit coefficients the server applies (`WeaponDefenceCoef`, `MagicDefCoef`, `BowResist`) are
+//  NOT inside PhysDps/MagicDps, which read the bare defence — defence is the divisor, so they are
+//  applied here as ×1/coef. Crit resistance is not modelled (a boss-only passive; bosses are skipped).
+//  SKEW = one attacker's factor ÷ the FASTEST of the other two; ≥ 1.25 prints as ANTI-that-attacker, and
+//  warrior + bow both slow against the mage prints as ANTI-PHYSICAL (a median hid those: when two of the
+//  three are slow, the slow value IS the median).
+if (args.Length > 0 && args[0] == "--antitype") { AntiType(args); return; }
+
+static void AntiType(string[] args)
+{
+    int maxLevel = args.Length > 1 && int.TryParse(args[1], out var ml) ? ml : 90;
+    const float Anti = 1.25f;
+
+    float Ttk(Entity atk, Entity mob, bool magic)
+    {
+        float dps;
+        if (magic) dps = MagicDps(atk, mob) / mob.MagicDefCoef;
+        else
+        {
+            dps = PhysDps(atk, mob) / StatCalculator.WeaponDefenceCoef(atk.WeaponType,
+                      mob.PierceDefCoef, mob.BluntDefCoef, mob.BowDefCoef, mob.PhysicalDefCoef);
+            if (atk.WeaponType == WeaponType.Bow) dps *= 1f - mob.BowResist;
+        }
+        return dps > 0 ? mob.MaxHp / dps : float.PositiveInfinity;
+    }
+
+    var roster = MobCatalog.Templates
+        .Where(m => !m.Dummy && !m.HandPlaced && !m.Guard && m.Level > 0 && m.Level <= maxLevel
+                    && !(m.Mod is MobMod bm && bm.Boss))
+        .OrderBy(m => m.Level).ThenBy(m => m.Id).ToList();
+
+    var attackers = new Dictionary<int, (Entity Mage, Entity War, Entity Bow)>();
+    (Entity, Entity, Entity) At(int L)
+    {
+        if (!attackers.TryGetValue(L, out var a))
+        {
+            var bow = BuildRogue(L);
+            bow.Inventory.RemoveAll(i => ItemCatalog.Get(i.DefId)?.Slot == EquipSlot.Weapon);
+            Equip(bow, $"bow_t{GearTier(L)}");
+            bow.RecomputeDerived();
+            a = (BuildPlayer(Race.Human, BaseClass.Mage, L),
+                 BuildPlayer(Race.Human, BaseClass.Fighter, L, warrior: true), bow);
+            attackers[L] = a;
+        }
+        return a;
+    }
+
+    Console.WriteLine();
+    Console.WriteLine($"=== ANTI-TYPE MOBS (BL-280) — levels 1-{maxLevel}, {roster.Count} rostered templates, bosses skipped ===");
+    Console.WriteLine("    factor = attacker's kill time on THIS mob / on a plain mob of its level (1.00 = neutral)");
+    Console.WriteLine($"    skew = factor / fastest of the other two; >= {Anti:0.00} = ANTI-that-attacker (war+bow both = ANTI-PHYSICAL)");
+    Console.WriteLine();
+    Console.WriteLine($"{"lvl",3} {"id",-30} {"role",-6} {"hp",5} {"pdef",5} {"mdef",5} {"mres",5} {"eva",4} {"bowR",5}  {"mage",5} {"war",5} {"bow",5}  verdict");
+    var counts = new Dictionary<string, int>();
+    foreach (var t in roster)
+    {
+        var (mage, war, bow) = At(t.Level);
+        var mob = SpawnTemplate(t.Id);
+        var cat = t.Category;
+        float f(Entity a, bool magic)
+        {
+            var plain = BuildMobEntity(t.Level, cat);
+            float mine = Ttk(a, mob, magic);
+            return float.IsInfinity(mine) ? float.NaN : mine / Ttk(a, plain, magic);
+        }
+        float fm = f(mage, true), fw = f(war, false), fb = f(bow, false);
+        // No nuke learned yet (the first few levels): the mage column is n/a and judges nothing.
+        bool hasMage = float.IsFinite(fm);
+        var anti = new List<string>();
+        if (hasMage && fm / Math.Min(fw, fb) >= Anti) anti.Add("ANTI-MAGE");
+        if (hasMage && fw / fm >= Anti && fb / fm >= Anti)
+            anti.Add("ANTI-PHYSICAL" + (fb / fw >= Anti ? " +ARCHER" : fw / fb >= Anti ? " +FIGHTER" : ""));
+        else
+        {
+            if (fw / (hasMage ? Math.Min(fm, fb) : fb) >= Anti) anti.Add("ANTI-FIGHTER");
+            if (fb / (hasMage ? Math.Min(fm, fw) : fw) >= Anti) anti.Add("ANTI-ARCHER");
+        }
+        string verdict = anti.Count == 0 ? "-" : string.Join(" ", anti);
+        counts[verdict] = counts.GetValueOrDefault(verdict) + 1;
+        var m = t.Mod ?? default;
+        Console.WriteLine($"{t.Level,3} {t.Id,-30} {t.Role,-6} {(t.Mod is null ? 1f : m.Hp),5:0.00} {(t.Mod is null ? 1f : m.PDef),5:0.00} "
+            + $"{(t.Mod is null ? 1f : m.MDef),5:0.00} {m.MagicResist,5:+0.00;-0.00;0} {(t.Mod is null ? 1f : m.Evasion),4:0.0} {mob.BowResist,5:0.00}  "
+            + $"{(hasMage ? fm.ToString("0.00") : "n/a"),5} {fw,5:0.00} {fb,5:0.00}  {verdict}");
+    }
+    Console.WriteLine();
+    foreach (var (k, v) in counts.OrderByDescending(kv => kv.Value)) Console.WriteLine($"    {v,4}  {k}");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────
 //  `--mres` — the magic-resistance CHANNEL end to end, because he reported the Nullblade's
 //  ultimate doing nothing: *"magic armor of null blade does nothing ... he takes ~300 dmg less than
 //  other duals because of his anti magic but with magic armor on the dmg is the same"*.
