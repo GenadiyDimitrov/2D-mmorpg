@@ -75,7 +75,12 @@ namespace Game.Client
 
             // ----- presets A / B / C -----
             UiKit.Place(UiKit.Rect(UiKit.Label(_equipColumn, "Presets", 13f, UiKit.Accent).gameObject),
-                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(8f, -324f), new Vector2(200f, 18f));
+                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(8f, -324f), new Vector2(100f, 18f));
+            // `BL-272` part 2 — the built-in EMPTY preset: one tap takes everything off (it is how the
+            // temporary 2-hour gear is paused). On the header row, so the three saved rows keep their places.
+            var bare = UiKit.TextButton(_equipColumn, "Unequip all", Boot.UnequipAll, 13f);
+            UiKit.Place(UiKit.Rect(bare.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(116f, -320f), new Vector2(168f, 24f));
             for (int i = 0; i < 3; i++)
             {
                 int idx = i;

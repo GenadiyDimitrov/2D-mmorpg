@@ -393,6 +393,14 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("Preset: " + ex.Message); }
         }
 
+        /// <summary>`BL-272` part 2 — take everything off (the built-in empty preset). Refused in combat.</summary>
+        public async void UnequipAll()
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.UnequipAllAsync(); }
+            catch (Exception ex) { ClientLog.Warn("Unequip all: " + ex.Message); }
+        }
+
         /// <summary>Fetch a leaderboard board and hand the result back on the main thread.</summary>
         public async void RequestLeaderboard(string category, Action<LeaderboardDto> onResult)
         {

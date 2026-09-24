@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.201.0";
+    public const string GameVersion = "0.202.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -214,7 +214,7 @@ public static class GameConstants
     /// An APK on 44 or 45 would mis-read that record — but none exists: 44 and 45 were both cut and
     /// superseded inside one day and no APK was ever built from either, so nothing in the wild has the
     /// Drops window at all. That is why `MinAcceptedProtocol` does not move. ⚠ A NEW APK IS WANTED.
-    public const int ProtocolVersion = 46;   // 46: DropLookupRow carries sortable values (`BL-253`)
+    public const int ProtocolVersion = 47;   // 47: essence shop prices + worn-time items (`BL-272` part 2)
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means

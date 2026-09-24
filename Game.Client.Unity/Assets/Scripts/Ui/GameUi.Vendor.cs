@@ -213,6 +213,19 @@ namespace Game.Client
           : plat > 0 ? (plat * qty).ToString("N0") + " " + GameConstants.PlatinumName
           : (gold * qty).ToString("N0") + " " + GameConstants.CurrencyName;
 
+        /// <summary>`BL-272` part 2 — an essence price tag: "750 Cobalt Essence + 6,750 Darksteel Essence".</summary>
+        private static string EssencePrice(ItemCostDto[] cost) =>
+            string.Join(" + ", Array.ConvertAll(cost, c => c.Qty.ToString("N0") + " " + c.Name));
+
+        /// <summary>How many of an item the BAG holds, all rows — the reach of the server's CountItem.</summary>
+        private int HeldCount(string defId)
+        {
+            int n = 0;
+            foreach (var it in Boot.Inventory ?? Array.Empty<InventoryItemDto>())
+                if (it.DefId == defId) n += it.Quantity;
+            return n;
+        }
+
         /// <summary>Can this many be paid for out of BOTH wallets?</summary>
         private bool CanAfford(long gold, long plat, int qty = 1) =>
             Boot.Gold >= gold * qty && Boot.Platinum >= plat * qty;
@@ -232,6 +245,19 @@ namespace Game.Client
                 var def = ItemCatalog.Get(ware.DefId);
                 if (def == null || !InCategory(_vendorTab, def)) continue;
                 anyInTab = true;
+                // `BL-272` part 2 — an ESSENCE row (the T52 essence shop): no gold, one piece per purchase.
+                if (ware.Essence is { Length: > 0 } essence)
+                {
+                    string esPrice = EssencePrice(essence);
+                    bool esAfford = Array.TrueForAll(essence, c => HeldCount(c.DefId) >= c.Qty);
+                    string esDefId = ware.DefId, esName = ware.Name;
+                    string esHead = (esAfford ? Coloured(esName, def.Rarity) : esName) + "   " + esPrice;
+                    VendorRow(_vendorDetailed ? esHead + "\n<size=12><color=#9AA3AD>" + WareSummary(def) + "</color></size>"
+                                              : esHead,
+                              esAfford ? UiKit.Text : UiKit.TextDim,
+                              () => ConfirmBuy(esDefId, esName, 0, 0, 1, esPrice), _vendorDetailed ? 56f : 38f);
+                    continue;
+                }
                 long unit = Math.Max(0, ware.BuyPrice);   // -1 = no GOLD price, not "unbuyable"
                 long unitPlat = ware.PlatinumPrice;
                 bool afford = CanAfford(unit, unitPlat);
@@ -473,7 +499,7 @@ namespace Game.Client
             t.Append("</size>");
         }
 
-        private void ConfirmBuy(string defId, string name, long unit, long unitPlat, int qty)
+        private void ConfirmBuy(string defId, string name, long unit, long unitPlat, int qty, string priceText = null)
         {
             // The confirm dialog is where the item DESCRIPTION belongs (owner, playtest-13: "clicking on
             // the item opens confirmation dialog with the items description"). It is the last moment
@@ -483,7 +509,7 @@ namespace Game.Client
             var def = ItemCatalog.Get(defId);
             var t = new StringBuilder();
             t.Append("Buy ").Append(qty).Append(" x ").Append(name)
-             .Append(" for ").Append(Price(unit, unitPlat, qty)).Append('?');
+             .Append(" for ").Append(priceText ?? Price(unit, unitPlat, qty)).Append('?');
             AppendItemDetails(t, def, defId);
             Ask(t.ToString(), "Confirm", () => { Boot.BuyItem(defId, qty); CloseNumpad(); });
         }

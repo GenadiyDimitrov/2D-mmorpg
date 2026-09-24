@@ -7,11 +7,42 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.201.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.202.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-24 (latest) — 0.201.0: prices + essence, IG-shaped (`BL-287`, step 7b of the rework order)
+
+## 2026-09-24 (latest) — 0.202.0: the shops (`BL-272` part 2, step 8 of the rework order)
+
+> *"so breaking like crazy T40 can get u a t52"* … *"the 2 hours tick only while WORN"*
+
+**A T52 essence shop, 2-hour temporary Common gear on the gear merchants, and an Unequip-all button.**
+`BL-272` is complete and archived. Its one deferred leftover, rarity for consumables, is now `BL-288`.
+
+- **The T52 essence shop: Assayer Corvane, in Greymarsh only** (his pick: *"A single new NPC in a T52
+  town"*). He sells every T52 Mythic piece (8 weapons, 3 bodies, helm, gloves, boots, shield, 3 jewels) for
+  **essence only, with no gold and no mats**. The price is **¼ of the item's price in Cobalt essence + ¾ in
+  Darksteel**, each at its essence's sell price. A 2H costs **750 C + 6,750 D** and a ring **63 + 563**
+  (his pick of three readings of the pre-`BL-287` "500 T52 + ¾ in T40", 2026-09-24). The table is an
+  authored literal, generated once; full table in `docs/Formulas.md`.
+- **Temporary Common gear, T40 and T52**, from every Armsmaster (a **weapon box**: pick one of the 8
+  weapons) and every Outfitter (an **armour box**: pick a heavy / light / robe set, and each set includes a
+  **shield**). Both are priced at the **Common price**: weapon **214,286 / 675,000**, armour **357,143 /
+  1,125,000**. There is no temporary jewellery.
+- **A temporary piece has 2 hours of WEARING.** The clock ticks once a second only while the piece is
+  equipped (an offline-farming character counts as wearing it); in the bag, the warehouse or offline it is
+  paused. At 0 the piece is gone. The item card shows "1h 59m of wearing left (paused)". Temp pieces are
+  **untradeable, unsellable and cannot be broken** (his pick: a bought piece that broke into essence would
+  be a vendor selling essence), but they can be destroyed or kept in the private warehouse.
+- **"Unequip all"** sits on the Presets header of the equipment window: one tap takes everything off. It
+  is the built-in empty preset (his pick over a saved-empty A/B/C) and, like the presets, is refused in
+  combat.
+- Measured: nothing. No drop, sell or break number moved, so BalanceMatrix has nothing new to report. The
+  essence shop is a **sink** that `--craft-cost` does not model yet.
+- ⚠ **`game.db` delete needed** (a new `WornSecondsLeft` item column). **APK needed** (protocol 47: the
+  shop row carries an essence price and the item a worn clock; the new button, card line and vendor rows).
+
+## 2026-09-24 — 0.201.0: prices + essence, IG-shaped (`BL-287`, step 7b of the rework order)
 
 > *"a common why its is at 1/4 of the normal?"* … *"one common item or 2 [must] not allow me to craft an item"*
 

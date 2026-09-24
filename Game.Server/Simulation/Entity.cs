@@ -401,6 +401,12 @@ public class InventoryItem
     /// null = never expires (everything that isn't a rune).</summary>
     public DateTime? ExpiresAtUtc { get; set; }
 
+    /// <summary>`BL-272` part 2: seconds of WEARING left on a temporary piece (null = not a worn-time item).
+    /// Stamped from <see cref="Game.Shared.ItemDef.WornLifetimeSeconds"/> by AddItem, spent one per second
+    /// only while <see cref="Equipped"/> (GameLoopService.TickWornClocks), and the piece is deleted at 0.
+    /// Persisted, so a relog resumes where it paused.</summary>
+    public int? WornSecondsLeft { get; set; }
+
     // ===== PER-INSTANCE OVERRIDES (owner, playtest-20 `58d`) ==========================================
     // His rule: *"it is a REAL item with tags — never a new server-side def."* He wants to hand someone a
     // genuine Soulcrystal that happens to be timed and bound, without inventing `soulcrystal_bound`. The
@@ -482,7 +488,7 @@ public class InventoryItem
 
     public InventoryItemDto ToDto() =>
         new(InstanceId, DefId, Equipped, Enchant, Quantity, Attributes.ToArray(), ExpiresAtUtc,
-            SellPriceOverride, TradableOverride, CustomName, CanStorePrivate, CanStoreAccount);
+            SellPriceOverride, TradableOverride, CustomName, CanStorePrivate, CanStoreAccount, WornSecondsLeft);
 }
 
 /// <summary>

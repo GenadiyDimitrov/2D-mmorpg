@@ -271,7 +271,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-263` | 🟡 | **BUFFS ARE WRAPPERS OVER `(family, level)`** — [design/BuffFamilies.md](design/BuffFamilies.md). Duration is out of the conflict rule and the first three racial wrappers are built (0.176.0); per-family group rank DECLINED, and so is the group-vs-single authoring check — a group ALWAYS outranks its singles. Left: the passive check and the racial split, both DEFERRED on your call — the racial split now carries your colour-not-abbreviation rule | skills |
 | `BL-264` | ❓ | **NO CSV SAYS WHICH BUFFS FIGHT EACH OTHER** — from `mage 1st` you cannot tell the three Mights are one family. A generated `FAMILY` + `RANK` column, checked like every other; §2 the RACE cell nothing verifies | skills |
 | `BL-270` | 🔵 | A vertical skill bar, or a wheel, for hand-held play | client |
-| `BL-272` | 🟡 | **RARITY COLLAPSE — Common + Mythic only** for equipment (part 1 built 0.199.0; shops = part 2) — [design/Rework-2026-09-23.md](design/Rework-2026-09-23.md) §2.1 | items |
 | `BL-273` | 🟡 | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05` (archived) — §2.2; ✅ no profession lock; 🟢 part 1 (essence) built 0.200.0 | items |
 | `BL-274` | ❓ | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3 | items |
 | `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
@@ -279,6 +278,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-282` | 🟡 | **`BalanceMatrix --craft-cost`** ✅ built + all inputs ruled; only C5 (consumables) left, waits on §2.2 #8 — kills + hours per crafted T40/52/61/76/80 item under the NEW rules, by recipe %; extends M1-M9 | items |
 | `BL-284` | 🔵 | **RECURRING RUNE GRANT** — premium/event: a 1 h rune a day + 1-2 2 h runes a week; needs a premium status or events (neither exists) — split out of `BL-277` | progression |
 | `BL-286` | ⏸ | **CASTLE "NOBLE" CHARISMA** — a castle-holding clan leader gets charisma decay/loss protection or a grant; split out of `BL-283`; waits on castles | social |
+| `BL-288` | ⏸ | **CONSUMABLE RARITY → PLAIN LEVELS 1-6** — potions/scrolls may drop the rarity word entirely; deferred by him, split out of `BL-272` | items |
 
 ---
 
@@ -2207,36 +2207,6 @@ but need options to make it different and esier for hand-held"*. Client-only; it
 over the same 12 (+`BL-269`) slots. ❓ Which one first? A vertical column is cheap; a thumb wheel
 is a real UI piece.
 
-## `BL-272` 🟡 RARITY COLLAPSE — Common + Mythic only for equipment
-
-[design/Rework-2026-09-23.md](design/Rework-2026-09-23.md) §2.1 holds the spec and five questions.
-In short: Common (T40-T61 only, Mythic stats, no enchant/attribute/set, drop 0.5% normal / 2%
-elite, sold cheap) and Mythic (T1/T20 in shops at a real price; T40+ out of shops; T40 in a
-dedicated shop at price + 2× craft mats). Consumables keep their rarities.
-✅ **2026-09-23 answers (design doc §2.1 "Your answers", §2.4):**
-- Equipment → Common + Mythic, yes. ⏸ Consumables may drop rarity entirely for levels 1-6 (later, not blocking).
-- **Common is UNMODIFIABLE** (no enchant, no attribute, no set bonus; flat stats only). A fresh
-  Mythic is ahead from day one.
-- Merchants sell **Mythic T1/T20/T40**. The **dedicated shop moves to T52** (price + mats, no recipe).
-  **T61+ is drop/craft only.** Vendors sell **temporary 2-hour Common T40/T52** gear in selection
-  boxes: a weapon at 5× a Common 2H, or a set by weight at 5× the set's sum.
-- **Disassembly gives ESSENCE only** (see `BL-273`). The 20% head/mats/recipe roll is gone.
-- ✅ Second round: the temp armour boxes include the shield; temp gear is untradeable and **ticks
-  only while worn** (needs an **empty saved gear preset** to unequip everything); **no temp jewellery**.
-  The **T52 shop costs essence, no mats**: 500 T52 + ~5-10k T40 (¾ of the worth).
-- ✅ Third round: **essence only, no gold** at the T52 shop; **all three temp armour boxes** (heavy,
-  light, robe) include a shield.
-🟢 **Part 1 BUILT, 0.199.0 (2026-09-24, step 6 of §7):** equipment is Common + Mythic; Common exists at T40-T61,
-has Mythic stats, no set/attribute/enchant; drops 0.5% normal / 2% elite through its own `common` group; Mythic
-gear shows no rarity word. His interim rulings that day: bosses pay one guaranteed Mythic (group `boss`),
-merchants sell Mythic T1/T20/T40 at the authored price, a gear craft's Legendary share is a fail, and guards/demo
-mobs wear Mythic. **Still open (part 2 = step 8):** the T52 essence-only shop, the 2 h temp Common boxes (weapon
-+ three armour sets with a shield) that tick only while worn, and the empty gear preset. ⏸ Consumable rarity
-→ levels 1-6 stays deferred.
-🔑 **Newest ruling on the temp-box PRICE (`BL-287` item 8, 2026-09-24, archived when 0.201.0 built the rest):
-the temporary boxes cost the COMMON price** (a T40 temporary 2H = **214k**), which replaces the "5× a Common
-2H" above. T1/T20 stay unbreakable.
-
 ## `BL-273` ❓ THE CRAFTING REWORK — supersedes `BL-05` (archived 2026-09-23)
 
 §2.2 of the design doc. The @40 unlock quest line, craft levels (+slots, +5% overall, +5% per type),
@@ -2397,3 +2367,12 @@ grant. ⏸ **Blocked: castles do not exist.** ❓ Open when they do: protection 
 while he holds it? penalties spare lifetime?) or a grant (how much, how often), and whether it covers the
 leader only or the clan.
 
+
+## `BL-288` ⏸ CONSUMABLE RARITY → PLAIN LEVELS 1-6
+
+Split out of `BL-272` when its part 2 was built (0.202.0, 2026-09-24). His answer 1 of 2026-09-23 (design doc
+§2.1): *"If we dont have much of rarity for other items (not all potions ahve all 6 rarities, scrolls have 1..)
+we can remove the rarity as whole .. and items just have lvls 1,2,3...6"*. Equipment already speaks only Common
++ Mythic; this is the same idea for consumables and materials. ⏸ **Deferred by him, not blocking.** ❓ Open when
+it is picked up: which families keep a ladder at all, what the level word looks like on a card, and whether the
+pickup filter (`BL-241`, keyed on rarity) moves to the level.

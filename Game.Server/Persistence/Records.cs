@@ -346,6 +346,11 @@ public class ItemRecord
     /// keeps counting down across relogs/restarts and is purged on load if the time has passed.</summary>
     public DateTime? ExpiresAtUtc { get; set; }
 
+    /// <summary>`BL-272` part 2: seconds of WEARING left on a temporary piece; null = not one. Unlike
+    /// ExpiresAtUtc it is not a wall clock: it only moves while the piece is worn, so it is saved as a count.
+    /// (Schema change — delete game.db to recreate.)</summary>
+    public int? WornSecondsLeft { get; set; }
+
     /// <summary>True = this item lives in the character's private WAREHOUSE, not the bag. Routes the item
     /// to the right list on load. (Schema change — delete game.db to recreate.)</summary>
     public bool InWarehouse { get; set; }

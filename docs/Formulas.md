@@ -1172,6 +1172,33 @@ Greater and Safe scrolls never destroy the item, so they never pay essence. No v
 
 ---
 
+## The shops: T52 for essence, temporary Common gear (`BL-272` part 2, 0.202.0)
+
+**The T52 essence shop** (Assayer Corvane, Greymarsh only) sells every T52 Mythic base-tier piece for
+**essence only, no gold**: ¼ of the item's buy price in Cobalt essence + ¾ in Darksteel, each at that
+essence's sell price. An **authored literal** (`Crafting.T52ShopCobalt` / `T52ShopDarksteel`), generated
+once from the 0.202.0 prices (C = 0.25 × buy ÷ 4500, D = 0.75 × buy ÷ 1500, rounded half away from zero).
+
+```
+                 2H     1H   body  helm/sh  glv/bts  neck  earring  ring
+Cobalt (C)      750    675    450    250     150     375    125     63
+Darksteel (D)  6750   6075   4050   2250    1350    3375   1125    563
+```
+
+**Temporary Common gear** (every Armsmaster / Outfitter), T40 and T52, priced at the COMMON price:
+
+```
+weapon box  (pick 1 of 8)                       = one Common 2H        T40 214,286 · T52 675,000
+armour box  (pick heavy / light / robe set)     = Common body + helm + gloves + boots + shield
+                                                                       T40 357,143 · T52 1,125,000
+a temp piece  = its Common piece's stats; 7200 s of WEARING (ticks 1/s only while equipped, in the world);
+                deleted at 0; untradeable → unsellable; cannot be broken; no temporary jewellery
+```
+
+`Crafting.EssenceShopPrice` · `ItemCatalog.TempGear` · `GameLoopService.TickWornClocks`.
+
+---
+
 ## Kill EXP and the Wayfarer's Favor (`BL-277`, 0.195.0)
 
 `GameLoopService.PayKillShare` + `Game.Shared/WayfarerFavor.cs`. Per member of a kill:

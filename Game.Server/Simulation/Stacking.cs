@@ -266,6 +266,7 @@ internal static class Stacking
             CanStoreAccount = row.CanStoreAccount,
             PicksRemaining = row.PicksRemaining,
             ExpiresAtUtc = row.ExpiresAtUtc,
+            WornSecondsLeft = row.WornSecondsLeft,
             Attributes = new List<ItemAttribute>(row.Attributes),
         });
 

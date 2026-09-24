@@ -182,7 +182,7 @@ public static class BoxCatalog
         };
 
         var dict = new Dictionary<string, BoxDef>();
-        foreach (var b in list.Concat(TieredAccessoryBoxes()).Concat(RuneBoxes()))
+        foreach (var b in list.Concat(TieredAccessoryBoxes()).Concat(RuneBoxes()).Concat(TempGearBoxes()))
             if (!dict.TryAdd(b.Id, b))
                 throw new InvalidOperationException($"Duplicate box id '{b.Id}'.");
         return dict;
@@ -211,6 +211,28 @@ public static class BoxCatalog
             new[] { new BoxEntry(ItemCatalog.GrandRune, 1f) });
     }
 
+
+    /// <summary>`BL-272` part 2 — the temporary 2-hour Common gear, per tier: a WEAPON selection box (pick one
+    /// of the eight lines), an ARMOUR selection box (pick heavy / light / robe) whose options are the three
+    /// SET boxes, and each set box → body, helmet, gloves, boots and shield (guaranteed, so it refuses to
+    /// open until all five fit). Built from the id helpers only, never from ItemCatalog, so the two
+    /// catalogs' static initialisers cannot depend on each other.</summary>
+    private static IEnumerable<BoxDef> TempGearBoxes()
+    {
+        foreach (int L in ItemCatalog.TempGearTiers)
+        {
+            yield return new BoxDef(ItemCatalog.TempWeaponBoxId(L),
+                ItemCatalog.TempWeaponStems.Select(s => new BoxEntry(ItemCatalog.TempId($"{s}_t{L}"), 1f)).ToArray(),
+                PickCount: 1);
+            yield return new BoxDef(ItemCatalog.TempArmorBoxId(L),
+                ItemCatalog.TempArmorWeights.Select(w => new BoxEntry(ItemCatalog.TempSetBoxId(w, L), 1f)).ToArray(),
+                PickCount: 1);
+            foreach (var w in ItemCatalog.TempArmorWeights)
+                yield return new BoxDef(ItemCatalog.TempSetBoxId(w, L),
+                    new[] { w }.Concat(ItemCatalog.TempArmorShared)
+                        .Select(s => new BoxEntry(ItemCatalog.TempId($"{s}_t{L}"), 1f)).ToArray());
+        }
+    }
     /// <summary>One accessory box per gear tier → the 3 accessories of that tier (100% each).</summary>
     private static IEnumerable<BoxDef> TieredAccessoryBoxes()
     {

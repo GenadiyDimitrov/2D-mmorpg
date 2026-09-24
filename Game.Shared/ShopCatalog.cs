@@ -7,7 +7,10 @@ namespace Game.Shared;
 /// Value (ItemCatalog.BuyPrice); the shop only decides WHAT is for sale. Selling
 /// is independent — any vendor buys back any sellable item the player owns.
 /// </summary>
-public record ShopDef(string NpcId, string Title, string[] ItemIds);
+/// <para>`BL-272` part 2: <paramref name="EssenceOnly"/> makes a shelf charge ESSENCE and no gold — every row
+/// is priced by <see cref="Crafting.EssenceShopPrice"/>, and a row with no essence price is not for sale
+/// there. Only the T52 essence shop sets it.</para>
+public record ShopDef(string NpcId, string Title, string[] ItemIds, bool EssenceOnly = false);
 
 /// <summary>
 /// Per-NPC shop definitions, keyed by the vendor's NpcDef id (WorldMap.Npcs).
@@ -19,6 +22,8 @@ public static class ShopCatalog
     public const string GearMerchant = "merchant_gear";
     /// <summary>The armor/shield/jewel half of the gear trade — see the split in Build().</summary>
     public const string ArmorMerchant = "merchant_armor";
+    /// <summary>The T52 essence shop (`BL-272` part 2) — one NPC, in Greymarsh.</summary>
+    public const string EssenceMerchant = "merchant_essence";
 
     private static readonly Dictionary<string, ShopDef> Shops = Build();
 
@@ -144,7 +149,9 @@ public static class ShopCatalog
                 // wrong weapon, or lost one, can just buy another instead of being stuck with it.
                 ItemCatalog.TrainingSword,
                 ItemCatalog.TrainingWand,
-            }.Concat(WeaponsOf(ladderGear)).ToArray()),
+            }.Concat(WeaponsOf(ladderGear))
+             // `BL-272` part 2: the temporary 2-hour Common weapon box, T40 and T52 (pick one weapon).
+             .Concat(ItemCatalog.TempGearTiers.Select(ItemCatalog.TempWeaponBoxId)).ToArray()),
 
             // ARMOR, shields and jewels.
             new ShopDef(ArmorMerchant, "Outfitter — Armor & Jewels", new[]
@@ -161,7 +168,19 @@ public static class ShopCatalog
                 //  The three Broken jewels ARE the pre-F rung; a second, off-ladder necklace beside them
                 //  was the same drift 72a caught in the jewels themselves.)
                 ItemCatalog.WoodenShield,
-            }.Concat(ArmorOf(ladderGear)).ToArray()),
+            }.Concat(ArmorOf(ladderGear))
+             // `BL-272` part 2: the temporary 2-hour Common armour box, T40 and T52 (pick heavy / light /
+             // robe; every set carries a shield). No temporary jewellery (ruled).
+             .Concat(ItemCatalog.TempGearTiers.Select(ItemCatalog.TempArmorBoxId)).ToArray()),
+
+            // `BL-272` part 2 — THE T52 ESSENCE SHOP. One NPC, in Greymarsh (the 40-60 town; his pick
+            // 2026-09-24: *"A single new NPC in a T52 town"*). T52 Mythic, every slot, essence ONLY: no
+            // gold and no mats (*"so breaking like crazy T40 can get u a t52"*). Prices are
+            // Crafting.EssenceShopPrice. T61+ stays drop/craft only.
+            new ShopDef(EssenceMerchant, "Assayer — Cobalt for Essence", ItemCatalog.AllItems
+                .Where(d => Crafting.EssenceShopPrice(d) is not null)
+                .OrderBy(d => d.Slot).ThenBy(d => d.Name)
+                .Select(d => d.Id).ToArray(), EssenceOnly: true),
         };
 
         var dict = new Dictionary<string, ShopDef>(StringComparer.OrdinalIgnoreCase);

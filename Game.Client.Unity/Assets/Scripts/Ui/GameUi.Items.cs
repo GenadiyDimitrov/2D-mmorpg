@@ -1680,6 +1680,16 @@ namespace Game.Client
         /// </summary>
         private static string TimedLine(InventoryItemDto item)
         {
+            // `BL-272` part 2 — a temporary piece's clock runs only while WORN, so it is a count of
+            // seconds, not a date: the server re-sends it every minute while it ticks. Yellow over 10 min.
+            if (item.WornSecondsLeft is int worn)
+            {
+                string wl = worn >= 3600 ? worn / 3600 + "h " + worn % 3600 / 60 + "m"
+                          : worn >= 60   ? worn / 60 + "m"
+                          :                worn + "s";
+                return "<color=" + (worn > 600 ? "#FFD44D" : "#FF6060") + ">" + wl + " of wearing left"
+                     + (item.Equipped ? "" : " (paused)") + "</color>";
+            }
             if (item.ExpiresAtUtc == null) return "";
 
             var span = item.ExpiresAtUtc.Value - System.DateTime.UtcNow;

@@ -316,6 +316,9 @@ public static class Crafting
     public static EssenceYield? BreakYield(ItemDef? def)
     {
         if (def is null || def.ItemLevel <= 0) return null;
+        // Temporary 2-hour gear (`BL-272` part 2) never breaks: it is bought with gold, and a bought
+        // piece that broke into essence would be a vendor selling essence (*"no vendor sells essence"*).
+        if (def.WornLifetimeSeconds > 0) return null;
         int grade = EssenceGrade(def.ItemLevel);
         int col = BreakColumn(def);
         if (grade < 0 || col < 0) return null;
@@ -328,6 +331,36 @@ public static class Crafting
         if (grade >= table.Length) return null;
         int qty = table[grade][col];
         return qty > 0 ? new EssenceYield(EssenceIds[grade], qty) : null;
+    }
+
+    // ----- THE T52 ESSENCE SHOP (`BL-272` part 2, 0.202.0) -------------------------------------------
+    // His rulings: *"The T52 dedicated shop costs ESSENCE, not craft mats … 500 T52 essence (¼ of its
+    // worth) plus the other ¾ in T40 essence (~5-10k) … so breaking like crazy T40 can get u a t52"*; third
+    // round: **essence only, no gold**. Re-read after `BL-287` moved the break values (2026-09-24, his pick
+    // of three): ¼ of the item's BUY price in Cobalt essence and ¾ in Darksteel, each at its essence's SELL
+    // price, so the essence handed over is worth the item's full price. The T52 2H: 13.5M → 750 C + 6750 D.
+    // 🔑 AUTHORED, like the break tables: generated once from the 0.202.0 prices (C = 0.25 × buy ÷ 4500,
+    //    D = 0.75 × buy ÷ 1500, rounded half away from zero) and never recomputed from a live price.
+    //    Same column order as the break tables.
+    private static readonly int[] T52ShopCobalt    = {  750,  675,  450,  250,  150,  375,  125,  63 };
+    private static readonly int[] T52ShopDarksteel = { 6750, 6075, 4050, 2250, 1350, 3375, 1125, 563 };
+
+    /// <summary>The item level the essence shop sells.</summary>
+    public const int EssenceShopTier = 52;
+
+    /// <summary>What the essence shop charges for a piece, as (essence id, qty) pairs, or null if the piece
+    /// is not on its shelf: a T52 Mythic base-tier weapon, armour piece, shield or jewel.</summary>
+    public static EssenceYield[]? EssenceShopPrice(ItemDef? def)
+    {
+        if (def is null || def.ItemLevel != EssenceShopTier || def.Rarity != ItemRarity.Mythic
+            || !ItemCatalog.IsBaseTier(def.Id)) return null;
+        int col = BreakColumn(def);
+        if (col < 0) return null;
+        return new[]
+        {
+            new EssenceYield(EssenceIds[EssenceGrade(EssenceShopTier)], T52ShopCobalt[col]),
+            new EssenceYield(EssenceIds[0], T52ShopDarksteel[col]),
+        };
     }
 
     /// <summary>What a SHATTERED enchant leaves behind (`BL-273`, second round): failing +N → N+1 with a

@@ -263,6 +263,7 @@ public class GameLoopService : BackgroundService
                 case PartyChangeLeaderCmd c: HandlePartyChangeLeader(c); break;
                 case SaveEquipPresetCmd c: HandleSaveEquipPreset(c); break;
                 case ApplyEquipPresetCmd c: HandleApplyEquipPreset(c); break;
+                case UnequipAllCmd c: HandleUnequipAll(c); break;
                 case PartyKickCmd c: HandlePartyKick(c); break;
                 case PartySetLootModeCmd c: HandlePartySetLootMode(c); break;
                 case PartyLootVoteCmd c: HandlePartyLootVote(c); break;
@@ -2742,6 +2743,29 @@ public class GameLoopService : BackgroundService
         SendSystemToEntity(player, missing == 0
             ? $"Equipped preset {PresetLabels[cmd.Slot]}."
             : $"Equipped preset {PresetLabels[cmd.Slot]} — {missing} item(s) were missing and skipped.");
+    }
+
+    /// <summary>`BL-272` part 2 — the EMPTY preset, built in (his pick, 2026-09-24): one click takes off
+    /// everything, which is how temporary gear is paused (*"needs an empty saved gear preset"*). A fixed
+    /// button rather than a saved-empty A/B/C, so it can never be overwritten by mistake. Refused in combat,
+    /// the same rule as the presets.</summary>
+    private void HandleUnequipAll(UnequipAllCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
+        if (IsInCombat(player))
+        {
+            SendSystemToEntity(player, "You can't swap equipment in combat.");
+            return;
+        }
+        int n = 0;
+        foreach (var it in player.Inventory)
+            if (it.Equipped) { it.Equipped = false; n++; }
+        if (n == 0) { SendSystemToEntity(player, "You are wearing nothing."); return; }
+        player.RecomputeDerived();
+        SendInventory(player);
+        SendStats(player);
+        SaveEntity(player);
+        SendSystemToEntity(player, $"Took off {n} item(s).");
     }
 
     private void HandleEnchant(EnchantCmd cmd)
@@ -6872,7 +6896,7 @@ public class GameLoopService : BackgroundService
         static InventoryItem Shadow(InventoryItem src, int qty) => new()
         {
             DefId = src.DefId, Quantity = qty, Enchant = src.Enchant,
-            ExpiresAtUtc = src.ExpiresAtUtc, PicksRemaining = src.PicksRemaining,
+            ExpiresAtUtc = src.ExpiresAtUtc, PicksRemaining = src.PicksRemaining, WornSecondsLeft = src.WornSecondsLeft,
             SellPriceOverride = src.SellPriceOverride, TradableOverride = src.TradableOverride,
             CustomName = src.CustomName,
             CanStorePrivate = src.CanStorePrivate, CanStoreAccount = src.CanStoreAccount,
@@ -6926,6 +6950,7 @@ public class GameLoopService : BackgroundService
             Quantity = qty,
             Attributes = new List<ItemAttribute>(item.Attributes),
             ExpiresAtUtc = item.ExpiresAtUtc,
+            WornSecondsLeft = item.WornSecondsLeft,
         });
     }
 
@@ -9844,6 +9869,7 @@ public class GameLoopService : BackgroundService
                 if (_tick % GameConstants.SecondIntervalTicks == 0) TickBlessing(entity);   // `BL-277` part 2
                 EnforceDungeonWalls(entity);
                 if (_tick % GameConstants.TickRate == 0) ReconcileTimedItems(entity);   // runes, ~1/s
+                if (_tick % GameConstants.TickRate == 0) TickWornClocks(entity);        // `BL-272` temp gear, 1/s
                 if (_tick % GameConstants.TickRate == 0) TickCraftMasterProximity(entity);
             }
 
@@ -11560,6 +11586,41 @@ public class GameLoopService : BackgroundService
         p.Hp = Math.Min(p.Hp, p.MaxHp);   // a restored +MaxHP buff must not leave HP over the new cap
         p.Mp = Math.Min(p.Mp, p.MaxMp);
         PushBuffs(p);   // the periodic push is ~1/s; don't make the bar appear a second late
+    }
+
+    /// <summary>`BL-272` part 2 — spend one second of every WORN temporary piece, once a second. *"the 2
+    /// hours tick only while WORN. Two hours of active farming uses it up; unequipping or logging off
+    /// pauses it."* A piece in the bag or the warehouse is not touched, and a character that is not in the
+    /// world is not ticked at all, so both of his pauses fall out of where this is called from. (An
+    /// offline-FARMING character is in the world wearing it, so its clock runs: that is still farming.)
+    ///
+    /// <para>At 0 the piece is deleted, worn or not, and the stats recomputed, the same as an expired
+    /// loaner in <see cref="ReconcileTimedItems"/>. The bag is re-sent once a minute while something is
+    /// ticking so the card's countdown stays honest without pushing the whole inventory every second.</para></summary>
+    private void TickWornClocks(Entity p)
+    {
+        if (p.Kind != EntityKind.Player) return;
+        bool gone = false, ticking = false;
+        for (int i = p.Inventory.Count - 1; i >= 0; i--)
+        {
+            var it = p.Inventory[i];
+            if (!it.Equipped || it.WornSecondsLeft is not int left) continue;
+            ticking = true;
+            it.WornSecondsLeft = --left;
+            if (left > 0) continue;
+            p.Inventory.RemoveAt(i);
+            gone = true;
+            SendSystemToEntity(p, $"{ItemCatalog.Get(it.DefId)?.Name ?? it.DefId} has worn out.");
+        }
+        if (gone)
+        {
+            p.RecomputeDerived();
+            SendStats(p);
+            SendInventory(p);
+            SaveEntity(p);
+        }
+        else if (ticking && _tick % (GameConstants.TickRate * 60) == 0)
+            SendInventory(p);
     }
 
     private void ReconcileTimedItems(Entity p)
@@ -18318,6 +18379,10 @@ public class GameLoopService : BackgroundService
             // factory would otherwise be asked to stamp a shared one.
             else if (def.LifetimeSeconds > 0)
                 newItem.ExpiresAtUtc = DateTime.UtcNow.AddSeconds(def.LifetimeSeconds);
+            // A WORN-TIME piece (`BL-272` part 2, the temporary 2-hour gear) starts with its full budget; the
+            // clock is TickWornClocks, which only spends it while the piece is equipped.
+            if (def.WornLifetimeSeconds > 0)
+                newItem.WornSecondsLeft = def.WornLifetimeSeconds;
 
             return newItem;
         });
@@ -20417,6 +20482,13 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // `BL-272` part 2 — the T52 essence shop charges essence and nothing else.
+        if (ShopCatalog.Get(npcId) is { EssenceOnly: true })
+        {
+            BuyForEssence(player, def);
+            return;
+        }
+
         // `BL-257` — TWO PRICES, EITHER OR BOTH. *"any item that have a platinum or/and gold must be
         // bought with the value."* A `BuyPrice` of -1 means "no gold price", not "not for sale": an
         // item priced in platinum alone carries exactly that, so it is floored to 0 here and the
@@ -20497,6 +20569,48 @@ public class GameLoopService : BackgroundService
                             : $"{total:N0} {GameConstants.CurrencyName}";
         SendSystemToEntity(player,
             $"Bought {def.Name}{(qty > 1 ? $" x{qty}" : "")} for {paid}.");
+    }
+
+    /// <summary>A shelf's essence price on the wire (names resolved), or null for none.</summary>
+    private static ItemCostDto[]? EssenceCostDto(Crafting.EssenceYield[]? price) =>
+        price?.Select(p => new ItemCostDto(p.EssenceId, ItemCatalog.Get(p.EssenceId)?.Name ?? p.EssenceId, p.Qty))
+              .ToArray();
+
+    /// <summary>`BL-272` part 2 — buy one T52 Mythic piece at the essence shop: Cobalt + Darksteel essence
+    /// from the BAG (<see cref="Crafting.EssenceShopPrice"/>), no gold (*"essence only, no gold"*). One piece
+    /// per purchase, because gear does not stack. Everything is checked before anything is taken.</summary>
+    private void BuyForEssence(Entity player, ItemDef def)
+    {
+        if (Crafting.EssenceShopPrice(def) is not Crafting.EssenceYield[] price)
+        {
+            SendSystemToEntity(player, "That item is not for sale.");
+            return;
+        }
+        var shortOf = price.Where(p => CountItem(player, p.EssenceId) < p.Qty).ToList();
+        if (shortOf.Count > 0)
+        {
+            SendSystemToEntity(player, "Not enough essence (need " + string.Join(" and ", price.Select(p =>
+                $"{p.Qty:N0} {ItemCatalog.Get(p.EssenceId)?.Name ?? p.EssenceId}")) + ").");
+            return;
+        }
+        if (player.Inventory.Count(i => !i.Equipped) >= GameConstants.InventorySize)
+        {
+            SendSystemToEntity(player, "Your inventory is full.");
+            return;
+        }
+        foreach (var p in price) ConsumeItem(player, p.EssenceId, p.Qty);
+        if (!AddItem(player, def.Id, 1, rollAttributes: false))
+        {
+            // Unreachable after the slot check, but never let essence vanish for nothing.
+            foreach (var p in price) AddItem(player, p.EssenceId, p.Qty, rollAttributes: false);
+            SendInventory(player);
+            SendSystemToEntity(player, "Your inventory is full.");
+            return;
+        }
+        SendInventory(player);
+        SaveEntity(player);
+        SendSystemToEntity(player, $"Bought {def.Name} for " + string.Join(" and ", price.Select(p =>
+            $"{p.Qty:N0} {ItemCatalog.Get(p.EssenceId)?.Name ?? p.EssenceId}")) + ".");
     }
 
     private void HandleSell(SellItemCmd cmd)
@@ -21659,7 +21773,10 @@ public class GameLoopService : BackgroundService
             var items = shopDef.ItemIds
                 .Select(id => ItemCatalog.Get(id))
                 .Where(d => d is not null)
-                .Select(d => new ShopItemDto(d!.Id, d.Name, ItemCatalog.BuyPrice(d), ItemCatalog.PlatinumPrice(d)))
+                .Select(d => shopDef.EssenceOnly
+                    // `BL-272` part 2: the essence shop quotes essence and no gold.
+                    ? new ShopItemDto(d!.Id, d.Name, 0, 0, EssenceCostDto(Crafting.EssenceShopPrice(d)))
+                    : new ShopItemDto(d!.Id, d.Name, ItemCatalog.BuyPrice(d), ItemCatalog.PlatinumPrice(d)))
                 .ToArray();
             shop = new ShopInfo(shopDef.Title, items);
             SendBuyBack(player);   // the vendor also shows what you recently sold, to re-buy

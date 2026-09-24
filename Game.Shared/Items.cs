@@ -717,6 +717,13 @@ public record ItemDef(
     // because a rune BOX overrides its rune's default duration at open time; a timed item has no
     // such second source. Used by the bound Newbie loaner kit (30 days). -----
     int LifetimeSeconds = 0,
+    // ----- WORN-TIME item (`BL-272` part 2, 0.202.0): seconds this item lasts while EQUIPPED (0 = none).
+    // The temporary 2-hour Common gear from the vendor boxes: *"the 2 hours tick only while WORN. Two
+    // hours of active farming uses it up; unequipping or logging off pauses it."* Copied onto the
+    // INSTANCE as WornSecondsLeft by AddItem; the per-second tick spends it only while the piece is worn,
+    // and at 0 the piece is deleted. NOT a wall clock, so unlike LifetimeSeconds it never runs in a bag,
+    // a warehouse or while offline. -----
+    int WornLifetimeSeconds = 0,
     // ----- MAX STACK OVERRIDE (0 = derive it from the CATEGORY, which is what nearly everything does).
     // Only set this when one item has to disagree with its whole category. See ItemDef.MaxStack and
     // StackLimits: the numbers live in ONE place so a retune is one edit, never a sweep of authored
@@ -764,7 +771,7 @@ public record ItemDef(
     public bool IsStackable => (Slot is EquipSlot.Consumable or EquipSlot.Scroll or EquipSlot.Material
                                      or EquipSlot.QuestItem or EquipSlot.Box
                                 || TeachesRecipeId.Length > 0)
-                               && !IsRune && LifetimeSeconds == 0;
+                               && !IsRune && LifetimeSeconds == 0 && WornLifetimeSeconds == 0;
 
     /// <summary>How many of this item fit in ONE inventory row. The (cap+1)-th opens a new row; it is
     /// never destroyed and never refused for being over a cap (owner, 0.93.0: *"the 10,100,1000 etc
@@ -1191,6 +1198,44 @@ public static class ItemCatalog
 
     /// <summary>The id of an item's bound copy (see <see cref="BoundCopies"/>).</summary>
     public static string BoundId(string baseId) => baseId + "_bound";
+
+    // ===== THE TEMPORARY 2-HOUR COMMON GEAR (`BL-272` part 2, 0.202.0) ==============================
+    // His rulings (2026-09-23, design doc §2.1/§2.4; price `BL-287` item 8, 2026-09-24; the gaps 2026-09-24):
+    //   * Vendors sell T40/T52 temporary Common gear in selection boxes: a WEAPON box (pick one) and an
+    //     ARMOUR box (pick heavy / light / robe), each armour set WITH A SHIELD. No temporary jewellery.
+    //   * Priced at the COMMON price: the weapon box = one Common two-hander (T40 214k), the armour box =
+    //     the Common set's sum (body + helm + gloves + boots + shield; the three bodies cost the same).
+    //   * The 2 hours tick ONLY WHILE WORN (<see cref="ItemDef.WornLifetimeSeconds"/>), and at 0 it is gone.
+    //   * Untradeable, so unsellable (<see cref="IsSellable"/> needs tradable), and UNBREAKABLE (<see
+    //     cref="Crafting.BreakYield"/>): a bought box that broke into essence would be a vendor selling
+    //     essence, which he ruled out. It may still be destroyed, and kept in the private warehouse.
+    // Like the loaner kit, every piece is a CLONE of the generated Common piece; nothing is authored here.
+
+    /// <summary>How long a temporary piece lasts while worn: two hours.</summary>
+    public const int TempGearWornSeconds = 2 * 3600;
+
+    /// <summary>The tiers that sell temporary gear.</summary>
+    public static readonly int[] TempGearTiers = { 40, 52 };
+
+    /// <summary>The weapon lines in a temporary weapon box (the id stem before "_t{tier}").</summary>
+    public static readonly string[] TempWeaponStems =
+        { "sword1h", "sword2h", "blunt1h", "blunt2h", "duals", "bow", "wand", "staff" };
+
+    /// <summary>The three armour weights; each set box holds its body + <see cref="TempArmorShared"/>.</summary>
+    public static readonly string[] TempArmorWeights = { "heavy", "light", "robe" };
+
+    /// <summary>The pieces every temporary armour set shares, shield included (*"all three … include a shield"*).</summary>
+    public static readonly string[] TempArmorShared = { "helm", "gloves", "boots", "shield" };
+
+    /// <summary>The temporary copy of a Mythic base-tier piece: "sword2h_t40" → "sword2h_t40_temp".</summary>
+    public static string TempId(string mythicId) => mythicId + "_temp";
+    public static string TempWeaponBoxId(int tier) => $"box_temp_weapon_t{tier}";
+    public static string TempArmorBoxId(int tier) => $"box_temp_armor_t{tier}";
+    public static string TempSetBoxId(string weight, int tier) => $"box_temp_{weight}_t{tier}";
+
+    /// <summary>Every temporary piece's id at a tier, in box order.</summary>
+    public static IEnumerable<string> TempPieceIds(int tier) =>
+        TempWeaponStems.Concat(TempArmorWeights).Concat(TempArmorShared).Select(s => TempId($"{s}_t{tier}"));
 
     public const string NewbieSword1HBound  = "sword1h_t1_bound";
     public const string NewbieDaggersBound  = "duals_t1_bound";
@@ -2088,6 +2133,8 @@ public static class ItemCatalog
         // consumables. Generated last, off the finished list, so a clone always mirrors the real
         // item (see BoundCopies).
         list.AddRange(BoundCopies(list));
+        // The temporary 2-hour Common gear and its vendor boxes (`BL-272` part 2), cloned off the Commons.
+        list.AddRange(TempGear(list));
 
         // ----- Duplicate-key guard + value fill: any item left at Value 0 gets the
         //       formula price (quest items / god one-offs stay 0 = not for trade). -----
@@ -2295,6 +2342,77 @@ public static class ItemCatalog
             });
         }
 
+        return made;
+    }
+
+    /// <summary>The temporary 2-hour Common gear and the four kinds of box that sell it (`BL-272` part 2;
+    /// the rules are on <see cref="TempGearWornSeconds"/>). Every piece is its Common copy with a new id,
+    /// no trade, no shelf price and the worn clock. The two SHELF boxes per tier are priced off the Commons
+    /// they hold, at build time, so a Common retune moves the box with it; the three set boxes are what the
+    /// armour box's pick hands you and have no price of their own. Throws if a stem names no Common piece,
+    /// so a renamed line fails at boot instead of shipping an empty box.</summary>
+    private static List<ItemDef> TempGear(List<ItemDef> all)
+    {
+        var by = all.GroupBy(d => d.Id).ToDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
+        var made = new List<ItemDef>();
+
+        ItemDef Common(string mythicId) =>
+            by.TryGetValue(mythicId + "_common", out var c) ? c
+            : throw new InvalidOperationException($"Temporary gear: no Common copy of '{mythicId}'.");
+        // The Common's shelf price. Its Value is still 0 here (DefaultValue fills it after the build),
+        // so ask the same formula the dictionary will.
+        int CommonPrice(string mythicId)
+        {
+            var c = Common(mythicId);
+            return BuyPrice(c.Value > 0 ? c : c with { Value = DefaultValue(c) });
+        }
+
+        foreach (int tier in TempGearTiers)
+        {
+            string grade = GradeTheme(tier);
+            foreach (var stem in TempWeaponStems.Concat(TempArmorWeights).Concat(TempArmorShared))
+            {
+                var c = Common($"{stem}_t{tier}");
+                made.Add(c with
+                {
+                    Id = TempId($"{stem}_t{tier}"),
+                    Tradable = false,
+                    BuyPriceOverride = -1,
+                    SellPriceOverride = 0,
+                    WornLifetimeSeconds = TempGearWornSeconds,
+                });
+            }
+
+            // The weapon box costs one Common TWO-HANDER (his example: *"a T40 temporary 2H = 214k"*),
+            // whichever weapon is picked.
+            made.Add(new ItemDef(TempWeaponBoxId(tier), $"Temporary {grade} Weapon", EquipSlot.Box,
+                ItemGrade.B, ItemRarity.Common, Tradable: false, BuyPriceOverride: CommonPrice($"sword2h_t{tier}"),
+                SellPriceOverride: 0, NoAttributes: true,
+                Description: $"Choose ONE {grade} weapon. It is a Common piece that lasts 2 hours of WEARING: "
+                           + "the clock stops while it is unequipped or you are offline. Cannot be traded, "
+                           + "sold or broken."));
+
+            // The armour box costs the whole Common set: body + helm + gloves + boots + shield. All three
+            // bodies are one price, so the pick does not change it; heavy is read as the representative.
+            int setPrice = CommonPrice($"heavy_t{tier}")
+                         + TempArmorShared.Sum(s => CommonPrice($"{s}_t{tier}"));
+            made.Add(new ItemDef(TempArmorBoxId(tier), $"Temporary {grade} Armor", EquipSlot.Box,
+                ItemGrade.B, ItemRarity.Common, Tradable: false, BuyPriceOverride: setPrice,
+                SellPriceOverride: 0, NoAttributes: true,
+                Description: $"Choose ONE {grade} set: heavy, light or robe. Each is body, helmet, gloves, "
+                           + "boots and a shield, Common pieces that last 2 hours of WEARING. Cannot be "
+                           + "traded, sold or broken."));
+
+            foreach (var weight in TempArmorWeights)
+            {
+                string body = Common($"{weight}_t{tier}").Name;
+                made.Add(new ItemDef(TempSetBoxId(weight, tier), $"Temporary {body} Set", EquipSlot.Box,
+                    ItemGrade.B, ItemRarity.Common, Tradable: false, BuyPriceOverride: -1,
+                    SellPriceOverride: 0, NoAttributes: true,
+                    Description: $"Opens into a temporary {body}, helmet, gloves, boots and shield "
+                               + "(2 hours of wearing each)."));
+            }
+        }
         return made;
     }
 

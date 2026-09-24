@@ -524,6 +524,12 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task UnequipAll()
+    {
+        _world.Commands.Enqueue(new UnequipAllCmd(Context.ConnectionId));
+        return Task.CompletedTask;
+    }
+
     public Task PartyKick(Guid targetId)
     {
         _world.Commands.Enqueue(new PartyKickCmd(Context.ConnectionId, targetId));

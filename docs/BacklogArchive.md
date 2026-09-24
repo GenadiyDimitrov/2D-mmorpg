@@ -7238,3 +7238,47 @@ kills; Common gold ~13-14× the coin (~400k / 434k / 496k an hour); essence for 
 22.7h** (0.200.0: 3.2 / 2.8 / 3.1), so the settled per-success times move to about T40 16h, **T52 ~36h, T61
 ~79h**. He accepted that (*"essence amount stays"*); a playtest judges it.
 **Build: 0.201.0, before step 8** (step 7b in design doc §7).
+
+---
+
+## `BL-272` ✅ BUILT 2026-09-24 — the rarity collapse + the shops (**0.199.0** part 1, **0.202.0** part 2)
+
+Part 2 built as ruled, with the four gaps he closed on 2026-09-24: the T52 essence shop charges **¼ of the price
+in Cobalt + ¾ in Darksteel** at essence sell prices (2H 750 C + 6750 D, an authored literal); temporary gear is
+**untradeable, unsellable and unbreakable** (it may be destroyed or warehoused privately); the empty preset is a
+**built-in "Unequip all" button**; the shop is **one NPC in Greymarsh** (Assayer Corvane). Temp boxes at the Common
+price (weapon T40 214,286 / T52 675,000; armour set T40 357,143 / T52 1,125,000), 7200 s of wearing, deleted at 0.
+The deferred consumable-rarity leftover is split to `BL-288`.
+
+The entry as it stood:
+
+## `BL-272` 🟡 RARITY COLLAPSE — Common + Mythic only for equipment
+
+[design/Rework-2026-09-23.md](design/Rework-2026-09-23.md) §2.1 holds the spec and five questions.
+In short: Common (T40-T61 only, Mythic stats, no enchant/attribute/set, drop 0.5% normal / 2%
+elite, sold cheap) and Mythic (T1/T20 in shops at a real price; T40+ out of shops; T40 in a
+dedicated shop at price + 2× craft mats). Consumables keep their rarities.
+✅ **2026-09-23 answers (design doc §2.1 "Your answers", §2.4):**
+- Equipment → Common + Mythic, yes. ⏸ Consumables may drop rarity entirely for levels 1-6 (later, not blocking).
+- **Common is UNMODIFIABLE** (no enchant, no attribute, no set bonus; flat stats only). A fresh
+  Mythic is ahead from day one.
+- Merchants sell **Mythic T1/T20/T40**. The **dedicated shop moves to T52** (price + mats, no recipe).
+  **T61+ is drop/craft only.** Vendors sell **temporary 2-hour Common T40/T52** gear in selection
+  boxes: a weapon at 5× a Common 2H, or a set by weight at 5× the set's sum.
+- **Disassembly gives ESSENCE only** (see `BL-273`). The 20% head/mats/recipe roll is gone.
+- ✅ Second round: the temp armour boxes include the shield; temp gear is untradeable and **ticks
+  only while worn** (needs an **empty saved gear preset** to unequip everything); **no temp jewellery**.
+  The **T52 shop costs essence, no mats**: 500 T52 + ~5-10k T40 (¾ of the worth).
+- ✅ Third round: **essence only, no gold** at the T52 shop; **all three temp armour boxes** (heavy,
+  light, robe) include a shield.
+🟢 **Part 1 BUILT, 0.199.0 (2026-09-24, step 6 of §7):** equipment is Common + Mythic; Common exists at T40-T61,
+has Mythic stats, no set/attribute/enchant; drops 0.5% normal / 2% elite through its own `common` group; Mythic
+gear shows no rarity word. His interim rulings that day: bosses pay one guaranteed Mythic (group `boss`),
+merchants sell Mythic T1/T20/T40 at the authored price, a gear craft's Legendary share is a fail, and guards/demo
+mobs wear Mythic. **Still open (part 2 = step 8):** the T52 essence-only shop, the 2 h temp Common boxes (weapon
++ three armour sets with a shield) that tick only while worn, and the empty gear preset. ⏸ Consumable rarity
+→ levels 1-6 stays deferred.
+🔑 **Newest ruling on the temp-box PRICE (`BL-287` item 8, 2026-09-24, archived when 0.201.0 built the rest):
+the temporary boxes cost the COMMON price** (a T40 temporary 2H = **214k**), which replaces the "5× a Common
+2H" above. T1/T20 stay unbreakable.
+

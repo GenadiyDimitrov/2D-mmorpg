@@ -258,7 +258,7 @@ public record MobCastInfo(Guid CasterId, string SkillName, float Seconds);
 public record InventoryItemDto(Guid InstanceId, string DefId, bool Equipped, int Enchant, int Quantity,
     ItemAttribute[] Attributes, DateTime? ExpiresAtUtc = null,
     long? SellPriceOverride = null, bool? TradableOverride = null, string? CustomName = null,
-    bool? CanStorePrivate = null, bool? CanStoreAccount = null);
+    bool? CanStorePrivate = null, bool? CanStoreAccount = null, int? WornSecondsLeft = null);
 
 /// <summary>The tag an item instance DISPLAYS, derived from its three properties rather than stored —
 /// so there is exactly one truth and a tag can never disagree with the behaviour (owner, `58d`).
@@ -306,7 +306,7 @@ public static class ItemTag
     public static string For(ItemDef def, InventoryItemDto i) =>
         Of(Sellable(def, i.SellPriceOverride, i.TradableOverride),
            Tradable(def, i.TradableOverride),
-           i.ExpiresAtUtc.HasValue);
+           i.ExpiresAtUtc.HasValue || i.WornSecondsLeft.HasValue);
 
     public static string Of(bool sellable, bool tradable, bool timed)
     {
@@ -1251,7 +1251,13 @@ public record ClassChangeOption(int SecondClassId, string ClassName, bool Meets,
 /// <summary>One buyable line in a vendor shop.</summary>
 /// <summary>One shelf row. `BuyPrice` is gold (0 = costs no gold) and `PlatinumPrice` is the premium
 /// half (`BL-257`, 0 = costs none). An item may be priced in EITHER or BOTH, and both are charged.</summary>
-public record ShopItemDto(string DefId, string Name, int BuyPrice, int PlatinumPrice = 0);
+/// <para>`BL-272` part 2: <paramref name="Essence"/> is an ESSENCE price (the T52 essence shop), null everywhere
+/// else. Such a row costs no gold (`BuyPrice` 0) and is bought only if the bag holds every listed amount.</para>
+public record ShopItemDto(string DefId, string Name, int BuyPrice, int PlatinumPrice = 0,
+    ItemCostDto[]? Essence = null);
+
+/// <summary>One ingredient of a non-gold price: an item id, its display name, and how many.</summary>
+public record ItemCostDto(string DefId, string Name, int Qty);
 
 /// <summary>A vendor's wares, attached to the dialog when talking to a vendor.</summary>
 public record ShopInfo(string Title, ShopItemDto[] Items);

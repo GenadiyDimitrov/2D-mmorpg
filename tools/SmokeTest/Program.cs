@@ -207,6 +207,62 @@ Check("server pushed the warehouse on login", a.Ware is not null);
 }
 
 // -------------------------------------------------------------------------------------------
+// 1a-1a. `BL-272` part 2 (0.202.0): THE SHOPS. The T52 essence shop (one NPC in Greymarsh, essence only,
+//     ¼ of the price in Cobalt + ¾ in Darksteel), the temporary 2-hour Common boxes at the Common price,
+//     and the temp pieces' rules (untradeable, unsellable, unbreakable, 2 h of WEARING).
+// -------------------------------------------------------------------------------------------
+{
+    var essShop = ShopCatalog.Get(ShopCatalog.EssenceMerchant);
+    var assayer = WorldMap.NpcById(ShopCatalog.EssenceMerchant);
+    Check("the essence shop is ONE NPC, in Greymarsh, essence-only, stocking every T52 Mythic slot (8 weapons + 3 bodies + helm/gloves/boots/shield + 3 jewels)",
+          essShop is { EssenceOnly: true } && essShop.ItemIds.Length == 18
+          && WorldMap.Npcs.Count(n => n.Id.StartsWith(ShopCatalog.EssenceMerchant)) == 1
+          && assayer is not null && Towns.All.First(t => t.Id == "town_greymarsh") is var gmTown
+          && (assayer.X - gmTown.X) * (assayer.X - gmTown.X) + (assayer.Y - gmTown.Y) * (assayer.Y - gmTown.Y) < gmTown.Radius * gmTown.Radius,
+          $"{essShop?.ItemIds.Length} rows");
+    Check("a T52 2H costs 750 Cobalt + 6750 Darksteel essence; a ring 63 + 563",
+          Crafting.EssenceShopPrice(ItemCatalog.Get("sword2h_t52")) is [{ EssenceId: "essence_c", Qty: 750 }, { EssenceId: "essence_d", Qty: 6750 }]
+          && Crafting.EssenceShopPrice(ItemCatalog.Get("ring_t52")) is [{ Qty: 63 }, { Qty: 563 }]);
+    Check("the essence price IS ¼ buy ÷ 4500 in C + ¾ buy ÷ 1500 in D (within rounding) on every row",
+          essShop!.ItemIds.All(id => ItemCatalog.Get(id) is ItemDef d && Crafting.EssenceShopPrice(d) is [var c, var dk]
+              && Math.Abs(c.Qty - 0.25 * ItemCatalog.BuyPrice(d) / 4500) <= 0.51
+              && Math.Abs(dk.Qty - 0.75 * ItemCatalog.BuyPrice(d) / 1500) <= 0.51));
+    Check("no T40/T61/Common piece has an essence price",
+          Crafting.EssenceShopPrice(ItemCatalog.Get("sword2h_t40")) is null
+          && Crafting.EssenceShopPrice(ItemCatalog.Get("sword2h_t61")) is null
+          && Crafting.EssenceShopPrice(ItemCatalog.Get("sword2h_t52_common")) is null);
+
+    var wBox = ItemCatalog.Get(ItemCatalog.TempWeaponBoxId(40));
+    var aBox = ItemCatalog.Get(ItemCatalog.TempArmorBoxId(40));
+    Check("the temp boxes cost the COMMON price: weapon T40 214,286 / T52 675,000, armour T40 357,143 / T52 1,125,000",
+          ItemCatalog.BuyPrice(wBox!) == 214_286 && ItemCatalog.BuyPrice(aBox!) == 357_143
+          && ItemCatalog.BuyPrice(ItemCatalog.Get(ItemCatalog.TempWeaponBoxId(52))!) == 675_000
+          && ItemCatalog.BuyPrice(ItemCatalog.Get(ItemCatalog.TempArmorBoxId(52))!) == 1_125_000,
+          $"{ItemCatalog.BuyPrice(wBox!)} / {ItemCatalog.BuyPrice(aBox!)}");
+    Check("the weapon boxes are on every Armsmaster, the armour boxes on every Outfitter",
+          ShopCatalog.Sells("merchant_gear_greymarsh", ItemCatalog.TempWeaponBoxId(52))
+          && ShopCatalog.Sells(ShopCatalog.GearMerchant, ItemCatalog.TempWeaponBoxId(40))
+          && ShopCatalog.Sells("merchant_armor_frostmere", ItemCatalog.TempArmorBoxId(40)));
+    var setBox = BoxCatalog.Get(ItemCatalog.TempSetBoxId("robe", 40));
+    Check("every temp armour set (robe too) holds body + helm + gloves + boots + SHIELD, all guaranteed",
+          ItemCatalog.TempArmorWeights.All(w => BoxCatalog.Get(ItemCatalog.TempSetBoxId(w, 52)) is { PickCount: 0 } b
+              && b.Entries.Length == 5 && b.Entries.All(e => e.Chance >= 1f)
+              && b.Entries.Any(e => e.ItemId == ItemCatalog.TempId("shield_t52")))
+          && setBox!.Entries.Any(e => e.ItemId == ItemCatalog.TempId("robe_t40")));
+    Check("the weapon box is pick-ONE of 8, the armour box pick-ONE of the 3 set boxes",
+          BoxCatalog.Get(ItemCatalog.TempWeaponBoxId(40)) is { PickCount: 1, Entries.Length: 8 }
+          && BoxCatalog.Get(ItemCatalog.TempArmorBoxId(40)) is { PickCount: 1, Entries.Length: 3 });
+    var temp = ItemCatalog.Get(ItemCatalog.TempId("sword2h_t40"));
+    var com = ItemCatalog.Get("sword2h_t40_common");
+    Check("a temp piece: Common stats, 2 h worn, untradeable, unsellable, unbuyable, unbreakable",
+          temp is { Rarity: ItemRarity.Common, WornLifetimeSeconds: 7200, Tradable: false, IsStackable: false }
+          && temp.AtkBonus == com!.AtkBonus && !ItemCatalog.IsSellable(temp) && ItemCatalog.BuyPrice(temp) < 0
+          && Crafting.BreakYield(temp) is null);
+    Check("no temporary jewellery exists",
+          ItemCatalog.Get(ItemCatalog.TempId("ring_t40")) is null && ItemCatalog.Get(ItemCatalog.TempId("necklace_t52")) is null);
+}
+
+// -------------------------------------------------------------------------------------------
 // 1a-1b. THE GEAR LADDER'S SHAPE. The authored tier tables are the MYTHIC piece and every lesser
 //     quality is derived from it. All of that is arithmetic nobody sees until an item is in hand,
 //     so assert it on the catalogue directly.
@@ -309,8 +365,8 @@ Check("server pushed the warehouse on login", a.Ware is not null);
                   - 0.4 * d.Value / Crafting.EssenceSellPrice[Crafting.EssenceGrade(d.ItemLevel)]) <= 0.51));
     Check("T1 and T20 gear cannot be broken (no essence below D)",
           Crafting.BreakYield(ItemCatalog.Get("sword2h_t20")) is null && Crafting.BreakYield(ItemCatalog.Get(ItemCatalog.NewbieSword1H)) is null);
-    Check("every T40+ gear piece breaks into something",
-          ItemCatalog.AllItems.Where(d => Crafting.IsGearSlot(d.Slot) && d.ItemLevel >= 40).All(d => Crafting.BreakYield(d) is not null));
+    Check("every T40+ gear piece breaks into something (except the temporary 2-hour gear, BL-272)",
+          ItemCatalog.AllItems.Where(d => Crafting.IsGearSlot(d.Slot) && d.ItemLevel >= 40 && d.WornLifetimeSeconds == 0).All(d => Crafting.BreakYield(d) is not null));
     Check("a shattered +3 returns 30% of the break value, a +15 150%",
           Crafting.ShatterYield(ItemCatalog.Get("sword2h_t40"), 3)?.Qty == 342
           && Crafting.ShatterYield(ItemCatalog.Get("sword2h_t40"), 15)?.Qty == 1714);
@@ -956,6 +1012,107 @@ Check("breaking a T40 Common 2H on the server gives 57 Darksteel Essence and con
       toBreak is not null && essAfter - essBefore == 57
       && a.Inv?.Items.Any(i => i.InstanceId == toBreak.InstanceId) == false,
       $"essence {essBefore} -> {essAfter}");
+
+// `BL-272` part 2 (0.202.0): the SHOPS on the server. Buy a T52 piece for essence at the Assayer, buy a
+// temporary weapon box for gold at Greymarsh's Armsmaster, pick from it, wear it and watch the worn clock
+// move; then Unequip-all pauses it. The gear `a` wears is parked in preset C and put back afterwards.
+{
+    int HeldA(string defId) => a.Inv?.Items.Where(i => i.DefId == defId).Sum(i => i.Quantity) ?? 0;
+    async Task<Guid> StandAt(string npcId)
+    {
+        var npc = WorldMap.NpcById(npcId)!;
+        string given = npc.Name.Split(' ')[^1];
+        await a.Hub.SendAsync("DebugTeleport", npc.X + 40f, npc.Y);
+        await a.WaitFor(() => a.EntityNames.Any(kv => kv.Value == given));
+        return a.EntityNames.FirstOrDefault(kv => kv.Value == given).Key;
+    }
+
+    await a.Hub.SendAsync("SaveEquipPreset", 2);
+    await a.Settle();
+
+    var assayerId = await StandAt(ShopCatalog.EssenceMerchant);
+    Check("the Assayer is in view in Greymarsh", assayerId != Guid.Empty);
+    if (assayerId != Guid.Empty)
+    {
+        await a.Hub.SendAsync("TalkToNpc", assayerId);
+        await a.WaitFor(() => a.Dialog?.Shop?.Items.Any(w => w.DefId == "sword2h_t52") == true);
+        var row = a.Dialog?.Shop?.Items.FirstOrDefault(w => w.DefId == "sword2h_t52");
+        Check("the Assayer quotes the T52 2H in essence and no gold",
+              row is { BuyPrice: 0, Essence.Length: 2 } && row.Essence[0].Qty == 750 && row.Essence[1].Qty == 6750,
+              row is null ? "no row" : $"gold {row.BuyPrice}, essence {row.Essence?.Length}");
+
+        // Short of essence: refused, nothing taken.
+        await a.Hub.SendAsync("BuyItem", assayerId, "sword2h_t52", 1);
+        await a.Settle();
+        Check("without the essence the Assayer refuses", HeldA("sword2h_t52") == 0);
+
+        await a.Hub.SendAsync("DebugGive", "essence_c", 750);
+        await a.Hub.SendAsync("DebugGive", "essence_d", 6750);
+        await a.Settle();
+        int cBefore = HeldA("essence_c"), dBefore = HeldA("essence_d");
+        long goldBefore = a.Gold;
+        await a.Hub.SendAsync("BuyItem", assayerId, "sword2h_t52", 1);
+        await a.WaitFor(() => HeldA("sword2h_t52") == 1);
+        Check("the Assayer sells the T52 2H for 750 C + 6750 D essence and no gold",
+              HeldA("sword2h_t52") == 1 && cBefore - HeldA("essence_c") == 750
+              && dBefore - HeldA("essence_d") == 6750 && a.Gold == goldBefore,
+              $"C {cBefore}->{HeldA("essence_c")}, D {dBefore}->{HeldA("essence_d")}, gold {goldBefore}->{a.Gold}");
+    }
+
+    var smithId = await StandAt("merchant_gear_greymarsh");
+    Check("Greymarsh's Armsmaster is in view", smithId != Guid.Empty);
+    if (smithId != Guid.Empty)
+    {
+        await a.Hub.SendAsync("DebugGold", 1_000_000L);
+        await a.Settle();
+        long g0 = a.Gold;
+        string boxId = ItemCatalog.TempWeaponBoxId(40);
+        await a.Hub.SendAsync("BuyItem", smithId, boxId, 1);
+        await a.WaitFor(() => HeldA(boxId) == 1);
+        Check("a T40 temp weapon box costs 214,286 gold", HeldA(boxId) == 1 && g0 - a.Gold == 214_286,
+              $"paid {g0 - a.Gold}");
+
+        var box = a.Inv?.Items.FirstOrDefault(i => i.DefId == boxId);
+        string tempId = ItemCatalog.TempId("sword2h_t40");
+        if (box is not null)
+        {
+            await a.Hub.SendAsync("SelectBoxItems", box.InstanceId, new[] { tempId });
+            await a.WaitFor(() => HeldA(tempId) == 1);
+        }
+        var piece = a.Inv?.Items.FirstOrDefault(i => i.DefId == tempId);
+        Check("picking from the box gives a temp 2H with 7200 s of wearing, tagged temporary + bound",
+              piece is { WornSecondsLeft: 7200 } && HeldA(boxId) == 0
+              && ItemTag.For(ItemCatalog.Get(tempId)!, piece) == "(temporary, bound)",
+              piece is null ? "no piece" : $"worn {piece.WornSecondsLeft}, tag {ItemTag.For(ItemCatalog.Get(tempId)!, piece)}");
+
+        if (piece is not null)
+        {
+            // In the bag it does not tick.
+            await Task.Delay(2500);
+            await a.Hub.SendAsync("DisassembleItem", piece.InstanceId);   // refused: temp gear never breaks
+            await a.Settle();
+            Check("a temp piece cannot be broken", HeldA(tempId) == 1);
+
+            await a.Hub.SendAsync("EquipItem", piece.InstanceId);
+            await a.WaitFor(() => a.Inv?.Items.Any(i => i.InstanceId == piece.InstanceId && i.Equipped) == true);
+            var bagged = a.Inv?.Items.FirstOrDefault(i => i.InstanceId == piece.InstanceId);
+            Check("the clock did not run in the bag (still 7200 when equipped)", bagged?.WornSecondsLeft == 7200,
+                  $"{bagged?.WornSecondsLeft}");
+            await Task.Delay(3500);   // the clock is 1/s on the server, only while worn
+            await a.Hub.SendAsync("UnequipAll");
+            await a.WaitFor(() => a.Inv?.Items.Any(i => i.Equipped) == false);
+            var worn = a.Inv?.Items.FirstOrDefault(i => i.InstanceId == piece.InstanceId);
+            Check("Unequip all takes everything off", a.Inv?.Items.Any(i => i.Equipped) == false);
+            Check("wearing it spent the clock (7200 -> ~7197), and it is paused now",
+                  worn?.WornSecondsLeft is int w && w < 7200 && w >= 7190, $"{worn?.WornSecondsLeft}");
+        }
+    }
+
+    await a.Hub.SendAsync("ApplyEquipPreset", 2);   // put `a`'s own gear back
+    await a.Settle();
+    await a.Hub.SendAsync("DebugTeleport", 24000f, 24000f);
+    await a.Settle();
+}
 
 // -------------------------------------------------------------------------------------------
 // 4d. BUFFS BEFORE THE RELOG. Buffs used to die on every logout because nothing saved them

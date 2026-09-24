@@ -612,6 +612,8 @@ public record PartyChangeLeaderCmd(string ConnectionId, Guid TargetId) : IGameCo
 // Equipment presets A/B/C (slot 0/1/2): save the worn set, or apply a saved one.
 public record SaveEquipPresetCmd(string ConnectionId, int Slot) : IGameCommand;
 public record ApplyEquipPresetCmd(string ConnectionId, int Slot) : IGameCommand;
+/// <summary>`BL-272` part 2 — the built-in EMPTY preset: take off everything in one click (pauses temporary gear).</summary>
+public record UnequipAllCmd(string ConnectionId) : IGameCommand;
 public record PartySetLootModeCmd(string ConnectionId, LootMode Mode) : IGameCommand;
 public record PartyLootVoteCmd(string ConnectionId, bool Accept) : IGameCommand;
 public record SetAutoHuntConfigCmd(string ConnectionId, AutoHuntConfigDto Config) : IGameCommand;

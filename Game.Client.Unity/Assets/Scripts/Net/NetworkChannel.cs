@@ -406,6 +406,7 @@ namespace Game.Client
         public Task PartyChangeLeaderAsync(Guid targetId) => _connection.SendAsync("PartyChangeLeader", targetId);
         public Task SaveEquipPresetAsync(int slot) => _connection.SendAsync("SaveEquipPreset", slot);
         public Task ApplyEquipPresetAsync(int slot) => _connection.SendAsync("ApplyEquipPreset", slot);
+        public Task UnequipAllAsync() => _connection.SendAsync("UnequipAll");
         public Task PartySetLootModeAsync(LootMode mode) => _connection.SendAsync("PartySetLootMode", mode);
 
         // ----- NPC interaction --------------------------------------------------------------------

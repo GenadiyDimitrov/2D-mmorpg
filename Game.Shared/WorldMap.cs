@@ -486,6 +486,12 @@ public static class WorldMap
         // should join him rather than accumulating back in the starter town.
         yield return new NpcDef("master_class3", "Grandmaster Thorne", 34800, 33400, NpcRole.ClassChange);
 
+        // `BL-272` part 2 — the T52 ESSENCE SHOP, one NPC in the one town whose band (40-60) is T52's (his
+        // pick, 2026-09-24). East with the other shops, on the gatekeeper's side of the staircase: +1200 /
+        // -650 keeps 250 of Y from the gatekeeper (-900) and 300 from the Apothecary (-350), and the
+        // Huntmaster on the same Y stands 1900 away to the west, outside the label guard's 1500.
+        yield return new NpcDef(ShopCatalog.EssenceMerchant, "Assayer Corvane", 37200, 32350, NpcRole.Vendor);
+
         // The 4th-class master lives in FROSTMERE — the last town on the level path out of
         // Brackenford (north to Stonewatch, round to Greymarsh, Ironreach, and finally here), so it
         // is the only town whose neighbours reach the level-76 ascension. Same west-side offset as
