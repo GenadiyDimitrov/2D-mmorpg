@@ -7,11 +7,47 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.200.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.201.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-24 (latest) — 0.200.0: essence (`BL-273` part 1, step 7 of the rework order)
+## 2026-09-24 (latest) — 0.201.0: prices + essence, IG-shaped (`BL-287`, step 7b of the rework order)
+
+> *"a common why its is at 1/4 of the normal?"* … *"one common item or 2 [must] not allow me to craft an item"*
+
+**Prices, selling and breaking now follow IG's shape.** You sell anything for half its price, a Common costs a
+twentieth of its Mythic, and breaking gives you less than selling would.
+
+- **Everything with a price sells for 50% of its own buy price.** This replaces four rules: gear sold for its
+  Mythic price ÷10 (Mythic) down to ÷200 (Common), buff potions ÷10, and materials and healing potions 30%.
+  Items authored to sell for nothing (premium items, runes, buff potions) still sell for 0. One code path
+  (`ItemCatalog.SellPrice`) serves the vendor, the trade window and the client's price labels.
+- **A Common costs 0.05 × its Mythic** (was 0.225), so it sells for 2.5% of the Mythic. A T40 Common 2H costs
+  214,286 and sells for 107,143.
+- **Mythic prices move per tier**, with every slot of a tier moving by the same factor: T1 **×2.2** (2H 188,571),
+  T20 **×0.65** (2H 1.39M), T40 and T52 **×0.5** (2H 4.29M / 13.5M). T61, T76 and T80 are unchanged (60M /
+  120M / 600M). The merchants' Mythic T1/T20/T40 stock moves with this.
+- **Breaking gives 40% of the item's price, paid as essence at the essence's sell price**, so breaking
+  costs you about a fifth of the gold that selling would pay. Essence now sells for **1,500 / 4,500 / 7,500 /
+  12,500 / 25,000** (Darksteel … Soulcrystal). A 2H breaks for **1143 / 1200 / 3200 / 3840 / 9600** (Mythic)
+  and **57 / 60 / 160** (Common). Commons and Mythics use the same rule, so 0.200.0's "a Common breaks for
+  70%" is gone. The tables are still literals, generated once. Recipe essence amounts are unchanged, so a
+  2H craft takes about 7 / 13 / 7.5 broken Commons. Full table in `docs/Formulas.md`.
+- **Common drops roll PER SLOT**: ring highest, then earring/boots/gloves, helm/shield/necklace, body, weapon
+  lowest. The ranges are T40 **2% → 1%**, T52 **1% → 0.2%** and T61 **0.3% → 0.05%**, which is a Common every
+  ~7 / 17 / 59 normal kills. **An elite rolls ×2.** All of it still runs through the `common` drop group
+  and its `/droprate` knob.
+- **No healing potion drops from any mob above level 40** (*"go town buy potions"*). The Greater potion is
+  now craft- and box-only.
+- 📊 **Measured (BalanceMatrix, before → after).** Common gear pays **4.8× / 12.8× / 14×** the coin at
+  40 / 52 / 61 (was 0.1× / 0.8× / 1.5×). A 1→60 climb that sells everything earns **63.6M** (was 9.6M). The
+  Rune of Sinister's 1000 kills at 50 / 70 pays 5.4M / 7.8M (was 0.54M / 1.38M). `--craft-cost` per success:
+  T40 **16.1h**, T52 **30h**, T61 **70h** (0.200.0: 17.3 / 28 / 59). Essence per 2H craft is 2.0h / 4.5h / 13.4h
+  on the elite camp. That lands inside what §2.5 predicted (T40 16h, T52 ~36h, T61 ~79h) and is the
+  gear-gold faucet that 0.199.0 closed, reopened on purpose.
+- APK needed: the client prices, sells and offers Break from `Game.Shared`. No schema change.
+
+## 2026-09-24 — 0.200.0: essence (`BL-273` part 1, step 7 of the rework order)
 
 > *"breaking common or even mythic darksteel gives you 'Darksteel essence' ... acquired only by breaking full
 > items -> so not mindlessly selling in the vendor"*

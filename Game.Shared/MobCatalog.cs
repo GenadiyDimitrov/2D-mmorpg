@@ -652,16 +652,49 @@ public static class MobCatalog
         (FamilyJewel,     new[] { "necklace", "ring", "earring" }),
     };
 
-    /// <summary>COMMON gear per kill (`BL-272`, his numbers): 0.5% off a normal kill, 2% off an elite, as
-    /// ONE roll across every slot of the tier (<see cref="GroupCommonGear"/>). The "common" group ships at
-    /// x1, so these are the delivered chances on a x1 server. Only mobs whose gear tier is T40/T52/T61
-    /// pay them, because only those tiers HAVE a Common (<see cref="ItemCatalog.HasCommonTier"/>).
+    /// <summary>COMMON gear per kill (`BL-287`, owner, 2026-09-24): **each SLOT rolls its own chance**, ring
+    /// highest and weapon lowest, inside his per-tier ranges, T40 1-2% / T52 0.2-1% / T61 0.05-0.3%. The five
+    /// ranks in between are MINE, linear over the range (his words: *"not everything set in stone"*):
     ///
-    /// ⚠ This replaces the whole playtest-14 quality table (normal C 5 / U 2 / R 0.2 / E 0.01 % per
-    /// family, elite U 10 / R 2 / E 0.2 %, all under the gear groups' x0.075). Below T40 and from T76 up a
-    /// normal or elite creature now drops NO equipment at all until `BL-274` gives every mob its rare
-    /// Mythic; T1/T20 gear comes from the merchants, which sell the Mythic piece (see ShopCatalog).</summary>
-    public const float CommonGearNormal = 0.005f, CommonGearElite = 0.02f;
+    /// | rank | slots | T40 | T52 | T61 |
+    /// |---|---|---|---|---|
+    /// | 1 | ring | 2% | 1% | 0.3% |
+    /// | 2 | earring, boots, gloves | 1.75% | 0.8% | 0.2375% |
+    /// | 3 | helm, shield, necklace | 1.5% | 0.6% | 0.175% |
+    /// | 4 | body (split across heavy/light/robe) | 1.25% | 0.4% | 0.1125% |
+    /// | 5 | weapon (split across the eight lines) | 1% | 0.2% | 0.05% |
+    ///
+    /// Summed, a normal kill pays a Common every ~7 / 17 / 59 kills. An **elite rolls ×2**
+    /// (<see cref="CommonGearEliteMul"/>). Still ONE entry per piece in the "common" group, so
+    /// <see cref="EffectiveRate"/> and <c>/droprate common</c> move all of it; a member's weight IS its
+    /// marginal per-kill chance. Which mob drops which slot is `BL-274`, not this.
+    ///
+    /// ⚠ Replaces 0.199.0's single 0.5% / 2% roll spread evenly across the families. Only the T40/T52/T61
+    /// tiers HAVE a Common (<see cref="ItemCatalog.HasCommonTier"/>); any other tier returns 0.</summary>
+    public static float CommonGearSlotChance(int tier, int rank) => tier switch
+    {
+        40 => 0.0200f - 0.0025f   * (rank - 1),
+        52 => 0.0100f - 0.0020f   * (rank - 1),
+        61 => 0.0030f - 0.000625f * (rank - 1),
+        _ => 0f,
+    };
+
+    /// <summary>`BL-287`: the highest mob level that still drops a HEALING potion (the always group).
+    /// Above it, potions come from the town merchant: *"go town buy potions"*.</summary>
+    public const int HealingPotionDropMaxLevel = 40;
+
+    /// <summary>An elite's Common chances are the normal ones ×2 (`BL-287`).</summary>
+    public const float CommonGearEliteMul = 2f;
+
+    /// <summary>The slot rank of a gear key for <see cref="CommonGearSlotChance"/>: 1 = ring … 5 = weapon.</summary>
+    private static int CommonSlotRank(string key) => key switch
+    {
+        "ring" => 1,
+        "earring" or "boots" or "gloves" => 2,
+        "helm" or "shield" or "necklace" => 3,
+        "heavy" or "light" or "robe" => 4,
+        _ => 5,   // the eight weapon lines
+    };
 
     /// <summary>A BOSS's gear: ONE guaranteed Mythic piece of its tier (<see cref="GroupBossGear"/>), plus
     /// the old 2%-per-family Mythic accent, which is unchanged (it still runs under the family groups'
@@ -971,8 +1004,20 @@ public static class MobCatalog
         }
 
         if (!ItemCatalog.HasCommonTier(tier)) yield break;
-        float common = rank == MobRank.Elite ? CommonGearElite : CommonGearNormal;
-        foreach (var e in Spread(common, GroupCommonGear, "_common")) yield return e;
+        // `BL-287`: each SLOT carries its own chance (ring highest, weapon lowest); the body and weapon
+        // slots split theirs across their weights / lines, so a slot's total is what the table says.
+        float mul = rank == MobRank.Elite ? CommonGearEliteMul : 1f;
+        foreach (var (_, keys) in GearFamilies)
+        {
+            var bySlot = keys.GroupBy(CommonSlotRank);
+            foreach (var slot in bySlot)
+            {
+                float each = CommonGearSlotChance(tier, slot.Key) * mul
+                           / (slot.Key is 4 or 5 ? slot.Count() : 1);
+                foreach (var key in slot)
+                    yield return new DropEntry($"{key}_t{tier}_common", each, GroupId: GroupCommonGear);
+            }
+        }
     }
 
     /// <summary>MATS-PRIMARY drop table (docs/design/Crafting.md): every mob drops crafting materials
@@ -1214,11 +1259,12 @@ public static class MobCatalog
         // Rare before 61". So the ladder is Common below 40, Common+Uncommon to 60, Uncommon+Rare from
         // 61 — potHigh is one rung above potLow, and neither may cross its floor. Below 40 both rungs
         // are the Minor potion; the two weights simply add, which is the intended "only Common exists".
-        string potLow  = level >= 61 ? ItemCatalog.HealingPotion : ItemCatalog.MinorPotion;
-        string potHigh = level >= 61 ? ItemCatalog.GreaterPotion
-                       : level >= 40 ? ItemCatalog.HealingPotion
-                       : ItemCatalog.MinorPotion;
-        bool topLevel = level >= 75;
+        //
+        // 🔑 `BL-287` (owner, 2026-09-24): NO HEALING POTION DROPS ABOVE LEVEL 40, from normals, elites or
+        // bosses (an elite/boss rolls this same baked table): *"go town buy potions"*. So only the <=40 half
+        // of the ladder is left — the 61+ Healing/Greater pair and the 75+ Greater top-up are gone.
+        string potLow  = ItemCatalog.MinorPotion;
+        string potHigh = level >= 40 ? ItemCatalog.HealingPotion : ItemCatalog.MinorPotion;
         // ⚠ POTIONS ARE A MINORITY OF THIS GROUP (owner, 2026-07-31, playtest-15). The group still fires
         // on EVERY kill — he explicitly liked never having to buy basic potions again (30f passed) — so
         // what changed is the split inside it, not the 100 %.
@@ -1263,16 +1309,10 @@ public static class MobCatalog
         // comes off an elite or off a vendor. Stated here so the next playtest does not read it as a bug.
         void Always(string item, float weight) =>
             drops.Add(new(item, weight, 1, 1, GroupId: GroupAlways));
-        if (!topLevel)
+        if (level <= HealingPotionDropMaxLevel)
         {
             Always(potLow,  0.020f);
             Always(potHigh, 0.010f);
-        }
-        else
-        {
-            Always(potLow,  0.015f);
-            Always(potHigh, 0.010f);
-            Always(ItemCatalog.GreaterPotion, 0.002f);
         }
         // The starter trio's exception, at the rate the whole world used to pay — the point is that the
         // first eight levels are unchanged, not that they are generous. No resurrection scroll: he named

@@ -222,26 +222,27 @@ public static class Crafting
     }
 
     // =====================================================================================
-    //  ESSENCE (`BL-273` part 1, 0.200.0) — breaking gear gives its GRADE's essence, nothing else.
+    //  ESSENCE (`BL-273` part 1, 0.200.0; tables rewritten by `BL-287`, 0.201.0) — breaking gear gives
+    //  its GRADE's essence, nothing else.
     // =====================================================================================
     //
     // His rule (2026-09-23, design doc §2.4): *"breaking common or even mythic darksteel gives you
-    // 'Darksteel essence' ... and crafting to require also this essence that is aquired only by breaking
-    // full items -> so not mindlessly selling in the vendor"*. It replaced the `BL-22` disassembly roll
-    // (rarity → material rarity, grade → quantity), which is deleted outright, not kept beside it.
+    // 'Darksteel essence' (Cobolt -> 'Cobolt Essence' ... etc...) - and crafting to require also this
+    // essence that is aquired only by breaking full items -> so not mindlessly selling in the vendor"*.
+    // It replaced the `BL-22` disassembly roll, which is deleted outright, not kept beside it.
     //
     // 🔑 THE AMOUNT IS AUTHORED, NEVER COMPUTED. *"changing prices later should not change the essence
-    //    amount"*. The tables below were written ONCE (0.200.0) from the prices of that day
-    //    (`ItemCatalog.TieredGearBasePrice`) and are literals on purpose: retuning a price must not move a
-    //    single cell here. Nothing reads a price to produce them.
+    //    amount"*. The tables below are literals on purpose: retuning a price must not move a single cell
+    //    here, and nothing reads a price to produce them.
     //
-    // How they were written, so the next cell can be written the same way:
-    //   * a Mythic 2H is the anchor per grade: T40 2000 / T52 2000 / T80 10000 are his; T61 4000 / T76
-    //     7000 are the `--craft-cost` placeholders, ruled 2026-09-24;
-    //   * every other slot is that anchor × its price share inside the grade (1H .9, body .6, helm/shield
-    //     1/3, gloves/boots .2, necklace .5, earring 1/6, ring 1/12), rounded half away from zero;
-    //   * a COMMON breaks for 70% of ITS OWN price (ruled 2026-09-24), and its price is 0.225 × the Mythic,
-    //     so a Common cell is the Mythic cell × 0.1575. T76/T80 have no Commons (their essence DROPS, step 12).
+    // How they were written (`BL-287`, owner, 2026-09-24, design doc §2.5 — generated ONCE from the
+    // 0.201.0 prices, so the next cell can be written the same way):
+    //   * BREAK = 0.4 × the item's own BUY price ÷ its essence's SELL price, rounded half away from zero.
+    //     Selling returns 50%, breaking 40% (as essence at its sell price): *"breaking it down gives less
+    //     than its actual sell price"*, and *"one common item or 2 [must] not allow me to craft an item"*.
+    //   * Mythic and Common alike (a Common is 0.05 × its Mythic, so it breaks for 1/20th); the 0.200.0
+    //     "Common breaks for 70%" is gone. T76/T80 have no Commons (their essence DROPS, step 12).
+    //   * The essence sell prices are his: D 1500 / C 4500 / B 7500 / A 12500 / S 25000.
     //
     // ⚠ F and E gear (T1 / T20) CANNOT be broken (ruled 2026-09-24): the five essences are D..S, and a
     //   Ferrite or Electrum piece is sold, not broken.
@@ -254,14 +255,11 @@ public static class Crafting
     /// <summary>The item level each essence is named after (its <see cref="ItemCatalog.GradeTheme"/>).</summary>
     public static readonly int[] EssenceItemLevels = { 40, 52, 61, 76, 80 };
 
-    /// <summary>The GOLD one essence is worth: the yardstick the break tables were authored against (a
-    /// Mythic 2H's price ÷ its break amount, 0.200.0 prices). It is the essence's <c>Value</c>, and it is
-    /// never a shop price: *"no vendor sells essence"*. It sells for <see cref="EssenceSellDivisor"/>th of
-    /// this, which makes selling the essence the worst of the three things a broken item could become.</summary>
-    public static readonly int[] EssenceGoldWorth = { 4_286, 13_500, 15_000, 17_143, 60_000 };
-
-    /// <summary>*"essence sells at /25"*.</summary>
-    public const int EssenceSellDivisor = 25;
+    /// <summary>What a vendor pays for ONE essence (`BL-287`, his numbers): D 1500 / C 4500 / B 7500 /
+    /// A 12500 / S 25000. The break tables were authored against these. The essence's <c>Value</c> is twice
+    /// this, so the ordinary half-price sell rule pays exactly this number; that Value is a yardstick only,
+    /// never a shop price (*"no vendor sells essence"*).</summary>
+    public static readonly int[] EssenceSellPrice = { 1_500, 4_500, 7_500, 12_500, 25_000 };
 
     /// <summary>Which essence grade an item level breaks into, or -1 for F/E (no essence).</summary>
     public static int EssenceGrade(int itemLevel) => itemLevel switch
@@ -272,18 +270,18 @@ public static class Crafting
     // Column order of the two tables: 2H, 1H, body, helm/shield, gloves/boots, necklace, earring, ring.
     private static readonly int[][] MythicBreak =
     {
-        new[] {  2000, 1800, 1200,  667,  400, 1000,  333, 167 },   // T40 Darksteel
-        new[] {  2000, 1800, 1200,  667,  400, 1000,  333, 167 },   // T52 Cobalt
-        new[] {  4000, 3600, 2400, 1333,  800, 2000,  667, 333 },   // T61 Bloodsteel
-        new[] {  7000, 6300, 4200, 2333, 1400, 3500, 1167, 583 },   // T76 Adamantine
-        new[] { 10000, 9000, 6000, 3333, 2000, 5000, 1667, 833 },   // T80 Soulcrystal
+        new[] { 1143, 1029,  686,  381,  229,  571,  190,  95 },   // T40 Darksteel   (2H 4.29M ÷ 1500)
+        new[] { 1200, 1080,  720,  400,  240,  600,  200, 100 },   // T52 Cobalt      (2H 13.5M ÷ 4500)
+        new[] { 3200, 2880, 1920, 1067,  640, 1600,  533, 267 },   // T61 Bloodsteel  (2H 60M ÷ 7500)
+        new[] { 3840, 3456, 2304, 1280,  768, 1920,  640, 320 },   // T76 Adamantine  (2H 120M ÷ 12500)
+        new[] { 9600, 8640, 5760, 3200, 1920, 4800, 1600, 800 },   // T80 Soulcrystal (2H 600M ÷ 25000)
     };
 
     private static readonly int[][] CommonBreak =
     {
-        new[] { 315, 284, 189, 105,  63, 158,  53, 26 },   // T40
-        new[] { 315, 284, 189, 105,  63, 158,  53, 26 },   // T52
-        new[] { 630, 567, 378, 210, 126, 315, 105, 53 },   // T61
+        new[] {  57,  51,  34,  19,  11,  29,  10,   5 },   // T40
+        new[] {  60,  54,  36,  20,  12,  30,  10,   5 },   // T52
+        new[] { 160, 144,  96,  53,  32,  80,  27,  13 },   // T61
     };
 
     /// <summary>Which column of the break tables a piece of gear reads, or -1 if it is not gear.</summary>

@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.200.0";
+    public const string GameVersion = "0.201.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -1074,59 +1074,16 @@ public static class GameConstants
 
     // ----- Vendors (Phase 21) -------------------------------------------------
 
-    /// <summary>Fraction of an item's Value a vendor pays when you SELL to it. Applies to the
-    /// GENERIC price formula only — mats, potions, scrolls, legacy gear. Tiered gear has its own
-    /// rule (<see cref="GearSellDivisor"/>), because gear is what floods the economy.</summary>
-    public const float VendorSellFraction = 0.30f;
-
-    /// <summary>Tiered gear (and use-consumables) sell for their BUY price divided by this. The owner's
-    /// original acceptance test was "selling ~25 Robes should buy one Leathers" — same slot, same
-    /// grade+rarity, so they share a buy price and the divisor IS that ratio. That was 25.
+    /// <summary>What a vendor pays when you SELL to it, as a fraction of the item's own buy price:
+    /// **half, for everything** (`BL-287`, owner, 2026-09-24: IG-shaped). The one knob;
+    /// <see cref="ItemCatalog.SellPrice"/> is its one reader. Items authored with
+    /// <c>SellPriceOverride</c> (premium, runes, buff potions at 0) are untouched by it.
     ///
-    /// It is 10 as of playtest-18 (owner, 2026-08-05), and the direction is deliberate: sold gear was
-    /// ~10x the mob's own gold drop and the faucet had to come down ~4x, but doing that with the PRICE
-    /// would have left the player wading through the same flood of near-worthless drops. So the cut went
-    /// on the drop RATE instead (<see cref="RateConfig.DropGroupRates"/>, the four gear groups, 13x
-    /// rarer) and this moved the OTHER way — fewer drops, each one worth 2.5x more. Ten Robes buy one
-    /// Leathers now. Measured in tools/BalanceMatrix; change it there and re-run, don't re-derive.
-    ///
-    /// ⚠ SINCE `BL-114` THIS IS ONLY THE USE-CONSUMABLE DIVISOR. Tiered GEAR takes the per-rarity
-    /// ladder below.</summary>
-    public const int GearSellDivisor = 10;
-
-    /// <summary>`BL-114` (owner, playtest 29): the tiered-gear sell divisor is PER RARITY, and the
-    /// number divides the MYTHIC rung of the price table — not the item's own buy price. That is his
-    /// own arithmetic: *"a myth item is sold for (buy price bp*1/10)"* is the rung he is happy with,
-    /// and every cheaper rarity is expressed as the same kind of fraction of that same bp.
-    ///
-    /// | rarity | divisor | sell, as a fraction of the Mythic price | was |
-    /// |---|---|---|---|
-    /// | Mythic | /10 | 0.100 | 0.1000 (unchanged) |
-    /// | Legendary | /25 | 0.040 | 0.0425 |
-    /// | Epic | /33 | 0.030 | 0.0350 |
-    /// | Rare | /50 | 0.020 | 0.0350 |
-    /// | Uncommon | /100 | 0.010 | 0.0275 |
-    /// | Common | /200 | 0.005 | 0.0225 |
-    ///
-    /// 🔑 **The shape is the point, not the magnitude.** Mythic does not move at all and Legendary
-    /// barely does (-6 %); the cut lands almost entirely on the junk end — Common -78 %, Uncommon -64 %,
-    /// Rare -43 %. His complaint was specifically about the flood: *"common sels for 0.225 of the
-    /// original price so selling 4.(4) items Is like I sold a real item ...and that alot"*. A Common
-    /// now needs 45 sales to buy its own replacement, up from 10.
-    ///
-    /// ⚠ It also SEPARATES Epic from Rare, which were identical before: they share a
-    /// <see cref="ItemCatalog.RarityPriceMul"/> of 0.35 (Epic buys the same as Rare on purpose) but
-    /// they no longer sell the same. That is his ladder, /33 against /50, and it is monotonic.</summary>
-    public static int GearSellDivisorFor(ItemRarity rarity) => rarity switch
-    {
-        ItemRarity.Mythic    => 10,
-        ItemRarity.Legendary => 25,
-        ItemRarity.Epic      => 33,
-        ItemRarity.Rare      => 50,
-        ItemRarity.Uncommon  => 100,
-        ItemRarity.Common    => 200,
-        _ => 50,
-    };
+    /// ⚠ History, so nobody rebuilds it: until 0.201.0 this was 30% for mats/potions only, gear sold
+    /// for its MYTHIC price ÷ a per-rarity divisor (Mythic ÷10 … Common ÷200, `BL-114`) and buff
+    /// potions ÷10. Those divisors were the playtest-14/-18/-29 fixes for a gear flood that the drop
+    /// side now holds instead (per-slot Common chances, Common at 0.05 of the Mythic).</summary>
+    public const float VendorSellFraction = 0.5f;
 
     /// <summary>Extra fraction added to an item's Value when you BUY from a vendor.
     /// Reserved for the future castle system: a vendor in a castle-owned village

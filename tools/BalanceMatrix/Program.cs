@@ -4045,11 +4045,9 @@ const double CoinObserved = 350_000;   // his mage: gold drops only, sold nothin
 // The per-rarity sell ladder (`BL-114`) collapsed to the ONE number the sweep below needs: the flat
 // divisor that would pay out what the ladder actually pays out, on the drops of this level's mobs.
 //
-// ⚠ UNITS. The sweep's rows are divisors on the item's OWN BUY PRICE — that is what `GearSellDivisor`
-// meant for a year — while the owner authored `BL-114` against the MYTHIC rung. The two differ by
-// RarityPriceMul (0.225 at Common), so this measures in the sweep's units, not his: a Common's /200
-// off the Mythic price is /45 off its own. Reading his 200 straight into this column would overstate
-// the cut 4.4x. The weighting is by what actually drops, so an all-Common field reads near /45.
+// ⚠ UNITS. The sweep's rows are divisors on the item's OWN BUY PRICE. Since `BL-287` (0.201.0) the live
+// rule IS that (half of the own price, for everything), so this now reads /2 wherever gear drops; it
+// stays measured rather than hard-coded so a future per-rarity rule cannot misreport it.
 static double EffectiveGearSellDivisor(int level)
 {
     double buy = 0, paid = 0;
@@ -4063,7 +4061,7 @@ static double EffectiveGearSellDivisor(int level)
             buy += chance * qty * b * ItemCatalog.RarityPriceMul(def.Rarity);
             paid += chance * qty * ItemCatalog.SellPrice(def);
         }
-    return paid <= 0 ? GameConstants.GearSellDivisor : buy / paid;
+    return paid <= 0 ? 1.0 / GameConstants.VendorSellFraction : buy / paid;
 }
 
 static (double Gear, double Trash, double Coin) PerKill(int level)
@@ -4096,10 +4094,8 @@ float liveGearMul = RateConfig.DropGroupRate("armor");
 // no longer be read off a constant — it is the ladder's drop-WEIGHTED effective divisor, measured on
 // the same drops pk.Gear was measured on. A hardcoded 10 here would misreport the moment a rarity moves.
 double liveDivisor = EffectiveGearSellDivisor(PlaytestLevel);
-Console.WriteLine($"  live now: gear groups x{liveGearMul:0.###}, per-rarity sell ladder "
-    + string.Join(" ", new[] { ItemRarity.Common, ItemRarity.Mythic }
-        .Select(r => $"{r.ToString()[..2]}/{GameConstants.GearSellDivisorFor(r)}"))
-    + $" (off the MYTHIC rung)  => effective /{liveDivisor:0.#} off the OWN buy price here, was /10 flat");
+Console.WriteLine($"  live now: gear groups x{liveGearMul:0.###}, sell {GameConstants.VendorSellFraction:P0} of the own price"
+    + $"  => effective /{liveDivisor:0.#} off the OWN buy price here (BL-287; was a per-rarity ladder off the Mythic rung)");
 // ⚠ Every multiplier below was tripled on 2026-08-05, when `DropChanceRate` went 3 → 1 and the x3 was
 // folded into the groups that were taking it. The DELIVERED rates are identical — only the units moved
 // — but a row labelled 0.025 would now mean a third of what it meant when these were first written.
@@ -6315,8 +6311,8 @@ static void CraftCost()
     int[] nsQty = { 300, 200, 150, 50, 10 };          // NOTE: Nightsilver rung = the tier index (normal … legendary)
     const int Heads = 20;                             // RULED: 20 per 100% recipe, every tier
     int[] essence = { 400, 800, 1200, 1600, 2000 };   // 2H at 100%: RULED 2026-09-23 (T40/T80 his, T52/T61/T76 "as u like"); = essBySlot[t][0]
-    // The 2H break value per tier, READ from the authored table (`Crafting.BreakYield`, `BL-273` 0.200.0): T40 2000 /
-    // T52 2000 / T80 10000 his, T61 4000 / T76 7000 ruled 2026-09-24. A Common breaks for 70% of ITS OWN price.
+    // The 2H break value per tier, READ from the authored table (`Crafting.BreakYield`). Since `BL-287` (0.201.0):
+    // break = 0.4 x buy / essence sell, Mythic 2H 1143 / 1200 / 3200 / 3840 / 9600, Common 57 / 60 / 160.
     int[] mythicBreak = new[] { 40, 52, 61, 76, 80 }
         .Select(L => Crafting.BreakYield(ItemCatalog.Get($"sword2h_t{L}"))?.Qty ?? 0).ToArray();
     int[] commonBreak = new[] { 40, 52, 61, 76, 80 }
@@ -6435,7 +6431,9 @@ static void CraftCost()
         var refine = Mul(Nightsilver(L, rung - 1), 10);         // RULED: 10 of the rung below = 1
         return refine.H < direct.H ? refine : direct;
     }
-    (double H, double K) Essence(int t) => Unit(farmL[t], EssencePerKill(t), EssencePerKill(t) * EliteMul);
+    // An elite's Commons roll at the LIVE elite factor (`BL-287`: ×2), not the note's generic x4.
+    (double H, double K) Essence(int t) =>
+        Unit(farmL[t], EssencePerKill(t), EssencePerKill(t) * MobCatalog.CommonGearEliteMul);
     (double H, double K) Recipe(int L, string src, double perKill) => src switch
     {
         "normal" => Unit(L, perKill, 0),

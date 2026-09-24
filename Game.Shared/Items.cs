@@ -1629,8 +1629,8 @@ public static class ItemCatalog
         //
         // ⚠ MINE, not his: the 15,000 Value. Tradable-but-refused-at-the-counter is the exact
         // complaint recorded on the Scroll of Return above, so leaving SellPriceOverride: 0 here would
-        // recreate it one line down. 15,000 is 10x the basic scroll, i.e. 600 gold over the counter
-        // through the /25 consumable rule. BuyPriceOverride stays -1: no vendor STOCKS it, so this
+        // recreate it one line down. 15,000 is 10x the basic scroll, i.e. 7,500 gold over the counter
+        // at the half-price sell rule (`BL-287`; it was 600 under the old /25). BuyPriceOverride stays -1: no vendor STOCKS it, so this
         // opens no new faucet — it only lets players move the ones they find.
         list.Add(new ItemDef(ScrollResurrectUltimate, "Ultimate Scroll of Resurrection", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Rare,
@@ -2120,19 +2120,18 @@ public static class ItemCatalog
 
     /// <summary>The five grade ESSENCES (`BL-273` part 1): what breaking gear gives
     /// (<see cref="Crafting.BreakYield"/>). Stackable and tradable; <b>no vendor sells one</b> (*"no vendor
-    /// sells essence"*, so it is unbuyable), and a vendor buys it back at 1/25 of its gold worth, the worst
-    /// of the three things a broken item could have become.
+    /// sells essence"*, so it is unbuyable). `BL-287`: its Value is TWICE <see cref="Crafting.EssenceSellPrice"/>,
+    /// so the ordinary half-price sell rule pays exactly his 1500 … 25000 with no override.
     /// ⚠ Rarity is Common for all five: it is a grade material, not a rarity ladder. When essence starts to
     /// DROP (`BL-274` step 12), a pickup filter set above Common would skip it; decide that there.</summary>
     private static IEnumerable<ItemDef> Essences()
     {
         for (int g = 0; g < Crafting.EssenceIds.Length; g++)
         {
-            int worth = Crafting.EssenceGoldWorth[g];
             yield return new ItemDef(Crafting.EssenceIds[g],
                 $"{GradeTheme(Crafting.EssenceItemLevels[g])} Essence",
                 EquipSlot.Material, ItemGrade.F, ItemRarity.Common,
-                Value: worth, BuyPriceOverride: -1, SellPriceOverride: worth / Crafting.EssenceSellDivisor,
+                Value: 2 * Crafting.EssenceSellPrice[g], BuyPriceOverride: -1,
                 NoAttributes: true,
                 Description: $"Broken down from {TierLetter(Crafting.EssenceItemLevels[g])}-grade gear. "
                            + "The grade's crafting essence; no merchant sells it.");
@@ -2659,7 +2658,8 @@ public static class ItemCatalog
     /// is craft-only and meant to be traded between players for absurd sums. Epic and above are NOT
     /// vendor stock; their multipliers exist only so selling one pays sensibly.
     ///
-    /// ⚠ Since `BL-272` (0.199.0) equipment is only Common (×0.225) and Mythic (×1): the middle rows of
+    /// ⚠ Since `BL-272` (0.199.0) equipment is only Common (×0.05 since `BL-287`) and Mythic (×1), and
+    /// since `BL-287` (0.201.0) each tier's cells are scaled by <see cref="TierPriceFactor"/>: the middle rows of
     /// <see cref="RarityPriceMul"/> no longer price any gear, and the merchants sell the MYTHIC piece at
     /// this table's full cell (F/E/D cells are lifted from the old Rare shop price by <see cref="Shop"/>).</summary>
     private static int? TieredGearPrice(ItemDef def) =>
@@ -2668,10 +2668,9 @@ public static class ItemCatalog
             : null;
 
     /// <summary>The MYTHIC rung of the table above — the row cell BEFORE <see cref="RarityPriceMul"/>
-    /// is applied. Split out of <see cref="TieredGearPrice"/> for one reason: the per-rarity SELL
-    /// divisors (<see cref="GameConstants.GearSellDivisor"/>) are authored by the owner against THIS
-    /// number and not against the item's own buy price, so a Common's 1/200 is 1/200 of the Mythic
-    /// price, not of the Common one. Null for untiered/legacy gear.</summary>
+    /// is applied, with the tier's <see cref="TierPriceFactor"/> already in. Null for untiered/legacy gear.
+    /// (It was split out for the per-rarity sell divisors, which divided THIS number; `BL-287` deleted
+    /// them, and selling now reads the item's own price.)</summary>
     public static int? TieredGearBasePrice(ItemDef def)
     {
         int tier = def.ItemLevel switch
@@ -2709,8 +2708,24 @@ public static class ItemCatalog
         };
         if (row is null) return null;
 
-        return row[tier];
+        return (int)Math.Round(row[tier] * TierPriceFactor(tier));
     }
+
+    /// <summary>`BL-287` (owner, 2026-09-24, design doc §2.5): the IG-shaped move of the MYTHIC prices,
+    /// one factor per tier and the same for every slot of it. T1 ×2.2 (2H ~190k), T20 ×0.65 (2H 1.4M),
+    /// T40 and T52 ×0.5 (2H 4.29M / 13.5M), T61 / T76 / T80 unchanged (60M / 120M / 600M). The rows above
+    /// keep their authored cells, so the slot fractions they encode stay intact and this is the only
+    /// place a tier's level moves. Index = the tier switch in <see cref="TieredGearBasePrice"/>.
+    /// ⚠ A switch, not a static array: the catalog is built by a static initializer declared ABOVE any
+    /// field here, so an array would still be null when the first price is computed.</summary>
+    private static double TierPriceFactor(int tier) => tier switch
+    {
+        0 => 2.2,    // F  (T1)
+        1 => 0.65,   // E  (T20)
+        2 => 0.5,    // D  (T40)
+        3 => 0.5,    // C  (T52)
+        _ => 1.0,    // B / A / S (T61 / T76 / T80)
+    };
 
     /// <summary>The owner's F/E/D shop price is the price of a **RARE** item. This lifts it to the
     /// MYTHIC rung the price table is expressed in, so that multiplying back down by the Rare
@@ -2718,11 +2733,13 @@ public static class ItemCatalog
     private static int Shop(int rareShopPrice) =>
         (int)Math.Round(rareShopPrice / (double)RarityPriceMul(ItemRarity.Rare));
 
-    /// <summary>Rarity's effect on GOLD — the power ratio halved (see <see cref="TieredGearPrice"/>).
-    /// Epic shares Rare's 70 % power, so it shares its price too; Mythic is the 100 % base.</summary>
+    /// <summary>Rarity's effect on GOLD. Since `BL-287` (0.201.0) only two rungs price real gear: Mythic 1.0
+    /// and **Common 0.05** (owner, 2026-09-24: *"a common why its is at 1/4 of the normal?"*; it was 0.225,
+    /// half its old 45% power). The middle rungs price nothing any more; Rare stays 0.35 only because
+    /// <see cref="Shop"/> lifts the F/E/D shop cells through it, and moving it would move those cells.</summary>
     public static float RarityPriceMul(ItemRarity rarity) => rarity switch
     {
-        ItemRarity.Common    => 0.225f,
+        ItemRarity.Common    => 0.05f,
         ItemRarity.Uncommon  => 0.275f,
         ItemRarity.Rare      => 0.350f,
         ItemRarity.Epic      => 0.350f,
@@ -2769,43 +2786,25 @@ public static class ItemCatalog
         return Math.Max(1, (int)(gradeBase * rarityMul * slotMul));
     }
 
-    /// <summary>Gold paid to a player who SELLS this item. SellPriceOverride wins
-    /// (0 = sells for nothing); otherwise it DERIVES from the buy price.
+    /// <summary>Gold paid to a player who SELLS this item: **half its buy price, for everything**
+    /// (`BL-287`, owner, 2026-09-24, IG-shaped). <c>SellPriceOverride</c> still wins, and 0 there means
+    /// "sells for nothing" (premium items, runes, buff potions), which the ruling keeps at 0.
     ///
-    /// Tiered gear divides the MYTHIC rung of its price row by
-    /// <see cref="GameConstants.GearSellDivisorFor"/> — a PER-RARITY divisor since `BL-114` — instead of
-    /// taking the generic 30 % — that is the playtest-14 faucet fix, and it is deliberately confined to
-    /// gear: mats, potions and scrolls are not what made a level-25 character rich, and cutting them
-    /// too would quietly nerf crafting income nobody asked to nerf. Everything else keeps
-    /// <see cref="GameConstants.VendorSellFraction"/>.
+    /// The buy price is the item's own: <c>BuyPriceOverride</c> when it names a positive price (a vendor
+    /// stone is 20,000 against a Value of 100), else its <c>Value</c>, which for tiered gear is the rarity-
+    /// scaled cell (<see cref="TieredGearPrice"/>). So a Common sells for 2.5% of its Mythic, not a
+    /// fraction of the Mythic rung.
     ///
-    /// ⚠ It divides <see cref="TieredGearBasePrice"/> and NOT the item's own buy price, because that is
-    /// how the owner authored the ladder — see the table on <c>GearSellDivisorFor</c>. Dividing the own
-    /// price instead would compound the rarity multiplier twice and take a Common to 1/900th.</summary>
-    /// USE-CONSUMABLES (buff potions and the cast-on-use scrolls) take the same /25 as gear, added
-    /// 2026-07-31 for playtest-15. They are the other half of the same faucet: the Always and Scrolls
-    /// drop groups hand one out on essentially every kill, so at the generic 30 % a Lesser buff potion
-    /// paid 450 — a third of a tiered F body — for something the player never has to buy. /25 puts it
-    /// at 60, which is the owner's own number. HEALING potions are deliberately NOT in this branch:
-    /// they carry a PotionCooldownTicks and their oversupply is being fixed at the DROP rate instead,
-    /// so their price is left alone rather than nerfed twice.
-    /// ⚠ Use-consumables keep the FLAT <see cref="GameConstants.GearSellDivisor"/>. `BL-114` is about
-    /// gear ("a myth item", "common"), and a buff potion has no Mythic rung on the tiered table to be
-    /// a fraction OF — most of them are SellPriceOverride: 0 anyway. Say the word and they follow.
-    public static int SellPrice(ItemDef def) =>
-        def.SellPriceOverride is int s ? Math.Max(0, s)
-        : TieredGearBasePrice(def) is int mythic
-            ? Math.Max(1, mythic / GameConstants.GearSellDivisorFor(def.Rarity))
-        : IsUseConsumable(def) && def.Value > 0
-            ? Math.Max(1, def.Value / GameConstants.GearSellDivisor)
-        : def.Value <= 0 ? 0 : Math.Max(1, (int)(def.Value * GameConstants.VendorSellFraction));
-
-    /// <summary>A consumable whose worth is the EFFECT it casts, not a heal on a timer: buff potions
-    /// and the Return/Resurrection scrolls. Keyed off "no heal cooldown + it uses a skill", which is
-    /// what separates them from healing potions.</summary>
-    private static bool IsUseConsumable(ItemDef def) =>
-        def.Slot == EquipSlot.Consumable && def.PotionCooldownTicks == 0
-        && !string.IsNullOrEmpty(def.UseSkillId);
+    /// ⚠ This replaced FOUR rules at once, all deleted: gear Mythic ÷10 and a per-rarity ladder down to
+    /// Common ÷200 of the Mythic rung (`BL-114`), buff potions and cast-on-use scrolls ÷10 of their own
+    /// value, and 30% for everything else. The flood those divisors fought is now held by the DROP side
+    /// (per-slot Common chances, no healing potions above 40) and by the Common price itself.</summary>
+    public static int SellPrice(ItemDef def)
+    {
+        if (def.SellPriceOverride is int s) return Math.Max(0, s);
+        int basis = def.BuyPriceOverride is int b && b > 0 ? b : def.Value;
+        return basis <= 0 ? 0 : Math.Max(1, (int)(basis * (double)GameConstants.VendorSellFraction));
+    }
 
     /// <summary>Gold charged when BUYING this item from a vendor (incl. the future
     /// castle surcharge). BuyPriceOverride wins (-1 = unbuyable, 0 = free); otherwise

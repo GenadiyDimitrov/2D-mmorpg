@@ -1059,18 +1059,31 @@ fraction rolled, so `E[copies] == chance` exactly.
 **Gear (`BL-272`, 0.199.0): equipment is COMMON + MYTHIC only.** Tier = the mob's gear tier
 (`MobCatalog.GearTier`: 1 / 20 / 40 / 52 / 61 / 76).
 
+**Common gear, per SLOT (`BL-287`, 0.201.0).** Each slot carries its own chance, in group "common" ×1:
+
 ```
-normal kill   common group  0.005 × rates   (T40 / T52 / T61 only)    group "common" ×1
-elite kill    common group  0.02  × rates   (T40 / T52 / T61 only)    group "common" ×1
+slot rank                         T40      T52      T61       (normal kill; elite ×2)
+1  ring                           2.00%    1.00%    0.3000%
+2  earring · boots · gloves       1.75%    0.80%    0.2375%   each
+3  helm · shield · necklace       1.50%    0.60%    0.1750%   each
+4  body (÷3: heavy/light/robe)    1.25%    0.40%    0.1125%
+5  weapon (÷8 lines)              1.00%    0.20%    0.0500%
+sum per normal kill               14.0%    5.8%     1.7%      (a Common every ~7 / 17 / 59 kills)
+```
+
+His ranges (T40 1-2%, T52 0.2-1%, T61 0.05-0.3%) and slot order; the linear cells in between are mine.
+
+```
 boss kill     boss group    1.0   × rates   one Mythic piece, any tier group "boss"   ×1
               + per family  0.02  × rates   Mythic accent             groups armor/accessory/weapon/jewel ×0.075
 ```
 
-Each group is ONE roll across every slot of the tier, each family (armor / accessory / weapon / jewel)
-holding an equal quarter, split evenly inside it. A Common has the Mythic piece's stats, **no set, no
-attribute, no enchant**, and prices at `RarityPriceMul(Common)` = ×0.225 buy, Mythic ÷ 200 sell.
-Below T40 and from T76 up, a normal or elite mob drops **no equipment** until `BL-274`.
-`MobCatalog.GearDrops` · `CommonGearNormal` / `CommonGearElite` / `BossGuaranteedPiece`.
+A Common has the Mythic piece's stats, **no set, no attribute, no enchant**, and costs 0.05 × its Mythic
+(prices below). Below T40 and from T76 up, a normal or elite mob drops **no equipment** until `BL-274`.
+`MobCatalog.GearDrops` · `CommonGearSlotChance` / `CommonGearEliteMul` / `BossGuaranteedPiece`.
+
+**Healing potions** drop (group "always") only from mobs **level ≤ 40** (`BL-287`,
+`MobCatalog.HealingPotionDropMaxLevel`): Minor 2% + Minor/Healing 1% (Healing from 40). Above that, buy them.
 
 ⚠ A template's `Drops` is **not the whole table**. RANK is a property of the spawn, not the template,
 so five layers are added at kill time (`GameLoopService.RollDrop`, mirrored by target-inspect and by
@@ -1106,36 +1119,56 @@ group fires, never what the other members pay.
 
 ---
 
-## Breaking gear into essence (`BL-273` part 1, 0.200.0)
+## Prices and selling (`BL-287`, 0.201.0)
+
+```
+Mythic price  = slot row cell (ItemCatalog.TieredGearBasePrice) × tier factor
+                tier factor: T1 ×2.2 · T20 ×0.65 · T40 ×0.5 · T52 ×0.5 · T61 / T76 / T80 ×1
+Common price  = Mythic × 0.05                                  (RarityPriceMul(Common))
+sell price    = 50% × own buy price, for EVERYTHING            (GameConstants.VendorSellFraction)
+                own buy price = BuyPriceOverride if > 0, else Value
+                SellPriceOverride wins (0 = unsellable: premium, runes, buff potions)
+```
+
+2H Mythic: T1 188,571 · T20 1,392,857 · T40 4,285,714 · T52 13.5M · T61 60M · T76 120M · T80 600M.
+A T40 Common 2H costs 214,286 and sells for 107,143. The row cells keep the slot fractions (1H .9 of the
+2H, body .6, helm/shield ⅓, gloves/boots .2, neck .5, earring ⅙, ring 1/12). `ItemCatalog.SellPrice` is
+the one sell path (vendor, trade window, client labels, BalanceMatrix). Until 0.201.0 gear sold for its
+Mythic rung ÷ a per-rarity divisor (Mythic ÷10 … Common ÷200), buff potions ÷10 and the rest 30%.
+
+---
+
+## Breaking gear into essence (`BL-273` part 1, 0.200.0; tables `BL-287`, 0.201.0)
 
 Breaking a piece gives its **grade's essence** and nothing else. The amount is an **authored literal**
-(`Crafting.MythicBreak` / `CommonBreak`), written once from the 0.200.0 prices; a later price change moves
+(`Crafting.MythicBreak` / `CommonBreak`), generated ONCE from the 0.201.0 prices; a later price change moves
 no cell. Columns: 2H · 1H · body · helm/shield · gloves/boots · necklace · earring · ring.
 
 ```
             essence      2H     1H   body  helm/sh  glv/bts  neck  earring  ring
-Mythic T40  Darksteel   2000   1800  1200    667     400    1000    333    167
-Mythic T52  Cobalt      2000   1800  1200    667     400    1000    333    167
-Mythic T61  Bloodsteel  4000   3600  2400   1333     800    2000    667    333
-Mythic T76  Adamantine  7000   6300  4200   2333    1400    3500   1167    583
-Mythic T80  Soulcrystal 10000  9000  6000   3333    2000    5000   1667    833
-Common T40 / T52         315    284   189    105      63     158     53     26
-Common T61               630    567   378    210     126     315    105     53
+Mythic T40  Darksteel   1143   1029   686    381     229     571    190     95
+Mythic T52  Cobalt      1200   1080   720    400     240     600    200    100
+Mythic T61  Bloodsteel  3200   2880  1920   1067     640    1600    533    267
+Mythic T76  Adamantine  3840   3456  2304   1280     768    1920    640    320
+Mythic T80  Soulcrystal 9600   8640  5760   3200    1920    4800   1600    800
+Common T40                57     51    34     19      11      29     10      5
+Common T52                60     54    36     20      12      30     10      5
+Common T61               160    144    96     53      32      80     27     13
 ```
 
-How the cells were written: the Mythic 2H is the anchor per grade; every other slot = anchor × its price
-share inside the grade (1H .9, body .6, helm/shield ⅓, gloves/boots .2, neck .5, earring ⅙, ring 1/12);
-a Common = 70% of **its own** price = Mythic cell × 0.225 × 0.7. Rounded half away from zero.
-**T1 / T20 (F/E) cannot be broken.** Same gates as selling (not worn, sellable, not locked).
+How the cells were written: **break = 0.4 × the item's own buy price ÷ its essence's sell price**, Mythic
+and Common alike, rounded half away from zero. Selling pays 50% of the price and breaking 40% (as essence
+at its sell price), so breaking costs ~20% of the gold. **T1 / T20 (F/E) cannot be broken.** Same gates as
+selling (not worn, sellable, not locked).
 
 ```
 shattered enchant (Normal scroll, +N → N+1 fails)   essence = ⌊ break × N / 10 ⌋     (+3 = 30%, +15 = 150%)
-essence gold worth (its Value, never a shop price)  D 4,286 · C 13,500 · B 15,000 · A 17,143 · S 60,000
-essence sell price                                  worth ÷ 25            (D 171 · C 540 · B 600 · A 685 · S 2,400)
+essence sell price (his)                            D 1,500 · C 4,500 · B 7,500 · A 12,500 · S 25,000
+essence Value (yardstick, never a shop price)       2 × sell, so the 50% rule pays the sell price
 ```
 
 Greater and Safe scrolls never destroy the item, so they never pay essence. No vendor stocks essence.
-`Crafting.BreakYield` · `ShatterYield` · `EssenceGoldWorth`.
+`Crafting.BreakYield` · `ShatterYield` · `EssenceSellPrice`.
 
 ---
 

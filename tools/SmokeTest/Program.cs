@@ -246,9 +246,26 @@ Check("server pushed the warehouse on login", a.Ware is not null);
 
     // The drop groups, read off the same tables the kill roll uses.
     float GroupSum(IEnumerable<DropEntry> rows, int g) => rows.Where(r => r.GroupId == g).Sum(r => r.Chance);
-    Check("a normal T40-T61 kill rolls the COMMON group at 0.5%, an elite at 2%",
-          Math.Abs(GroupSum(MobCatalog.GearDrops(45, MobRank.Normal), MobCatalog.GroupCommonGear) - 0.005f) < 1e-6
-          && Math.Abs(GroupSum(MobCatalog.GearDrops(55, MobRank.Elite), MobCatalog.GroupCommonGear) - 0.02f) < 1e-6);
+    // `BL-287` (0.201.0): each SLOT rolls its own Common chance (ring > ear/boots/gloves > helm/shield/neck >
+    // body > weapon), T40 2%..1% (sum 14%), T52 1%..0.2% (5.8%), T61 0.3%..0.05% (1.7%); an elite x2.
+    float SlotSum(int L, MobRank r, Func<string, bool> key) => MobCatalog.GearDrops(L, r)
+        .Where(e => e.GroupId == MobCatalog.GroupCommonGear && key(e.ItemId)).Sum(e => e.Chance);
+    Check("a normal T40 / T52 / T61 kill rolls Commons at 14% / 5.8% / 1.7% in total, an elite x2",
+          Math.Abs(GroupSum(MobCatalog.GearDrops(45, MobRank.Normal), MobCatalog.GroupCommonGear) - 0.14f) < 1e-5
+          && Math.Abs(GroupSum(MobCatalog.GearDrops(56, MobRank.Normal), MobCatalog.GroupCommonGear) - 0.058f) < 1e-5
+          && Math.Abs(GroupSum(MobCatalog.GearDrops(68, MobRank.Normal), MobCatalog.GroupCommonGear) - 0.017f) < 1e-5
+          && Math.Abs(GroupSum(MobCatalog.GearDrops(45, MobRank.Elite), MobCatalog.GroupCommonGear) - 0.28f) < 1e-5);
+    Check("per slot at T40: ring 2%, boots 1.75%, helm 1.5%, body 1.25% (3 weights), weapon 1% (8 lines)",
+          Math.Abs(SlotSum(45, MobRank.Normal, id => id.StartsWith("ring_")) - 0.02f) < 1e-6
+          && Math.Abs(SlotSum(45, MobRank.Normal, id => id.StartsWith("boots_")) - 0.0175f) < 1e-6
+          && Math.Abs(SlotSum(45, MobRank.Normal, id => id.StartsWith("helm_")) - 0.015f) < 1e-6
+          && Math.Abs(SlotSum(45, MobRank.Normal, id => id.StartsWith("heavy_") || id.StartsWith("light_") || id.StartsWith("robe_")) - 0.0125f) < 1e-6
+          && Math.Abs(SlotSum(45, MobRank.Normal, id => ItemCatalog.Get(id)?.Slot == EquipSlot.Weapon) - 0.01f) < 1e-6);
+    Check("every Common drop id is a real item",
+          new[] { 45, 56, 68 }.All(L => MobCatalog.GearDrops(L, MobRank.Normal).All(e => ItemCatalog.Get(e.ItemId) is not null)));
+    Check("no healing potion drops from a mob above level 40 (BL-287)",
+          MobCatalog.Templates.Where(m => m.Level > MobCatalog.HealingPotionDropMaxLevel)
+              .All(m => (m.Drops ?? Array.Empty<DropEntry>()).All(d => ItemCatalog.Get(d.ItemId) is not ItemDef p || !ItemCatalog.IsHealPotion(p))));
     Check("a normal mob below T40 or from T76 up drops NO equipment",
           !MobCatalog.GearDrops(30, MobRank.Normal).Any() && !MobCatalog.GearDrops(78, MobRank.Normal).Any());
     Check("a boss pays ONE guaranteed Mythic piece at every tier",
@@ -256,23 +273,51 @@ Check("server pushed the warehouse on login", a.Ware is not null);
               Math.Abs(GroupSum(MobCatalog.GearDrops(L, MobRank.Boss), MobCatalog.GroupBossGear) - 1f) < 1e-5
               && MobCatalog.GearDrops(L, MobRank.Boss).All(r => ItemCatalog.Get(r.ItemId) is { Rarity: ItemRarity.Mythic })));
 
-    // `BL-273` part 1 (0.200.0): breaking gives the GRADE's essence from an AUTHORED table. A Mythic breaks
-    // for its full price-worth, a Common for 70% of its own price; T1/T20 cannot be broken.
-    Check("a T40 2H Mythic breaks for 2000 Darksteel Essence, its Common for 315",
-          Crafting.BreakYield(ItemCatalog.Get("sword2h_t40")) is { EssenceId: "essence_d", Qty: 2000 }
-          && Crafting.BreakYield(ItemCatalog.Get("sword2h_t40_common")) is { EssenceId: "essence_d", Qty: 315 });
-    Check("a T80 2H Mythic breaks for 10000 Soulcrystal Essence",
-          Crafting.BreakYield(ItemCatalog.Get($"sword2h_t{ItemCatalog.SGradeLevel}")) is { EssenceId: "essence_s", Qty: 10000 });
+    // `BL-287` (0.201.0): prices + essence, IG-shaped. Mythic T1 x2.2 / T20 x0.65 / T40-T52 x0.5, T61+ as
+    // they were; a Common is 0.05 of its Mythic; everything sells for half; break = 0.4 x buy / essence sell.
+    Check("Mythic 2H prices: T1 188,571 / T20 1,392,857 / T40 4,285,714 / T52 13.5M / T61 60M / T80 600M",
+          ItemCatalog.BuyPrice(ItemCatalog.Get($"sword2h_t{ItemCatalog.FGradeLevel}")!) == 188_571
+          && ItemCatalog.BuyPrice(ItemCatalog.Get("sword2h_t20")!) == 1_392_857
+          && ItemCatalog.BuyPrice(ItemCatalog.Get("sword2h_t40")!) == 4_285_714
+          && ItemCatalog.BuyPrice(ItemCatalog.Get("sword2h_t52")!) == 13_500_000
+          && ItemCatalog.BuyPrice(ItemCatalog.Get("sword2h_t61")!) == 60_000_000
+          && ItemCatalog.BuyPrice(ItemCatalog.Get($"sword2h_t{ItemCatalog.SGradeLevel}")!) == 600_000_000,
+          $"T40 {ItemCatalog.BuyPrice(ItemCatalog.Get("sword2h_t40")!)}");
+    Check("a T40 Common 2H is worth 214,286 and sells for 107,143; its Mythic sells for 2,142,857",
+          ItemCatalog.Get("sword2h_t40_common")!.Value == 214_286
+          && ItemCatalog.SellPrice(ItemCatalog.Get("sword2h_t40_common")!) == 107_143
+          && ItemCatalog.SellPrice(ItemCatalog.Get("sword2h_t40")!) == 2_142_857,
+          $"common {ItemCatalog.Get("sword2h_t40_common")!.Value} sells {ItemCatalog.SellPrice(ItemCatalog.Get("sword2h_t40_common")!)}");
+    Check("a healing potion and a material sell for half their value; a buff potion still sells for 0",
+          ItemCatalog.Get(ItemCatalog.HealingPotion) is ItemDef hp && ItemCatalog.SellPrice(hp) == Math.Max(1, hp.Value / 2)
+          && ItemCatalog.Get(Crafting.MaterialId(MaterialType.Wood, ItemRarity.Common)) is ItemDef wood
+          && ItemCatalog.SellPrice(wood) == Math.Max(1, wood.Value / 2)
+          && ItemCatalog.AllItems.Where(d => d.SellPriceOverride == 0).All(d => ItemCatalog.SellPrice(d) == 0));
+
+    // Breaking gives the GRADE's essence from an AUTHORED table (literals, generated once); T1/T20 cannot be broken.
+    Check("a T40 2H Mythic breaks for 1143 Darksteel Essence, its Common for 57",
+          Crafting.BreakYield(ItemCatalog.Get("sword2h_t40")) is { EssenceId: "essence_d", Qty: 1143 }
+          && Crafting.BreakYield(ItemCatalog.Get("sword2h_t40_common")) is { EssenceId: "essence_d", Qty: 57 });
+    Check("2H Mythic breaks T52 1200 / T61 3200 / T76 3840 / T80 9600 (Soulcrystal)",
+          Crafting.BreakYield(ItemCatalog.Get("sword2h_t52"))?.Qty == 1200
+          && Crafting.BreakYield(ItemCatalog.Get("sword2h_t61"))?.Qty == 3200
+          && Crafting.BreakYield(ItemCatalog.Get("sword2h_t76"))?.Qty == 3840
+          && Crafting.BreakYield(ItemCatalog.Get($"sword2h_t{ItemCatalog.SGradeLevel}")) is { EssenceId: "essence_s", Qty: 9600 });
+    Check("the break table IS 0.4 x buy / essence sell (within rounding) on every T40+ piece",
+          ItemCatalog.AllItems.Where(d => Crafting.IsGearSlot(d.Slot) && d.ItemLevel >= 40 && Crafting.BreakYield(d) is not null)
+              .All(d => Math.Abs(Crafting.BreakYield(d)!.Value.Qty
+                  - 0.4 * d.Value / Crafting.EssenceSellPrice[Crafting.EssenceGrade(d.ItemLevel)]) <= 0.51));
     Check("T1 and T20 gear cannot be broken (no essence below D)",
           Crafting.BreakYield(ItemCatalog.Get("sword2h_t20")) is null && Crafting.BreakYield(ItemCatalog.Get(ItemCatalog.NewbieSword1H)) is null);
     Check("every T40+ gear piece breaks into something",
           ItemCatalog.AllItems.Where(d => Crafting.IsGearSlot(d.Slot) && d.ItemLevel >= 40).All(d => Crafting.BreakYield(d) is not null));
     Check("a shattered +3 returns 30% of the break value, a +15 150%",
-          Crafting.ShatterYield(ItemCatalog.Get("sword2h_t40"), 3)?.Qty == 600
-          && Crafting.ShatterYield(ItemCatalog.Get("sword2h_t40"), 15)?.Qty == 3000);
-    Check("essence is unbuyable and sells for 1/25 of its worth",
-          Crafting.EssenceIds.All(id => ItemCatalog.Get(id) is { BuyPriceOverride: -1 } e
-              && e.SellPriceOverride == e.Value / Crafting.EssenceSellDivisor));
+          Crafting.ShatterYield(ItemCatalog.Get("sword2h_t40"), 3)?.Qty == 342
+          && Crafting.ShatterYield(ItemCatalog.Get("sword2h_t40"), 15)?.Qty == 1714);
+    Check("essence is unbuyable, worth 2x its sell, and sells for 1500 / 4500 / 7500 / 12500 / 25000",
+          Crafting.EssenceIds.Select((id, g) => (ItemCatalog.Get(id), g)).All(x => x.Item1 is { BuyPriceOverride: -1 } e
+              && e.Value == 2 * Crafting.EssenceSellPrice[x.g] && ItemCatalog.SellPrice(e) == Crafting.EssenceSellPrice[x.g])
+          && Crafting.EssenceSellPrice.SequenceEqual(new[] { 1500, 4500, 7500, 12500, 25000 }));
 
     // The "(Lesser)" line is GONE — it became the low QUALITIES of the real ladder.
     int lesser = ItemCatalog.AllItems.Count(d => d.Name.Contains("(Lesser)")
@@ -907,8 +952,8 @@ if (toBreak is not null)
     await a.Settle();
 }
 int essAfter = a.Inv?.Items.Where(i => i.DefId == "essence_d").Sum(i => i.Quantity) ?? 0;
-Check("breaking a T40 Common 2H on the server gives 315 Darksteel Essence and consumes it",
-      toBreak is not null && essAfter - essBefore == 315
+Check("breaking a T40 Common 2H on the server gives 57 Darksteel Essence and consumes it",
+      toBreak is not null && essAfter - essBefore == 57
       && a.Inv?.Items.Any(i => i.InstanceId == toBreak.InstanceId) == false,
       $"essence {essBefore} -> {essAfter}");
 
