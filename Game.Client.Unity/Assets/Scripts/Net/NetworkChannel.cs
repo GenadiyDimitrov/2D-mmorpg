@@ -477,8 +477,9 @@ namespace Game.Client
         /// travel with the craft rather than being a setting the two sides remember separately.</summary>
         /// `BL-273` part 2: <paramref name="recipePercent"/> is the % of the recipe item a GEAR craft spends
         /// (0 for a generic recipe, which spends none).
-        public Task CraftAsync(string recipeId, bool useWarehouse, int recipePercent) =>
-            _connection.SendAsync("Craft", recipeId, useWarehouse, recipePercent);
+        /// 0.205.0: <paramref name="count"/> repeats a non-gear craft (refines, potions, scrolls) up to that many times.
+        public Task CraftAsync(string recipeId, bool useWarehouse, int recipePercent, int count) =>
+            _connection.SendAsync("Craft", recipeId, useWarehouse, recipePercent, count);
 
         /// <summary>Forget a learned recipe to free its slot (anywhere; refunds nothing).</summary>
         public Task ForgetRecipeAsync(string recipeId) =>

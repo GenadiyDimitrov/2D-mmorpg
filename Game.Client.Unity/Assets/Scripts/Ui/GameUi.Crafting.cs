@@ -52,6 +52,12 @@ namespace Game.Client
         private Button _craftKeeperToggle;
         private bool _craftUseKeeper = true;
 
+        // THE COUNT (0.205.0): how many times one tap repeats a NON-gear recipe. Refining is 10:1 and a T76
+        // weapon is ~5,500 refines, so one-at-a-time is not a real option. Session-only; gear ignores it.
+        private static readonly int[] CraftCounts = { 1, 10, 100, Crafting.MaxCraftCount };
+        private int _craftCountIndex;
+        private Button _craftCountToggle;
+
         private void BuildCraftingWindow()
         {
             _craftPanel = UiKit.PanelBox(_worldRoot, "Crafting");
@@ -62,7 +68,15 @@ namespace Game.Client
 
             _craftTitle = UiKit.Label(inner, "", 15f, UiKit.TextDim, TextAlignmentOptions.TopLeft);
             UiKit.Place(UiKit.Rect(_craftTitle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(16f, -chrome - 6f), new Vector2(660f, 22f));
+                        new Vector2(16f, -chrome - 6f), new Vector2(530f, 22f));
+
+            _craftCountToggle = UiKit.TextButton(inner, "", () =>
+            {
+                _craftCountIndex = (_craftCountIndex + 1) % CraftCounts.Length;
+                _craftRevision = -1;
+            }, 14f);
+            UiKit.Place(UiKit.Rect(_craftCountToggle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(556f, -chrome - 2f), new Vector2(126f, 26f));
 
             // The four tabs lost 20px each to make room for [Keeper] on the same row (`BL-245`). A
             // third row would have cost the list 40px of height for one toggle; the tab captions are
@@ -130,7 +144,7 @@ namespace Game.Client
                          + Boot.CraftTypeLevels.Aggregate(0, (h, v) => h * 11 + v) * 7 + Boot.CraftRespecs * 13
                          + Boot.CraftSlots * 17 + (int)(Boot.Gold % 1000003)
                          + (Boot.AtCraftMaster ? 1046527 : 0) + (Boot.DialogNpcId != Guid.Empty ? 3 : 0)
-                         + (_craftUseKeeper ? 15485863 : 0);
+                         + (_craftUseKeeper ? 15485863 : 0) + _craftCountIndex * 7919;
             foreach (var kv in Boot.KnownRecipes) revision = revision * 29 + kv.Key.GetHashCode() + kv.Value;
             foreach (var it in bag) revision = revision * 31 + it.DefId.GetHashCode() + it.Quantity;
             foreach (var it in keeper) revision = revision * 37 + it.DefId.GetHashCode() + it.Quantity;
@@ -139,6 +153,9 @@ namespace Game.Client
 
             UiKit.SetButtonText(_craftKeeperToggle, _craftUseKeeper ? "Keeper: ON" : "Keeper: off");
             _craftKeeperToggle.targetGraphic.color = _craftUseKeeper ? UiKit.TabActive : UiKit.PanelLight;
+            int countNow = CraftCounts[_craftCountIndex];
+            UiKit.SetButtonText(_craftCountToggle, countNow >= Crafting.MaxCraftCount ? "Count: max" : "Count: x" + countNow);
+            _craftCountToggle.targetGraphic.color = countNow > 1 ? UiKit.TabActive : UiKit.PanelLight;
 
             // The tabs are hidden until the trial is done — except while the trial's own recipe is held,
             // because its craft happens in this window too.
@@ -244,7 +261,7 @@ namespace Game.Client
             bool haveAll = true;
             foreach (var input in recipe.Inputs)
             {
-                int need = recipe.IsGear ? Crafting.ScaledQty(input.Qty, pct) : input.Qty;
+                int need = Crafting.InputQty(recipe, input, pct);
                 int have = counts.TryGetValue(input.ItemId, out var c) ? c : 0;
                 bool ok = have >= need;
                 haveAll &= ok;
@@ -264,6 +281,9 @@ namespace Game.Client
                 haveAll &= ok;
                 parts.Add(Tinted(gold.ToString("N0") + " " + GameConstants.CurrencyName, ok));
             }
+            // MP is shown, not tinted: it regenerates every tick, and a colour that follows it would rebuild this
+            // list every frame. The server refuses an attempt it cannot pay for.
+            if (recipe.MpCost > 0) parts.Add(recipe.MpCost + " MP");
 
             int shown = Mathf.RoundToInt(chance * 100f);
             // LOCKED after a respec (0.204.0): the recipe keeps its slot but will not craft below its gate.
@@ -279,6 +299,7 @@ namespace Game.Client
 
             string id = recipe.Id;                 // captured per row
             int usePct = pct;
+            int count = recipe.IsGear || recipe.QuestOnly ? 1 : CraftCounts[_craftCountIndex];
             bool spendsRecipe = recipeItemId != null;
             CraftRow(label, enabled, () =>
             {
@@ -286,10 +307,10 @@ namespace Game.Client
                 // because failure eats the materials (and the recipe) and that is not something to learn
                 // by tapping.
                 bool keeperOn = _craftUseKeeper;    // captured, so the tap spends what the row promised
-                if (chance >= 1f) { Boot.Craft(id, keeperOn, usePct); return; }
+                if (chance >= 1f) { Boot.Craft(id, keeperOn, usePct, count); return; }
                 Ask("Craft " + name + "?\n\n<size=15>" + shown + "% chance to succeed. A failure still consumes "
                     + (spendsRecipe ? "the materials and the recipe." : "the materials.") + "</size>",
-                    "Craft", () => Boot.Craft(id, keeperOn, usePct));
+                    "Craft", () => Boot.Craft(id, keeperOn, usePct, count));
             });
         }
 
@@ -387,27 +408,39 @@ namespace Game.Client
 
         // ---- the materials page --------------------------------------------------------------------
 
-        /// <summary>Every material in the game with what you hold of it, laid out type by type. This is
-        /// the page you read BEFORE a farm session, so the ones you have none of are still listed —
-        /// showing only what is in the bag would hide exactly the thing you are short of.</summary>
+        /// <summary>Every material in the game with what you hold of it, group by group (0.205.0): the base
+        /// mats, the two refinable ladders, alloy + volcanic, essence, and the parts you hold. This is the page
+        /// you read BEFORE a farm session, so the base mats and ladders you have none of are still listed —
+        /// showing only what is in the bag would hide exactly the thing you are short of. Parts are the one
+        /// exception (90 of them): only held ones are listed.</summary>
         private void BuildMaterialsPage(Dictionary<string, int> counts)
         {
-            _craftTitle.text = "Materials — every rarity drops; refining is the other way up the ladder.";
+            _craftTitle.text = "Materials — Nightsilver and Nightsilk refine 10 into 1 of the next rung.";
 
-            foreach (var type in Crafting.MaterialTypes)
+            string Cell(string id, string label = null)
             {
-                var line = new List<string>();
-                foreach (var rarity in Crafting.MaterialRarities)
-                {
-                    string id = Crafting.MaterialId(type, rarity);
-                    int have = counts.TryGetValue(id, out var c) ? c : 0;
-                    var colour = ItemCatalog.Get(id) is ItemDef d ? d.Rarity : rarity;
-                    line.Add(Coloured(rarity.ToString(), colour) + " "
-                             + (have > 0 ? have.ToString() : "<color=#8A9099>0</color>"));
-                }
-
-                CraftNoteRow(MaterialWord(type) + "\n<size=14>" + string.Join("    ", line) + "</size>");
+                int have = counts.TryGetValue(id, out var c) ? c : 0;
+                var d = ItemCatalog.Get(id);
+                string name = label ?? d?.Name ?? id;
+                return (d != null ? Coloured(name, d.Rarity) : name) + " "
+                       + (have > 0 ? have.ToString("N0") : "<color=#8A9099>0</color>");
             }
+            void Row(string head, IEnumerable<string> cells) =>
+                CraftNoteRow(head + "\n<size=14>" + string.Join("    ", cells) + "</size>");
+
+            Row("Base materials", Crafting.MaterialTypes.Select(t => Cell(Crafting.MaterialId(t))));
+            Row("Nightsilver (weapons, earrings, rings)", Enumerable.Range(0, Crafting.RefineRungs)
+                .Select(r => Cell(Crafting.NightsilverId(r), r == 0 ? "Normal" : Crafting.RefineRungPrefix[r].Trim())));
+            Row("Nightsilk (armour, shields, necklaces)", Enumerable.Range(0, Crafting.RefineRungs)
+                .Select(r => Cell(Crafting.NightsilkId(r), r == 0 ? "Normal" : Crafting.RefineRungPrefix[r].Trim())));
+            Row("Alloy and volcanic", new[] { Crafting.AlloyId, ItemCatalog.VolcanicAsh, ItemCatalog.VolcanicStone,
+                                             ItemCatalog.VolcanicBar }.Select(id => Cell(id)));
+            Row("Essence", Crafting.EssenceIds.Select(id => Cell(id)));
+
+            var parts = counts.Where(kv => kv.Value > 0 && kv.Key.StartsWith("part_", StringComparison.Ordinal))
+                              .Select(kv => kv.Key).OrderBy(id => id.Substring(id.LastIndexOf("_t", StringComparison.Ordinal))).ThenBy(id => id)
+                              .Select(id => Cell(id)).ToList();
+            Row("Parts", parts.Count > 0 ? parts : new List<string> { "<color=#8A9099>none held</color>" });
         }
 
         // ---- helpers ---------------------------------------------------------------------------------
@@ -474,15 +507,6 @@ namespace Game.Client
 
         private static string Tinted(string text, bool ok) =>
             "<color=#" + ColorUtility.ToHtmlStringRGB(ok ? UiKit.Good : UiKit.Bad) + ">" + text + "</color>";
-
-        private static string MaterialWord(MaterialType t) => t switch
-        {
-            MaterialType.Ingot => "Ingots",
-            MaterialType.Leather => "Leather",
-            MaterialType.Gem => "Gems",
-            MaterialType.Wood => "Wood",
-            _ => "Thread",
-        };
 
         // ---- row primitives ---------------------------------------------------------------------
 

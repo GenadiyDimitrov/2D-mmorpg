@@ -498,9 +498,9 @@ namespace Game.Client
         /// <summary>Craft one unit. Same rule as every other action: nothing is applied locally — the
         /// inventory push that follows is what tells us it happened. <paramref name="recipePercent"/> is the
         /// recipe item a gear craft spends (0 for a generic recipe).</summary>
-        public async void Craft(string recipeId, bool useWarehouse, int recipePercent)
+        public async void Craft(string recipeId, bool useWarehouse, int recipePercent, int count = 1)
         {
-            try { await _net.CraftAsync(recipeId, useWarehouse, recipePercent); }
+            try { await _net.CraftAsync(recipeId, useWarehouse, recipePercent, count); }
             catch (Exception ex) { ClientLog.Warn("Craft: " + ex.Message); }
         }
 

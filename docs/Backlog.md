@@ -271,7 +271,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-263` | 🟡 | **BUFFS ARE WRAPPERS OVER `(family, level)`** — [design/BuffFamilies.md](design/BuffFamilies.md). Duration is out of the conflict rule and the first three racial wrappers are built (0.176.0); per-family group rank DECLINED, and so is the group-vs-single authoring check — a group ALWAYS outranks its singles. Left: the passive check and the racial split, both DEFERRED on your call — the racial split now carries your colour-not-abbreviation rule | skills |
 | `BL-264` | ❓ | **NO CSV SAYS WHICH BUFFS FIGHT EACH OTHER** — from `mage 1st` you cannot tell the three Mights are one family. A generated `FAMILY` + `RANK` column, checked like every other; §2 the RACE cell nothing verifies | skills |
 | `BL-270` | 🔵 | A vertical skill bar, or a wheel, for hand-held play | client |
-| `BL-273` | 🟡 | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05` (archived) — §2.2; ✅ no profession lock; 🟢 part 1 (essence) built 0.200.0; 🟢 part 2 (becoming a crafter) built 0.203.0; 🟢 9b (generic-recipe table) + the crafter-points model (5 types, a points budget, 5 respecs) built 0.204.0; next: step 10 (part 3, the materials) | items |
+| `BL-273` | 🟡 | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05` (archived) — §2.2; ✅ no profession lock; 🟢 part 1 (essence) built 0.200.0; 🟢 part 2 (becoming a crafter) built 0.203.0; 🟢 9b (generic-recipe table) + the crafter-points model (5 types, a points budget, 5 respecs) built 0.204.0; 🟢 part 3 (step 10, the materials: Nightsilver/Nightsilk, parts, refines, per-slot tables) built 0.205.0; open = placeholder confirmations only | items |
 | `BL-274` | ❓ | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3 | items |
 | `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
 | `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
@@ -2309,6 +2309,21 @@ IG-style interlocking professions). See §2.2, "The crafter-points model".
 9b itself is built as ruled: a buff's tier is its class skill's LAST rung. ⚠ Open placeholders: the respec prices
 (1M doubling), the volcanic Values, and rare HP at L7 vs rare MP at L10. **Next: step 10.** Its Q7 (the refine
 unlocks) is unruled.
+🟢 **2026-09-24: part 3 (step 10) BUILT 0.205.0: the materials.** Step 10 was ruled first (design doc §2.2, "Step 10
+proposal" + "Your answers"): the refine ladder L0/40 · L3/52 · L5/61 · L8/76 (bar L7/76, alloy L0/40); refines pay
+**0** points; **one base mat, Iron** (the note's metal and iron); **one part per item kind** (18 a tier). Built: the
+old Uncommon…Mythic mat ladder is deleted with its drop rows; Nightsilver / Nightsilk (5 rungs, 10:1), Alloy and 90
+parts are new; every gear recipe is an authored per-tier × per-slot table; MP per craft; a **count** on non-gear
+crafts. ⚠ **Nightsilver, Nightsilk, parts and volcanic ash/stone have no source until step 11 (`BL-274`)**, so no
+gear can be crafted in between.
+⚠ **Still open, all placeholders for you to confirm** (nothing else in `BL-273` is unbuilt):
+- respec prices (1M doubling);
+- rare HP at Apothecary L7, rare MP at L10;
+- the nine "basic" buff scrolls = the common line;
+- the volcanic Values (ash/stone 5k, bar 200k);
+- the Nightsilver/Nightsilk Values (20 × 10^rung);
+- a part = its item's Common price. This comes from your note, and step 11 measures what it pays as coin.
+
 
 ## `BL-274` ❓ PER-MOB DROP TABLES
 

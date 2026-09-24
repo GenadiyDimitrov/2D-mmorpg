@@ -8,28 +8,99 @@ namespace Game.Shared;
 /// "type level" is the generic level itself.</summary>
 public enum CraftType { General = 0, Weapon = 1, Armour = 2, Jewels = 3, Apothecary = 4, Scribe = 5 }
 
-/// <summary>The 5 crafting material types. Every rarity DROPS from mobs, and anyone who has the refine
-/// recipe can refine it. ⚠ Replaced by Nightsilver / Nightsilk in `BL-273` part 3 (step 10).</summary>
-public enum MaterialType { Ingot = 0, Thread, Wood, Leather, Gem }
+/// <summary>The five BASE materials (`BL-273` part 3, 0.205.0): one rung each, no rarity ladder. The old
+/// Uncommon…Mythic rungs are gone; what climbs a ladder now is Nightsilver / Nightsilk. <see cref="Iron"/>
+/// is both of the note's *metal* (the bulk) and its *iron* (the alloy) — owner, 2026-09-24: one mat, not
+/// two near-synonyms — and gems are the harder one to farm.</summary>
+public enum MaterialType { Iron = 0, Thread, Wood, Leather, Gem }
 
 public static class Crafting
 {
-    /// <summary>Material rarities — the FULL six, matching <see cref="ItemRarity"/> exactly. The old
-    /// material ladder; it lives until `BL-273` part 3 replaces the mats.</summary>
-    public static readonly ItemRarity[] MaterialRarities =
-        { ItemRarity.Common, ItemRarity.Uncommon, ItemRarity.Rare,
-          ItemRarity.Epic, ItemRarity.Legendary, ItemRarity.Mythic };
-
     public static readonly MaterialType[] MaterialTypes =
-        { MaterialType.Ingot, MaterialType.Thread, MaterialType.Wood, MaterialType.Leather, MaterialType.Gem };
+        { MaterialType.Iron, MaterialType.Thread, MaterialType.Wood, MaterialType.Leather, MaterialType.Gem };
 
-    /// <summary>Stable item id for a material of a type + rarity, e.g. "mat_gem_rare".</summary>
-    public static string MaterialId(MaterialType type, ItemRarity rarity) =>
-        $"mat_{type.ToString().ToLowerInvariant()}_{rarity.ToString().ToLowerInvariant()}";
+    /// <summary>Stable item id for a base material, e.g. "mat_gem".</summary>
+    public static string MaterialId(MaterialType type) => $"mat_{type.ToString().ToLowerInvariant()}";
 
-    /// <summary>Display name, e.g. "Rare Gem".</summary>
-    public static string MaterialName(MaterialType type, ItemRarity rarity) =>
-        $"{rarity} {type}";
+    /// <summary>Display name, e.g. "Gem".</summary>
+    public static string MaterialName(MaterialType type) => type.ToString();
+
+    // =====================================================================================
+    //  THE REFINABLE METAL AND CLOTH (`BL-273` part 3, 0.205.0) — design doc §2.2 point 4 and the
+    //  step-10 answers. Five rungs each, 10 of a rung refine into 1 of the next.
+    // =====================================================================================
+
+    /// <summary>The rung names, index 0 (normal, no prefix) … 4 (Legendary). A gear tier eats the rung of its
+    /// own index: T40 normal · T52 Refined · T61 Rare · T76 Refined Rare · T80 Legendary.</summary>
+    public static readonly string[] RefineRungPrefix = { "", "Refined ", "Rare ", "Refined Rare ", "Legendary " };
+
+    /// <summary>Nightsilver: weapons, earrings and rings. Id "nightsilver_0" … "nightsilver_4".</summary>
+    public static string NightsilverId(int rung) => $"nightsilver_{rung}";
+
+    /// <summary>Nightsilk: armour, shields and necklaces. Id "nightsilk_0" … "nightsilk_4".</summary>
+    public static string NightsilkId(int rung) => $"nightsilk_{rung}";
+
+    public const int RefineRungs = 5;
+
+    /// <summary>Refining is 10 of a rung into 1 of the next (the note's *"10 of lower = 1 of higher"*).</summary>
+    public const int RefineRatio = 10;
+
+    /// <summary>What each refine STEP costs in MP (the note: *"normal to refined/refined to rare/ ... ->
+    /// 50/100/150/200"*), index = the rung refined INTO, minus one.</summary>
+    public static readonly int[] RefineMp = { 50, 100, 150, 200 };
+
+    /// <summary>The generic level and the character level each refine step needs (Q7, ruled 2026-09-24),
+    /// index = the rung refined INTO, minus one: → Refined L0/40 · → Rare L3/52 · → Refined Rare L5/61 ·
+    /// → Legendary L8/76.</summary>
+    public static readonly int[] RefineGate = { 0, 3, 5, 8 };
+    public static readonly int[] RefineCharLevel = { 40, 52, 61, 76 };
+
+    /// <summary>Alloy: 20 gems + 20 iron → 1 (the note). Open at generic L0 / character 40, MP 50.</summary>
+    public const string AlloyId = "mat_alloy";
+
+    /// <summary>True for an input that does NOT scale with the recipe % (second round, answer 4: *"refined
+    /// mats DO NOT scale"*): Nightsilver and Nightsilk, at every rung. They are the same on every recipe of a
+    /// tier, which is what gives a 100% recipe its edge over five 20% attempts. Everything else — base mats,
+    /// alloy, parts, bars, essence — scales on the 30/50/70/100 curve.</summary>
+    public static bool IsFixedInput(string itemId) =>
+        itemId.StartsWith("nightsilver_", StringComparison.Ordinal)
+        || itemId.StartsWith("nightsilk_", StringComparison.Ordinal);
+
+    /// <summary>What ONE attempt of a recipe needs of an input when spending a recipe of <paramref name="percent"/>.
+    /// The server's gate and spend and the client's have/need colouring all read this.</summary>
+    public static int InputQty(Recipe recipe, RecipeInput input, int percent) =>
+        recipe.IsGear && !IsFixedInput(input.ItemId) ? ScaledQty(input.Qty, percent) : input.Qty;
+
+    // ----- PARTS: the note's "heads" (step 10, answer 4: one per item KIND per tier) -----------------
+
+    /// <summary>The part each gear KIND takes, keyed by the kind (the id prefix before "_t", e.g. "blunt2h").
+    /// A body's variants share their weight's part.</summary>
+    public static readonly IReadOnlyDictionary<string, string> PartNames = new Dictionary<string, string>
+    {
+        ["sword2h"] = "Greatsword Blade", ["blunt2h"] = "Maul Head", ["staff"] = "Staff Crown",
+        ["bow"] = "Bow Limb", ["duals"] = "Fang Hilt", ["sword1h"] = "Sword Blade",
+        ["blunt1h"] = "Mace Head", ["wand"] = "Wand Core",
+        ["heavy"] = "Armor Plate", ["light"] = "Hide Panel", ["robe"] = "Robe Weave",
+        ["helm"] = "Helm Shell", ["shield"] = "Shield Boss", ["gloves"] = "Gauntlet Frame",
+        ["boots"] = "Greave Frame",
+        ["necklace"] = "Pendant Setting", ["earring"] = "Stud Setting", ["ring"] = "Band Setting",
+    };
+
+    /// <summary>The kind of a tiered gear id: "light_t40_mdef" → "light".</summary>
+    public static string GearKind(string gearId)
+    {
+        int i = gearId.IndexOf("_t", StringComparison.Ordinal);
+        return i < 0 ? gearId : gearId.Substring(0, i);
+    }
+
+    /// <summary>The part id for a kind at a tier, e.g. "part_blunt2h_t40".</summary>
+    public static string PartId(string kind, int itemLevel) => $"part_{kind}_t{itemLevel}";
+
+    /// <summary>The five crafted gear tiers, index 0-4.</summary>
+    public static readonly int[] GearTiers = { 40, 52, 61, 76, 80 };
+
+    /// <summary>The largest count one craft command may ask for (the client's "Max" asks for this).</summary>
+    public const int MaxCraftCount = 1000;
 
     // =====================================================================================
     //  BECOMING A CRAFTER (`BL-273` part 2, 0.203.0) — design doc §2.2, all rounds.
@@ -90,8 +161,14 @@ public static class Crafting
     public static readonly long[] RespecPrices = { 1_000_000, 2_000_000, 4_000_000, 8_000_000, 16_000_000 };
 
     /// <summary>Craft points one ATTEMPT is worth (his pick, 2026-09-24: tier-weighted, and a FAIL counts).
-    /// Gear by its tier: T40 1 · T52 2 · T61 3 · T76 5 · T80 8. A generic recipe (potion, scroll, refine) is
-    /// 1 a BATCH. Every attempt feeds the generic level only; type levels are bought with its points. ⚠ Playtest placeholders.</summary>
+    /// Gear by its tier: T40 1 · T52 2 · T61 3 · T76 5 · T80 8. A Scribe/Apothecary recipe is 1 a BATCH, and a
+    /// REFINE (Nightsilver/Nightsilk, alloy, the bar) is **0** (step 10, ruled 2026-09-24: one T61 weapon is
+    /// 1,650 refines, which at 1 each would pass generic L10 on conversions alone). Every attempt feeds the
+    /// generic level only; type levels are bought with its points. ⚠ Playtest placeholders.</summary>
+    public static int CraftPoints(Recipe recipe) =>
+        recipe.Refine ? 0 : recipe.IsGear ? CraftPoints(recipe.GearItemLevel) : 1;
+
+    /// <summary>The gear half of <see cref="CraftPoints(Recipe)"/>, by tier.</summary>
     public static int CraftPoints(int gearItemLevel) => gearItemLevel switch
     {
         >= 80 => 8,

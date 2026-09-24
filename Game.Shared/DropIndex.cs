@@ -52,7 +52,7 @@ public sealed record DropIndexData(IReadOnlyList<DropSource> Sources);
 /// <para>🔑 <b>AND THE STALENESS PROBLEM WENT WITH THE FILE</b>, which is the real win rather than the
 /// milliseconds. A cache needed two stamps to know when it had gone wrong: a content hash for the DATA,
 /// and a hand-bumped version for the rank-LAYER CODE (<see cref="MobCatalog.GearDrops"/>,
-/// <see cref="MobCatalog.EnchantScrollDrops"/>, <see cref="MobCatalog.EliteMatDrops"/>,
+/// <see cref="MobCatalog.EnchantScrollDrops"/>,
 /// <see cref="MobCatalog.UtilityScrollDrops"/>, <see cref="MobCatalog.RecipeRolls"/>,
 /// <see cref="MobCatalog.BossPile"/>) — because editing a number inside one of those methods moves no
 /// data at all and no hash could see it. That second stamp was a thing a person had to remember, forever,
@@ -109,7 +109,6 @@ public static class DropIndex
                 rows.AddRange(MobCatalog.GearDrops(lvl, zone.Rank));
                 rows.AddRange(MobCatalog.EnchantScrollDrops(lvl, zone.Rank));
                 rows.AddRange(MobCatalog.UtilityScrollDrops(lvl, zone.Rank));
-                rows.AddRange(MobCatalog.EliteMatDrops(lvl, zone.Rank, type.Category));
             }
 
             foreach (var e in rows)
@@ -127,7 +126,7 @@ public static class DropIndex
             }
 
             foreach (var row in MobCatalog.BossPile(lvl, zone.Rank, type.Category))
-                Offer(new DropSource(Crafting.MaterialId(row.Type, row.Rarity), mobId, type.Name, lo, hi,
+                Offer(new DropSource(Crafting.MaterialId(row.Type), mobId, type.Name, lo, hi,
                                      lvl, zone.Rank, where, row.Chance, row.MinQty, row.MaxQty,
                                      GroupId: 0, IgnoresRates: true));
         }

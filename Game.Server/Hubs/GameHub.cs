@@ -781,11 +781,13 @@ public class GameHub : Hub
     }
 
     /// <summary>Craft a recipe by id (consume inputs → roll the outcome → produce output). A gear craft
-    /// names the % of the recipe item it spends (`BL-273` part 2); a generic craft passes 0.</summary>
-    public Task Craft(string recipeId, bool useWarehouse = true, int recipePercent = 0)
+    /// names the % of the recipe item it spends (`BL-273` part 2); a generic craft passes 0. <paramref name="count"/>
+    /// repeats a NON-gear craft up to that many times (0.205.0: refining is thousands of conversions); gear
+    /// is always one attempt.</summary>
+    public Task Craft(string recipeId, bool useWarehouse, int recipePercent, int count)
     {
         if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
-        _world.Commands.Enqueue(new CraftCmd(Context.ConnectionId, recipeId, useWarehouse, recipePercent));
+        _world.Commands.Enqueue(new CraftCmd(Context.ConnectionId, recipeId, useWarehouse, recipePercent, count));
         return Task.CompletedTask;
     }
 

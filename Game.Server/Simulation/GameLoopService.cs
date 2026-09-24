@@ -3492,77 +3492,93 @@ public class GameLoopService : BackgroundService
 
         // `BL-245` — THE KEEPER'S SHELF IS A SECOND PANTRY: the gate and the spend walk the same two
         // containers, in the same order, behind the same flag, so the gate can never pass on a total the
-        // spend cannot reach. Gear inputs are scaled by the % spent; the trial and generic recipes are not.
+        // spend cannot reach. Gear inputs are scaled by the % spent, all but Nightsilver/Nightsilk
+        // (Crafting.InputQty); the trial and generic recipes are not.
         bool useWh = cmd.UseWarehouse;
-        var inputs = recipe.IsGear
-            ? recipe.Inputs.Select(i => i with { Qty = Crafting.ScaledQty(i.Qty, pct) }).ToArray()
-            : recipe.Inputs;
-        foreach (var inp in inputs)
-            if (CraftCount(player, inp.ItemId, useWh) < inp.Qty)
-            {
-                SendSystemToEntity(player, "You don't have the required materials.");
-                return;
-            }
-        if (recipeItemId != null && CraftCount(player, recipeItemId, useWh) < 1)
-        {
-            SendSystemToEntity(player, $"You need a {pct}% recipe to spend on the attempt.");
-            return;
-        }
+        var inputs = recipe.Inputs.Select(i => i with { Qty = Crafting.InputQty(recipe, i, pct) }).ToArray();
         // Scribe/Apothecary gold floats with the type level (×0.9 → ×0.55); the rest charge a flat GoldCost.
         int goldCost = recipe.GoldAt(player.CraftTypeLevel(recipe.Type));
-        if (goldCost > 0 && player.Gold < goldCost)
-        {
-            SendSystemToEntity(player, $"Not enough {GameConstants.CurrencyName} (need {goldCost:N0}).");
-            return;
-        }
 
+        // THE COUNT (0.205.0): a non-gear recipe repeats up to `Count` times — one T76 weapon is ~5,500
+        // refines — and stops at the first thing that runs out. Each unit is its own attempt, with its own
+        // MP, gold and points. Gear and the trial are always one: each spends a recipe and rolls a %.
+        int wanted = recipe.IsGear || trial ? 1 : Math.Clamp(cmd.Count, 1, Crafting.MaxCraftCount);
+        int attempts = 0, made = 0;
         bool tookFromWarehouse = false;
-        foreach (var inp in inputs)
-            tookFromWarehouse |= CraftConsume(player, inp.ItemId, inp.Qty, useWh);
-        if (recipeItemId != null)
-            tookFromWarehouse |= CraftConsume(player, recipeItemId, 1, useWh);
-        if (goldCost > 0)
+        string? stop = null;
+        while (attempts < wanted)
         {
-            player.Gold -= goldCost;
-            SendGold(player);
+            // ---- the gate, re-read every unit (the first refusal is the player's message; a later one
+            //      just ends the run and is named in the summary).
+            stop = null;
+            foreach (var inp in inputs)
+                if (CraftCount(player, inp.ItemId, useWh) < inp.Qty) { stop = "You don't have the required materials."; break; }
+            if (stop is null && recipeItemId != null && CraftCount(player, recipeItemId, useWh) < 1)
+                stop = $"You need a {pct}% recipe to spend on the attempt.";
+            if (stop is null && goldCost > 0 && player.Gold < goldCost)
+                stop = $"Not enough {GameConstants.CurrencyName} (need {goldCost:N0}).";
+            // MP per attempt (the note: *"each craft/refine whatever requires mp"* — *"warriors need to wear
+            // a robe to spam crafts"*).
+            if (stop is null && recipe.MpCost > 0 && player.Mp < recipe.MpCost)
+                stop = $"Not enough MP (need {recipe.MpCost}).";
+            if (stop != null)
+            {
+                if (attempts == 0) { SendSystemToEntity(player, stop); return; }
+                break;
+            }
+
+            // ---- the spend.
+            foreach (var inp in inputs)
+                tookFromWarehouse |= CraftConsume(player, inp.ItemId, inp.Qty, useWh);
+            if (recipeItemId != null)
+                tookFromWarehouse |= CraftConsume(player, recipeItemId, 1, useWh);
+            if (goldCost > 0) player.Gold -= goldCost;
+            if (recipe.MpCost > 0) player.Mp -= recipe.MpCost;
+            attempts++;
+
+            // ---- THE ROLL.
+            float chance = recipe.IsGear
+                ? pct / 100f + Crafting.GearSuccessBonus(player.CraftTypeLevel(recipe.Type))
+                : recipe.SuccessChance;
+            if (_rng.NextDouble() < chance)
+            {
+                AddItem(player, recipe.OutputId, recipe.OutputQty);
+                made++;
+            }
+            if (!trial) AwardCraftPoints(player, recipe);
         }
+        if (goldCost > 0) SendGold(player);
         // The keeper's shelf is PUSHED state on this client, so a craft that spent from it MUST say so.
         if (tookFromWarehouse) SendWarehouse(player);
+        if (!trial) SendCrafting(player);     // once per command, not once per unit of the count
 
-        // ---- THE ROLL.
-        float chance = recipe.IsGear
-            ? pct / 100f + Crafting.GearSuccessBonus(player.CraftTypeLevel(recipe.Type))
-            : recipe.SuccessChance;
-        bool made = _rng.NextDouble() < chance;
-        if (made)
+        string madeName = ItemCatalog.Get(recipe.OutputId)?.Name ?? recipe.OutputId;
+        if (attempts == 1)
         {
-            AddItem(player, recipe.OutputId, recipe.OutputQty);
-            string madeName = ItemCatalog.Get(recipe.OutputId)?.Name ?? recipe.OutputId;
-            SendSystemToEntity(player, $"Crafted {madeName}"
-                + (recipe.OutputQty > 1 ? $" x{recipe.OutputQty}." : "."));
+            SendSystemToEntity(player, made == 1
+                ? $"Crafted {madeName}" + (recipe.OutputQty > 1 ? $" x{recipe.OutputQty}." : ".")
+                : recipeItemId != null
+                    ? "Craft failed — the materials and the recipe were lost."
+                    : "Craft failed — the materials were lost.");
         }
         else
         {
-            SendSystemToEntity(player, recipeItemId != null
-                ? "Craft failed — the materials and the recipe were lost."
-                : "Craft failed — the materials were lost.");
+            SendSystemToEntity(player, $"Crafted {madeName} x{made * recipe.OutputQty} ({attempts} crafts"
+                + (made < attempts ? $", {attempts - made} failed" : "") + ")"
+                + (attempts < wanted && stop != null ? $". Stopped: {stop}" : "."));
         }
 
-        if (trial)
+        if (trial && made == 0)
         {
             // *"5.1. fail go to 1"* — back to the first gather step. Leftovers still count: the collect
             // re-check that SendInventory runs below moves the quest straight on past anything still held.
-            if (!made && player.ActiveQuests.TryGetValue(QuestCatalog.QuestBecomeCrafter, out var qs))
+            if (player.ActiveQuests.TryGetValue(QuestCatalog.QuestBecomeCrafter, out var qs))
             {
                 player.ActiveQuests[QuestCatalog.QuestBecomeCrafter] =
                     qs with { StepIndex = QuestCatalog.CrafterQuestGatherStep, Counter = 0 };
                 SendSystemToEntity(player, "The Master's Trial: gather the materials again.");
                 SendQuestLog(player);
             }
-        }
-        else
-        {
-            AwardCraftPoints(player, recipe);
         }
         SendInventory(player);
     }
@@ -3572,7 +3588,8 @@ public class GameLoopService : BackgroundService
     /// 0.204.0): each generic level gives one point, and the player spends it on a type himself.</summary>
     private void AwardCraftPoints(Entity player, Recipe recipe)
     {
-        int pts = recipe.IsGear ? Crafting.CraftPoints(recipe.GearItemLevel) : 1;
+        int pts = Crafting.CraftPoints(recipe);
+        if (pts <= 0) return;
         int cap = Crafting.PointsForLevel(Crafting.MaxCraftLevel);
         int genBefore = player.CraftLevel;
         player.CraftPoints = Math.Min(cap, player.CraftPoints + pts);
@@ -3583,7 +3600,6 @@ public class GameLoopService : BackgroundService
                 + $"You have {player.CraftPointsFree} crafting point(s) to spend.");
             SaveEntity(player);                // a level is worth not trusting to the 60s autosave
         }
-        SendCrafting(player);
     }
 
     private static string CraftTypeName(CraftType t) => t switch
@@ -16412,12 +16428,6 @@ public class GameLoopService : BackgroundService
             // earns them. ⚠ These carry GroupAlways, so they JOIN that group rather than adding a new
             // one — which is what keeps their authored chance an absolute per-kill chance.
             applicable.AddRange(MobCatalog.UtilityScrollDrops(mob.Level, mob.Rank));
-            // Same shape, same reason, for the TOP crafting mats (`BL-05`): Epic/Legendary/Mythic
-            // materials have no normal-mob faucet at all, so B, A and S gear is only craftable because
-            // elites pay them. See MobCatalog.EliteMatDrops.
-            if (mob.MobTypeId is not null)
-                applicable.AddRange(MobCatalog.EliteMatDrops(
-                    mob.Level, mob.Rank, MobCatalog.Get(mob.MobTypeId).Category));
         }
 
         // Everyone who received something this kill (refresh their inventory once at the end).
@@ -16646,10 +16656,10 @@ public class GameLoopService : BackgroundService
         // whether ANYTHING landed, so a recipient who filtered the whole pile is neither told he got
         // materials nor pushed a bag that did not change.
         bool gave = false;
-        void GiveMat(MaterialType t, ItemRarity r, int qty)
+        void GiveMat(MaterialType t, int qty)
         {
             if (qty <= 0) return;
-            string matId = Crafting.MaterialId(t, r);
+            string matId = Crafting.MaterialId(t);
             if (ItemCatalog.Get(matId) is ItemDef matDef && !PickupWanted(recipient, matDef)) return;
             if (AddItem(recipient, matId, qty)) gave = true;
         }
@@ -16662,7 +16672,7 @@ public class GameLoopService : BackgroundService
         foreach (var row in MobCatalog.BossPile(mob.Level, mob.Rank, mobType.Category))
         {
             if (row.Chance < 1f && _rng.NextDouble() >= row.Chance) continue;
-            GiveMat(row.Type, row.Rarity, _rng.Next(row.MinQty, row.MaxQty + 1));
+            GiveMat(row.Type, _rng.Next(row.MinQty, row.MaxQty + 1));
         }
 
         // The GEAR a boss or elite drops is no longer decided here — RollDrop swaps the normal gear groups
@@ -16679,7 +16689,7 @@ public class GameLoopService : BackgroundService
         // not the global rate, not the group, not a Rune of Drop, not the level gap — which is the whole
         // reason he had none: he plays at ×100 and the elite's 0.1% stayed 0.1%, one book per thousand
         // elite kills. `recipeRate` is the composed number from the call site, and the numbers below are
-        // the DELIVERED chances at ×1 divided by the "other" group's ×3, exactly as EliteMatDrops
+        // the DELIVERED chances at ×1 divided by the "other" group's ×3, exactly as the old elite mat rungs
         // authors its rungs — so nothing changes at ×1 and his test rate finally lands.
         //
         // ⚠ DropCopies, not a comparison: above 100% the excess is COPIES, the same rule every other
@@ -19915,8 +19925,6 @@ public class GameLoopService : BackgroundService
                 rows.AddRange(MobCatalog.GearDrops(t.Level, t.Rank));
                 rows.AddRange(MobCatalog.EnchantScrollDrops(t.Level, t.Rank));
                 rows.AddRange(MobCatalog.UtilityScrollDrops(t.Level, t.Rank));
-                rows.AddRange(MobCatalog.EliteMatDrops(
-                    t.Level, t.Rank, MobCatalog.Get(t.MobTypeId).Category));
             }
             string ItemLine(DropEntry d)
             {

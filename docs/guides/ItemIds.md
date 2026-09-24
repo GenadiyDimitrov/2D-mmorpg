@@ -4,7 +4,7 @@
 `dotnet run --project tools/ItemIds` after adding or removing an item. Every id below is a real
 id the server will accept today.
 
-**602 items.** Generated 2026-09-24.
+**826 items.** Generated 2026-09-24.
 
 ```
 /give <player> <itemId> [sellPrice] [tradable] [timed] ["name"] [enchant] [canStorePrivate] [canStoreAccount] [amount]
@@ -602,49 +602,13 @@ is full (it tells you how many fit).
 | `scroll_common` | Scroll of Enchant (E) | F | Common | stacks |
 | `scroll_enchant_s` | Scroll of Enchant (S) | S | Mythic | stacks |
 
-## Boxes  (75)
+## Boxes  (215)
 
 | id | name | grade | rarity | notes |
 |---|---|---|---|---|
 | `box_acc_t76` | Adamantine Accessory Box | A | Rare | stacks |
 | `box_buff_scrolls` | Blessing Box | F | Rare | stacks |
 | `box_acc_t61` | Bloodsteel Accessory Box | A | Rare | stacks |
-| `recipe_craft_shield_t76` | Blueprint: Adamantine Aegis | A | Epic | stacks |
-| `recipe_craft_ring_t76` | Blueprint: Adamantine Band | A | Epic | stacks |
-| `recipe_craft_staff_t76` | Blueprint: Adamantine Battlestaff | A | Epic | stacks |
-| `recipe_craft_sword1h_t76` | Blueprint: Adamantine Blade | A | Epic | stacks |
-| `recipe_craft_heavy_t76` | Blueprint: Adamantine Bulwark | A | Epic | stacks |
-| `recipe_craft_duals_t76` | Blueprint: Adamantine Fangs | A | Epic | stacks |
-| `recipe_craft_gloves_t76` | Blueprint: Adamantine Gauntlets | A | Epic | stacks |
-| `recipe_craft_sword2h_t76` | Blueprint: Adamantine Greatsword | A | Epic | stacks |
-| `recipe_craft_boots_t76` | Blueprint: Adamantine Greaves | A | Epic | stacks |
-| `recipe_craft_helm_t76` | Blueprint: Adamantine Helm | A | Epic | stacks |
-| `recipe_craft_light_t76` | Blueprint: Adamantine Leathers | A | Epic | stacks |
-| `recipe_craft_bow_t76` | Blueprint: Adamantine Longbow | A | Epic | stacks |
-| `recipe_craft_blunt1h_t76` | Blueprint: Adamantine Mace | A | Epic | stacks |
-| `recipe_craft_blunt2h_t76` | Blueprint: Adamantine Maul | A | Epic | stacks |
-| `recipe_craft_necklace_t76` | Blueprint: Adamantine Pendant | A | Epic | stacks |
-| `recipe_craft_robe_t76` | Blueprint: Adamantine Robe | A | Epic | stacks |
-| `recipe_craft_earring_t76` | Blueprint: Adamantine Stud | A | Epic | stacks |
-| `recipe_craft_wand_t76` | Blueprint: Adamantine Wand | A | Epic | stacks |
-| `recipe_craft_shield_t80` | Blueprint: Soulcrystal Aegis | A | Epic | stacks |
-| `recipe_craft_ring_t80` | Blueprint: Soulcrystal Band | A | Epic | stacks |
-| `recipe_craft_staff_t80` | Blueprint: Soulcrystal Battlestaff | A | Epic | stacks |
-| `recipe_craft_sword1h_t80` | Blueprint: Soulcrystal Blade | A | Epic | stacks |
-| `recipe_craft_heavy_t80` | Blueprint: Soulcrystal Bulwark | A | Epic | stacks |
-| `recipe_craft_duals_t80` | Blueprint: Soulcrystal Fangs | A | Epic | stacks |
-| `recipe_craft_gloves_t80` | Blueprint: Soulcrystal Gauntlets | A | Epic | stacks |
-| `recipe_craft_sword2h_t80` | Blueprint: Soulcrystal Greatsword | A | Epic | stacks |
-| `recipe_craft_boots_t80` | Blueprint: Soulcrystal Greaves | A | Epic | stacks |
-| `recipe_craft_helm_t80` | Blueprint: Soulcrystal Helm | A | Epic | stacks |
-| `recipe_craft_light_t80` | Blueprint: Soulcrystal Leathers | A | Epic | stacks |
-| `recipe_craft_bow_t80` | Blueprint: Soulcrystal Longbow | A | Epic | stacks |
-| `recipe_craft_blunt1h_t80` | Blueprint: Soulcrystal Mace | A | Epic | stacks |
-| `recipe_craft_blunt2h_t80` | Blueprint: Soulcrystal Maul | A | Epic | stacks |
-| `recipe_craft_necklace_t80` | Blueprint: Soulcrystal Pendant | A | Epic | stacks |
-| `recipe_craft_robe_t80` | Blueprint: Soulcrystal Robe | A | Epic | stacks |
-| `recipe_craft_earring_t80` | Blueprint: Soulcrystal Stud | A | Epic | stacks |
-| `recipe_craft_wand_t80` | Blueprint: Soulcrystal Wand | A | Epic | stacks |
 | `box_acc_t52` | Cobalt Accessory Box | B | Rare | stacks |
 | `box_acc_t40` | Darksteel Accessory Box | B | Rare | stacks |
 | `box_acc_t20` | Electrum Accessory Box | E | Rare | stacks |
@@ -657,6 +621,182 @@ is full (it tells you how many fit).
 | `box_newbie_armor_robe` | Newbie Robe Armor Box | F | Common | untradable, stacks |
 | `box_newbie_rune_choice` | Newbie Rune | F | Common | untradable, stacks |
 | `box_newbie_weapons` | Newbie Weapons Box | F | Common | untradable, stacks |
+| `recipe_craft_shield_t76_20` | Recipe: Adamantine Aegis (20%) | A | Common | stacks |
+| `recipe_craft_shield_t76_40` | Recipe: Adamantine Aegis (40%) | A | Common | stacks |
+| `recipe_craft_shield_t76_60` | Recipe: Adamantine Aegis (60%) | A | Common | stacks |
+| `recipe_craft_ring_t76_20` | Recipe: Adamantine Band (20%) | A | Common | stacks |
+| `recipe_craft_ring_t76_40` | Recipe: Adamantine Band (40%) | A | Common | stacks |
+| `recipe_craft_ring_t76_60` | Recipe: Adamantine Band (60%) | A | Common | stacks |
+| `recipe_craft_staff_t76_20` | Recipe: Adamantine Battlestaff (20%) | A | Common | stacks |
+| `recipe_craft_staff_t76_40` | Recipe: Adamantine Battlestaff (40%) | A | Common | stacks |
+| `recipe_craft_staff_t76_60` | Recipe: Adamantine Battlestaff (60%) | A | Common | stacks |
+| `recipe_craft_sword1h_t76_20` | Recipe: Adamantine Blade (20%) | A | Common | stacks |
+| `recipe_craft_sword1h_t76_40` | Recipe: Adamantine Blade (40%) | A | Common | stacks |
+| `recipe_craft_sword1h_t76_60` | Recipe: Adamantine Blade (60%) | A | Common | stacks |
+| `recipe_craft_heavy_t76_20` | Recipe: Adamantine Bulwark (20%) | A | Common | stacks |
+| `recipe_craft_heavy_t76_40` | Recipe: Adamantine Bulwark (40%) | A | Common | stacks |
+| `recipe_craft_heavy_t76_60` | Recipe: Adamantine Bulwark (60%) | A | Common | stacks |
+| `recipe_craft_duals_t76_20` | Recipe: Adamantine Fangs (20%) | A | Common | stacks |
+| `recipe_craft_duals_t76_40` | Recipe: Adamantine Fangs (40%) | A | Common | stacks |
+| `recipe_craft_duals_t76_60` | Recipe: Adamantine Fangs (60%) | A | Common | stacks |
+| `recipe_craft_gloves_t76_20` | Recipe: Adamantine Gauntlets (20%) | A | Common | stacks |
+| `recipe_craft_gloves_t76_40` | Recipe: Adamantine Gauntlets (40%) | A | Common | stacks |
+| `recipe_craft_gloves_t76_60` | Recipe: Adamantine Gauntlets (60%) | A | Common | stacks |
+| `recipe_craft_sword2h_t76_20` | Recipe: Adamantine Greatsword (20%) | A | Common | stacks |
+| `recipe_craft_sword2h_t76_40` | Recipe: Adamantine Greatsword (40%) | A | Common | stacks |
+| `recipe_craft_sword2h_t76_60` | Recipe: Adamantine Greatsword (60%) | A | Common | stacks |
+| `recipe_craft_boots_t76_20` | Recipe: Adamantine Greaves (20%) | A | Common | stacks |
+| `recipe_craft_boots_t76_40` | Recipe: Adamantine Greaves (40%) | A | Common | stacks |
+| `recipe_craft_boots_t76_60` | Recipe: Adamantine Greaves (60%) | A | Common | stacks |
+| `recipe_craft_helm_t76_20` | Recipe: Adamantine Helm (20%) | A | Common | stacks |
+| `recipe_craft_helm_t76_40` | Recipe: Adamantine Helm (40%) | A | Common | stacks |
+| `recipe_craft_helm_t76_60` | Recipe: Adamantine Helm (60%) | A | Common | stacks |
+| `recipe_craft_light_t76_20` | Recipe: Adamantine Leathers (20%) | A | Common | stacks |
+| `recipe_craft_light_t76_40` | Recipe: Adamantine Leathers (40%) | A | Common | stacks |
+| `recipe_craft_light_t76_60` | Recipe: Adamantine Leathers (60%) | A | Common | stacks |
+| `recipe_craft_bow_t76_20` | Recipe: Adamantine Longbow (20%) | A | Common | stacks |
+| `recipe_craft_bow_t76_40` | Recipe: Adamantine Longbow (40%) | A | Common | stacks |
+| `recipe_craft_bow_t76_60` | Recipe: Adamantine Longbow (60%) | A | Common | stacks |
+| `recipe_craft_blunt1h_t76_20` | Recipe: Adamantine Mace (20%) | A | Common | stacks |
+| `recipe_craft_blunt1h_t76_40` | Recipe: Adamantine Mace (40%) | A | Common | stacks |
+| `recipe_craft_blunt1h_t76_60` | Recipe: Adamantine Mace (60%) | A | Common | stacks |
+| `recipe_craft_blunt2h_t76_20` | Recipe: Adamantine Maul (20%) | A | Common | stacks |
+| `recipe_craft_blunt2h_t76_40` | Recipe: Adamantine Maul (40%) | A | Common | stacks |
+| `recipe_craft_blunt2h_t76_60` | Recipe: Adamantine Maul (60%) | A | Common | stacks |
+| `recipe_craft_necklace_t76_20` | Recipe: Adamantine Pendant (20%) | A | Common | stacks |
+| `recipe_craft_necklace_t76_40` | Recipe: Adamantine Pendant (40%) | A | Common | stacks |
+| `recipe_craft_necklace_t76_60` | Recipe: Adamantine Pendant (60%) | A | Common | stacks |
+| `recipe_craft_robe_t76_20` | Recipe: Adamantine Robe (20%) | A | Common | stacks |
+| `recipe_craft_robe_t76_40` | Recipe: Adamantine Robe (40%) | A | Common | stacks |
+| `recipe_craft_robe_t76_60` | Recipe: Adamantine Robe (60%) | A | Common | stacks |
+| `recipe_craft_earring_t76_20` | Recipe: Adamantine Stud (20%) | A | Common | stacks |
+| `recipe_craft_earring_t76_40` | Recipe: Adamantine Stud (40%) | A | Common | stacks |
+| `recipe_craft_earring_t76_60` | Recipe: Adamantine Stud (60%) | A | Common | stacks |
+| `recipe_craft_wand_t76_20` | Recipe: Adamantine Wand (20%) | A | Common | stacks |
+| `recipe_craft_wand_t76_40` | Recipe: Adamantine Wand (40%) | A | Common | stacks |
+| `recipe_craft_wand_t76_60` | Recipe: Adamantine Wand (60%) | A | Common | stacks |
+| `recipe_craft_crafter_hammer_40` | Recipe: Blacksmith's Hammer (40%) | F | Common | untradable, stacks |
+| `recipe_craft_shield_t61_100` | Recipe: Bloodsteel Aegis (100%) | A | Common | stacks |
+| `recipe_craft_shield_t61_60` | Recipe: Bloodsteel Aegis (60%) | A | Common | stacks |
+| `recipe_craft_ring_t61_100` | Recipe: Bloodsteel Band (100%) | A | Common | stacks |
+| `recipe_craft_ring_t61_60` | Recipe: Bloodsteel Band (60%) | A | Common | stacks |
+| `recipe_craft_staff_t61_100` | Recipe: Bloodsteel Battlestaff (100%) | A | Common | stacks |
+| `recipe_craft_staff_t61_60` | Recipe: Bloodsteel Battlestaff (60%) | A | Common | stacks |
+| `recipe_craft_sword1h_t61_100` | Recipe: Bloodsteel Blade (100%) | A | Common | stacks |
+| `recipe_craft_sword1h_t61_60` | Recipe: Bloodsteel Blade (60%) | A | Common | stacks |
+| `recipe_craft_heavy_t61_100` | Recipe: Bloodsteel Bulwark (100%) | A | Common | stacks |
+| `recipe_craft_heavy_t61_60` | Recipe: Bloodsteel Bulwark (60%) | A | Common | stacks |
+| `recipe_craft_duals_t61_100` | Recipe: Bloodsteel Fangs (100%) | A | Common | stacks |
+| `recipe_craft_duals_t61_60` | Recipe: Bloodsteel Fangs (60%) | A | Common | stacks |
+| `recipe_craft_gloves_t61_100` | Recipe: Bloodsteel Gauntlets (100%) | A | Common | stacks |
+| `recipe_craft_gloves_t61_60` | Recipe: Bloodsteel Gauntlets (60%) | A | Common | stacks |
+| `recipe_craft_sword2h_t61_100` | Recipe: Bloodsteel Greatsword (100%) | A | Common | stacks |
+| `recipe_craft_sword2h_t61_60` | Recipe: Bloodsteel Greatsword (60%) | A | Common | stacks |
+| `recipe_craft_boots_t61_100` | Recipe: Bloodsteel Greaves (100%) | A | Common | stacks |
+| `recipe_craft_boots_t61_60` | Recipe: Bloodsteel Greaves (60%) | A | Common | stacks |
+| `recipe_craft_helm_t61_100` | Recipe: Bloodsteel Helm (100%) | A | Common | stacks |
+| `recipe_craft_helm_t61_60` | Recipe: Bloodsteel Helm (60%) | A | Common | stacks |
+| `recipe_craft_light_t61_100` | Recipe: Bloodsteel Leathers (100%) | A | Common | stacks |
+| `recipe_craft_light_t61_60` | Recipe: Bloodsteel Leathers (60%) | A | Common | stacks |
+| `recipe_craft_bow_t61_100` | Recipe: Bloodsteel Longbow (100%) | A | Common | stacks |
+| `recipe_craft_bow_t61_60` | Recipe: Bloodsteel Longbow (60%) | A | Common | stacks |
+| `recipe_craft_blunt1h_t61_100` | Recipe: Bloodsteel Mace (100%) | A | Common | stacks |
+| `recipe_craft_blunt1h_t61_60` | Recipe: Bloodsteel Mace (60%) | A | Common | stacks |
+| `recipe_craft_blunt2h_t61_100` | Recipe: Bloodsteel Maul (100%) | A | Common | stacks |
+| `recipe_craft_blunt2h_t61_60` | Recipe: Bloodsteel Maul (60%) | A | Common | stacks |
+| `recipe_craft_necklace_t61_100` | Recipe: Bloodsteel Pendant (100%) | A | Common | stacks |
+| `recipe_craft_necklace_t61_60` | Recipe: Bloodsteel Pendant (60%) | A | Common | stacks |
+| `recipe_craft_robe_t61_sup_100` | Recipe: Bloodsteel Raiment (100%) | A | Common | stacks |
+| `recipe_craft_robe_t61_sup_60` | Recipe: Bloodsteel Raiment (60%) | A | Common | stacks |
+| `recipe_craft_robe_t61_100` | Recipe: Bloodsteel Robe (100%) | A | Common | stacks |
+| `recipe_craft_robe_t61_60` | Recipe: Bloodsteel Robe (60%) | A | Common | stacks |
+| `recipe_craft_earring_t61_100` | Recipe: Bloodsteel Stud (100%) | A | Common | stacks |
+| `recipe_craft_earring_t61_60` | Recipe: Bloodsteel Stud (60%) | A | Common | stacks |
+| `recipe_craft_wand_t61_100` | Recipe: Bloodsteel Wand (100%) | A | Common | stacks |
+| `recipe_craft_wand_t61_60` | Recipe: Bloodsteel Wand (60%) | A | Common | stacks |
+| `recipe_craft_light_t61_dmg_100` | Recipe: Bloodsteel Warhide (100%) | A | Common | stacks |
+| `recipe_craft_light_t61_dmg_60` | Recipe: Bloodsteel Warhide (60%) | A | Common | stacks |
+| `recipe_craft_heavy_t61_dmg_100` | Recipe: Bloodsteel Warplate (100%) | A | Common | stacks |
+| `recipe_craft_heavy_t61_dmg_60` | Recipe: Bloodsteel Warplate (60%) | A | Common | stacks |
+| `recipe_craft_shield_t52_100` | Recipe: Cobalt Aegis (100%) | B | Common | stacks |
+| `recipe_craft_ring_t52_100` | Recipe: Cobalt Band (100%) | B | Common | stacks |
+| `recipe_craft_staff_t52_100` | Recipe: Cobalt Battlestaff (100%) | B | Common | stacks |
+| `recipe_craft_sword1h_t52_100` | Recipe: Cobalt Blade (100%) | B | Common | stacks |
+| `recipe_craft_heavy_t52_100` | Recipe: Cobalt Bulwark (100%) | B | Common | stacks |
+| `recipe_craft_duals_t52_100` | Recipe: Cobalt Fangs (100%) | B | Common | stacks |
+| `recipe_craft_gloves_t52_100` | Recipe: Cobalt Gauntlets (100%) | B | Common | stacks |
+| `recipe_craft_sword2h_t52_100` | Recipe: Cobalt Greatsword (100%) | B | Common | stacks |
+| `recipe_craft_boots_t52_100` | Recipe: Cobalt Greaves (100%) | B | Common | stacks |
+| `recipe_craft_helm_t52_100` | Recipe: Cobalt Helm (100%) | B | Common | stacks |
+| `recipe_craft_light_t52_100` | Recipe: Cobalt Leathers (100%) | B | Common | stacks |
+| `recipe_craft_bow_t52_100` | Recipe: Cobalt Longbow (100%) | B | Common | stacks |
+| `recipe_craft_blunt1h_t52_100` | Recipe: Cobalt Mace (100%) | B | Common | stacks |
+| `recipe_craft_blunt2h_t52_100` | Recipe: Cobalt Maul (100%) | B | Common | stacks |
+| `recipe_craft_necklace_t52_100` | Recipe: Cobalt Pendant (100%) | B | Common | stacks |
+| `recipe_craft_robe_t52_100` | Recipe: Cobalt Robe (100%) | B | Common | stacks |
+| `recipe_craft_light_t52_sup_100` | Recipe: Cobalt Sagehide (100%) | B | Common | stacks |
+| `recipe_craft_earring_t52_100` | Recipe: Cobalt Stud (100%) | B | Common | stacks |
+| `recipe_craft_wand_t52_100` | Recipe: Cobalt Wand (100%) | B | Common | stacks |
+| `recipe_craft_heavy_t52_dmg_100` | Recipe: Cobalt Warplate (100%) | B | Common | stacks |
+| `recipe_craft_shield_t40_100` | Recipe: Darksteel Aegis (100%) | B | Common | stacks |
+| `recipe_craft_ring_t40_100` | Recipe: Darksteel Band (100%) | B | Common | stacks |
+| `recipe_craft_staff_t40_100` | Recipe: Darksteel Battlestaff (100%) | B | Common | stacks |
+| `recipe_craft_sword1h_t40_100` | Recipe: Darksteel Blade (100%) | B | Common | stacks |
+| `recipe_craft_light_t40_str_100` | Recipe: Darksteel Brawlhide (100%) | B | Common | stacks |
+| `recipe_craft_heavy_t40_100` | Recipe: Darksteel Bulwark (100%) | B | Common | stacks |
+| `recipe_craft_duals_t40_100` | Recipe: Darksteel Fangs (100%) | B | Common | stacks |
+| `recipe_craft_gloves_t40_100` | Recipe: Darksteel Gauntlets (100%) | B | Common | stacks |
+| `recipe_craft_sword2h_t40_100` | Recipe: Darksteel Greatsword (100%) | B | Common | stacks |
+| `recipe_craft_boots_t40_100` | Recipe: Darksteel Greaves (100%) | B | Common | stacks |
+| `recipe_craft_light_t40_pdef_100` | Recipe: Darksteel Guardhide (100%) | B | Common | stacks |
+| `recipe_craft_helm_t40_100` | Recipe: Darksteel Helm (100%) | B | Common | stacks |
+| `recipe_craft_light_t40_100` | Recipe: Darksteel Leathers (100%) | B | Common | stacks |
+| `recipe_craft_bow_t40_100` | Recipe: Darksteel Longbow (100%) | B | Common | stacks |
+| `recipe_craft_blunt1h_t40_100` | Recipe: Darksteel Mace (100%) | B | Common | stacks |
+| `recipe_craft_blunt2h_t40_100` | Recipe: Darksteel Maul (100%) | B | Common | stacks |
+| `recipe_craft_necklace_t40_100` | Recipe: Darksteel Pendant (100%) | B | Common | stacks |
+| `recipe_craft_robe_t40_sup_100` | Recipe: Darksteel Raiment (100%) | B | Common | stacks |
+| `recipe_craft_robe_t40_100` | Recipe: Darksteel Robe (100%) | B | Common | stacks |
+| `recipe_craft_earring_t40_100` | Recipe: Darksteel Stud (100%) | B | Common | stacks |
+| `recipe_craft_robe_t40_nuke_100` | Recipe: Darksteel Vestments (100%) | B | Common | stacks |
+| `recipe_craft_wand_t40_100` | Recipe: Darksteel Wand (100%) | B | Common | stacks |
+| `recipe_craft_light_t40_mdef_100` | Recipe: Darksteel Wardhide (100%) | B | Common | stacks |
+| `recipe_craft_shield_t80_40` | Recipe: Soulcrystal Aegis (40%) | S | Common | stacks |
+| `recipe_craft_shield_t80_60` | Recipe: Soulcrystal Aegis (60%) | S | Common | stacks |
+| `recipe_craft_ring_t80_40` | Recipe: Soulcrystal Band (40%) | S | Common | stacks |
+| `recipe_craft_ring_t80_60` | Recipe: Soulcrystal Band (60%) | S | Common | stacks |
+| `recipe_craft_staff_t80_40` | Recipe: Soulcrystal Battlestaff (40%) | S | Common | stacks |
+| `recipe_craft_staff_t80_60` | Recipe: Soulcrystal Battlestaff (60%) | S | Common | stacks |
+| `recipe_craft_sword1h_t80_40` | Recipe: Soulcrystal Blade (40%) | S | Common | stacks |
+| `recipe_craft_sword1h_t80_60` | Recipe: Soulcrystal Blade (60%) | S | Common | stacks |
+| `recipe_craft_heavy_t80_40` | Recipe: Soulcrystal Bulwark (40%) | S | Common | stacks |
+| `recipe_craft_heavy_t80_60` | Recipe: Soulcrystal Bulwark (60%) | S | Common | stacks |
+| `recipe_craft_duals_t80_40` | Recipe: Soulcrystal Fangs (40%) | S | Common | stacks |
+| `recipe_craft_duals_t80_60` | Recipe: Soulcrystal Fangs (60%) | S | Common | stacks |
+| `recipe_craft_gloves_t80_40` | Recipe: Soulcrystal Gauntlets (40%) | S | Common | stacks |
+| `recipe_craft_gloves_t80_60` | Recipe: Soulcrystal Gauntlets (60%) | S | Common | stacks |
+| `recipe_craft_sword2h_t80_40` | Recipe: Soulcrystal Greatsword (40%) | S | Common | stacks |
+| `recipe_craft_sword2h_t80_60` | Recipe: Soulcrystal Greatsword (60%) | S | Common | stacks |
+| `recipe_craft_boots_t80_40` | Recipe: Soulcrystal Greaves (40%) | S | Common | stacks |
+| `recipe_craft_boots_t80_60` | Recipe: Soulcrystal Greaves (60%) | S | Common | stacks |
+| `recipe_craft_helm_t80_40` | Recipe: Soulcrystal Helm (40%) | S | Common | stacks |
+| `recipe_craft_helm_t80_60` | Recipe: Soulcrystal Helm (60%) | S | Common | stacks |
+| `recipe_craft_light_t80_40` | Recipe: Soulcrystal Leathers (40%) | S | Common | stacks |
+| `recipe_craft_light_t80_60` | Recipe: Soulcrystal Leathers (60%) | S | Common | stacks |
+| `recipe_craft_bow_t80_40` | Recipe: Soulcrystal Longbow (40%) | S | Common | stacks |
+| `recipe_craft_bow_t80_60` | Recipe: Soulcrystal Longbow (60%) | S | Common | stacks |
+| `recipe_craft_blunt1h_t80_40` | Recipe: Soulcrystal Mace (40%) | S | Common | stacks |
+| `recipe_craft_blunt1h_t80_60` | Recipe: Soulcrystal Mace (60%) | S | Common | stacks |
+| `recipe_craft_blunt2h_t80_40` | Recipe: Soulcrystal Maul (40%) | S | Common | stacks |
+| `recipe_craft_blunt2h_t80_60` | Recipe: Soulcrystal Maul (60%) | S | Common | stacks |
+| `recipe_craft_necklace_t80_40` | Recipe: Soulcrystal Pendant (40%) | S | Common | stacks |
+| `recipe_craft_necklace_t80_60` | Recipe: Soulcrystal Pendant (60%) | S | Common | stacks |
+| `recipe_craft_robe_t80_40` | Recipe: Soulcrystal Robe (40%) | S | Common | stacks |
+| `recipe_craft_robe_t80_60` | Recipe: Soulcrystal Robe (60%) | S | Common | stacks |
+| `recipe_craft_earring_t80_40` | Recipe: Soulcrystal Stud (40%) | S | Common | stacks |
+| `recipe_craft_earring_t80_60` | Recipe: Soulcrystal Stud (60%) | S | Common | stacks |
+| `recipe_craft_wand_t80_40` | Recipe: Soulcrystal Wand (40%) | S | Common | stacks |
+| `recipe_craft_wand_t80_60` | Recipe: Soulcrystal Wand (60%) | S | Common | stacks |
 | `box_daily_rune_choice` | Rune Box (1h) — Daily | F | Common | untradable, stacks |
 | `box_acc_t80` | Soulcrystal Accessory Box | S | Rare | stacks |
 | `box_spell_rune_24h` | Spell Rune Box (1d) | F | Rare | untradable, stacks |
@@ -682,47 +822,126 @@ is full (it tells you how many fit).
 | `box_war_rune_30d` | War Rune Box (30d) | F | Rare | untradable, stacks |
 | `box_wayfarer_subclass` | Wayfarer's Subclass Box | F | Mythic | untradable, stacks |
 
-## Materials  (35)
+## Materials  (114)
 
 | id | name | grade | rarity | notes |
 |---|---|---|---|---|
+| `part_heavy_t76` | Adamantine Armor Plate | A | Rare | stacks |
+| `part_ring_t76` | Adamantine Band Setting | A | Rare | stacks |
+| `part_bow_t76` | Adamantine Bow Limb | A | Rare | stacks |
 | `essence_a` | Adamantine Essence | F | Common | stacks |
+| `part_duals_t76` | Adamantine Fang Hilt | A | Rare | stacks |
+| `part_gloves_t76` | Adamantine Gauntlet Frame | A | Rare | stacks |
+| `part_sword2h_t76` | Adamantine Greatsword Blade | A | Rare | stacks |
+| `part_boots_t76` | Adamantine Greave Frame | A | Rare | stacks |
+| `part_helm_t76` | Adamantine Helm Shell | A | Rare | stacks |
+| `part_light_t76` | Adamantine Hide Panel | A | Rare | stacks |
+| `part_blunt1h_t76` | Adamantine Mace Head | A | Rare | stacks |
+| `part_blunt2h_t76` | Adamantine Maul Head | A | Rare | stacks |
+| `part_necklace_t76` | Adamantine Pendant Setting | A | Rare | stacks |
+| `part_robe_t76` | Adamantine Robe Weave | A | Rare | stacks |
+| `part_shield_t76` | Adamantine Shield Boss | A | Rare | stacks |
+| `part_staff_t76` | Adamantine Staff Crown | A | Rare | stacks |
+| `part_earring_t76` | Adamantine Stud Setting | A | Rare | stacks |
+| `part_sword1h_t76` | Adamantine Sword Blade | A | Rare | stacks |
+| `part_wand_t76` | Adamantine Wand Core | A | Rare | stacks |
+| `mat_alloy` | Alloy | F | Common | stacks |
+| `part_heavy_t61` | Bloodsteel Armor Plate | A | Rare | stacks |
+| `part_ring_t61` | Bloodsteel Band Setting | A | Rare | stacks |
+| `part_bow_t61` | Bloodsteel Bow Limb | A | Rare | stacks |
 | `essence_b` | Bloodsteel Essence | F | Common | stacks |
+| `part_duals_t61` | Bloodsteel Fang Hilt | A | Rare | stacks |
+| `part_gloves_t61` | Bloodsteel Gauntlet Frame | A | Rare | stacks |
+| `part_sword2h_t61` | Bloodsteel Greatsword Blade | A | Rare | stacks |
+| `part_boots_t61` | Bloodsteel Greave Frame | A | Rare | stacks |
+| `part_helm_t61` | Bloodsteel Helm Shell | A | Rare | stacks |
+| `part_light_t61` | Bloodsteel Hide Panel | A | Rare | stacks |
+| `part_blunt1h_t61` | Bloodsteel Mace Head | A | Rare | stacks |
+| `part_blunt2h_t61` | Bloodsteel Maul Head | A | Rare | stacks |
+| `part_necklace_t61` | Bloodsteel Pendant Setting | A | Rare | stacks |
+| `part_robe_t61` | Bloodsteel Robe Weave | A | Rare | stacks |
+| `part_shield_t61` | Bloodsteel Shield Boss | A | Rare | stacks |
+| `part_staff_t61` | Bloodsteel Staff Crown | A | Rare | stacks |
+| `part_earring_t61` | Bloodsteel Stud Setting | A | Rare | stacks |
+| `part_sword1h_t61` | Bloodsteel Sword Blade | A | Rare | stacks |
+| `part_wand_t61` | Bloodsteel Wand Core | A | Rare | stacks |
+| `part_heavy_t52` | Cobalt Armor Plate | B | Rare | stacks |
+| `part_ring_t52` | Cobalt Band Setting | B | Rare | stacks |
+| `part_bow_t52` | Cobalt Bow Limb | B | Rare | stacks |
 | `essence_c` | Cobalt Essence | F | Common | stacks |
-| `mat_gem_common` | Common Gem | F | Common | stacks |
-| `mat_ingot_common` | Common Ingot | F | Common | stacks |
-| `mat_leather_common` | Common Leather | F | Common | stacks |
-| `mat_thread_common` | Common Thread | F | Common | stacks |
-| `mat_wood_common` | Common Wood | F | Common | stacks |
+| `part_duals_t52` | Cobalt Fang Hilt | B | Rare | stacks |
+| `part_gloves_t52` | Cobalt Gauntlet Frame | B | Rare | stacks |
+| `part_sword2h_t52` | Cobalt Greatsword Blade | B | Rare | stacks |
+| `part_boots_t52` | Cobalt Greave Frame | B | Rare | stacks |
+| `part_helm_t52` | Cobalt Helm Shell | B | Rare | stacks |
+| `part_light_t52` | Cobalt Hide Panel | B | Rare | stacks |
+| `part_blunt1h_t52` | Cobalt Mace Head | B | Rare | stacks |
+| `part_blunt2h_t52` | Cobalt Maul Head | B | Rare | stacks |
+| `part_necklace_t52` | Cobalt Pendant Setting | B | Rare | stacks |
+| `part_robe_t52` | Cobalt Robe Weave | B | Rare | stacks |
+| `part_shield_t52` | Cobalt Shield Boss | B | Rare | stacks |
+| `part_staff_t52` | Cobalt Staff Crown | B | Rare | stacks |
+| `part_earring_t52` | Cobalt Stud Setting | B | Rare | stacks |
+| `part_sword1h_t52` | Cobalt Sword Blade | B | Rare | stacks |
+| `part_wand_t52` | Cobalt Wand Core | B | Rare | stacks |
+| `part_heavy_t40` | Darksteel Armor Plate | B | Rare | stacks |
+| `part_ring_t40` | Darksteel Band Setting | B | Rare | stacks |
+| `part_bow_t40` | Darksteel Bow Limb | B | Rare | stacks |
 | `essence_d` | Darksteel Essence | F | Common | stacks |
-| `mat_gem_epic` | Epic Gem | F | Epic | stacks |
-| `mat_ingot_epic` | Epic Ingot | F | Epic | stacks |
-| `mat_leather_epic` | Epic Leather | F | Epic | stacks |
-| `mat_thread_epic` | Epic Thread | F | Epic | stacks |
-| `mat_wood_epic` | Epic Wood | F | Epic | stacks |
-| `mat_gem_legendary` | Legendary Gem | F | Legendary | stacks |
-| `mat_ingot_legendary` | Legendary Ingot | F | Legendary | stacks |
-| `mat_leather_legendary` | Legendary Leather | F | Legendary | stacks |
-| `mat_thread_legendary` | Legendary Thread | F | Legendary | stacks |
-| `mat_wood_legendary` | Legendary Wood | F | Legendary | stacks |
-| `mat_gem_mythic` | Mythic Gem | F | Mythic | stacks |
-| `mat_ingot_mythic` | Mythic Ingot | F | Mythic | stacks |
-| `mat_leather_mythic` | Mythic Leather | F | Mythic | stacks |
-| `mat_thread_mythic` | Mythic Thread | F | Mythic | stacks |
-| `mat_wood_mythic` | Mythic Wood | F | Mythic | stacks |
-| `mat_gem_rare` | Rare Gem | F | Rare | stacks |
-| `mat_ingot_rare` | Rare Ingot | F | Rare | stacks |
-| `mat_leather_rare` | Rare Leather | F | Rare | stacks |
-| `mat_thread_rare` | Rare Thread | F | Rare | stacks |
-| `mat_wood_rare` | Rare Wood | F | Rare | stacks |
+| `part_duals_t40` | Darksteel Fang Hilt | B | Rare | stacks |
+| `part_gloves_t40` | Darksteel Gauntlet Frame | B | Rare | stacks |
+| `part_sword2h_t40` | Darksteel Greatsword Blade | B | Rare | stacks |
+| `part_boots_t40` | Darksteel Greave Frame | B | Rare | stacks |
+| `part_helm_t40` | Darksteel Helm Shell | B | Rare | stacks |
+| `part_light_t40` | Darksteel Hide Panel | B | Rare | stacks |
+| `part_blunt1h_t40` | Darksteel Mace Head | B | Rare | stacks |
+| `part_blunt2h_t40` | Darksteel Maul Head | B | Rare | stacks |
+| `part_necklace_t40` | Darksteel Pendant Setting | B | Rare | stacks |
+| `part_robe_t40` | Darksteel Robe Weave | B | Rare | stacks |
+| `part_shield_t40` | Darksteel Shield Boss | B | Rare | stacks |
+| `part_staff_t40` | Darksteel Staff Crown | B | Rare | stacks |
+| `part_earring_t40` | Darksteel Stud Setting | B | Rare | stacks |
+| `part_sword1h_t40` | Darksteel Sword Blade | B | Rare | stacks |
+| `part_wand_t40` | Darksteel Wand Core | B | Rare | stacks |
+| `mat_gem` | Gem | F | Common | stacks |
+| `mat_iron` | Iron | F | Common | stacks |
+| `mat_leather` | Leather | F | Common | stacks |
+| `nightsilk_4` | Legendary Nightsilk | F | Legendary | stacks |
+| `nightsilver_4` | Legendary Nightsilver | F | Legendary | stacks |
+| `nightsilk_0` | Nightsilk | F | Common | stacks |
+| `nightsilver_0` | Nightsilver | F | Common | stacks |
+| `nightsilk_2` | Rare Nightsilk | F | Rare | stacks |
+| `nightsilver_2` | Rare Nightsilver | F | Rare | stacks |
+| `nightsilk_1` | Refined Nightsilk | F | Uncommon | stacks |
+| `nightsilver_1` | Refined Nightsilver | F | Uncommon | stacks |
+| `nightsilk_3` | Refined Rare Nightsilk | F | Epic | stacks |
+| `nightsilver_3` | Refined Rare Nightsilver | F | Epic | stacks |
+| `part_heavy_t80` | Soulcrystal Armor Plate | S | Rare | stacks |
+| `part_ring_t80` | Soulcrystal Band Setting | S | Rare | stacks |
+| `part_bow_t80` | Soulcrystal Bow Limb | S | Rare | stacks |
 | `essence_s` | Soulcrystal Essence | F | Common | stacks |
-| `mat_gem_uncommon` | Uncommon Gem | F | Uncommon | stacks |
-| `mat_ingot_uncommon` | Uncommon Ingot | F | Uncommon | stacks |
-| `mat_leather_uncommon` | Uncommon Leather | F | Uncommon | stacks |
-| `mat_thread_uncommon` | Uncommon Thread | F | Uncommon | stacks |
-| `mat_wood_uncommon` | Uncommon Wood | F | Uncommon | stacks |
+| `part_duals_t80` | Soulcrystal Fang Hilt | S | Rare | stacks |
+| `part_gloves_t80` | Soulcrystal Gauntlet Frame | S | Rare | stacks |
+| `part_sword2h_t80` | Soulcrystal Greatsword Blade | S | Rare | stacks |
+| `part_boots_t80` | Soulcrystal Greave Frame | S | Rare | stacks |
+| `part_helm_t80` | Soulcrystal Helm Shell | S | Rare | stacks |
+| `part_light_t80` | Soulcrystal Hide Panel | S | Rare | stacks |
+| `part_blunt1h_t80` | Soulcrystal Mace Head | S | Rare | stacks |
+| `part_blunt2h_t80` | Soulcrystal Maul Head | S | Rare | stacks |
+| `part_necklace_t80` | Soulcrystal Pendant Setting | S | Rare | stacks |
+| `part_robe_t80` | Soulcrystal Robe Weave | S | Rare | stacks |
+| `part_shield_t80` | Soulcrystal Shield Boss | S | Rare | stacks |
+| `part_staff_t80` | Soulcrystal Staff Crown | S | Rare | stacks |
+| `part_earring_t80` | Soulcrystal Stud Setting | S | Rare | stacks |
+| `part_sword1h_t80` | Soulcrystal Sword Blade | S | Rare | stacks |
+| `part_wand_t80` | Soulcrystal Wand Core | S | Rare | stacks |
+| `mat_thread` | Thread | F | Common | stacks |
+| `mat_volcanic_ash` | Volcanic Ash | F | Rare | stacks |
+| `mat_volcanic_bar` | Volcanic Bar | F | Epic | stacks |
+| `mat_volcanic_stone` | Volcanic Stone | F | Rare | stacks |
+| `mat_wood` | Wood | F | Common | stacks |
 
-## Quest items  (96)
+## Quest items  (101)
 
 | id | name | grade | rarity | notes |
 |---|---|---|---|---|
@@ -731,6 +950,7 @@ is full (it tells you how many fit).
 | `qi_129_token` | Assassin Ordeal Mark | F | Epic | stacks |
 | `quest_token_spider_hook` | Barbed Hook | F | Common | stacks |
 | `quest_token_bear_pelt` | Bear Pelt | F | Common | stacks |
+| `quest_crafter_hammer` | Blacksmith's Hammer | F | Rare | stacks |
 | `qi_127_token` | Champion Ordeal Mark | F | Epic | stacks |
 | `quest_clerics_proof` | Cleric's Proof | F | Epic | stacks |
 | `quest_token_cracked_rib` | Cracked Rib | F | Common | stacks |
@@ -763,6 +983,7 @@ is full (it tells you how many fit).
 | `qi_111_token` | Fire Adept Ordeal Mark | F | Epic | stacks |
 | `qi_121_token` | Forest Whisperer Ordeal Mark | F | Epic | stacks |
 | `quest_token_fox_pelt` | Fox Pelt | F | Common | stacks |
+| `quest_crafter_hammer_head` | Hammer Head | F | Rare | stacks |
 | `qi_122_token` | Harmonist Ordeal Mark | F | Epic | stacks |
 | `quest_token_harpy_feather` | Harpy Feather | F | Common | stacks |
 | `qi_133_token` | Holy Priest Ordeal Mark | F | Epic | stacks |
@@ -783,8 +1004,10 @@ is full (it tells you how many fit).
 | `qi_117_token` | Phantom Ordeal Mark | F | Epic | stacks |
 | `quest_token_radiant_plume` | Radiant Plume | F | Common | stacks |
 | `qi_103_token` | Ravager Ordeal Mark | F | Epic | stacks |
+| `quest_crafter_iron` | Raw Iron | F | Common | stacks |
 | `quest_token_redhorn_badge` | Redhorn Badge | F | Common | stacks |
 | `qi_ascension_rite` | Rite of Ascension | F | Legendary | untradable, stacks |
+| `quest_crafter_gem` | Rough Gem | F | Common | stacks |
 | `quest_token_rusted_shard` | Rusted Shard | F | Common | stacks |
 | `qi_129_proof` | Seal of the Assassin | F | Legendary | stacks |
 | `qi_127_proof` | Seal of the Champion | F | Legendary | stacks |
@@ -810,6 +1033,7 @@ is full (it tells you how many fit).
 | `qi_128_proof` | Seal of the Vanguard | F | Legendary | stacks |
 | `qi_104_proof` | Seal of the Warborn | F | Legendary | stacks |
 | `qi_123_proof` | Seal of the Water Adept | F | Legendary | stacks |
+| `quest_crafter_wood` | Seasoned Hardwood | F | Common | stacks |
 | `qi_118_token` | Sentinel Ordeal Mark | F | Epic | stacks |
 | `qi_130_token` | Sharpshooter Ordeal Mark | F | Epic | stacks |
 | `qi_116_token` | Skirmisher Ordeal Mark | F | Epic | stacks |

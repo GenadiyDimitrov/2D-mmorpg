@@ -14,7 +14,7 @@ public record RecipeInput(string ItemId, int Qty);
 /// <item><b>Gear</b> (T40-T80 weapons, armour, shields, jewels). Learned from a recipe ITEM
 ///   (<see cref="ItemCatalog.RecipeBookId"/>) that carries a % (20/40/60/100), and every attempt SPENDS one
 ///   such item at or below the learned %. The attempt succeeds at the used %, plus the T76/T80 crafter
-///   bonus, and every input is scaled by it (<see cref="Crafting.ScaledQty"/>).
+///   bonus, and every input but Nightsilver/Nightsilk is scaled by it (<see cref="Crafting.InputQty"/>).
 ///   <see cref="SuccessChance"/> is unused for gear.</item>
 /// <item><b>Generic</b> (potions, scrolls, refines). Bought at the Master for <see cref="LearnPrice"/>; no
 ///   recipe item per craft; always succeeds (step 9b, 2026-09-24); costs <see cref="GoldAt"/> gold a batch.</item>
@@ -23,6 +23,8 @@ public record RecipeInput(string ItemId, int Qty);
 /// crafter-points model, 0.204.0): a recipe whose type level is gone after a respec stays in its slot, LOCKED,
 /// and crafts again once the level is back. For <see cref="CraftType.General"/> it reads the generic level.
 /// <see cref="LearnLevel"/> is the CHARACTER level (*"i cannot learn T52 rcp @50"*).</para>
+/// <para><see cref="MpCost"/> is charged per ATTEMPT (the note's MP table, 0.205.0). <see cref="Refine"/> marks the
+/// Nightsilver / Nightsilk / alloy / bar conversions, which pay no craft points.</para>
 /// <para><see cref="BatchValue"/> (Scribe / Apothecary only) is what the batch costs to BUY. The crafter pays
 /// <see cref="Crafting.PriceFactor"/> of it in all, the fixed inputs counted at their vendor sell price and
 /// gold making up the rest: <see cref="GoldAt"/>.</para>
@@ -40,7 +42,9 @@ public record Recipe(
     int GoldCost = 0,
     int GearItemLevel = 0,
     bool QuestOnly = false,
-    int BatchValue = 0)
+    int BatchValue = 0,
+    int MpCost = 0,
+    bool Refine = false)
 {
     /// <summary>The gold one batch costs a crafter at this type level. A recipe without a
     /// <see cref="BatchValue"/> charges its flat <see cref="GoldCost"/>. A Scribe/Apothecary one charges
@@ -72,7 +76,7 @@ public static class RecipeCatalog
     private static Dictionary<string, Recipe> Build()
     {
         var list = new List<Recipe>();
-        list.AddRange(RefinementRecipes());
+        list.AddRange(RefineRecipes());
         list.AddRange(FinishedItemRecipes());
         list.AddRange(ConsumableRecipes());
         list.Add(HammerRecipe());
@@ -83,17 +87,6 @@ public static class RecipeCatalog
                 throw new InvalidOperationException($"Duplicate recipe id '{r.Id}'.");
         return dict;
     }
-
-    /// <summary>An OLD material refine, kept on its 0.203.0 gate until step 10 deletes it: General, so the gate
-    /// reads the GENERIC level (refining is open to every crafter), unlocked at 2·(rung − 1).</summary>
-    private static Recipe Refine(string id, string output, RecipeInput[] inputs, int oldRung)
-    {
-        int unlock = System.Math.Clamp(2 * (oldRung - 1), 0, Crafting.MaxCraftLevel);
-        return new Recipe(id, CraftType.General, output, inputs,
-            LearnLevel: oldRung >= 5 ? 76 : Crafting.CrafterQuestLevel,
-            UnlockLevel: unlock, LearnPrice: Crafting.LearnPriceLadder[unlock]);
-    }
-
     /// <summary>The crafter quest's Blacksmith's Hammer (*"at least 20 quest wood and at least 20 iron …
     /// 20 quest gems … 1 hammer head"*). Unscaled: the quest's 40% recipe is a lesson, not a discount.</summary>
     private static Recipe HammerRecipe() => new(
@@ -108,210 +101,191 @@ public static class RecipeCatalog
         SuccessChance: Crafting.HammerRecipePercent / 100f,
         LearnLevel: Crafting.CrafterQuestLevel, QuestOnly: true);
 
-    // Each material type upgrades using 5 of itself (one rarity lower) + 2 CROSS mats of two other
-    // types (also the lower rarity). Refinement is guaranteed (the 5+2 cost is the gate).
-    private static readonly Dictionary<MaterialType, (MaterialType A, MaterialType B)> Cross = new()
+    // =====================================================================================
+    //  THE REFINES (`BL-273` part 3, 0.205.0; design doc §2.2 "Step 10", ruled 2026-09-24). General
+    //  recipes, open to every crafter: no gold, always succeed, one output a craft, and they pay NO craft
+    //  points (Crafting.CraftPoints). A count on the craft command makes the thousands of them one tap.
+    // =====================================================================================
+    private static IEnumerable<Recipe> RefineRecipes()
     {
-        [MaterialType.Gem]     = (MaterialType.Ingot,  MaterialType.Wood),
-        [MaterialType.Ingot]   = (MaterialType.Gem,    MaterialType.Leather),
-        [MaterialType.Leather] = (MaterialType.Thread, MaterialType.Wood),
-        [MaterialType.Thread]  = (MaterialType.Leather, MaterialType.Gem),
-        [MaterialType.Wood]    = (MaterialType.Ingot,  MaterialType.Thread),
-    };
+        Recipe Step(string id, string output, string input, int step) =>
+            new(id, CraftType.General, output, new[] { new RecipeInput(input, Crafting.RefineRatio) },
+                LearnLevel: Crafting.RefineCharLevel[step], UnlockLevel: Crafting.RefineGate[step],
+                LearnPrice: Crafting.LearnPriceLadder[Crafting.RefineGate[step]],
+                MpCost: Crafting.RefineMp[step], Refine: true);
 
-    private static readonly (ItemRarity Low, ItemRarity High)[] Steps =
-    {
-        (ItemRarity.Common, ItemRarity.Uncommon),
-        (ItemRarity.Uncommon, ItemRarity.Rare),
-        (ItemRarity.Rare, ItemRarity.Epic),
-        (ItemRarity.Epic, ItemRarity.Legendary),
-        (ItemRarity.Legendary, ItemRarity.Mythic),
-    };
-
-    /// <summary>The old material refines, now GENERIC recipes: refining into rarity R sat on rung R.
-    /// ⚠ Replaced by the Nightsilver / Nightsilk ladder in `BL-273` part 3.</summary>
-    private static IEnumerable<Recipe> RefinementRecipes()
-    {
-        foreach (var type in Crafting.MaterialTypes)
+        for (int rung = 1; rung < Crafting.RefineRungs; rung++)
         {
-            var (a, b) = Cross[type];
-            foreach (var (low, high) in Steps)
-                yield return Refine(
-                    $"refine_{type}_{high}".ToLowerInvariant(),
-                    Crafting.MaterialId(type, high),
-                    new[]
-                    {
-                        new RecipeInput(Crafting.MaterialId(type, low), 5),
-                        new RecipeInput(Crafting.MaterialId(a, low), 1),
-                        new RecipeInput(Crafting.MaterialId(b, low), 1),
-                    },
-                    oldRung: (int)high);
+            yield return Step($"refine_nightsilver_{rung}", Crafting.NightsilverId(rung), Crafting.NightsilverId(rung - 1), rung - 1);
+            yield return Step($"refine_nightsilk_{rung}", Crafting.NightsilkId(rung), Crafting.NightsilkId(rung - 1), rung - 1);
         }
+
+        // Alloy: *"a x50 alloy that is own recipie (20 gems + 20 iron)"*. L0 / 40, MP 50.
+        yield return new Recipe("refine_alloy", CraftType.General, Crafting.AlloyId,
+            new[] { new RecipeInput(Crafting.MaterialId(MaterialType.Gem), 20), new RecipeInput(Crafting.MaterialId(MaterialType.Iron), 20) },
+            LearnLevel: Crafting.CrafterQuestLevel, UnlockLevel: 0, LearnPrice: Crafting.LearnPriceLadder[0],
+            MpCost: 50, Refine: true);
+
+        // The Volcanic Bar: *"20 volcanic ash + 20 volcanic stone"*. L7 / 76, MP 200.
+        yield return new Recipe("refine_volcanic_bar", CraftType.General, ItemCatalog.VolcanicBar,
+            new[] { new RecipeInput(ItemCatalog.VolcanicAsh, 20), new RecipeInput(ItemCatalog.VolcanicStone, 20) },
+            LearnLevel: 76, UnlockLevel: 7, LearnPrice: Crafting.LearnPriceLadder[7], MpCost: 200, Refine: true);
     }
 
-    /// <summary>The input-table index a gear tier reads (T40 → 1 … T80 → 5; the old E rung at 0 is gone).</summary>
-    private static int GearRung(int itemLevel) => itemLevel switch
-    {
-        >= 80 => 5,
-        >= 76 => 4,
-        >= 61 => 3,
-        >= 52 => 2,
-        >= 40 => 1,
-        _ => 0,
-    };
-
     // =====================================================================================
-    //  GEAR RECIPE COSTS — the owner's 2026-08-13 target curve, solved against the measured
-    //  drop faucet. docs/balance/CraftingMats.md §7 is the measurement; `tools/BalanceMatrix`
-    //  §M (M8-M12) is what prints it. DO NOT hand-retune these six numbers — change them,
-    //  re-run the tool, read M12.
+    //  THE GEAR RECIPES (`BL-273` part 3, 0.205.0) — AUTHORED TABLES, one cell per tier × slot.
+    //
+    //  🔑 NEVER A FORMULA (owner, 2026-09-23: *"please do not do anything as formula because moving one
+    //     will break all others ... The fractions per part are just guidelines not formula locked"*). Any
+    //     cell below can move alone. They were WRITTEN ONCE from his guide shares (1H 0.8, body 0.6,
+    //     helmet/shield/necklace 0.4, earring 0.3, gloves/boots 0.2, ring 0.1 of the 2H) and the note's
+    //     bulk splits (heavy metal 2 : leather 1, light leather 2 : thread 1, robe thread 4 : leather 1,
+    //     helmet 3 : 2 : 1, shield 10 : 1 : 1, gloves/boots 2 : 1 : 1; rings/earrings iron, the necklace
+    //     thread), rounded half away from zero and never below 1.
+    //
+    //  The 2H column is the note: wood AND iron 400/800/1200/1600/2000, alloy 10…50, 20 parts every tier,
+    //  Nightsilver 300 normal / 200 Refined / 150 Rare / 50 Refined Rare / 10 Legendary, Volcanic Bars 40 / 70
+    //  at T76 / T80 (second round), essence 400…2000 (third round, §2.2's ruled table).
+    //
+    //  Columns: 2H, 1H, heavy, light, robe, helmet, shield, gloves, boots, necklace, earring, ring.
+    //  Rows: T40, T52, T61, T76, T80. Everything scales with the recipe % EXCEPT Nightsilver / Nightsilk
+    //  (Crafting.IsFixedInput).
     // =====================================================================================
-
-    /// <summary>The bulk mat rarity a rung eats — its OWN rung's rarity, except S, which eats Legendary
-    /// like A does (the owner's table: *"A-legend(100-200)+1~2mytic, S-legend(1000~2000)+(10~20)mytic"*).
-    /// Indexed by crafting level 1-6.</summary>
-    private static readonly ItemRarity[] GearBulkRarity =
+    private static readonly int[][] GearWood =
     {
-        ItemRarity.Common, ItemRarity.Uncommon, ItemRarity.Rare,
-        ItemRarity.Epic, ItemRarity.Legendary, ItemRarity.Legendary,
+        new[] {  400,  320,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0 },   // T40
+        new[] {  800,  640,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0 },   // T52
+        new[] { 1200,  960,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0 },   // T61
+        new[] { 1600, 1280,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0 },   // T76
+        new[] { 2000, 1600,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0 },   // T80
     };
-
-    /// <summary>The accent mat — *"a pile of your own rung's mat, plus a few of the rung above"*.</summary>
-    private static readonly ItemRarity[] GearAccentRarity =
+    private static readonly int[][] GearIron =
     {
-        ItemRarity.Uncommon, ItemRarity.Rare, ItemRarity.Epic,
-        ItemRarity.Legendary, ItemRarity.Mythic, ItemRarity.Mythic,
+        new[] {  400,  320,  320,    0,    0,  160,  267,   80,   80,    0,  240,   80 },   // T40
+        new[] {  800,  640,  640,    0,    0,  320,  533,  160,  160,    0,  480,  160 },   // T52
+        new[] { 1200,  960,  960,    0,    0,  480,  800,  240,  240,    0,  720,  240 },   // T61
+        new[] { 1600, 1280, 1280,    0,    0,  640, 1067,  320,  320,    0,  960,  320 },   // T76
+        new[] { 2000, 1600, 1600,    0,    0,  800, 1333,  400,  400,    0, 1200,  400 },   // T80
     };
-
-    /// <summary>Bulk mats for ONE WEAPON craft ATTEMPT at each rung (index = crafting level − 1).
-    ///
-    /// 🔑 These are SOLVED, not chosen. The owner ruled a target cost per FINISHED weapon —
-    /// *"2-3h of farming for E grade per weapon craft, 3-5h per D grade, 5-10 C, 12-1d B, 1-3d A, 7-14d S
-    /// … 1d of farming to mean the full 12h (auto+offline)"* — so E 2-3h · D 3-5h · C 5-10h · B 12-24h ·
-    /// A 12-36h · S 84-168h. Divide the midpoint by the attempts a success costs
-    /// (the old `BL-05` odds table) to get a per-ATTEMPT budget, then buy the owner's own
-    /// 100-bulk-to-1-accent shape with it at the measured drop rates.
-    ///
-    /// ⚠ **Where this disagrees with the ranges he first wrote, the TARGET CURVE won.** Those ranges came
-    /// with *"depending on drop rates/amount"* attached — they are an estimate awaiting a measurement — and
-    /// the curve is a considered ruling in wall-clock hours. Two rungs moved as a result and both are worth
-    /// knowing: **E and D land BELOW his ranges** (300 not 500-1000; 95 not 100-500), because his curve is
-    /// ~2.5× cheaper than the one I had proposed and a cheaper target buys a smaller pile. And **S lands at
-    /// 490, less than half his 1000-2000**: his own S pile is ~10× A's while his own S target is only ~5× A's,
-    /// so the two cannot both hold. B and A land inside his ranges untouched.
-    ///
-    /// ⚠ B, A and S are only affordable at all because of <c>MobCatalog.EliteMatDrops</c> — before it,
-    /// Legendary and Mythic mats dropped from NOTHING and one Legendary cost 467 kills of refining, which
-    /// priced an S weapon at 3-6 YEARS. Delete that faucet and these three numbers become fiction.</summary>
-    private static readonly int[] GearBulk = { 90, 75, 8, 147, 154, 1450 };
-
-    /// <summary>Accent mats for one weapon attempt — the owner's shape is 100 bulk : 1 accent, and this
-    /// is that ratio rounded to whole mats at each rung.</summary>
-    private static readonly int[] GearAccent = { 1, 1, 1, 1, 1, 14 };
-
-    /// <summary>What one gear SLOT costs as a fraction of one weapon (owner, 2026-08-13), authored so a
-    /// full armor set and a full jewel set each come to **exactly one weapon**:
-    /// <code>
-    /// armor   gloves WH/10  boots WH/10  helmet WH/3.33  body WH/2                  = 1.000
-    /// jewels  ring   WH/10  earring WH/5 necklace WH/2.5   (2 rings + 2 earrings)   = 1.000
-    /// </code>
-    /// Both sums check to 1.000 against the real <c>ArmorSlot</c> and <c>JewelType</c> slot counts, so a
-    /// fully geared character is **3 weapons** — and at S that is 378 farm hours, which is the number to
-    /// sanity-check rather than any per-item one.
-    ///
-    /// 🔑 **The SHIELD was the one slot his fractions missed**, because it is its own
-    /// <see cref="EquipSlot.Shield"/> and sits outside both sums. His ruling (2026-08-13): *"It's armor so
-    /// make it as a helmet price"* → WH/3.33. Note the consequence, which is intended and not a rounding
-    /// slip: a shield user's kit is 1.30 weapons of armor, not 1.00, because the shield is a real extra
-    /// slot with real stats and nothing else gives way to pay for it.</summary>
-    private static float SlotFraction(ItemDef d) => d.Slot switch
+    private static readonly int[][] GearLeather =
     {
-        EquipSlot.Weapon => 1f,
-        EquipSlot.Shield => 1f / 3.33f,          // = a helmet (owner)
-        EquipSlot.Armor  => d.ArmorSlot switch
+        new[] {    0,    0,  160,  320,   96,  107,   27,   40,   40,    0,    0,    0 },   // T40
+        new[] {    0,    0,  320,  640,  192,  213,   53,   80,   80,    0,    0,    0 },   // T52
+        new[] {    0,    0,  480,  960,  288,  320,   80,  120,  120,    0,    0,    0 },   // T61
+        new[] {    0,    0,  640, 1280,  384,  427,  107,  160,  160,    0,    0,    0 },   // T76
+        new[] {    0,    0,  800, 1600,  480,  533,  133,  200,  200,    0,    0,    0 },   // T80
+    };
+    private static readonly int[][] GearThread =
+    {
+        new[] {    0,    0,    0,  160,  384,   53,   27,   40,   40,  320,    0,    0 },   // T40
+        new[] {    0,    0,    0,  320,  768,  107,   53,   80,   80,  640,    0,    0 },   // T52
+        new[] {    0,    0,    0,  480, 1152,  160,   80,  120,  120,  960,    0,    0 },   // T61
+        new[] {    0,    0,    0,  640, 1536,  213,  107,  160,  160, 1280,    0,    0 },   // T76
+        new[] {    0,    0,    0,  800, 1920,  267,  133,  200,  200, 1600,    0,    0 },   // T80
+    };
+    private static readonly int[][] GearAlloy =
+    {
+        new[] {   10,    8,    6,    6,    6,    4,    4,    2,    2,    4,    3,    1 },   // T40
+        new[] {   20,   16,   12,   12,   12,    8,    8,    4,    4,    8,    6,    2 },   // T52
+        new[] {   30,   24,   18,   18,   18,   12,   12,    6,    6,   12,    9,    3 },   // T61
+        new[] {   40,   32,   24,   24,   24,   16,   16,    8,    8,   16,   12,    4 },   // T76
+        new[] {   50,   40,   30,   30,   30,   20,   20,   10,   10,   20,   15,    5 },   // T80
+    };
+    private static readonly int[][] GearParts =
+    {
+        new[] {   20,   16,   12,   12,   12,    8,    8,    4,    4,    8,    6,    2 },   // T40
+        new[] {   20,   16,   12,   12,   12,    8,    8,    4,    4,    8,    6,    2 },   // T52
+        new[] {   20,   16,   12,   12,   12,    8,    8,    4,    4,    8,    6,    2 },   // T61
+        new[] {   20,   16,   12,   12,   12,    8,    8,    4,    4,    8,    6,    2 },   // T76
+        new[] {   20,   16,   12,   12,   12,    8,    8,    4,    4,    8,    6,    2 },   // T80
+    };
+    /// <summary>Nightsilver (weapons, earring, ring) or Nightsilk (the rest), at the tier's own rung.</summary>
+    private static readonly int[][] GearNight =
+    {
+        new[] {  300,  240,  180,  180,  180,  120,  120,   60,   60,  120,   90,   30 },   // T40 normal
+        new[] {  200,  160,  120,  120,  120,   80,   80,   40,   40,   80,   60,   20 },   // T52 Refined
+        new[] {  150,  120,   90,   90,   90,   60,   60,   30,   30,   60,   45,   15 },   // T61 Rare
+        new[] {   50,   40,   30,   30,   30,   20,   20,   10,   10,   20,   15,    5 },   // T76 Refined Rare
+        new[] {   10,    8,    6,    6,    6,    4,    4,    2,    2,    4,    3,    1 },   // T80 Legendary
+    };
+    private static readonly int[][] GearBars =
+    {
+        new[] {    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0 },   // T40
+        new[] {    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0 },   // T52
+        new[] {    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0 },   // T61
+        new[] {   40,   32,   24,   24,   24,   16,   16,    8,    8,   16,   12,    4 },   // T76
+        new[] {   70,   56,   42,   42,   42,   28,   28,   14,   14,   28,   21,    7 },   // T80
+    };
+    /// <summary>The tier's grade essence, RULED 2026-09-23 (third round, §2.2): the body columns share one
+    /// cell, as do helmet / shield / necklace and gloves / boots.</summary>
+    private static readonly int[][] GearEssence =
+    {
+        new[] {  400,  320,  240,  240,  240,  160,  160,   80,   80,  160,  120,   40 },   // T40 D
+        new[] {  800,  640,  480,  480,  480,  320,  320,  160,  160,  320,  240,   80 },   // T52 C
+        new[] { 1200,  960,  720,  720,  720,  480,  480,  240,  240,  480,  360,  120 },   // T61 B
+        new[] { 1600, 1280,  960,  960,  960,  640,  640,  320,  320,  640,  480,  160 },   // T76 A
+        new[] { 2000, 1600, 1200, 1200, 1200,  800,  800,  400,  400,  800,  600,  200 },   // T80 S
+    };
+    /// <summary>MP per attempt, by column (the note: *"weapons 1h/2h 300/400, armor body 200,
+    /// gloves/boots/earrings 100, helmet/shield/neckclace 150, rings 50"*). The same on every tier.</summary>
+    private static readonly int[] GearMp = { 400, 300, 200, 200, 200, 150, 150, 100, 100, 150, 100, 50 };
+
+    /// <summary>The table column a piece of gear reads, or -1.</summary>
+    private static int GearColumn(ItemDef d) => d.Slot switch
+    {
+        EquipSlot.Weapon => d.WeaponType.IsTwoHanded() ? 0 : 1,
+        EquipSlot.Shield => 6,
+        EquipSlot.Armor => d.ArmorSlot switch
         {
-            ArmorSlot.Body => 1f / 2f,
-            ArmorSlot.Head => 1f / 3.33f,
-            _              => 1f / 10f,          // gloves, boots
+            ArmorSlot.Body => d.Weight switch { ArmorWeight.Heavy => 2, ArmorWeight.Light => 3, _ => 4 },
+            ArmorSlot.Head => 5,
+            ArmorSlot.Gloves => 7,
+            ArmorSlot.Boots => 8,
+            _ => -1,
         },
-        EquipSlot.Jewel  => d.JewelType switch
+        EquipSlot.Jewel => d.JewelType switch
         {
-            JewelType.Necklace => 1f / 2.5f,
-            JewelType.Earring  => 1f / 5f,
-            _                  => 1f / 10f,      // ring
+            JewelType.Necklace => 9,
+            JewelType.Earring => 10,
+            JewelType.Ring => 11,
+            _ => -1,
         },
-        _ => 0.5f
+        _ => -1,
     };
 
-    private static (MaterialType Type, float Frac)[] Composition(ItemDef d)
-    {
-        switch (d.Slot)
-        {
-            case EquipSlot.Weapon:
-                return new[] { (MaterialType.Ingot, 0.6f), (MaterialType.Gem, 0.2f), (MaterialType.Wood, 0.2f) };
-            case EquipSlot.Jewel:
-                return new[] { (MaterialType.Gem, 0.6f), (MaterialType.Ingot, 0.2f), (MaterialType.Leather, 0.2f) };
-            case EquipSlot.Shield:
-                return new[] { (MaterialType.Ingot, 0.6f), (MaterialType.Leather, 0.2f), (MaterialType.Gem, 0.2f) };
-            case EquipSlot.Armor when d.ArmorSlot == ArmorSlot.Body:
-                return d.Weight switch
-                {
-                    ArmorWeight.Heavy => new[] { (MaterialType.Ingot, 0.5f), (MaterialType.Leather, 0.2f), (MaterialType.Thread, 0.2f), (MaterialType.Gem, 0.1f) },
-                    ArmorWeight.Robe  => new[] { (MaterialType.Thread, 0.5f), (MaterialType.Ingot, 0.2f), (MaterialType.Leather, 0.2f), (MaterialType.Gem, 0.1f) },
-                    _                 => new[] { (MaterialType.Leather, 0.5f), (MaterialType.Ingot, 0.2f), (MaterialType.Thread, 0.2f), (MaterialType.Gem, 0.1f) },
-                };
-            case EquipSlot.Armor:   // weightless accessories (helm/gloves/boots)
-                return new[] { (MaterialType.Leather, 0.4f), (MaterialType.Ingot, 0.3f), (MaterialType.Thread, 0.2f), (MaterialType.Gem, 0.1f) };
-            default:
-                return System.Array.Empty<(MaterialType, float)>();
-        }
-    }
+    /// <summary>Weapons, earrings and rings take Nightsilver; armour, shields and the necklace take Nightsilk
+    /// (second round, answer 5).</summary>
+    private static bool TakesNightsilver(int column) => column is 0 or 1 or 10 or 11;
 
     private static IEnumerable<Recipe> FinishedItemRecipes()
     {
         foreach (var d in ItemCatalog.AllItems)
         {
             if (d.ItemLevel <= 0) continue;                // only the tiered gear
-            // Only the AUTHORED set piece is craftable; the derived quality copies are drop-only. That
-            // authored piece used to be the Epic rung and is now the MYTHIC one (the ladder re-anchored
-            // so the authored number is the ceiling rather than a 70% mid-point) — this filter is how
-            // "the real item" is identified, so it had to move with it. Leaving it on Epic silently
-            // produced ZERO craftable recipes, which the SmokeTest caught as RecipeCatalog returning
-            // null for a known id.
+            // Only the authored (Mythic) piece is craftable; its Common copy is drop-only.
             if (d.Rarity != ItemRarity.Mythic) continue;
             if (!Crafting.IsGearSlot(d.Slot)) continue;
-            // F AND E GEAR ARE NOT CRAFTED (`BL-273` part 2): the rework's recipe tables start at T40. The
-            // input tables below are still the `BL-05` ones, read at T40..T80 until part 3 replaces the mats.
-            if (d.ItemLevel < Crafting.MinCraftedGearLevel) continue;
-            int rung = GearRung(d.ItemLevel);
-
-            float slot = SlotFraction(d);
-            int bulk   = System.Math.Max(1, (int)System.Math.Round(GearBulk[rung] * slot));
-            // The accent ROUNDS DOWN and may reach zero, and that is deliberate: a ring is a tenth of a
-            // weapon, so at rungs where the weapon takes a single accent mat the ring genuinely takes
-            // none. Flooring it up to 1 instead would have made the smallest slots the most expensive
-            // per point of stat — a Mythic accent mat is 44 farm hours by itself at the top.
-            int accent = (int)(GearAccent[rung] * slot);
-            var bulkR   = GearBulkRarity[rung];
-            var accentR = GearAccentRarity[rung];
+            int t = System.Array.IndexOf(Crafting.GearTiers, d.ItemLevel);
+            int c = GearColumn(d);
+            if (t < 0 || c < 0) continue;                  // F and E gear is not crafted
 
             var inputs = new List<RecipeInput>();
-            var comp = Composition(d);
-            foreach (var (type, frac) in comp)
-                inputs.Add(new RecipeInput(Crafting.MaterialId(type, bulkR),
-                                           System.Math.Max(1, (int)System.Math.Round(bulk * frac))));
-            // ⚠ The accent goes ENTIRELY on the dominant material, never split across the composition.
-            // Splitting it was the old behaviour and it was a silent multiplier: `Max(1, accent * frac)`
-            // turned "1 accent mat" into one PER TYPE, so a four-material body paid four Legendary mats
-            // where the recipe said one — and at the top rungs a single mat is hours of farming.
-            // Composition() lists the dominant material FIRST at every slot, so comp[0] is it.
-            if (accent > 0 && comp.Length > 0)
-                inputs.Add(new RecipeInput(Crafting.MaterialId(comp[0].Type, accentR), accent));
+            void Add(string id, int qty) { if (qty > 0) inputs.Add(new RecipeInput(id, qty)); }
+            Add(Crafting.MaterialId(MaterialType.Wood), GearWood[t][c]);
+            Add(Crafting.MaterialId(MaterialType.Iron), GearIron[t][c]);
+            Add(Crafting.MaterialId(MaterialType.Leather), GearLeather[t][c]);
+            Add(Crafting.MaterialId(MaterialType.Thread), GearThread[t][c]);
+            Add(Crafting.AlloyId, GearAlloy[t][c]);
+            Add(Crafting.PartId(Crafting.GearKind(d.Id), d.ItemLevel), GearParts[t][c]);
+            Add(TakesNightsilver(c) ? Crafting.NightsilverId(t) : Crafting.NightsilkId(t), GearNight[t][c]);
+            Add(ItemCatalog.VolcanicBar, GearBars[t][c]);
+            Add(Crafting.EssenceIds[t], GearEssence[t][c]);
 
             // The success % is the recipe ITEM's, not the recipe's (see Recipe): SuccessChance is unused here.
             yield return new Recipe(
                 $"craft_{d.Id}", Crafting.TypeOf(d), d.Id, inputs.ToArray(),
-                LearnLevel: d.ItemLevel, UnlockLevel: Crafting.TierGate(d.ItemLevel), GearItemLevel: d.ItemLevel);
+                LearnLevel: d.ItemLevel, UnlockLevel: Crafting.TierGate(d.ItemLevel), GearItemLevel: d.ItemLevel,
+                MpCost: GearMp[c]);
         }
     }
 
@@ -336,7 +310,7 @@ public static class RecipeCatalog
     // =====================================================================================
     private static IEnumerable<Recipe> ConsumableRecipes()
     {
-        static RecipeInput M(MaterialType t, int n) => new(Crafting.MaterialId(t, ItemRarity.Common), n);
+        static RecipeInput M(MaterialType t, int n) => new(Crafting.MaterialId(t), n);
         static RecipeInput E(int grade, int n) => new(Crafting.EssenceIds[grade], n);
         static RecipeInput V(string id, int n) => new(id, n);
 
@@ -350,7 +324,7 @@ public static class RecipeCatalog
         const int Gem = 0, Wood = 1, Iron = 2, Leather = 3;
         static RecipeInput Mat(int k, int n) => M(k switch
         {
-            0 => MaterialType.Gem, 1 => MaterialType.Wood, 2 => MaterialType.Ingot, _ => MaterialType.Leather,
+            0 => MaterialType.Gem, 1 => MaterialType.Wood, 2 => MaterialType.Iron, _ => MaterialType.Leather,
         }, n);
 
         // ---- HP / MP ------------------------------------------------------------------------------------

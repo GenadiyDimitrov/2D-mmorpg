@@ -346,7 +346,7 @@ Check("server pushed the warehouse on login", a.Ware is not null);
           $"common {ItemCatalog.Get("sword2h_t40_common")!.Value} sells {ItemCatalog.SellPrice(ItemCatalog.Get("sword2h_t40_common")!)}");
     Check("a healing potion and a material sell for half their value; a buff potion still sells for 0",
           ItemCatalog.Get(ItemCatalog.HealingPotion) is ItemDef hp && ItemCatalog.SellPrice(hp) == Math.Max(1, hp.Value / 2)
-          && ItemCatalog.Get(Crafting.MaterialId(MaterialType.Wood, ItemRarity.Common)) is ItemDef wood
+          && ItemCatalog.Get(Crafting.MaterialId(MaterialType.Wood)) is ItemDef wood
           && ItemCatalog.SellPrice(wood) == Math.Max(1, wood.Value / 2)
           && ItemCatalog.AllItems.Where(d => d.SellPriceOverride == 0).All(d => ItemCatalog.SellPrice(d) == 0));
 
@@ -384,6 +384,48 @@ Check("server pushed the warehouse on login", a.Ware is not null);
     Check("craft points per attempt: T40 1 · T52 2 · T61 3 · T76 5 · T80 8",
           Crafting.CraftPoints(40) == 1 && Crafting.CraftPoints(52) == 2 && Crafting.CraftPoints(61) == 3
           && Crafting.CraftPoints(76) == 5 && Crafting.CraftPoints(80) == 8);
+    // 0.205.0 — STEP 10: the materials and the authored per-slot tables (`BL-273` part 3).
+    Check("🔑 step 10: the old mat ladder is gone (one rung per base mat; Iron replaces Ingot)",
+          ItemCatalog.Get("mat_ingot_uncommon") is null && ItemCatalog.Get("mat_wood_common") is null
+          && Crafting.MaterialTypes.All(t => ItemCatalog.Get(Crafting.MaterialId(t)) is { Rarity: ItemRarity.Common })
+          && ItemCatalog.Get(Crafting.MaterialId(MaterialType.Iron))?.Name == "Iron");
+    Check("🔑 Nightsilver / Nightsilk: five rungs each, plus Alloy; 18 parts a tier, 90 in all",
+          Enumerable.Range(0, 5).All(r => ItemCatalog.Get(Crafting.NightsilverId(r)) is not null && ItemCatalog.Get(Crafting.NightsilkId(r)) is not null)
+          && ItemCatalog.Get(Crafting.NightsilverId(4))?.Name == "Legendary Nightsilver" && ItemCatalog.Get(Crafting.AlloyId) is not null
+          && ItemCatalog.AllItems.Count(d => d.Id.StartsWith("part_")) == 90
+          && ItemCatalog.Get("part_blunt2h_t40")?.Name == "Darksteel Maul Head",
+          $"{ItemCatalog.AllItems.Count(d => d.Id.StartsWith("part_"))} parts");
+    Check("🔑 a part is worth its item's Common price (T40 Maul Head = the T40 Common maul)",
+          ItemCatalog.Get("part_blunt2h_t40")?.Value == ItemCatalog.Get("blunt2h_t40_common")?.Value,
+          $"{ItemCatalog.Get("part_blunt2h_t40")?.Value} vs {ItemCatalog.Get("blunt2h_t40_common")?.Value}");
+    {
+        var t40 = RecipeCatalog.Get("craft_sword2h_t40")!;
+        int Q(Recipe r, string id) => r.Inputs.FirstOrDefault(i => i.ItemId == id)?.Qty ?? 0;
+        Check("🔑 T40 2H recipe = 400 wood + 400 iron + 10 alloy + 20 Greatsword Blades + 300 Nightsilver + 400 D essence, 400 MP",
+              Q(t40, "mat_wood") == 400 && Q(t40, "mat_iron") == 400 && Q(t40, Crafting.AlloyId) == 10
+              && Q(t40, "part_sword2h_t40") == 20 && Q(t40, Crafting.NightsilverId(0)) == 300 && Q(t40, "essence_d") == 400
+              && t40.Inputs.Length == 6 && t40.MpCost == 400,
+              string.Join(" + ", t40.Inputs.Select(i => $"{i.Qty} {i.ItemId}")));
+        var ring80 = RecipeCatalog.Get("craft_ring_t80")!;
+        var robe61 = RecipeCatalog.Get("craft_robe_t61")!;
+        Check("authored cells: T80 ring = 7 bars + 1 Legendary Nightsilver, 50 MP; T61 robe = 1152 thread + 90 Rare Nightsilk",
+              Q(ring80, ItemCatalog.VolcanicBar) == 7 && Q(ring80, Crafting.NightsilverId(4)) == 1 && ring80.MpCost == 50
+              && Q(robe61, "mat_thread") == 1152 && Q(robe61, Crafting.NightsilkId(2)) == 90);
+        Check("🔑 Nightsilver does NOT scale with the recipe %, everything else does (T76 1H at 20%)",
+              RecipeCatalog.Get("craft_sword1h_t76") is { } r76
+              && r76.Inputs.All(i => Crafting.InputQty(r76, i, 20) == (Crafting.IsFixedInput(i.ItemId) ? i.Qty : Crafting.ScaledQty(i.Qty, 20)))
+              && r76.Inputs.Any(i => Crafting.IsFixedInput(i.ItemId)));
+        var refines = RecipeCatalog.All.Where(r => r.Refine).ToList();
+        Check("🔑 the refines: 8 ladder steps + alloy + bar, 10:1, gated L0/40 · L3/52 · L5/61 · L8/76 (bar L7/76), 0 points, no gold",
+              refines.Count == 10 && refines.All(r => r.Type == CraftType.General && r.GoldAt(0) == 0 && Crafting.CraftPoints(r) == 0)
+              && RecipeCatalog.Get("refine_nightsilver_1") is { UnlockLevel: 0, LearnLevel: 40, MpCost: 50 }
+              && RecipeCatalog.Get("refine_nightsilk_2") is { UnlockLevel: 3, LearnLevel: 52, MpCost: 100 }
+              && RecipeCatalog.Get("refine_nightsilver_3") is { UnlockLevel: 5, LearnLevel: 61, MpCost: 150 }
+              && RecipeCatalog.Get("refine_nightsilk_4") is { UnlockLevel: 8, LearnLevel: 76, MpCost: 200 }
+              && RecipeCatalog.Get("refine_volcanic_bar") is { UnlockLevel: 7, LearnLevel: 76 }
+              && RecipeCatalog.Get("refine_nightsilver_1")!.Inputs[0] is { ItemId: "nightsilver_0", Qty: 10 },
+              $"{refines.Count} refines");
+    }
     // 0.204.0 — THE CRAFTER-POINTS MODEL (his Idea-1) + step 9b.
     Check("🔑 a smith's L9 / L10 add +5% each, and nothing below",
           Crafting.GearSuccessBonus(8) == 0f && Math.Abs(Crafting.GearSuccessBonus(9) - 0.05f) < 1e-6
@@ -1037,7 +1079,7 @@ Check("quest markers appear once the character is old enough to be offered a que
       a.Marks is not null && a.Marks.Marks.Length > 0,
       $"{a.Marks?.Marks.Length ?? 0} marks at level {a.Progress?.Level}");
 
-string matId = Crafting.MaterialId(MaterialType.Ingot, ItemRarity.Common);
+string matId = Crafting.MaterialId(MaterialType.Iron);
 await a.Hub.SendAsync("DebugGive", matId, 5);
 await a.Settle();
 var matStack = a.Inv?.Items.FirstOrDefault(i => i.DefId == matId);
@@ -1461,7 +1503,7 @@ b.MyId = entered2.EntityId;
               $"wood {Held(ItemCatalog.CrafterQuestWood)}, recipes {Held(ItemCatalog.CrafterQuestRecipe)}");
 
         // Crafting BEFORE the craft step is refused (the hammer recipe is not even learned yet).
-        await b.Hub.SendAsync("Craft", Crafting.HammerRecipeId, true, Crafting.HammerRecipePercent);
+        await b.Hub.SendAsync("Craft", Crafting.HammerRecipeId, true, Crafting.HammerRecipePercent, 1);
         await b.Settle();
         Check("a hammer craft before the craft step is refused, and costs nothing",
               Held(ItemCatalog.CrafterHammer) == 0 && Held(ItemCatalog.CrafterQuestWood) >= 20,
@@ -1491,7 +1533,7 @@ b.MyId = entered2.EntityId;
         while (Held(ItemCatalog.CrafterHammer) == 0 && tries < 25)
         {
             tries++;
-            await b.Hub.SendAsync("Craft", Crafting.HammerRecipeId, true, Crafting.HammerRecipePercent);
+            await b.Hub.SendAsync("Craft", Crafting.HammerRecipeId, true, Crafting.HammerRecipePercent, 1);
             await b.Settle();
             if (Held(ItemCatalog.CrafterHammer) > 0) break;
             fails++;
@@ -1592,12 +1634,12 @@ b.MyId = entered2.EntityId;
               Known().Contains($"{recipeId}:60") && Known().Count(k => k.StartsWith(recipeId + ":")) == 1 && Count(r60) == 0,
               $"known [{string.Join(",", Known())}]");
 
-        var scaled = recipe.Inputs.Select(i => (i.ItemId, Qty: Crafting.ScaledQty(i.Qty, 40))).ToArray();
+        var scaled = recipe.Inputs.Select(i => (i.ItemId, Qty: Crafting.InputQty(recipe, i, 40))).ToArray();
         foreach (var (id, qty) in scaled) await b.Hub.SendAsync("DebugGive", id, qty * 3);
         await b.Settle();
         int mat0 = Count(scaled[0].ItemId);
 
-        await b.Hub.SendAsync("Craft", recipeId, false, 40);
+        await b.Hub.SendAsync("Craft", recipeId, false, 40, 1);
         await b.Settle();
         Check("🔑 a craft AWAY FROM A MASTER is refused, and costs nothing",
               Count(r40) == 3 && Count(scaled[0].ItemId) == mat0, $"r40 {Count(r40)}, mats {Count(scaled[0].ItemId)}/{mat0}");
@@ -1607,13 +1649,20 @@ b.MyId = entered2.EntityId;
         await b.WaitFor(() => b.Crafting is { AtMaster: true });
         Check("the crafting push says AT MASTER once you stand at one", b.Crafting is { AtMaster: true });
 
-        await b.Hub.SendAsync("Craft", recipeId, false, 100);
+        await b.Hub.SendAsync("Craft", recipeId, false, 100, 1);
         await b.Settle();
         Check("a % ABOVE the learned one (or one that does not exist at this tier) is refused",
               Count(r40) == 3 && Count(scaled[0].ItemId) == mat0);
 
         int made0 = Count(recipe.OutputId);
-        for (int i = 0; i < 2; i++) { await b.Hub.SendAsync("Craft", recipeId, false, 40); await b.Settle(); }
+        // 0.205.0: a T76 1H costs 300 MP an attempt, so refill between them (/heal, admin) — the MP gate is real.
+        for (int i = 0; i < 2; i++)
+        {
+            await b.Hub.SendAsync("AdminCommand", "heal", "");
+            await b.Settle();
+            await b.Hub.SendAsync("Craft", recipeId, false, 40, 1);
+            await b.Settle();
+        }
         int attempts = 2;
         Check("🔑 each attempt spends ONE 40% recipe and the inputs scaled to 50%, pass or fail",
               Count(r40) == 3 - attempts && Count(scaled[0].ItemId) == mat0 - attempts * scaled[0].Qty,
@@ -1635,7 +1684,7 @@ b.MyId = entered2.EntityId;
         Check("🔑 forgetting frees the slot", !Known().Any(k => k.StartsWith(recipeId + ":")),
               $"known [{string.Join(",", Known())}]");
         int r40Before = Count(r40);
-        await b.Hub.SendAsync("Craft", recipeId, false, 40);
+        await b.Hub.SendAsync("Craft", recipeId, false, 40, 1);
         await b.Settle();
         Check("...and a forgotten recipe cannot be crafted", Count(r40) == r40Before);
 
@@ -1667,12 +1716,28 @@ b.MyId = entered2.EntityId;
         foreach (var inp in generic.Inputs) await b.Hub.SendAsync("DebugGive", inp.ItemId, inp.Qty);
         await b.Settle();
         int gIn0 = Count(generic.Inputs[0].ItemId);
-        await b.Hub.SendAsync("Craft", generic.Id, false, 0);
+        await b.Hub.SendAsync("Craft", generic.Id, false, 0, 1);
         await b.Settle();
         Check("a generic craft spends its inputs (no recipe item) and pays 1 GENERIC point, no type point",
               Count(generic.Inputs[0].ItemId) == gIn0 - generic.Inputs[0].Qty
               && b.Crafting is { GenericPoints: 1 },
               $"input {gIn0}->{Count(generic.Inputs[0].ItemId)}, generic {b.Crafting?.GenericPoints}");
+
+        // 0.205.0 — A REFINE WITH A COUNT: one command repeats until something runs out, pays MP, no gold,
+        // and NO craft points (*"refines pay 0"*). 50 normal Nightsilver asked x100 = 5 refines, then stops.
+        const string refineId = "refine_nightsilver_1";
+        await b.Hub.SendAsync("LearnRecipeAtMaster", masterId, refineId);
+        await b.Hub.SendAsync("DebugGive", Crafting.NightsilverId(0), 50);
+        await b.Settle();
+        int ns0 = Count(Crafting.NightsilverId(0)), ns1 = Count(Crafting.NightsilverId(1));
+        int gp0 = b.Crafting?.GenericPoints ?? -1;
+        await b.Hub.SendAsync("Craft", refineId, false, 0, 100);
+        await b.Settle();
+        Check("🔑 a refine x100 with 50 normal Nightsilver makes 5 Refined, spends all 50, and pays NO craft point",
+              Known().Contains($"{refineId}:100") && Count(Crafting.NightsilverId(0)) == ns0 - 50
+              && Count(Crafting.NightsilverId(1)) == ns1 + 5 && b.Crafting?.GenericPoints == gp0,
+              $"known {Known().Contains($"{refineId}:100")}, normal {ns0}->{Count(Crafting.NightsilverId(0))}, "
+              + $"refined {ns1}->{Count(Crafting.NightsilverId(1))}, generic {gp0}->{b.Crafting?.GenericPoints}");
 
         // 0.204.0 — A RESPEC LOCKS, IT NEVER FORGETS (*"each repec locks the recipies … only can be removed by
         // hand to free up slot - never crafted if not that lvl of that type"*).
@@ -1691,10 +1756,10 @@ b.MyId = entered2.EntityId;
               && b.Gold == gold2 - Crafting.RespecPrices[0] && Known().Contains($"{recipeId}:20"),
               $"free {b.Crafting?.FreePoints}, respecs {b.Crafting?.Respecs}, gold {gold2}->{b.Gold}, "
               + $"known [{string.Join(",", Known())}]");
-        foreach (var inp in recipe.Inputs) await b.Hub.SendAsync("DebugGive", inp.ItemId, Crafting.ScaledQty(inp.Qty, 20));
+        foreach (var inp in recipe.Inputs) await b.Hub.SendAsync("DebugGive", inp.ItemId, Crafting.InputQty(recipe, inp, 20));
         await b.Settle();
         int r20Before = Count(r20);
-        await b.Hub.SendAsync("Craft", recipeId, false, 20);
+        await b.Hub.SendAsync("Craft", recipeId, false, 20, 1);
         await b.Settle();
         Check("🔑 ...and a LOCKED recipe will not craft below its gate (nothing spent)", Count(r20) == r20Before && r20Before > 0,
               $"r20 {r20Before}->{Count(r20)}");

@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.204.0";
+    public const string GameVersion = "0.205.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -219,7 +219,10 @@ public static class GameConstants
     /// hub lost `JoinProfession` / `QuitProfession` / `DebugSetProfession` and gained `ForgetRecipe`,
     /// `DebugBecomeCrafter` and `DebugSetCraftLevels`; `Craft` takes the recipe % used. Positional records
     /// changed shape, so an old client mis-reads the crafting push. ⚠ A NEW APK IS WANTED.
-    public const int ProtocolVersion = 49;   // 49: the crafter-points model + step 9b (`BL-273`)
+    /// 49 → 50 (2026-09-24, `BL-273` part 3, step 10): the hub's `Craft` takes a 4th argument, the COUNT, and
+    /// SignalR binds by argument count, so an old client's 3-argument Craft is refused. The material ids changed
+    /// too (`mat_ingot_common` → `mat_iron`). ⚠ A NEW APK IS WANTED.
+    public const int ProtocolVersion = 50;   // 50: step 10, the materials + a count on Craft (`BL-273`)
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means

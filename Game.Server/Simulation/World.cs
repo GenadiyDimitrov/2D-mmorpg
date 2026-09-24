@@ -490,7 +490,7 @@ public record DebugCancelAttrCmd(string ConnectionId, int Index) : IAdminCommand
 /// <para>`BL-273` part 2: <paramref name="RecipePercent"/> is the % of the recipe ITEM a gear craft spends
 /// (at or below the learned %); the attempt rolls at it and the inputs scale by it. Ignored for generic
 /// recipes, which spend no recipe item.</para></summary>
-public record CraftCmd(string ConnectionId, string RecipeId, bool UseWarehouse, int RecipePercent) : IGameCommand;
+public record CraftCmd(string ConnectionId, string RecipeId, bool UseWarehouse, int RecipePercent, int Count = 1) : IGameCommand;
 
 /// <summary>Forget a learned recipe to free its slot (`BL-273` part 2). Anywhere; refunds nothing.</summary>
 public record ForgetRecipeCmd(string ConnectionId, string RecipeId) : IGameCommand;

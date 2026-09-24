@@ -2165,6 +2165,7 @@ public static class ItemCatalog
         list.AddRange(tieredGear);
         list.AddRange(CommonCopies(tieredGear));
         list.AddRange(Materials());
+        list.AddRange(Parts(tieredGear));
         list.AddRange(Essences());
         list.AddRange(VolcanicMaterials());
         list.AddRange(RecipeBooks(tieredGear));
@@ -2188,20 +2189,50 @@ public static class ItemCatalog
         return dict;
     }
 
-    /// <summary>Crafting MATERIALS: 5 types × **6** rarities (docs/design/Crafting.md). Tradable +
-    /// stackable, no attributes; rarity drives the value. Each type is refined by its owning profession
-    /// (Crafting.RefinerOf) but every rarity also drops from mobs.
-    ///
-    /// ⚠ The Mythic rung was added 2026-08-12 with `BL-05` — see Crafting.MaterialRarities for why. The
-    /// count comes from that array, so this loop needed no change; <see cref="MaterialValue"/> DID.</summary>
+    /// <summary>Crafting MATERIALS (`BL-273` part 3, 0.205.0). The five BASE mats are one rung each (the old
+    /// Uncommon…Mythic ladder is gone) and sell for 2.5 apiece. Above them sit the two refinable families,
+    /// Nightsilver and Nightsilk, five rungs each at 10:1, and Alloy (20 gems + 20 iron). ⚠ The refinable
+    /// Values are placeholders, ×10 a rung so that a refine neither makes nor loses coin; step 11 measures
+    /// them against the drop.</summary>
     private static IEnumerable<ItemDef> Materials()
     {
         foreach (var type in Crafting.MaterialTypes)
-            foreach (var rarity in Crafting.MaterialRarities)
-                yield return new ItemDef(Crafting.MaterialId(type, rarity),
-                    Crafting.MaterialName(type, rarity),
-                    EquipSlot.Material, ItemGrade.F, rarity,
-                    Value: MaterialValue(rarity), NoAttributes: true);
+            yield return new ItemDef(Crafting.MaterialId(type), Crafting.MaterialName(type),
+                EquipSlot.Material, ItemGrade.F, ItemRarity.Common, Value: 5, NoAttributes: true);
+
+        var rungRarity = new[] { ItemRarity.Common, ItemRarity.Uncommon, ItemRarity.Rare, ItemRarity.Epic, ItemRarity.Legendary };
+        int value = 20;
+        for (int rung = 0; rung < Crafting.RefineRungs; rung++, value *= Crafting.RefineRatio)
+        {
+            string p = Crafting.RefineRungPrefix[rung];
+            string tier = $"T{Crafting.GearTiers[rung]}";
+            yield return new ItemDef(Crafting.NightsilverId(rung), $"{p}Nightsilver", EquipSlot.Material, ItemGrade.F,
+                rungRarity[rung], Value: value, NoAttributes: true,
+                Description: $"The smith's metal of the {tier} weapons, earrings and rings. 10 refine into 1 of the next rung.");
+            yield return new ItemDef(Crafting.NightsilkId(rung), $"{p}Nightsilk", EquipSlot.Material, ItemGrade.F,
+                rungRarity[rung], Value: value, NoAttributes: true,
+                Description: $"The cloth of the {tier} armour, shields and necklaces. 10 refine into 1 of the next rung.");
+        }
+        yield return new ItemDef(Crafting.AlloyId, "Alloy", EquipSlot.Material, ItemGrade.F, ItemRarity.Common,
+            Value: 200, NoAttributes: true, Description: "Refined from 20 gems and 20 iron. Every gear recipe takes some.");
+    }
+
+    /// <summary>The PARTS (the note's "heads", step 10): one per gear KIND per crafted tier, 18 a tier, e.g.
+    /// "Darksteel Maul Head". A part's Value is its item's COMMON price (the note: *"the head costs same as the
+    /// common item"*), so T76/T80 parts are priced as the Common those tiers do not have.</summary>
+    private static IEnumerable<ItemDef> Parts(IEnumerable<ItemDef> tiered)
+    {
+        foreach (var d in tiered)
+        {
+            if (d.Rarity != ItemRarity.Mythic || !IsBaseTier(d.Id) || !Crafting.IsGearSlot(d.Slot)) continue;
+            if (Array.IndexOf(Crafting.GearTiers, d.ItemLevel) < 0) continue;
+            string kind = Crafting.GearKind(d.Id);
+            if (!Crafting.PartNames.TryGetValue(kind, out var noun)) continue;
+            yield return new ItemDef(Crafting.PartId(kind, d.ItemLevel), $"{GradeTheme(d.ItemLevel)} {noun}",
+                EquipSlot.Material, d.Grade, ItemRarity.Rare,
+                Value: DefaultValue(d with { Rarity = ItemRarity.Common, Value = 0 }), NoAttributes: true,
+                Description: $"The main part of a {d.Name}. Every {GradeTheme(d.ItemLevel)} recipe of its kind takes some.");
+        }
     }
 
     /// <summary>The five grade ESSENCES (`BL-273` part 1): what breaking gear gives
@@ -2235,21 +2266,6 @@ public static class ItemCatalog
                            + "The grade's crafting essence; no merchant sells it.");
         }
     }
-
-    /// <summary>Roughly ×5 a rung, which is the shape of the refine cost (7 mats in, 1 out) plus a margin.
-    /// ⚠ Mythic is NOT a fall-through: before `BL-05` added the rung the `_` arm returned 5, which would
-    /// have priced the rarest material in the game below a Common one — and the sell price is derived from
-    /// Value, so it would have been visible in a shop the day a Mythic mat first dropped.</summary>
-    private static int MaterialValue(ItemRarity rarity) => rarity switch
-    {
-        ItemRarity.Common => 5,
-        ItemRarity.Uncommon => 25,
-        ItemRarity.Rare => 120,
-        ItemRarity.Epic => 600,
-        ItemRarity.Legendary => 3000,
-        ItemRarity.Mythic => 15000,
-        _ => 5
-    };
 
     // ===================================================================
     //  EQUIPMENT RARITY = COMMON + MYTHIC (`BL-272`, 2026-09-23)

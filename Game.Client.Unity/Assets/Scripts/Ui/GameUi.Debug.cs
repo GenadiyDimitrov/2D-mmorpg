@@ -672,28 +672,39 @@ namespace Game.Client
             _debugTitle.text = "Crafting materials — sized for a real craft, not a taste";
             DebugAction("< Back", () => { _debugItemsView = 0; RefreshDebugPanel(); });
 
-            // The one button that actually gets used: enough of everything to craft anything and still
-            // have room to fail a few 80% rolls.
-            DebugAction("* GIVE ALL — every material x500", () =>
+            // 0.205.0: the base mats are one rung each; the ladders are Nightsilver / Nightsilk. GIVE ALL covers a
+            // T80 2H at 100% (2,000 wood + 2,000 iron) with room for a few fails; the parts are the Parts buttons.
+            var bulk = Crafting.MaterialTypes.Select(Crafting.MaterialId).ToArray();
+            var ladders = Enumerable.Range(0, Crafting.RefineRungs)
+                .SelectMany(r => new[] { Crafting.NightsilverId(r), Crafting.NightsilkId(r) }).ToArray();
+            var extras = new[] { Crafting.AlloyId, ItemCatalog.VolcanicAsh, ItemCatalog.VolcanicStone, ItemCatalog.VolcanicBar };
+            DebugAction("* GIVE ALL — base x5000, every Nightsilver/Nightsilk rung x500, alloy/volcanic x200", () =>
             {
-                foreach (var type in Crafting.MaterialTypes)
-                    foreach (var rarity in Crafting.MaterialRarities)
-                    {
-                        string id = Crafting.MaterialId(type, rarity);
-                        if (ItemCatalog.Get(id) is null) continue;
-                        Boot.Debug(n => n.DebugGiveAsync(id, 500), "give");
-                    }
+                foreach (var id in bulk) Boot.Debug(n => n.DebugGiveAsync(id, 5000), "give");
+                foreach (var id in ladders) Boot.Debug(n => n.DebugGiveAsync(id, 500), "give");
+                foreach (var id in extras) Boot.Debug(n => n.DebugGiveAsync(id, 200), "give");
             });
 
-            foreach (var type in Crafting.MaterialTypes)
+            DebugHeader("Base");
+            foreach (var id in bulk) DebugGive(id, $"{ItemCatalog.Get(id)?.Name} x1000", 1000);
+            DebugHeader("Nightsilver / Nightsilk");
+            foreach (var id in ladders) DebugGive(id, $"{ItemCatalog.Get(id)?.Name} x100", 100);
+            DebugHeader("Alloy / volcanic");
+            foreach (var id in extras) DebugGive(id, $"{ItemCatalog.Get(id)?.Name} x50", 50);
+            // Parts: one button per tier gives 20 of every kind at that tier (a 2H at 100% takes 20).
+            DebugHeader("Parts");
+            foreach (int tier in Crafting.GearTiers)
             {
-                DebugHeader($"{type}");
-                foreach (var rarity in Crafting.MaterialRarities)
+                int t = tier;
+                DebugAction($"T{t}: every part x20", () =>
                 {
-                    string id = Crafting.MaterialId(type, rarity);
-                    if (ItemCatalog.Get(id) is null) continue;
-                    DebugGive(id, $"{Crafting.MaterialName(type, rarity)} x200", 200);
-                }
+                    foreach (var kind in Crafting.PartNames.Keys)
+                    {
+                        string id = Crafting.PartId(kind, t);
+                        if (ItemCatalog.Get(id) is null) continue;
+                        Boot.Debug(n => n.DebugGiveAsync(id, 20), "give");
+                    }
+                });
             }
         }
 

@@ -7,12 +7,46 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.204.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.205.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-24 (latest) — 0.204.0: the crafter-points model + the generic-recipe table (`BL-273`, step 9b)
+## 2026-09-24 (latest) — 0.205.0: the crafting materials and the gear recipe tables (`BL-273` part 3, step 10)
+
+> *"we need new mats -> like any weapon/armor need main crafting mat for itself"*
+
+**Gear recipes now take the rework's materials.** The old Uncommon…Mythic material ladder is gone: the five base
+mats (**Iron**, Thread, Wood, Leather, Gem) are one rung each, and the metal and cloth that climb a ladder are
+**Nightsilver** (weapons, earrings, rings) and **Nightsilk** (armour, shields, necklaces). Every weapon, armour
+piece and jewel recipe from T40 to T80 is an authored table. ⚠ `game.db` delete (item ids changed).
+⚠ Protocol 50: **a new APK is needed.**
+
+- ⚠ **Nightsilver, Nightsilk, parts, volcanic ash and stone drop from nothing yet.** Step 11 (`BL-274`) gives
+  them sources, so until then no gear can be crafted. The old higher-rarity mat drops (the level-gated rolls,
+  the elite rungs and the boss pile's upper rows) are removed. Bosses and elites still pay their Common pile.
+- **Refines** (open to every crafter, no gold, **0 craft points**): 10 of a rung → 1 of the next, at generic
+  L0/40 → Refined, L3/52 → Rare, L5/61 → Refined Rare, L8/76 → Legendary. They cost MP 50/100/150/200.
+  **Alloy** = 20 gems + 20 iron (L0/40, 50 MP). **Volcanic Bar** = 20 ash + 20 stone (L7/76, 200 MP).
+- **Parts**, one per item kind per tier (18 a tier, 90 in all), e.g. *Darksteel Maul Head*, *Cobalt Hide Panel*.
+  A part is worth its item's Common price.
+- **A 2H at 100%:** wood + iron 400 … 2000 each, alloy 10 … 50, 20 parts, Nightsilver 300 normal / 200 Refined /
+  150 Rare / 50 Refined Rare / 10 Legendary, Volcanic Bars 40 / 70 at T76 / T80, and essence 400 … 2000. Every
+  other slot is its own cell, written from your guide shares. **Nightsilver/Nightsilk never scale with the
+  recipe %**; everything else does.
+- **Every craft costs MP**, from your note: 2H 400, 1H 300, body 200, helmet/shield/necklace 150,
+  gloves/boots/earring 100, ring 50, refines 50-200. (*"warriors need to wear a robe to spam crafts"*)
+- **A count on non-gear crafts.** The Crafting window's **Count** button cycles x1 / x10 / x100 / max. One tap
+  repeats a refine, potion or scroll recipe until something runs out, because a T76 weapon is ~5,500 refines.
+  Gear stays one attempt a tap.
+- The Materials tab lists the base mats, both ladders, alloy/volcanic, essence and the parts you hold. The Debug
+  window gives the new mats and a tier's parts.
+- `--craft-cost` now reads the 2H recipe from the catalog; the hours are unchanged (T40 14.8h · T52 28h · T61
+  65h per 2H at 100%). BalanceMatrix §M (M1-M12, the old ladder's faucet) is deleted.
+- SmokeTest: 359 PASS, 7 of them new (catalog cells, fixed Nightsilver, refine gates, a x100 refine that stops at
+  its materials and pays no points).
+
+## 2026-09-24 — 0.204.0: the crafter-points model + the generic-recipe table (`BL-273`, step 9b)
 
 > *"when u craft u lvl up generic .. each generic gives 1 "skill" point .. u then deside where to put this point into"*
 

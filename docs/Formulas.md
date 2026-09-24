@@ -1199,7 +1199,7 @@ a temp piece  = its Common piece's stats; 7200 s of WEARING (ticks 1/s only whil
 
 ---
 
-## Becoming a crafter: levels, points, slots, recipe % (`BL-273` part 2, 0.203.0; points model + 9b, 0.204.0)
+## Becoming a crafter: levels, points, slots, recipe % (`BL-273` part 2, 0.203.0; points model + 9b, 0.204.0; step 10, 0.205.0)
 
 Read off `Crafting` (Game.Shared/Crafting.cs). ⚠ The points, the placeholders marked below and every
 generic-recipe number are **playtest placeholders**.
@@ -1207,7 +1207,7 @@ generic-recipe number are **playtest placeholders**.
 ```
 crafter          the Master's Trial, level 40 (for good; no quitting)
 slots            10 + 5 × genericLevel                     (L0 10 … L10 60; type levels give no slots)
-points/attempt   gear: T40 1 · T52 2 · T61 3 · T76 5 · T80 8   generic recipe: 1 a batch   (a FAIL pays too)
+points/attempt   gear: T40 1 · T52 2 · T61 3 · T76 5 · T80 8   Scribe/Apothecary: 1 a batch   refine: 0   (a FAIL pays too)
                  every attempt pays the GENERIC level only
 | armour+shield | jewels); generic pays generic only
 level from pts   level N starts at 10·N·(N+1)              (L1 20 · L2 60 · L5 300 · L10 1100), max 10
@@ -1223,6 +1223,11 @@ batch gold       Scribe/Apothecary: round10( (0.9 − 0.035 × typeLevel) × Bat
                  BatchValue = the batch at its buy price (HP/MP 60/120 · 250/500 · 5000/10000 each)
 inputs (gear)    ScaledQty(q, %) = % ≥ 100 ? q : max(1, round_half_away(q × f(%)))
                  f: 20 → 0.30 · 40 → 0.50 · 60 → 0.70 · 100 → 1.00          (the trial's hammer is unscaled)
+                 Nightsilver / Nightsilk are NEVER scaled (Crafting.IsFixedInput); everything else is
+MP per attempt   Recipe.MpCost, paid on every attempt (fail too): gear 2H 400 · 1H 300 · body 200 · helmet/shield/
+                 necklace 150 · gloves/boots/earring 100 · ring 50; refines 50/100/150/200 by step; Scribe/Apothecary 0
+count            a non-gear craft repeats up to Count (1 … 1000) and stops at the first missing input, MP or gold;
+                 gear is always 1
 recipe items     T40 / T52: 100 · T61: 60, 100 · T76: 20, 40, 60 · T80: 40, 60
 spent per craft  one recipe item of % ≤ learned (gear), pass or fail
 shop recipe      Master sells T40/T52 100% at round(0.10 × piece price)        ⚠ placeholder
@@ -1230,6 +1235,30 @@ recipe drops     T76/T80: boss 60%, elite 40% (rates are still §3's until BL-27
 generic learn    authored per recipe from the ladder L0 20k · L1 50k · L2 100k · L3 200k · L4 400k · L5 700k · L6 1M
                  · L7 1.5M · L8 2M · L9 3M · L10 4M; char level = the item's tier (a buff's = its class skill's LAST rung)
 learn level      gear: the piece's own item level (T52 recipe at 52)
+```
+
+## The materials and the gear recipes (`BL-273` part 3, 0.205.0)
+
+Read off `Crafting` and `RecipeCatalog` (Game.Shared/Crafting.cs, Recipes.cs). Every gear cell is an **authored
+literal** (one per tier × slot, `Recipes.Gear*` tables), written once from his guide shares and never recomputed.
+
+```
+base mats        Iron · Thread · Wood · Leather · Gem   one rung each, Value 5 (sell 2.5)
+refinable        Nightsilver (weapons, earrings, rings) / Nightsilk (armour, shields, necklace):
+                 rung 0 normal · 1 Refined · 2 Rare · 3 Refined Rare · 4 Legendary; a tier eats its own rung
+                 (T40 0 · T52 1 · T61 2 · T76 3 · T80 4); Value 20 × 10^rung  ⚠ placeholder
+refine           10 of rung r → 1 of r+1; gate (generic L / char L): →1 L0/40 · →2 L3/52 · →3 L5/61 · →4 L8/76;
+                 MP 50 · 100 · 150 · 200; no gold; 0 craft points
+alloy            20 gem + 20 iron → 1 (L0/40, MP 50, Value 200)
+volcanic bar     20 ash + 20 stone → 1 (L7/76, MP 200)
+parts            one per KIND per tier (18 × 5 = 90), "{grade} {part}"; Value = the kind's Common price
+gear 2H @100%    wood + iron 400·(t+1) each · alloy 10·(t+1) · parts 20 · Nightsilver 300/200/150/50/10 ·
+                 bars 0/0/0/40/70 · essence 400·(t+1)        (t = 0 … 4 for T40 … T80)
+other slots      authored cells, written from the guide shares 1H 0.8 · body 0.6 · helmet/shield/necklace 0.4 ·
+                 earring 0.3 · gloves/boots 0.2 · ring 0.1; body bulk heavy iron 2 : leather 1, light leather 2 :
+                 thread 1, robe thread 4 : leather 1; helmet 3:2:1, shield 10:1:1, gloves/boots 2:1:1 (iron:leather:
+                 thread); rings/earrings iron, necklace thread
+sources          ⚠ none yet for Nightsilver / Nightsilk / parts / ash / stone (step 11, `BL-274`)
 ```
 
 ## Kill EXP and the Wayfarer's Favor (`BL-277`, 0.195.0)

@@ -800,83 +800,6 @@ public static class MobCatalog
         }
     }
 
-    /// <summary>The TOP-RUNG material faucet: Epic, Legendary and Mythic crafting mats off ELITES and
-    /// BOSSES, banded by the creature's own grade (`BL-05`, 2026-08-13).
-    ///
-    /// 🔑 **Why this exists at all.** Measured (`tools/BalanceMatrix` §M, docs/balance/CraftingMats.md):
-    /// <c>StandardDrops</c> gates mats at Common 1.76/kill, Uncommon 30+, Rare 60+, Epic 76+ at
-    /// 0.015 — **and then stops**. Legendary and Mythic materials dropped from *nothing in the game*.
-    /// Their only source was refining at 7-in-1-out on top of that 0.015, which put **one Legendary mat at
-    /// 467 kills and one Mythic at 3,267**, and priced the owner's own authored S recipe at
-    /// **3 to 6 YEARS of continuous farming** (15-30 for a Mythic one). His crafting ladder needs its top
-    /// three rungs to be reachable; no target curve can buy a *pile* of a mat that costs 6 farm hours each.
-    ///
-    /// 🔑 **Why ELITES and not bosses.** Also measured (`M11`), and it corrected the estimate that came
-    /// with the proposal: an elite camp runs **110 kills/h — 147% of a normal farm** — because a camp is
-    /// RESPAWN-limited (6 camps, ~3.8 held, 125s timer) where ordinary farming is WALK-limited. A boss is
-    /// **0.09 kills/h** on a ~10.75 h timer, so a boss can gate a one-off and never a quantity. Bosses are
-    /// still the richer roll here; they are simply not the supply.
-    ///
-    /// This is the same move `D1` already made for enchant scrolls when the normal-mob faucet closed at B
-    /// (<see cref="EnchantScrollDrops"/>), and it finally gives an elite camp a reason to exist for a
-    /// level-80 farmer — the same argument that justified it for scrolls.
-    ///
-    /// 🔑 **ALL FIVE material types, and this is the one place mat flavor is deliberately dropped.**
-    /// Everywhere else a creature's materials follow its CATEGORY, which is right and is what forces
-    /// cross-profession trade. It cannot survive at the top, and `M12` is what proved it rather than
-    /// argued it: above level 61 the categories that actually exist do not span the five types, so a
-    /// flavored top faucet leaves whole recipes with an ingredient that **drops from nothing anywhere in
-    /// the band** — the A band priced every weapon, body, helmet and jewel at *never*, because no A-band
-    /// creature is an Animal and a weapon needs Wood. Flavor at the top is not a trade incentive, it is
-    /// an uncraftable recipe. (`M10` had already measured the same thing in its milder form: a **2-3.6×**
-    /// per-type penalty, *"A 2.5/1.6/1.0/1.0 — Ingot-only band"*.)
-    ///
-    /// ⚠ INDEPENDENT rolls in the "other" tuning group, so the delivered chance is **3×** what is
-    /// authored below (same as <see cref="EnchantScrollDrops"/>). Per-kill totals noted per line, and
-    /// those totals are split five ways across the types.</summary>
-    public static IEnumerable<DropEntry> EliteMatDrops(int level, MobRank rank, MobCategory cat)
-    {
-        if (rank == MobRank.Normal) yield break;
-        _ = cat;   // flavor is deliberately NOT applied here — see the 🔑 above
-
-        // A boss is worth ~4 elites per kill. It cannot be the supply (0.09 kills/h), so this is a
-        // reward for the trip, not a rate anyone can farm against.
-        float rankMult = rank == MobRank.Boss ? 4f : 1f;
-        var types = Crafting.MaterialTypes;
-
-        IEnumerable<DropEntry> Rung(ItemRarity rarity, float perKill)
-        {
-            float each = perKill * rankMult / (3f * types.Length);   // /3 = the "other" group's x3
-            foreach (var t in types)
-                yield return new DropEntry(Crafting.MaterialId(t, rarity), each);
-        }
-
-        // C band (52-60) — the first rung whose recipe names a mat its own band cannot drop: an L3 smith's
-        // ACCENT is Epic, and normal creatures pay no Epic until 76. Without this a C weapon is not
-        // expensive, it is impossible.
-        if (level >= 52 && level < 61)
-            foreach (var e in Rung(ItemRarity.Epic, 0.05f)) yield return e;      // 0.05/kill — accent only
-        // B band (61-75) — Epic is now the BULK, so the rate steps up four-fold.
-        else if (level >= 61 && level < 76)
-        {
-            foreach (var e in Rung(ItemRarity.Epic, 0.55f)) yield return e;      // 0.55/kill
-            foreach (var e in Rung(ItemRarity.Legendary, 0.01f)) yield return e; // 0.01/kill — accent only
-        }
-        // A band (76-79) — Epic bulk for the B crafter behind you, Legendary bulk for your own rung.
-        else if (level >= 76 && level < 80)
-        {
-            foreach (var e in Rung(ItemRarity.Epic, 0.60f)) yield return e;      // 0.60/kill
-            foreach (var e in Rung(ItemRarity.Legendary, 0.55f)) yield return e; // 0.55/kill
-            foreach (var e in Rung(ItemRarity.Mythic, 0.012f)) yield return e;   // 0.012/kill — accent only
-        }
-        // S band (80+) — the only place Mythic is a quantity rather than a keepsake.
-        else if (level >= 80)
-        {
-            foreach (var e in Rung(ItemRarity.Legendary, 1.60f)) yield return e; // 1.60/kill
-            foreach (var e in Rung(ItemRarity.Mythic, 0.055f)) yield return e;   // 0.055/kill
-        }
-    }
-
     /// <summary>ONE RECIPE-BOOK ROLL: the chance it fires, and the pool of books it picks one from.</summary>
     public readonly struct RecipeRoll
     {
@@ -944,14 +867,13 @@ public static class MobCatalog
     public static int RecipeTier(int level) =>
         level >= 76 ? 76 : level >= 61 ? 61 : level >= 52 ? 52 : level >= 40 ? 40 : 20;
 
-    /// <summary>ONE ROW of the boss/elite MAT PILE — a material type, a rarity, the chance the row fires
+    /// <summary>ONE ROW of the boss/elite MAT PILE — a base material type, the chance the row fires
     /// and the quantity band it gives (both inclusive).</summary>
     public readonly struct PileRow
     {
-        public PileRow(MaterialType type, ItemRarity rarity, float chance, int minQty, int maxQty)
-        { Type = type; Rarity = rarity; Chance = chance; MinQty = minQty; MaxQty = maxQty; }
+        public PileRow(MaterialType type, float chance, int minQty, int maxQty)
+        { Type = type; Chance = chance; MinQty = minQty; MaxQty = maxQty; }
         public MaterialType Type { get; }
-        public ItemRarity Rarity { get; }
         public float Chance { get; }
         public int MinQty { get; }
         public int MaxQty { get; }
@@ -974,11 +896,8 @@ public static class MobCatalog
         bool boss = rank == MobRank.Boss;
         var primary = MatFlavor(cat).Primary;
 
-        yield return new PileRow(primary, ItemRarity.Common, 1f, boss ? 6 : 2, boss ? 10 : 3);
-        yield return new PileRow(MaterialType.Gem, ItemRarity.Common, 1f, boss ? 4 : 1, boss ? 7 : 2);
-        yield return new PileRow(primary, ItemRarity.Uncommon, 1f, boss ? 2 : 1, boss ? 4 : 1);
-        if (boss && level >= 30) yield return new PileRow(primary, ItemRarity.Rare, 0.5f, 1, 1);
-        if (boss && level >= 76) yield return new PileRow(primary, ItemRarity.Epic, 0.2f, 1, 1);
+        yield return new PileRow(primary, 1f, boss ? 6 : 2, boss ? 10 : 3);
+        yield return new PileRow(MaterialType.Gem, 1f, boss ? 4 : 1, boss ? 7 : 2);
     }
 
     public static IEnumerable<DropEntry> GearDrops(int level, MobRank rank)
@@ -1059,10 +978,10 @@ public static class MobCatalog
     {
         MobCategory.Animal => (MaterialType.Leather, MaterialType.Wood),
         MobCategory.Plant => (MaterialType.Wood, MaterialType.Leather),
-        MobCategory.Humanoid => (MaterialType.Ingot, MaterialType.Thread),
+        MobCategory.Humanoid => (MaterialType.Iron, MaterialType.Thread),
         MobCategory.Undead => (MaterialType.Thread, MaterialType.Gem),
         MobCategory.Insect => (MaterialType.Thread, MaterialType.Leather),
-        MobCategory.Demon or MobCategory.Dragon => (MaterialType.Ingot, MaterialType.Gem),
+        MobCategory.Demon or MobCategory.Dragon => (MaterialType.Iron, MaterialType.Gem),
         _ => (MaterialType.Gem, MaterialType.Wood),   // MagicCreature / Angel
     };
 
@@ -1079,7 +998,7 @@ public static class MobCatalog
         // rather than sharing one row, and a Plant is now the creature you farm for wood.
         // ⚠ Do not re-merge these two cases. Their sharing one line is exactly the bug.
         var mats = MatFlavor(cat);
-        string Mat(MaterialType type, ItemRarity r) => Crafting.MaterialId(type, r);
+        string Mat(MaterialType type) => Crafting.MaterialId(type);
 
         var drops = new List<DropEntry>();
 
@@ -1091,13 +1010,7 @@ public static class MobCatalog
         var matTypes = new[] { mats.Primary, mats.Secondary, MaterialType.Gem };
         foreach (var type in matTypes)
             foreach (var (qty, w) in matRungs)
-                drops.Add(new(Mat(type, ItemRarity.Common), w / matTypes.Length, qty, qty, GroupId: GroupMats));
-
-        // Higher-rarity mats stay INDEPENDENT low-chance rolls (group "other"), gated by mob level. These
-        // are the ORIGINAL x1 numbers — the global rate still applies to them, as it always did.
-        if (level >= 30) { drops.Add(new(Mat(mats.Primary, ItemRarity.Uncommon), 0.08f)); drops.Add(new(Mat(mats.Secondary, ItemRarity.Uncommon), 0.05f)); }
-        if (level >= 60) drops.Add(new(Mat(mats.Primary, ItemRarity.Rare), 0.03f));
-        if (level >= 76) drops.Add(new(Mat(mats.Primary, ItemRarity.Epic), 0.005f));
+                drops.Add(new(Mat(type), w / matTypes.Length, qty, qty, GroupId: GroupMats));
 
         // ---- SCROLLS (§4): one per trigger at C 40 / U 20 / R 10 — half an enchant scroll of the grade,
         //      half a BUFF potion (never a healing one; those are the Always group's job). The rungs
