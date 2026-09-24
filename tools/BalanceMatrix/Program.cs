@@ -6608,8 +6608,150 @@ static void CraftCost()
     Console.WriteLine("  Each slot burns ONE recipe per attempt, at its own row of rcpBySlot. Slot mats are priced at his");
     Console.WriteLine("  guide shares until per-slot recipes are authored.");
     Console.WriteLine();
-    Console.WriteLine("  C5 (consumable recipe cost vs shop price, §2.2 #8) is NOT here: no consumable recipe exists under");
-    Console.WriteLine("  the new rules yet. It is added once the list of consumables that get recipes is ruled.");
+
+    // ------------------------------------------------------------------------------------------------
+    //  C5a: THE CONSUMABLE CENSUS — every Use-tab item, where it comes from today, and its recipe (if any).
+    // ------------------------------------------------------------------------------------------------
+    var shelved = ShopCatalog.AllShops.Where(s => !s.EssenceOnly).SelectMany(s => s.ItemIds).ToHashSet();
+    var dropLevels = new Dictionary<string, List<int>>();
+    foreach (var m in MobCatalog.Templates)
+        foreach (var d in m.Drops ?? Array.Empty<DropEntry>())
+            (dropLevels.TryGetValue(d.ItemId, out var l) ? l : dropLevels[d.ItemId] = new()).Add(m.Level);
+    var boxed = BoxCatalog.AllBoxes.SelectMany(b => b.Entries.Select(e => (e.ItemId, b.Id)))
+        .GroupBy(x => x.ItemId).ToDictionary(g => g.Key, g => g.Count());
+    var recipeOf = RecipeCatalog.All.Where(r => !r.IsGear).GroupBy(r => r.OutputId).ToDictionary(g => g.Key, g => g.First());
+    Console.WriteLine("=== C5a: CONSUMABLE CENSUS — every Use-tab item: shelf price, sources, today's (placeholder) recipe ===");
+    Console.WriteLine($"{"id",-28} {"rarity",-9} {"buy",9} {"value",9} {"sell",7} {"trd",3} {"shelf",5} {"mobs",5} {"boxes",5} | recipe (qty, unlock, inputs)");
+    foreach (var d in ItemCatalog.AllItems.Where(d => ItemCatalog.CategoryOf(d) == ItemCategory.Use).OrderBy(d => d.Slot).ThenBy(d => d.Id))
+    {
+        string rc = recipeOf.TryGetValue(d.Id, out var r)
+            ? $"x{r.OutputQty} L{r.UnlockLevel} {r.SuccessChance:P0} " + string.Join("+", r.Inputs.Select(i => $"{i.Qty} {i.ItemId.Replace("mat_", "")}"))
+            : "-";
+        int mobs = dropLevels.TryGetValue(d.Id, out var ls) ? ls.Count : 0;
+        Console.WriteLine($"{d.Id,-28} {d.Rarity,-9} {ItemCatalog.BuyPrice(d),9:N0} {d.Value,9:N0} {ItemCatalog.SellPrice(d),7:N0} "
+            + $"{(d.Tradable ? "y" : "n"),3} {(shelved.Contains(d.Id) ? "SHOP" : ""),5} {mobs,5} {boxed.GetValueOrDefault(d.Id),5} | {rc}");
+    }
+    Console.WriteLine("  'buy' is BuyPrice (the Value formula) even off the shelf; only 'SHOP' rows are on a gold shelf.");
+    Console.WriteLine();
+
+    // ------------------------------------------------------------------------------------------------
+    //  C5b: THE GENERIC-RECIPE TABLE — PROPOSED 2026-09-24 (step 9b), NOT RULED. His rule (0.203.0 answer 4):
+    //  *"200 potions cost ~50-60% of their shop price"*, and the standing check *"crafting an item costs x …
+    //  disassembling and selling y … not y > x"*. Every column but GOLD is authored here; GOLD is SOLVED so that
+    //  gold + essence (at its vendor SELL price) = Share x the batch's reference price, then rounded. Mats are
+    //  Common base mats (the only rung that survives `BL-273` part 3): they sell for 2.5g, so they are the TIME
+    //  cost and are shown in farm hours, not folded into the %.
+    //  Reference price ('ref'): SHOP = the shelf price; VALUE = the item's authored Value (no shelf, no drop);
+    //  BOX = the 300k Blessing Box's pick-10 = 30k a scroll; DROP = farm value, hours per drop x income per hour
+    //  at that grade's farm level (M1's clock, 'sell everything' income).
+    // ------------------------------------------------------------------------------------------------
+    const double Share = 0.52;                          // PROPOSED: gold + essence, a hair over the 50% vendor sell so y <= x always holds
+    const double MatShare = 0.05;                       // PROPOSED: the mats' farm TIME, valued at the row's farm income -> 57% in all
+    int[] learnByUnlock = { 20_000, 50_000, 100_000, 200_000, 400_000, 700_000, 1_000_000, 1_500_000, 2_000_000, 3_000_000, 4_000_000 };
+    int[] charLevelByGrade = { 40, 52, 61, 76, 80 };    // his "i cannot learn T52 rcp @50": D..S
+    // (id, batch, unlock 0-10, grade index for the char level + essence (-1 = none), essence share of the cost,
+    //  basis, explicit ref (0 = from basis), wood, thread, gem WEIGHTS, learn price (0 = the unlock ladder))
+    var rows = new (string Id, int Qty, int Unlock, int Grade, double EssShare, string Basis, double Ref, int Wood, int Thread, int Gem, int Learn)[]
+    {
+        // ---- HEALTH / MANA ----------------------------------------------------------------------------
+        (ItemCatalog.MinorPotion,        200, 0, -1, 0,   "SHOP", 0, 10, 5, 0, 0),
+        (ItemCatalog.HealingPotion,      200, 0, -1, 0,   "SHOP", 0, 20, 10, 0, 0),
+        (ItemCatalog.MinorManaPotion,    200, 0, -1, 0,   "SHOP", 0, 10, 5, 0, 0),
+        (ItemCatalog.ManaPotion,         200, 1, -1, 0,   "SHOP", 0, 20, 10, 0, 0),
+        (ItemCatalog.GreaterPotion,      200, 4, -1, 0,   "VALUE", 0, 40, 20, 10, 0),
+        (ItemCatalog.GreaterManaPotion,  200, 4, -1, 0,   "VALUE", 0, 40, 20, 10, 0),
+        (ItemCatalog.InstantPotion,      50,  6, -1, 0,   "VALUE", 0, 40, 20, 20, 0),
+        // ---- BUFF POTIONS (nine families; one row stands for each rung) --------------------------------
+        (ItemCatalog.AtkPotionC,         50,  1, -1, 0,   "SHOP", 0, 10, 10, 5, 0),
+        (ItemCatalog.AtkPotionU,         50,  3, -1, 0,   "VALUE", 0, 20, 20, 10, 0),
+        // ---- DASH (C/U drop; R..M have no source but the crafter) ------------------------------------
+        (ItemCatalog.DashPotionC,        50,  1, -1, 0,   "VALUE", 0, 10, 10, 5, 0),
+        (ItemCatalog.DashPotionU,        50,  3, -1, 0,   "VALUE", 0, 20, 20, 10, 0),
+        (ItemCatalog.DashPotionR,        50,  5, -1, 0,   "VALUE", 0, 30, 30, 15, 0),
+        (ItemCatalog.DashPotionE,        50,  7, -1, 0,   "VALUE", 0, 40, 40, 20, 0),
+        (ItemCatalog.DashPotionL,        50,  9, -1, 0,   "VALUE", 0, 50, 50, 25, 0),
+        (ItemCatalog.DashPotionM,        50,  10, -1, 0,  "VALUE", 0, 60, 60, 30, 0),
+        // ---- STONES (the BL-05 carry-over) -------------------------------------------------------------
+        (ItemCatalog.SkillStone,         200, 0, -1, 0,   "SHOP", 0, 0, 0, 20, 0),
+        (ItemCatalog.ElementalStone,     50,  2, 0, 0.25, "SHOP", 0, 0, 0, 40, 0),
+        // ---- UTILITY SCROLLS ---------------------------------------------------------------------------
+        (ItemCatalog.ScrollReturn,       50,  0, -1, 0,   "SHOP", 0, 5, 10, 0, 0),
+        (ItemCatalog.ScrollResurrect,    50,  0, -1, 0,   "SHOP", 0, 5, 10, 5, 0),
+        (ItemCatalog.ScrollReturnUltimate,    5, 10, 4, 0.5, "VALUE", 15_000, 0, 50, 50, 400_000),
+        (ItemCatalog.ScrollResurrectUltimate, 5, 10, 4, 0.5, "VALUE", 0, 0, 50, 50, 400_000),
+        // ---- BUFF SCROLLS (untradable; one row per half: the nine 'basic', the ten 'other') -----------
+        (ItemCatalog.AtkScrollR,         10,  4, -1, 0,   "BOX", 30_000, 0, 20, 10, 0),
+        (ItemCatalog.BodyScrollM,        10,  6, -1, 0,   "BOX", 30_000, 0, 30, 15, 0),
+        // ---- RUNE BOXES (the BL-05 chest/rune-box sketch: the shelf's own 1h/2h boxes) ------------------
+        (ItemCatalog.BoxWarRune1h,       10,  6, -1, 0,   "SHOP", 0, 0, 1, 1, 0),
+        (ItemCatalog.BoxWarRune2h,       10,  7, -1, 0,   "SHOP", 0, 0, 1, 1, 0),
+    };
+    // ⚠ NOT in the table, on purpose (see the DEFERRED block printed below): the normal ENCHANT scrolls D..S and the
+    // ATTRIBUTE scrolls. Their Value (60 … 19,200) is a vendor anchor, not a price, and their farm value is 4-10M.
+    var deferred = new[] { ItemCatalog.ScrollNormalD, ItemCatalog.ScrollNormalC, ItemCatalog.ScrollNormalB, ItemCatalog.ScrollNormalA,
+        ItemCatalog.ScrollNormalS, ItemCatalog.AttrScrollUncommon, ItemCatalog.AttrScrollRare, ItemCatalog.AttrScrollEpic, ItemCatalog.AttrScrollLegendary };
+
+    double Income(int L) { var p = PerKill(L); return (p.Gear + p.Trash + p.Coin) * KphN(L); }
+    double DropsPerHour(string id, int L)
+    {
+        double s = 0;
+        var near = MobsNear(L);
+        foreach (var mob in near)
+            foreach (var (e, ch) in Marginals(mob.Drops ?? Array.Empty<DropEntry>(), L))
+                if (e.ItemId == id) s += ch * (e.MinQty + e.MaxQty) / 2.0 * RateConfig.World.DropAmount / near.Length;
+        return s * KphN(L);
+    }
+    static int RoundUp2(double v) { if (v <= 0) return 0; double m = Math.Pow(10, Math.Floor(Math.Log10(v)) - 1); return (int)(Math.Ceiling(v / m) * m); }
+    double matSell = ItemCatalog.SellPrice(ItemCatalog.Get(Crafting.MaterialId(MaterialType.Wood, ItemRarity.Common))!);
+
+    Console.WriteLine("=== C5b: THE GENERIC-RECIPE TABLE — PROPOSED (step 9b): one BATCH, against its reference price ===");
+    Console.WriteLine($"{"output",-26} {"batch",5} {"unl",3} {"chr",3} {"learn",9} | {"basis",5} {"ref/1",8} {"batch ref",10} | "
+        + $"{"GOLD",9} {"essence",8} {"wood/thr/gem",12} {"mat h",6} | {"gold+ess",8} {"+mats",6} {"sell y",9} {"y<=x",4} {"payback",7}");
+    const int NoGradeFarmL = 45;                        // PLACEHOLDER: where a grade-less crafter farms his base mats
+    foreach (var r in rows)
+    {
+        var d = ItemCatalog.Get(r.Id)!;
+        int farm = r.Grade >= 0 ? farmL[r.Grade] : NoGradeFarmL;
+        double refOne = r.Ref > 0 ? r.Ref : r.Basis == "SHOP" ? ItemCatalog.BuyPrice(d) : d.Value;
+        double batchRef = r.Qty * refOne;
+        double target = Share * batchRef;
+        int essQty = r.Grade >= 0 && r.EssShare > 0 ? Math.Max(1, (int)Math.Round(target * r.EssShare / Crafting.EssenceSellPrice[r.Grade])) : 0;
+        double essGold = essQty > 0 ? essQty * Crafting.EssenceSellPrice[r.Grade] : 0;
+        int gold = RoundUp2(target - essGold);
+        // Mats: the row's wood/thread/gem are WEIGHTS; the counts are solved so their farm time is worth MatShare of the batch.
+        double hW = BaseMat(farm).H;
+        double hG = Unit(farm, BaseMatPerKill(farm) * GemIronShare, BaseMatPerKill(farm) * GemIronShare * BaseEliteMul).H;
+        double k = MatShare * batchRef / Income(farm) / ((r.Wood + r.Thread) * hW + r.Gem * hG);
+        int Cnt(int w) => w <= 0 ? 0 : Math.Max(1, (int)Math.Round(k * w));
+        int cw = Cnt(r.Wood), ct = Cnt(r.Thread), cg = Cnt(r.Gem);
+        double matH = (cw + ct) * hW + cg * hG;
+        double x = gold + essGold + (cw + ct + cg) * matSell;
+        double y = r.Qty * ItemCatalog.SellPrice(d);
+        int learn = r.Learn > 0 ? r.Learn : learnByUnlock[r.Unlock];
+        double save = batchRef - x - matH * Income(farm);
+        string ess = essQty > 0 ? $"{essQty} {grade[r.Grade]}" : "-";
+        Console.WriteLine($"{r.Id,-26} {r.Qty,5} {r.Unlock,3} {(r.Grade >= 0 ? charLevelByGrade[r.Grade] : 40),3} {learn,9:N0} | {r.Basis,5} {refOne,8:N0} {batchRef,10:N0} | "
+            + $"{gold,9:N0} {ess,8} {$"{cw}/{ct}/{cg}",12} {CS(matH),6} | {x / batchRef,8:P0} {(x + matH * Income(farm)) / batchRef,6:P0} {y,9:N0} {(y <= x ? "ok" : "FAIL"),4} {(save > 0 ? $"{learn / save:0.#}" : "-"),7}");
+    }
+    Console.WriteLine($"  GOLD is SOLVED: gold + essence (at its SELL price) = {Share:P0} of 'batch ref', rounded UP to 2 digits. MATS are Common");
+    Console.WriteLine($"  base mats (the only rung `BL-273` part 3 keeps); the row's weights are scaled so their farm time is worth {MatShare:P0} of");
+    Console.WriteLine("  the batch at the farm level's income ('+mats' = the full price in gold + time). They sell for 2.5g: a TIME cost.");
+    Console.WriteLine("  'sell y' = the batch sold to a vendor (the 50% rule; buff potions, buff scrolls and rune boxes sell 0): the check y <= x.");
+    Console.WriteLine("  'payback' = learn price / what one batch saves against buying it: batches before the recipe has paid for itself.");
+    Console.WriteLine("  VALUE = no shelf, the authored Value; BOX = the Blessing Box (300k, pick 10) = 30k a scroll.");
+    Console.WriteLine();
+
+    Console.WriteLine("=== C5c: DEFERRED — enchant + attribute scrolls: their farm value (hours per drop x income/h) against their Value ===");
+    foreach (var id in deferred)
+    {
+        var parts = Enumerable.Range(0, 5).Where(t => DropsPerHour(id, farmL[t]) > 0)
+            .Select(t => $"@{farmL[t]} {DropsPerHour(id, farmL[t]):0.###}/h = {Income(farmL[t]) / DropsPerHour(id, farmL[t]) / 1000:N0}k").ToArray();
+        Console.WriteLine($"  {id,-22} Value {ItemCatalog.Get(id)!.Value,7:N0} | {(parts.Length == 0 ? "no normal-mob drop at any farm level" : string.Join("  ", parts))}");
+    }
+    Console.WriteLine("  A scroll's shelf-less Value is a VENDOR anchor (60 for a D enchant), and its farm value is 50,000x that: the");
+    Console.WriteLine("  50-60% rule has no honest reference price here. And BL-274 (step 11) re-authors the very drop this would be priced");
+    Console.WriteLine("  against. Hence: no generic recipe in 9b; priced once the per-mob drop tables exist.");
+    Console.WriteLine();
 }
 
 static string NameOf(string id) => SkillCatalog.Get(id)?.Name ?? id;
