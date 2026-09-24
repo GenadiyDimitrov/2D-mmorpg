@@ -10,14 +10,13 @@ using Game.Shared;
 ///
 /// ── This file is now a PRINTER and nothing else ────────────────────────────────────────────────
 /// 🔑 THE WALK MOVED INTO <see cref="DropIndex"/> (Game.Shared, 0.168.0). It used to live here, and the
-/// in-game window he asked for would have been a second copy of it — with the recipe-book roll a *third*
-/// copy, reconstructed by hand from `RollBossBonus` and free to drift from it. One walk, three readers:
+/// in-game window he asked for would have been a second copy of it — with the old boss recipe-book roll a *third*
+/// copy, reconstructed by hand from the kill path and free to drift from it. One walk, three readers:
 /// this tool, the server's cached index, and the client window it feeds.
 ///
 /// Everything the old header argued is still true and now lives on `DropIndex`: it walks SPAWNS rather
 /// than templates because rank is a property of the spawn; every chance goes through
-/// `MobCatalog.EffectiveChance` so the number printed is the number rolled; and the boss MAT PILE, which
-/// takes no rate knob at all, is marked so it is never shown scaled.
+/// `MobCatalog.EffectiveChance` so the number printed is the number rolled. (The boss pile that took no rate knob is gone: since step 12 every boss drop is a table row.)
 /// </summary>
 internal static class DropFinder
 {
@@ -69,13 +68,12 @@ internal static class DropFinder
         s.MinLevel == s.MaxLevel ? s.MinLevel.ToString() : $"{s.MinLevel}-{s.MaxLevel}";
 
     /// <summary>The two things a row may need said about it: that its chance is only paid at part of the
-    /// band, and that it is the rate-free boss pile rather than a drop table row.</summary>
+    /// band, and its quantity band.</summary>
     private static string Note(DropSource s)
     {
         var bits = new List<string>();
         if (s.MinLevel != s.MaxLevel && s.BestLevel != s.MinLevel) bits.Add($"only from level {s.BestLevel}");
-        if (s.IgnoresRates) bits.Add($"boss pile, x{s.MinQty}-{s.MaxQty}, NO rate knobs");
-        else if (s.MaxQty > 1) bits.Add($"x{s.MinQty}-{s.MaxQty}");
+        if (s.MaxQty > 1) bits.Add($"x{s.MinQty}-{s.MaxQty}");
         return string.Join("; ", bits);
     }
 

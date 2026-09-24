@@ -506,10 +506,10 @@ public static class MobCatalog
     /// be gated away from low-level mobs entirely (a level-8 mob dropping E-grade gear).
     ///
     /// This IS the GRADE LOCK (playtest-14 §4, "a level-40 mob drops D — never E or C"): a mob offers
-    /// exactly ONE tier, so there is nothing to lock out. S (level 80) is deliberately absent — S carries
-    /// only the top half of the quality ladder and stays craft/boss-only.</summary>
+    /// exactly ONE tier, so there is nothing to lock out. S (level 80) was absent until step 12 ("craft/boss-only"),
+    /// which left the level-90 boss paying a T76 piece; only a boss reads 80, since T76+ has no Common.</summary>
     private static int GearTier(int level) =>
-        level >= 76 ? 76 : level >= 61 ? 61 : level >= 52 ? 52 : level >= 40 ? 40
+        level >= ItemCatalog.SGradeLevel ? ItemCatalog.SGradeLevel : level >= 76 ? 76 : level >= 61 ? 61 : level >= 52 ? 52 : level >= 40 ? 40
         : level >= 20 ? 20 : ItemCatalog.FGradeLevel;
 
     // ===================================================================
@@ -814,99 +814,6 @@ public static class MobCatalog
         }
     }
 
-    /// <summary>ONE RECIPE-BOOK ROLL: the chance it fires, and the pool of books it picks one from.</summary>
-    public readonly struct RecipeRoll
-    {
-        public RecipeRoll(float delivered, string[] bookIds) { Delivered = delivered; BookIds = bookIds; }
-        /// <summary>The DELIVERED chance at x1, as authored in his §3. The roll divides it by the
-        /// "other" group's x3 before applying the live rate — see the note in <see cref="RecipeRolls"/>.</summary>
-        public float Delivered { get; }
-        /// <summary>Every book this roll could yield; one is picked at random PER COPY.</summary>
-        public string[] BookIds { get; }
-    }
-
-    /// <summary>THE RECIPE BOOKS a boss or elite rolls (§3: boss armor 50% / weapon 40% / jewel 60%,
-    /// elite 0.1%) — now a TABLE rather than three hand-written lines inside the kill path.
-    ///
-    /// <para>🔑 IT WAS MIRRORED IN THREE PLACES AND THAT IS WHY IT MOVED HERE (`BL-253`). The roll lives
-    /// in `GameLoopService.RollBossBonus`, `tools/BalanceMatrix`'s `--drops` had reconstructed it by hand,
-    /// and the in-game drop database needs it too. Books are not `DropEntry`s — the roll picks one book
-    /// out of a pool per copy, which no drop group expresses — so the two readers could only ever agree
-    /// by both being edited. Now there is one list and three callers.</para>
-    ///
-    /// <para>⚠ Only T76/T80 recipes DROP today. T40-T61 recipe items exist (`BL-273` part 2) but their
-    /// drops are `BL-274` (step 11); until then T40/T52 are sold by the Master and T61 has no source.</para>
-    ///
-    /// <para>The DELIVERED number is what a x1 server pays. A reader that wants a per-ITEM chance divides
-    /// by <see cref="RecipeOtherGroupRate"/> (the "other" group's x3, which the authored numbers already
-    /// have baked in) and by the pool size, then runs it through <see cref="EffectiveChance"/> like
-    /// anything else.</para></summary>
-    public static IEnumerable<RecipeRoll> RecipeRolls(int level, MobRank rank)
-    {
-        // `BL-274` part 1: an ELITE's recipes are its specialty's now (CreatureDrops); only the boss rolls here.
-        if (rank != MobRank.Boss) yield break;
-        int tier = RecipeTier(level);
-        if (tier < 76) yield break;
-        // `BL-273` part 2: the S tier drops its own recipes too (they were never rolled before).
-        if (level >= ItemCatalog.SGradeLevel) tier = ItemCatalog.SGradeLevel;
-        // The recipe % by source (owner, 2026-09-24, design doc §2.2 0.203.0 #6): a boss gives 60%, an
-        // elite 40%, at T76 and T80 alike. The RATES are still §3's; `BL-274` retunes them in step 11.
-        int pct = rank == MobRank.Boss ? 60 : 40;
-
-        string[] Books(params string[] keys)
-        {
-            var ids = new string[keys.Length];
-            for (int i = 0; i < keys.Length; i++)
-                ids[i] = ItemCatalog.RecipeBookId($"craft_{keys[i]}_t{tier}", pct);
-            return ids;
-        }
-
-        yield return new RecipeRoll(0.50f, Books("heavy", "light", "robe", "helm", "gloves", "boots", "shield"));
-        yield return new RecipeRoll(0.40f, Books("sword1h", "sword2h", "blunt1h", "blunt2h", "duals", "bow", "wand", "staff"));
-        yield return new RecipeRoll(0.60f, Books("necklace", "ring", "earring"));
-    }
-
-    /// <summary>The "other" group's x3, which the authored §3 numbers in <see cref="RecipeRolls"/> already
-    /// have baked in and every reader therefore divides out. Named rather than typed twice.</summary>
-    public const float RecipeOtherGroupRate = 3f;
-
-    /// <summary>Which recipe-book TIER a creature of this level pays. Same ladder the kill path used.</summary>
-    public static int RecipeTier(int level) =>
-        level >= 76 ? 76 : level >= 61 ? 61 : level >= 52 ? 52 : level >= 40 ? 40 : 20;
-
-    /// <summary>ONE ROW of the boss/elite MAT PILE — a base material type, the chance the row fires
-    /// and the quantity band it gives (both inclusive).</summary>
-    public readonly struct PileRow
-    {
-        public PileRow(MaterialType type, float chance, int minQty, int maxQty)
-        { Type = type; Chance = chance; MinQty = minQty; MaxQty = maxQty; }
-        public MaterialType Type { get; }
-        public float Chance { get; }
-        public int MinQty { get; }
-        public int MaxQty { get; }
-    }
-
-    /// <summary>THE BOSS/ELITE MAT PILE — the guaranteed handful of crafting materials every rank kill
-    /// pays on top of its drop table, flavoured by the creature's own <see cref="MatFlavor"/> primary.
-    ///
-    /// <para>🔑 Extracted from `RollBossBonus` for the same reason as <see cref="RecipeRolls"/>: it is a
-    /// real source of materials that no drop table names, so a "where does this come from" lookup that
-    /// only read `DropEntry`s would answer wrongly for every Common and Uncommon mat in the game.</para>
-    ///
-    /// <para>⚠ THIS PILE TAKES NO RATE KNOB — not the global, not the group, not a Rune of Drop. It is a
-    /// flat give inside the kill path, which is the same shape the recipe roll had before `BL-247` fixed
-    /// it. Readers must therefore NOT run these rows through <see cref="EffectiveChance"/>; the numbers
-    /// here are what a x100 server pays, unchanged. Whether that is intended is `BL-262`.</para></summary>
-    public static IEnumerable<PileRow> BossPile(int level, MobRank rank, MobCategory cat)
-    {
-        // `BL-274` part 1: an ELITE's pile became its ×10 base mats and ×4 parts/Nightsilver (CreatureDrops).
-        if (rank != MobRank.Boss) yield break;
-        var primary = MatFlavor(cat).Primary;
-
-        yield return new PileRow(primary, 1f, 6, 10);
-        yield return new PileRow(MaterialType.Gem, 1f, 4, 7);
-    }
-
     public static IEnumerable<DropEntry> GearDrops(int level, MobRank rank)
     {
         int tier = GearTier(level);
@@ -1121,6 +1028,9 @@ public static class MobCatalog
     public const double BaseMatEliteMul = 10;
     /// <summary>Everything else an elite drops by the note's *"elit x4"*: parts and Nightsilver/Nightsilk.</summary>
     public const double EliteMatMul = 4;
+    /// <summary>The note: *"@90 ... bosses 100-200"* base mats, against a normal's 1-2 — ×100 the normal curve
+    /// (1.5 × 100 = 150 at 90). It replaces the old flat 6-10 + 4-7 gem pile.</summary>
+    public const double BaseMatBossMul = 100;
     private static double HardMat(MaterialType t) => t is MaterialType.Iron or MaterialType.Gem ? 0.5 : 1.0;
 
     /// <summary>One part of each kind the creature drops, per kill (RULED 2026-09-23: *"1% for t40 ... t80 at
@@ -1141,14 +1051,14 @@ public static class MobCatalog
     };
 
     /// <summary>The RARE full item per kill of a creature that drops its Common: *"1/10000~20000"*.
-    /// PROPOSAL shape: ONE roll a kill, split across the creature's kinds.</summary>
+    /// RULED (step 11): ONE roll a kill, split across the creature's kinds.</summary>
     public const double RareGearPerKill = 1 / 10000.0;
 
     /// <summary>Volcanic Ash and Stone per kill, each, on the creatures of levels 76 / 80 / 85 (RULED: 0.3).</summary>
     public const double VolcanicPerKill = 0.3;
     public static bool DropsVolcanic(MobType t) => t.Level is 76 or 80 or 85;
 
-    /// <summary>T76/T80 direct essence: (chance per kill, min, max). PROPOSAL until he rules it.</summary>
+    /// <summary>T76/T80 direct essence: (chance per kill, min, max). RULED (step 11).</summary>
     public static (double Chance, int Min, int Max) DirectEssence(int tier) =>
         tier >= 80 ? (0.005, 30, 50) : (0.01, 30, 50);
 
@@ -1198,8 +1108,8 @@ public static class MobCatalog
     /// Baked into the template at its natural level (normal rank) and REBUILT at kill time for the spawn's own
     /// level and rank, so an elite, or a creature a zone forces to another level, drops what it is there.
     ///
-    /// <para>⚠ A BOSS keeps its pre-`BL-274` shape until step 12: its category mats, its guaranteed piece
-    /// (<see cref="GearDrops"/>) and, in the kill path, its pile and recipe rolls. None of the specialty.</para></summary>
+    /// <para>A BOSS has no specialty (Q5c: it keeps all three kinds until dungeons split them): its category
+    /// mats at ×100, then <see cref="BossDrops"/>.</para></summary>
     public static IEnumerable<DropEntry> CreatureDrops(MobType t, int level, MobRank rank)
     {
         bool elite = rank == MobRank.Elite;
@@ -1207,14 +1117,15 @@ public static class MobCatalog
 
         if (level >= BaseMatMinLevel)
         {
-            double r = BaseMatPerKill(level) * (elite ? BaseMatEliteMul : 1);
+            double r = BaseMatPerKill(level) * rank switch
+            { MobRank.Boss => BaseMatBossMul, MobRank.Elite => BaseMatEliteMul, _ => 1 };
             var (pri, sec) = MatFlavor(t.Category);
             list.Add(RateEntry(Crafting.MaterialId(pri), r * HardMat(pri), GroupMats));
             list.Add(RateEntry(Crafting.MaterialId(sec), r * 0.5 * HardMat(sec), GroupMats));
         }
         if (rank == MobRank.Boss)
         {
-            list.AddRange(GearDrops(level, rank));
+            list.AddRange(BossDrops(level));
             return list;
         }
 
@@ -1266,6 +1177,68 @@ public static class MobCatalog
             list.Add(RateEntry(ItemCatalog.VolcanicStone, VolcanicPerKill, GroupMats));
         }
         return list;
+    }
+
+    // ---- BOSSES (`BL-274` part 2, step 12, 0.207.0; design doc §2.3 Q5/Q5b/Q5c and "Step 12 proposal") ----
+
+    /// <summary>Recipes a boss pays per kill, one GROUP roll across every kind of its tier. T52's *"every kill,
+    /// + an item"* is the 1.0 (a guaranteed book); T76/T80 keep the 1.5 the old three rolls paid (armour 50% +
+    /// weapon 40% + jewel 60%). RULED 2026-09-24.</summary>
+    public static double BossRecipesPerKill(int tier) => tier >= 76 ? 1.5 : 1.0;
+    /// <summary>The recipe % a boss pays (0.203.0 source table): T40/T52/T61 100%, T76/T80 60%.</summary>
+    public static int BossRecipePct(int tier) => tier >= 76 ? 60 : 100;
+    /// <summary>A boss's parts and Nightsilver/Nightsilk against a normal kill's (elite ×4). RULED 2026-09-24.</summary>
+    public const double BossMatMul = 10;
+    /// <summary>T76/T80 direct essence off a boss: ~1/10 of a full 2H's break (Q5: *"a T80 item breaks for ~10k,
+    /// so ~1k per boss"*), ±25%, guaranteed.</summary>
+    public const double BossEssenceShare = 0.1;
+
+    /// <summary>WHAT A BOSS DROPS beyond its base mats — every row an ordinary rated `DropEntry`, so the kill
+    /// roll, inspect and <see cref="DropIndex"/> read one table and every piece goes through the party loot
+    /// rule (`BL-50`). Replaces the old pile and recipe rolls that lived in the kill path, which no rate knob
+    /// reached (`BL-262`).
+    /// <list type="bullet">
+    /// <item>the guaranteed full item and the 2%/family accent (<see cref="GearDrops"/>; Q5b, every tier) — never a Common;</item>
+    /// <item>recipes of every kind, <see cref="BossRecipesPerKill"/> at <see cref="BossRecipePct"/>;</item>
+    /// <item>parts of every kind and BOTH Nightsilver and Nightsilk, ×<see cref="BossMatMul"/>, higher rungs from the
+    /// elite gates (so Legendary from 80, the note's *"legend ds from elit and bosses 80+"*);</item>
+    /// <item>T76/T80: direct essence, <see cref="BossEssenceShare"/> of a 2H's break.</item>
+    /// </list></summary>
+    public static IEnumerable<DropEntry> BossDrops(int level)
+    {
+        foreach (var e in GearDrops(level, MobRank.Boss)) yield return e;
+
+        int tier = CraftTier(level);
+        int ti = Array.IndexOf(Crafting.GearTiers, tier);
+        if (ti < 0) yield break;
+        var kinds = GearFamilies;
+
+        // Recipes: family-equal shares (as the guaranteed piece), even inside a family, summing to the per-kill count.
+        double books = BossRecipesPerKill(tier);
+        foreach (var (_, keys) in kinds)
+            foreach (var key in keys)
+                yield return new DropEntry(ItemCatalog.RecipeBookId($"craft_{key}_t{tier}", BossRecipePct(tier)),
+                    (float)(books / kinds.Length / keys.Length), GroupId: GroupRecipe);
+
+        foreach (var (_, keys) in kinds)
+            foreach (var key in keys)
+                yield return new DropEntry(Crafting.PartId(key, tier), (float)(PartChance(ti) * BossMatMul), GroupId: GroupMats);
+
+        foreach (bool silver in new[] { true, false })
+        {
+            string Metal(int rung) => silver ? Crafting.NightsilverId(rung) : Crafting.NightsilkId(rung);
+            yield return RateEntry(Metal(0), NightPerKill(ti) * BossMatMul, GroupMats);
+            for (int rung = 1; rung <= 4; rung++)
+                if (level >= NightGate(rung, elite: true))
+                    yield return new DropEntry(Metal(rung), (float)(NightHigherPerKill * BossMatMul), GroupId: GroupMats);
+        }
+
+        if (tier >= 76)
+        {
+            int mean = (int)Math.Round(Crafting.BreakYield(ItemCatalog.Get($"sword2h_t{tier}"))!.Value.Qty * BossEssenceShare);
+            yield return new DropEntry(Crafting.EssenceIds[ti], 1f, (int)(mean * 0.75), (int)(mean * 1.25),
+                GroupId: GroupEssence);
+        }
     }
 
     /// <summary>THE TABLE A KILL ROLLS, and the only copy of it: the template's rows valid at this level, with

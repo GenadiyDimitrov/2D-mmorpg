@@ -497,9 +497,23 @@ Check("server pushed the warehouse on login", a.Ware is not null);
           WorldMap.Npcs.Count(n => n.Role == NpcRole.CraftMaster) == 5
           && WorldMap.Npcs.Where(n => n.Role == NpcRole.CraftMaster).All(n => WorldMap.IsCraftMaster(n.Id)),
           $"{WorldMap.Npcs.Count(n => n.Role == NpcRole.CraftMaster)} masters");
-    Check("T76/T80 bosses drop 60% recipes and elites 40%, and every id they roll exists",
-          MobCatalog.RecipeRolls(78, MobRank.Boss).SelectMany(r => r.BookIds).All(id => id.EndsWith("_60") && ItemCatalog.Get(id) is not null)
-          && MobCatalog.RecipeRolls(82, MobRank.Elite).SelectMany(r => r.BookIds).All(id => id.EndsWith("_40") && id.Contains("_t80") && ItemCatalog.Get(id) is not null));
+    // `BL-274` step 12: a boss's recipes are rows of its table (group "recipe"), 100% below T76 and 60% at T76/T80.
+    {
+        var b44 = MobCatalog.BossDrops(44).ToList();
+        var b90 = MobCatalog.BossDrops(90).ToList();
+        var books44 = b44.Where(e => e.GroupId == MobCatalog.GroupRecipe).ToList();
+        var books90 = b90.Where(e => e.GroupId == MobCatalog.GroupRecipe).ToList();
+        Check("bosses: T40 pays 100% recipes (one a kill), T80 60% (1.5 a kill), a T80 full item, S essence; every id exists",
+              books44.All(e => e.ItemId.EndsWith("_100") && e.ItemId.Contains("_t40"))
+              && Math.Abs(books44.Sum(e => e.Chance) - 1f) < 0.001f
+              && books90.All(e => e.ItemId.EndsWith("_60") && e.ItemId.Contains("_t80"))
+              && Math.Abs(books90.Sum(e => e.Chance) - 1.5f) < 0.001f
+              && b90.Any(e => e.GroupId == MobCatalog.GroupBossGear && e.ItemId == "sword2h_t80")
+              && b90.Any(e => e.GroupId == MobCatalog.GroupEssence && e.Chance >= 1f)
+              && !b44.Any(e => e.GroupId == MobCatalog.GroupEssence || e.ItemId.EndsWith("_common"))
+              && b44.Concat(b90).All(e => ItemCatalog.Get(e.ItemId) is not null),
+              $"{books44.Count}/{books90.Count} books");
+    }
 
     // The "(Lesser)" line is GONE — it became the low QUALITIES of the real ladder.
     int lesser = ItemCatalog.AllItems.Count(d => d.Name.Contains("(Lesser)")

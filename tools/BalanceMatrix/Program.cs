@@ -2635,6 +2635,32 @@ if (args.Length > 0 && args[0] == "--drop-value")
             + $" · Nightsilver {Sell(Crafting.NightsilverId(0))}..{Sell(Crafting.NightsilverId(4))}"
             + $" · essence {Sell(Crafting.EssenceIds[ti])} · Common 2H {Sell($"sword2h_t{t}_common")} · full 2H {Sell($"sword2h_t{t}")}");
     }
+
+    // `BL-274` step 12 — ONE BOSS KILL at x1: what it pays in COUNT (the thing a party splits) and in vendor coin.
+    Console.WriteLine();
+    Console.WriteLine("Boss kill (x1, the table MobCatalog.KillTable rolls):");
+    Console.WriteLine($"  {"boss",-28} {"lvl",3} {"full",5} {"books",5} {"parts",5} {"base mats",14} {"night+silk",10} {"essence",9} | {"gear",11} {"recipe",10} {"mats",10} {"essence",10} {"scrolls",9} {"TOTAL",12}");
+    foreach (var z in WorldMap.SpawnZones.Where(z => z.Rank == MobRank.Boss))
+        foreach (var id in z.MobTypes)
+        {
+            var type = MobCatalog.Get(id);
+            int lvl = type.Level > 0 && !z.ForceZoneLevel ? type.Level : z.MaxLevel;
+            var rows = Marginals(MobCatalog.KillTable(type, lvl, MobRank.Boss), lvl).ToList();
+            double Count(Func<DropEntry, bool> f) => rows.Where(r => f(r.Entry)).Sum(r => r.Chance * (r.Entry.MinQty + r.Entry.MaxQty) / 2.0);
+            double Coin(Func<DropEntry, bool> f) => rows.Where(r => f(r.Entry) && ItemCatalog.Get(r.Entry.ItemId) is not null)
+                .Sum(r => r.Chance * (r.Entry.MinQty + r.Entry.MaxQty) / 2.0 * ItemCatalog.SellPrice(ItemCatalog.Get(r.Entry.ItemId)!));
+            bool Gear(DropEntry e) => MobCatalog.IsGearGroup(e.GroupId);
+            bool Base(DropEntry e) => e.ItemId.StartsWith("mat_");
+            bool Part(DropEntry e) => e.ItemId.StartsWith("part_");
+            bool Night(DropEntry e) => e.ItemId.StartsWith("night");
+            string mats = string.Join("+", rows.Where(r => Base(r.Entry)).GroupBy(r => r.Entry.ItemId)
+                .Select(g => $"{g.Sum(r => r.Chance * (r.Entry.MinQty + r.Entry.MaxQty) / 2.0):0}{g.Key[4..6]}"));
+            Console.WriteLine($"  {type.Name,-28} {lvl,3} {Count(Gear),5:0.00} {Count(e => e.GroupId == MobCatalog.GroupRecipe),5:0.00}"
+                + $" {Count(Part),5:0.00} {mats,14} {Count(Night),10:0} {Count(e => e.GroupId == MobCatalog.GroupEssence),9:0}"
+                + $" | {Coin(Gear),11:N0} {Coin(e => e.GroupId == MobCatalog.GroupRecipe),10:N0} {Coin(e => e.GroupId == MobCatalog.GroupMats),10:N0}"
+                + $" {Coin(e => e.GroupId == MobCatalog.GroupEssence),10:N0} {Coin(e => e.GroupId is MobCatalog.GroupScrolls or MobCatalog.GroupAlways or 0),9:N0}"
+                + $" {Coin(_ => true),12:N0}");
+        }
     return;
 }
 
@@ -5735,7 +5761,12 @@ static void CraftCost()
     // ⚠ The note's T76 20%-from-normals row is gone (T76 = quest/boss/elite). T80's elite recipe is 20% in the
     // note and "40% if at all" in his answer — kept at the note's 20% until he looks.
     // 🔑 0.206.0: the normal/elite rows are READ from MobCatalog.RecipeDrop (the 2H cell), the 0.203.0 source
-    // table: T61 normal 60% / elite 100%, T76 normal 20% / elite 40%, T80 elite 40%. Quest and boss stay here.
+    // table: T61 normal 60% / elite 100%, T76 normal 20% / elite 40%, T80 elite 40%. Quest stays here.
+    // 🔑 0.207.0 (`BL-274` step 12): the BOSS row is read from MobCatalog.BossDrops too — the chance its one group
+    // roll lands on the 2H book (1.5 books a kill over 18 kinds, family-equal), where the note's "80-90%" was ANY book.
+    (int, string, double) Boss(int tier) => MobCatalog.BossDrops(tier == 80 ? 90 : 78)
+        .Where(e => e.ItemId == ItemCatalog.RecipeBookId($"craft_sword2h_t{tier}", MobCatalog.BossRecipePct(tier)))
+        .Select(e => (MobCatalog.BossRecipePct(tier), "boss", (double)e.Chance)).Single();
     (int, string, double)[] Farmed(int tier) => new[] { MobRank.Normal, MobRank.Elite }
         .Select(r => (r, d: MobCatalog.RecipeDrop(tier, r, "sword2h")))
         .Where(x => x.d is not null && !(x.r == MobRank.Elite && tier < 61))
@@ -5745,8 +5776,8 @@ static void CraftCost()
         Farmed(40),
         Farmed(52),
         Farmed(61),
-        Farmed(76).Concat(new[] { (40, "quest", 0.0), (60, "boss", 0.85) }).ToArray(),
-        Farmed(80).Concat(new[] { (40, "quest", 0.0), (60, "boss", 0.85) }).ToArray(),
+        Farmed(76).Concat(new[] { (40, "quest", 0.0), Boss(76) }).ToArray(),
+        Farmed(80).Concat(new[] { (40, "quest", 0.0), Boss(80) }).ToArray(),
     };
     // 🔑 RULED 2026-09-23 (second round): *"Keep the times as is and add the rcp times on top. Those times are
     // for a 100%"* — the C1 totals ARE the targets now; a lower-% recipe is a cheaper ATTEMPT plus luck.

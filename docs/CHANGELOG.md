@@ -7,12 +7,36 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.206.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.207.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-24 (latest) — 0.206.0: per-mob drop tables (`BL-274` part 1, step 11)
+## 2026-09-24 (latest) — 0.207.0: boss drops (`BL-274` part 2, step 12; closes `BL-50` + `BL-262`)
+
+> *"ppl do bosses to get equipment ... otherwice bosses are usless"*
+
+**A boss now pays a full item, recipes, a big mat pile, parts, both metals and (T76/T80) essence, and every piece
+of it is an ordinary drop-table row.** The old pile and recipe rolls lived inside the kill path, where no rate knob
+reached them and the party loot rule applied to the pile as one lump. They are gone. The version moved, so **a new
+APK is needed** (no DTO changed). ⚠ `game.db` delete still owed from 0.205.0.
+
+- **Full item:** one guaranteed at every tier, across all 18 kinds (unchanged), plus the 2%/family accent.
+  🔴 **Fixed: the level-90 boss was paying a T76 item**, because the gear tier stopped at 76. It pays T80 now.
+- **Recipes:** one book a kill at T40-T61 (100%), 1.5 a kill at T76/T80 (60%), all kinds. Knob: `/droprate recipe`.
+- **Base mats ×100 a normal kill** (150 of the primary at 90, the note's "100-200"); **parts** of every kind and
+  **Nightsilver and Nightsilk both ×10**, with Legendary from 80. The old flat 6-10 + 4-7 gem pile is gone.
+- **T76/T80 essence, guaranteed:** a tenth of a full 2H's break: 288-480 A, 720-1200 S.
+- One kill at x1: Grave Lich 1.26M coin · Valley Treant 3.9M · Dread Knight 17.3M · Emberwyrm Matriarch 39M ·
+  Disciple of the Dawn 195M. ~90% of that is the full item (`--drop-value`, new boss section).
+- **`BL-262` (your option 3):** the whole boss drop takes every knob: the global, the group, a Rune of Drop and
+  the level gap.
+- **`BL-50`:** every piece goes to its own recipient under the party's loot mode and pickup filters, the same
+  code as any party drop. 🔧 **Your check:** kill a boss in a party on Random or Round-robin loot.
+- Removed: `GameLoopService.RollBossBonus`, `MobCatalog.BossPile` / `RecipeRolls`, and the drop database's
+  "no rates" rows. `--craft-cost` now reads the boss recipe chance from the table.
+
+## 2026-09-24 — 0.206.0: per-mob drop tables (`BL-274` part 1, step 11)
 
 > *"mobs should have own drop tables .. not all to drop all items"*
 

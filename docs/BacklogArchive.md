@@ -7282,3 +7282,55 @@ mobs wear Mythic. **Still open (part 2 = step 8):** the T52 essence-only shop, t
 the temporary boxes cost the COMMON price** (a T40 temporary 2H = **214k**), which replaces the "5× a Common
 2H" above. T1/T20 stay unbreakable.
 
+
+## `BL-50` + `BL-262` ✅ CLOSED 2026-09-24 in **0.207.0** — the boss pile became table rows (`BL-274` step 12)
+
+Your rulings (design doc §2.3, "Your answers ... step 12"): **`BL-262` → option (3)**, the whole boss drop takes every
+rate knob; **`BL-50` closed by construction**: every piece goes through `Award` → `LootRecipient`. 🔧 Your check
+is a party boss kill on Random or Round-robin loot. The entries as they stood:
+
+- `BL-50` 🟡 **A boss/elite crafting-mat pile must obey the party loot rule.** Written as *(not
+  tested)* and never tested. ✅ **2026-09-23: kept, gated on `BL-274`** (it was parked with the old
+  crafting). After the rework bosses still drop mats + recipes (§2.3 Q5), so the rule still matters and
+  is tested when `BL-274` builds the new boss drops.
+
+## `BL-262` ❓ THE BOSS MAT PILE TAKES NO RATE KNOB — the same shape `BL-247` fixed
+
+**Found while building `BL-253` (2026-09-17), and NOT fixed by it** — because it is a tuning decision
+and those are yours.
+
+Every elite and boss pays a **mat pile** on top of its drop table: a handful of its own primary
+material plus gems, and at 30+/76+ a chance at a Rare and an Epic one. It is now a table
+(`MobCatalog.BossPile`) rather than five lines buried in the kill path, which is how the drop database
+can see it at all. What the extraction made visible is this:
+
+> **Nothing multiplies it.** Not `RateConfig.DropChanceRate`, not the group rate, not a Rune of Drop,
+> not the level-gap penalty. A boss on your ×100 server hands over the same 6-10 Common Leather it
+> hands a ×1 server.
+
+🔑 **That is exactly the shape `BL-247` found in the recipe roll** — *"fix the blueprints to take the
+rates multiplier"* — and it is why your ×100 never touched the books either. I have not applied your
+`BL-247` ruling here on my own, because the two are not the same decision:
+
+| | recipe books | the mat pile |
+|---|---|---|
+| what a rate does | more BOOKS — a chance becoming copies | more of a **quantity** that is already guaranteed |
+| at ×100 | 50 copies of a book, "as if you had killed fifty" | 600-1000 Common Leather off one boss |
+
+The second is a real economic choice rather than a bug fix, which is the whole reason it is a question.
+
+❓ **Three ways, and it is your call:**
+1. **Leave it flat.** The pile is a fixed "thanks for the trip" and the rate knobs are for the table.
+2. **Rate the CHANCE rows only** (the Rare at 50% and the Epic at 20%) and leave the guaranteed
+   handful alone. That fixes the part that behaves like a drop and leaves the part that behaves like
+   a reward.
+3. **Rate all of it**, exactly as `BL-247` ruled for the books — consistent, and at ×100 it is a
+   thousand hides.
+
+My reading if you say nothing: **(2)**. It is the only one where nothing you already like changes and
+the one genuinely drop-shaped thing in the pile starts obeying the knob you play with.
+
+⚠ Whichever you pick, the fix is a few lines: the pile is one table with one reader now
+(`GameLoopService.RollBossBonus`), and the drop database reads the same table, so both move together.
+
+

@@ -8,10 +8,6 @@ namespace Game.Shared;
 /// <param name="BaseChance">The chance at **x1**, with no rate knob applied. Every knob is live and
 /// admin-editable, so storing a multiplied number would freeze whatever the rate was on the day the
 /// index was built. Read it through <see cref="DropIndex.ChanceFor"/>, never directly.</param>
-/// <param name="IgnoresRates">True for the boss/elite MAT PILE, which is a flat give inside the kill
-/// path that no multiplier reaches (<see cref="MobCatalog.BossPile"/>). For those rows
-/// <see cref="DropIndex.ChanceFor"/> returns <paramref name="BaseChance"/> unchanged — showing a player
-/// a rate-scaled number for a drop that ignores rates is the exact lie this system exists to avoid.</param>
 /// <param name="BestLevel">The level inside the band at which <paramref name="BaseChance"/> is paid. A
 /// `DropEntry` can be level-gated inside a spawner's band, so "76-79" beside a 79-only rate would be
 /// wrong; when this is not the band's floor the UI says "from level N".</param>
@@ -20,8 +16,7 @@ public sealed record DropSource(
     string MobId, string MobName,
     int MinLevel, int MaxLevel, int BestLevel,
     MobRank Rank, string Location,
-    float BaseChance, int MinQty, int MaxQty, int GroupId,
-    bool IgnoresRates);
+    float BaseChance, int MinQty, int MaxQty, int GroupId);
 
 /// <summary>A BUILT index.</summary>
 public sealed record DropIndexData(IReadOnlyList<DropSource> Sources);
@@ -53,8 +48,7 @@ public sealed record DropIndexData(IReadOnlyList<DropSource> Sources);
 /// milliseconds. A cache needed two stamps to know when it had gone wrong: a content hash for the DATA,
 /// and a hand-bumped version for the rank-LAYER CODE (<see cref="MobCatalog.GearDrops"/>,
 /// <see cref="MobCatalog.EnchantScrollDrops"/>,
-/// <see cref="MobCatalog.UtilityScrollDrops"/>, <see cref="MobCatalog.RecipeRolls"/>,
-/// <see cref="MobCatalog.BossPile"/>) — because editing a number inside one of those methods moves no
+/// <see cref="MobCatalog.UtilityScrollDrops"/>, <see cref="MobCatalog.BossDrops"/>) — because editing a number inside one of those methods moves no
 /// data at all and no hash could see it. That second stamp was a thing a person had to remember, forever,
 /// or the window would quietly tell a player to farm a creature that does not pay. Nothing to remember
 /// now: a restart is the invalidation.</para></summary>
@@ -104,22 +98,7 @@ public static class DropIndex
 
             foreach (var e in rows)
                 Offer(new DropSource(e.ItemId, mobId, type.Name, lo, hi, lvl, zone.Rank, where,
-                                     e.Chance, e.MinQty, e.MaxQty, e.GroupId, IgnoresRates: false));
-
-            // The two faucets that are NOT DropEntries — both read from the same tables the kill path
-            // reads, which is why they moved into MobCatalog (`BL-253`).
-            foreach (var roll in MobCatalog.RecipeRolls(lvl, zone.Rank))
-            {
-                float each = roll.Delivered / MobCatalog.RecipeOtherGroupRate / roll.BookIds.Length;
-                foreach (string bookId in roll.BookIds)
-                    Offer(new DropSource(bookId, mobId, type.Name, lo, hi, lvl, zone.Rank, where,
-                                         each, 1, 1, GroupId: 0, IgnoresRates: false));
-            }
-
-            foreach (var row in MobCatalog.BossPile(lvl, zone.Rank, type.Category))
-                Offer(new DropSource(Crafting.MaterialId(row.Type), mobId, type.Name, lo, hi,
-                                     lvl, zone.Rank, where, row.Chance, row.MinQty, row.MaxQty,
-                                     GroupId: 0, IgnoresRates: true));
+                                     e.Chance, e.MinQty, e.MaxQty, e.GroupId));
         }
 
         into.AddRange(best.Values);
@@ -127,12 +106,10 @@ public static class DropIndex
 
     /// <summary>THE chance this source pays a given player, with every live knob applied — the same
     /// <see cref="MobCatalog.EffectiveChance"/> the kill roll and the target-inspect list use, so the
-    /// number in the window is the number he gets. The mat pile is the one exception and says so.</summary>
+    /// number in the window is the number he gets.</summary>
     public static float ChanceFor(DropSource s, float playerMult = 1f) =>
-        s.IgnoresRates
-            ? s.BaseChance
-            : MobCatalog.EffectiveChance(new DropEntry(s.ItemId, s.BaseChance, s.MinQty, s.MaxQty,
-                                                       GroupId: s.GroupId), playerMult);
+        MobCatalog.EffectiveChance(new DropEntry(s.ItemId, s.BaseChance, s.MinQty, s.MaxQty, GroupId: s.GroupId),
+                                   playerMult);
 
     /// <summary>Everything matching a free-text query, by item id or item NAME, substring, case
     /// insensitive — richest source first, then by creature level. Grouped by item by the caller.</summary>

@@ -16539,20 +16539,9 @@ public class GameLoopService : BackgroundService
                 Award(e, n);
         }
 
-        // Boss/elite pile goes to ONE recipient per the loot rule (mats stay together).
-        //
-        // ⚠ `BL-241` — this recipient is drawn from the UNFILTERED roster, and the filter is applied
-        // ITEM BY ITEM inside RollBossBonus instead. The pile is a dozen different defs across two
-        // categories, so there is no single "does he want it" to ask here; what he filtered out is
-        // skipped and the rest of the pile still arrives.
-        var bossTo = LootRecipient(killer, eligible, party);
-        // The RECIPE roll inside takes the same rate every other drop on this kill takes — the global
-        // rate × the "other" group × the killer's own Rune of Drop × the level-gap penalty. See the
-        // comment on the roll itself (`BL-247`): it used to be a raw _rng roll no knob touched.
-        if (bossTo is not null && RollBossBonus(bossTo, mob, mobType,
-                MobCatalog.EffectiveRate(0, dropMult) * dropGap))
-            touched.Add(bossTo);
-
+        // There is no boss "bonus" pass any more (`BL-274` step 12): the pile and the recipe books are rows of
+        // MobCatalog.BossDrops, so they were rolled above, rated like everything else (`BL-262`), and each copy
+        // went to its own LootRecipient under the party's loot mode and pickup filters (`BL-50`, `BL-241`).
         foreach (var t in touched)
             SendInventory(t);
     }
@@ -16626,84 +16615,6 @@ public class GameLoopService : BackgroundService
                 // Finders keepers means the finder and nobody else — so if HE filtered it, it drops.
                 return roster.FirstOrDefault(m => m.Id == killer.Id);
         }
-    }
-
-    /// <summary>Elite/boss EXTRA loot: a pile of crafting mats (rarity + amount by rank) and a chance
-    /// at the finished tiered set piece — bosses are the reliable gear/mat source (docs/design/Crafting.md).</summary>
-    private bool RollBossBonus(Entity recipient, Entity mob, MobType mobType, float recipeRate)
-    {
-        if (mob.Rank is not (MobRank.Boss or MobRank.Elite))
-            return false;
-        bool boss = mob.Rank == MobRank.Boss;
-
-        // `BL-241` — the pickup filter applies to the pile, one item at a time. A mats filter set to
-        // Rare skips the Common ingots and still takes the Rare hide off the same boss. `gave` tracks
-        // whether ANYTHING landed, so a recipient who filtered the whole pile is neither told he got
-        // materials nor pushed a bag that did not change.
-        bool gave = false;
-        void GiveMat(MaterialType t, int qty)
-        {
-            if (qty <= 0) return;
-            string matId = Crafting.MaterialId(t);
-            if (ItemCatalog.Get(matId) is ItemDef matDef && !PickupWanted(recipient, matDef)) return;
-            if (AddItem(recipient, matId, qty)) gave = true;
-        }
-
-        // THE PILE IS A TABLE NOW — `MobCatalog.BossPile` (`BL-253`). It was five hand-written lines
-        // here, which made it invisible to every reader but this one: the drop database has to answer
-        // "where does Common Leather come from" and a boss pile that only exists inside the kill path
-        // cannot be part of that answer. Same move the recipe roll makes below.
-        // ⚠ Still rate-free, exactly as it was — see the ⚠ on BossPile and `BL-262`.
-        foreach (var row in MobCatalog.BossPile(mob.Level, mob.Rank, mobType.Category))
-        {
-            if (row.Chance < 1f && _rng.NextDouble() >= row.Chance) continue;
-            GiveMat(row.Type, _rng.Next(row.MinQty, row.MaxQty + 1));
-        }
-
-        // The GEAR a boss or elite drops is no longer decided here — RollDrop swaps the normal gear groups
-        // for MobCatalog.GearDrops(level, rank), which is the owner's §3 rank table (elite U 10 / R 2 /
-        // E 0.2; boss E 70 / L 40 / M 2) across all four slot families. What stays here is the mat pile
-        // above and the RECIPE roll below, neither of which is a per-slot rarity roll.
-
-        // RECIPE ITEMS (§3: boss armor 50% / weapon 40% / jewel 60%, elite 0.1%) at T76/T80, boss 60% and
-        // elite 40% recipes (`BL-273` part 2). T40-T61 recipe items exist now, but their drops are `BL-274`
-        // (step 11); until then only the Master sells T40/T52.
-        //
-        // 🔑 THE RATE KNOBS APPLY HERE (`BL-247`, owner 2026-09-16: *"fix the blueprints to take the
-        // rates multiplier"*). This was a raw `_rng.NextDouble() < chance` that NO multiplier reached —
-        // not the global rate, not the group, not a Rune of Drop, not the level gap — which is the whole
-        // reason he had none: he plays at ×100 and the elite's 0.1% stayed 0.1%, one book per thousand
-        // elite kills. `recipeRate` is the composed number from the call site, and the numbers below are
-        // the DELIVERED chances at ×1 divided by the "other" group's ×3, exactly as the old elite mat rungs
-        // authors its rungs — so nothing changes at ×1 and his test rate finally lands.
-        //
-        // ⚠ DropCopies, not a comparison: above 100% the excess is COPIES, the same rule every other
-        // drop on this kill runs on. At ×100 a boss's armor book is 50 copies, not one — "as if you had
-        // killed fifty", which is what the rate means everywhere else.
-        //
-        // 🔑 THE ROLLS THEMSELVES ARE A TABLE NOW — `MobCatalog.RecipeRolls` (`BL-253`). They were three
-        // literal lines here and a hand-made COPY of them in `tools/BalanceMatrix`, and the in-game drop
-        // database would have been a third. One list, three callers.
-        foreach (var roll in MobCatalog.RecipeRolls(mob.Level, mob.Rank))
-        {
-            int copies = MobCatalog.DropCopies(
-                roll.Delivered / MobCatalog.RecipeOtherGroupRate * recipeRate, _rng.NextDouble());
-            for (int i = 0; i < copies; i++)
-            {
-                // `BL-241` — a filter can refuse a recipe book too; each copy re-rolls WHICH book,
-                // so the check is per copy rather than per roll.
-                string bookId = roll.BookIds[_rng.Next(roll.BookIds.Length)];
-                if (ItemCatalog.Get(bookId) is ItemDef bookDef && !PickupWanted(recipient, bookDef))
-                    continue;
-                if (!AddItem(recipient, bookId)) break;
-                gave = true;
-            }
-        }
-
-        if (!gave)
-            return false;   // `BL-241` — the whole pile was filtered out; say nothing, push nothing
-        SendSystemToEntity(recipient, $"{mob.Name} dropped crafting materials!");
-        return true;
     }
 
     /// <summary>The killer + any alive party members within share range (ViewRange). Solo = just
@@ -19781,7 +19692,6 @@ public class GameLoopService : BackgroundService
 
                 var bits = new List<string>();
                 if (s.MinLevel != s.MaxLevel && s.BestLevel != s.MinLevel) bits.Add($"from lvl {s.BestLevel}");
-                if (s.IgnoresRates) bits.Add("guaranteed pile, no rates");
                 if (s.MaxQty > 1) bits.Add($"x{s.MinQty}-{s.MaxQty}");
                 if (gap <= 0f) bits.Add("TOO FAR from your level — drops nothing for you");
                 else if (gap < 0.999f) bits.Add($"level gap: cut to {gap * 100:0.#}%");

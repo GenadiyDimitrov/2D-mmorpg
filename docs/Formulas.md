@@ -1116,19 +1116,27 @@ direct essence      T76 1% × 30-50 A · T80 0.5% × 30-50 S                    
 ```
 
 A rate above 1 is a quantity band around it with the chance corrected so chance × mean qty = rate
-(`RateEntry`). **A boss** keeps its category mats, `GearDrops`' guaranteed piece, `BossPile` and
-`RecipeRolls` until step 12; none of the specialty.
+(`RateEntry`).
+
+**Bosses (`BL-274` step 12, 0.207.0)** have no specialty; `MobCatalog.BossDrops(level)` after the category mats:
+
+```
+base mats           ×100 the normal curve (150 primary at 90), secondary half, Iron/Gem ×0.5         group mats
+full item           1 guaranteed across all 18 kinds of GearTier (40/52/61/76/80) + 2%/family accent  group boss
+recipes             one group roll, 1.0 a kill at T40-T61 (100%), 1.5 at T76/T80 (60%), family-equal   group recipe
+parts               every kind, PartChance × 10                                               group mats
+Nightsilver + silk  BOTH, plain NightPerKill × 10; rungs 1-4 at the ELITE gates, 0.01 × 10          group mats
+essence (T76/T80)   guaranteed, round(0.1 × a 2H's break) ±25%: T76 288-480 A · T80 720-1200 S     group essence
+```
+
+No Commons and no volcanic from a boss. Every row takes every knob (`BL-262`), and every piece goes to its own
+`LootRecipient` (`BL-50`).
 
 ⚠ A template's `Drops` is **not the whole table**: `MobCatalog.KillTable(type, level, rank)` is, and it is
 the ONE function the kill roll, target-inspect and `DropIndex` all call. It drops every creature-group row
 and rebuilds `CreatureDrops` at the spawn's own level and rank, then adds `EnchantScrollDrops` and
-`UtilityScrollDrops` (return / resurrection, `BL-174`) for elites and bosses. Two boss layers are not
-`DropEntry`s and live in the kill path:
-
-* **`RecipeRolls`** — the BOSS recipe-book roll (one book out of a pool). It takes the same `EffectiveRate`
-  × level-gap product as everything else, its authored numbers **divided by the `other` group's ×3**.
-* **`BossPile`** — the boss's guaranteed materials, flavoured by `MatFlavor(category).Primary`. 🔴 **It takes
-  NO rate knob** (`BL-262`).
+`UtilityScrollDrops` (return / resurrection, `BL-174`) for elites and bosses. Nothing a kill pays lives outside
+it since 0.207.0.
 
 `MatFlavor` is the one category → (primary, secondary) material map.
 
@@ -1259,7 +1267,7 @@ recipe items     T40 / T52: 100 · T61: 60, 100 · T76: 20, 40, 60 · T80: 40, 6
 spent per craft  one recipe item of % ≤ learned (gear), pass or fail
 recipe price     round(0.10 × piece price × pct/100): 100% → 10%, 60% → 6%, 20% → 2% (Crafting.RecipePrice);
                  the Master sells T40/T52 100% at it; vendor pays half
-recipe drops     by specialty (see "Per-mob drop tables"); bosses: 60% at T76/T80 (step 12 retunes)
+recipe drops     by specialty (see "Per-mob drop tables"); bosses: 1 a kill at 100% (T40-T61), 1.5 at 60% (T76/T80)
 generic learn    authored per recipe from the ladder L0 20k · L1 50k · L2 100k · L3 200k · L4 400k · L5 700k · L6 1M
                  · L7 1.5M · L8 2M · L9 3M · L10 4M; char level = the item's tier (a buff's = its class skill's LAST rung)
 learn level      gear: the piece's own item level (T52 recipe at 52)
