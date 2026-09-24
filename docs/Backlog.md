@@ -2012,6 +2012,16 @@ one-line "…when the summoner ships"; that is cheap once and a trap four more t
   creature + Lord.** Elf **Spirit Tamer → Spirit Lord**, Demon **Hound Tamer → Hound Lord**, Human
   **Golem Tamer → Golem Lord**. *Lord*, not *Master*, so *Master* stays the nuker 4ths' word. Also in
   `design/ClassRenames.md`.
+- 📝 **2026-09-24, his note (so it is not forgotten): the master ↔ pet STAT LINK, both ways.**
+  - **A conversion skill** (passive or buff) in the summoner kit: *part of the master's stats become the
+    pet's*. His example is a share of the master's **M.Atk** feeding the pet, *"etc."* for the others.
+    ❓ Open until it is built: a **copy** (the master keeps his M.Atk) or a **transfer** (he gives it up),
+    and which stat maps to which.
+  - **Pet → master procs:** pet passives that, **with a chance, when the pet is hit OR when it hits**, heal
+    the master or raise his stats. 🔑 **The MASTER only**, not the party and not the pet itself.
+  - **Master → pet procs (the reverse):** when the **master is hit**, the pet's stats may rise.
+  - This fits Q4 above: all of it is KIT (skills/passives), not a class stat bonus. Also in design doc §6
+    item 7.
 
 ---
 
