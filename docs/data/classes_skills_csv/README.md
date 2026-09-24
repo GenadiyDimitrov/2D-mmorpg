@@ -316,42 +316,42 @@ if any column is off (`StatCalculator.BaseStatsNotSummingTo153`).
 the skill CSVs mirror the catalogs — edit one, edit the other, in the same commit.
 
 ### Classes
-| 1st     | 2nd        | 3rd              | 4th              | Race  | Weapon                      | Armor               | Path             |
-| ------- | ---------- | ---------------- | ---------------- | ----- | --------------------------- | ------------------- | ---------------- |
-| Fighter |            |                  |                  |       | Sword/Blunt/Dual/Bow - 1/2h | Robe/Light/Heavy    | -                |
-|         | Rogue      |                  |                  |       | Dual/Bow                    | Light               | -                |
-|         |            | Assassin         | Nullblade        | Human | Dual                        | Light               | Mele Burst       |
-|         |            | Phantom          | Shadowblade      | Elf   | Dual                        | Light               | Mele Burst       |
-|         |            | Stalker          | Venomblade       | Demon | Dual                        | Light               | Mele Burst       |
-|         |            | Sharpshooter     | Deadeye          | Human | Bow                         | Light               | Range Dmg        |
-|         |            | Sentinel         | Trapper          | Elf   | Bow                         | Light               | Range Dmg        |
-|         |            | Soultracker      | Soulhunter       | Demon | Bow                         | Light               | Range Dmg        |
-|         | Warrior    |                  |                  |       | Sword/Blunt - 2h            | Heavy               | -                |
-|         |            | Champion         | Sword Master     | Human | Sword - 2h                  | Heavy               | Mele Dmg         |
-|         |            | Swiftblade       | Sword Saint      | Elf   | Sword - 2h                  | Heavy               | Mele Dmg         |
-|         |            | Ravager          | Berserker        | Demon | Sword - 2h                  | Heavy               | Mele Dmg         |
-|         |            | Vanguard         | War Master       | Human | Blunt - 2h                  | Heavy               | Mele AOE Dmg     |
-|         |            | Skirmisher       | War Storm        | Elf   | Blunt - 2h                  | Heavy               | Mele AOE Dmg     |
-|         |            | Warborn          | Warbringer       | Demon | Blunt - 2h                  | Heavy               | Mele AOE Dmg     |
-|         | Knight     |                  |                  |       | Sword/Blunt - 1h            | Heavy + Shield      | -                |
-|         |            | Iron Guard       | Knight Commander | Human | Sword/Blunt - 1h            | Heavy + Shield      | Defence          |
-|         |            | Templar          | Paladin          | Elf   | Sword/Blunt - 1h            | Heavy + Shield      | Defence          |
-|         |            | Dread Knight     | Abyssal Knight   | Demon | Sword/Blunt - 1h            | Heavy + Shield      | Defence          |
-| Mage    |            |                  |                  |       | Wand/Staff                  | Robe [+ Shield]     | -                |
-|         | Priest     |                  |                  |       | Wand/Staff                  | Robe [+ Shield]     | -                |
-|         |            | Holy Priest      | Holy Messenger   | Human | Wand/Staff                  | Robe [+ Shield]     | Heal             |
-|         |            | Forest Whisperer | Forest Elder     | Elf   | Wand/Staff                  | Robe [+ Shield]     | Heal             |
-|         |            | Dark Healer      | Occultist        | Demon | Wand/Staff                  | Robe [+ Shield]     | Heal             |
-|         |            | Doctor           | War Doctor       | Human | Sword/Blunt/Wand - 1h       | Heavy/Robe + Shield | Buffer           |
-|         |            | Harmonist        | War Harmonist    | Elf   | Bow/Wand/Staff              | Light/Robe          | Buffer           |
-|         |            | Dreadcaller      | Warlock          | Demon | Sword/Blunt - 2h            | Heavy/Robe          | Buffer           |
-|         | Apprentice |                  |                  |       | Wand/Staff                  | Robe [+ Shield]     | -                |
-|         |            | Mana Adept       | Arcane Master    | Human | Wand/Staff                  | Robe [+ Shield]     | Nuke             |
-|         |            | Water Adept      | Ice Master       | Elf   | Wand/Staff                  | Robe [+ Shield]     | Nuke             |
-|         |            | Fire Adept       | Inferno Master   | Demon | Wand/Staff                  | Robe [+ Shield]     | Nuke             |
-|         |            | Golem Tamer      | Golem Lord       | Human | Any Sword/Blunt 1h/2h       | Robe                | Light [+ Shield] | Nuke |
-|         |            | Hound Tamer      | Hound Lord       | Elf   | Any Sword/Blunt 1h/2h       | Robe                | Light [+ Shield] | Nuke |
-|         |            | Spirit Tamer     | Spirit Lord      | Demon | Any Sword/Blunt 1h/2h       | Robe                | Light [+ Shield] | Nuke |
+| 1st     | 2nd        | 3rd              | 4th              | Race  | Weapon                      | Armor                 | Path         |
+| ------- | ---------- | ---------------- | ---------------- | ----- | --------------------------- | --------------------- | ------------ |
+| Fighter |            |                  |                  |       | Sword/Blunt/Dual/Bow - 1/2h | Robe/Light/Heavy      | -            |
+|         | Rogue      |                  |                  |       | Dual/Bow                    | Light                 | -            |
+|         |            | Assassin         | Nullblade        | Human | Dual                        | Light                 | Mele Burst   |
+|         |            | Phantom          | Shadowblade      | Elf   | Dual                        | Light                 | Mele Burst   |
+|         |            | Stalker          | Venomblade       | Demon | Dual                        | Light                 | Mele Burst   |
+|         |            | Sharpshooter     | Deadeye          | Human | Bow                         | Light                 | Range Dmg    |
+|         |            | Sentinel         | Trapper          | Elf   | Bow                         | Light                 | Range Dmg    |
+|         |            | Soultracker      | Soulhunter       | Demon | Bow                         | Light                 | Range Dmg    |
+|         | Warrior    |                  |                  |       | Sword/Blunt - 2h            | Heavy                 | -            |
+|         |            | Champion         | Sword Master     | Human | Sword - 2h                  | Heavy                 | Mele Dmg     |
+|         |            | Swiftblade       | Sword Saint      | Elf   | Sword - 2h                  | Heavy                 | Mele Dmg     |
+|         |            | Ravager          | Berserker        | Demon | Sword - 2h                  | Heavy                 | Mele Dmg     |
+|         |            | Vanguard         | War Master       | Human | Blunt - 2h                  | Heavy                 | Mele AOE Dmg |
+|         |            | Skirmisher       | War Storm        | Elf   | Blunt - 2h                  | Heavy                 | Mele AOE Dmg |
+|         |            | Warborn          | Warbringer       | Demon | Blunt - 2h                  | Heavy                 | Mele AOE Dmg |
+|         | Knight     |                  |                  |       | Sword/Blunt - 1h            | Heavy + Shield        | -            |
+|         |            | Iron Guard       | Knight Commander | Human | Sword/Blunt - 1h            | Heavy + Shield        | Defence      |
+|         |            | Templar          | Paladin          | Elf   | Sword/Blunt - 1h            | Heavy + Shield        | Defence      |
+|         |            | Dread Knight     | Abyssal Knight   | Demon | Sword/Blunt - 1h            | Heavy + Shield        | Defence      |
+| Mage    |            |                  |                  |       | Wand/Staff                  | Robe [+ Shield]       | -            |
+|         | Priest     |                  |                  |       | Wand/Staff                  | Robe [+ Shield]       | -            |
+|         |            | Holy Priest      | Holy Messenger   | Human | Wand/Staff                  | Robe [+ Shield]       | Heal         |
+|         |            | Forest Whisperer | Forest Elder     | Elf   | Wand/Staff                  | Robe [+ Shield]       | Heal         |
+|         |            | Dark Healer      | Occultist        | Demon | Wand/Staff                  | Robe [+ Shield]       | Heal         |
+|         |            | Doctor           | War Doctor       | Human | Sword/Blunt/Wand - 1h       | Heavy/Robe + Shield   | Buffer       |
+|         |            | Harmonist        | War Harmonist    | Elf   | Bow/Wand/Staff              | Light/Robe            | Buffer       |
+|         |            | Dreadcaller      | Warlock          | Demon | Sword/Blunt - 2h            | Heavy/Robe            | Buffer       |
+|         | Apprentice |                  |                  |       | Wand/Staff                  | Robe [+ Shield]       | -            |
+|         |            | Mana Adept       | Arcane Master    | Human | Wand/Staff                  | Robe [+ Shield]       | Nuke         |
+|         |            | Water Adept      | Ice Master       | Elf   | Wand/Staff                  | Robe [+ Shield]       | Nuke         |
+|         |            | Fire Adept       | Inferno Master   | Demon | Wand/Staff                  | Robe [+ Shield]       | Nuke         |
+|         |            | Golem Tamer      | Golem Lord       | Human | Any Sword/Blunt 1h/2h       | Robe/Light [+ Shield] | Summoner     |
+|         |            | Spirit Tamer     | Spirit Lord      | Elf   | Any Sword/Blunt 1h/2h       | Robe/Light [+ Shield] | Summoner     |
+|         |            | Hound Tamer      | Hound Lord       | Demon | Any Sword/Blunt 1h/2h       | Robe/Light [+ Shield] | Summoner     |
 
 
 
