@@ -762,6 +762,15 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    /// <summary>Admin: credit N kills of a mob template to the caller's kill quests (the SmokeTest's way through
+    /// a kill step without farming it).</summary>
+    public Task DebugQuestKill(string mobTypeId, int count)
+    {
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
+        _world.Commands.Enqueue(new DebugQuestKillCmd(Context.ConnectionId, mobTypeId ?? "", count));
+        return Task.CompletedTask;
+    }
+
     /// <summary>Admin: shift level by delta (+1 / +10 / -1 / -10). Delevel keeps learned skills.</summary>
     public Task DebugLevel(int delta)
     {

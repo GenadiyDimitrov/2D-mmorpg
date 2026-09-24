@@ -15,6 +15,7 @@ public static partial class QuestCatalog
         RegisterDailyQuests();            // repeatable once per server day
         RegisterRepeatableQuests();       // the Huntmasters' endless + finite contracts
         RegisterCrafterQuest();           // the Master Crafter's trial (lvl 40, `BL-273` part 2)
+        RegisterRecipeDailies();          // the Frostmere recipe givers' T76/T80 dailies (`BL-274` part 3)
         // Add more (non-class-change) chains here.
     }
 
@@ -29,6 +30,8 @@ public static partial class QuestCatalog
     static partial void RegisterRepeatableQuests();
     // Implemented in Quests.Crafter.cs.
     static partial void RegisterCrafterQuest();
+    // Implemented in Quests.RecipeDaily.cs.
+    static partial void RegisterRecipeDailies();
 }
 
 public static partial class ClassChangeRequirements

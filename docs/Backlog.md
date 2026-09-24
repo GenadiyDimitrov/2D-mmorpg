@@ -1,4 +1,4 @@
-🟢 part 2 (step 12, bosses) built 0.207.0; open = step 13 daily recipe quests |# Backlog — what is still owed
+# Backlog — what is still owed
 
 **One list. Features and changes only, and ONLY the ones that are still open.** Bugs, verifications
 and "does this work" live in [testing/Open-Checklist.md](testing/Open-Checklist.md) during a pass and
@@ -270,7 +270,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-264` | ❓ | **NO CSV SAYS WHICH BUFFS FIGHT EACH OTHER** — from `mage 1st` you cannot tell the three Mights are one family. A generated `FAMILY` + `RANK` column, checked like every other; §2 the RACE cell nothing verifies | skills |
 | `BL-270` | 🔵 | A vertical skill bar, or a wheel, for hand-held play | client |
 | `BL-273` | 🟡 | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05` (archived) — §2.2; ✅ no profession lock; 🟢 part 1 (essence) built 0.200.0; 🟢 part 2 (becoming a crafter) built 0.203.0; 🟢 9b (generic-recipe table) + the crafter-points model (5 types, a points budget, 5 respecs) built 0.204.0; 🟢 part 3 (step 10, the materials: Nightsilver/Nightsilk, parts, refines, per-slot tables) built 0.205.0; open = placeholder confirmations only | items |
-| `BL-274` | 🟡 | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3; 🟢 part 1 (step 11, the per-mob tables) built 0.206.0; 🟢 part 2 (step 12, bosses) built 0.207.0; open = step 13 daily recipe quests | items |
 | `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
 | `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
 | `BL-282` | 🟡 | **`BalanceMatrix --craft-cost`** ✅ built + all inputs ruled; only C5 (consumables) left, waits on §2.2 #8 — kills + hours per crafted T40/52/61/76/80 item under the NEW rules, by recipe %; extends M1-M9 | items |
@@ -2277,49 +2276,6 @@ gear can be crafted in between.
 - the Nightsilver/Nightsilk Values (20 × 10^rung);
 - ~~a part = its item's Common price~~ ✅ **settled in step 11 (0.206.0): a part = 1% of its full item's price**, and a recipe
   = 10% × its % (your ruling: *"a 20% recipe will cost 2%"*).
-
-
-## `BL-274` 🟡 PER-MOB DROP TABLES
-
-§2.3 of the design doc. Each mob drops a few things (1-3 weapon types, or body armour, or small armour;
-wood OR metal OR thread), plus that item's parts, its recipe and a rare Mythic. The refinable-metal
-grades by level band, volcanic mats in 2-3 zones, recipe % by source (normal/elite/boss/quest), daily
-recipe quests.
-✅ **2026-09-23 (§2.3 answers):** (1) The gear specialty is a **generator rule** (deterministic from the
-mob id, flavoured by category), dumped to a **readable CSV**. Change the rule, not the rows. The mats
-half already exists (`MatFlavor`). There are **four specialties**: weapons (1-3 types), body, small
-armour (helm/gloves/boots + **shield**), and **jewellery on fewer mobs**. (2) The rare full-item drop
-has its **own drop group** (own `/droprate` knob), separate from Common gear; still through
-`EffectiveRate`, and the global `DropChanceRate` multiplies it like every drop. (3) Volcanic
-dust/stone, **for now**, goes on some normal mobs at 76/80/85, on top of their own mats; real volcanic
-places come with the map rework (`BL-281`). **Naming: equipment "Mythic" becomes plain
-items; the reduced ones are "Common" items** (a `BL-272` text change).
-✅ **2026-09-23 (§2.3 Q4): daily recipe quests exist for T76/T80 only.** Three NPCs (weapon / armour /
-jewels), each with a T76 quest (75-85) and a T80 quest (80+), where 80-85 chooses one. A quest gives a
-**40%** recipe rolled uniformly within its kind: 1/8 weapons, 1/7 armour, 1/3 jewels. T40 = shop + normal
-drop recipes, T52 = shop + drops, T61 = craft/drop + Commons, T76/T80 = crafted only. Needs a
-random-pool `QuestReward`. **The slot model:** one slot per recipe item, holding the highest learned %;
-a higher % overrides that slot; recipes at or below it are spent as mats; deleting refunds nothing. ❓ One
-shared daily stamp per NPC (max 3 recipes/day)?
-✅ **2026-09-23 (§2.3 Q5): boss drops.** Below T76, bosses drop **full gear only** (no Commons), with
-recipes + new mats replacing the Common rolls; Commons/essence come from normals and elites. **T76/T80
-bosses drop at least one full item, guaranteed**, plus direct essence of ~1/10 an item's break value.
-All three kinds (weapon / armour / jewels) stay on bosses. Boss recipe %: T61 100%, T76/T80 60%.
-✅ **The guaranteed item holds at EVERY tier.** **One daily per NPC/kind**, shared by its T76 and T80 quest (max 3 a day, any tier mix).
-✅ **2026-09-24 (while building 0.203.0): the recipe % BY SOURCE, per tier** (supersedes the second-round rows): T40
-shop 100%; T52 shop 100%, normals a low chance, elites higher, **bosses every kill + an item**; T61 normal **60%**,
-elite/boss **100%**; T76 normal **20%**, elite **40%**, boss **60%**, quest **40%**; T80 elite **40%** (was 20%),
-boss **60%**, quest **40%**. Design doc §2.2, 0.203.0 answers #6.
-🟢 **PART 1 (step 11) BUILT 0.206.0** (design doc §2.3 "Step 11 proposal" + "Your answers ... step 11"): the dealt
-specialty (`MobCatalog.AssignDropProfiles`, readable `docs/data/mobs/mob_drops.csv`), `CreatureDrops` (Commons by
-specialty, the rare item 1/10,000 in group "rare", recipes by source in group "recipe", parts, Nightsilver/
-Nightsilk, base mats from 35, volcanic on the 76/80/85 creatures, T76/T80 direct essence 1% / 0.5% × 30-50 in
-group "essence"), and `KillTable`, the one table the roll, inspect and `DropIndex` read.
-🟢 **PART 2 (step 12) BUILT 0.207.0** (design doc §2.3 "Step 12 proposal" + answers): `MobCatalog.BossDrops`: the
-guaranteed full item (now T80 at 80+), books 1 a kill at 100% (T40-T61) / 1.5 at 60% (T76/T80), base mats ×100,
-parts and both metals ×10, T76/T80 essence 1/10 of a 2H's break. All table rows; `BL-50` and `BL-262` closed.
-**Open: step 13 (daily recipe quests), ✅ RULED 2026-09-24** (design doc §2.3 "Step 13 proposal" + answers: three
-Frostmere givers, the other two as contacts at 8 kills each on the kind's own carriers, the 40% book only).
 
 ## `BL-280` 🔵 ZONES BY ARCHETYPE, AND NO MOB CLUSTERS
 

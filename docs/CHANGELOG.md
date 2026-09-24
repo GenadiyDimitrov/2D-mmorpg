@@ -7,12 +7,37 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.207.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.208.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-24 (latest) — 0.207.0: boss drops (`BL-274` part 2, step 12; closes `BL-50` + `BL-262`)
+## 2026-09-24 (latest) — 0.208.0: the daily recipe quests (`BL-274` part 3, step 13; closes `BL-274`)
+
+> *"talk to 2-3 ppl, each asks 5-10 kills"*
+
+**Three new NPCs in Frostmere hand out the T76/T80 recipe books once a day.** Weaponwright Harrow (weapons),
+Armourer Edda (armour) and Jeweller Ossian (jewellery) stand in a column west of the town centre. The version
+moved, so **a new APK is needed** (no DTO changed; an old APK still sees the NPCs, only its debug teleport list
+misses them). ⚠ `game.db` delete still owed from 0.205.0.
+
+- **Each giver has two quests:** a **T76** one (levels 75-85, Adamantine) and a **T80** one (80+, Soulcrystal).
+  They share **one daily stamp**, so between 80 and 85 you pick one. Holding either bars the other, and the hand-in
+  closes both until the server day rolls over. **At most three books a day, one per kind.**
+- **The errand:** talk to the other two givers, and each wants 8 kills of the kind's own carriers:
+  weapons: Redhorn Soldier + General (T76), Wrathborn Demon + Radiant Scout (T80) · armour: Sunland Orc Captain
+  + Commander, Scarlet Mantis + Splinter Mantis Drone · jewels: Emberwyrm Drake + Redhorn General, Radiant Mage +
+  Radiant Berserker. Then back to the giver.
+- **The reward is one 40% recipe book, uniform within the kind** (1/8 weapons, 1/7 armour, 1/3 jewels), and
+  nothing else. The 16 kills pay their own EXP and drops.
+- **Engine:** `QuestReward.RandomItemIds` (a pool paying one id) and `QuestDef.DailyGroup` (one stamp shared by
+  several dailies). Ungrouped dailies keep their old stamps.
+- ⚠ **Side effect, by the standing rule:** a quest kill target gets a dedicated spawner in every normal camp that
+  rosters it, so the 76+ camps holding these 11 creatures gain 2-4 guaranteed spawns each.
+- SmokeTest §5c plays Harrow's T80 quest end to end (`DebugQuestKill` credits kills through the real matching)
+  and checks the shared stamp, the one-book payout and its kind. 371 checks, all pass.
+
+## 2026-09-24 — 0.207.0: boss drops (`BL-274` part 2, step 12; closes `BL-50` + `BL-262`)
 
 > *"ppl do bosses to get equipment ... otherwice bosses are usless"*
 

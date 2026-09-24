@@ -248,6 +248,7 @@ public class GameLoopService : BackgroundService
                 case SwapSubclassOutCmd c: HandleSwapSubclassOut(c); break;
                 case SwitchSubclassCmd c: HandleSwitchSubclass(c); break;
                 case DebugSpCmd c: HandleDebugSp(c); break;
+                case DebugQuestKillCmd c: HandleDebugQuestKill(c); break;
                 case DebugResetCmd c: HandleDebugReset(c); break;
                 case DebugThirdClassCmd c: HandleDebugThirdClass(c); break;
                 case DebugFourthClassCmd c: HandleDebugFourthClass(c); break;
@@ -4410,6 +4411,22 @@ public class GameLoopService : BackgroundService
         SendStats(player);
         SendLearned(player);
         SendSystemToEntity(player, $"[DEBUG] +{cmd.Amount:N0} SP (now {player.SkillPoints:N0}).");
+        SaveEntity(player);
+    }
+
+    /// <summary>DEBUG: credit kills of a template to the player's kill quests, as if each had died to them. A
+    /// stand-in entity at the template's natural level goes through <see cref="AdvanceKillQuests"/>, so the
+    /// type and level-band matching is the real one; no EXP, drops or gather tokens are paid.</summary>
+    private void HandleDebugQuestKill(DebugQuestKillCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
+        var type = MobCatalog.Get(cmd.MobTypeId);
+        for (int i = 0; i < Math.Clamp(cmd.Count, 1, 100); i++)
+        {
+            var standIn = new Entity { Kind = EntityKind.Mob, MobTypeId = cmd.MobTypeId, Name = type.Name };
+            standIn.Level = Math.Max(1, type.Level);
+            AdvanceKillQuests(player, standIn);
+        }
         SaveEntity(player);
     }
 
@@ -21982,12 +21999,21 @@ public class GameLoopService : BackgroundService
         // A DAILY re-opens once the server day rolls over, a REPEATABLE immediately; anything else is
         // one-shot. Same rule as the offer list — see QuestClosed. The daily gets its own line first,
         // because "not today" is worth saying and "already done, forever" is not.
-        if (def.Daily && !DailyQuestReady(player, questId))
+        if (def.Daily && !DailyQuestReady(player, def))
         {
-            SendSystemToEntity(player, $"{def.Name} can be taken again tomorrow.");
+            SendSystemToEntity(player, def.DailyGroup is null
+                ? $"{def.Name} can be taken again tomorrow."
+                : $"You have done today's errand for {WorldMap.NpcById(def.OfferNpcId)?.Name ?? "this giver"}. Come back tomorrow.");
             return;
         }
         if (QuestClosed(player, questId)) return;
+        // A daily GROUP is one errand a day (`BL-274` part 3): holding one of its quests bars the others, or a
+        // player at 80-85 could carry the T76 and the T80 quest together and hand in both.
+        if (DailySiblingActive(player, def) is QuestDef busy)
+        {
+            SendSystemToEntity(player, $"Finish or abandon {busy.Name} first. It is the same daily errand.");
+            return;
+        }
         // LEVEL RANGE (owner): too low OR too high blocks the ACCEPT. Class quests carry no ceiling.
         if (!def.LevelInRange(player.Level))
         {
@@ -22084,12 +22110,20 @@ public class GameLoopService : BackgroundService
 
     /// <summary>Has the server day rolled over since this daily was last completed? The stamp is kept
     /// in the character's completed-quest set as "<id>@<yyyy-MM-dd>", so it needs no new column and a
-    /// day's worth of dailies costs one string each.</summary>
-    private static bool DailyQuestReady(Entity player, string questId)
+    /// day's worth of dailies costs one string each. The stamp is keyed on <see cref="QuestDef.DailyKey"/>, so
+    /// a daily GROUP shares one (`BL-274` part 3).</summary>
+    private static bool DailyQuestReady(Entity player, QuestDef def)
     {
         string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
-        return !player.CompletedQuests.Contains(DailyStamp(questId, today));
+        return !player.CompletedQuests.Contains(DailyStamp(def.DailyKey, today));
     }
+
+    /// <summary>Another quest of <paramref name="def"/>'s daily group that the player is holding, or null.</summary>
+    private static QuestDef? DailySiblingActive(Entity player, QuestDef def) =>
+        def.DailyGroup is null ? null
+        : player.ActiveQuests.Keys
+            .Select(QuestCatalog.Get)
+            .FirstOrDefault(o => o is not null && o.Id != def.Id && o.DailyGroup == def.DailyGroup);
 
     /// <summary>Is this quest CLOSED to the player — done, and not coming back? The one answer both the
     /// NPC's offer list and the "!" markers ask, so they can never disagree.
@@ -22103,7 +22137,7 @@ public class GameLoopService : BackgroundService
     /// limited": a quest marked both is offered once a day, not endlessly.</summary>
     private static bool QuestClosed(Entity player, string questId) => QuestCatalog.Get(questId) switch
     {
-        { Daily: true } => !DailyQuestReady(player, questId),
+        { Daily: true } d => !DailyQuestReady(player, d),
         { Repeatable: true } => false,
         _ => player.CompletedQuests.Contains(questId),
     };
@@ -22225,13 +22259,21 @@ public class GameLoopService : BackgroundService
                     SendCombatToEntity(player, "LOOT",
                         $"Quest reward: {rewardDef.Name}{(g.Count() > 1 ? $" x{g.Count()}" : "")}");
         }
+        // The POOL pays exactly one of its ids, uniformly (`BL-274` part 3: the recipe givers' one book).
+        if (def.Reward.RandomItemIds is { Length: > 0 } pool)
+        {
+            string picked = pool[_rng.Next(pool.Length)];
+            AddItem(player, picked);
+            SendCombatToEntity(player, "LOOT", $"Quest reward: {ItemCatalog.Get(picked)?.Name ?? picked}");
+        }
 
         player.ActiveQuests.Remove(questId);
         if (def.Daily)
         {
             // A daily records TODAY's stamp rather than closing permanently, so it re-opens when the
             // server day rolls over. The plain id is deliberately NOT added — that would retire it.
-            player.CompletedQuests.Add(DailyStamp(questId, DateTime.UtcNow.ToString("yyyy-MM-dd")));
+            // Keyed on the GROUP when it has one, so the sibling tier closes for the day too.
+            player.CompletedQuests.Add(DailyStamp(def.DailyKey, DateTime.UtcNow.ToString("yyyy-MM-dd")));
         }
         // A REPEATABLE still records its bare id: it is genuinely completed, prerequisites that name it
         // are satisfied, and the "completed" list stays a true history. What makes it repeatable is that
@@ -22754,6 +22796,11 @@ public class GameLoopService : BackgroundService
             availability = QuestAvailability.Completed;
             status = def.Daily ? "Done today — again after the server day rolls over" : "Completed";
         }
+        else if (DailySiblingActive(player, def) is QuestDef busy)
+        {
+            availability = QuestAvailability.Locked;
+            status = $"One errand a day: you hold {busy.Name}";
+        }
         else if (player.Level < def.MinLevel)
         {
             availability = QuestAvailability.Locked;
@@ -22849,6 +22896,8 @@ public class GameLoopService : BackgroundService
             string name = ItemCatalog.Get(id)?.Name ?? id;
             parts.Add(counts[id] > 1 ? $"{name} x{counts[id]}" : name);
         }
+        if (reward.RandomItemIds is { Length: > 0 } pool)
+            parts.Add(reward.RandomLabel ?? $"one of {pool.Length} items, at random");
         return string.Join(" · ", parts);
     }
 

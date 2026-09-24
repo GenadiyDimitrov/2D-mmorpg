@@ -561,6 +561,10 @@ public record SwitchSubclassCmd(string ConnectionId, int Slot) : IAdminCommand;
 /// <summary>DEBUG-only: grant skill points.</summary>
 public record DebugSpCmd(string ConnectionId, long Amount) : IAdminCommand;
 
+/// <summary>DEBUG-only: credit N kills of a mob template to the player's KILL quests, through the real
+/// AdvanceKillQuests path (`BL-274` part 3: the SmokeTest cannot farm 16 level-80 creatures).</summary>
+public record DebugQuestKillCmd(string ConnectionId, string MobTypeId, int Count) : IAdminCommand;
+
 /// <summary>DEBUG-only: re-roll the current character (new race/base class, reset to
 /// level 1 with the starter kit; keeps the same character row + gold).</summary>
 public record DebugResetCmd(string ConnectionId, Race Race, BaseClass BaseClass) : IAdminCommand;

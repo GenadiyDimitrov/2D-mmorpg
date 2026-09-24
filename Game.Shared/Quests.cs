@@ -77,8 +77,14 @@ public record QuestStep(
     //       neither re-checks nor takes them.
     bool PaidAtHandIn = true);
 
-/// <summary>What the player gets on completion. ItemIds grants quest items.</summary>
-public record QuestReward(int Exp = 0, int SkillPoints = 0, string[]? ItemIds = null, int Gold = 0);
+/// <summary>What the player gets on completion. ItemIds grants quest items.
+///
+/// <para><paramref name="RandomItemIds"/> is a POOL: the hand-in grants exactly ONE of them, picked uniformly
+/// (`BL-274` part 3, the daily recipe quests: *"the roll is uniform within the kind"*: 1/8 weapons, 1/7 armour,
+/// 1/3 jewels). <paramref name="RandomLabel"/> is how the reward line names the pool, since eight recipe names
+/// do not fit on one line.</para></summary>
+public record QuestReward(int Exp = 0, int SkillPoints = 0, string[]? ItemIds = null, int Gold = 0,
+                          string[]? RandomItemIds = null, string? RandomLabel = null);
 
 /// <summary>
 /// One "this creature yields this token" line of a GATHERING quest (owner, playtest-13: *"can be kill
@@ -145,8 +151,16 @@ public record QuestDef(
     //       back (owner, playtest-19 M11: "i have no way to go back to the 1st town just to take it").
     //       ONE quest id, so it still cannot be run twice in a day — what widens is only WHERE.
     //       OfferNpcId stays the starter town's id; WorldMap.IsSameService matches the rest.
-    bool AnyTownNpc = false)
+    bool AnyTownNpc = false,
+    // ----- DAILY GROUP: dailies with the same key share ONE day-stamp (`BL-274` part 3). Each recipe giver's T76
+    //       and T80 quests are one group, so between 80 and 85 handing in one locks the other out for the day
+    //       (owner, Q4 follow-up: "one or the other"). While one is ACTIVE its siblings are not offered either,
+    //       which is what stops a player holding both and handing in both. null = the quest's own id.
+    string? DailyGroup = null)
 {
+    /// <summary>The key of this quest's daily stamp: its <see cref="DailyGroup"/>, else its own id.</summary>
+    public string DailyKey => DailyGroup ?? Id;
+
     /// <summary>Does <paramref name="npcId"/> count as this quest's giver / turn-in NPC?
     /// Exact id normally; any town's copy of that service when <see cref="AnyTownNpc"/> is set.</summary>
     public bool GivenBy(string npcId) =>
@@ -203,6 +217,9 @@ public static partial class QuestCatalog
     {
         if (!All.TryAdd(quest.Id, quest))
             throw new InvalidOperationException($"Duplicate quest id '{quest.Id}'.");
+        // A group shares a DAY-stamp; on a non-daily it would mean nothing and silently gate nothing.
+        if (quest.DailyGroup is not null && !quest.Daily)
+            throw new InvalidOperationException($"Quest '{quest.Id}' has a DailyGroup but is not Daily.");
         // A gather token belongs to exactly ONE quest, globally. Two lines of one quest sharing a token
         // would be counted twice at turn-in and paid at whichever modifier came first; two QUESTS
         // sharing one would make abandoning either confiscate the other's progress. Both are silent, so
@@ -326,6 +343,9 @@ public static partial class QuestCatalog
             // A DAILY is never permanently "completed" — the caller's isCompleted answers for today's
             // stamp instead, so the quest reappears when the server day rolls over.
             if (isActive(q.Id)) continue;
+            // A daily GROUP is one errand: while any of its quests is in progress, none of the others is offered.
+            if (q.DailyGroup is not null && All.Values.Any(o => o.DailyGroup == q.DailyGroup && isActive(o.Id)))
+                continue;
             if (isCompleted(q.Id)) continue;
             if (q.RequiresQuestId is not null && !isCompleted(q.RequiresQuestId)) continue;
             yield return q;

@@ -7334,3 +7334,53 @@ the one genuinely drop-shaped thing in the pile starts obeying the knob you play
 (`GameLoopService.RollBossBonus`), and the drop database reads the same table, so both move together.
 
 
+
+## `BL-274` ✅ CLOSED 2026-09-24 in **0.208.0**: per-mob drops, boss drops and the daily recipe quests (steps 11-13)
+
+Built in three versions: 0.206.0 (step 11, the per-mob tables), 0.207.0 (step 12, bosses) and **0.208.0 (step 13, the
+daily recipe quests)**: Weaponwright Harrow, Armourer Edda and Jeweller Ossian in Frostmere, a T76 (75-85) and a T80
+(80+) daily each sharing one day-stamp (`QuestDef.DailyGroup`), the other two givers as contacts at 8 kills each,
+and one 40% book uniform within the kind (`QuestReward.RandomItemIds`). The entry as it stood:
+
+### `BL-274` 🟡 PER-MOB DROP TABLES (as it stood)
+
+§2.3 of the design doc. Each mob drops a few things (1-3 weapon types, or body armour, or small armour;
+wood OR metal OR thread), plus that item's parts, its recipe and a rare Mythic. The refinable-metal
+grades by level band, volcanic mats in 2-3 zones, recipe % by source (normal/elite/boss/quest), daily
+recipe quests.
+✅ **2026-09-23 (§2.3 answers):** (1) The gear specialty is a **generator rule** (deterministic from the
+mob id, flavoured by category), dumped to a **readable CSV**. Change the rule, not the rows. The mats
+half already exists (`MatFlavor`). There are **four specialties**: weapons (1-3 types), body, small
+armour (helm/gloves/boots + **shield**), and **jewellery on fewer mobs**. (2) The rare full-item drop
+has its **own drop group** (own `/droprate` knob), separate from Common gear; still through
+`EffectiveRate`, and the global `DropChanceRate` multiplies it like every drop. (3) Volcanic
+dust/stone, **for now**, goes on some normal mobs at 76/80/85, on top of their own mats; real volcanic
+places come with the map rework (`BL-281`). **Naming: equipment "Mythic" becomes plain
+items; the reduced ones are "Common" items** (a `BL-272` text change).
+✅ **2026-09-23 (§2.3 Q4): daily recipe quests exist for T76/T80 only.** Three NPCs (weapon / armour /
+jewels), each with a T76 quest (75-85) and a T80 quest (80+), where 80-85 chooses one. A quest gives a
+**40%** recipe rolled uniformly within its kind: 1/8 weapons, 1/7 armour, 1/3 jewels. T40 = shop + normal
+drop recipes, T52 = shop + drops, T61 = craft/drop + Commons, T76/T80 = crafted only. Needs a
+random-pool `QuestReward`. **The slot model:** one slot per recipe item, holding the highest learned %;
+a higher % overrides that slot; recipes at or below it are spent as mats; deleting refunds nothing. ❓ One
+shared daily stamp per NPC (max 3 recipes/day)?
+✅ **2026-09-23 (§2.3 Q5): boss drops.** Below T76, bosses drop **full gear only** (no Commons), with
+recipes + new mats replacing the Common rolls; Commons/essence come from normals and elites. **T76/T80
+bosses drop at least one full item, guaranteed**, plus direct essence of ~1/10 an item's break value.
+All three kinds (weapon / armour / jewels) stay on bosses. Boss recipe %: T61 100%, T76/T80 60%.
+✅ **The guaranteed item holds at EVERY tier.** **One daily per NPC/kind**, shared by its T76 and T80 quest (max 3 a day, any tier mix).
+✅ **2026-09-24 (while building 0.203.0): the recipe % BY SOURCE, per tier** (supersedes the second-round rows): T40
+shop 100%; T52 shop 100%, normals a low chance, elites higher, **bosses every kill + an item**; T61 normal **60%**,
+elite/boss **100%**; T76 normal **20%**, elite **40%**, boss **60%**, quest **40%**; T80 elite **40%** (was 20%),
+boss **60%**, quest **40%**. Design doc §2.2, 0.203.0 answers #6.
+🟢 **PART 1 (step 11) BUILT 0.206.0** (design doc §2.3 "Step 11 proposal" + "Your answers ... step 11"): the dealt
+specialty (`MobCatalog.AssignDropProfiles`, readable `docs/data/mobs/mob_drops.csv`), `CreatureDrops` (Commons by
+specialty, the rare item 1/10,000 in group "rare", recipes by source in group "recipe", parts, Nightsilver/
+Nightsilk, base mats from 35, volcanic on the 76/80/85 creatures, T76/T80 direct essence 1% / 0.5% × 30-50 in
+group "essence"), and `KillTable`, the one table the roll, inspect and `DropIndex` read.
+🟢 **PART 2 (step 12) BUILT 0.207.0** (design doc §2.3 "Step 12 proposal" + answers): `MobCatalog.BossDrops`: the
+guaranteed full item (now T80 at 80+), books 1 a kill at 100% (T40-T61) / 1.5 at 60% (T76/T80), base mats ×100,
+parts and both metals ×10, T76/T80 essence 1/10 of a 2H's break. All table rows; `BL-50` and `BL-262` closed.
+**Open: step 13 (daily recipe quests), ✅ RULED 2026-09-24** (design doc §2.3 "Step 13 proposal" + answers: three
+Frostmere givers, the other two as contacts at 8 kills each on the kind's own carriers, the 40% book only).
+

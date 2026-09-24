@@ -1268,6 +1268,8 @@ spent per craft  one recipe item of % ≤ learned (gear), pass or fail
 recipe price     round(0.10 × piece price × pct/100): 100% → 10%, 60% → 6%, 20% → 2% (Crafting.RecipePrice);
                  the Master sells T40/T52 100% at it; vendor pays half
 recipe drops     by specialty (see "Per-mob drop tables"); bosses: 1 a kill at 100% (T40-T61), 1.5 at 60% (T76/T80)
+recipe quests    T76/T80 only (0.208.0): 3 Frostmere givers (weapon/armour/jewel), each a T76 (75-85) + T80 (80+) daily
+                 on ONE shared stamp → max 3 books a day; 16 kills; reward 1 × 40% book, uniform in the kind (1/8, 1/7, 1/3)
 generic learn    authored per recipe from the ladder L0 20k · L1 50k · L2 100k · L3 200k · L4 400k · L5 700k · L6 1M
                  · L7 1.5M · L8 2M · L9 3M · L10 4M; char level = the item's tier (a buff's = its class skill's LAST rung)
 learn level      gear: the piece's own item level (T52 recipe at 52)

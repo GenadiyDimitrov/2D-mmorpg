@@ -465,6 +465,14 @@ public static class WorldMap
         // wants 200 of Y between any two within 1500 of X. 14600 is the first free slot north of the
         // smith. The boot assert rejected three placements before this one; trust it, not arithmetic.
         yield return new NpcDef("sp_broker", "Ledgerkeep Mora", 10800, 14600, NpcRole.SpExchange);
+
+        // `BL-274` part 3 (0.208.0) — the three RECIPE GIVERS, one per kind, in Frostmere only (owner, step 13:
+        // the 76+ town). Each gives a T76 and a T80 daily and sends you to the other two. A column of their
+        // own at X 11000, south of the gatekeeper line: 15100 / 15650 / 16150 each keep >= 250 of Y from the
+        // Master Crafter (14850), Sevrin (15400) and the Spirit Helper (15900); the east shops are > 1500 away.
+        yield return new NpcDef(QuestCatalog.RecipeWeaponGiver, "Weaponwright Harrow", 11000, 15100, NpcRole.QuestGiver);
+        yield return new NpcDef(QuestCatalog.RecipeArmourGiver, "Armourer Edda",       11000, 15650, NpcRole.QuestGiver);
+        yield return new NpcDef(QuestCatalog.RecipeJewelGiver,  "Jeweller Ossian",     11000, 16150, NpcRole.QuestGiver);
     }
 
     /// <summary>A ring town's Master Crafter's display name. One ORDER with a chapter in every town, so the

@@ -1801,6 +1801,119 @@ b.MyId = entered2.EntityId;
 }
 
 // -------------------------------------------------------------------------------------------
+// 5c. THE DAILY RECIPE QUESTS (`BL-274` part 3, 0.208.0) — the Frostmere givers, PLAYED on the level-81 main.
+//
+//     Weaponwright Harrow's T80 quest walked through the real protocol: accept, the talk to Edda, 8 kills, the
+//     talk to Ossian, 8 more, the hand-in. The kills are credited by `DebugQuestKill`, which runs the REAL
+//     AdvanceKillQuests matching, so a wrong creature must still be refused. Then the ruled rules:
+//       • holding the T80 quest bars the T76 one (one errand a day, not two in parallel),
+//       • the reward is exactly ONE 40% book, and it is one of the KIND's (the 8 Soulcrystal weapons),
+//       • 🔑 the SHARED stamp: after the hand-in the T76 quest is closed for the day too,
+//       • the other kinds keep their own stamp (the armourer still offers hers).
+// -------------------------------------------------------------------------------------------
+{
+    int Held(string defId) => b.Inv?.Items.Where(i => i.DefId == defId).Sum(i => i.Quantity) ?? 0;
+
+    // Offline: the three pools are exactly the kind's 40% books at each tier (1/8, 1/7, 1/3 uniform).
+    bool poolsOk = true;
+    string poolInfo = "";
+    foreach (var (kind, keys) in new[]
+    {
+        ("weapon", new[] { "sword1h", "sword2h", "blunt1h", "blunt2h", "duals", "bow", "wand", "staff" }),
+        ("armour", new[] { "heavy", "light", "robe", "helm", "gloves", "boots", "shield" }),
+        ("jewel",  new[] { "necklace", "ring", "earring" }),
+    })
+        foreach (int tier in new[] { 76, 80 })
+        {
+            var qd = QuestCatalog.Get(QuestCatalog.RecipeQuestId(kind, tier));
+            var want = keys.Select(k => ItemCatalog.RecipeBookId($"craft_{k}_t{tier}", 40)).OrderBy(x => x).ToArray();
+            var got = (qd?.Reward.RandomItemIds ?? Array.Empty<string>()).OrderBy(x => x).ToArray();
+            bool ok = qd is { Daily: true } && qd.DailyGroup == $"daily_recipe_{kind}"
+                      && got.SequenceEqual(want) && got.All(id => ItemCatalog.Get(id) is not null)
+                      && qd.Reward is { Exp: 0, Gold: 0, SkillPoints: 0, ItemIds: null }
+                      && qd.MinLevel == (tier == 76 ? 75 : 80) && qd.MaxLevel == (tier == 76 ? 85 : 0);
+            if (!ok) poolInfo += $" {kind}/t{tier}: [{string.Join(",", got)}]";
+            poolsOk &= ok;
+        }
+    Check("the six recipe dailies: each pays ONE book from exactly its kind's 40% set (8/7/3), nothing else, "
+          + "T76 75-85, T80 80+", poolsOk, poolInfo);
+
+    var harrow = WorldMap.Npcs.First(n => n.Id == QuestCatalog.RecipeWeaponGiver);
+    await b.Hub.SendAsync("DebugTeleport", harrow.X + 100, harrow.Y + 500);
+    Guid NpcId(string fullName) => b.EntityNames.FirstOrDefault(kv => kv.Value == fullName.Split(' ')[^1]).Key;
+    await b.WaitFor(() => NpcId("Weaponwright Harrow") != Guid.Empty && NpcId("Armourer Edda") != Guid.Empty
+                          && NpcId("Jeweller Ossian") != Guid.Empty);
+    Guid harrowId = NpcId("Weaponwright Harrow"), eddaId = NpcId("Armourer Edda"), ossianId = NpcId("Jeweller Ossian");
+    // 'TalkRange' applies to talks, accepts and hand-ins: stand beside each NPC first (one column, 550 apart).
+    async Task At(string npcId) { var n = WorldMap.Npcs.First(x => x.Id == npcId); await b.Hub.SendAsync("DebugTeleport", n.X + 60, n.Y); await b.Settle(); }
+    Check("the three Frostmere recipe givers are in view", harrowId != Guid.Empty && eddaId != Guid.Empty && ossianId != Guid.Empty,
+          $"harrow {harrowId}, edda {eddaId}, ossian {ossianId}");
+
+    if (harrowId != Guid.Empty && eddaId != Guid.Empty && ossianId != Guid.Empty)
+    {
+        string t80 = QuestCatalog.RecipeQuestId("weapon", 80), t76 = QuestCatalog.RecipeQuestId("weapon", 76);
+        QuestSummary? Q() => b.Quests?.Active.FirstOrDefault(q => q.Id == t80);
+        QuestEntry? Entry(string id) => b.Quests?.Entries.FirstOrDefault(e => e.Id == id);
+
+        await At(QuestCatalog.RecipeWeaponGiver);
+        await b.Hub.SendAsync("QuestAction", "accept", t80, harrowId);
+        await b.Settle();
+        await b.Hub.SendAsync("QuestAction", "accept", t76, harrowId);
+        await b.Settle();
+        Check("🔑 holding the T80 quest BARS the T76 one (one errand a day, not two in parallel)",
+              Q() is not null && b.Quests!.Active.All(q => q.Id != t76) && Entry(t76)?.State == QuestAvailability.Locked,
+              $"active [{string.Join(",", b.Quests?.Active.Select(q => q.Id) ?? Array.Empty<string>())}], "
+              + $"t76 {Entry(t76)?.State} '{Entry(t76)?.Status}'");
+
+        await At(QuestCatalog.RecipeArmourGiver);
+        await b.Hub.SendAsync("TalkToNpc", eddaId);
+        await b.Settle();
+        Check("talking to Edda hands over to her 8 kills", Q() is { StepIndex: 1, CounterNeeded: 8 },
+              $"step {Q()?.StepIndex}, needs {Q()?.CounterNeeded}");
+        await b.Hub.SendAsync("DebugQuestKill", "radiant_scout", 8);     // Ossian's creature, not Edda's
+        await b.Settle();
+        Check("...the WRONG creature does not count", Q() is { StepIndex: 1, Counter: 0 }, $"step {Q()?.StepIndex}, {Q()?.Counter}");
+        await b.Hub.SendAsync("DebugQuestKill", "wrathborn_demon", 8);
+        await b.Settle();
+        await At(QuestCatalog.RecipeJewelGiver);
+        await b.Hub.SendAsync("TalkToNpc", ossianId);
+        await b.Settle();
+        await b.Hub.SendAsync("DebugQuestKill", "radiant_scout", 8);
+        await b.Settle();
+        Check("8 Wrathborn Demons, Ossian, 8 Radiant Scouts: ready to hand in at Harrow", Q() is { StepIndex: 4, CanComplete: true },
+              $"step {Q()?.StepIndex}, canComplete {Q()?.CanComplete}");
+
+        var weaponBooks = QuestCatalog.Get(t80)!.Reward.RandomItemIds!;
+        var allBooks = ItemCatalog.AllItems.Where(d => d.Id.StartsWith("recipe_craft_")).Select(d => d.Id).ToArray();
+        var before = allBooks.ToDictionary(id => id, Held);
+        await At(QuestCatalog.RecipeWeaponGiver);
+        await b.Hub.SendAsync("QuestAction", "complete", t80, harrowId);
+        await b.Settle();
+        var gained = allBooks.Where(id => Held(id) > before[id]).ToArray();
+        int gainedTotal = allBooks.Sum(id => Held(id) - before[id]);
+        Check("🔑 the hand-in pays exactly ONE 40% book, and it is a Soulcrystal WEAPON",
+              gainedTotal == 1 && gained.Length == 1 && weaponBooks.Contains(gained[0]) && gained[0].EndsWith("_t80_40"),
+              $"gained [{string.Join(",", gained)}] total {gainedTotal}");
+
+        await b.Hub.SendAsync("QuestAction", "accept", t76, harrowId);
+        await b.Settle();
+        Check("🔴🔑 the SHARED stamp: after the T80 hand-in the T76 quest is closed for the day too",
+              b.Quests!.Active.All(q => q.Id != t76) && Entry(t76)?.State == QuestAvailability.Completed
+              && Entry(t80)?.State == QuestAvailability.Completed,
+              $"t76 {Entry(t76)?.State} '{Entry(t76)?.Status}', t80 {Entry(t80)?.State}");
+
+        string armour76 = QuestCatalog.RecipeQuestId("armour", 76);
+        await At(QuestCatalog.RecipeArmourGiver);
+        await b.Hub.SendAsync("QuestAction", "accept", armour76, eddaId);
+        await b.Settle();
+        Check("...and the other kinds keep their OWN stamp: Edda still gives hers",
+              b.Quests!.Active.Any(q => q.Id == armour76), $"active [{string.Join(",", b.Quests.Active.Select(q => q.Id))}]");
+        await b.Hub.SendAsync("QuestAction", "abandon", armour76, Guid.Empty);
+        await b.Settle();
+    }
+}
+
+// -------------------------------------------------------------------------------------------
 // 6. ADMIN MODERATION — jail (per-char, live + persists + pins), kick (per-char lockout). These SHIP in
 //    release, so they're authorized server-side by the caller's role; verify the behaviour, not the UI.
 // -------------------------------------------------------------------------------------------

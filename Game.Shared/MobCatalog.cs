@@ -892,10 +892,13 @@ public static class MobCatalog
     public static int CraftTier(int level) =>
         level >= 80 ? 80 : level >= 76 ? 76 : level >= 61 ? 61 : level >= 52 ? 52 : level >= 40 ? 40 : 0;
 
-    private static string[] WeaponKeys => new[] { "sword1h", "sword2h", "blunt1h", "blunt2h", "duals", "bow", "wand", "staff" };
+    // Internal for the recipe givers' pools (`BL-274` part 3: weapons 8, armour = bodies + smalls 7, jewels 3), so
+    // a quest's pool and the drop tables read the same kinds.
+    internal static string[] WeaponKeys => new[] { "sword1h", "sword2h", "blunt1h", "blunt2h", "duals", "bow", "wand", "staff" };
     private static string[] BodyKeys => new[] { "heavy", "light", "robe" };
     private static string[] SmallKeys => new[] { "helm", "gloves", "boots", "shield" };
-    private static string[] JewelKeys => new[] { "necklace", "ring", "earring" };
+    internal static string[] ArmourKeys => BodyKeys.Concat(SmallKeys).ToArray();
+    internal static string[] JewelKeys => new[] { "necklace", "ring", "earring" };
 
     /// <summary>The level bands a specialty is dealt across, one per crafted tier.</summary>
     private static (int Lo, int Hi)[] ProfileBands => new[] { (40, 51), (52, 60), (61, 75), (76, 79), (80, 999) };
