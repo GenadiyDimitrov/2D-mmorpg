@@ -72,16 +72,18 @@ public static class WorldPlan
         /// no template has a natural level in the band (the 86-90 camps), and then with ForceZoneLevel so
         /// the borrowed roster respawns at the band's levels.</summary>
         string[]? Mobs = null,
-        /// <summary>Which types attack on sight. Null = the <see cref="AggressiveRamp"/> count, taken from
-        /// the toughest aggressive-capable creatures in the roster. Authored per band when a field wants a
-        /// specific pair.</summary>
+        /// <summary>Which types MAY attack on sight. Null = every aggressive-capable creature in the roster,
+        /// and then only the spawns at level <see cref="AggressiveFromLevel"/>+ actually do (`BL-280`).</summary>
         string[]? Aggressive = null,
-        int? AggressiveCount = null,
         bool ForceZoneLevel = false,
         /// <summary>This camp's HP multiplier, overriding the level-derived ladder in
         /// <see cref="HpScaleFor"/>. Null = take the ladder, which is what every camp does today.
         /// Authored only where a specific field should read heavier or lighter than its level says.</summary>
-        float? HpScale = null);
+        float? HpScale = null,
+        /// <summary>Living creatures in the camp. Null = the standard 11. The `BL-280` AoE fields pack 20.</summary>
+        int? Count = null,
+        /// <summary>Camp radius. Null = <see cref="CampRadius"/>. The `BL-280` AoE fields use 500.</summary>
+        float? Radius = null);
 
     /// <summary>One field: whose city, where around it, and the camps it holds.</summary>
     public sealed record FieldPlan(
@@ -99,8 +101,8 @@ public static class WorldPlan
         int[]? EliteLevels = null);
 
     private static Band B(int min, int max, string[]? mobs = null, string[]? aggressive = null,
-                          int? aggressiveCount = null, bool force = false, float? hpScale = null) =>
-        new(min, max, mobs, aggressive, aggressiveCount, force, hpScale);
+                          bool force = false, float? hpScale = null, int? count = null, float? radius = null) =>
+        new(min, max, mobs, aggressive, force, hpScale, count, radius);
 
     // ===================================================================================
     //  THE FIELD HP LADDER — BL-78 item 1 (owner, 2026-08-27): "the 15k mobs are zone placed with
@@ -177,8 +179,7 @@ public static class WorldPlan
     public static readonly FieldPlan[] Plans =
     {
         // ── Brackenford (centre, 24000/24000, r3500) — levels 1-16 ────────────────────────────────
-        // The two starter camps are PEACEFUL (AggressiveRamp gives 0 below 13): nothing should ever jump
-        // a level-3 character. Danger starts in Bracken Downs.
+        // Every camp below 80 is PEACEFUL (`BL-280`, AggressiveFromLevel).
         new("town_brackenford", "field_bracken_hollow", "Bracken Hollow", 180f, 5750f,
             new[] { B(1, 4), B(4, 8) }),
         new("town_brackenford", "field_bracken_downs", "Bracken Downs", 0f, 5750f,
@@ -282,14 +283,49 @@ public static class WorldPlan
             new[] { B(85, 86, force: true),
                     B(87, 88, SummitRoster, force: true),
                     B(89, 90, SummitRoster, force: true) }, EliteLevels: new[] { 90 }),
+
+        // ── THE ANTI-TYPE ZONES (`BL-280`, owner 2026-09-24) ──────────────────────────────────────
+        // Three proof-of-concept zones, each repeated at 55-60 (Greymarsh) and 75-80 (Frostmere): the
+        // MELEE zone (its creatures resist the bow or magic and are weak to blades/blunt), the RANGED zone
+        // (resist blades/blunt, weak to magic or the bow) and the AoE zone (half-HP swarms, packed tight).
+        // Their creatures are `OwnField` — they live nowhere else, and nothing else lives here. ForceZoneLevel
+        // spreads each two-creature roster across the field's five levels.
+        new("town_greymarsh", "field_marsh_shellback", "Shellback Flats", 180f, 4300f,
+            new[] { B(55, 57, AntiBowMage58, force: true), B(58, 60, AntiBowMage58, force: true) }),
+        new("town_greymarsh", "field_marsh_harpyfen", "Harpy Fen", 315f, 8600f,
+            new[] { B(55, 57, AntiMelee58, force: true), B(58, 60, AntiMelee58, force: true) }),
+        new("town_greymarsh", "field_marsh_swarm", "Swarming Mire", 45f, 8600f,
+            new[] { B(55, 57, Swarm58, force: true, count: SwarmCount, radius: SwarmRadius),
+                    B(58, 60, Swarm58, force: true, count: SwarmCount, radius: SwarmRadius) }),
+        new("town_frostmere", "field_frost_ironshell", "Ironshell Drifts", 0f, 5000f,
+            new[] { B(75, 77, AntiBowMage78, force: true), B(78, 80, AntiBowMage78, force: true) }),
+        new("town_frostmere", "field_frost_stormcrest", "Stormcrest Ridge", 135f, 9000f,
+            new[] { B(75, 77, AntiMelee78, force: true), B(78, 80, AntiMelee78, force: true) }),
+        new("town_frostmere", "field_frost_rimeskitter", "Rimeskitter Hollow", 225f, 9000f,
+            new[] { B(75, 77, Swarm78, force: true, count: SwarmCount, radius: SwarmRadius),
+                    B(78, 80, Swarm78, force: true, count: SwarmCount, radius: SwarmRadius) }),
     };
 
-    /// <summary>How many types attack on sight at a given band cap. Ramped, not flat: 71 of ~80 templates
-    /// are flagged aggressive, and honouring that made every field above 10 wall-to-wall aggro — a
-    /// level-22 melee walking into a 22-28 camp was jumped by casters and melee at once and simply died
-    /// (owner, playtest-13). Starter camps have none; the endgame has three.</summary>
-    public static int AggressiveRamp(int bandMax) =>
-        bandMax <= 12 ? 0 : bandMax <= 40 ? 1 : bandMax <= 75 ? 2 : 3;
+    // The `BL-280` rosters. Two kinds per zone, one pair per tier.
+    private static string[] AntiBowMage58 => new[] { "shellback_crawler", "hexward_golem" };
+    private static string[] AntiMelee58   => new[] { "gloomhusk_treant", "marsh_harpy" };
+    private static string[] Swarm58       => new[] { "mire_swarmling", "mudskitter" };
+    private static string[] AntiBowMage78 => new[] { "ironshell_crawler", "frostward_golem" };
+    private static string[] AntiMelee78   => new[] { "rimebark_treant", "storm_harpy" };
+    private static string[] Swarm78       => new[] { "frost_swarmling", "rimeskitter" };
+
+    /// <summary>The AoE fields' packing: 20 creatures in a 500 radius against the standard 11 in 700 —
+    /// about 3.5× the density, so an area skill finds a crowd.</summary>
+    private const int SwarmCount = 20;
+    private const float SwarmRadius = 500f;
+
+    /// <summary>The level from which a spawn in a generated NORMAL camp attacks on sight (`BL-280`, owner
+    /// 2026-09-24: *"make only 80+ mobs aggressive. So a 78~80 camp having 80 mobs make the 80 mobs
+    /// aggressive"*). Below it every field is peaceful; at and above it every aggressive-capable creature
+    /// is (*"zones 80+ ... are all aggressive"*). It replaced the 0/1/2/3-types ramp of playtest-13.
+    /// Elite camps (aggressive by RANK), dungeons and the field-boss flank rosters are untouched: those are
+    /// grounds you choose to walk into. A stopgap until the real zones and map, in his words.</summary>
+    public const int AggressiveFromLevel = 80;
 
     /// <summary>Respawn cadence for a band, derived from its level: 8s in the starter camps up to ~32s at
     /// the cap. Authored per zone before, which meant 27 numbers that all had to trend the same way.</summary>
@@ -461,7 +497,7 @@ public static class WorldPlan
                 double angle = centre + (i - (n - 1) / 2.0) * step;
                 float x = city.X + plan.Distance * (float)Math.Cos(angle);
                 float y = city.Y + plan.Distance * (float)Math.Sin(angle);
-                camps.Add(new Camp(BuildZone(band, x, y, CampRadius, MobRank.Normal, 11),
+                camps.Add(new Camp(BuildZone(band, x, y, band.Radius ?? CampRadius, MobRank.Normal, band.Count ?? 11),
                                    BuildGate(plan, band, x, y, angle, i, n)));
             }
 
@@ -502,7 +538,7 @@ public static class WorldPlan
         // Elites are aggressive by RANK, so an authored list there would be dead weight.
         string[]? aggressive = rank == MobRank.Elite
             ? null
-            : band.Aggressive ?? PickAggressive(roster, band.AggressiveCount ?? AggressiveRamp(band.Max));
+            : band.Aggressive ?? PickAggressive(roster);
 
         // The camp's HP multiplier: its own if authored, otherwise the level ladder. Keyed on Max —
         // a camp is named by the top of its band, and that is the level a player judges it at.
@@ -511,7 +547,8 @@ public static class WorldPlan
         return new SpawnZone(x, y, radius, band.Min, band.Max, roster, maxCount,
                              respawn, variance, rank, ActiveTime.Always,
                              band.ForceZoneLevel, aggressive,
-                             DedicatedFor(roster, band, rank), hpScale);
+                             DedicatedFor(roster, band, rank), hpScale,
+                             AggressiveFromLevel: rank == MobRank.Normal ? AggressiveFromLevel : 0);
     }
 
     /// <summary>How many of a quest target a camp keeps in its OWN spawner, on top of the mixed pool.</summary>
@@ -582,18 +619,10 @@ public static class WorldPlan
             .ToArray();
     }
 
-    /// <summary>The N types that attack on sight: the TOUGHEST aggressive-capable creatures in the roster.
-    /// Deterministic (the roster is level-ordered), and it puts the danger where a player would guess it
-    /// is — the biggest thing in the camp is the thing that comes for you.</summary>
-    private static string[] PickAggressive(string[] roster, int count)
-    {
-        if (count <= 0) return Array.Empty<string>();
-        return roster.Where(id => MobCatalog.Get(id).Aggressive)
-                     .OrderByDescending(id => MobCatalog.Get(id).Level)
-                     .ThenBy(id => id, StringComparer.Ordinal)
-                     .Take(count)
-                     .ToArray();
-    }
+    /// <summary>The types that MAY attack on sight: every aggressive-capable creature in the roster. Whether a
+    /// given spawn does is decided by its level against <see cref="AggressiveFromLevel"/> (`BL-280`).</summary>
+    private static string[] PickAggressive(string[] roster) =>
+        roster.Where(id => MobCatalog.Get(id).Aggressive).ToArray();
 
     /// <summary>The named gate for a camp: a point on its TOWN-FACING rim, so you arrive at the edge of
     /// the camp rather than in the middle of it (arriving inside a level-90 camp is a death, not a
@@ -606,8 +635,8 @@ public static class WorldPlan
                                            double angle, int index, int count)
     {
         // Step back toward town by the camp's radius: on the rim, facing the way you came.
-        float gx = x - CampRadius * (float)Math.Cos(angle);
-        float gy = y - CampRadius * (float)Math.Sin(angle);
+        float gx = x - (band.Radius ?? CampRadius) * (float)Math.Cos(angle);
+        float gy = y - (band.Radius ?? CampRadius) * (float)Math.Sin(angle);
 
         string where;
         if (count == 1)

@@ -71,6 +71,10 @@ public readonly record struct MobMod(
     // to author freely per template: it changes how controllable the creature is and no other number
     // in the game.
     int Con = 0, int Spt = 0,
+    // REWARD SHARE (`BL-280`): multiplies this creature's GOLD and every DROP CHANCE. His *"half hp ==
+    // half all"* for the AoE swarms. EXP/SP need no knob — they already follow the creature's real HP
+    // (GameLoopService.MobKillTimeRatio), so an Hp 0.5 creature pays half of those on its own.
+    float Reward = 1f,
     string Name = "")        // display label for the inspect/target window
 {
     /// <summary>Human-readable passive lines for the target-inspect window.</summary>
@@ -104,6 +108,7 @@ public readonly record struct MobMod(
         // overrides its role default, so an ordinary creature's plate is unchanged.
         if (Con != 0) yield return $"Stun/bleed resistance {(Con >= 48 ? "high" : Con >= 42 ? "average" : "low")} (CON {Con})";
         if (Spt != 0) yield return $"Hold/fear resistance {(Spt >= 48 ? "high" : Spt >= 38 ? "average" : "low")} (SPT {Spt})";
+        if (Reward != 1f) yield return $"Gold and drops {Sign(Reward)}";
         // Bow/Crit resist are rendered from the numeric DTO fields (uniform for mobs
         // and players), so they're not repeated here.
         if (Boss) yield return "Raid Boss";
@@ -260,6 +265,9 @@ public record MobType(
     // would immediately appear in every generated 40-44 camp in the game, which is the one thing the
     // BL-47 experiment promises not to do.
     bool HandPlaced = false,
+    // OWN FIELD (`BL-280`): never rostered by band either, but unlike HandPlaced it IS dealt a drop
+    // profile — a real farmable creature whose one home is its own authored field (the anti-type zones).
+    bool OwnField = false,
     // ===================================================================================
     //  GUARD (BL-79) — a creature that polices outlaws instead of hunting players.
     //
@@ -1261,6 +1269,11 @@ public static class MobCatalog
             rows.AddRange(EnchantScrollDrops(level, rank));
             rows.AddRange(UtilityScrollDrops(level, rank));
         }
+        // `BL-280`: a creature's REWARD SHARE scales every row it rolls — here, once, so the kill roll, the
+        // inspect list and the drop index all read the halved number.
+        float reward = type.Mod?.Reward ?? 1f;
+        if (reward != 1f)
+            for (int i = 0; i < rows.Count; i++) rows[i] = rows[i] with { Chance = rows[i].Chance * reward };
         return rows;
     }
 
@@ -1563,27 +1576,46 @@ public static class MobCatalog
     }
 
     // ===================================================================================
-    //  THE TWO DEFENCE ARCHETYPES (BL-11). *"We had a anti magic mobs (lower pdef more mdef) and
-    //  anty physical (less m def more pdef) — this should feed your mres passive."*
+    //  THE ANTI-TYPE ZONES (`BL-280`, owner 2026-09-24). *"anti mage and anti fighter and anti archer
+    //  mobs need to be in self zones"* — so a resist lives on a creature that lives ONLY in its own
+    //  field (`OwnField`), and every ordinary camp levels the same for every archetype.
     //
-    //  The pair only existed as a comment on MobMod and as ONE template (Watcher Eye), and neither
-    //  half touched mRes — so an "anti magic" mob was just a bigger M.Def divisor, which a levelling
-    //  mage out-scales, and there was no anti-physical mob in the game at all.
+    //  🔑 THE EIGHT OLD ANTI-TYPE TEMPLATES WERE NEUTRALISED, NOT DELETED (his ruling, same day).
+    //  `shield_skeleton`, `watcher_eye`, `grave_lich`, `fomor_brute`, `aether_wisp`, `obsidian_knight`,
+    //  `dread_knight` and `spiteful_ghost` once carried the BL-11 AntiMagic / AntiPhysical presets (and
+    //  the obsidian knight a "Stoneplate" mastery). They were rostered into every generated camp of their
+    //  band, mixed with neutral creatures — which is the thing `BL-280` objects to. They keep their ids,
+    //  so the class-change hunt (`shield_skeleton`), the gather contract (`dread_knight`) and the dungeon
+    //  bosses keep their targets; they are plain mobs now, dungeon copies included.
     //
-    //  Authored ONCE here and shared, so the pattern reads in the bestiary instead of being eight
-    //  hand-tuned numbers. Each is a genuine two-way trade: the warded thing wants a fighter, the
-    //  armoured thing wants a mage. That is what makes a party composition matter in a field.
+    //  His six kinds, three zones, each zone repeated at 55-60 and 75-80 as a proof of concept:
+    //    1. the MELEE zone — one kind resists the bow (+60%), one resists magic (+50% mRes), both −20%
+    //       to blunt/sword/fangs. ("Fangs" are daggers, which are duals, which share PierceResist.)
+    //    2. the RANGED zone — both +60% to blunt/sword/fangs; one −20% mRes, one −20% to the bow.
+    //    3. the AoE zone — half HP, packed camps. "Half hp == half all": EXP/SP already follow HP
+    //       (GameLoopService.MobKillTimeRatio), and `Reward` halves the gold and the drops.
+    //  A weapon resist is a P.Def COEFFICIENT (×1.6 = +60%); mRes is a damage divisor (+0.5 = ÷1.5).
     // ===================================================================================
-    /// <summary>Warded: harder for a MAGE (M.Def ×1.5 AND −20% magic damage taken), softer for a
-    /// fighter (P.Def ×0.8). Wisps, wraiths, liches — things made of magic.</summary>
-    private static MobMod AntiMagic(string name = "Warded") =>
-        new(PDef: 0.8f, MDef: 1.5f, MagicResist: 0.20f, Name: name);
+    private static MobMod AntiBow(string name) =>
+        new(BowDefResist: 1.6f, PierceResist: 0.8f, BluntResist: 0.8f, Name: name);
 
-    /// <summary>Ironhide: harder for a FIGHTER (P.Def ×1.5), softer for a mage (M.Def ×0.8 and
-    /// +20% magic damage TAKEN — a real weakness, not merely the absence of a resist). Shielded
-    /// skeletons, plated knights, brutes.</summary>
-    private static MobMod AntiPhysical(string name = "Ironhide") =>
-        new(PDef: 1.5f, MDef: 0.8f, MagicResist: -0.20f, Name: name);
+    private static MobMod AntiMage(string name) =>
+        new(MagicResist: 0.50f, PierceResist: 0.8f, BluntResist: 0.8f, Name: name);
+
+    private static MobMod AntiMeleeMagicWeak(string name) =>
+        new(PierceResist: 1.6f, BluntResist: 1.6f, MagicResist: -0.20f, Name: name);
+
+    private static MobMod AntiMeleeBowWeak(string name) =>
+        new(PierceResist: 1.6f, BluntResist: 1.6f, BowDefResist: 0.8f, Name: name);
+
+    private static MobMod Swarm(string name) => new(Hp: 0.5f, Reward: 0.5f, Name: name);
+
+    /// <summary>A creature that lives ONLY in its own authored field (`BL-280`): never rostered into a
+    /// generated camp by its band, but dealt a drop profile like any roster creature — which is the
+    /// difference from <c>handPlaced</c>, whose creatures drop no gear at all.</summary>
+    private static MobType Own(string id, string name, int level, MobCategory cat, float run,
+                               MobMod mod, MobRole role = MobRole.Melee) =>
+        Mob(id, name, level, cat, run, true, mod, role) with { OwnField = true };
 
     private static Dictionary<string, MobType> Build()
     {
@@ -1601,23 +1633,14 @@ public static class MobCatalog
             Mob("hook_spider", "Hook Spider", 14, MobCategory.Insect, 130f, true),
             Mob("orc_archer", "Orc Archer", 16, MobCategory.Humanoid, 132f, true, role: MobRole.Archer, clan: ClanOrc),
             Mob("skeleton_grunt", "Skeleton Grunt", 18, MobCategory.Undead, 120f, true, clan: ClanSkeleton),
-            // ANTI-PHYSICAL (BL-11): the shield is the whole creature. The first of the pair a
-            // player meets, deliberately early — it is where "bring the mage" is taught.
-            Mob("shield_skeleton", "Shield Skeleton", 20, MobCategory.Undead, 115f, true,
-                AntiPhysical("Shieldwall"), clan: ClanSkeleton),
+            // Neutral since `BL-280` (was BL-11's first anti-physical mob). Still the Tank/Healer/Nuker
+            // class-change hunt, which is why it was neutralised rather than removed.
+            Mob("shield_skeleton", "Shield Skeleton", 20, MobCategory.Undead, 115f, true, clan: ClanSkeleton),
             Mob("grizzly_bear", "Grizzly Bear", 22, MobCategory.Animal, 135f, true),
             Mob("cinder_imp", "Cinder Imp", 24, MobCategory.Demon, 142f, true),
-            // MAGIC monster: high M.Def / low P.Def — hard for mages, easy for fighters.
-            // Also a CASTER (Mage role): no basic attack, nukes from range, sits helpless at 0 MP.
-            // Its M.Def 2.0 is kept — steeper than the shared AntiMagic preset, and it is the
-            // archetype's namesake; BL-11 added the mRes half it never had.
-            // ⚠ ITS P.DEF WAS 0.5 AND IS NOW 0.8 (BL-78 item 2, 2026-08-27). 0.5 was authored
-            // against a Mage role that ALSO multiplied defence by 0.7, so the creature actually
-            // stood in ×0.35 — the single worst case of his "caster mobs are not weaker than the
-            // other ... a bit less pdef" and the reason the fix is two-sided. At 0.8 it matches the
-            // shared AntiMagic preset, and with the role's new ×0.85 it lands on ×0.68.
-            Mob("watcher_eye", "Watcher Eye", 26, MobCategory.MagicCreature, 130f, true,
-                new MobMod(MDef: 2f, PDef: 0.8f, MagicResist: 0.25f, Name: "Magic Monster"), MobRole.Mage),
+            // A CASTER (Mage role): no basic attack, nukes from range, sits helpless at 0 MP. It was the
+            // "Magic Monster" (M.Def ×2, mRes +0.25) until `BL-280` neutralised it.
+            Mob("watcher_eye", "Watcher Eye", 26, MobCategory.MagicCreature, 130f, true, role: MobRole.Mage),
             Mob("lizardman_warrior", "Lizardman Warrior", 28, MobCategory.Humanoid, 132f, true, clan: ClanLizard),
             Mob("marauder_recruit", "Marauder Recruit", 30, MobCategory.Humanoid, 132f, true, clan: ClanMarauder),
             Mob("mantis_worker", "Mantis Worker", 32, MobCategory.Insect, 140f, true, clan: ClanMantis),
@@ -1644,10 +1667,9 @@ public static class MobCatalog
             Mob("dune_orc_archer", "Dune Orc Archer", 40, MobCategory.Humanoid, 132f, true, role: MobRole.Archer, clan: ClanOrc),
             Mob("ridge_orc_overlord", "Ridge Orc Overlord", 42, MobCategory.Humanoid, 132f, true, clan: ClanOrc),
             Mob("harpy", "Harpy", 42, MobCategory.Humanoid, 138f, true),
-            // ANTI-MAGIC (BL-11): a lich is made of the stuff. Also the Hollow Crypt boss.
-            Mob("grave_lich", "Grave Lich", 44, MobCategory.Undead, 120f, true, AntiMagic("Deathward")),
-            // ANTI-PHYSICAL (BL-11): the mid-band plated brute.
-            Mob("fomor_brute", "Fomor Brute", 45, MobCategory.Humanoid, 132f, true, AntiPhysical("Ironhide")),
+            // Also the Hollow Crypt boss. Neutral since `BL-280`.
+            Mob("grave_lich", "Grave Lich", 44, MobCategory.Undead, 120f, true),
+            Mob("fomor_brute", "Fomor Brute", 45, MobCategory.Humanoid, 132f, true),
             Mob("marsh_marauder", "Marsh Marauder", 46, MobCategory.Humanoid, 132f, true, clan: ClanMarauder),
             Mob("warped_drake", "Warped Drake", 47, MobCategory.Dragon, 150f, true, clan: ClanDrake),
             Mob("wildhorn_grunt", "Wildhorn Grunt", 48, MobCategory.Humanoid, 132f, true, clan: ClanWildhorn),
@@ -1662,28 +1684,23 @@ public static class MobCatalog
             Mob("mirror_wraith", "Hall of Mirrors Wraith", 56, MobCategory.Undead, 125f, true, clan: ClanMirror),
             Mob("mirror_ghost", "Mirror Ghost", 56, MobCategory.Undead, 125f, true, clan: ClanMirror),
             Mob("dune_orc_porter", "Dune Orc Porter", 57, MobCategory.Humanoid, 132f, false, clan: ClanOrc),
-            // ANTI-MAGIC (BL-11): a wisp IS magic. A caster too, so a fighter has to close on it.
-            Mob("aether_wisp", "Aether Wisp", 58, MobCategory.MagicCreature, 115f, true,
-                AntiMagic("Aetherward"), MobRole.Mage),
+            // A caster. Neutral since `BL-280`.
+            Mob("aether_wisp", "Aether Wisp", 58, MobCategory.MagicCreature, 115f, true, role: MobRole.Mage),
             Mob("hollow_one", "Hollow One", 58, MobCategory.Humanoid, 132f, true),
             Mob("valley_treant", "Valley Treant", 60, MobCategory.Plant, 90f, false),
             Mob("sand_ratman", "Sand Ratman", 60, MobCategory.Humanoid, 132f, true),
             Mob("cursed_blade", "Cursed Blade", 61, MobCategory.Undead, 130f, true),
             Mob("bogwood", "Bogwood", 62, MobCategory.Plant, 90f, false),
             Mob("fen_lizardman", "Fen Lizardman", 62, MobCategory.Humanoid, 132f, true, clan: ClanLizard),
-            // Golem-type stone/obsidian body, authored via the leveled MASTERY table: Piercing
-            // Resistance L10 (×1.43 P.Def vs sword/dual), Bow Resistance L12 (×2), Blunt Resistance
-            // IG (×0.5 = weak). Same effect as a hand MobMod, but "picks a level" like a class.
-            Mob("obsidian_knight", "Obsidian Knight", 63, MobCategory.Humanoid, 132f, true,
-                MobMasteries.Build(pierce: 10, bow: 12, blunt: 2, magicResist: 5, name: "Stoneplate")),
+            // Neutral since `BL-280` (it wore the "Stoneplate" MobMasteries resists). Also a Sunless
+            // Warrens room mob.
+            Mob("obsidian_knight", "Obsidian Knight", 63, MobCategory.Humanoid, 132f, true),
             Mob("crimson_drake", "Crimson Drake", 64, MobCategory.Dragon, 150f, true, clan: ClanDrake),
             Mob("wildhorn_scout", "Wildhorn Scout", 64, MobCategory.Humanoid, 138f, true, clan: ClanWildhorn),
-            // ANTI-PHYSICAL (BL-11): full plate. Also the Sunless Warrens boss.
-            Mob("dread_knight", "Dread Knight", 65, MobCategory.Undead, 135f, true,
-                AntiPhysical("Dreadplate"), clan: ClanDread),
+            // Also the Sunless Warrens boss. Neutral since `BL-280`.
+            Mob("dread_knight", "Dread Knight", 65, MobCategory.Undead, 135f, true, clan: ClanDread),
             Mob("wildhorn_elder", "Wildhorn Elder", 66, MobCategory.Humanoid, 132f, true, clan: ClanWildhorn),
-            // ANTI-MAGIC (BL-11): incorporeal — a blade passes through it, a spell does not.
-            Mob("spiteful_ghost", "Spiteful Ghost", 66, MobCategory.Undead, 125f, true, AntiMagic("Spiteward")),
+            Mob("spiteful_ghost", "Spiteful Ghost", 66, MobCategory.Undead, 125f, true),
             Mob("highland_kookaburra", "Highland Kookaburra", 67, MobCategory.Animal, 135f, false),
             Mob("highland_buffalo", "Highland Buffalo", 68, MobCategory.Animal, 130f, false),
             Mob("highland_buffalo_tamed", "Highland Buffalo (Tamed)", 68, MobCategory.Animal, 130f, false),
@@ -1722,6 +1739,25 @@ public static class MobCatalog
             Mob("splinter_mantis_walker", "Splinter Mantis Walker", 84, MobCategory.Insect, 142f, true, clan: ClanMantis),
             Mob("drake_leader", "Drake Leader", 85, MobCategory.Dragon, 150f, true, clan: ClanDrake),
             Mob("disciple_of_the_dawn", "Disciple of the Dawn", 85, MobCategory.Humanoid, 132f, true),
+
+            // ===== THE ANTI-TYPE ZONES (`BL-280`) — see the presets above Build(). Each lives ONLY in its
+            //       own field (WorldPlan), which spawns it across 55-60 or 75-80 with ForceZoneLevel; the
+            //       natural level (58 / 78) is what deals its drop profile. =====
+            // Zone 1, the melee zone: Shellback Flats (55-60) / Ironshell Drifts (75-80).
+            Own("shellback_crawler", "Shellback Crawler", 58, MobCategory.Insect, 130f, AntiBow("Shellback")),
+            Own("hexward_golem", "Hexward Golem", 58, MobCategory.MagicCreature, 115f, AntiMage("Hexward")),
+            Own("ironshell_crawler", "Ironshell Crawler", 78, MobCategory.Insect, 130f, AntiBow("Ironshell")),
+            Own("frostward_golem", "Frostward Golem", 78, MobCategory.MagicCreature, 115f, AntiMage("Frostward")),
+            // Zone 2, the ranged zone: Harpy Fen (55-60) / Stormcrest Ridge (75-80).
+            Own("gloomhusk_treant", "Gloomhusk Treant", 58, MobCategory.Plant, 110f, AntiMeleeMagicWeak("Gloomhusk")),
+            Own("marsh_harpy", "Marsh Harpy", 58, MobCategory.Humanoid, 138f, AntiMeleeBowWeak("Featherguard")),
+            Own("rimebark_treant", "Rimebark Treant", 78, MobCategory.Plant, 110f, AntiMeleeMagicWeak("Rimebark")),
+            Own("storm_harpy", "Storm Harpy", 78, MobCategory.Humanoid, 138f, AntiMeleeBowWeak("Featherguard")),
+            // Zone 3, the AoE zone: Swarming Mire (55-60) / Rimeskitter Hollow (75-80).
+            Own("mire_swarmling", "Mire Swarmling", 58, MobCategory.Insect, 142f, Swarm("Swarm")),
+            Own("mudskitter", "Mudskitter", 58, MobCategory.Animal, 140f, Swarm("Swarm")),
+            Own("frost_swarmling", "Frost Swarmling", 78, MobCategory.Insect, 142f, Swarm("Swarm")),
+            Own("rimeskitter", "Rimeskitter", 78, MobCategory.Animal, 140f, Swarm("Swarm")),
 
             // Training dummy: immortal, stationary, deals no damage. The ZONE sets its level
             // (20/40/60/80 training grounds). No drops. For testing damage/skills.
@@ -1900,9 +1936,10 @@ public static class MobCatalog
     /// player-built creatures and their four curve twins. Same reason: the demo's whole promise is that
     /// *nothing else in the world changes*, and without this clause a level-40 Goblin Raider would
     /// immediately be rostered into every generated 40-44 camp in the game. **Clear `HandPlaced` on a
-    /// creature when it is ready to join the roster** — that is the switch, and it is per-template.</summary>
+    /// creature when it is ready to join the roster** — that is the switch, and it is per-template.
+    /// An `OwnField` creature (`BL-280`) is excluded for the same reason: it lives only in its own field.</summary>
     public static MobType[] InBand(int min, int max) =>
-        Templates.Where(m => !m.Dummy && !m.HandPlaced && m.Level >= min && m.Level <= max).ToArray();
+        Templates.Where(m => !m.Dummy && !m.HandPlaced && !m.OwnField && m.Level >= min && m.Level <= max).ToArray();
 
     /// <summary>Boot guard: every piece a <see cref="MobBuild"/> names must actually exist in the item
     /// catalogue. A missing id is silent and flattering — the creature simply spawns without that slot,

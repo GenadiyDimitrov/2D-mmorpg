@@ -1,4 +1,4 @@
-# Anti-type mobs — the measured list (`BL-280`, 2026-09-24, ❓ yours to rule)
+# Anti-type mobs (`BL-280`) — ✅ BUILT in 0.209.0 (2026-09-24)
 
 > *"anti mage and anti fighter and anti archer mobs need to be in self zones"* … **for now:** pull the anti-type
 > mobs out so 1-40 levels the same for every archetype.
@@ -31,7 +31,13 @@
   way, `shield_skeleton`'s class-change hunt must keep an in-band target.
 - The aggression rule touches `WorldPlan`'s `AggressiveRamp`/`PickAggressive` for every generated camp below 80.
 
-## ❓ Build plan, 2026-09-24: waiting on your OK (nothing is built yet)
+## ✅ Build plan, 2026-09-24 — ruled and BUILT in 0.209.0
+
+> Your answers: (a) names OK · (b) neutralise the 8, dungeon copies too · (c) *"half hp == half all .. half drop
+> and half xp/sp and half gold"* · (d) *"make only 80+ mobs aggressive. So a 78~80 camp having 80 mobs make the 80
+> mobs aggressive"*. Built as below, with two differences: aggression is judged per SPAWN (level ≥ 80), not per camp,
+> and at 80+ EVERY aggressive-capable creature attacks (it was three types). Zone 3 needed only `Reward` for gold and
+> drops, because EXP/SP already follow a creature's real HP. The measured list further down is the PRE-0.209.0 state.
 
 **1. Twelve new creatures: three zones × two kinds × two tiers.** The names are mine and original, so rename freely.
 Each kind has one **natural level (58 or 78)**, which decides its drops. Its camps use `ForceZoneLevel`, so it

@@ -602,14 +602,26 @@ Check("server pushed the warehouse on login", a.Ware is not null);
     int empty = WorldPlan.Fields.SelectMany(f => f.Zones).Count(z => z.MobTypes.Length == 0);
     Check("no camp has an empty roster", empty == 0, $"{empty} empty");
 
-    // Starter camps must be PEACEFUL — nothing should ever jump a level-3 character.
+    // `BL-280` (0.209.0): in a generated NORMAL camp only a spawn of level 80+ attacks on sight. Below 80
+    // every field is peaceful; at 80+ every aggressive-capable creature in the roster is.
+    var normalCamps = WorldPlan.Fields.SelectMany(f => f.Zones).Where(z => z.Rank == MobRank.Normal).ToArray();
+    Check("every generated normal camp gates aggression at level 80",
+          normalCamps.All(z => z.AggressiveFromLevel == WorldPlan.AggressiveFromLevel && WorldPlan.AggressiveFromLevel == 80));
     var starter = WorldPlan.Fields.First(f => f.Plan.Id == "field_bracken_hollow");
-    Check("the two starter camps are peaceful (nothing attacks on sight)",
-          starter.Zones.All(z => z.AggressiveTypes is { Length: 0 }));
-    // …and the endgame is not.
+    Check("the two starter camps are peaceful (no spawn reaches the gate)",
+          starter.Zones.All(z => z.MaxLevel < z.AggressiveFromLevel || z.AggressiveTypes is { Length: 0 }));
+    // …and the endgame is not: every aggressive-capable creature in an 80+ camp may attack.
     var summit = WorldPlan.Fields.First(f => f.Plan.Id == "field_frost_summit");
-    Check("an endgame camp has three aggressive types",
-          summit.Zones.Any(z => z.Rank == MobRank.Normal && z.AggressiveTypes is { Length: 3 }));
+    Check("an 80+ camp makes EVERY aggressive-capable creature aggressive",
+          summit.Zones.Where(z => z.Rank == MobRank.Normal).All(z => z.MinLevel >= 80 && z.AggressiveTypes is { Length: > 0 } a
+              && a.Length == z.MobTypes.Count(id => MobCatalog.Get(id).Aggressive)));
+    // `BL-280`: an OwnField creature (the anti-type zones) lives in its own field and nowhere else.
+    var leaked = normalCamps.Where(z => z.MobTypes.Any(id => MobCatalog.Get(id).OwnField)
+                                        && !z.MobTypes.All(id => MobCatalog.Get(id).OwnField))
+                            .Select(z => $"{z.MinLevel}-{z.MaxLevel}").ToArray();
+    Check("no anti-type creature is mixed into an ordinary camp", leaked.Length == 0, string.Join(", ", leaked));
+    Check("the six anti-type fields exist",
+          WorldPlan.Fields.Count(f => f.Zones.All(z => z.MobTypes.All(id => MobCatalog.Get(id).OwnField))) == 6);
 
     // Every field is OWNED by a city, and that city's gatekeeper can therefore send you there.
     var orphan = RegionMap.Fields.Where(f => f.CityId.Length == 0)

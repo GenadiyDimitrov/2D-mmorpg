@@ -7,12 +7,48 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.208.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.209.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-24 (latest) — `BL-273` closed: the crafting rework's five placeholders confirmed (no code)
+## 2026-09-24 (latest) — 0.209.0: the anti-type zones, and aggression only from level 80 (`BL-280`)
+
+> *"anti mage and anti fighter and anti archer mobs need to be in self zones"*
+
+**Six new fields hold twelve new creatures, and a resist now lives only in its own zone.** Three proof-of-concept
+zones, each repeated at 55-60 (Greymarsh) and 75-80 (Frostmere). **A new APK is needed**: the client draws fields
+from its own `WorldMap`, so an old APK plays fine but does not show the new fields on the map. No DTO changed.
+⚠ The `game.db` delete is still owed from 0.205.0.
+
+| zone | field (55-60 / 75-80) | creatures | passive |
+| ---- | --------------------- | --------- | ------- |
+| melee | Shellback Flats / Ironshell Drifts | Shellback/Ironshell Crawler · Hexward/Frostward Golem | bow ×1.6 · mRes +0.50; both −20% to blunt/sword/dual |
+| ranged | Harpy Fen / Stormcrest Ridge | Gloomhusk/Rimebark Treant · Marsh/Storm Harpy | +60% to blunt/sword/dual; −20% mRes · −20% bow |
+| AoE | Swarming Mire / Rimeskitter Hollow | Mire/Frost Swarmling · Mudskitter/Rimeskitter | half HP; 20 in a 500 radius (≈3.5× density) |
+
+- **Measured** (`BalanceMatrix --antitype`, its verdict now judged per attacker against a plain mob): each resist
+  reads ×1.60 kill time, each weakness ×0.80, and the swarms ×0.50 for everyone.
+- **"Half HP == half all".** EXP/SP already follow the creature's real HP (`MobKillTimeRatio`), so the swarms
+  pay half with no extra knob. A new **`MobMod.Reward`** (0.5) halves their gold and every drop chance, and it is
+  applied inside `KillTable` so the roll, the inspect list and the drop index agree.
+- **`MobType.OwnField`**: never rostered into a generated camp by band (unlike a normal template), but still dealt a
+  drop profile (unlike `HandPlaced`). ⚠ Adding six creatures to each of the 52-60 and 76-79 profile bands
+  **re-dealt those bands**, so some existing creatures there now carry different gear kinds.
+- **The eight old anti-type templates are neutral** (his ruling): `shield_skeleton`, `watcher_eye`, `grave_lich`,
+  `fomor_brute`, `aether_wisp`, `obsidian_knight`, `dread_knight` and `spiteful_ghost` lost their resist passives
+  and kept their ids. The Tank/Healer/Nuker class-change hunt, the Dread Knight contract and the dungeon bosses
+  keep their targets, and the dungeon copies are plain too.
+- **Aggression, until the real zones and map:** in a generated normal camp only a spawn of **level 80+** attacks on
+  sight (`SpawnZone.AggressiveFromLevel`, checked per spawn), so a 78-80 camp's level-80 spawns bite and its
+  78-79 ones do not. At 80+, **every** aggressive-capable creature does (it was 3 types). Everything below 80 is
+  peaceful. Elite camps, dungeons and the two field-boss flank rosters are unchanged. `AggressiveRamp` is gone.
+- `Formulas.md`: the drop formula gained `× Reward`, and a stale line saying zone HP leaves EXP untouched is
+  corrected (EXP follows HP).
+- SmokeTest **375 ALL PASS**: the old "three aggressive types" check is replaced by four (the level-80 gate,
+  80+ all-aggressive, no anti-type creature in an ordinary camp, six anti-type fields).
+
+## 2026-09-24 — `BL-273` closed: the crafting rework's five placeholders confirmed (no code)
 
 The rework design doc §8 was answered: respec 1M-16M, rare HP/MP at Apothecary L7/L10, the nine basic buff scrolls
 = the common line, volcanic ash/stone 5,000 and bar 200,000, and Nightsilver/Nightsilk 20 × 10^rung all **stay as

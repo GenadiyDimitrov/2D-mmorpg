@@ -1522,15 +1522,15 @@ if (args.Length > 0 && args[0] == "--ccland") { CcLand(args); return; }
 //  🔑 The per-hit coefficients the server applies (`WeaponDefenceCoef`, `MagicDefCoef`, `BowResist`) are
 //  NOT inside PhysDps/MagicDps, which read the bare defence — defence is the divisor, so they are
 //  applied here as ×1/coef. Crit resistance is not modelled (a boss-only passive; bosses are skipped).
-//  SKEW = one attacker's factor ÷ the FASTEST of the other two; ≥ 1.25 prints as ANTI-that-attacker, and
-//  warrior + bow both slow against the mage prints as ANTI-PHYSICAL (a median hid those: when two of the
-//  three are slow, the slow value IS the median).
+//  Each factor is judged against the plain mob: ≥ 1.25 prints ANTI-that-attacker, ≤ 0.82 weak-to-it, and
+//  all three equal and low prints FRAGILE (the half-HP swarms). The 2026-09-24 relative-skew verdict
+//  mislabelled a neutral channel whenever another one was weak, which the zone kinds all are.
 if (args.Length > 0 && args[0] == "--antitype") { AntiType(args); return; }
 
 static void AntiType(string[] args)
 {
     int maxLevel = args.Length > 1 && int.TryParse(args[1], out var ml) ? ml : 90;
-    const float Anti = 1.25f;
+    const float Anti = 1.25f, Weak = 0.82f;   // 0.82: the archer/mage ROLE trade (0.85) is not a weakness
 
     float Ttk(Entity atk, Entity mob, bool magic)
     {
@@ -1569,7 +1569,7 @@ static void AntiType(string[] args)
     Console.WriteLine();
     Console.WriteLine($"=== ANTI-TYPE MOBS (BL-280) — levels 1-{maxLevel}, {roster.Count} rostered templates, bosses skipped ===");
     Console.WriteLine("    factor = attacker's kill time on THIS mob / on a plain mob of its level (1.00 = neutral)");
-    Console.WriteLine($"    skew = factor / fastest of the other two; >= {Anti:0.00} = ANTI-that-attacker (war+bow both = ANTI-PHYSICAL)");
+    Console.WriteLine($"    >= {Anti:0.00} = ANTI-that-attacker, <= {Weak:0.00} = weak to it; all equal and low = FRAGILE");
     Console.WriteLine();
     Console.WriteLine($"{"lvl",3} {"id",-30} {"role",-6} {"hp",5} {"pdef",5} {"mdef",5} {"mres",5} {"eva",4} {"bowR",5}  {"mage",5} {"war",5} {"bow",5}  verdict");
     var counts = new Dictionary<string, int>();
@@ -1587,14 +1587,19 @@ static void AntiType(string[] args)
         float fm = f(mage, true), fw = f(war, false), fb = f(bow, false);
         // No nuke learned yet (the first few levels): the mage column is n/a and judges nothing.
         bool hasMage = float.IsFinite(fm);
+        // Judged per attacker against the PLAIN mob (1.00), not against the other two: the `BL-280` zone
+        // kinds are "resists one, weak to another, neutral to the third", and a relative skew called a
+        // neutral channel "anti" whenever the third one was weak. A mob every attacker kills in the same
+        // fraction of the time is FRAGILE (the AoE swarms), not weak to anybody in particular.
         var anti = new List<string>();
-        if (hasMage && fm / Math.Min(fw, fb) >= Anti) anti.Add("ANTI-MAGE");
-        if (hasMage && fw / fm >= Anti && fb / fm >= Anti)
-            anti.Add("ANTI-PHYSICAL" + (fb / fw >= Anti ? " +ARCHER" : fw / fb >= Anti ? " +FIGHTER" : ""));
+        var fs = new List<(string Who, float F)> { ("FIGHTER", fw), ("ARCHER", fb) };
+        if (hasMage) fs.Insert(0, ("MAGE", fm));
+        if (fs.All(x => x.F <= Weak) && fs.Max(x => x.F) / fs.Min(x => x.F) < 1.1f)
+            anti.Add($"FRAGILE x{fs.Average(x => x.F):0.00}");
         else
         {
-            if (fw / (hasMage ? Math.Min(fm, fb) : fb) >= Anti) anti.Add("ANTI-FIGHTER");
-            if (fb / (hasMage ? Math.Min(fm, fw) : fw) >= Anti) anti.Add("ANTI-ARCHER");
+            foreach (var (who, fx) in fs) if (fx >= Anti) anti.Add("ANTI-" + who);
+            foreach (var (who, fx) in fs) if (fx <= Weak) anti.Add("weak-" + who.ToLowerInvariant());
         }
         string verdict = anti.Count == 0 ? "-" : string.Join(" ", anti);
         counts[verdict] = counts.GetValueOrDefault(verdict) + 1;

@@ -16416,7 +16416,10 @@ public class GameLoopService : BackgroundService
 
         // Gold ALWAYS splits evenly among in-range members regardless of loot mode; the killer takes
         // the remainder. Solo = it all goes to the killer. (Level x rate, +/-20% variance.)
+        // `BL-280`: the creature's own reward share (half for the AoE swarms, 1 everywhere else).
+        float rewardShare = MobCatalog.Get(mob.MobTypeId).Mod?.Reward ?? 1f;
         int gold = (int)(StatCalculator.MobGoldReward(mob.Level) * RateConfig.World.Gold * dropGap
+            * rewardShare
             * (0.8f + (float)_rng.NextDouble() * 0.4f));
         if (gold > 0)
             AwardGold(killer, eligible, gold);
@@ -23024,13 +23027,14 @@ public class GameLoopService : BackgroundService
     ///     still bites, but you can fight one thing at a time.
     ///
     /// A mob whose template is passive stays passive everywhere — this only ever REMOVES aggression.</summary>
-    private static bool ResolveAggression(string mobId, MobType mobType, MobRank rank, string zoneId)
+    private static bool ResolveAggression(string mobId, MobType mobType, MobRank rank, string zoneId, int level)
     {
         if (rank == MobRank.Elite) return true;
         if (!mobType.Aggressive) return false;
 
         var zone = WorldMap.SpawnZones.FirstOrDefault(z => z.Id == zoneId);
         if (zone is null) return mobType.Aggressive;   // boss ADDs and debug spawns keep the template
+        if (level < zone.AggressiveFromLevel) return false;   // `BL-280`: only 80+ spawns in a field
         return zone.AllAggressive || zone.IsAggressiveType(mobId);
     }
 
@@ -23173,7 +23177,7 @@ public class GameLoopService : BackgroundService
             // ELITES attack on sight; BOSSES do not (owner). A raid/field boss sits in its lair and is
             // fought when you choose to pull it — making it aggressive turned every approach into an
             // ambush and put a "*" on the Treant. Boss difficulty comes from its kit, not from jumping you.
-            Aggressive = ResolveAggression(mobId, mobType, rank, zoneId),
+            Aggressive = ResolveAggression(mobId, mobType, rank, zoneId, level),
             ZoneId = zoneId,
             Rank = rank,
             InnateWeaponType = mobWeapon,

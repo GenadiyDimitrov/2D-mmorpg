@@ -7510,3 +7510,33 @@ gear can be crafted in between.
 - the Nightsilver/Nightsilk Values (20 × 10^rung);
 - ~~a part = its item's Common price~~ ✅ **settled in step 11 (0.206.0): a part = 1% of its full item's price**, and a recipe
   = 10% × its % (your ruling: *"a 20% recipe will cost 2%"*).
+
+## `BL-280` ✅ CLOSED 2026-09-24 in **0.209.0**: the anti-type zones, and aggression only from level 80
+
+Built as ruled (`docs/design/AntiTypeMobs.md`, "Your ruling" + the build plan and its four answers): 12 `OwnField`
+creatures in six fields (55-60 Greymarsh, 75-80 Frostmere), the eight old anti-type templates neutralised (dungeon
+copies too), the swarms at half HP with `MobMod.Reward 0.5` (half gold and drops; EXP/SP follow HP), and a
+per-spawn level-80 aggression gate in every generated normal camp. **The cluster half** (*"space mobs so a nuker is
+not pulling clusters"*) is answered by that gate, since nothing below 80 attacks on sight. Any camp spacing
+beyond that belongs to `BL-281`'s map work. A playtest may reopen any of it. The entry as it stood:
+
+### `BL-280` 🔵 (as it stood) ZONES BY ARCHETYPE, AND NO MOB CLUSTERS
+
+*"anti mage and anti fighter and anti archer mobs need to be in self zones"* — anti-mage zones that
+are weak to fighters and the reverse; some zones at half HP (less exp, easier). **For now:** pull the
+anti-type mobs out so 1-40 levels the same for every archetype, and space mobs so a nuker is not
+pulling clusters. The rest comes with the map work (`BL-281`).
+❓ **2026-09-24, measured (`BalanceMatrix --antitype`): `docs/design/AntiTypeMobs.md`.** 8 of 79 templates are
+anti-type (4 anti-mage, 4 anti-physical, no pure anti-archer); only `shield_skeleton` (20) and `watcher_eye` (26) are in
+1-40, and `shield_skeleton` is the Tank/Healer/Nuker class-change hunt. My pick: neutralise those two now, leave the
+41-90 six until `BL-281`. The cluster half is not measured yet.
+✅ **2026-09-24, his design (verbatim in `docs/design/AntiTypeMobs.md` "Your ruling"), which supersedes my picks:**
+three **proof-of-concept zones**, repeated at **~55-60** and **~75-80**:
+1. **Anti-archer / anti-mage zone:** one kind at **+60% bow resist, −20% to blunt/sword/fangs**; the other at **+50%
+   mRes, −20% to blunt/sword/fangs**.
+2. **Anti-melee zone:** one kind at **+60% to blunt/sword/fangs, −20% mRes**; the other at **+60% to blunt/sword/fangs,
+   −20% to bow**.
+3. **AoE zone:** a **½-HP passive** and **denser camps**, so an AoE gathers and kills.
+- **The current resist mobs leave the current zones** (all 8 in the measured list, not only the 1-40 two).
+- **Aggression:** aggressive mobs leave the normal zones. **Only 80+ zones and every dungeon are all-aggressive**,
+  plus maybe the ground around a field boss.

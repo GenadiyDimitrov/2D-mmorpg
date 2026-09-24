@@ -659,7 +659,12 @@ public record SpawnZone(
     //  measured every boss into his 12-25 minute band off a curve; letting a field's x3 through
     //  would trip a boss straight out of it, silently, from an edit that never mentions bosses.
     // ===================================================================================
-    float HpScale = 1f)
+    float HpScale = 1f,
+    // `BL-280` (owner, 2026-09-24): *"make only 80+ mobs aggressive. So a 78~80 camp having 80 mobs make
+    // the 80 mobs aggressive."* A SPAWN below this level never attacks on sight, whatever its type; 0 = no
+    // level gate. It is per spawned creature, not per camp, because a ForceZoneLevel camp rolls one
+    // template at several levels. Every generated normal camp sets it to 80.
+    int AggressiveFromLevel = 0)
 {
     /// <summary>Stable id from coordinates+rank, used to persist boss timers.</summary>
     public string Id => $"{(int)X}_{(int)Y}_{Rank}";

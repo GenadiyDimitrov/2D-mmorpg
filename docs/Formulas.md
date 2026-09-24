@@ -939,8 +939,11 @@ level     zone      elite (zone x rank x4)
   overridable per field with `Band.HpScale`. The two knobs compose in ONE place, `Entity.ApplyMobScale`.
 - The **elite column is the product, not a second knob**: `MobRankScale.Hp(Elite)` is x4 flat at every
   level and was not touched (owner: *"elits still have their x4 everywhere"*).
-- It multiplies **HP and nothing else** — damage, defence, EXP and drops are untouched. The corollary:
-  lowering a rung raises farm rate, since the same EXP now comes out in less time.
+- It multiplies **HP**, and through HP the **EXP and SP**: a kill pays `MobExpReward(level) × MobKillTimeRatio`,
+  and that ratio is `MaxHp / MobBaseStats.Hp(level)` (× the defence ratio), so a ×1.5 field pays ×1.5 EXP. Damage,
+  defence, gold and drops are untouched. (Corrected 0.209.0: this line used to say EXP was untouched too.)
+- A template's own `MobMod.Hp` lands in the same `MaxHp`, so it moves EXP/SP the same way. The `BL-280` swarms
+  (`Hp 0.5`) pay half EXP/SP with no extra knob, and `MobMod.Reward 0.5` halves their gold and drop chances.
 - ⚠ A boss is exempt: 0.89.0's measured 12-25 min band derives from the same curve, so a field's x3
   would be inherited and multiplied. An elite is **not** exempt.
 - ⚠ Level **83** is filed under x2 — his bands read `x2<83` and `x3 84+`, which leaves 83 unnamed.
@@ -1045,7 +1048,11 @@ NOT in his party    silently skipped, no cost   REFUSED at cast start + one rung
 
 ```
 effective = RateConfig.DropChanceRate * DropGroupRates[group] * perItemOverride
+            * MobMod.Reward      (0.209.0, BL-280: 0.5 on the half-HP swarms, 1 elsewhere)
 ```
+
+`Reward` is applied inside `MobCatalog.KillTable`, so the roll, the inspect list and `DropIndex` all see it, and
+it also scales the kill's **gold**: `MobGoldReward(level) × World.Gold × levelGap × Reward × 0.8-1.2`.
 
 The guaranteed groups (mats / always / scrolls) are authored as ABSOLUTES but are **not exempt** from
 the global — that exemption came off on 2026-08-18 when `DropCopies` removed the 100% clamp, so a 100%
