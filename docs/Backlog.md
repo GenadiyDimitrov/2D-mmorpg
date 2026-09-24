@@ -271,7 +271,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-263` | 🟡 | **BUFFS ARE WRAPPERS OVER `(family, level)`** — [design/BuffFamilies.md](design/BuffFamilies.md). Duration is out of the conflict rule and the first three racial wrappers are built (0.176.0); per-family group rank DECLINED, and so is the group-vs-single authoring check — a group ALWAYS outranks its singles. Left: the passive check and the racial split, both DEFERRED on your call — the racial split now carries your colour-not-abbreviation rule | skills |
 | `BL-264` | ❓ | **NO CSV SAYS WHICH BUFFS FIGHT EACH OTHER** — from `mage 1st` you cannot tell the three Mights are one family. A generated `FAMILY` + `RANK` column, checked like every other; §2 the RACE cell nothing verifies | skills |
 | `BL-270` | 🔵 | A vertical skill bar, or a wheel, for hand-held play | client |
-| `BL-273` | 🟡 | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05` (archived) — §2.2; ✅ no profession lock; 🟢 part 1 (essence) built 0.200.0; 🟢 part 2 (becoming a crafter) built 0.203.0; ❓ 9b (generic-recipe table) PROPOSED, waiting on you | items |
+| `BL-273` | 🟡 | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05` (archived) — §2.2; ✅ no profession lock; 🟢 part 1 (essence) built 0.200.0; 🟢 part 2 (becoming a crafter) built 0.203.0; ✅ 9b (generic-recipe table) RULED 2026-09-24; 💬 the crafter-points model (generic level = points spent on types) in discussion before 9b is built | items |
 | `BL-274` | ❓ | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3 | items |
 | `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
 | `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
@@ -2290,6 +2290,16 @@ C5b table, C5c deferred). One batch = gold + essence at **52%** of its buy price
 after `BL-274`** (a D scroll is Valued 60g but farms at ~4M; my pick is no recipe until step 11). Also: crafting the
 Common/Uncommon mana potions would reverse your 2026-08-27 shop-only ruling; generic recipes at 100%; batches of
 10 / 5 for buff scrolls, rune boxes and Ultimates; 1 point per batch; the step-10 refine unlocks.
+✅ **2026-09-24: 9b RULED** (design doc §2.2, "Your answers").
+- **OUT:** the Ultimates, all stones, Return/Resurrection, all Dash potions and the Instant potion. Enchant and
+  attribute scrolls are **never** craftable.
+- **IN:** HP and mana potions at x100 @40, x50 @52 and rare x10 @76. They take gems + D/C/B essence, and the rare
+  ones also take volcanic ash/stone. Buff potions come x6 (L1/L3) and buff scrolls x2 (L2/L4), both at the buff's
+  class-skill level. Rune boxes come **x3**: 1h @70 for ~400k, and 2h @80 for ~800k with Volcanic Bars + S.
+- Every recipe succeeds 100% and costs ~80-90% of the shop price. The 20k…4M learn ladder is agreed.
+
+🔴 **Build ON HOLD:** he asked to discuss the crafter-points model first (generic level = points spent on types, i.e.
+IG-style interlocking professions). See §2.2, "The crafter-points model".
 
 ## `BL-274` ❓ PER-MOB DROP TABLES
 
