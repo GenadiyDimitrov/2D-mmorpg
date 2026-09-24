@@ -31,6 +31,76 @@
   way, `shield_skeleton`'s class-change hunt must keep an in-band target.
 - The aggression rule touches `WorldPlan`'s `AggressiveRamp`/`PickAggressive` for every generated camp below 80.
 
+## ❓ Build plan, 2026-09-24: waiting on your OK (nothing is built yet)
+
+**1. Twelve new creatures: three zones × two kinds × two tiers.** The names are mine and original, so rename freely.
+Each kind has one **natural level (58 or 78)**, which decides its drops. Its camps use `ForceZoneLevel`, so it
+spawns at every level in its field (55-60 or 75-80). One id covers the whole 5-level spread, the way the 85-90
+Summit roster already works.
+
+| zone | kind | 55-60 id (lvl 58) | 75-80 id (lvl 78) | passive (`MobMod`) |
+| ---- | ---- | ----------------- | ----------------- | ------------------ |
+| 1 · melee zone | anti-bow | `shellback_crawler` Shellback Crawler | `ironshell_crawler` Ironshell Crawler | `BowDefResist 1.6`, `PierceResist 0.8`, `BluntResist 0.8` |
+| 1 · melee zone | anti-mage | `hexward_golem` Hexward Golem | `frostward_golem` Frostward Golem | `MagicResist +0.50`, `PierceResist 0.8`, `BluntResist 0.8` |
+| 2 · ranged zone | magic-weak | `gloomhusk_treant` Gloomhusk Treant | `rimebark_treant` Rimebark Treant | `PierceResist 1.6`, `BluntResist 1.6`, `MagicResist −0.20` |
+| 2 · ranged zone | bow-weak | `marsh_harpy` Marsh Harpy | `storm_harpy` Storm Harpy | `PierceResist 1.6`, `BluntResist 1.6`, `BowDefResist 0.8` |
+| 3 · AoE zone | swarm | `mire_swarmling` Mire Swarmling | `frost_swarmling` Frost Swarmling | `Hp 0.5` |
+| 3 · AoE zone | swarm | `mudskitter` Mudskitter | `rimeskitter` Rimeskitter | `Hp 0.5` |
+
+"Sword/dual" is one coefficient (`PierceResist`), so fangs come with it for free. Blunt is set to the same value.
+A kind's other channels stay neutral: the anti-bow crawler takes normal magic, for example.
+
+**2. They must not leak into other camps.** A normal template joins every generated camp whose band holds its level
+(`MobCatalog.InBand`). `HandPlaced` would keep them out, but it also skips them when drop profiles are dealt, so they
+would drop no gear. I add a new template flag, **`OwnField`**: `InBand` skips it, and it still gets a drop profile.
+⚠ Adding six creatures each to the 52-60 and 76-79 profile bands **re-deals those two bands**. Some existing
+creatures there will change which gear kinds they carry. The 76-79 band has only five creatures today, so that one
+gains the most.
+
+**3. Six new fields, two camps each.** The camps are `B(55,57)` + `B(58,60)` and `B(75,77)` + `B(78,80)`, each
+with an explicit roster (the zone's two kinds) and `force: true`:
+- **55-60 → Greymarsh** (its 40-60 city): Shellback Flats (1), Harpy Fen (2), Swarming Mire (3).
+- **75-80 → Frostmere** (its 76-90 city): Ironshell Drifts (1), Stormcrest Ridge (2), Rimeskitter Hollow (3).
+- Bearings and distances are fitted by booting against `ValidateLayout`, the same way the `BL-68` grid was. Greymarsh
+  has 180° free and Frostmere has 0°, and the rest go on a second ring. They are new ground, so no existing camp
+  moves. No elite camps are added.
+- **Zone 3 is denser**: 20 creatures per camp instead of 11, in a 500-radius camp instead of 700. That is about 3.5×
+  the density.
+- HP: the field ladder still applies (×1.5 below 76, ×2 at 76+), so zone 3 lands at ×0.75 / ×1.0 of a plain mob.
+
+**4. The eight old anti-type mobs: neutralise them, don't delete them** (*my pick*). Their skewing passive is removed
+(`AntiMagic`/`AntiPhysical`/`Stoneplate`/`Magic Monster`), and each keeps its id, name, role, weapon and drops. This:
+- takes the resists out of every current zone, which is your instruction;
+- keeps `shield_skeleton` as the Tank/Healer/Nuker `mobB` with no quest edit, and it is no longer a 1.5× hunt for
+  the Tank;
+- keeps `dread_knight`'s gathering contract (`Quests.Repeatable.cs`) and the Sunken Vale roster that uses
+  `aether_wisp` unchanged;
+- ⚠ also makes the **dungeon** copies plain: `grave_lich` (boss, 44), `dread_knight` (boss, 65) and `obsidian_knight`
+  (a room mob, 63) share the template. A boss's identity comes from its `BossProfile` (phases, adds, enrage), not
+  from these passives, so I'd accept that. Say if you want the dungeon copies kept as they are (that costs a
+  boss-only twin template for each).
+
+**5. Aggression: only camps whose band starts at 80.** `AggressiveRamp` becomes `band.Min >= 80 ? 3 : 0`.
+- **Loses aggression:** every generated normal camp from 13 to 79, which is all of Stonewatch, Greymarsh and
+  Ironreach, plus Frostmere Wastes 76-77 and 78-79. The six new fields are peaceful too.
+- **Keeps it:** Wastes 80, Radiant Expanse, Dawnbreak Summit, **every elite camp** (aggressive by rank, which a
+  lure needs), **every dungeon** (its rooms are elite rank) and the two **field-boss** flank rosters (Wastes boss,
+  Sunken Vale). That covers your "maybe near a field boss".
+- I read "80+" as *everything in the camp is 80+*, so a camp that runs 78-80 stays peaceful.
+
+**6. One question of mine: zone 3's EXP.** A kill pays by level alone, not by HP (`ExpCurve.MobExpReward`). So a
+half-HP swarm pays full EXP for half the work, even to a single-target class, and zone 3 becomes the best EXP/hr in
+its band for **everyone**, not only for AoE. *My pick:* halve its EXP and gold with a new `MobMod.Reward 0.5`. A
+single-target class then earns about what it earns elsewhere, and the density bonus goes to AoE only. Say "full"
+if you meant the zone as a general fast farm.
+
+**Verification once built:** `--antitype` should show the 8 old mobs neutral, the crawler at bow ≈1.6 / melee ≈0.8,
+the golem at mage ≈1.5 / melee ≈0.8, and the harpy and treant at melee ≈1.6 with bow or mage ≈0.8.
+Then `--dump-mob-csv`, the CHANGELOG, `Formulas.md` (the aggression line), and SmokeTest.
+
+**Rule on:** (a) names/ids OK? (b) neutralise the 8, and the dungeon copies too? (c) zone 3's EXP: half or full?
+(d) aggression = band starts at 80?
+
 Nobody had ever listed which mobs are "anti-type". This is that list, **measured, not read off the passives**:
 
 ```
