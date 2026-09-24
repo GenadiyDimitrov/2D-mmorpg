@@ -2075,12 +2075,12 @@ public static class ItemCatalog
         // ----- Level-tier gear (docs/data/gear/gear_sets.csv): weapons + base armor/shield/accessory/
         //       jewel pieces. SET BONUSES (and the dmg/support VARIANTS) come later; these carry only
         //       their own base stats via the existing equip rails, so no new mechanic to test. -----
-        // The tiered gear pieces (Epic rarity) = the craft/boss SET tier. From each base piece we
-        // also generate weaker Common/Uncommon/Rare DROP versions (scaled stats, no set), so mobs
-        // can drop usable-now gear while the full set stays a crafting/boss goal.
+        // The tiered gear pieces ARE the Mythic ("plain") items. From each T40-T61 base piece we also
+        // generate its COMMON copy (`BL-272`): the same stats, but unmodifiable (no set, no attribute,
+        // no enchant), so mobs can drop usable-now gear while the real piece stays the one you invest in.
         var tieredGear = TieredWeapons().Concat(TieredArmor()).ToList();
         list.AddRange(tieredGear);
-        list.AddRange(ScaledDropItems(tieredGear));
+        list.AddRange(CommonCopies(tieredGear));
         list.AddRange(Materials());
         list.AddRange(RecipeBooks(tieredGear));
         // The tutorial chain's BOUND copies — the 30-day Newbie loaner kit and the completion
@@ -2132,40 +2132,40 @@ public static class ItemCatalog
         _ => 5
     };
 
-    /// <summary>The scaled Common/Uncommon/Rare DROP versions of the tiered gear. Each base tier
-    /// piece (the Epic set item) spawns three weaker copies at ~65/78/90% of its stats, standalone
-    /// (no SetId, so no set bonus). Only the plain base-tier pieces get copies — the alternate body
-    /// VARIANTS (e.g. "heavy_t52_dmg") stay set-only. Ids: "<baseid>_common" etc.</summary>
-    // A property, not a static field: BuildCatalog() runs from the `All` field initializer above
-    // this declaration, so a field here would still be null when ScaledDropItems reads it.
-    /// <summary>The percentage of a piece's FULL power each quality carries. See <see cref="ItemRarity"/>.
-    /// Mythic (100) is the ceiling; the authored numbers in the tiered tables are the EPIC anchor, which
-    /// is why the scale factors below divide by 70.</summary>
-    public static int RarityPercent(ItemRarity r) => r switch
-    {
-        ItemRarity.Common    => 45,
-        ItemRarity.Uncommon  => 55,
-        ItemRarity.Rare      => 70,
-        ItemRarity.Epic      => 70,
-        ItemRarity.Legendary => 85,
-        ItemRarity.Mythic    => 100,
-        _ => 70,
-    };
+    // ===================================================================
+    //  EQUIPMENT RARITY = COMMON + MYTHIC (`BL-272`, 2026-09-23)
+    // ===================================================================
+    // The six-rung quality ladder for equipment (45/55/70/70/85/100 % power, set + attributes from Epic
+    // up) is GONE. His ruling: *"equipment will have common equip items and normal (current mythic)
+    // items -> no longer in between"*. What is left:
+    //   * MYTHIC: the authored piece, bare id. Shown to the player as a PLAIN item (no rarity word).
+    //   * COMMON: `{id}_common`, T40-T61 only, the SAME stats as the Mythic piece, and UNMODIFIABLE:
+    //     *"u cannot add attribute to weapons nor have set bonus nor can enchant -> its just flat
+    //     defense"*. A fresh Mythic is ahead from day one through its set and its attribute slot.
+    // Consumables and materials keep all six rarities; this is about equipment only.
 
-    /// <summary>Does this quality carry set bonuses and rolled attributes? The 70% split: Rare and Epic
-    /// have the same raw stats, and THIS is the difference between them.</summary>
-    public static bool HasIdentity(ItemRarity r) => r >= ItemRarity.Epic;
+    /// <summary>The item-level window a COMMON copy exists in: T40, T52 and T61 (*"common equip are only
+    /// available T40 ~ T61"*). Above it, T76+ essence drops directly instead (`BL-273`).</summary>
+    public const int CommonMinLevel = 40, CommonMaxLevel = 61;
 
-    /// <summary>Stat multiplier relative to the AUTHORED numbers.
-    ///
-    /// The authored tier tables ARE the Mythic piece (owner, 2026-07-29) — 100% — and every lesser
-    /// quality is a fraction of it. This was re-anchored from Epic: anchoring at 70% meant a GENERATED
-    /// Mythic sat 43% above anything the game had ever been balanced for, which was a real ceiling
-    /// raise nobody had measured. Anchoring at the top instead makes the authored number the ceiling
-    /// again, and the ladder above A becomes authored content (the S grade) rather than a multiplier
-    /// artefact. The owner's reading of it: our A-grade is IG's LOW S-grade, so A at full power is
-    /// already about right for level 85.</summary>
-    public static float RarityScale(ItemRarity r) => RarityPercent(r) / 100f;
+    /// <summary>Does a Common copy exist at this item level?</summary>
+    public static bool HasCommonTier(int itemLevel) =>
+        itemLevel >= CommonMinLevel && itemLevel <= CommonMaxLevel;
+
+    /// <summary>Is this a COMMON piece of equipment, the unmodifiable kind? The one test the enchant gate
+    /// (server and the client's picker) asks. Attributes and sets need no gate: a Common is generated
+    /// with <c>NoAttributes</c> and an empty <c>SetId</c>.</summary>
+    public static bool IsCommonGear(ItemDef def) =>
+        def.Rarity == ItemRarity.Common && Crafting.IsGearSlot(def.Slot);
+
+    /// <summary>The rarity WORD a player is shown. Equipment speaks the collapsed vocabulary: a Mythic
+    /// piece is a plain item and says nothing (*"equipment 'Mythic' becomes plain items; the reduced ones
+    /// are 'Common' items"*, `BL-274` answer 3); everything else keeps its six-rung word.
+    /// "" = show no word.</summary>
+    public static string RarityLabel(ItemDef def) =>
+        Crafting.IsGearSlot(def.Slot)
+            ? (def.Rarity == ItemRarity.Common ? "Common" : "")
+            : def.Rarity.ToString();
 
     // (`SGradeOverA` = 1.60 — DELETED 2026-08-11. S was derived from A by this one number; he has now
     //  authored the whole level-80 column by hand for weapons, armor, shields, accessories and jewels,
@@ -2175,30 +2175,10 @@ public static class ItemCatalog
     /// <summary>The level S gear is built for: 80+, sitting above A's 76-80 window.</summary>
     public const int SGradeLevel = 80;
 
-    /// <summary>S carries only the TOP HALF of the quality ladder — Epic, Legendary, Mythic (owner).
-    /// Two reasons. Below Epic is where a piece has no set bonus and no attributes, which is not what
-    /// endgame gear is for; and CRAFTING PRODUCES LEGENDARY ONLY, so an S grade without a Legendary
-    /// rung could never be crafted at all and the whole blueprint economy would stop at A.</summary>
-    public static bool IsTopHalfOnly(int itemLevel) => itemLevel >= SGradeLevel;
-
-    // The DROP copies generated off each authored piece. MYTHIC is the authored item itself, so it is
-    // not in this list — it would collide with its own id.
-    private static (ItemRarity Rarity, float Scale)[] DropTiers => new[]
-    {
-        (ItemRarity.Common,    RarityScale(ItemRarity.Common)),
-        (ItemRarity.Uncommon,  RarityScale(ItemRarity.Uncommon)),
-        (ItemRarity.Rare,      RarityScale(ItemRarity.Rare)),
-        (ItemRarity.Epic,      RarityScale(ItemRarity.Epic)),
-        (ItemRarity.Legendary, RarityScale(ItemRarity.Legendary)),
-    };
-
     /// <summary>The id of a gear piece at another QUALITY, given the AUTHORED (Mythic) piece's id.
-    /// Mythic is the authored item and carries no suffix; every other rung is "{id}_{rarity}".
-    ///
-    /// Used by the crafting three-way roll (`BL-05`): a gear craft lands on Mythic or on Legendary, and
-    /// the recipe only names the Mythic one, so the Legendary sibling has to be derivable. Returns the
-    /// input unchanged if the resulting id is not a real item, so a caller can never hand out a
-    /// phantom.</summary>
+    /// Mythic is the authored item and carries no suffix; the only other rung equipment has since
+    /// `BL-272` is Common, "{id}_common", and only at T40-T61. Returns the input unchanged if the
+    /// resulting id is not a real item, so a caller can never hand out a phantom.</summary>
     public static string QualityId(string mythicId, ItemRarity rarity)
     {
         if (rarity == ItemRarity.Mythic) return mythicId;
@@ -2208,7 +2188,7 @@ public static class ItemCatalog
 
     /// <summary>True for a plain base-tier id like "heavy_t52" (the part after the last "_t" is all
     /// digits) — excludes alternate variants like "heavy_t52_dmg".</summary>
-    private static bool IsBaseTier(string id)
+    public static bool IsBaseTier(string id)
     {
         int i = id.LastIndexOf("_t", StringComparison.Ordinal);
         if (i < 0) return false;
@@ -2297,50 +2277,27 @@ public static class ItemCatalog
         return made;
     }
 
-    private static IEnumerable<ItemDef> ScaledDropItems(IEnumerable<ItemDef> tiered)
+    /// <summary>The COMMON copy of every T40-T61 base-tier piece (`BL-272`). Same stats as the authored
+    /// Mythic piece; the difference is what you can DO to it: no set id, no attribute, no enchant (the
+    /// enchant gate reads <see cref="IsCommonGear"/>). Only plain base-tier ids get one; the alternate
+    /// body VARIANTS (e.g. "heavy_t52_dmg") stay Mythic-only. Id: "{baseid}_common".</summary>
+    private static IEnumerable<ItemDef> CommonCopies(IEnumerable<ItemDef> tiered)
     {
         foreach (var d in tiered)
         {
-            if (d.Slot is not (EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield or EquipSlot.Jewel)) continue;
-            if (!IsBaseTier(d.Id)) continue;   // only plain base-tier pieces spawn drop copies
-            foreach (var (rarity, scale) in DropTiers)
+            if (!Crafting.IsGearSlot(d.Slot)) continue;
+            if (!IsBaseTier(d.Id) || !HasCommonTier(d.ItemLevel)) continue;
+            // The quality is NOT in the name (owner). "Common Electrum Longbow" became a different item's
+            // name in the player's head; the piece is an Electrum Longbow and its quality is a property,
+            // shown by the name's COLOUR and a Rarity: row in the description.
+            yield return d with
             {
-                // S grade is TOP HALF ONLY — Epic / Legendary / Mythic. Below Epic a piece has no set
-                // bonus and no attributes, which is not what endgame gear is for, and the low rungs
-                // would just be clutter nobody would ever equip at 80+.
-                if (IsTopHalfOnly(d.ItemLevel) && !HasIdentity(rarity)) continue;
-
-                int S(int v) => v == 0 ? 0 : Math.Max(1, (int)(v * scale));
-                // The quality is NOT in the name (owner). "Common Electrum Longbow" became a different
-                // item's name in the player's head; the piece is an Electrum Longbow and its quality is
-                // a property — shown by the name's COLOUR and a Rarity: row in the description.
-                string name = d.Name;
-                yield return d with
-                {
-                    Id = $"{d.Id}_{rarity.ToString().ToLowerInvariant()}",
-                    Name = name,
-                    Rarity = rarity,
-                    AtkBonus = S(d.AtkBonus),
-                    MAtkBonus = S(d.MAtkBonus),
-                    DefBonus = S(d.DefBonus),
-                    MDefBonus = S(d.MDefBonus),
-                    HpBonus = S(d.HpBonus),
-                    MpBonus = S(d.MpBonus),
-                    EvaBonus = S(d.EvaBonus),
-                    // THE 70% SPLIT. Below Epic a piece is numbers only — no set bonus, no rolled
-                    // attributes — and from Epic up it keeps its identity. That one rule is what makes
-                    // Rare and Epic (identical raw stats) different things worth wanting.
-                    // QUALITY-MATCHED set id. A copy joins the set of ITS OWN quality, not the authored
-                    // one — otherwise a Mythic body + Epic accessories completed the Mythic set and paid
-                    // full price, making a mixed bag strictly better than a matched one (owner).
-                    // Mythic IS the authored item, so only Epic/Legendary need the suffix.
-                    SetId = HasIdentity(rarity) && !string.IsNullOrEmpty(d.SetId)
-                        ? d.SetId + "_" + rarity.ToString().ToLowerInvariant()
-                        : "",
-                    NoAttributes = !HasIdentity(rarity),
-                    Value = 0,             // filled from DefaultValue (rarity-scaled)
-                };
-            }
+                Id = d.Id + "_common",
+                Rarity = ItemRarity.Common,
+                SetId = "",
+                NoAttributes = true,
+                Value = 0,             // filled from DefaultValue (the Common price multiplier)
+            };
         }
     }
 
@@ -2678,7 +2635,11 @@ public static class ItemCatalog
     /// 45/55/70/70/85/100 %, so gold moves 22.5/27.5/35/35/42.5 % — rarity is worth less in gold than
     /// it is in stats, deliberately. Mythic is a 2.35x jump over Legendary, which is intended: Mythic
     /// is craft-only and meant to be traded between players for absurd sums. Epic and above are NOT
-    /// vendor stock; their multipliers exist only so selling one pays sensibly.</summary>
+    /// vendor stock; their multipliers exist only so selling one pays sensibly.
+    ///
+    /// ⚠ Since `BL-272` (0.199.0) equipment is only Common (×0.225) and Mythic (×1): the middle rows of
+    /// <see cref="RarityPriceMul"/> no longer price any gear, and the merchants sell the MYTHIC piece at
+    /// this table's full cell (F/E/D cells are lifted from the old Rare shop price by <see cref="Shop"/>).</summary>
     private static int? TieredGearPrice(ItemDef def) =>
         TieredGearBasePrice(def) is int mythic
             ? Math.Max(1, (int)Math.Round(mythic * (double)RarityPriceMul(def.Rarity)))

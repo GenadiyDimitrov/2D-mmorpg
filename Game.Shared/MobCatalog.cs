@@ -143,8 +143,8 @@ public readonly record struct MobBuild(
     int SecondClass,          // a real ClassCatalog id → an Archetype → the HP/MP class-level curve
     string Body,              // "heavy" / "light" / "robe"
     string Weapon,            // "sword1h" / "sword2h" / "staff" / …
-    int ArmorTier, ItemRarity ArmorQuality, int ArmorEnchant,
-    int WeaponTier, ItemRarity WeaponQuality, int WeaponEnchant,
+    int ArmorTier, int ArmorEnchant,
+    int WeaponTier, int WeaponEnchant,
     // The race lean, ±5 (his B1). Added to the StatBase block below; 0 = no lean on that stat.
     int Con = 0, int Atk = 0, int Wit = 0, int Agi = 0, int Spt = 0,
     // Which player stat block the lean is applied TO. Human is the neutral one, and keeping every
@@ -163,33 +163,29 @@ public readonly record struct MobBuild(
     // ALONE does, and teaching them a kit would silently rewrite every G3 reading in the docs.
     bool LearnsKit = false)
 {
-    /// <summary>Item-id quality suffix. The AUTHORED piece is the Mythic one (bare id); every lesser
-    /// quality is a generated copy suffixed with its rarity name — see ItemCatalog's DropTiers. This
-    /// is why an admin gear picker that drilled down by name could only ever hand out Mythic.</summary>
-    public static string QualitySuffix(ItemRarity q) =>
-        q == ItemRarity.Mythic ? "" : "_" + q.ToString().ToLowerInvariant();
-
     /// <summary>Everything this creature carries, as (item id, enchant) pairs. Accessories and jewels
-    /// follow the ARMOUR — only the weapon is dressed on its own axis.</summary>
+    /// follow the ARMOUR — only the weapon is dressed on its own axis.
+    ///
+    /// Every piece is the MYTHIC one (bare id). Builds used to name a quality per axis (the guards wore
+    /// Epic, the `BL-47` demo creatures Uncommon/Rare/Epic/Common); those rungs were deleted with
+    /// `BL-272`, and his ruling (2026-09-24) was *Mythic, stats as they fall*.</summary>
     public IEnumerable<(string DefId, int Enchant)> Pieces()
     {
-        string aq = QualitySuffix(ArmorQuality), wq = QualitySuffix(WeaponQuality);
-        yield return ($"{Weapon}_t{WeaponTier}{wq}", WeaponEnchant);
-        yield return ($"{Body}_t{ArmorTier}{aq}", ArmorEnchant);
-        yield return ($"helm_t{ArmorTier}{aq}", ArmorEnchant);
-        yield return ($"gloves_t{ArmorTier}{aq}", ArmorEnchant);
-        yield return ($"boots_t{ArmorTier}{aq}", ArmorEnchant);
+        yield return ($"{Weapon}_t{WeaponTier}", WeaponEnchant);
+        yield return ($"{Body}_t{ArmorTier}", ArmorEnchant);
+        yield return ($"helm_t{ArmorTier}", ArmorEnchant);
+        yield return ($"gloves_t{ArmorTier}", ArmorEnchant);
+        yield return ($"boots_t{ArmorTier}", ArmorEnchant);
         if (Jewels)
         {
-            yield return ($"necklace_t{ArmorTier}{aq}", ArmorEnchant);
-            yield return ($"ring_t{ArmorTier}{aq}", ArmorEnchant);
-            yield return ($"ring_t{ArmorTier}{aq}", ArmorEnchant);
-            yield return ($"earring_t{ArmorTier}{aq}", ArmorEnchant);
-            yield return ($"earring_t{ArmorTier}{aq}", ArmorEnchant);
+            yield return ($"necklace_t{ArmorTier}", ArmorEnchant);
+            yield return ($"ring_t{ArmorTier}", ArmorEnchant);
+            yield return ($"ring_t{ArmorTier}", ArmorEnchant);
+            yield return ($"earring_t{ArmorTier}", ArmorEnchant);
+            yield return ($"earring_t{ArmorTier}", ArmorEnchant);
         }
-        // A SHIELD, for the builds that carry one (BL-79's tank guard). The tier ladder authors exactly
-        // one shield per tier and it is Mythic — there is no rarity suffix to apply, which is why this
-        // does not take `aq` the way every line above does. Never pair it with a two-handed weapon.
+        // A SHIELD, for the builds that carry one (BL-79's tank guard). Never pair it with a two-handed
+        // weapon.
         if (Shield) yield return ($"shield_t{ArmorTier}", ArmorEnchant);
         if (Held.Length > 0) yield return (Held, 0);
     }
@@ -203,8 +199,8 @@ public readonly record struct MobBuild(
         // sentence that wraps mid-number is harder to read than three that do not wrap at all.
         static string Ench(int e) => e > 0 ? $" +{e}" : "";
         yield return "Built like a player";
-        yield return $"  Weapon: t{WeaponTier} {WeaponQuality} {Weapon}{Ench(WeaponEnchant)}";
-        yield return $"  Armour: t{ArmorTier} {ArmorQuality} {Body}{Ench(ArmorEnchant)}"
+        yield return $"  Weapon: t{WeaponTier} {Weapon}{Ench(WeaponEnchant)}";
+        yield return $"  Armour: t{ArmorTier} {Body}{Ench(ArmorEnchant)}"
                    + (Jewels ? "" : ", no jewels");
         if (Held.Length > 0) yield return $"  Holds: {ItemCatalog.Get(Held)?.Name ?? Held} (never dropped)";
     }
@@ -343,22 +339,22 @@ public static class MobCatalog
     /// <summary>A player-built WARRIOR (Champion, id 14): heavy body, two-handed sword — the archetype
     /// every `G3` table is measured on. The armour and the weapon take SEPARATE tiers on purpose; that
     /// split is the whole finding of G3.7 and collapsing them back into one is what G3.2 got wrong.</summary>
-    private static MobBuild Warrior(int armorTier, ItemRarity armorQ, int armorEnch,
-        int weaponTier, ItemRarity weaponQ, int weaponEnch,
+    private static MobBuild Warrior(int armorTier, int armorEnch,
+        int weaponTier, int weaponEnch,
         int con = 0, int atk = 0, int wit = 0, int agi = 0, int spt = 0, string held = "") =>
         new(BaseClass.Fighter, 14, "heavy", "sword2h",
-            armorTier, armorQ, armorEnch, weaponTier, weaponQ, weaponEnch,
+            armorTier, armorEnch, weaponTier, weaponEnch,
             Con: con, Atk: atk, Wit: wit, Agi: agi, Spt: spt, Held: held);
 
     /// <summary>A player-built NUKER (Sorcerer, id 18): robe and staff. Its M.Atk, cast speed and magic
     /// crit all come from the same places a player's do — which is why the Mage ROLE's stat lean is
     /// skipped for a player-built creature (see Entity.ApplyMobScale); it would pay for the caster
     /// shape twice.</summary>
-    private static MobBuild Nuker(int armorTier, ItemRarity armorQ, int armorEnch,
-        int weaponTier, ItemRarity weaponQ, int weaponEnch,
+    private static MobBuild Nuker(int armorTier, int armorEnch,
+        int weaponTier, int weaponEnch,
         int con = 0, int atk = 0, int wit = 0, int agi = 0, int spt = 0, string held = "") =>
         new(BaseClass.Mage, 18, "robe", "staff",
-            armorTier, armorQ, armorEnch, weaponTier, weaponQ, weaponEnch,
+            armorTier, armorEnch, weaponTier, weaponEnch,
             Con: con, Atk: atk, Wit: wit, Agi: agi, Spt: spt, Held: held);
 
     // ===================================================================================
@@ -390,7 +386,7 @@ public static class MobCatalog
     /// heavy-armour and sword masteries are real learned passives, not a multiplier.</summary>
     private static MobBuild GuardTank(int tier, int ench, string held = "") =>
         new(BaseClass.Fighter, 13, "heavy", "sword1h",
-            tier, ItemRarity.Epic, ench, tier, ItemRarity.Epic, ench,
+            tier, ench, tier, ench,
             Held: held, Shield: true, LearnsKit: true);
 
     /// <summary>A guard ARCHER: Assassin (id 15, the merged bow/dagger rogue), LIGHT armour, BOW —
@@ -398,7 +394,7 @@ public static class MobCatalog
     /// matters here.</summary>
     private static MobBuild GuardArcher(int tier, int ench, string held = "") =>
         new(BaseClass.Fighter, 15, "light", "bow",
-            tier, ItemRarity.Epic, ench, tier, ItemRarity.Epic, ench,
+            tier, ench, tier, ench,
             Held: held, LearnsKit: true);
 
     /// <summary>A guard template. Never aggressive in the ordinary sense — <see cref="MobType.Guard"/>
@@ -517,16 +513,26 @@ public static class MobCatalog
     // the slot" exactly, with no new mechanism: his Armor row (50% x C 10 / U 4 / R 0.4 / E 0.02) and the
     // §3 target (C 5 / U 2 / R 0.2 / E 0.01) are the same numbers, and §3 is the one written here.
     //
-    // A gear group id is `10 + family*10 + (int)rarity` — one group PER RARITY RUNG. That is what lets a
-    // BOSS row whose chances sum past 100% (E 70 + L 40 + M 2) drop several pieces while each rung still
-    // randomises across the family. For a normal mob the cost is a 0.1% chance of both a Common and an
-    // Uncommon armor off one kill, which is not the failure mode the groups exist to prevent.
+    // A family gear group id is `10 + family*10 + (int)rarity`, one group PER RARITY RUNG. Since `BL-272`
+    // only the MYTHIC rung is left on them (a boss's per-family accent); the old Common/Uncommon/Rare/
+    // Epic/Legendary rungs went with the quality ladder. COMMON gear and the boss's guaranteed piece have
+    // their OWN groups (below), each with its own `/droprate` knob, and each spans every family at once.
     public const int GroupMats = 1, GroupScrolls = 2, GroupAlways = 3;
     private const int FamilyArmor = 0, FamilyAccessory = 1, FamilyWeapon = 2, FamilyJewel = 3;
 
+    /// <summary>COMMON gear's own drop group (`BL-272`): ONE roll per kill across every slot of the tier,
+    /// tuning name "common". *"common equip are dropped like 0.5% per kill 2% per elit kill"*.</summary>
+    public const int GroupCommonGear = 60;
+
+    /// <summary>The BOSS's guaranteed Mythic piece: one roll across every slot of the tier, tuning name
+    /// "boss". Pulled forward from `BL-274` part 2 (*"T76/T80 bosses drop at least one full item,
+    /// guaranteed ... The guaranteed item holds at EVERY tier"*) when the Epic/Legendary rungs it replaces
+    /// were deleted; the rest of the boss rework (recipes, direct essence) is still step 12.</summary>
+    public const int GroupBossGear = 61;
+
     private static int GearGroupId(int family, ItemRarity rarity) => 10 + family * 10 + (int)rarity;
 
-    /// <summary>Is this drop group one of the four GEAR groups? Elite and boss kills REPLACE the normal
+    /// <summary>Is this drop group a GEAR group (a family group, Common or the boss piece)? Elite and boss kills REPLACE the normal
     /// gear table with their own rank row (§3), so the drop roll has to tell gear from mats/consumables.</summary>
     public static bool IsGearGroup(int groupId) => groupId >= 10;
 
@@ -554,6 +560,8 @@ public static class MobCatalog
         GroupMats => "mats",
         GroupScrolls => "scrolls",
         GroupAlways => "always",
+        GroupCommonGear => "common",
+        GroupBossGear => "boss",
         // Parenthesised on purpose: without them `a / 10 switch {…}` parses as `a / (10 switch {…})`.
         _ when IsGearGroup(groupId) => ((groupId - 10) / 10) switch
         {
@@ -644,53 +652,22 @@ public static class MobCatalog
         (FamilyJewel,     new[] { "necklace", "ring", "earring" }),
     };
 
-    /// <summary>NORMAL mobs (playtest-14 §3). Per GROUP, not in total — four groups means ~20% of kills
-    /// yield some Common piece, spread over 18 item lines instead of the 3 that used to drop.</summary>
-    private static (ItemRarity Rarity, float Chance)[] NormalGearRates => new[]
-    {
-        (ItemRarity.Common,   0.050f),
-        (ItemRarity.Uncommon, 0.020f),
-        (ItemRarity.Rare,     0.002f),
-        (ItemRarity.Epic,     0.0001f),
-    };
+    /// <summary>COMMON gear per kill (`BL-272`, his numbers): 0.5% off a normal kill, 2% off an elite, as
+    /// ONE roll across every slot of the tier (<see cref="GroupCommonGear"/>). The "common" group ships at
+    /// x1, so these are the delivered chances on a x1 server. Only mobs whose gear tier is T40/T52/T61
+    /// pay them, because only those tiers HAVE a Common (<see cref="ItemCatalog.HasCommonTier"/>).
+    ///
+    /// ⚠ This replaces the whole playtest-14 quality table (normal C 5 / U 2 / R 0.2 / E 0.01 % per
+    /// family, elite U 10 / R 2 / E 0.2 %, all under the gear groups' x0.075). Below T40 and from T76 up a
+    /// normal or elite creature now drops NO equipment at all until `BL-274` gives every mob its rare
+    /// Mythic; T1/T20 gear comes from the merchants, which sell the Mythic piece (see ShopCatalog).</summary>
+    public const float CommonGearNormal = 0.005f, CommonGearElite = 0.02f;
 
-    /// <summary>ELITE / dungeon / instance (§3): no Common rung at all, and a full band better.</summary>
-    private static (ItemRarity Rarity, float Chance)[] EliteGearRates => new[]
-    {
-        (ItemRarity.Uncommon, 0.100f),
-        (ItemRarity.Rare,     0.020f),
-        (ItemRarity.Epic,     0.002f),
-    };
-
-    /// <summary>BOSS (§3). Sums past 100% on purpose — a boss is meant to pay out several pieces, which
-    /// the per-rung grouping allows (each rung rolls on its own).</summary>
-    private static (ItemRarity Rarity, float Chance)[] BossGearRates => new[]
-    {
-        (ItemRarity.Epic,      0.70f),
-        (ItemRarity.Legendary, 0.40f),
-        (ItemRarity.Mythic,    0.02f),
-    };
-
-    /// <summary>The tiered item id for a slot key at a grade + quality. MYTHIC is the AUTHORED piece, so
-    /// it carries no rarity suffix — the scaled copies are what get one.</summary>
-    private static string TieredId(string key, int tier, ItemRarity rarity) =>
-        rarity == ItemRarity.Mythic ? $"{key}_t{tier}"
-        : $"{key}_t{tier}_{rarity.ToString().ToLowerInvariant()}";
-
-    /// <summary>Which qualities a mob of this level may drop. Rarity is introduced BY MOB LEVEL (owner,
-    /// §1) so the first hour has somewhere to go, and EPIC and above are held to E grade and up — F is
-    /// Common/Uncommon/Rare only, because F gear is worn for under an hour.</summary>
-    private static bool RarityDrops(ItemRarity r, int level, int tier) => r switch
-    {
-        ItemRarity.Common => true,
-        ItemRarity.Uncommon => level >= 5,
-        ItemRarity.Rare => level >= 10,
-        // The MYTHIC rung is the AUTHORED piece, which exists at every tier including F — so a boss below
-        // E grade still has something to pay out instead of dropping nothing but a mat pile.
-        ItemRarity.Mythic => true,
-        _ => tier >= 20,
-    };
-
+    /// <summary>A BOSS's gear: ONE guaranteed Mythic piece of its tier (<see cref="GroupBossGear"/>), plus
+    /// the old 2%-per-family Mythic accent, which is unchanged (it still runs under the family groups'
+    /// x0.075). The Epic 70% / Legendary 40% rungs it replaces summed to ~1.1 pieces a kill, so the COUNT
+    /// is about what it was; every piece is now the real one.</summary>
+    public const float BossGuaranteedPiece = 1f, BossMythicAccent = 0.02f;
     /// <summary>The GEAR half of a mob's drop table at one level and rank. Normal-rank entries are baked
     /// into the template (below); Elite and Boss are built at KILL time by the drop roll, because rank is
     /// a property of the SPAWN — the zone assigns it — and not of the template.</summary>
@@ -970,21 +947,32 @@ public static class MobCatalog
     public static IEnumerable<DropEntry> GearDrops(int level, MobRank rank)
     {
         int tier = GearTier(level);
-        var rates = rank switch
+
+        // One roll across every slot of the tier, each FAMILY holding an equal share (so eight weapon
+        // lines do not crowd out the three jewels) and split evenly inside it. Common's suffix, Mythic's
+        // bare id: the authored piece IS the Mythic one.
+        IEnumerable<DropEntry> Spread(float chance, int groupId, string suffix)
         {
-            MobRank.Boss => BossGearRates,
-            MobRank.Elite => EliteGearRates,
-            _ => NormalGearRates,
-        };
-        foreach (var (family, keys) in GearFamilies)
-            foreach (var (rarity, chance) in rates)
-            {
-                if (!RarityDrops(rarity, level, tier)) continue;
-                float each = chance / keys.Length;
+            float perFamily = chance / GearFamilies.Length;
+            foreach (var (_, keys) in GearFamilies)
                 foreach (var key in keys)
-                    yield return new DropEntry(TieredId(key, tier, rarity), each,
-                        GroupId: GearGroupId(family, rarity));
-            }
+                    yield return new DropEntry($"{key}_t{tier}{suffix}", perFamily / keys.Length,
+                        GroupId: groupId);
+        }
+
+        if (rank == MobRank.Boss)
+        {
+            foreach (var e in Spread(BossGuaranteedPiece, GroupBossGear, "")) yield return e;
+            foreach (var (family, keys) in GearFamilies)
+                foreach (var key in keys)
+                    yield return new DropEntry($"{key}_t{tier}", BossMythicAccent / keys.Length,
+                        GroupId: GearGroupId(family, ItemRarity.Mythic));
+            yield break;
+        }
+
+        if (!ItemCatalog.HasCommonTier(tier)) yield break;
+        float common = rank == MobRank.Elite ? CommonGearElite : CommonGearNormal;
+        foreach (var e in Spread(common, GroupCommonGear, "_common")) yield return e;
     }
 
     /// <summary>MATS-PRIMARY drop table (docs/design/Crafting.md): every mob drops crafting materials
@@ -1534,8 +1522,8 @@ public static class MobCatalog
             //      creature is deliberately given NO stat passive. If it fights like a level-40 mob,
             //      gear alone reproduced the curve.
             Demo("demo_goblin_raider", "Goblin Raider", 40, MobCategory.Humanoid, 132f,
-                Warrior(armorTier: 1, armorQ: ItemRarity.Uncommon, armorEnch: 0,
-                        weaponTier: 40, weaponQ: ItemRarity.Rare, weaponEnch: 0,
+                Warrior(armorTier: 1, armorEnch: 0,
+                        weaponTier: 40, weaponEnch: 0,
                         con: +5, atk: +5, agi: -5),
                 new MobMod(Name: "Goblin blood (CON +5, ATK +5, AGI -5)")),
 
@@ -1547,8 +1535,8 @@ public static class MobCatalog
             //      passive (or one more enchant rung) would have to carry. Do NOT tune this row flat:
             //      it exists to show the drift, and hiding it would answer his question with a guess.
             Demo("demo_goblin_raider_elder", "Goblin Elder Raider", 45, MobCategory.Humanoid, 132f,
-                Warrior(armorTier: 1, armorQ: ItemRarity.Uncommon, armorEnch: 0,
-                        weaponTier: 40, weaponQ: ItemRarity.Rare, weaponEnch: 0,
+                Warrior(armorTier: 1, armorEnch: 0,
+                        weaponTier: 40, weaponEnch: 0,
                         con: +5, atk: +5, agi: -5),
                 new MobMod(Name: "Goblin blood (CON +5, ATK +5, AGI -5)")),
 
@@ -1558,8 +1546,8 @@ public static class MobCatalog
             //      the number works — it does, arithmetically — but whether a x3.3 HP passive READS as
             //      a fair caster or as a sponge.
             Demo("demo_lich", "Cairn Lich", 60, MobCategory.Undead, 120f,
-                Nuker(armorTier: 1, armorQ: ItemRarity.Epic, armorEnch: 0,
-                      weaponTier: 52, weaponQ: ItemRarity.Common, weaponEnch: 30,
+                Nuker(armorTier: 1, armorEnch: 0,
+                      weaponTier: 52, weaponEnch: 30,
                       con: -5, wit: +5),
                 new MobMod(Hp: 3.73f, PDef: 1.02f, MDef: 0.78f, MAtk: 0.97f,
                            Name: "Deathward (CON -5, WIT +5)"),
@@ -1567,8 +1555,8 @@ public static class MobCatalog
 
             // #4 — THE TOP BAND, where gear alone still leaves the attack passive real work: x1.55.
             Demo("demo_seraph", "Fallen Seraph", 80, MobCategory.Angel, 140f,
-                Warrior(armorTier: 52, armorQ: ItemRarity.Common, armorEnch: 0,
-                        weaponTier: 80, weaponQ: ItemRarity.Epic, weaponEnch: 16,
+                Warrior(armorTier: 52, armorEnch: 0,
+                        weaponTier: 80, weaponEnch: 16,
                         agi: +5, con: -5),
                 new MobMod(Hp: 1.46f, PDef: 1.05f, MDef: 0.61f, PAtk: 2.07f,
                            Name: "Seraphic wrath (AGI +5, CON -5)")),
@@ -1578,8 +1566,8 @@ public static class MobCatalog
             //      its curve's P.Atk; the rune's +100% takes it to **x0.97** — the same place #4 gets to
             //      with an authored, per-band, per-creature ×2.07. One item, no table, no drift.
             Demo("demo_seraph_rune", "Fallen Seraph, Runebearer", 80, MobCategory.Angel, 140f,
-                Warrior(armorTier: 52, armorQ: ItemRarity.Common, armorEnch: 0,
-                        weaponTier: 80, weaponQ: ItemRarity.Epic, weaponEnch: 16,
+                Warrior(armorTier: 52, armorEnch: 0,
+                        weaponTier: 80, weaponEnch: 16,
                         agi: +5, con: -5, held: ItemCatalog.WarRune),
                 new MobMod(Hp: 1.46f, PDef: 1.05f, MDef: 0.61f,
                            Name: "Seraphic wrath (AGI +5, CON -5)")),

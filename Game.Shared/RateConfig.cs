@@ -123,7 +123,12 @@ public static class RateConfig
             // ⚠ `other` is the INDEPENDENT rolls (attribute scrolls among them), which take the global
             // that the guaranteed groups are exempt from; that asymmetry is the whole reason a single
             // number could not just move to 1 on its own.
+            //
+            // `BL-272` (2026-09-24): since the rarity collapse the four family groups carry only a
+            // boss's 2% Mythic accent. COMMON gear and the boss's guaranteed piece have their own
+            // groups at x1, because his numbers for them (0.5% / 2% / one piece) are DELIVERED chances.
             ["armor"] = 0.075f, ["accessory"] = 0.075f, ["weapon"] = 0.075f, ["jewel"] = 0.075f,
+            ["common"] = 1f, ["boss"] = 1f,
             ["mats"] = 1f, ["scrolls"] = 1f, ["always"] = 1f, ["other"] = 3f,
         };
 

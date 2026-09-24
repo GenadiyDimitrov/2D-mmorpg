@@ -590,7 +590,7 @@ namespace Game.Client
                 // The rarity and grade ride along on every row, because they are how he narrows and
                 // seeing them beside the name is what makes the next filter tap an informed one.
                 var row = UiKit.TextButton(_dropSearchList,
-                    d.Name + "   <color=#8a8f98>" + d.Rarity + " / " + d.Grade + "</color>",
+                    d.Name + "   <color=#8a8f98>" + (ItemCatalog.RarityLabel(d) is { Length: > 0 } rw ? rw + " / " : "") + d.Grade + "</color>",
                     () => ShowDropsFor(id), 15f);
                 var le = row.gameObject.AddComponent<LayoutElement>();
                 le.preferredHeight = 34f;
@@ -1434,7 +1434,9 @@ namespace Game.Client
             }
             // The GRADE BAND is checked from EnchantRules — the same code the server validates with, so
             // the list can never offer a target the server will then refuse.
+            // A COMMON piece is unmodifiable (`BL-272`), so it is never offered either.
             return ItemCatalog.IsEquippable(def)
+                   && !ItemCatalog.IsCommonGear(def)
                    && item.Enchant < EnchantRules.MaxEnchant
                    && EnchantRules.Accepts(scrollDef, def);
         }
@@ -1717,8 +1719,13 @@ namespace Game.Client
             string tag58d = ItemTag.For(def, item);
             Line("Name:  " + ItemTag.Name(def, item) + (tag58d.Length > 0 ? "  " + tag58d : ""));
             Line("Grade:  " + (def.ItemLevel > 0 ? ItemCatalog.TierLetter(def.ItemLevel) : def.Grade.ToString()));
-            Line("Rarity:  " + Coloured(def.Rarity.ToString(), def.Rarity)
-                 + "   (" + ItemCatalog.RarityPercent(def.Rarity) + "% power)");
+            // `BL-272`: a Mythic piece of equipment is a PLAIN item and shows no rarity row at all; a
+            // Common one says what it is, and what it cannot do.
+            string rarityWord = ItemCatalog.RarityLabel(def);
+            if (ItemCatalog.IsCommonGear(def))
+                Line("Rarity:  " + Coloured(rarityWord, def.Rarity) + "   (no enchant, attribute or set bonus)");
+            else if (rarityWord.Length > 0)
+                Line("Rarity:  " + Coloured(rarityWord, def.Rarity));
             Line("Type:  " + TypeLine(def));
             if (!ItemTag.Tradable(def, item.TradableOverride)) Line("<color=#FF8080>Untradable</color>");
             // Ask the SHARED predicates, not the raw overrides: a SoulBound def (the Rune of Sinners)

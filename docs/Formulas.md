@@ -1056,6 +1056,22 @@ the player is shown will disagree.
 Above 100% the excess is **copies**, not a clamp: `DropCopies` = the whole part guaranteed, the
 fraction rolled, so `E[copies] == chance` exactly.
 
+**Gear (`BL-272`, 0.199.0): equipment is COMMON + MYTHIC only.** Tier = the mob's gear tier
+(`MobCatalog.GearTier`: 1 / 20 / 40 / 52 / 61 / 76).
+
+```
+normal kill   common group  0.005 × rates   (T40 / T52 / T61 only)    group "common" ×1
+elite kill    common group  0.02  × rates   (T40 / T52 / T61 only)    group "common" ×1
+boss kill     boss group    1.0   × rates   one Mythic piece, any tier group "boss"   ×1
+              + per family  0.02  × rates   Mythic accent             groups armor/accessory/weapon/jewel ×0.075
+```
+
+Each group is ONE roll across every slot of the tier, each family (armor / accessory / weapon / jewel)
+holding an equal quarter, split evenly inside it. A Common has the Mythic piece's stats, **no set, no
+attribute, no enchant**, and prices at `RarityPriceMul(Common)` = ×0.225 buy, Mythic ÷ 200 sell.
+Below T40 and from T76 up, a normal or elite mob drops **no equipment** until `BL-274`.
+`MobCatalog.GearDrops` · `CommonGearNormal` / `CommonGearElite` / `BossGuaranteedPiece`.
+
 ⚠ A template's `Drops` is **not the whole table**. RANK is a property of the spawn, not the template,
 so five layers are added at kill time (`GameLoopService.RollDrop`, mirrored by target-inspect and by
 `DropIndex`): `GearDrops` *replaces* the gear groups, and `EnchantScrollDrops`, `UtilityScrollDrops`

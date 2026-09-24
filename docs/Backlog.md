@@ -271,7 +271,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-263` | 🟡 | **BUFFS ARE WRAPPERS OVER `(family, level)`** — [design/BuffFamilies.md](design/BuffFamilies.md). Duration is out of the conflict rule and the first three racial wrappers are built (0.176.0); per-family group rank DECLINED, and so is the group-vs-single authoring check — a group ALWAYS outranks its singles. Left: the passive check and the racial split, both DEFERRED on your call — the racial split now carries your colour-not-abbreviation rule | skills |
 | `BL-264` | ❓ | **NO CSV SAYS WHICH BUFFS FIGHT EACH OTHER** — from `mage 1st` you cannot tell the three Mights are one family. A generated `FAMILY` + `RANK` column, checked like every other; §2 the RACE cell nothing verifies | skills |
 | `BL-270` | 🔵 | A vertical skill bar, or a wheel, for hand-held play | client |
-| `BL-272` | ❓ | **RARITY COLLAPSE — Common + Mythic only** for equipment — [design/Rework-2026-09-23.md](design/Rework-2026-09-23.md) §2.1 | items |
+| `BL-272` | 🟡 | **RARITY COLLAPSE — Common + Mythic only** for equipment (part 1 built 0.199.0; shops = part 2) — [design/Rework-2026-09-23.md](design/Rework-2026-09-23.md) §2.1 | items |
 | `BL-273` | ❓ | **THE CRAFTING REWORK** — quest unlock, recipe %, refinable metal, MP per craft. Supersedes `BL-05` (archived) — §2.2; ✅ no profession lock | items |
 | `BL-274` | ❓ | **PER-MOB DROP TABLES** + the refinable-metal ladder + wood/metal/gems/volcanic — §2.3 | items |
 | `BL-280` | 🔵 | Anti-mage / anti-fighter / half-HP zones; mobs not in clusters | world |
@@ -2197,7 +2197,7 @@ but need options to make it different and esier for hand-held"*. Client-only; it
 over the same 12 (+`BL-269`) slots. ❓ Which one first? A vertical column is cheap; a thumb wheel
 is a real UI piece.
 
-## `BL-272` ❓ RARITY COLLAPSE — Common + Mythic only for equipment
+## `BL-272` 🟡 RARITY COLLAPSE — Common + Mythic only for equipment
 
 [design/Rework-2026-09-23.md](design/Rework-2026-09-23.md) §2.1 holds the spec and five questions.
 In short: Common (T40-T61 only, Mythic stats, no enchant/attribute/set, drop 0.5% normal / 2%
@@ -2216,6 +2216,13 @@ dedicated shop at price + 2× craft mats). Consumables keep their rarities.
   The **T52 shop costs essence, no mats**: 500 T52 + ~5-10k T40 (¾ of the worth).
 - ✅ Third round: **essence only, no gold** at the T52 shop; **all three temp armour boxes** (heavy,
   light, robe) include a shield.
+🟢 **Part 1 BUILT, 0.199.0 (2026-09-24, step 6 of §7):** equipment is Common + Mythic; Common exists at T40-T61,
+has Mythic stats, no set/attribute/enchant; drops 0.5% normal / 2% elite through its own `common` group; Mythic
+gear shows no rarity word. His interim rulings that day: bosses pay one guaranteed Mythic (group `boss`),
+merchants sell Mythic T1/T20/T40 at the authored price, a gear craft's Legendary share is a fail, and guards/demo
+mobs wear Mythic. **Still open (part 2 = step 8):** the T52 essence-only shop, the 2 h temp Common boxes (weapon
++ three armour sets with a shield) that tick only while worn, and the empty gear preset. ⏸ Consumable rarity
+→ levels 1-6 stays deferred.
 
 ## `BL-273` ❓ THE CRAFTING REWORK — supersedes `BL-05` (archived 2026-09-23)
 

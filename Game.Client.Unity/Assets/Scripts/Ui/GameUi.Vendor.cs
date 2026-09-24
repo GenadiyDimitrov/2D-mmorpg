@@ -525,8 +525,8 @@ namespace Game.Client
         private static string WareSummary(ItemDef def)
         {
             var t = new StringBuilder();
-            t.Append(def.Rarity).Append(' ')
-             .Append(def.ItemLevel > 0 ? ItemCatalog.TierLetter(def.ItemLevel) : def.Grade.ToString())
+            if (ItemCatalog.RarityLabel(def) is { Length: > 0 } rw) t.Append(rw).Append(' ');   // Mythic gear is plain (`BL-272`)
+            t.Append(def.ItemLevel > 0 ? ItemCatalog.TierLetter(def.ItemLevel) : def.Grade.ToString())
              .Append("-grade ").Append(TypeLine(def));
 
             var stats = new List<string>();

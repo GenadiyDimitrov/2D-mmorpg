@@ -294,32 +294,32 @@ public static class Crafting
         return new Salvage(type, def.Rarity, qty);
     }
 
-    /// <summary>The odds of one gear craft attempt. Sums to 1: a craft lands on Mythic, lands on
-    /// Legendary, or FAILS and eats the materials.</summary>
-    public readonly record struct GearOdds(float Mythic, float Legendary, float Fail);
+    /// <summary>The odds of one gear craft attempt. Sums to 1: a craft lands on the (Mythic) piece, or
+    /// FAILS and eats the materials.
+    ///
+    /// ⚠ It was three-way (Mythic / Legendary / fail) until `BL-272` deleted the Legendary rung. His
+    /// interim ruling (2026-09-24) until the recipe-% rework (`BL-273` part 2): the old Legendary share
+    /// becomes a FAIL, so the Success column is his old Mythic column unchanged.</summary>
+    public readonly record struct GearOdds(float Success, float Fail);
 
-    /// <summary>The owner's success table, verbatim (2026-08-13): *"the gear is not crafted at 100% …
-    /// E - (50% for mytic, 40% for legend, 10% fail); D - 45m, 40l, 15fail; C - 40m, 40l, 20fail;
-    /// B - 30m, 40l, 30fail; A - 20, 30, 50fail; S - 5m, 20l, 75 fail"*.
+    /// <summary>The owner's success table (2026-08-13): *"E - (50% for mytic, 40% for legend, 10% fail);
+    /// D - 45m, 40l, 15fail; C - 40m, 40l, 20fail; B - 30m, 40l, 30fail; A - 20, 30, 50fail; S - 5m,
+    /// 20l, 75 fail"*, with the Legendary share folded into the fail (see <see cref="GearOdds"/>).
     ///
-    /// 🔑 **Only Legendary and Mythic gear is craftable** — *"the only craftable gears should be legend,
-    /// mytic (others are drop based anyways)"* — so there is no third success rung to fall to. A fail
-    /// produces nothing and consumes the mats, and that is the first real sink the crafting economy has.
-    ///
-    /// ⚠ The fail rate and the mat cost are ONE knob, not two: at 75% a successful S item costs four
-    /// attempts, so quadrupling the fail rate is arithmetically the same act as quadrupling the pile.
-    /// Both were solved together in <c>Recipes.GearBulk</c> — move one and the other is wrong.</summary>
+    /// ⚠ The fail rate and the mat cost are ONE knob, not two: at 95% a successful S item costs twenty
+    /// attempts. `Recipes.GearBulk` was sized against the old 75% (four), so an S craft is 5× dearer until the
+    /// `BL-273` recipe rework replaces this table.</summary>
     public static GearOdds GearCraftOdds(int craftLevel) => craftLevel switch
     {
-        1 => new(0.50f, 0.40f, 0.10f),   // E
-        2 => new(0.45f, 0.40f, 0.15f),   // D
-        3 => new(0.40f, 0.40f, 0.20f),   // C
-        4 => new(0.30f, 0.40f, 0.30f),   // B
-        5 => new(0.20f, 0.30f, 0.50f),   // A
-        _ => new(0.05f, 0.20f, 0.75f),   // S
+        1 => new(0.50f, 0.50f),   // E
+        2 => new(0.45f, 0.55f),   // D
+        3 => new(0.40f, 0.60f),   // C
+        4 => new(0.30f, 0.70f),   // B
+        5 => new(0.20f, 0.80f),   // A
+        _ => new(0.05f, 0.95f),   // S
     };
 
-    /// <summary>True if this rung's recipes are GEAR (three-way outcome) rather than materials or
+    /// <summary>True if this rung's recipes are GEAR (success-or-fail outcome) rather than materials or
     /// consumables (a plain <see cref="Recipe.SuccessChance"/> roll).</summary>
     public static bool IsGearSlot(EquipSlot slot) =>
         slot is EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield or EquipSlot.Jewel;

@@ -223,22 +223,38 @@ Check("server pushed the warehouse on login", a.Ware is not null);
           sSword is not null && aSword is not null && sSword.AtkBonus > aSword.AtkBonus,
           $"A {aSword?.AtkBonus} -> S {sSword?.AtkBonus}");
 
-    var aEpic = ItemCatalog.Get("sword1h_t76_epic");
-    Check("A-Epic is 70% of A-Mythic (the split rung, same stats as Rare)",
-          aEpic is not null && aSword is not null
-            && aEpic.AtkBonus == (int)(aSword.AtkBonus * 0.70f),
-          $"{aEpic?.AtkBonus} vs {aSword?.AtkBonus}");
+    // `BL-272` (0.199.0): equipment is COMMON + MYTHIC. A Common exists at T40-T61 only, carries the
+    // Mythic piece's stats, and is unmodifiable (no set, no attribute; the enchant gate is server-side).
+    foreach (int lvl in new[] { 40, 52, 61 })
+    {
+        var m = ItemCatalog.Get($"sword1h_t{lvl}");
+        var cm = ItemCatalog.Get($"sword1h_t{lvl}_common");
+        Check($"T{lvl} has a Common with the Mythic's stats, no set, no attributes",
+              cm is { Rarity: ItemRarity.Common, SetId: "", NoAttributes: true } && m is not null
+                && cm.AtkBonus == m.AtkBonus && cm.MAtkBonus == m.MAtkBonus && ItemCatalog.IsCommonGear(cm),
+              $"{cm?.AtkBonus} vs {m?.AtkBonus}");
+    }
+    Check("no Common outside T40-T61 (T20, T76, S)",
+          ItemCatalog.Get("sword1h_t20_common") is null && ItemCatalog.Get("sword1h_t76_common") is null
+          && ItemCatalog.Get($"sword1h_t{ItemCatalog.SGradeLevel}_common") is null);
+    int midRungs = ItemCatalog.AllItems.Count(d => Crafting.IsGearSlot(d.Slot)
+        && d.Rarity is ItemRarity.Uncommon or ItemRarity.Rare or ItemRarity.Epic or ItemRarity.Legendary);
+    Check("no Uncommon/Rare/Epic/Legendary EQUIPMENT exists", midRungs == 0, $"{midRungs} found");
+    Check("a Mythic piece of gear shows NO rarity word, a Common says 'Common', a potion keeps its own",
+          ItemCatalog.RarityLabel(aSword!) == "" && ItemCatalog.RarityLabel(ItemCatalog.Get("sword1h_t40_common")!) == "Common"
+          && ItemCatalog.RarityLabel(ItemCatalog.Get(ItemCatalog.HealingPotion)!) != "");
 
-    // S is TOP HALF ONLY — crafting produces Legendary, so that rung must exist or S can never be
-    // crafted; and the sub-Epic rungs must NOT exist or they would be endgame clutter.
-    Check("S has a LEGENDARY rung (crafting produces Legendary — without it S is uncraftable)",
-          ItemCatalog.Get($"sword1h_t{ItemCatalog.SGradeLevel}_legendary") is not null);
-    Check("S has NO common/uncommon/rare rungs",
-          ItemCatalog.Get($"sword1h_t{ItemCatalog.SGradeLevel}_common") is null
-          && ItemCatalog.Get($"sword1h_t{ItemCatalog.SGradeLevel}_uncommon") is null
-          && ItemCatalog.Get($"sword1h_t{ItemCatalog.SGradeLevel}_rare") is null);
-    Check("A still HAS the low rungs (only S is top-half)",
-          ItemCatalog.Get("sword1h_t76_common") is not null);
+    // The drop groups, read off the same tables the kill roll uses.
+    float GroupSum(IEnumerable<DropEntry> rows, int g) => rows.Where(r => r.GroupId == g).Sum(r => r.Chance);
+    Check("a normal T40-T61 kill rolls the COMMON group at 0.5%, an elite at 2%",
+          Math.Abs(GroupSum(MobCatalog.GearDrops(45, MobRank.Normal), MobCatalog.GroupCommonGear) - 0.005f) < 1e-6
+          && Math.Abs(GroupSum(MobCatalog.GearDrops(55, MobRank.Elite), MobCatalog.GroupCommonGear) - 0.02f) < 1e-6);
+    Check("a normal mob below T40 or from T76 up drops NO equipment",
+          !MobCatalog.GearDrops(30, MobRank.Normal).Any() && !MobCatalog.GearDrops(78, MobRank.Normal).Any());
+    Check("a boss pays ONE guaranteed Mythic piece at every tier",
+          new[] { 10, 30, 45, 78, 85 }.All(L =>
+              Math.Abs(GroupSum(MobCatalog.GearDrops(L, MobRank.Boss), MobCatalog.GroupBossGear) - 1f) < 1e-5
+              && MobCatalog.GearDrops(L, MobRank.Boss).All(r => ItemCatalog.Get(r.ItemId) is { Rarity: ItemRarity.Mythic })));
 
     // The "(Lesser)" line is GONE — it became the low QUALITIES of the real ladder.
     int lesser = ItemCatalog.AllItems.Count(d => d.Name.Contains("(Lesser)")
@@ -252,8 +268,8 @@ Check("server pushed the warehouse on login", a.Ware is not null);
           fSword is { Rarity: ItemRarity.Mythic, ItemLevel: ItemCatalog.FGradeLevel },
           $"{fSword?.Name} {fSword?.Rarity} lvl {fSword?.ItemLevel}");
     Check("...and it is themed Ferrite (F grade)", fSword?.Name.StartsWith("Ferrite") == true, fSword?.Name);
-    Check("F grade has the low rungs too (so the shop has something cheap)",
-          ItemCatalog.Get($"sword1h_t{ItemCatalog.FGradeLevel}_common") is not null);
+    Check("F grade has NO Common (Commons are T40-T61 only, BL-272)",
+          ItemCatalog.Get($"sword1h_t{ItemCatalog.FGradeLevel}_common") is null);
 
     // A set is joined to its pieces by an id STRING and nothing else, so a mismatch is a bonus that
     // silently never applies — exactly what happened when the newbie kit became the F tier and its set
@@ -276,56 +292,17 @@ Check("server pushed the warehouse on login", a.Ware is not null);
               set is not null && helm is not null && set.AccessorySetId == helm.SetId);
     }
 
-    // ---- A SET MUST BE FOUR PIECES OF THE SAME QUALITY (owner) ----
-    // Previously every Epic/Legendary/Mythic copy carried the SAME set id, so a Mythic body finished
-    // by Epic accessories completed the MYTHIC set at full strength — mixing beat matching. Assert the
-    // ids now segregate by quality, and that each quality's set exists with a scaled bonus.
+    // ---- `BL-272`: EQUIPMENT IS COMMON + MYTHIC, AND ONE SET PER BODY ----
+    // The Epic/Legendary set variants went with their rungs. What is left to assert is that nothing
+    // but the authored set exists, and that a Common piece carries none of it.
     {
-        var mythicBody = ItemCatalog.Get("light_t20");            // authored piece = Mythic
-        var epicBody   = ItemCatalog.Get("light_t20_epic");
-        var legBody    = ItemCatalog.Get("light_t20_legendary");
-        var rareBody   = ItemCatalog.Get("light_t20_rare");
-        Check("Epic and Mythic bodies do NOT share a set id (no mixing)",
-              epicBody is not null && mythicBody is not null && epicBody.SetId != mythicBody.SetId,
-              $"epic '{epicBody?.SetId}' vs mythic '{mythicBody?.SetId}'");
-        Check("Legendary has its own set id too",
-              legBody is not null && legBody.SetId != mythicBody!.SetId && legBody.SetId != epicBody!.SetId);
-        Check("below Epic there is no set at all", rareBody is { SetId: "" }, $"rare SetId '{rareBody?.SetId}'");
-
-        var mSet = ArmorSetCatalog.Get(mythicBody!.SetId);
-        var eSet = ArmorSetCatalog.Get(epicBody!.SetId);
-        Check("both the Mythic and Epic sets exist", mSet is not null && eSet is not null);
-        // The Epic set must be WEAKER — 70% of the authored numbers. Asserted on the HEAVY t20 set
-        // because it is the one that actually carries MaxHp (135); the light set uses Evasion/MaxMp,
-        // and picking a field a set does not use compares 0 against 0 and passes for the wrong reason.
-        var mHeavy = ArmorSetCatalog.Get("set_heavy_t20");
-        var eHeavy = ArmorSetCatalog.Get("set_heavy_t20_epic");
-        Check("the Epic set's bonus is scaled below Mythic's",
-              mHeavy is not null && eHeavy is not null
-                && eHeavy.Mods.MaxHp > 0 && eHeavy.Mods.MaxHp < mHeavy.Mods.MaxHp,
-              $"epic {eHeavy?.Mods.MaxHp} vs mythic {mHeavy?.Mods.MaxHp}");
-        // 🔴 THIS ASSERTION HAD BEEN DEAD SINCE 0.118.0 AND NOBODY KNEW, in the worst of the two ways:
-        //    it probed `ShieldBonus.ShieldDefPct`, a field that commit DELETED, so SmokeTest stopped
-        //    COMPILING — and a test that does not build is a test that cannot fail. Nothing in the
-        //    build gate covers `tools/`. (Second time: see 2026-09-02.)
-        // ⚠ AND IT WAS AIMED AT THE WRONG SET. `set_heavy_t20`'s shield clause was EMPTIED by the same
-        //    commit, so restoring it on any surviving channel would still have read 0 vs 0. The
-        //    invariant — an Epic variant's shield clause is scaled below the Mythic's — is worth
-        //    keeping, so it now asks a set that still HAS one: t40, whose shield gives +5% P.Def.
-        var mHeavyShield = ArmorSetCatalog.Get("set_heavy_t40");
-        var eHeavyShield = ArmorSetCatalog.Get("set_heavy_t40_epic");
-        Check("the Epic set's SHIELD bonus is scaled too",
-              mHeavyShield is not null && eHeavyShield is not null
-                && eHeavyShield.ShieldBonus.PDefPct > 0f
-                && eHeavyShield.ShieldBonus.PDefPct < mHeavyShield.ShieldBonus.PDefPct,
-              $"epic {eHeavyShield?.ShieldBonus.PDefPct} vs mythic {mHeavyShield?.ShieldBonus.PDefPct}");
-        // An Epic body must want EPIC accessories, not the shared line.
-        var epicHelm = ItemCatalog.Get("helm_t20_epic");
-        Check("an Epic body's set wants EPIC accessories",
-              eSet is not null && epicHelm is not null && eSet.AccessorySetId == epicHelm.SetId,
-              $"set wants '{eSet?.AccessorySetId}', epic helm has '{epicHelm?.SetId}'");
-        Check("...and a MYTHIC helm would NOT satisfy it",
-              eSet is not null && ItemCatalog.Get("helm_t20") is { } mh && eSet.AccessorySetId != mh.SetId);
+        var mythicBody = ItemCatalog.Get("light_t40");
+        var commonBody = ItemCatalog.Get("light_t40_common");
+        Check("a Common body carries NO set id (unmodifiable, BL-272)",
+              commonBody is { SetId: "" } && mythicBody is not null && mythicBody.SetId.Length > 0,
+              $"common '{commonBody?.SetId}', mythic '{mythicBody?.SetId}'");
+        Check("the Epic/Legendary set variants are gone",
+              ArmorSetCatalog.Get("set_heavy_t20_epic") is null && ArmorSetCatalog.Get("set_heavy_t40_legendary") is null);
     }
 }
 
@@ -1232,9 +1209,9 @@ b.MyId = entered2.EntityId;
 //     Crafting had NEVER been exercised end-to-end, which hid a static-init crash (RecipeCatalog threw
 //     on first access). It is worth more now than it was then, because `BL-05` gave a craft three gates
 //     that a human playtest cannot easily tell apart when one of them silently fails: you must be AT
-//     your master, you must hold the crafting LEVEL, and a gear craft rolls three ways.
+//     your master, you must hold the crafting LEVEL, and a gear craft rolls success-or-fail.
 //
-//     ⚠ NOTHING HERE ASSERTS "the item appeared". A gear craft is Mythic / Legendary / FAIL, and at the
+//     ⚠ NOTHING HERE ASSERTS "the item appeared". A gear craft is the piece or a FAIL, and at the
 //     A rung it fails half the time — an assertion on the outcome would be a coin flip dressed as a test.
 //     What IS deterministic is the bookkeeping, so that is what is checked:
 //       • mats are consumed on EVERY attempt (his fail rule: *"a fail consumes the materials"*),
@@ -1251,9 +1228,8 @@ b.MyId = entered2.EntityId;
     {
         string bpId = ItemCatalog.RecipeBookId(recipeId);
         int Count(Session s, string defId) => s.Inv?.Items.Where(i => i.DefId == defId).Sum(i => i.Quantity) ?? 0;
-        // Both faces of the coin — the roll lands on the authored Mythic piece or on its Legendary copy.
-        string legendaryId = ItemCatalog.QualityId(recipe.OutputId, ItemRarity.Legendary);
-        int Made(Session s) => Count(s, recipe.OutputId) + Count(s, legendaryId);
+        // The roll lands on the authored piece or fails (the Legendary face went with `BL-272`).
+        int Made(Session s) => Count(s, recipe.OutputId);
 
         await b.Hub.SendAsync("DebugSetProfession", (int)recipe.Profession);
         await b.Hub.SendAsync("DebugSetCraftLevel", recipe.CraftLevel);

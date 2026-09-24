@@ -901,7 +901,7 @@ if (args.Length > 0 && args[0] == "--magicdef")
     Console.WriteLine("  'casts' = MaxHP / dmg, i.e. how many of his best nukes the sheet eats.");
     Console.WriteLine();
 
-    var qualities = new[] { "rare", "epic", "legendary", "mythic" };
+    var qualities = new[] { "mythic" };   // `BL-272`: rare/epic/legendary gear no longer exists
 
     foreach (int L in new[] { 40, 60, 76, 90 })
     {
@@ -1000,7 +1000,7 @@ if (args.Length > 0 && args[0] == "--magicdef")
         if (ench > 0)
         {
             e.Inventory.RemoveAll(i => ItemCatalog.Get(i.DefId)?.Slot == EquipSlot.Jewel);
-            string s = q == "mythic" ? "" : "_" + q;
+            string s = "";   // `BL-272`: S jewels are Mythic only
             EquipEnchanted(e, $"necklace_t80{s}", ench);
             EquipEnchanted(e, $"ring_t80{s}", ench);    EquipEnchanted(e, $"ring_t80{s}", ench);
             EquipEnchanted(e, $"earring_t80{s}", ench); EquipEnchanted(e, $"earring_t80{s}", ench);
@@ -1015,8 +1015,6 @@ if (args.Length > 0 && args[0] == "--magicdef")
     Layer("+ jewels +16", Doc(true, "mythic", 16, false));
     Layer("+ NPC BUFF SHELF (jewels +0)", Doc(true, "mythic", 0, true));
     Layer("+ NPC BUFF SHELF + jewels +16", Doc(true, "mythic", 16, true));
-    Layer("epic jewels +16, buffed", Doc(true, "epic", 16, true));
-    Layer("legendary jewels +16, buffed", Doc(true, "legendary", 16, true));
     return;
 }
 
@@ -2492,10 +2490,10 @@ if (args.Length > 0 && args[0] == "--guards")
 
         foreach (var (id, ench) in new[]
                  {
-                     ($"{(warrior ? "sword2h" : "sword1h")}_t80_epic", 0), ("heavy_t80_epic", 0),
-                     ("helm_t80_epic", 0), ("gloves_t80_epic", 0), ("boots_t80_epic", 0),
-                     ("necklace_t80_epic", 0), ("ring_t80_epic", 0), ("ring_t80_epic", 0),
-                     ("earring_t80_epic", 0), ("earring_t80_epic", 0),
+                     ($"{(warrior ? "sword2h" : "sword1h")}_t80", 0), ("heavy_t80", 0),
+                     ("helm_t80", 0), ("gloves_t80", 0), ("boots_t80", 0),
+                     ("necklace_t80", 0), ("ring_t80", 0), ("ring_t80", 0),
+                     ("earring_t80", 0), ("earring_t80", 0),
                  })
             EquipEnchanted(e, id, ench);
         if (!warrior) EquipEnchanted(e, "shield_t80", 0);
@@ -3888,8 +3886,8 @@ foreach (int L in new[] { 5, 10, 15, 20, 25, 30, 40, 52, 61, 76 })
 Console.WriteLine("  'cons' = potions/scrolls (the Always + Scrolls groups). 'coin' = the gold drop itself.");
 // Price anchors, so the per-kill column above can be checked by hand against docs/design/EconomyRework.md
 // without re-deriving the whole ladder. The E Common gauntlet is the level-25 playtest's actual trash.
-foreach (var id in new[] { "gloves_t20_common", "heavy_t20_common", "sword2h_t20_common",
-                           "ring_t20_common", "heavy_t76_common", "potion_minor" })
+foreach (var id in new[] { "gloves_t40_common", "heavy_t40_common", "sword2h_t40_common",
+                           "ring_t40_common", "heavy_t40", "potion_minor" })
     if (ItemCatalog.Get(id) is ItemDef anchor)
         Console.Write($"  {anchor.Name} [{id.Split('_')[^1]}] buy {ItemCatalog.BuyPrice(anchor):N0} / sell {ItemCatalog.SellPrice(anchor):N0}\n");
 Console.WriteLine();
@@ -4099,8 +4097,7 @@ float liveGearMul = RateConfig.DropGroupRate("armor");
 // the same drops pk.Gear was measured on. A hardcoded 10 here would misreport the moment a rarity moves.
 double liveDivisor = EffectiveGearSellDivisor(PlaytestLevel);
 Console.WriteLine($"  live now: gear groups x{liveGearMul:0.###}, per-rarity sell ladder "
-    + string.Join(" ", new[] { ItemRarity.Common, ItemRarity.Uncommon, ItemRarity.Rare,
-                               ItemRarity.Epic, ItemRarity.Legendary, ItemRarity.Mythic }
+    + string.Join(" ", new[] { ItemRarity.Common, ItemRarity.Mythic }
         .Select(r => $"{r.ToString()[..2]}/{GameConstants.GearSellDivisorFor(r)}"))
     + $" (off the MYTHIC rung)  => effective /{liveDivisor:0.#} off the OWN buy price here, was /10 flat");
 // ⚠ Every multiplier below was tripled on 2026-08-05, when `DropChanceRate` went 3 → 1 and the x3 was
@@ -4726,8 +4723,8 @@ foreach (int L in g3Levels)
 {
     foreach (var arch in g3Archs)
     {
-        var mp = BuildMobPlayer(L, arch, tierDrop: 1, ItemRarity.Common, enchant: 0, kit: false);
-        Console.WriteLine($"{L,4} {arch,9} {G3GearLabel(L, 1, ItemRarity.Common, 0),14} | " +
+        var mp = BuildMobPlayer(L, arch, tierDrop: 1, ItemRarity.Mythic, enchant: 0, kit: false);
+        Console.WriteLine($"{L,4} {arch,9} {G3GearLabel(L, 1, ItemRarity.Mythic, 0),14} | " +
             $"{mp.MaxHp,7} {Ratio(mp.MaxHp, MobBaseStats.Hp(L)),7} " +
             $"{(int)mp.EffectiveDefence,7} {Ratio(mp.EffectiveDefence, MobBaseStats.PDef(L)),6} " +
             $"{(int)mp.EffectiveMagicDefence,7} {Ratio(mp.EffectiveMagicDefence, MobBaseStats.MDef(L)),6} " +
@@ -4749,8 +4746,7 @@ Console.WriteLine("=== G3.2: can GEAR ALONE land on the mob curve? (sweep grade 
 Console.WriteLine("  scored on P.Def / M.Def / attack together — 'worst off' is the biggest single miss.");
 Console.WriteLine($"{"Lvl",4} {"archetype",9} {"best loadout",22} | {"P.Def x",8} {"M.Def x",8} {"atk x",7} " +
                   $"{"worst off",10} | {"HP x needed",12}");
-var g3Qualities = new[] { ItemRarity.Common, ItemRarity.Uncommon, ItemRarity.Rare,
-                          ItemRarity.Epic, ItemRarity.Legendary, ItemRarity.Mythic };
+var g3Qualities = new[] { ItemRarity.Common, ItemRarity.Mythic };   // `BL-272`: the only two rungs left
 foreach (int L in g3Levels)
 {
     foreach (var arch in g3Archs)
@@ -4805,7 +4801,7 @@ foreach (int L in new[] { 20, 30, 40, 52, 61, 76, 85 })
 {
     // tierDrop is computed from level 20 deliberately: the loadout is FIXED at E grade (t20) whatever
     // the spawn level is — that is what "one template, many zones" means today.
-    var mp = BuildMobPlayerFixedTier(L, Archetype.Warrior, tier: 20, ItemRarity.Common, enchant: 0);
+    var mp = BuildMobPlayerFixedTier(L, Archetype.Warrior, tier: 20, ItemRarity.Mythic, enchant: 0);
     Console.WriteLine($"{L,6} {mp.MaxHp,7} {Ratio(mp.MaxHp, MobBaseStats.Hp(L)),7} " +
         $"{(int)mp.EffectiveDefence,7} {Ratio(mp.EffectiveDefence, MobBaseStats.PDef(L)),7} " +
         $"{(int)mp.EffectiveAttack,7} {Ratio(mp.EffectiveAttack, MobBaseStats.PAtk(L)),7}");
@@ -4842,7 +4838,7 @@ foreach (int L in g3Levels)
 
     var opponents = new List<(string Label, Entity E)> { ("today's mob (Kind=Mob)", BuildMobEntity(L)) };
     foreach (var arch in g3Archs)
-        opponents.Add(($"mob-player {arch}", BuildMobPlayer(L, arch, tierDrop: 1, ItemRarity.Common, 0, kit: true)));
+        opponents.Add(($"mob-player {arch}", BuildMobPlayer(L, arch, tierDrop: 1, ItemRarity.Mythic, 0, kit: true)));
 
     bool isTodaysMob = true;
     foreach (var (label, opp) in opponents)
@@ -4884,7 +4880,7 @@ float g3SwingRatio = 1f;   // read by the verdict block below — see the note a
 {
     const int L = 60;
     var oldMob = BuildMobEntity(L);
-    var newMob = BuildMobPlayer(L, Archetype.Warrior, tierDrop: 1, ItemRarity.Common, 0, kit: false);
+    var newMob = BuildMobPlayer(L, Archetype.Warrior, tierDrop: 1, ItemRarity.Mythic, 0, kit: false);
 
     // (a) SWING RATE. The attack interval is keyed off Kind in ResolveAttack, so a mob that becomes a
     //     player swings on the PLAYER clock — a silent DPS uplift nobody authored.
@@ -4907,7 +4903,7 @@ float g3SwingRatio = 1f;   // read by the verdict block below — see the note a
         + $"{Pct(Miss(refPlayer, oldMob))}");
     foreach (var arch in g3Archs)
     {
-        var a = BuildMobPlayer(L, arch, 1, ItemRarity.Common, 0, kit: false);
+        var a = BuildMobPlayer(L, arch, 1, ItemRarity.Mythic, 0, kit: false);
         Console.WriteLine($"                     {arch,-8} AGI {a.Agi,3} acc {a.Accuracy,4} eva {(int)a.EffectiveEvasion,4}"
             + $"  player misses it {Pct(Miss(refPlayer, a)),4}, it misses the player {Pct(Miss(a, refPlayer)),4}"
             + $"{(a.Agi == StatCalculator.MobAgiReference ? "" : "   << OFF THE BENCHMARK")}");
@@ -4929,13 +4925,13 @@ float g3SwingRatio = 1f;   // read by the verdict block below — see the note a
         + $"g@40+ {StatCalculator.HpGrowth(BaseClass.Fighter, Archetype.Warrior, null).T3:0.00}) = {newMob.MaxHp}");
     foreach (var arch in g3Archs)
         Console.WriteLine($"                     {arch,-8} = "
-            + $"{BuildMobPlayer(L, arch, 1, ItemRarity.Common, 0, kit: false).MaxHp,6}"
-            + $"  (needs an HP passive of {Ratio(MobBaseStats.Hp(L), BuildMobPlayer(L, arch, 1, ItemRarity.Common, 0, kit: false).MaxHp)})");
+            + $"{BuildMobPlayer(L, arch, 1, ItemRarity.Mythic, 0, kit: false).MaxHp,6}"
+            + $"  (needs an HP passive of {Ratio(MobBaseStats.Hp(L), BuildMobPlayer(L, arch, 1, ItemRarity.Mythic, 0, kit: false).MaxHp)})");
 
     // (e) THE SKILL KIT. "Different skill kits" is not free — the class tables carry MASTERIES, and a
     //     mob-player that learns them gets stat floors no mob was ever meant to have.
-    var bare = BuildMobPlayer(L, Archetype.Warrior, 1, ItemRarity.Common, 0, kit: false);
-    var kitted = BuildMobPlayer(L, Archetype.Warrior, 1, ItemRarity.Common, 0, kit: true);
+    var bare = BuildMobPlayer(L, Archetype.Warrior, 1, ItemRarity.Mythic, 0, kit: false);
+    var kitted = BuildMobPlayer(L, Archetype.Warrior, 1, ItemRarity.Mythic, 0, kit: true);
     Console.WriteLine($"  learned kit      Warrior L{L}: {kitted.LearnedSkills.Count} skills learned changes "
         + $"P.Atk {(int)bare.EffectiveAttack} -> {(int)kitted.EffectiveAttack} "
         + $"({Ratio(kitted.EffectiveAttack, bare.EffectiveAttack)}), "
@@ -4947,7 +4943,7 @@ float g3SwingRatio = 1f;   // read by the verdict block below — see the note a
     //     geared mob-player only reaches a fifth of the mob's authored P.Atk. Half of it is the RUNE:
     //     a player's expected play state includes the War Rune (+100% P.Atk), and a mob holds no runes.
     //     Measure the split so the weapon-type passive is authored against the right number.
-    var runed = BuildMobPlayer(L, Archetype.Warrior, 1, ItemRarity.Common, 0, kit: false);
+    var runed = BuildMobPlayer(L, Archetype.Warrior, 1, ItemRarity.Mythic, 0, kit: false);
     if (SkillCatalog.Get(SkillCatalog.WarRuneBuff) is SkillDef rune)
     {
         runed.Buffs.Add(new Game.Server.Simulation.BuffInstance
@@ -5005,7 +5001,7 @@ foreach (var arch in g3Archs)
     foreach (var (name, need) in stats)
     {
         var vals = g3Levels
-            .Select(L => need(BuildMobPlayer(L, arch, 1, ItemRarity.Common, 0, kit: false), L))
+            .Select(L => need(BuildMobPlayer(L, arch, 1, ItemRarity.Mythic, 0, kit: false), L))
             .ToArray();
         double spread = vals.Max() / Math.Max(1e-6, vals.Min());
         string verdict = spread < 1.25 ? "FLAT — one authored number does it"
@@ -5036,8 +5032,7 @@ Console.WriteLine("  best = the smallest worst-miss over armor(grade x quality x
 Console.WriteLine("  'passive needed' = what a mob passive must still supply. His hypothesis: all of it inside x2.");
 Console.WriteLine($"{"Lvl",4} {"archetype",9} {"armor",16} {"weapon",16} | {"P.Def x",8} {"M.Def x",8} " +
                   $"{"atk x",7} | {"passive needed (pd/md/atk/hp)",30} {"fits x2?",9}");
-var g37Qualities = new[] { ItemRarity.Common, ItemRarity.Uncommon, ItemRarity.Rare,
-                           ItemRarity.Epic, ItemRarity.Legendary, ItemRarity.Mythic };
+var g37Qualities = new[] { ItemRarity.Common, ItemRarity.Mythic };  // `BL-272`: the only two rungs left
 int[] g37ArmorEnch  = { 0, 8, 16 };
 int[] g37WeaponEnch = { 0, 16, 30, 45, 60 };
 int g37Fits = 0, g37Rows = 0;
@@ -8324,7 +8319,10 @@ static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality =
     // asking for epic got mythic, ~+40% of P.Def, and the rig looked 73% richer than his screen.
     // ⚠ `_mythic` is NOT a real id. Asking for it prints "missing item" and dresses a NAKED character.
     int t = gearTier > 0 ? gearTier : GearTier(level);   // BL-169: an explicit tier lets his own gear be reproduced
-    string q = quality is null or "mythic" ? "" : "_" + quality;
+    // `BL-272` (2026-09-24): equipment is Common + Mythic only, and Common exists at T40-T61. Any other
+    // quality word (the old "epic" default, "rare", "legendary") now dresses the MYTHIC piece, because
+    // that is the only rung left; "common" off its window does too rather than dressing a naked rig.
+    string q = quality == "common" && ItemCatalog.HasCommonTier(t) ? "_common" : "";
     // 🔴🔑 EVERY CLASS WEARS ITS OWN WEIGHT AND ITS OWN WEAPON (owner, 2026-09-09). Until then this
     //   block dressed EVERY Fighter in heavy plate, a shield and a ONE-HANDED SWORD — so the warrior
     //   was measured with the tank's weapon, and the rogue and the archer were measured in plate they
@@ -10228,7 +10226,7 @@ static void GoldFlow()
         // piece has no Common rung at all, ItemCatalog.IsTopHalfOnly). Asking for one printed a 0 and
         // read as "free", so the column takes the CHEAPEST body that actually exists at that tier and
         // names its rarity. The ladder shifting under you is part of what the drift IS.
-        var bodyRungs = new[] { "_common", "_uncommon", "_rare", "_epic", "_legendary", "" }
+        var bodyRungs = new[] { "_common", "" }   // `BL-272`: Common (T40-T61) + Mythic
             .Select(sfx => ItemCatalog.Get($"heavy_t{tier}{sfx}"))
             .Where(d => d is not null && ItemCatalog.BuyPrice(d) > 0)
             .OrderBy(d => ItemCatalog.BuyPrice(d!))

@@ -7,11 +7,52 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.198.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.199.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-24 (latest) — 0.198.0: Charisma (`BL-283`, closes step 5 of the rework order)
+## 2026-09-24 (latest) — 0.199.0: the rarity collapse (`BL-272` part 1, step 6 of the rework order)
+
+> *"equipment will have common equip items and normal (current mythic) items -> no longer in between"*
+
+**Equipment is Common + Mythic now.** Uncommon, Rare, Epic and Legendary gear is deleted: the items, their
+drop rungs, and the Epic/Legendary set variants (93 sets → 31). Consumables and materials keep all six rarities.
+
+- **Mythic** is the authored piece. The player sees it as a **plain item** with no rarity word (the tooltip
+  drops the row, and the loot line reads `[D]` instead of `[D/Mythic]`). It keeps its colour.
+- **Common** exists at **T40, T52 and T61 only** (`{id}_common`). It has the Mythic piece's stats and is
+  **unmodifiable**: no set bonus, no attribute, no enchant. The server refuses the enchant, and the client never
+  offers a Common in the enchant picker. Its tooltip says so. It keeps the old Common price: ×0.225 of the Mythic
+  buy price, Mythic ÷ 200 when sold (a T40 two-hander buys at 1.93kk and sells for 42,857).
+- **Drops.** A normal T40-T61 kill rolls **0.5%** and an elite **2%** for one Common piece, through their own
+  group `common` (×1, so those are the delivered chances; tune it with `/droprate common`). Each family
+  (armour / accessory / weapon / jewel) gets an equal quarter of that roll. **Below T40 and from T76 up, normal
+  and elite mobs drop no equipment** until `BL-274` gives every mob its rare Mythic.
+
+His interim rulings for what the deleted rungs used to feed, until the later steps replace them:
+- **Bosses** pay **one guaranteed Mythic piece** of their tier (group `boss`, ×1), pulled forward from
+  `BL-274` part 2. The old 2%-per-family Mythic accent stays as it was. This replaces Epic 70% + Legendary 40%.
+- **Merchants** sell **Mythic T1 / T20 / T40** at the authored price (pulled forward from step 8). Examples:
+  a T20 one-hander costs 1.91kk (you remembered ~1.4kk), a T40 heavy body 5.14kk, a T40 two-hander 8.57kk.
+  The T52 essence shop and the 2-hour Common boxes are still step 8.
+- **Crafting:** the Legendary share of a gear craft is now a **fail**. Success is his old Mythic column
+  unchanged (E 50% … A 20%, S 5%). The mats were sized for S at 25% success, so an S craft costs 5× more until
+  the recipe rework (`BL-273` part 2).
+- **Town guards and the `BL-47` demo creatures wear Mythic**, and their stats rise as a result (Epic was 70%).
+
+🔴 **Measured (BalanceMatrix, before → after): gear was the gold faucet and it has mostly closed.** Gear value
+per normal kill: level 20-39 **158 → 0**, 52 **2,076 → 351**, 61 **4,613 → 780**, 76 **9,226 → 0**. The
+playtest-18 idle farm that sold gear reads **541k → 350k**, which is his "sold nothing" figure. This follows
+directly from the ruled numbers and no knob was moved; `BL-274` (per-mob rare Mythic drops) is what refills it.
+⚠ BalanceMatrix's historical `G3` tables (mobs built as players) were fitted on Common/Rare/Epic loadouts that
+no longer exist. They now measure Mythic, so their old conclusions ("15/16 rows fit a ×2 passive") are not
+reproducible. ⚠ Until step 7, salvaging a Mythic item still yields **Mythic** materials. A shop-bought T20/T40
+or a boss's guaranteed piece is therefore a source of Mythic mats. Step 7 replaces salvage with essence.
+
+`game.db` delete (items with deleted ids). New APK needed (the client's catalogue, tooltip and craft window
+changed). SmokeTest: 12 new catalogue checks pass; the 3 pre-existing crafting FAILs remain.
+
+## 2026-09-24 — 0.198.0: Charisma (`BL-283`, closes step 5 of the rework order)
 
 > *"player recomendetions/likes/charisma points increase the gauge fill up rate as well"*
 

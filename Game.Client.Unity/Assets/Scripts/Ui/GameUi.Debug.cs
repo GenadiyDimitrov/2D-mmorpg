@@ -65,8 +65,8 @@ namespace Game.Client
 
         private static readonly (ItemRarity Value, string Label)[] Qualities =
         {
-            (ItemRarity.Common, "Common"), (ItemRarity.Uncommon, "Uncommon"), (ItemRarity.Rare, "Rare"),
-            (ItemRarity.Epic, "Epic"), (ItemRarity.Legendary, "Legendary"), (ItemRarity.Mythic, "Mythic")
+            // Equipment is Common + Mythic since `BL-272`; Common exists at T40-T61 only.
+            (ItemRarity.Common, "Common"), (ItemRarity.Mythic, "Mythic")
         };
         private int _debugTpView;          // 0 root, 1 npcs, 2 zones, 3 cities, 4 bosses (`BL-175`)
         // 0 root, 1 crafting materials, 2 blueprints, and `BL-176`'s four:
@@ -404,14 +404,13 @@ namespace Game.Client
                 "armor" => "Armor & Shields", "weapon" => "Weapons", _ => "Jewels"
             };
 
-            // A quality is dimmed when the TIER in hand does not carry it. S grade is top-half only, so
-            // below Epic at level 80+ there is genuinely no item to give — the note below says so.
+            // A quality is dimmed when the TIER in hand does not carry it: Common exists at T40-T61 only.
             DebugHeader("Quality");
             DebugChips(Qualities, r => r == _debugEquipRarity,
                        r => { _debugEquipRarity = r; RefreshDebugPanel(); },
                        r => _debugEquipLevel == 0
-                            || !ItemCatalog.IsTopHalfOnly(_debugEquipLevel)
-                            || ItemCatalog.HasIdentity(r));
+                            || r == ItemRarity.Mythic
+                            || ItemCatalog.HasCommonTier(_debugEquipLevel));
 
             DebugHeader("Tier");
             var levels = GearLevels()
@@ -434,10 +433,9 @@ namespace Game.Client
             _debugTitle.text = $"{catLabel} — {_debugEquipRarity}, Level {_debugEquipLevel} " +
                                $"({ItemCatalog.TierLetter(_debugEquipLevel)}-Grade)";
 
-            if (ItemCatalog.IsTopHalfOnly(_debugEquipLevel) && !ItemCatalog.HasIdentity(_debugEquipRarity))
+            if (_debugEquipRarity == ItemRarity.Common && !ItemCatalog.HasCommonTier(_debugEquipLevel))
             {
-                DebugNote($"S grade carries Epic, Legendary and Mythic only — there is no " +
-                          $"{_debugEquipRarity} rung at level {_debugEquipLevel}.");
+                DebugNote($"Common gear exists at T40-T61 only — there is no Common rung at level {_debugEquipLevel}.");
                 return;
             }
 
@@ -446,12 +444,12 @@ namespace Game.Client
             bool listHeaded = false;
             if (_debugEquipCat == "armor")
             {
-                if (!ItemCatalog.HasIdentity(_debugEquipRarity))
+                if (_debugEquipRarity == ItemRarity.Common)
                 {
-                    // Below Epic a generated copy carries no SetId and no attributes (the 70% split), so
-                    // four matching pieces are still four separate items. Offering a "full set" button
-                    // there would promise a bonus that cannot exist.
-                    DebugNote("Below Epic a piece has no set bonus and no attributes — no set to hand out.");
+                    // A Common carries no SetId and no attributes (`BL-272`), so four matching pieces are
+                    // still four separate items. Offering a "full set" button would promise a bonus that
+                    // cannot exist.
+                    DebugNote("Common gear has no set bonus and no attributes — no set to hand out.");
                 }
                 else
                 {

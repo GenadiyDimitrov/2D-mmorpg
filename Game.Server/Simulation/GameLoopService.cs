@@ -2761,6 +2761,13 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // A COMMON piece is unmodifiable (`BL-272`): *"cannot enchant ... its just flat defense"*.
+        if (ItemCatalog.IsCommonGear(targetDef))
+        {
+            SendSystemToEntity(player, $"{targetDef.Name} is Common gear and cannot be enchanted.");
+            return;
+        }
+
         if (target.Enchant >= EnchantRules.MaxEnchant)
         {
             SendSystemToEntity(player, $"{targetDef.Name} is already at max enchant.");
@@ -3378,9 +3385,9 @@ public class GameLoopService : BackgroundService
     ///
     /// <para>Two kinds of roll live here. A material or consumable recipe rolls its own
     /// <see cref="Recipe.SuccessChance"/> — succeed or lose the mats. A GEAR recipe rolls the owner's
-    /// three-way table instead (<see cref="Crafting.GearCraftOdds"/>): Mythic, Legendary, or a failure
-    /// that eats the materials. Only Legendary and Mythic gear is craftable at all, which is why there
-    /// is no third success rung to fall to.</para></summary>
+    /// table instead (<see cref="Crafting.GearCraftOdds"/>): the piece, or a failure that eats the
+    /// materials. (It was three-way until `BL-272` deleted the Legendary rung; that share is a fail
+    /// now, his interim ruling until the `BL-273` recipe rework.)</para></summary>
     private void HandleCraft(CraftCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player))
@@ -3467,18 +3474,15 @@ public class GameLoopService : BackgroundService
         foreach (var inp in recipe.Inputs)
             tookFromWarehouse |= CraftConsume(player, inp.ItemId, inp.Qty, useWh);
 
-        // ---- THE ROLL. Gear takes the owner's three-way table; everything else its own SuccessChance.
+        // ---- THE ROLL. Gear takes the owner's success-or-fail table; everything else its own SuccessChance.
         var outDef = ItemCatalog.Get(recipe.OutputId);
         bool isGear = outDef is not null && Crafting.IsGearSlot(outDef.Slot);
         string? madeId = null;
         if (isGear)
         {
-            var odds = Crafting.GearCraftOdds(recipe.CraftLevel);
-            double roll = _rng.NextDouble();
-            if (roll < odds.Mythic) madeId = recipe.OutputId;                     // the authored piece
-            else if (roll < odds.Mythic + odds.Legendary)
-                madeId = ItemCatalog.QualityId(recipe.OutputId, ItemRarity.Legendary);
-            // else: fail — the mats are gone, which is the crafting economy's first real sink.
+            // A fail eats the mats, which is the crafting economy's first real sink.
+            if (_rng.NextDouble() < Crafting.GearCraftOdds(recipe.CraftLevel).Success)
+                madeId = recipe.OutputId;                     // the authored piece
         }
         else if (_rng.NextDouble() < recipe.SuccessChance)
         {
@@ -3503,8 +3507,7 @@ public class GameLoopService : BackgroundService
         {
             AddItem(player, madeId, recipe.OutputQty);
             string madeName = ItemCatalog.Get(madeId)?.Name ?? madeId;
-            string quality = isGear ? $" ({ItemCatalog.Get(madeId)?.Rarity})" : "";
-            SendSystemToEntity(player, $"Crafted {madeName}{quality}"
+            SendSystemToEntity(player, $"Crafted {madeName}"
                 + (recipe.OutputQty > 1 ? $" x{recipe.OutputQty}." : "."));
         }
         else
@@ -16333,7 +16336,7 @@ public class GameLoopService : BackgroundService
                     SendSystemToEntity(to, $"{mob.Name} dropped {rolled}x {def.Name} — only {got} fit!");
 
                 string qtyLabel = got > 1 ? $" x{got}" : "";
-                SendCombatToEntity(to, "LOOT", $"You looted: {def.Name}{qtyLabel} [{def.Grade}/{def.Rarity}]");
+                SendCombatToEntity(to, "LOOT", $"You looted: {def.Name}{qtyLabel} [{def.Grade}{(ItemCatalog.RarityLabel(def) is { Length: > 0 } rl ? "/" + rl : "")}]");
                 // Let the rest of the in-range party see where it went.
                 if (eligible.Count > 1)
                     foreach (var m in eligible)
@@ -19736,14 +19739,13 @@ public class GameLoopService : BackgroundService
                 string name = ItemCatalog.Get(d.ItemId)?.Name ?? d.ItemId;
                 return d.MaxQty > 1 ? $"{name} x{d.MinQty}-{d.MaxQty}" : name;
             }
-            // "Armor · Rare", "Mats", "Scrolls" — the group's tuning name (the word /droprate takes),
-            // plus the rarity for the four gear families, which is the half that tells them apart.
+            // "Armor", "Common", "Boss", "Mats" — the group's tuning name (the word /droprate takes). The
+            // rarity suffix went with `BL-272`: a family group now only ever holds the Mythic rung.
             string GroupTitle(int groupId)
             {
                 string name = MobCatalog.GroupName(groupId);
                 string head = char.ToUpperInvariant(name[0]) + name.Substring(1);
-                return MobCatalog.IsGearGroup(groupId)
-                    ? $"{head} · {(ItemRarity)((groupId - 10) % 10)}" : head;
+                return head;
             }
 
             // The chances are shown as THIS player would roll them, so a Rune of Drop moves the numbers

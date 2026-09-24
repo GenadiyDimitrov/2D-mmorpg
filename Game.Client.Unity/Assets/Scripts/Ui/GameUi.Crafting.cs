@@ -272,10 +272,8 @@ namespace Game.Client
                 rungLocked ? Tinted("Crafting L" + recipe.CraftLevel, false)
                 : levelLocked ? Tinted("Needs level " + recipe.LearnLevel, false)
                 : needsBlueprint ? Tinted("Blueprint not learned", false)
-                // A gear craft is not a success/fail coin — it is Mythic / Legendary / nothing, and the
-                // player is choosing whether to spend hours of materials on those odds. Show all three.
-                : isGear ? Tinted(Mathf.RoundToInt(odds.Mythic * 100f) + "% Mythic  "
-                                  + Mathf.RoundToInt(odds.Legendary * 100f) + "% Legendary  "
+                // A gear craft is the piece or nothing (the Legendary rung went with `BL-272`).
+                : isGear ? Tinted(Mathf.RoundToInt(odds.Success * 100f) + "% success  "
                                   + Mathf.RoundToInt(odds.Fail * 100f) + "% fail", true)
                 : recipe.SuccessChance >= 1f ? Tinted("Guaranteed", true)
                 : Tinted(Mathf.RoundToInt(recipe.SuccessChance * 100f) + "% success", true);
@@ -289,8 +287,7 @@ namespace Game.Client
             string id = recipe.Id;                 // captured per row
             float chance = recipe.SuccessChance;
             string oddsLine = isGear
-                ? Mathf.RoundToInt(odds.Mythic * 100f) + "% Mythic, "
-                  + Mathf.RoundToInt(odds.Legendary * 100f) + "% Legendary, "
+                ? Mathf.RoundToInt(odds.Success * 100f) + "% success, "
                   + Mathf.RoundToInt(odds.Fail * 100f) + "% failure"
                 : Mathf.RoundToInt(chance * 100f) + "% chance to succeed";
             CraftRow(label, enabled, () =>

@@ -36,20 +36,22 @@ public static class ShopCatalog
         static bool IsWeapon(ItemDef d) => d.Slot == EquipSlot.Weapon;
 
         // The REAL gear ladder at the three shop grades. Only F/E/D is ever sold (owner) — C and above
-        // are crafted, dropped or taken off a boss — and only up to RARE, because Epic is where set
-        // bonuses and rolled attributes begin and that tier is not for sale at any price.
+        // are crafted, dropped or taken off a boss.
         //
-        // ItemLevel 1/20/40 are the F/E/D tiers; the price for each comes from the owner's table in
-        // ItemCatalog.TieredGearPrice, scaled down for the low qualities (they drop freely, so at full
-        // price nobody would buy one).
+        // 🔑 `BL-272` (2026-09-23): the shop sells the MYTHIC piece, at its full authored price
+        // (ItemCatalog.TieredGearPrice). It used to sell the Common/Uncommon/Rare copies at a cut, and
+        // those rungs no longer exist: *"Weapon / armour / jewellery merchants sell Mythic T1, T20 and
+        // T40"*. Only the plain base-tier ids are stocked, the same lines the old copies were made of
+        // (the alternate set VARIANTS such as "heavy_t40_dmg" stay off the shelf, as they always were).
+        // The T52 essence shop and the 2-hour Common boxes are `BL-272` part 2.
         var shopGrades = new[] { ItemCatalog.FGradeLevel, 20, 40 };
-        var shopQualities = new[] { ItemRarity.Common, ItemRarity.Uncommon, ItemRarity.Rare };
         var ladderGear = ItemCatalog.AllItems
             .Where(d => shopGrades.Contains(d.ItemLevel)
-                && shopQualities.Contains(d.Rarity)
+                && d.Rarity == ItemRarity.Mythic
+                && ItemCatalog.IsBaseTier(d.Id)
                 && d.Slot is EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield or EquipSlot.Jewel
                 )
-            .OrderBy(d => d.ItemLevel).ThenBy(d => d.Slot).ThenBy(d => d.Rarity).ThenBy(d => d.Name)
+            .OrderBy(d => d.ItemLevel).ThenBy(d => d.Slot).ThenBy(d => d.Name)
             .ToArray();
 
         string[] WeaponsOf(params ItemDef[][] sets) =>
