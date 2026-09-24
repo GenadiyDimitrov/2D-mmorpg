@@ -2318,7 +2318,8 @@ group "essence"), and `KillTable`, the one table the roll, inspect and `DropInde
 🟢 **PART 2 (step 12) BUILT 0.207.0** (design doc §2.3 "Step 12 proposal" + answers): `MobCatalog.BossDrops`: the
 guaranteed full item (now T80 at 80+), books 1 a kill at 100% (T40-T61) / 1.5 at 60% (T76/T80), base mats ×100,
 parts and both metals ×10, T76/T80 essence 1/10 of a 2H's break. All table rows; `BL-50` and `BL-262` closed.
-**Open: step 13 (daily recipe quests).**
+**Open: step 13 (daily recipe quests), ✅ RULED 2026-09-24** (design doc §2.3 "Step 13 proposal" + answers: three
+Frostmere givers, the other two as contacts at 8 kills each on the kind's own carriers, the 40% book only).
 
 ## `BL-280` 🔵 ZONES BY ARCHETYPE, AND NO MOB CLUSTERS
 
