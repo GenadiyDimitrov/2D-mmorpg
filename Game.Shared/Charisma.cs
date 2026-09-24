@@ -80,6 +80,18 @@ public static class Charisma
         return Refusal.None;
     }
 
+    /// <summary>Staff `/like &lt;name&gt; -f &lt;value&gt;` (owner, 2026-09-24): FORCE current charisma to
+    /// <paramref name="value"/> (clamped 0 … <see cref="CurrentCap"/>). The ring is emptied and the whole value
+    /// lands on today's slot, so the sheet reads exactly that number now and it ages out like a day of
+    /// recommendations would. Lifetime and today's giver list are untouched. Returns the value set.</summary>
+    public static int ForceCurrent(int[] ring, ref int ringDay, List<string> giversToday, int value, int today)
+    {
+        Advance(ring, ref ringDay, giversToday, today);
+        Array.Clear(ring, 0, ring.Length);
+        ring[0] = Math.Clamp(value, 0, CurrentCap);
+        return ring[0];
+    }
+
     public static string RefusalText(Refusal r, string target) => r switch
     {
         Refusal.AlreadyToday => $"You have already recommended {target} today.",

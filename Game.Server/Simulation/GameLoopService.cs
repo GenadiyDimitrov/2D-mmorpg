@@ -7469,6 +7469,26 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // THE FOURTH: `/like <name>` (owner, 2026-09-24) — the typed Recommend, for everyone, through the
+        // very same rules as the button (HandleLike). Only the `-f <value>` form is staff: it falls through
+        // to the gate and the `like` case below, so a Moderator (whose allow-list lacks it) is refused there.
+        if (cmd.Command.Equals("like", StringComparison.OrdinalIgnoreCase)
+            && TryGetPlayer(cmd.ConnectionId, out var liker))
+        {
+            var likeArg = cmd.Argument.Trim();
+            if (!ParseLikeForce(likeArg, out _, out _))
+            {
+                if (likeArg.Length == 0) SendSystemToEntity(liker, "Usage: /like <name>");
+                else HandleLike(new LikeCmd(cmd.ConnectionId, likeArg));
+                return;
+            }
+            if (!liker.IsStaff)
+            {
+                SendSystemToEntity(liker, "Only staff can force charisma. Usage: /like <name>");
+                return;
+            }
+        }
+
         // SERVER-AUTHORIZED (owner): every moderation action re-checks the caller's role here, in
         // addition to the hub's session check — these SHIP in release, so authorization can't rely on a
         // compile flag the way the DEBUG cheats do.
@@ -8160,6 +8180,37 @@ public class GameLoopService : BackgroundService
                 SendSystemToEntity(admin, $"{statWhat} forced to {statV:0.##}.");
                 SendStats(admin);
                 PushSelfState(admin);
+                break;
+            }
+
+            // `/like <name> -f <value>` (owner, 2026-09-24) — FORCE a character's current (30-day) charisma
+            // to <value>: *"if a player have 1000 monthly and admin do '-f 0' the players score should show
+            // 0"*. Lifetime is left alone. Online or offline. (The plain `/like <name>` never reaches here.)
+            case "like":
+            {
+                if (!ParseLikeForce(arg, out string forceName, out int? forceArg) || forceName.Length == 0 || forceArg is not int forceValue || forceValue < 0)
+                {
+                    SendSystemToEntity(admin, $"Usage: /like <name> -f <0-{Charisma.CurrentCap}>  — sets current charisma.");
+                    break;
+                }
+                int today = Charisma.Today();
+                if (FindOnlinePlayer(forceName) is Entity ft)
+                {
+                    int day = ft.CharismaRingDay;
+                    int set = Charisma.ForceCurrent(ft.CharismaRing, ref day, ft.CharismaGiversToday, forceValue, today);
+                    ft.CharismaRingDay = day;
+                    SaveEntity(ft);
+                    SendFavor(ft);   // the sheet's Charisma line and the Blessing fill rate
+                    SendSystemToEntity(admin, $"{ft.Name}: current charisma set to {set} (lifetime {ft.CharismaLifetime:N0}).");
+                    break;
+                }
+                _ = Task.Run(async () =>
+                {
+                    var r = await _db.ForceCharismaCurrentAsync(forceName, forceValue, today);
+                    SendSystemToEntity(admin, r is { } ok
+                        ? $"{ok.Name} (offline): current charisma set to {ok.Value}."
+                        : $"No character named '{forceName}'.");
+                });
                 break;
             }
 
@@ -9340,6 +9391,20 @@ public class GameLoopService : BackgroundService
     /// record of recommendations received and no penalty edits it (his call, 2026-09-24).</summary>
     private static void AdjustCharismaLifetime(Entity target, long delta) =>
         target.CharismaLifetime = Math.Max(0, target.CharismaLifetime + delta);
+
+    /// <summary>`/like` argument: true when it carries the staff `-f` flag, splitting it into the name (the
+    /// words before `-f`) and the value after it. A missing/unparsable value still returns true with
+    /// <paramref name="value"/> = null, so the staff case prints its usage rather than liking "Ivan -f".</summary>
+    private static bool ParseLikeForce(string arg, out string name, out int? value)
+    {
+        name = arg; value = null;
+        var parts = arg.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        int f = Array.FindIndex(parts, s => s.Equals("-f", StringComparison.OrdinalIgnoreCase));
+        if (f < 0) return false;
+        name = string.Join(' ', parts[..f]);
+        if (f + 1 < parts.Length && int.TryParse(parts[f + 1], out int v)) value = v;
+        return true;
+    }
 
     /// <summary>Apply a charisma change to a character by name on the tick thread (online → live entity;
     /// offline → DB). Enqueued by the worker-thread moderation callbacks.</summary>

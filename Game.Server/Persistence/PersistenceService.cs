@@ -1729,6 +1729,25 @@ public class PersistenceService
         return true;
     }
 
+    /// <summary>Staff `/like -f` on an OFFLINE character: force current charisma (<see cref="Charisma.ForceCurrent"/>).
+    /// Returns the canonical name and the value set, or null when no such character exists.</summary>
+    public async Task<(string Name, int Value)?> ForceCharismaCurrentAsync(string characterName, int value, int today)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var lower = characterName.ToLower();
+        var c = await db.Characters.FirstOrDefaultAsync(ch => ch.Name.ToLower() == lower);
+        if (c is null) return null;
+        var ring = Charisma.ParseRing(c.CharismaRingCsv);
+        var givers = Charisma.ParseGivers(c.CharismaGiversCsv);
+        int day = c.CharismaRingDay;
+        int set = Charisma.ForceCurrent(ring, ref day, givers, value, today);
+        c.CharismaRingCsv = Charisma.FormatRing(ring);
+        c.CharismaGiversCsv = Charisma.FormatGivers(givers);
+        c.CharismaRingDay = day;
+        await db.SaveChangesAsync();
+        return (c.Name, set);
+    }
+
     /// <summary>CHAT-BAN a character until <paramref name="until"/> (null = lift).</summary>
     public async Task<bool> SetChatBanAsync(string characterName, DateTime? until)
     {

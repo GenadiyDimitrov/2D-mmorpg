@@ -7,12 +7,26 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.209.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.209.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-24 (latest) — 0.209.0: the anti-type zones, and aggression only from level 80 (`BL-280`)
+## 2026-09-24 (latest) — 0.209.1: `/like <name>`, and the staff `-f` that forces charisma
+
+> *"Make an admin command "/like <name> [-f 1234]" where a normal player like command stop to the name and admin
+> can add -f(force) option ... if a player have 1000 monthly and admin do "..-f 0" the players score should show 0"*
+
+- **`/like <name>`** is the typed Recommend, for every player. It runs the same rules as the button, and
+  `@t`/`@s` work in it. **A new APK is needed** for ordinary players, because the client used to refuse the slash command.
+- **`/like <name> -f <0-1000>`** (Admin+) **sets** current (30-day) charisma to that number, online or offline.
+  Your first reading was chosen: *set the sum*, not *add to today*. The ring is emptied and the whole value is put on
+  today's slot, so the sheet reads exactly that number now and it ages out after 30 days like real recommendations.
+  Adding a negative number to today's slot was the other reading. It would have left negative days that swallow new likes
+  for a month, so it was not used. **Lifetime (the board) is not touched**; a ban and `/jail` still drain it.
+- SmokeTest: four new checks (a player's `/like`, a player's `-f` refused, staff `-f` online and offline).
+
+## 2026-09-24 — 0.209.0: the anti-type zones, and aggression only from level 80 (`BL-280`)
 
 > *"anti mage and anti fighter and anti archer mobs need to be in self zones"*
 

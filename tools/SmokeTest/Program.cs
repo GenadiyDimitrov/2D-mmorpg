@@ -862,6 +862,28 @@ a.SystemChat.Clear();
 await a.Hub.SendAsync("Like", name);   // can't recommend yourself
 await a.Settle();
 Check("you can't recommend yourself", a.SystemChat.Any(s => s.Contains("can't recommend yourself")));
+// The typed `/like` (2026-09-24): an ordinary player reaches HandleLike through the admin path, and its
+// staff `-f` form is refused for them; staff force CURRENT charisma, online and offline.
+friend.SystemChat.Clear();
+await friend.Hub.SendAsync("AdminCommand", "like", "Test2");   // refused (self) — spends no budget on the seeded Test2
+await friend.Hub.SendAsync("AdminCommand", "like", $"{name} -f 0");
+await a.Settle();
+Check("a player's typed /like runs the Recommend rules",
+      friend.SystemChat.Any(s => s.Contains("can't recommend yourself")),
+      string.Join(" | ", friend.SystemChat));
+Check("a player's /like -f is refused (staff only)",
+      friend.SystemChat.Any(s => s.Contains("Only staff can force charisma")), string.Join(" | ", friend.SystemChat));
+a.SystemChat.Clear();
+await a.Hub.SendAsync("AdminCommand", "like", "Test2 -f 0");
+await a.Settle();
+Check("staff /like <online> -f 0 sets current charisma to 0",
+      a.SystemChat.Any(s => s.Contains("Test2: current charisma set to 0")), string.Join(" | ", a.SystemChat));
+a.SystemChat.Clear();
+await a.Hub.SendAsync("AdminCommand", "like", $"{victimName} -f 300");
+for (int attempt = 0; attempt < 10 && !a.SystemChat.Any(s => s.Contains("(offline)")); attempt++)
+    await Task.Delay(300);
+Check("staff /like <offline> -f 300 sets it in the DB",
+      a.SystemChat.Any(s => s.Contains($"{victimName} (offline): current charisma set to 300")), string.Join(" | ", a.SystemChat));
 a.SystemChat.Clear();
 await a.Hub.SendAsync("Like", victimName);   // offline, and on the protagonist's OWN account
 for (int attempt = 0; attempt < 10 && !a.SystemChat.Any(s => s.Contains("own account")); attempt++)

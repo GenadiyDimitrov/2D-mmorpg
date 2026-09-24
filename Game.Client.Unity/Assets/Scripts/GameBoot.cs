@@ -3134,7 +3134,10 @@ namespace Game.Client
                     bool playerAllowed = (cmd.Equals("where", StringComparison.OrdinalIgnoreCase)
                                           && arg.Length == 0)
                                          || cmd.Equals("buff", StringComparison.OrdinalIgnoreCase)
-                                         || cmd.Equals("unstuck", StringComparison.OrdinalIgnoreCase);
+                                         || cmd.Equals("unstuck", StringComparison.OrdinalIgnoreCase)
+                                         // `/like <name>` (2026-09-24) — the typed Recommend; its staff
+                                         // `-f <value>` form is gated server-side.
+                                         || cmd.Equals("like", StringComparison.OrdinalIgnoreCase);
                     if (!IsAdmin && !playerAllowed) { ClientLog.Warn("Unknown command: " + raw); return; }
                     await _net.AdminCommandAsync(cmd, arg);
                     return;
