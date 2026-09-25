@@ -30,6 +30,26 @@ public class PersistenceService
     /// One gate for every save path keeps it correct no matter how many call sites appear later.</summary>
     private readonly SemaphoreSlim _saveGate = new(1, 1);
 
+    /// <summary>The newest snapshot (<see cref="CharacterSnapshot.Seq"/>) written per character. Read and
+    /// written ONLY inside <see cref="_saveGate"/>, so it needs no lock of its own.
+    ///
+    /// 🔴 THE GATE SERIALISES SAVES; IT DOES NOT ORDER THEM. Each save is its own <c>Task.Run</c>, and
+    /// neither the thread pool nor <see cref="SemaphoreSlim"/> promises first-come-first-served. Two
+    /// saves of one character queued in the same tick could therefore land in EITHER order, and when
+    /// the older landed last it overwrote the newer on disk — silently, until the next autosave, or
+    /// for good if the newer one was the logout save. It was caught by the SmokeTest's jail check
+    /// (`§103.2`): <c>/jail</c> saves the teleport and then saves the charisma drain in the same tick,
+    /// and about one run in four the board still listed the jailed player, because the pre-drain
+    /// snapshot had won. Polling longer could never have fixed it.
+    ///
+    /// A snapshot is a WHOLE character, so skipping an older one loses nothing the newer does not
+    /// already carry.</summary>
+    private readonly Dictionary<int, long> _lastSavedSeq = new();
+
+    /// <summary>True if a newer snapshot of this character is already on disk. Call inside the gate.</summary>
+    private bool IsStale(CharacterSnapshot snap) =>
+        _lastSavedSeq.TryGetValue(snap.CharacterId, out var last) && last > snap.Seq;
+
     public PersistenceService(IDbContextFactory<GameDbContext> factory) => _factory = factory;
 
     public async Task EnsureCreatedAsync()
@@ -1071,6 +1091,14 @@ public class PersistenceService
         int SocialOptions,
         IReadOnlyList<ItemSnapshot> Items)
     {
+        private static long _seqCounter;
+
+        /// <summary>The ORDER this snapshot was taken in, stamped at construction — which is always on
+        /// the tick thread (see <see cref="From"/>), so a higher number is a newer state of the world.
+        /// <see cref="SaveCharacterAsync"/> uses it to refuse a write older than one already on disk;
+        /// see <see cref="_lastSavedSeq"/> for why that can happen at all.</summary>
+        public long Seq { get; } = Interlocked.Increment(ref _seqCounter);
+
         /// <summary>Capture a character. MUST be called on the tick thread. Returns
         /// null for entities with no persistent row (not yet saved).</summary>
         public static CharacterSnapshot? From(Entity e)
@@ -1199,6 +1227,7 @@ public class PersistenceService
         await _saveGate.WaitAsync();          // see _saveGate: overlapping saves lose data
         try
         {
+            if (IsStale(snap)) return;        // see _lastSavedSeq: the gate does not ORDER saves
             await using var db = await _factory.CreateDbContextAsync();
             var rec = await db.Characters
                 .Include(c => c.Items).ThenInclude(i => i.Attributes)
@@ -1210,6 +1239,7 @@ public class PersistenceService
 
             ApplySnapshot(db, rec, snap);
             await db.SaveChangesAsync();
+            _lastSavedSeq[snap.CharacterId] = snap.Seq;
         }
         finally { _saveGate.Release(); }
     }
@@ -1225,17 +1255,23 @@ public class PersistenceService
         try
         {
             await using var db = await _factory.CreateDbContextAsync();
+            var written = new List<CharacterSnapshot>(snaps.Count);
             foreach (var snap in snaps)
             {
+                if (IsStale(snap)) continue;
                 var rec = await db.Characters
                     .Include(c => c.Items).ThenInclude(i => i.Attributes)
                     .Include(c => c.Subclasses)
                     .AsSplitQuery()
                     .FirstOrDefaultAsync(c => c.Id == snap.CharacterId);
                 if (rec is not null)
+                {
                     ApplySnapshot(db, rec, snap);
+                    written.Add(snap);
+                }
             }
             await db.SaveChangesAsync();
+            foreach (var snap in written) _lastSavedSeq[snap.CharacterId] = snap.Seq;
         }
         finally { _saveGate.Release(); }
     }

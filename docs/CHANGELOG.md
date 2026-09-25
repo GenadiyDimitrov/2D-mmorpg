@@ -7,12 +7,29 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.210.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.210.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-25 (latest) — 0.210.1: the Armsmaster and the Outfitter in four groups
+## 2026-09-25 (latest) — 0.210.2: saves land in order; §102.9/§102.10 not reproduced
+
+- **A character's saves can no longer land out of order.** Each save runs on its own thread. The save gate stopped two
+  saves from overlapping, but it never guaranteed the order they ran in. So when two saves of one character were queued
+  in the same tick, the OLDER one could be written last and overwrite the newer one. That meant lost data until the next
+  60 s autosave, or permanently if the newer save was the logout. Each snapshot now carries the order it was taken in
+  (`CharacterSnapshot.Seq`), and `PersistenceService` skips any snapshot older than one already written for that
+  character. A snapshot is the whole character, so skipping an older one loses nothing. Found by the SmokeTest's
+  intermittent jail check (§103.2): `/jail` saves the teleport and the charisma drain in the same tick.
+- **§102.9 / §102.10 (Heal replaces Self Heal; Holy/Elemental Bolt replace Magic Bolt) do not reproduce.** A new SmokeTest
+  block (11b) walks the path through the real handlers. It buys the base spell, class-changes at 20, buys the 2nd-class
+  spell, and checks three things: the old spell is gone, it cannot be bought back, and it stays gone after a relog. All
+  three pass for all three pairs. The question left for you is on the checklist: should the old spell go at the
+  **purchase** (today) or at the **class change**?
+- SmokeTest: the "Spellcaster Mastery" check now waits for the skill list rather than reading it straight after the
+  stats push (the other §103.2 flake). Server-only fix; **the 0.210.1 APK still works** (protocol unchanged).
+
+## 2026-09-25 — 0.210.1: the Armsmaster and the Outfitter in four groups
 
 > *"i wonder if we group the armsmaster to sword/blunt/magic/bow+fang .. 4 groups not 8 ... and same for outfitter"*
 

@@ -1518,7 +1518,7 @@ section; if the three still fail, the first thing to establish is whether the ba
 pass (a test defect) or the first attempt already refuses (an engine defect). Those are different bugs and
 the current output cannot tell them apart.
 
-## §102 — YOUR NOTE OF 2026-09-23, the BUGS (ten; SEVEN fixed 0.181–0.191, 102.8 deferred by you, 102.9–10 open)
+## §102 — YOUR NOTE OF 2026-09-23, the BUGS (ten; SEVEN fixed 0.181–0.191, 102.8 deferred by you, 102.9–10 not reproduced, a question for you)
 
 Your note is verbatim in [design/Rework-2026-09-23.md](../design/Rework-2026-09-23.md); its asks are
 `BL-267`…`BL-281`. These are the defects in it.
@@ -1533,12 +1533,12 @@ Your note is verbatim in [design/Rework-2026-09-23.md](../design/Rework-2026-09-
 | 102.6 | ✅ **FIXED 0.186.0** — **`/stat patk 99999` does nothing to basic attacks** (1kk P.Atk still hit a boss for ~500); only skills changed | the admin override must reach the basic-attack path |
 | 102.7 | ✅ **FIXED 0.191.0** (`BL-276`) — With PvP OFF, your Whirlwind hit a **lvl-90 field guard**, and it killed you | fixed by `BL-276` (watchmen become NPCs) |
 | 102.8 | ⏸ Self-centred harmful AoE can be cast **inside town**; it does nothing there (tested every combination) | deferred by you; a refusal at cast time is enough |
-| 102.9 | 🔴 **OPEN** (reported 2026-09-23 in the summoner discussion) — **Elf cleric: the self-heal stays** in the kit after the class change | *"heal should have replaced my self heal"*: the Heal must **replace** the self-heal |
-| 102.10 | 🔴 **OPEN** (same day) — **Mage: Magic Bolt stays** after the class change | *"elemental bolts and holy bolt should replace it"*: each discipline's bolt **replaces** Magic Bolt |
+| 102.9 | ❓ **NOT REPRODUCED on 0.210.2** (reported 2026-09-23 in the summoner discussion) — **Elf cleric: the self-heal stays** in the kit after the class change. The SmokeTest now plays it through the real handlers: an Elf buys Self Heal at 7, class-changes to cleric at 20, **buys Heal**, and Self Heal is gone, cannot be bought back, and stays gone after a relog. Heal has carried `Replaces: elf_self_heal` since 0.163.1 (2026-09-17). | *"heal should have replaced my self heal"*. ❓ **Two readings, and I can't tell which you meant:** (a) you played an APK from before 0.163.1, in which case this is fixed; (b) you expect it to go **at the class change itself**, before you buy Heal. Today it goes when you BUY Heal, so between the change and the purchase you still have a heal. Say if you want (b). |
+| 102.10 | ❓ **NOT REPRODUCED on 0.210.2** (same day) — **Mage: Magic Bolt stays** after the class change. Same test: buying **Holy Bolt** (cleric) or **Elemental Bolt** (nuker) removes Magic Bolt, it cannot be bought back, and a relog keeps it gone. Both bolts have carried `Replaces: magic_bolt` all along. | *"elemental bolts and holy bolt should replace it"*. ❓ Same question as 102.9: at the **purchase** (today) or at the **class change**? |
 
 ## §103 — FOUND WHILE BUILDING, NOT PLAYED (2026-09-25)
 
 | # | what | the question |
 |---|---|---|
 | 103.1 | ❓ **The Training Wand is not a magic weapon.** It is a plain `Blunt` with M.Atk 7 and no `IsMagicWeapon`, and the caster check (`Entity`) keys on that flag, so a mage holding it is treated as holding a mace. Found by `BL-290`'s Wand tab, which now names it by id. Nothing was changed. | Should it be a magic weapon like every other wand? One flag on one item, but it changes a level-1 mage's casting. |
-| 103.2 | ⚠ **The SmokeTest failed ONE check per run, a different one each time** (0.210.0: "the grant gave him Spellcaster Mastery", then "a jail drained the player's charisma"). Neither touches shops or grades, and each passed on the other run, so they look like timing races in the test, not bugs in the game. | none (for me to harden the two waits) |
+| 103.2 | ✅ **FIXED 0.210.2.** One of the two flakes was a real server bug. **The jail check**: `/jail` saves the teleport, then saves the charisma drain, in the same tick. Every save runs on its own thread, and nothing guaranteed they finished **in order**, so sometimes the older save landed last and overwrote the drain. That is lost data for up to 60 s, or permanently if the lost save was the logout one. Now every save carries the order it was taken in, and an older one is skipped once a newer one is on disk. **The Spellcaster Mastery check** was the test's own fault: it read the skill list without waiting for it to arrive. Two full runs, ALL PASS. | none |

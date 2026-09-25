@@ -2742,6 +2742,89 @@ await gm.DisposeAsync();
 }
 
 // -------------------------------------------------------------------------------------------
+// 11b. THE CLASS CHANGE'S SPELLS REPLACE THE BASE ONES — his §102.9 / §102.10 (2026-09-23).
+//
+//     *"as elf cleric i kept my self heal -> heal should have replaced my self heal"* and *"a mages
+//     magic bolt is not replaced and left -> elemental bolts and holy bolt should replace it"*.
+//
+//     The data has said so since 0.163.1 (Heal `Replaces: [elf_self_heal]`, Holy Bolt and Elemental
+//     Bolt `Replaces: [magic_bolt]`), so this walks HIS path through the real handlers rather than
+//     the debug learn-all: BUY the self-heal at 7, class-change at 20, BUY the 2nd-class spell, and
+//     the base one must be gone — from the kit, from a relog, and off the Learn shelf (the server
+//     must refuse to sell it back).
+// -------------------------------------------------------------------------------------------
+{
+    // One character per 2nd class, so the block costs two of the account's 36 slots, not three.
+    foreach (var (arch, trades) in new[]
+    {
+        (Archetype.Healer, new[] { (SkillCatalog.Heal, SkillCatalog.ElfSelfHeal),
+                                   (SkillCatalog.HolyBolt, SkillCatalog.MagicBolt) }),
+        (Archetype.Nuker,  new[] { (SkillCatalog.ElementalBolt, SkillCatalog.MagicBolt) }),
+    })
+    {
+        var rp = await ConnectAsync("test1", "test");
+        string rname = "Repl" + DateTime.UtcNow.ToString("HHmmssff");
+        var rerr = await rp.Hub.InvokeAsync<string?>("CreateCharacter",
+            new CreateCharacterRequest(rname, Race.Elf, BaseClass.Mage));
+        Check($"created an elf mage to become a {arch}", rerr is null, rerr);
+        if (rerr is not null) { await rp.DisposeAsync(); continue; }
+
+        await PromoteToAdminAsync(rname);
+        var rchars = await rp.Hub.InvokeAsync<CharacterList>("ListCharacters");
+        var rid = rchars.Characters.First(c => c.Name == rname).Id;
+        var rin = await rp.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(rid));
+        rp.MyId = rin.EntityId;
+        await rp.Hub.SendAsync("DebugSp", 10_000_000L);
+        await rp.Hub.SendAsync("DebugLevel", 6);   // 1 -> 7: the self-heal's first rung
+        await rp.WaitFor(() => rp.Progress?.Level == 7, 5000);
+
+        bool Knows(string id) => rp.Learned?.Skills.Any(s => s.Id == id) == true;
+
+        foreach (var (_, replaced) in trades)
+        {
+            if (replaced == SkillCatalog.ElfSelfHeal) await rp.Hub.SendAsync("LearnSkill", replaced);
+            await rp.WaitFor(() => Knows(replaced), 5000);
+            Check($"...the base mage knows {replaced} before the class change", Knows(replaced));
+        }
+
+        await rp.Hub.SendAsync("DebugLevel", 10);
+        await rp.Hub.SendAsync("DebugLevel", 3);   // -> 20
+        var second = ClassCatalog.OptionsFor(Race.Elf, BaseClass.Mage).First(c => c.Archetype == arch);
+        await rp.Hub.SendAsync("DebugSecondClass", second.Id);
+        await rp.WaitFor(() => rp.Progress?.Level == 20, 5000);
+
+        foreach (var (spell, replaced) in trades)
+        {
+            await rp.Hub.SendAsync("LearnSkill", spell);
+            await rp.WaitFor(() => Knows(spell) && !Knows(replaced), 5000);
+            Check($"...as a {arch}, buying {spell} REPLACES {replaced}",
+                  Knows(spell) && !Knows(replaced),
+                  $"knows {spell}: {Knows(spell)}, still knows {replaced}: {Knows(replaced)}");
+
+            rp.SystemChat.Clear();
+            await rp.Hub.SendAsync("LearnSkill", replaced);
+            await rp.WaitFor(() => rp.SystemChat.Count > 0, 5000);
+            Check($"...and {replaced} cannot be bought back",
+                  !Knows(replaced) && rp.SystemChat.Any(s => s.Contains("superior version")),
+                  string.Join(" | ", rp.SystemChat));
+        }
+
+        await rp.LeaveWorldAsync();
+        rp.Learned = null;
+        var again = await rp.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(rid));
+        rp.MyId = again.EntityId;
+        await rp.WaitFor(() => rp.Learned is not null, 8000);
+        foreach (var (spell, replaced) in trades)
+            Check($"...and after a relog {replaced} is still gone and {spell} still there",
+                  rp.Learned is not null && Knows(spell) && !Knows(replaced),
+                  rp.Learned is null ? "no Learned push" : string.Join(",", rp.Learned.Skills.Select(s => s.Id)));
+
+        await rp.LeaveWorldAsync();
+        await rp.DisposeAsync();
+    }
+}
+
+// -------------------------------------------------------------------------------------------
 // 12. A FRESH CHARACTER'S FIRST STATS ARE ALREADY THE RECOMPUTED ONES — his playtest-29 find.
 //
 //     *"newly created mage (lvl 1) have his first spell cast without penalty of weapon_proficiency ..
@@ -2792,8 +2875,10 @@ await gm.DisposeAsync();
 
         // Spellcaster Mastery is auto-granted at level 1 and is the passive his find was about — if
         // the grant did not even land, everything below is measuring the wrong thing.
+        // ⚠ WAITED FOR, not read: `Learned` is its own push, and the wait above was for `Stats`. Reading
+        //   it straight after failed about one run in five (`§103.2`) with the grant fully in place.
         Check("...and the grant gave him Spellcaster Mastery",
-              gr.Learned?.Skills.Any(s => s.Id == SkillCatalog.SpellcasterMastery) == true);
+              await gr.WaitFor(() => gr.Learned?.Skills.Any(s => s.Id == SkillCatalog.SpellcasterMastery) == true, 5000));
 
         var leaveErr = await gr.LeaveWorldAsync();
         Check("...and he logs out cleanly, saving those granted ids", leaveErr is null, leaveErr);
