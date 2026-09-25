@@ -274,6 +274,8 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-284` | 🔵 | **RECURRING RUNE GRANT** — premium/event: a 1 h rune a day + 1-2 2 h runes a week; needs a premium status or events (neither exists) — split out of `BL-277` | progression |
 | `BL-286` | ⏸ | **CASTLE "NOBLE" CHARISMA** — a castle-holding clan leader gets charisma decay/loss protection or a grant; split out of `BL-283`; waits on castles | social |
 | `BL-288` | ⏸ | **CONSUMABLE RARITY → PLAIN LEVELS 1-6** — potions/scrolls may drop the rarity word entirely; deferred by him, split out of `BL-272` | items |
+| `BL-289` | 🔴 | **A GRADE ONLY WHERE ONE EXISTS** — boxes read "B-grade" (enum default); a box shows its contents' grade, non-gear shows "-"; temporary box names say "Selection Box" | items |
+| `BL-290` | 🔴 | **PER-VENDOR TABS** — Apothecary Potions/Scrolls/Misc, Armor by slot, Essence Armor/Jewels/Weapons | UI |
 
 ---
 
@@ -2227,3 +2229,50 @@ we can remove the rarity as whole .. and items just have lvls 1,2,3...6"*. Equip
 + Mythic; this is the same idea for consumables and materials. ⏸ **Deferred by him, not blocking.** ❓ Open when
 it is picked up: which families keep a ladder at all, what the level word looks like on a card, and whether the
 pickup filter (`BL-241`, keyed on rarity) moves to the level.
+
+## `BL-289` 🔴 THE GRADE ON THINGS THAT HAVE NO GRADE — and the temporary boxes' names
+
+His words, 2026-09-25: *"The desciprion in the vendor if the box for comolt and Darksteel are 'common b - grade box'
+make it something like a 'temporary common weapon selection box C/D grade)' look at boxes they have grade for some
+reason if it's not a equipment or something that have a grade inside the box grade should show as '-'. (check
+everything to match it's grade - most won't have any)"*.
+
+**The cause, measured:** the vendor row (`GameUi.Vendor.cs` `WareSummary`) prints `TierLetter(ItemLevel)` when the
+def has an item level and **otherwise the raw `ItemGrade` enum**. Every temporary box is built with `ItemGrade.B`
+(`Items.cs`, `TempWeaponBoxId` / `TempArmorBoxId` / `TempSetBoxId`) and no item level, so a T40 (D) and a T52 (C) box
+both read **"B-grade"**. Every other non-gear def falls through to its enum default the same way (the method's own
+comment quotes "Rare F-grade Potion").
+
+**Owed:**
+1. **A grade only where one exists.** Equipment shows its tier letter; a box shows the grade of the gear INSIDE it
+   (T40 box → D, T52 box → C; derived from the contents, never typed); everything else (potions, scrolls, mats,
+   runes, quest items, boxes of non-gear) shows **"-"**. One shared helper in `Game.Shared` so the vendor row, the
+   bag's details and any other place that prints a grade all say the same thing. ⚠ Grep every grade print (`def.Grade`,
+   `GradeNameOf`, `TierLetter`) and check each against this rule. That is the "check everything" part of his note.
+2. **The box names say what they are:** e.g. *"Temporary Common Weapon Selection Box"* / *"… Armor Selection Box"*,
+   with the grade shown by rule 1, not written into the name.
+3. APK (the vendor row and the item names are compiled into the client).
+
+## `BL-290` 🔴 A VENDOR'S TABS ARE ITS OWN
+
+His words, 2026-09-25: *"can we make npc vendors their tabs to be custom per vendor ? Apothecary to have like
+(pots,scrolls,misc) ; armor vendors to have (body,helm,gloves,boots,Shield,neck,ring,ear); etc... The new npc that
+sells cobold for essence can have (armor,jewels,weapons)"*.
+
+**Today:** one fixed tab strip for every vendor, `GameUi.Vendor.cs` `VendorTabs` = All / Gear / Use / Mats
+(`ItemCategory`). Shops are `ShopCatalog` (`Game.Shared/ShopCatalog.cs`): `merchant_potions`, `merchant_gear`,
+`merchant_armor` (armor + shields + jewels) and `merchant_essence` (Assayer Corvane, Greymarsh, T52 for essence).
+
+**Proposed shape:** `ShopDef` gains its own tab list, each tab a name + a filter over the item def (slot / type), and
+the window builds its strip from the shop being shown. Whether the SELL side (your own bag) keeps the generic tabs or
+uses the shop's is decided at build time; the shop's own tabs would hide most of a bag. Starting tabs, from his
+note:
+| shop | tabs |
+|---|---|
+| Apothecary (`merchant_potions`) | Potions · Scrolls · Misc |
+| Armor (`merchant_armor`) | Body · Helm · Gloves · Boots · Shield · Neck · Ring · Ear |
+| Essence (`merchant_essence`) | Armor · Jewels · Weapons |
+| Weapons (`merchant_gear`) | ❓ *"etc..."*: per weapon type (1H / 2H / Blunt / Duals / Bow / Wand / Staff…) is the obvious reading; confirm at build |
+
+⚠ Keep an **All** tab first unless he says otherwise (the other windows all have one). APK (the shop defs and the
+window are both in the client).
