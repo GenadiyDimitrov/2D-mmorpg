@@ -242,11 +242,20 @@ public static partial class QuestCatalog
             },
             // The armor + weapon halves. Both are SELECTION boxes, so the reward stays class-agnostic
             // exactly as the creation kit is.
+            //
+            // 🔑 AND THE FIRST POTIONS (owner, 2026-09-25): *"start items for newly created chars should
+            //    have none .. the newbie quest gives enough .. it can also give 50 mp and 50 hp pots
+            //    somewhere in between reach 10/15/18"*. Creation's 5 Common + 2 Rare heals are gone, so
+            //    these are the first potions a character owns; 10 is the earliest of his three points,
+            //    and the one where the gear (and harder fights) arrive. Moving them is one line.
             Reward: new QuestReward(Exp: 12000, SkillPoints: 2, ItemIds: new[]
             {
                 ItemCatalog.BoxNewbieArmorChoice,
                 ItemCatalog.BoxNewbieWeapons,
-            })));
+            }
+            .Concat(Many(ItemCatalog.MinorPotion, 50))
+            .Concat(Many(ItemCatalog.MinorManaPotion, 50))
+            .ToArray())));
 
         // ---- PART 4 (beats 9-10): reach 15, back to Dolan for the rune + jewels. -----------------
         // The old "Blooded" (starter_blooded), unchanged but for its prerequisite.
@@ -332,4 +341,8 @@ public static partial class QuestCatalog
                 ItemCatalog.InstantPotionBound,
             })));
     }
+
+    /// <summary>A stack in a reward: <see cref="QuestReward"/> carries no quantities, so N of an item is
+    /// N entries, and the turn-in merges them into one stack.</summary>
+    private static IEnumerable<string> Many(string itemId, int count) => Enumerable.Repeat(itemId, count);
 }

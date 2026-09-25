@@ -7617,3 +7617,12 @@ details pannel then a buy button will open the numpad ... same details panel as 
 is bought, a stack goes to the numpad. Sell: the real instance, tracked, so its attributes show and the window closes
 once it is sold. QSell skips the panel. The panel is the one confirmation (playtest-16), and the old vendor confirm
 dialogs were deleted. There is no quick-BUY toggle, because none existed: his "(if not quick is enabled)" can only mean QSell.
+
+
+## `BL-292` ✅ CLOSED 2026-09-25 in **0.212.0**: a new character starts with an empty bag
+
+His words, 2026-09-25: *"start items for newly created chars should have none .. the newbie quest gives enough .. it can
+also give 50 mp and 50 hp pots somewhere in between reach 10/15/18"*, clarified: *"buy stating items i mean the 2 rare
+and 5 common pots"*. **Built as:** creation (and the debug re-roll) hand out nothing. The level-10 tutorial reward
+(Properly Armed) adds 50 Common HP + 50 Common MP potions. "Somewhere in between" was his to leave open; 10 was chosen
+as the earliest, and a playtest may move it.

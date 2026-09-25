@@ -4580,19 +4580,16 @@ public class GameLoopService : BackgroundService
     /// gain the staff he lacks without collecting a second copy of every newbie box he already holds.</summary>
     private void GiveStarterKit(Entity player, bool skipOwned = false)
     {
-        void Give(string defId, int qty = 1)
-        {
-            if (skipOwned && player.Inventory.Any(i => i.DefId == defId)) return;
-            AddItem(player, defId, qty);
-        }
-
-        // Matches CreateCharacterAsync: potions only. The two training boxes left creation on
+        // EMPTY — matches CreateCharacterAsync. A future starter item goes here as
+        // `if (!skipOwned || !player.Inventory.Any(i => i.DefId == id)) AddItem(player, id, qty);`.
+        //
+        // The two training boxes left creation on
         // 2026-08-12 (him, 63j) — the tutorial's own steps supply them at the moment they are needed,
         // and handing them out here as well is what gave him three of everything.
         // No jewels and no runes at creation either — jewels are earned from level 1-5 mobs or bought,
         // and the rune arrives with the level-10 starter quest along with the Newbie set.
-        Give(ItemCatalog.MinorPotion, 5);
-        Give(ItemCatalog.GreaterPotion, 2);
+        // ⚠ AND NO POTIONS since 2026-09-25: creation hands out NOTHING (see CreateCharacterAsync). The
+        //   method stays as the one place a future starter item would go, mirrored on both paths.
     }
 #pragma warning restore CS1998
 

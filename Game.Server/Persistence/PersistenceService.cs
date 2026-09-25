@@ -575,8 +575,11 @@ public class PersistenceService
         //
         // Explicitly NO runes and NO jewels at creation (owner). Jewels are earned — the broken line
         // drops from level 1-5 mobs and is sold in the shop — and runes come with the quest.
-        record.Items.Add(NewItem(ItemCatalog.MinorPotion, 5));
-        record.Items.Add(NewItem(ItemCatalog.GreaterPotion, 2));
+        //
+        // 🔑 AND NO POTIONS EITHER, since 2026-09-25 (owner: *"start items for newly created chars should
+        //    have none .. the newbie quest gives enough"*). The 5 Common + 2 Rare heals that stood here
+        //    moved to the tutorial as 50 HP + 50 MP potions at level 10. A new character's bag is EMPTY.
+        //    Mirrored in GameLoopService.GiveStarterKit (the debug re-roll).
 
         db.Characters.Add(record);
         await db.SaveChangesAsync();

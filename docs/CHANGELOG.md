@@ -7,12 +7,25 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.211.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.212.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-25 (latest) — 0.211.0: a vendor row opens the item's details first (`BL-291`)
+## 2026-09-25 (latest) — 0.212.0: a new character starts with an empty bag (`BL-292`)
+
+> *"start items for newly created chars should have none .. the newbie quest gives enough .. it can also give 50 mp and 50
+> hp pots somewhere in between reach 10/15/18"* · *"buy stating items i mean the 2 rare and 5 common pots"*
+
+- Creation no longer hands out the **5 Common + 2 Rare healing potions**, so a new character's bag is **empty**. The debug
+  re-roll (`GiveStarterKit`) matches.
+- **Properly Armed** (the level-10 tutorial quest, with the Newbie gear boxes) now also pays **50 Common healing + 50
+  Common mana potions**. Of your three points (10/15/18), 10 is the earliest, and with an empty bag from level 1 that is
+  the one that matters. Moving them to 15 or 18 is one line.
+- `QuestReward` has no quantity field, so a stack is N entries. The turn-in already merges them into one stack, and a small
+  `Many(id, n)` helper keeps the reward readable. **No APK needed** (server + shared data only).
+
+## 2026-09-25 — 0.211.0: a vendor row opens the item's details first (`BL-291`)
 
 > *"the mythic body armors in vendors need to show the set effect .. may be before buy/sell (if not quick is enabled) open a
 > details panel for that item .. then there should be a buy button .. for potions will open it details pannel then a buy
