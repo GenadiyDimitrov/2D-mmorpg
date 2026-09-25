@@ -11536,7 +11536,7 @@ public class GameLoopService : BackgroundService
             int stagesLost = stageBefore - WayfarerFavor.Stage(p.FavorPoints);
             if (stagesLost > 0) AddBlessing(p, stagesLost * WayfarerBlessing.PerFavorStageLost);
         }
-        AddBlessing(p, WayfarerBlessing.PerKill);
+        AddBlessing(p, WayfarerBlessing.PerKill, killFill: true);   // `BL-295`: the ONLY scaled source
         PushFavorIfMoved(p);
     }
 
@@ -11569,14 +11569,21 @@ public class GameLoopService : BackgroundService
         PushFavorIfMoved(p);
     }
 
-    /// <summary>Add <paramref name="percent"/> (already the SOURCE's number, ×1) to the Blessing gauge,
-    /// scaled once by <see cref="BlessingFillRate"/>. Reaching the top fires the Blessing on the spot. While
-    /// one is running the gauge is parked at the top and nothing is added — the overflow is not banked
-    /// (*"after 3 minutes expire, the gauge resets to 0%"*). The caller pushes the sheet.</summary>
-    private void AddBlessing(Entity p, double percent)
+    /// <summary>Add <paramref name="percent"/> (already the SOURCE's number, ×1) to the Blessing gauge.
+    /// Reaching the top fires the Blessing on the spot. While one is running the gauge is parked at the top
+    /// and nothing is added — the overflow is not banked (*"after 3 minutes expire, the gauge resets to
+    /// 0%"*). The caller pushes the sheet.
+    ///
+    /// <para>🔑 <paramref name="killFill"/> — ONLY A MOB KILL IS SCALED BY <see cref="BlessingFillRate"/>
+    /// (owner, 2026-09-25, `BL-295`: *"the bonus x2/4 to the blessing only works on killing mobs .. not on
+    /// the 1%/60s nor on the 8% when favor drops a lvl nor on the lvl up ... only the mob fighting gets the
+    /// x2/4"*). This REVERSES the fifth-round "the modifier multiplies every source"; the combat minute,
+    /// the stage-loss bump and the level-up bump are paid at ×1.</para></summary>
+    private void AddBlessing(Entity p, double percent, bool killFill = false)
     {
         if (p.Kind != EntityKind.Player || p.BlessingActive || percent <= 0) return;
-        p.BlessingPercent = Math.Min(WayfarerBlessing.MaxPercent, p.BlessingPercent + percent * BlessingFillRate(p));
+        double rate = killFill ? BlessingFillRate(p) : 1.0;
+        p.BlessingPercent = Math.Min(WayfarerBlessing.MaxPercent, p.BlessingPercent + percent * rate);
         if (p.BlessingPercent >= WayfarerBlessing.MaxPercent) StartBlessing(p);
     }
 
@@ -11586,7 +11593,6 @@ public class GameLoopService : BackgroundService
     {
         p.BlessingPercent = WayfarerBlessing.MaxPercent;
         p.BlessingSecondsLeft = WayfarerBlessing.DurationSeconds;
-        RefreshBlessingBuff(p);
         SendSystemToEntity(p, "The Wayfarer's Blessing is upon you: +100% EXP and SP for 3 minutes, "
                             + "and your kills restore the Wayfarer's Favor instead of draining it.");
         SendFavor(p);   // the rates on the sheet now include the +100%
@@ -11597,23 +11603,14 @@ public class GameLoopService : BackgroundService
     {
         p.BlessingSecondsLeft = 0;
         p.BlessingPercent = 0;
-        if (p.Buffs.RemoveAll(b => b.Key == SkillCatalog.WayfarerBlessingBuff) > 0) PushBuffs(p);
         SendSystemToEntity(p, "The Wayfarer's Blessing fades.");
         SendFavor(p);
     }
 
-    /// <summary>Put the buff-bar face back for the time the CLOCK says is left. Cosmetic (the `BL-98`
-    /// pattern): nothing reads the buff, so whatever strips it — death, a subclass swap, a cleanse, a
-    /// double-click — is undone within a second and ends nothing.</summary>
-    private void RefreshBlessingBuff(Entity p)
-    {
-        if (SkillCatalog.Get(SkillCatalog.WayfarerBlessingBuff) is not SkillDef def) return;
-        p.Buffs.RemoveAll(b => b.Key == SkillCatalog.WayfarerBlessingBuff);
-        // One spare second, so the bar's own countdown can never expire the face a tick before the clock
-        // ends the Blessing and make the re-assert flicker it back on for its last second.
-        ApplyBuff(p, def, 1, durationOverride: (p.BlessingSecondsLeft + 1) * GameConstants.TickRate);
-        PushBuffs(p);
-    }
+    // (`RefreshBlessingBuff` — the Blessing's buff-bar FACE — was DELETED 2026-09-25, `BL-295`. Owner:
+    //  *"no need fo actual buff to appear by mistake a person can remove it - its directly linked to the
+    //  blessing bar"*. The HUD's Blessing bar now shows the gauge and, while one runs, its countdown, off
+    //  `FavorUpdate.BlessingSecondsLeft`. The clock on the entity was always the truth; only the face went.)
 
     /// <summary>`BL-277` part 2 — once a second, for a player in the world: run a Blessing's clock, or
     /// fill the gauge 1% per minute of COMBAT (*"staying in active combat continuously builds up points.
@@ -11626,7 +11623,6 @@ public class GameLoopService : BackgroundService
         if (p.BlessingActive)
         {
             if (--p.BlessingSecondsLeft <= 0) { EndBlessing(p); return; }
-            if (!p.Buffs.Any(b => b.Key == SkillCatalog.WayfarerBlessingBuff)) RefreshBlessingBuff(p);
             return;
         }
         if (p.Dead || !IsInCombat(p)) return;
@@ -11672,7 +11668,7 @@ public class GameLoopService : BackgroundService
         SendTo(p, "Favor", new FavorUpdate(p.FavorSentPoints, WayfarerFavor.Stage(p.FavorPoints),
             rates.Exp * bonus, rates.Sp * bonus, rates.Gold, rates.DropChance,
             p.BlessingSentPercent, BlessingFillRate(p), p.BlessingActive,
-            p.CharismaLifetime, p.CharismaSentCurrent));
+            p.CharismaLifetime, p.CharismaSentCurrent, p.BlessingSecondsLeft));
     }
 
     // (The old RuneBuffKeys array is gone: SkillCatalog.IsRuneBuff answers the same question from the

@@ -241,7 +241,7 @@ namespace Game.Client
                 // `BL-277` part 2 — his "Our_Blessing: 98/100 (x4)": current progress and the fill rate.
                 // The time left of a running one is on its buff square, so the row just says it is on.
                 t.AppendLine(Row2("Blessing", f.BlessingActive ? "ACTIVE" : f.BlessingPercent + " / 100",
-                                  "Fill rate", Rate(f.BlessingFillRate)));
+                                  "Kill fill", Rate(f.BlessingFillRate)));   // `BL-295`: kills only
                 t.AppendLine(Row2("Exp rate", Rate(f.ExpRate), "SP rate", Rate(f.SpRate)));
                 t.AppendLine(Row2("Gold rate", Rate(f.GoldRate), "Drop rate", Rate(f.DropRate)));
                 t.AppendLine();

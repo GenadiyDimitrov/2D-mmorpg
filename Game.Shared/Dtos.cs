@@ -1127,7 +1127,10 @@ public record DebugConfigDto(
 /// `BL-283` adds charisma for his *"Charisma: lifetime (current)"* line — current is already capped at 1000.</summary>
 public record FavorUpdate(int Points, int Stage, float ExpRate, float SpRate, float GoldRate, float DropRate,
                           int BlessingPercent = 0, float BlessingFillRate = 1f, bool BlessingActive = false,
-                          long CharismaLifetime = 0, int CharismaCurrent = 0);
+                          long CharismaLifetime = 0, int CharismaCurrent = 0,
+                          // `BL-295` — the running Blessing's seconds left, stamped at SEND time; the HUD
+                          // counts it down itself between pushes. Appended: JSON, so an older client ignores it.
+                          int BlessingSecondsLeft = 0);
 
 /// <summary>One member row in the party window. Debuffs = the names of the debuffs currently on this
 /// member, so a healer sees at a glance who to cleanse without selecting each one.</summary>

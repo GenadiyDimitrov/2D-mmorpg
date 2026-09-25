@@ -120,10 +120,10 @@ public static class WayfarerFavor
 /// when full, fires a 3-minute +100% EXP/SP on its own. Full rulings: <c>docs/design/Rework-2026-09-23.md</c>
 /// §3 points 2 and 10 (and his note's "Bonus while actively fighting" block, verbatim in the appendix).
 ///
-/// <para>🔑 **Every source is multiplied by ONE fill rate, applied once, where the gauge is added to**
-/// (his fifth-round ruling: *"OK mobs 0.1% x1"* + the modifier multiplies kills, combat minutes, stage
-/// drops AND the level-up bump). The rate reads ×1 until charisma (`BL-283`) and the booster rune
-/// (`BL-277` part 3) exist.</para>
+/// <para>🔑 **Only a MOB KILL is multiplied by the fill rate** (owner, 2026-09-25, `BL-295`: *"the bonus
+/// x2/4 to the blessing only works on killing mobs .. not on the 1%/60s nor on the 8% when favor drops a
+/// lvl nor on the lvl up"*). The combat minute, the stage-loss bump and the level-up bump are paid at ×1.
+/// This REVERSES the fifth-round ruling that the modifier multiplied every source.</para>
 ///
 /// <para>Shared, because the client prints the gauge and must never re-derive the numbers.</para></summary>
 public static class WayfarerBlessing
@@ -152,6 +152,6 @@ public static class WayfarerBlessing
     public const float Bonus = 1.0f;
 
     /// <summary>`BL-277` part 3 — the Blessing booster rune: *"increases the blessing gauge fill up rate
-    /// with 100%"*, so ×2 on every source. Charisma's up-to-×2 (`BL-283`, <see cref="Charisma.FillMultiplier"/>) MULTIPLIES it (×4 with both).</summary>
+    /// with 100%"*, so ×2 on a mob kill's fill (the only scaled source since `BL-295`). Charisma's up-to-×2 (`BL-283`, <see cref="Charisma.FillMultiplier"/>) MULTIPLIES it (×4 with both).</summary>
     public const float BoosterRuneFillRate = 2f;
 }

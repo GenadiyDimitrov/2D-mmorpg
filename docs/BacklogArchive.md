@@ -7650,3 +7650,13 @@ direction of the npc/mob i need (when i get into 200-300 range to disapear)"*. *
 player, driven by the top pinned quest. TalkTo → the NPC. KillMobs or an unfinished gathering contract → the nearest
 spawn zone of that mob. A ready contract → its giver. It hides within 250 of an NPC or inside the mob's zone. Client
 only (`GameUi.Quests.cs`). ⚠ Unplayed: its size, colour and the 140-unit offset from the player are first guesses.
+
+
+## `BL-295` ✅ CLOSED 2026-09-25 in **0.214.0**: Favor and Blessing are bars; EXP runs along the bottom
+
+His words, 2026-09-25 (verbatim in the 0.214.0 CHANGELOG entry): the vitals panel becomes HP (name left, numbers
+centred) · MP · Favor `[pts/20000 L{stage} {bonus}%]` in a slightly darker green · Blessing `[0~100%]` in a quiet gold
+that becomes a 180 s countdown while active, with no removable buff. EXP + level go to a full-width strip at the bottom
+of the screen. **Built as written.** The Blessing's cosmetic buff face (`wayfarer_blessing`) is deleted, and
+`FavorUpdate.BlessingSecondsLeft` drives the countdown. ⚠ Unplayed: bar heights (26/22/18/18), the strip (16 px) and
+both colours are first guesses. **Same version, his follow-up:** the Blessing fill multiplier (rune x2, charisma x2) now scales MOB KILLS ONLY; the combat minute, the stage-loss 8% and the level-up 30% are x1 (reverses the fifth-round "every source").

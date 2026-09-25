@@ -1342,14 +1342,14 @@ FavorPerMinute = 40 (admin Tune tab)                                           f
 `FavorOnKill`. A 0-100% gauge:
 
 ```
-fill      = source * fillRate                         applied ONCE, in AddBlessing
+fill      = kill source * fillRate; every other source * 1     in AddBlessing (0.214.0, BL-295)
 fillRate  = rune * charismaFill                         (BlessingFillRate; x4 with both at full)
 rune      = 2 while a Blessing booster rune is held, else 1                            (0.197.0)
 charismaFill = 1 + 0.1 * floor(currentCharisma / 100)       1.0 ... 2.0                (0.198.0, below)
-source    kill that paid EXP (not a boss)   +0.1
-          each second in combat             +1/60     (1%/min; "in combat" = IsInCombat, 30 s window)
-          each Favor stage a drain crosses  +8
-          each level earned (AwardExp)      +30       (not a debug/admin level set)
+source    kill that paid EXP (not a boss)   +0.1      x fillRate — the ONLY scaled source
+          each second in combat             +1/60     x1 (1%/min; "in combat" = IsInCombat, 30 s window)
+          each Favor stage a drain crosses  +8        x1
+          each level earned (AwardExp)      +30       x1 (not a debug/admin level set)
 at 100    fires automatically: 180 s of blessing = +1.0 in the bonus sum above
 while on  gauge parked at 100, nothing fills; a non-boss kill does NOT drain the Favor and
           ADDS the drain it would have cost:  favor += drain   (clamp 20000)
@@ -1359,7 +1359,7 @@ ends      gauge = 0
 - The clock counts only while the character is in the world (paused offline, saved with the character);
   an offline-farmer is in the world, so for it both fill and clock run.
 - A boss kill neither fills the gauge nor gets the refund; its EXP still pays at the current bonus sum.
-- The buff on the bar is cosmetic and re-asserted every second from the clock; nothing reads it.
+- There is no buff: the HUD's Blessing bar shows the countdown off `FavorUpdate.BlessingSecondsLeft` (0.214.0).
 
 ### The Wayfarer's items and the raid-boss grant (`BL-277` part 3, 0.197.0)
 
@@ -1369,7 +1369,7 @@ boss grant  = min(20000 - favor, memberExp / MobExpReward(L) * 11.2)     L = mem
               0 when a rune zeroes EXP; no drain, no refund, no Blessing fill
               ~3,000 per 9-man member at every level, ~9,000 per 3-man, a solo kill fills the gauge
 keep-rune   held (1 h / 2 h): a non-boss kill does not drain the Favor (so no stage-loss fill either)
-booster     held (1 h / 2 h): Blessing fillRate x2, every source
+booster     held (1 h / 2 h): Blessing fillRate x2 (mob kills only, 0.214.0)
 restore pot + 2500 Favor (clamp 20000), refused when full; reuse 3600 s WALL CLOCK, saved on the character
 subclass box  both 1 h runes + 4 restore potions; paid while boxesGiven < subclasses held (once per slot, ever)
 ```

@@ -1210,8 +1210,6 @@ public class PersistenceService
                 string skillId = string.IsNullOrEmpty(b.SkillId) ? b.SourceSkillId : b.SkillId;
                 if (b.IsDebuff || b.Internal || string.IsNullOrEmpty(skillId)) continue;
                 if (SkillCatalog.IsRuneBuff(skillId)) continue;
-                // `BL-277` — the Blessing's face; its clock is saved on the character (BlessingSecondsLeft).
-                if (skillId == SkillCatalog.WayfarerBlessingBuff) continue;
 
                 DateTime? expires = b.Toggle
                     ? null

@@ -384,25 +384,64 @@ namespace Game.Client
                 if (Boot.SelfId != Guid.Empty) Boot.TargetId = Boot.SelfId;
             });
 
-            _selfName = UiKit.Label(inner, "waiting for your entity ...", 19f);
-            UiKit.Place(UiKit.Rect(_selfName.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -6f), new Vector2(300f, 24f));
-
+            // `BL-295` — FOUR BARS, NO TITLE ROW (owner, 2026-09-25). The name moved INTO the HP bar (left,
+            // with the numbers centred), the level moved to the EXP strip at the bottom of the screen, and
+            // the two freed rows are the Wayfarer's FAVOR and BLESSING gauges, which until now lived only
+            // on the character sheet. The panel keeps its size.
             _selfHp = UiKit.ValueBar(inner, UiKit.Hp);
             UiKit.Place(UiKit.Rect(_selfHp.transform.parent.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -34f), new Vector2(306f, 22f));
+                        new Vector2(12f, -6f), new Vector2(306f, 26f));
             _selfHpText = UiKit.BarLabel(_selfHp, 13f);
+            _selfName = UiKit.BarLabel(_selfHp, 13f);
+            _selfName.alignment = TextAlignmentOptions.Left;
+            _selfName.fontStyle = FontStyles.Bold;
+            _selfName.text = "waiting ...";
 
             _selfMp = UiKit.ValueBar(inner, UiKit.Mp);
             UiKit.Place(UiKit.Rect(_selfMp.transform.parent.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -60f), new Vector2(306f, 22f));
+                        new Vector2(12f, -36f), new Vector2(306f, 22f));
             _selfMpText = UiKit.BarLabel(_selfMp, 13f);
 
-            _selfXp = UiKit.ValueBar(inner, UiKit.Xp);
-            UiKit.Place(UiKit.Rect(_selfXp.transform.parent.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -86f), new Vector2(306f, 18f));
-            _selfXpText = UiKit.BarLabel(_selfXp, 11f);
+            // His colour: *"a bit darker than the current lime one"* — the EXP green, darkened, not dark green.
+            _selfFavor = UiKit.ValueBar(inner, FavorColour);
+            UiKit.Place(UiKit.Rect(_selfFavor.transform.parent.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(12f, -62f), new Vector2(306f, 18f));
+            _selfFavorText = UiKit.BarLabel(_selfFavor, 11f);
+
+            // *"some golden color not so distracting"*; it turns BRIGHT while a Blessing runs.
+            _selfBlessing = UiKit.ValueBar(inner, BlessingColour);
+            UiKit.Place(UiKit.Rect(_selfBlessing.transform.parent.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(12f, -84f), new Vector2(306f, 18f));
+            _selfBlessingText = UiKit.BarLabel(_selfBlessing, 11f);
+
+            BuildExpStrip();
         }
+
+        private static readonly Color FavorColour = new Color(0.27f, 0.60f, 0.27f, 1f);
+        private static readonly Color BlessingColour = new Color(0.62f, 0.52f, 0.22f, 1f);
+        private static readonly Color BlessingActiveColour = new Color(0.96f, 0.82f, 0.36f, 1f);
+        private Image _selfFavor, _selfBlessing;
+        private TextMeshProUGUI _selfFavorText, _selfBlessingText;
+
+        /// <summary>`BL-295` — the EXP bar and the level, as one thin strip across the WHOLE bottom edge of
+        /// the screen (*"EXP bar + lvl 123 can go on the bottom of the screen spanning across the whole
+        /// width"*). Display only, so it may sit where the phone's gesture bar lives; the chat row and the
+        /// skill bar stand above it (<see cref="BottomRowY"/>).</summary>
+        private void BuildExpStrip()
+        {
+            _selfXp = UiKit.ValueBar(_worldRoot, UiKit.Xp);
+            var rt = UiKit.Rect(_selfXp.transform.parent.gameObject);
+            rt.anchorMin = new Vector2(0f, 0f);
+            rt.anchorMax = new Vector2(1f, 0f);
+            rt.pivot = new Vector2(0.5f, 0f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = new Vector2(0f, ExpStripHeight);
+            _selfXpText = UiKit.BarLabel(_selfXp, 12f);
+        }
+
+        /// <summary>Height of the bottom EXP strip, and the line every bottom-edge row stands on.</summary>
+        private const float ExpStripHeight = 16f;
+        private const float BottomRowY = ExpStripHeight + 4f;
 
         /// <summary>
         /// The target frame: movable, with the standard chrome, and its ✕ is what DESELECTS.
@@ -556,7 +595,7 @@ namespace Game.Client
 
             _skillBarPanel = UiKit.PanelBox(_worldRoot, "SkillBar");
             UiKit.Place(_skillBarPanel, new Vector2(1f, 0f), new Vector2(1f, 0f),
-                        new Vector2(-12f, 14f), new Vector2(w, h));
+                        new Vector2(-12f, BottomRowY), new Vector2(w, h));
             var inner = _skillBarPanel.GetChild(0);
             _barWidth = w;
 
@@ -564,7 +603,7 @@ namespace Game.Client
             // ApplyExtraSlots shrinks it to the rows the setting asks for and hides the rest.
             _skillBarExtraPanel = UiKit.PanelBox(_worldRoot, "SkillBarExtra");
             UiKit.Place(_skillBarExtraPanel, new Vector2(1f, 0f), new Vector2(1f, 0f),
-                        new Vector2(-12f, 14f + h + 6f),
+                        new Vector2(-12f, BottomRowY + h + 6f),
                         new Vector2(w, ExtraSlotsMax / BarColumns * (slot + pad) + pad));
             var extraInner = _skillBarExtraPanel.GetChild(0);
 
@@ -742,7 +781,7 @@ namespace Game.Client
         {
             // Bottom edge now that the action bar has left it, with a little padding off the edge —
             // flush against it is where a phone's own gesture bar lives.
-            const float bottom = 14f;
+            const float bottom = BottomRowY;   // `BL-295`: above the EXP strip
 
             // `BL-178` — THE ONE FIELD IN THE CLIENT THAT KEEPS ANDROID'S NATIVE INPUT, and therefore
             // the only one with a copy / cut / select-all / paste menu. Chat is where you type fresh
@@ -1379,13 +1418,15 @@ namespace Game.Client
 
             if (self == null)
             {
-                _selfName.text = "waiting for your entity ...";
+                _selfName.text = "waiting ...";
                 _selfHpText.text = _selfMpText.text = _selfXpText.text = "";
+                _selfFavorText.text = _selfBlessingText.text = "";
                 return;
             }
 
             int level = Boot.Progress != null ? Boot.Progress.Level : self.Level;
-            _selfName.text = self.Name + "    Lv " + level;
+            _selfName.text = self.Name;   // `BL-295`: the level lives on the EXP strip now
+            RefreshFavorBars();
 
             // VITALS ONLY, and the numbers ride ON the bars. Gold and raw coordinates used to live
             // under them and overflowed the panel onto the world behind it. The rule the owner set is
@@ -1408,12 +1449,54 @@ namespace Game.Client
             else if (Boot.Progress.ExpToNext > 0)
             {
                 UiKit.SetBar(_selfXp, Boot.Progress.Exp, Boot.Progress.ExpToNext);
-                _selfXpText.text = ValueAndPct(Boot.Progress.Exp, Boot.Progress.ExpToNext);
+                _selfXpText.text = "Lv " + level + "     " + ValueAndPct(Boot.Progress.Exp, Boot.Progress.ExpToNext);
             }
             else
             {
                 UiKit.SetBar(_selfXp, 1, 1);
-                _selfXpText.text = "MAX LEVEL";
+                _selfXpText.text = "Lv " + level + "     MAX LEVEL";
+            }
+        }
+
+        /// <summary>`BL-295` — the Wayfarer's two gauges on the vitals panel.
+        ///
+        /// <para>FAVOR: <c>points / 20,000   L{stage}   +{bonus}%</c>, the bonus being the Favor's own
+        /// (his *"only the favor one 50/100%"*), never the finished rate the sheet prints.</para>
+        ///
+        /// <para>BLESSING: the gauge in whole percent, and while one RUNS the bar turns bright and drains
+        /// with the time left, the text a countdown. The seconds are stamped by the server at send time and
+        /// counted down here between pushes; the buff-bar icon it replaces is gone (*"no need fo actual buff
+        /// to appear by mistake a person can remove it"*).</para></summary>
+        private void RefreshFavorBars()
+        {
+            var f = Boot.Favor;
+            if (f == null)
+            {
+                UiKit.SetBar(_selfFavor, 0, 1);
+                UiKit.SetBar(_selfBlessing, 0, 1);
+                _selfFavorText.text = _selfBlessingText.text = "";
+                return;
+            }
+
+            UiKit.SetBar(_selfFavor, f.Points, WayfarerFavor.MaxPoints);
+            _selfFavorText.text = f.Points.ToString("N0") + " / " + WayfarerFavor.MaxPoints.ToString("N0")
+                                + "   L" + f.Stage
+                                + "   +" + (WayfarerFavor.BonusPerStage * f.Stage * 100f).ToString("0") + "%";
+
+            int left = f.BlessingActive
+                ? Mathf.Max(0, f.BlessingSecondsLeft - (int)(Time.realtimeSinceStartup - Boot.FavorReceivedAt))
+                : 0;
+            if (f.BlessingActive && left > 0)
+            {
+                _selfBlessing.color = BlessingActiveColour;
+                UiKit.SetBar(_selfBlessing, left, WayfarerBlessing.DurationSeconds);
+                _selfBlessingText.text = "Blessing  " + (left / 60) + ":" + (left % 60).ToString("00");
+            }
+            else
+            {
+                _selfBlessing.color = BlessingColour;
+                UiKit.SetBar(_selfBlessing, f.BlessingPercent, 100);
+                _selfBlessingText.text = "Blessing  " + f.BlessingPercent + "%";
             }
         }
 

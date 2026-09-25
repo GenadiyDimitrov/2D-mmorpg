@@ -3021,7 +3021,7 @@ await gm.DisposeAsync();
         // It read as a control effect that never releases; it was the harness asking for an hour.
         // 🔑 A COMMAND THAT GAINS A DEFAULT CHANGES EVERY CALLER THAT OMITS THE ARGUMENT.
         fe.Buffs = null;
-        await fe.Hub.SendAsync("AdminCommand", "buff", "terrifying roar 5s");
+        await fe.Hub.SendAsync("AdminCommand", "buff", "terrifying roar 10s");
         bool landed = await fe.WaitFor(
             () => fe.Buffs is not null && fe.Buffs.Buffs.Any(b => b.Name.Contains("Terrifying")), 4000);
         Check("`/buff` can reach a CONTROL skill, so fear/charm are testable at all",
@@ -3047,19 +3047,27 @@ await gm.DisposeAsync();
 
         // THE REFUSAL. Tap "stop" — a Move to where we already are — repeatedly, and keep watching.
         // Accepted input would park him instantly; refused input leaves the panic running.
+        // ⚠ POLLED, AND THE FEAR IS 10s (`§103.2` again, 2026-09-25). With a 5s roar this read ONE
+        //   distance after six taps, and the taps could start ~7s after the `/buff` (a 4s wait for the
+        //   buff to land + a 3s wait for the flight) — past the fear, so a body that had stopped for the
+        //   right reason failed with "moved 15 units". It now taps and watches for up to 3s, and the
+        //   fear outlasts the worst case. Accepted input still parks him at once and still fails.
         double sx = fe.MyX, sy = fe.MyY;
-        for (int i = 0; i < 6; i++)
+        double Despite() => Math.Sqrt(Math.Pow(fe.MyX - sx, 2) + Math.Pow(fe.MyY - sy, 2));
+        for (int i = 0; i < 15 && Despite() <= 30.0; i++)
         {
             await fe.Hub.SendAsync("Move", new MoveCommand(fe.MyX, fe.MyY));
             await Task.Delay(200);
         }
-        double despite = Math.Sqrt(Math.Pow(fe.MyX - sx, 2) + Math.Pow(fe.MyY - sy, 2));
+        double despite = Despite();
         Check("...and a move order is REFUSED while it runs — a 'stop' tap cannot halt a panic",
-              despite > 30.0, $"moved {despite:0} units through 6 stop taps");
+              despite > 30.0, $"moved {despite:0} units through repeated stop taps");
 
         // AND IT HANDS THE BODY BACK. A control effect that never released would be the worse bug of
         // the two, and it is invisible for exactly as long as nobody waits out the duration.
-        await Task.Delay(3500);          // well past the 5s roar
+        // Waited for, not slept: the fear leaving the buff bar is the event, then half a second's grace.
+        await fe.WaitFor(() => fe.Buffs is not null && !fe.Buffs.Buffs.Any(b => b.Name.Contains("Terrifying")), 12000);
+        await Task.Delay(500);
         double rx = fe.MyX, ry = fe.MyY;
         await Task.Delay(1200);
         double after = Math.Sqrt(Math.Pow(fe.MyX - rx, 2) + Math.Pow(fe.MyY - ry, 2));

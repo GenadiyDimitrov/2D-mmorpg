@@ -119,6 +119,8 @@ namespace Game.Client
         public StatsUpdate Stats { get; private set; }
         /// <summary>`BL-277` - the Wayfarer's Favor gauge and the finished rates the details sheet prints.</summary>
         public FavorUpdate Favor { get; private set; }
+        /// <summary>`BL-295` — when <see cref="Favor"/> arrived, so the HUD counts a running Blessing down itself.</summary>
+        public float FavorReceivedAt { get; private set; }
         public ProgressUpdate Progress { get; private set; }
         public long Gold { get; private set; }
 
@@ -1367,7 +1369,7 @@ namespace Game.Client
             _net.SnapshotDeltaReceived += OnDelta;
             _net.SnapshotReceived += OnFullSnapshot;
             _net.StatsReceived += s => Main(() => { Stats = s; if (s != null) SkillPoints = s.SkillPoints; });
-            _net.FavorReceived += f => Main(() => Favor = f);
+            _net.FavorReceived += f => Main(() => { Favor = f; FavorReceivedAt = Time.realtimeSinceStartup; });
             _net.ProgressReceived += p => Main(() =>
             {
                 Progress = p;

@@ -7,12 +7,42 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.213.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-25 (latest) — 0.213.0: the quest arrow (`BL-294`)
+## 2026-09-25 (latest) — 0.214.0: Favor and Blessing are bars; EXP runs along the bottom (`BL-295`)
+
+> *"need the blessing % and favor to be like a bars ... EXP bar + lvl 123 can go on the bottom of the screen spanning
+> across the whole width ... [Name on the left and the 123/123 100% in the middle] -> thats the hp bar ... the curretnt exp
+> bar becomes the favor (... a bit darkenr than the current lime one) -> [0/20000 L0 0%] ... 4th bar [blessing 0~100%] some
+> golden color not so distracting ... when it activates ... the 100% to become a 180s countdown - no need fo actual buff"*
+
+The vitals panel (top left) is now **four bars and no title row**, the same size as before:
+
+| row | shows |
+|---|---|
+| **HP** | your **name** on the left, `123 / 123   100%` in the middle |
+| **MP** | as before |
+| **Favor** | `12,345 / 20,000   L5   +250%` (points, stage, the Favor's own bonus), a green a shade darker than EXP |
+| **Blessing** | `Blessing  73%`, muted gold. While one **runs**, the bar turns **bright gold**, drains with the time left, and reads `Blessing  2:41` |
+
+- **EXP and the level** moved to a thin strip across the **whole bottom edge** of the screen: `Lv 85   1,234 / 5,678   21%`.
+  The chat row and the skill bar moved up 6 px to stand on it.
+- **The Blessing has no buff icon any more**, so there is nothing a player can try to remove. The countdown comes from the
+  server's own clock: `FavorUpdate` gained `BlessingSecondsLeft` (appended, so an older client ignores it) and the HUD
+  counts it down between pushes. The cosmetic `wayfarer_blessing` buff, its re-assert loop and its icon were deleted.
+- **The Blessing's fill multiplier (booster rune ×2, charisma up to ×2, ×4 together) now applies to MOB KILLS ONLY.**
+  Your follow-up: *"the bonus x2/4 to the blessing only works on killing mobs .. not on the 1%/60s nor on the 8% when favor
+  drops a lvl nor on the lvl up"*. The combat minute (1%), the Favor stage loss (8%) and the level-up (30%) are now paid at
+  ×1. This **reverses** the fifth-round rule that the modifier multiplied every source. `Formulas.md` moved with it, and the
+  character sheet's "Fill rate" now reads **"Kill fill"**.
+- SmokeTest: the fear "stop taps are refused" check was a timing race (a 5 s fear, sampled up to ~7 s after it was cast).
+  The fear is now 10 s, the refusal is polled, and the "control handed back" check waits for the fear to leave the buff bar.
+- **A new APK is needed.**
+
+## 2026-09-25 — 0.213.0: the quest arrow (`BL-294`)
 
 > *"we need to make in the clientside (its only visual) for a tracking quest an arrow to point the direction of the
 > npc/mob i need (when i get into 200-300 range to disapear)"*
