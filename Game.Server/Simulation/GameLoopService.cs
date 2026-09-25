@@ -4431,7 +4431,7 @@ public class GameLoopService : BackgroundService
     }
 
     /// <summary>DEBUG: re-roll the SAME character in place — new race/base class, back to level 1,
-    /// classes/skills/quests cleared. Keeps the character row, name, gold and position.
+    /// classes/skills cleared. Keeps the character row, name, gold, position, QUESTS and LIMITS (`BL-296`).
     ///
     /// The INVENTORY is deliberately KEPT (owner reversed the earlier "wipe it" call): you re-roll to
     /// test another class, and losing the gear you built up each time made that painful. Everything is
@@ -4455,8 +4455,12 @@ public class GameLoopService : BackgroundService
         player.Subclasses.Add(main);
         player.SwitchSubclass(0);
 
-        player.ActiveQuests.Clear();
-        player.CompletedQuests.Clear();
+        // 🔑 QUESTS AND LIMITS SURVIVE A RE-ROLL (owner, 2026-09-25, `BL-296`): *"i want to reset nothing
+        //    only class and stats .. limits stay (i used them today no more)"*. These two lines were
+        //    `ActiveQuests.Clear()` + `CompletedQuests.Clear()`, which threw away his whole tutorial chain
+        //    and — because a daily's completion is a stamp in `CompletedQuests` — handed him today's
+        //    rune a second time. Only what the NEW race/class makes wrong goes; see KeepQuestsThroughReset.
+        KeepQuestsThroughReset(player);
         player.Buffs.Clear();
         foreach (var item in player.Inventory) item.Equipped = false;
         GiveStarterKit(player, skipOwned: true);
@@ -4473,6 +4477,52 @@ public class GameLoopService : BackgroundService
         SendQuestLog(player);
         SaveEntity(player);
         SendSystemToEntity(player, $"[DEBUG] Character reset to level 1 {cmd.Race} {cmd.BaseClass}.");
+    }
+
+    /// <summary>`BL-296` — what a main-class re-roll does to quests: NOTHING, except
+    /// <list type="bullet">
+    /// <item>a quest (active or completed) LOCKED to the old race, base class or class chain is dropped,
+    /// because it belongs to a character this one no longer is (none such exist today apart from the
+    /// class-change chains; the rule is written for the ones that will);</item>
+    /// <item>an active quest whose progress has passed a <c>Reach level X</c> step the new level no longer
+    /// meets is REWOUND to that step (*"like reach x lvl and i reset below X it activates again asking to
+    /// reach X"*). Steps before it keep their progress.</item>
+    /// </list>
+    /// Daily stamps (<c>id@yyyy-MM-dd</c>) are kept untouched: a limit used today stays used.</summary>
+    private static void KeepQuestsThroughReset(Entity player)
+    {
+        bool Foreign(QuestDef def)
+        {
+            if (def.ForRace is Race r && r != player.Race) return true;
+            if (def.ForBaseClass is BaseClass b && b != player.BaseClass) return true;
+            if (def.ForSecondClass is not null) return true;       // the new main holds no 2nd class
+            var (cid, tier) = QuestCatalog.ClassChainOf(def.Id);
+            if (tier == 2 && ClassCatalog.Get(cid) is { } c2 && (c2.Race != player.Race || c2.Base != player.BaseClass))
+                return true;
+            if (tier == 3) return true;                             // nor a 3rd
+            return false;
+        }
+
+        foreach (var id in player.CompletedQuests.ToList())
+            if (!id.Contains('@') && QuestCatalog.Get(id) is { } done && Foreign(done))
+                player.CompletedQuests.Remove(id);
+
+        foreach (var (qid, state) in player.ActiveQuests.ToList())
+        {
+            if (QuestCatalog.Get(qid) is not { } def) continue;
+            if (Foreign(def)) { player.ActiveQuests.Remove(qid); continue; }
+
+            // The LAST step already behind you counts as passed once the quest is ready to hand in.
+            int passedUpTo = state.Completed || state.Counter >= def.Steps[state.StepIndex].Count
+                ? state.StepIndex : state.StepIndex - 1;
+            for (int i = 0; i <= passedUpTo && i < def.Steps.Length; i++)
+            {
+                var step = def.Steps[i];
+                if (step.Type != QuestStepType.ReachLevel || player.Level >= step.Count) continue;
+                player.ActiveQuests[qid] = state with { StepIndex = i, Counter = 0, Completed = false };
+                break;
+            }
+        }
     }
 
     /// <summary>DEBUG: take a 3rd-class discipline directly (no quest/items). Forces
@@ -7531,6 +7581,7 @@ public class GameLoopService : BackgroundService
                         "/lvl [name] <level|max>, /sp [name] <amount|max>, " +
                         "/exp [name] <amount|max>, /droprate [group|gear|global|amount|item <id>] [mult], " +
                         "/titleright <name> <on|off>, /buff [name] [level], /clearbuffs [name], " +
+                        "/resetlimits [name] (today's dailies, farm allowance, likes, Favor potion), " +
                         "/server <shutdown|reboot|on> [min] [adminOnly]" +
                         (admin.Role == AccountRole.Owner
                             ? "  —  Owner: only you may /role … admin." : ""),
@@ -8846,10 +8897,50 @@ public class GameLoopService : BackgroundService
                 break;
             }
 
+            // `BL-296` — ADMIN ONLY (in no moderator allow-list). Owner, 2026-09-25: *"a new admin command/button
+            // to reset limits -> like instances/quests etc but only for admins"*. The re-roll no longer
+            // touches a limit, so this is the one deliberate way to get today's back for testing.
+            case "resetlimits":
+            {
+                var rlName = (arg ?? "").Trim();
+                Entity? rl = rlName.Length == 0 ? admin : FindOnlinePlayer(rlName);
+                if (rl is null) { SendSystemToEntity(admin, $"{rlName} is not online."); break; }
+                SendSystemToEntity(admin, $"[DEBUG] {rl.Name}: {ResetLimits(rl)}.");
+                if (rl != admin) SendSystemToEntity(rl, "An admin reset your daily limits.");
+                break;
+            }
+
             default:
                 SendSystemToEntity(admin, $"Unknown command: {command}");
                 break;
         }
+    }
+
+    /// <summary>`BL-296` — give back every PER-DAY limit this character has used: today's daily-quest
+    /// stamps (the `id@day` entries in <c>CompletedQuests</c> — the quests themselves are untouched), the
+    /// account's auto/offline farm allowance, the like budget and the Favor potion's cooldown. Instance
+    /// entry limits join this list the day instances exist. Returns what it did, for the reply.</summary>
+    private string ResetLimits(Entity p)
+    {
+        int stamps = p.CompletedQuests.RemoveWhere(id => id.Contains('@'));
+
+        if (BudgetOf(p) is { } budget)
+        {
+            budget.AutoTicksLeft    = (long)Math.Max(0, AutoIdleCapSecondsFor(budget)) * GameConstants.TickRate;
+            budget.OfflineTicksLeft = (long)Math.Max(0, AutoOfflineCapSecondsFor(budget)) * GameConstants.TickRate;
+            budget.LastResetDate    = DateOnly.FromDateTime(DateTime.Now);
+            budget.Dirty            = true;
+            SaveDirtyBudgets();
+            SendAutoHuntStatus(p);
+        }
+
+        p.LikesRemainingToday = GameConstants.DailyLikeBudget;
+        p.FavorPotionReadyUtc = null;
+
+        SendQuestLog(p);
+        SaveEntity(p);
+        return $"{stamps} daily stamp(s) cleared, farm allowance refilled, likes back to "
+             + $"{GameConstants.DailyLikeBudget}, Favor potion ready";
     }
 
     /// <summary>Apply a kick/ban to an ONLINE character (a no-op if they aren't). The persisted lockout

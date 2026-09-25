@@ -1103,6 +1103,12 @@ namespace Game.Client
 
             DebugHeader("Reset character (re-roll, same char)");
             DebugAction("Reset -> pick race & class >", () => { _debugResetView = true; RefreshDebugPanel(); });
+
+            // `BL-296` — the re-roll keeps quests AND limits now, so this is the one way to get today's
+            // back: dailies, farm allowance, likes, the Favor potion. Admin-only on the server.
+            DebugHeader("Limits");
+            DebugAction("Reset my daily limits",
+                        () => Boot.Debug(n => n.AdminCommandAsync("resetlimits", ""), "resetlimits"));
         }
 
         /// <summary>`BL-127` — the re-roll picker, the same shape as "+ Add a class": one button on the

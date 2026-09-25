@@ -274,6 +274,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-284` | 🔵 | **RECURRING RUNE GRANT** — premium/event: a 1 h rune a day + 1-2 2 h runes a week; needs a premium status or events (neither exists) — split out of `BL-277` | progression |
 | `BL-286` | ⏸ | **CASTLE "NOBLE" CHARISMA** — a castle-holding clan leader gets charisma decay/loss protection or a grant; split out of `BL-283`; waits on castles | social |
 | `BL-288` | ⏸ | **CONSUMABLE RARITY → PLAIN LEVELS 1-6** — potions/scrolls may drop the rarity word entirely; deferred by him, split out of `BL-272` | items |
+| `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
 
 ---
 
@@ -2228,3 +2229,13 @@ we can remove the rarity as whole .. and items just have lvls 1,2,3...6"*. Equip
 it is picked up: which families keep a ladder at all, what the level word looks like on a card, and whether the
 pickup filter (`BL-241`, keyed on rarity) moves to the level.
 
+
+
+## `BL-298` ⏸ PREMIUM MAIN-CLASS CHANGE
+
+His words, 2026-09-25, beside `BL-296`: *"later we will make a premium if a player wants to reset his main class to new
+one (staying the same lvl exp/sp etc) we wont reset his quests"*. ⏸ **"Later", by him.** Today only the admin re-roll
+exists (`HandleDebugReset`, back to level 1). Since `BL-296` it keeps quests and limits, and
+`GameLoopService.KeepQuestsThroughReset` is the quest half this will reuse. ❓ Open when it is picked up: the price
+(platinum?), whether subclasses survive, and what happens to class-chain quests of the old class (today's re-roll
+drops them).

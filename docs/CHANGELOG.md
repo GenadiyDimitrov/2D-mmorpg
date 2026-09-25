@@ -7,12 +7,31 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-25 (latest) — 0.214.0: Favor and Blessing are bars; EXP runs along the bottom (`BL-295`)
+## 2026-09-25 (latest) — 0.214.1: a re-roll keeps your quests and limits; `/resetlimits` (`BL-296`)
+
+> *"main class reset (admin reset) resets all my quest progress ... it should not cancel my quests"* · *"also it reset the
+> daily quests i could take the rune again .. i want to reset nothing only class and stats ... limits stay ... a new admin
+> command/button to reset limits"*
+
+- **The debug re-roll (Reset → race & class) no longer touches quests or limits.** It used to clear every active and
+  completed quest. That lost your "Welcome, traveler" chain and your hunter's contract. It also cleared today's daily
+  stamps, which is why the rune could be taken twice.
+- It now changes **only the class, its stats and its level** (back to 1, as before). The single exception is a quest
+  **locked to the old race, base class or class chain** (only the class-change chains, today), which is dropped. A quest
+  whose progress has passed a **"reach level X"** step that you no longer meet goes back to that step and asks for X
+  again. Steps before it keep their progress. Nothing is cancelled.
+- **`/resetlimits [name]`**, admin only, plus a **"Reset my daily limits"** button on the debug panel's character tab. It
+  gives back everything you use once a day: today's daily-quest stamps, the account's auto/offline farm allowance, the
+  like budget and the Favor potion's cooldown. Instance entry limits will join it once instances exist.
+- Filed for later: `BL-298`, the premium main-class change (same level/EXP/SP, quests kept). **A new APK is needed** for
+  the button; the command works from chat on any client.
+
+## 2026-09-25 — 0.214.0: Favor and Blessing are bars; EXP runs along the bottom (`BL-295`)
 
 > *"need the blessing % and favor to be like a bars ... EXP bar + lvl 123 can go on the bottom of the screen spanning
 > across the whole width ... [Name on the left and the 123/123 100% in the middle] -> thats the hp bar ... the curretnt exp

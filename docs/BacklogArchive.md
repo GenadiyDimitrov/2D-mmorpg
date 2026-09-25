@@ -7660,3 +7660,15 @@ that becomes a 180 s countdown while active, with no removable buff. EXP + level
 of the screen. **Built as written.** The Blessing's cosmetic buff face (`wayfarer_blessing`) is deleted, and
 `FavorUpdate.BlessingSecondsLeft` drives the countdown. ⚠ Unplayed: bar heights (26/22/18/18), the strip (16 px) and
 both colours are first guesses. **Same version, his follow-up:** the Blessing fill multiplier (rune x2, charisma x2) now scales MOB KILLS ONLY; the combat minute, the stage-loss 8% and the level-up 30% are x1 (reverses the fifth-round "every source").
+
+
+## `BL-296` ✅ CLOSED 2026-09-25 in **0.214.1**: a re-roll keeps quests and limits; `/resetlimits`
+
+His words, 2026-09-25: *"main class reset (admin reset) resets all my quest progress ... we currently dont have recial
+quests ... it should not cancel my quests (only if ... reach xlvl and i reset below X it activates again asking to reach
+X) but never cancels"*, then *"also it reset the daily quests i could take the rune again .. i want to reset nothing only
+class and stats .. (quest by race/class but we dont have any so nothing for now) limits stay ... a new admin
+command/button to reset limits -> like instances/quests etc but only for admins"*. **Built as:**
+`KeepQuestsThroughReset` (drops only race/class/class-chain-locked quests, and rewinds a passed ReachLevel step the new
+level fails), plus `/resetlimits [name]` (daily stamps, farm allowance, likes, Favor potion) and a debug-panel button.
+The premium class change he mentioned is `BL-298`.
