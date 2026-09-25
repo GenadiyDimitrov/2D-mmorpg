@@ -7599,3 +7599,21 @@ note:
 
 ⚠ Keep an **All** tab first unless he says otherwise (the other windows all have one). APK (the shop defs and the
 window are both in the client).
+
+
+## `BL-291` ✅ CLOSED 2026-09-25 in **0.211.0**: a vendor row opens the item's details first
+
+Filed and built the same day. The entry as it stood:
+
+### `BL-291` 🔴 (as it stood) A VENDOR ROW OPENS THE ITEM'S DETAILS FIRST
+
+His words, 2026-09-25: *"the mytic body armors in vendors need to show the set effect .. the weapons even show the
+attribute rolls, shields show block chance ... but a main armor dont show the set .. may be before buy/sell (if not
+quick is enabled) open a details panel for that item .. then there should be a buy button .. for potions will open it
+details pannel then a buy button will open the numpad ... same details panel as for the inventory just changed buttons
+(no lock, no break,equip use or wahtever there is .. just a buy and a cancel buttons)"*.
+
+**Built as:** `GameUi.OpenVendorItemDetails` opens the bag's item window with a replaced button row. Buy: a single piece
+is bought, a stack goes to the numpad. Sell: the real instance, tracked, so its attributes show and the window closes
+once it is sold. QSell skips the panel. The panel is the one confirmation (playtest-16), and the old vendor confirm
+dialogs were deleted. There is no quick-BUY toggle, because none existed: his "(if not quick is enabled)" can only mean QSell.

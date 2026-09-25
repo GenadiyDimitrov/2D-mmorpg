@@ -7,12 +7,27 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.210.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.211.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-25 (latest) — 0.210.2: saves land in order; §102.9/§102.10 not reproduced
+## 2026-09-25 (latest) — 0.211.0: a vendor row opens the item's details first (`BL-291`)
+
+> *"the mythic body armors in vendors need to show the set effect .. may be before buy/sell (if not quick is enabled) open a
+> details panel for that item .. then there should be a buy button .. for potions will open it details pannel then a buy
+> button will open the numpad ... same details panel as for the inventory just changed buttons"*
+
+- Tapping a vendor row now opens the **bag's own item window** for that item: stats, description, and the **set with its
+  effect**. The vendor's old confirm printed only the stat block, which is why a Mythic body armour never showed its set.
+- The window has just two buttons, **Buy (price)** and **Cancel**. There is no lock, equip, break down or bin.
+  Buy on a single piece buys it. Buy on a stackable (potions, scrolls, materials) opens the numpad, as before.
+  The panel **is** the confirmation, so nothing is asked twice (your playtest-16 rule). Essence wares work the same way.
+- **The sell side too**: Sell (price) + Cancel, drawn from the real piece, so its enchant and **attribute rolls** show.
+  The window follows the piece and closes itself once it is sold. **QSell ON still sells in one tap**, with no panel.
+- The vendor's old confirm dialogs (`ConfirmBuy` / `ConfirmSell`) are gone. **A new APK is needed** (client only).
+
+## 2026-09-25 — 0.210.2: saves land in order; §102.9/§102.10 not reproduced
 
 - **A character's saves can no longer land out of order.** Each save runs on its own thread. The save gate stopped two
   saves from overlapping, but it never guaranteed the order they ran in. So when two saves of one character were queued

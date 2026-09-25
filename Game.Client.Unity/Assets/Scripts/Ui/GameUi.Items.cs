@@ -1049,12 +1049,36 @@ namespace Game.Client
         /// deliberate second tap, not a shape the window remembers from the last item you looked at.</summary>
         public void OpenItemDetails(InventoryItemDto item)
         {
+            _itemVendorActions = null;
             SetItemCompare(false);
             _openItemInstance = item.InstanceId;
             _openItemStamp = 0;                    // force the first RefreshItemDetails to draw
             ShowItem(_itemView, item, actions: true);
             OpenWindow(_itemPanel);
         }
+
+        /// <summary>`BL-291` — THE SAME WINDOW, OPENED FROM A VENDOR ROW. Owner, 2026-09-25: *"same details
+        /// panel as for the inventory just changed buttons (no lock, no break, equip use or whatever there
+        /// is .. just a buy and a cancel buttons)"*, because the vendor's own confirm printed the stats but
+        /// never the SET, so a Mythic body armour said nothing about what its set does.
+        ///
+        /// <para><paramref name="actions"/> REPLACES the whole button row and hides the lock; it is asked
+        /// again on every redraw, with the fresh DTO. <paramref name="track"/> = a real bag instance (the
+        /// sell side): the `BL-141` refresh then follows it and closes the window once it has been sold.
+        /// A shop ware has no instance, so it is not tracked.</para></summary>
+        private void OpenVendorItemDetails(InventoryItemDto item, bool track,
+                                           Func<InventoryItemDto, List<(string Label, Action Click)>> actions)
+        {
+            SetItemCompare(false);
+            _itemVendorActions = actions;
+            _openItemInstance = track ? item.InstanceId : Guid.Empty;
+            _openItemStamp = 0;
+            ShowItem(_itemView, item, actions: true);
+            OpenWindow(_itemPanel);
+        }
+
+        /// <summary>Non-null while the window was opened by <see cref="OpenVendorItemDetails"/>.</summary>
+        private Func<InventoryItemDto, List<(string Label, Action Click)>> _itemVendorActions;
 
         /// <summary>Which item the details window is showing, and a stamp of what was drawn (`BL-141`).
         /// Empty = nothing open.</summary>
@@ -1129,7 +1153,8 @@ namespace Game.Client
             // `BL-239` — the lock toggle. Only on the actionable column, and never on a QUEST item:
             // every disposal path already refuses one, so a lock on it would be a button that promises
             // to change something and cannot.
-            bool lockable = actions && !ItemCatalog.IsQuestItem(def);
+            bool vendor = actions && _itemVendorActions != null;   // `BL-291`: Buy/Sell + Cancel only
+            bool lockable = actions && !vendor && !ItemCatalog.IsQuestItem(def);
             bool locked = Boot.IsLocked(def, item);
             v.Lock.gameObject.SetActive(lockable);
             if (lockable)
@@ -1154,6 +1179,7 @@ namespace Game.Client
 
             // The compare column is READ-ONLY: it shows the worn piece and stops there.
             if (!actions) return;
+            if (vendor) { LayoutButtons(v.Buttons, _itemVendorActions(item)); return; }
 
             var id = item.InstanceId;
             var buttons = new List<(string Label, Action Click)>();
@@ -1569,6 +1595,7 @@ namespace Game.Client
         {
             SetItemCompare(false);
             _openItemInstance = Guid.Empty;   // `BL-141` — nothing is being tracked once it is shut
+            _itemVendorActions = null;        // `BL-291` — the next open from the bag gets bag buttons
             CloseWindow(_itemPanel);
         }
 

@@ -329,7 +329,8 @@ namespace Game.Client
                     VendorRow(_vendorDetailed ? esHead + "\n<size=12><color=#9AA3AD>" + WareSummary(def) + "</color></size>"
                                               : esHead,
                               esAfford ? UiKit.Text : UiKit.TextDim,
-                              () => ConfirmBuy(esDefId, esName, 0, 0, 1, esPrice), _vendorDetailed ? 56f : 38f);
+                              () => OpenWareDetails(esDefId, "Buy  " + esPrice, () => Boot.BuyItem(esDefId, 1)),
+                              _vendorDetailed ? 56f : 38f);
                     continue;
                 }
                 long unit = Math.Max(0, ware.BuyPrice);   // -1 = no GOLD price, not "unbuyable"
@@ -422,17 +423,41 @@ namespace Game.Client
             return t.ToString();
         }
 
-        // ONE confirmation per purchase (owner, playtest-16). 32d put a details dialog in FRONT of the
-        // numpad, and with the confirm behind it a stack cost three taps through three windows — he
-        // called it "like a double confirmation… the details can be on the row, just better worded".
+        // ═══ `BL-291` — A ROW OPENS THE ITEM'S DETAILS FIRST (owner, 2026-09-25) ═══════════════════
         //
-        // So the details moved onto the ROW (detail view is on by default, buy AND sell), and for a
-        // stackable **the numpad IS the confirmation**: it names the item, prices it, and its button
-        // says what it will do. Nothing is asked twice. A NON-stackable still gets the one confirm
-        // dialog — it has no numpad to carry the question, and it is a single step, not a second one.
-        private void BuyTap(string defId, string name, ItemDef def, long unit, long unitPlat)
+        // *"the mythic body armors in vendors need to show the set effect .. before buy/sell (if not quick
+        // is enabled) open a details panel for that item .. then there should be a buy button .. for
+        // potions will open it details pannel then a buy button will open the numpad"*.
+        //
+        // The panel is the bag's own item window (OpenVendorItemDetails), so a ware reads exactly as
+        // it will once it is yours: stats, description, the SET and what it does. The vendor's old
+        // confirm dialog printed only the stat block, which is why a Mythic body armour never said.
+        //
+        // 🔑 STILL ONE CONFIRMATION PER PURCHASE (playtest-16: a details dialog in front of the numpad
+        //    and a confirm behind it was *"like a double confirmation"*). The PANEL is now the
+        //    confirmation: Buy on a single piece buys it, and for a stack Buy opens the numpad, which
+        //    names the quantity and the total. Nothing is asked twice. QSell still skips all of it.
+
+        /// <summary>Open a SHOP WARE in the item window with Buy + Cancel. It has no instance, so it is
+        /// drawn from a stand-in DTO (quantity 1, no enchant, no attributes).</summary>
+        private void OpenWareDetails(string defId, string buyLabel, Action buy)
         {
-            if (!IsStackable(def)) { ConfirmBuy(defId, name, unit, unitPlat, 1); return; }
+            var ware = new InventoryItemDto(Guid.Empty, defId, false, 0, 1, null);
+            OpenVendorItemDetails(ware, track: false, _ => new List<(string Label, Action Click)>
+            {
+                (buyLabel, () => { CloseAllItemViews(); buy(); }),
+                ("Cancel", CloseAllItemViews),
+            });
+        }
+
+        private void BuyTap(string defId, string name, ItemDef def, long unit, long unitPlat) =>
+            OpenWareDetails(defId, "Buy  " + Price(unit, unitPlat),
+                IsStackable(def) ? () => BuyQuantity(defId, name, def, unit, unitPlat)
+                                 : () => Boot.BuyItem(defId, 1));
+
+        /// <summary>The numpad half of buying a STACKABLE — reached from the details panel's Buy.</summary>
+        private void BuyQuantity(string defId, string name, ItemDef def, long unit, long unitPlat)
+        {
 
             // Max = the most you can AFFORD, clamped to ONE STACK — the server's own rule since 0.93.0
             // (*"max shop buy = 1 stack"*), so the cap here is the item's, not a hard-coded 999: mana
@@ -548,50 +573,25 @@ namespace Game.Client
             // row that said "+6 Electrum Blade" is the one place the warning could still be missed.
             string named = (item.Enchant > 0 ? "+" + item.Enchant + " " : "") + def.Name;
 
-            if (!IsStackable(def) || item.Quantity <= 1) { ConfirmSell(id, named, unit, 1); return; }
-
-            OpenNumpad("Sell " + named, item.Quantity, "Sell",
-                       qty => { Boot.SellItem(id, qty); CloseNumpad(); },
-                       qty => qty + " of " + item.Quantity + "   you get "
-                              + (unit * qty).ToString("N0") + " " + GameConstants.CurrencyName);
-        }
-
-        /// <summary>Append an item's stat block and description to a vendor message. Shared by the
-        /// details step and the final confirm so the two can never describe the same item differently.
-        /// The "Name:" row is dropped — the name is already in the line above it.</summary>
-        private void AppendItemDetails(StringBuilder t, ItemDef def, string defId)
-        {
-            if (def == null) return;
-            // Smaller than the question: the question is the decision, the stats are its evidence, and
-            // at the dialog's 19px they ran the panel past the bottom of the screen.
-            t.AppendLine().AppendLine().Append("<size=15>");
-            string stats = ItemStatsText(def, new InventoryItemDto(Guid.Empty, defId, false, 0, 1, null));
-            foreach (var line in stats.Split('\n'))
-                if (!line.StartsWith("Name:")) t.AppendLine(line.TrimEnd());
-            if (!string.IsNullOrWhiteSpace(def.Description))
-                t.Append("<color=#9AA3AD>").Append(def.Description).Append("</color>");
-            t.Append("</size>");
-        }
-
-        private void ConfirmBuy(string defId, string name, long unit, long unitPlat, int qty, string priceText = null)
-        {
-            // The confirm dialog is where the item DESCRIPTION belongs (owner, playtest-13: "clicking on
-            // the item opens confirmation dialog with the items description"). It is the last moment
-            // before the gold leaves, and the only place there is room to say what you are actually
-            // buying — which matters far more now that a piece exists at three qualities and the name
-            // no longer tells you which one you tapped.
-            var def = ItemCatalog.Get(defId);
-            var t = new StringBuilder();
-            t.Append("Buy ").Append(qty).Append(" x ").Append(name)
-             .Append(" for ").Append(priceText ?? Price(unit, unitPlat, qty)).Append('?');
-            AppendItemDetails(t, def, defId);
-            Ask(t.ToString(), "Confirm", () => { Boot.BuyItem(defId, qty); CloseNumpad(); });
-        }
-
-        private void ConfirmSell(Guid instanceId, string name, long unit, int qty)
-        {
-            Ask("Sell " + qty + " x " + name + " for " + (unit * qty).ToString("N0") + " " + GameConstants.CurrencyName + "?",
-                "Confirm", () => { Boot.SellItem(instanceId, qty); CloseNumpad(); });
+            // `BL-291` — the real instance goes in, so its enchant and ATTRIBUTE ROLLS show, and the
+            // window follows it (tracked) and closes itself once it has been sold. Each redraw is handed
+            // the fresh DTO, so a stack that shrank prices the numpad off what is actually left.
+            OpenVendorItemDetails(item, track: true, cur =>
+            {
+                string sellLabel = "Sell  " + unit.ToString("N0") + " " + GameConstants.CurrencyName
+                                 + (cur.Quantity > 1 ? " ea" : "");
+                Action sell = !IsStackable(def) || cur.Quantity <= 1
+                    ? () => Boot.SellItem(id, 1)
+                    : () => OpenNumpad("Sell " + named, cur.Quantity, "Sell",
+                                       qty => { Boot.SellItem(id, qty); CloseNumpad(); },
+                                       qty => qty + " of " + cur.Quantity + "   you get "
+                                              + (unit * qty).ToString("N0") + " " + GameConstants.CurrencyName);
+                return new List<(string Label, Action Click)>
+                {
+                    (sellLabel, () => { CloseAllItemViews(); sell(); }),
+                    ("Cancel", CloseAllItemViews),
+                };
+            });
         }
 
         // Stackable = the server's rule for what a quantity even means (Consumable / Scroll).
