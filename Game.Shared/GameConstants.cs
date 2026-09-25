@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.214.1";
+    public const string GameVersion = "0.214.2";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -578,6 +578,14 @@ public static class GameConstants
     /// <summary>Threat entries below this are pruned — decay's floor, so a table doesn't grow
     /// a long tail of entities that once threw a debuff and left.</summary>
     public const float ThreatFloor = 1f;
+
+    /// <summary>§104.1 — the threat a hostile act that dealt NO damage leaves behind: a MISSED swing, a
+    /// debuff, a CC (<c>Retaliate</c>). It was a flat 1 — EQUAL to <see cref="ThreatFloor"/> — so the first
+    /// one-second decay (×0.99) took it to 0.99 and pruned it, the mob lost its only target and went home.
+    /// Owner, 2026-09-25: *"if i miss 10 times and then hit .. he will start to attack at the hit (11th
+    /// time)"*. 10 outlives the floor for ~4 minutes of decay; walking out of view or past the leash still
+    /// ends the fight the ordinary way, and against real damage (hundreds a hit) it never decides a table.</summary>
+    public const float ProvokeThreat = 10f;
 
     /// <summary>What a mob that walked to YOU owes you, as a fraction of its own max HP.
     ///

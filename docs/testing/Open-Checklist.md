@@ -1542,3 +1542,10 @@ Your note is verbatim in [design/Rework-2026-09-23.md](../design/Rework-2026-09-
 |---|---|---|
 | 103.1 | ❓ **The Training Wand is not a magic weapon.** It is a plain `Blunt` with M.Atk 7 and no `IsMagicWeapon`, and the caster check (`Entity`) keys on that flag, so a mage holding it is treated as holding a mace. Found by `BL-290`'s Wand tab, which now names it by id. Nothing was changed. | Should it be a magic weapon like every other wand? One flag on one item, but it changes a level-1 mage's casting. |
 | 103.2 | ✅ **FIXED 0.210.2.** One of the two flakes was a real server bug. **The jail check**: `/jail` saves the teleport, then saves the charisma drain, in the same tick. Every save runs on its own thread, and nothing guaranteed they finished **in order**, so sometimes the older save landed last and overwrote the drain. That is lost data for up to 60 s, or permanently if the lost save was the logout one. Now every save carries the order it was taken in, and an older one is skipped once a newer one is on disk. **The Spellcaster Mastery check** was the test's own fault: it read the skill list without waiting for it to arrive. Two full runs, ALL PASS. **A third flake, fixed 0.214.0:** the fear check sampled a 5 s fear up to ~7 s after the cast; the fear is now 10 s and the checks poll. | none |
+
+## §104 — YOUR NOTES OF 2026-09-25 (the bugs)
+
+| # | bug | your words / the rule |
+|---|---|---|
+| 104.1 | ✅ **FIXED 0.214.2** — **A miss did not aggro the mob**; it attacked only from the first landed hit. A no-damage hostile act left 1 threat, equal to `ThreatFloor`, and the first one-second decay pruned it, so the mob went home. It now leaves `ProvokeThreat` = 10. Debuff-only pulls had the same bug. | *"if i miss 10 times and then hit .. he will start to attack at the hit (11th time)"*: a miss must aggro |
+| 104.2 | ✅ **FIXED 0.214.1** (`BL-296`) — **The admin re-roll wiped all quests and today's dailies** (the chain restarted, the rune could be taken twice) | reset only class and stats; quests and limits stay; an admin `/resetlimits` for the limits |

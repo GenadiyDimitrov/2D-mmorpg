@@ -7,12 +7,24 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-25 (latest) — 0.214.1: a re-roll keeps your quests and limits; `/resetlimits` (`BL-296`)
+## 2026-09-25 (latest) — 0.214.2: a miss aggroes the mob (§104.1)
+
+> *"a 1st misses until an actual hit on mobs the mob dont agrro"* · *"if i miss 10 times and then hit .. he will start to
+> attack at the hit (11th time)"*
+
+- **Root cause:** a hostile act that dealt no damage (a **missed swing**, and also a debuff or CC) left **1 threat**,
+  exactly the `ThreatFloor`. The first one-second decay (×0.99) took it to 0.99 and pruned it. The mob lost its only
+  target and went home, so each miss made it turn for under a second. Only a landed hit's damage-sized threat survived.
+- **Fix:** that act now leaves `GameConstants.ProvokeThreat` = **10**, which outlives the floor for about 4 minutes of decay.
+  Leaving view range or the leash still ends the fight as before. Against real damage (hundreds a hit) it never decides
+  who the mob chases. This also fixes a debuff-only pull, which had the same silent bug. Server only.
+
+## 2026-09-25 — 0.214.1: a re-roll keeps your quests and limits; `/resetlimits` (`BL-296`)
 
 > *"main class reset (admin reset) resets all my quest progress ... it should not cancel my quests"* · *"also it reset the
 > daily quests i could take the rune again .. i want to reset nothing only class and stats ... limits stay ... a new admin

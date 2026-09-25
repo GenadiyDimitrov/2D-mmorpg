@@ -15531,8 +15531,10 @@ public class GameLoopService : BackgroundService
         // Being targeted by an offensive action always provokes a mob — even a non-damaging
         // one (debuff/CC) — so add a little threat (damage adds the rest in ApplyDamage).
         // Training dummies never aggro.
+        // 🔴 NOT 1 (§104.1): 1 sat exactly on ThreatFloor, so the first decay pruned it and a MISS never
+        //    held aggro — the mob answered only the first swing that landed. See GameConstants.ProvokeThreat.
         if (victim.Kind == EntityKind.Mob && !victim.Dead && !victim.TrainingDummy)
-            AddThreat(victim, attacker, 1f);
+            AddThreat(victim, attacker, GameConstants.ProvokeThreat);
 
         // `BL-115` — *"retaliate if false don't strike back just sit and take it"*. FALSE on every NPC
         // placed today, so this branch is inert and deliberately so: it exists because the flag is
