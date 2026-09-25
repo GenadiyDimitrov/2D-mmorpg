@@ -7626,3 +7626,18 @@ also give 50 mp and 50 hp pots somewhere in between reach 10/15/18"*, clarified:
 and 5 common pots"*. **Built as:** creation (and the debug re-roll) hand out nothing. The level-10 tutorial reward
 (Properly Armed) adds 50 Common HP + 50 Common MP potions. "Somewhere in between" was his to leave open; 10 was chosen
 as the earliest, and a playtest may move it.
+
+
+## `BL-293` ✅ CLOSED 2026-09-25 in **0.212.1**: every town has a gate, and guards hold their post
+
+His words, 2026-09-25: *"town guards should walk with 0 speed .. so they wont move from their spot .. and run with normal
+one like 180(mele)-200(for archers) ... each town must have a gate ... two guards at each gate .. and in between the guards
+is the actual gate ... until we have a real gates and walls ... u can position only two guards on the bottom of each city
+... spaced out like 200 range so u can walk in between them - one fighter and one tank (the archers 90 are the guard
+towers on a piecefull zones -> u can leave them as they are (only unmovable when not aggroed))"*.
+
+**Built as:** a fighter + a tank 200 apart at the bottom (+Y) of every city, 60 past the safe radius, each on its own
+5-unit spawn zone. Run speed 180. No guard wanders (MobAi), which is the working form of "walk 0" (a 0 walk speed falls
+back to the run speed in `EffectiveSpeed`). The field pair is unchanged apart from not wandering. ⚠ **Still owed when real
+walls exist:** the gate on the far side (*"the other side is the same"*) and the walls themselves. Two guards per city,
+at the bottom only, is his interim.

@@ -354,11 +354,11 @@ public static class WorldPlan
     //  piesfull farming zones)", and from playtest 25: "each towns exit will have two guards - a tank
     //  and an archer".
     //
-    //  A TOWN POST sits just outside the city's safe radius, on the bearing of that city's first
-    //  hunting field — which is what "the town's exit" means here, since a city has no authored door
-    //  and its fields ARE its roads. Just outside matters twice over: a safe zone keeps mobs out
-    //  entirely, and MobAi skips any candidate standing in one, so a guard placed inside would be
-    //  both illegal and blind.
+    //  A TOWN POST is the city's GATE (2026-09-25): a fighter and a tank 200 apart at the BOTTOM of
+    //  the city, just outside its safe radius, until real walls and gates exist. (It used to be a
+    //  tank + archer pair wandering on the bearing of the first hunting field.) Just outside matters
+    //  twice over: a safe zone keeps mobs out entirely, and MobAi skips any candidate standing in
+    //  one, so a guard placed inside would be both illegal and blind.
     //
     //  A FIELD POST sits at the far camp of a quiet farming field — his "peaceful farming zones".
     //  Three of them, spread across the level range rather than clustered, so the feature can be
@@ -370,8 +370,16 @@ public static class WorldPlan
     //  has seen it work.
     // ===================================================================================
 
-    /// <summary>How far beyond a city's safe radius its guard post stands.</summary>
-    private const float GuardPostOffset = 300f;
+    /// <summary>How far beyond a city's safe radius its GATE stands — just outside, so the guards can
+    /// see who walks through (a guard inside a safe zone is blind).</summary>
+    private const float TownGateOffset = 60f;
+
+    /// <summary>Half the gap between the two gate guards: his *"spaced out like 200 range so u can
+    /// walk in between them"*.</summary>
+    private const float TownGateHalfWidth = 100f;
+
+    /// <summary>A gate guard's spawn zone: a few units, so it appears ON its post.</summary>
+    private const float TownGuardPostRadius = 5f;
 
     /// <summary>The radius a guard post patrols. Small on purpose — a post is a gate, not a camp,
     /// and the pair should read as standing TOGETHER at the road.</summary>
@@ -411,20 +419,26 @@ public static class WorldPlan
     private static SpawnZone[] BuildGuardZones()
     {
         var zones = new List<SpawnZone>();
-        string[] townPair = { "guard_town_tank", "guard_town_archer" };
         string[] fieldPair = { "guard_field_tank", "guard_field_archer" };
 
-        // ---- One post at each city's exit ----
+        // ---- THE GATE: two guards at the BOTTOM of each city (owner, 2026-09-25) ----
+        // *"each town must have a gate .. two guards at each gate .. and in between the guards is the
+        // actual gate .. until we have a real gates and walls ... u can position only two guards on the
+        // bottom of each city but both to be spaced out like 200 range so u can walk in between them
+        // - one fighter and one tank"*.
+        //
+        // Each guard gets a zone of its OWN, a few units wide, so it spawns ON its post; and a guard
+        // never wanders (MobAi), so between fights that is where it stands. "Bottom" is +Y: the server
+        // is screen-style, Y growing DOWN, which the client's WorldMapper preserves.
+        // ⚠ Just OUTSIDE the safe radius, as before: a guard inside one would be blind (MobAi skips
+        //   every candidate standing in a safe zone).
         foreach (var city in Cities)
         {
-            var firstPlan = Array.Find(Plans, p => p.CityId == city.Id);
-            if (firstPlan is null) continue;
-
-            double angle = firstPlan.Bearing * Math.PI / 180.0;
-            float dist = city.Radius + GuardPostOffset;
-            zones.Add(GuardZone(city.X + dist * (float)Math.Cos(angle),
-                                city.Y + dist * (float)Math.Sin(angle),
-                                townPair, 80, TownGuardRespawnSeconds, TownGuardRespawnVariance));
+            float gy = city.Y + city.Radius + TownGateOffset;
+            zones.Add(GuardZone(city.X - TownGateHalfWidth, gy, new[] { "guard_town_fighter" }, 80,
+                                TownGuardRespawnSeconds, TownGuardRespawnVariance, TownGuardPostRadius));
+            zones.Add(GuardZone(city.X + TownGateHalfWidth, gy, new[] { "guard_town_tank" }, 80,
+                                TownGuardRespawnSeconds, TownGuardRespawnVariance, TownGuardPostRadius));
         }
 
         // ---- One post at the far camp of each guarded field ----
@@ -444,8 +458,8 @@ public static class WorldPlan
     }
 
     private static SpawnZone GuardZone(float x, float y, string[] pair, int level,
-                                      double respawn, double variance) =>
-        new(x, y, GuardPostRadius, level, level, pair, pair.Length,
+                                      double respawn, double variance, float radius = GuardPostRadius) =>
+        new(x, y, radius, level, level, pair, pair.Length,
             respawn, variance, MobRank.Normal, ActiveTime.Always,
             // The guard templates carry their own natural level, so ForceZoneLevel stays false and
             // the band above is descriptive — the same convention every named creature runs on.

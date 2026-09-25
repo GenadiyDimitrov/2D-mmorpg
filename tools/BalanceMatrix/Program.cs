@@ -2606,7 +2606,7 @@ if (args.Length > 0 && args[0] == "--guards")
         ("PLAYER tank   (S+0, shield)", RefPlayer(warrior: false)),
         ("PLAYER warrior (S+0, 2H)",    RefPlayer(warrior: true)),
         ("guard_town_tank",             GuardEntity("guard_town_tank")),
-        ("guard_town_archer",           GuardEntity("guard_town_archer")),
+        ("guard_town_fighter",          GuardEntity("guard_town_fighter")),
         ("guard_field_tank",            GuardEntity("guard_field_tank")),
         ("guard_field_archer",          GuardEntity("guard_field_archer")),
     };

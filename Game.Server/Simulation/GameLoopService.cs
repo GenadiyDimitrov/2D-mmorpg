@@ -12168,7 +12168,13 @@ public class GameLoopService : BackgroundService
             }
         }
 
-        if (_rng.NextDouble() < 0.7)
+        // 🔑 A GUARD HOLDS ITS POST (owner, 2026-09-25: *"town guards should walk with 0 speed .. so
+        //    they wont move from their spot .. and run with normal one"*). It still scans (above), still
+        //    chases at its run speed, still sprints home off the leash — it just never WANDERS, so
+        //    between fights it stands exactly where it spawned. ⚠ Done here and not as WalkSpeed 0:
+        //    EffectiveSpeed reads a 0 base as "unset" and falls back to the run speed, and a gear-built
+        //    creature's RecomputeDerived rewrites WalkSpeed from RunSpeed anyway.
+        if (!IsGuard(mob) && _rng.NextDouble() < 0.7)
         {
             // The wander span has to FIT THE ZONE. It was a flat +/-1000 against the crypt's rooms of
             // radius 300-350, so nearly every target landed outside and got projected exactly ONTO the

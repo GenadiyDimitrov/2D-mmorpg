@@ -7,12 +7,32 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.212.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.212.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-25 (latest) — 0.212.0: a new character starts with an empty bag (`BL-292`)
+## 2026-09-25 (latest) — 0.212.1: every town has a gate, and guards hold their post (`BL-293`)
+
+> *"town guards should walk with 0 speed .. so they wont move from their spot .. and run with normal one like
+> 180(mele)-200(for archers) ... each town must have a gate ... two guards at each gate ... until we have a real gates and
+> walls ... u can position only two guards on the bottom of each city but both to be spaced out like 200 range so u can
+> walk in between them - one fighter and one tank (the archers 90 are the guard towers on a piecefull zones -> u can leave
+> them as they are (only unmovable when not aggroed))"*
+
+- **The gate:** each city now has a **fighter** (`guard_town_fighter`, "Town Warden": the Warrior build, heavy armour, 2H
+  sword, S +0, War Rune) and a **tank** ("Town Watchman") at the **bottom** of the town. They stand 200 apart, 60 past
+  the safe radius, and you walk between them. The old tank + archer pair on the first field's bearing is gone, and the town
+  archer with it. Each guard has its own 5-unit spawn zone, so it appears exactly on its post.
+- **No guard wanders**, town or field. A guard still scans, still chases at its run speed and still sprints home off the
+  leash, but between fights it **stands where it spawned**. ⚠ This is done in `MobAi`, not as "walk speed 0".
+  `EffectiveSpeed` reads a 0 base as "unset" and falls back to the run speed, so a walk of 0 would have made them wander
+  *faster*. A gear-built creature's `RecomputeDerived` also rewrites its walk speed anyway.
+- **Run speeds:** both town guards are **180**. The field pair (tank + the level-90 archer "guard towers") keep their speeds
+  as you said, and only gain the no-wander rule. No archer is left at a town, so the 200 has nothing to apply to yet.
+  **No APK needed.**
+
+## 2026-09-25 — 0.212.0: a new character starts with an empty bag (`BL-292`)
 
 > *"start items for newly created chars should have none .. the newbie quest gives enough .. it can also give 50 mp and 50
 > hp pots somewhere in between reach 10/15/18"* · *"buy stating items i mean the 2 rare and 5 common pots"*

@@ -408,6 +408,13 @@ public static class MobCatalog
             tier, ench, tier, ench,
             Held: held, Shield: true, LearnsKit: true);
 
+    /// <summary>A guard FIGHTER: the Warrior build (id 14, HEAVY armour, 2H sword) — the town gate's
+    /// damage half beside the tank (owner, 2026-09-25: *"one fighter and one tank"*).</summary>
+    private static MobBuild GuardFighter(int tier, int ench, string held = "") =>
+        new(BaseClass.Fighter, 14, "heavy", "sword2h",
+            tier, ench, tier, ench,
+            Held: held, LearnsKit: true);
+
     /// <summary>A guard ARCHER: Assassin (id 15, the merged bow/dagger rogue), LIGHT armour, BOW —
     /// again his own words ("archer: bow +light"). No shield; a bow is two-handed in every sense that
     /// matters here.</summary>
@@ -1886,10 +1893,15 @@ public static class MobCatalog
             // THE TOWN PAIR — level 80, S grade (t80) Epic, +0. The mirror of his reference player,
             // and the tier that is meant to be a real fight rather than a wall. No War Rune here:
             // the rune is what separates the field pair from this one.
-            GuardMob("guard_town_tank", "Town Watchman", 80, 132f,
+            //
+            // 🔑 THE GATE PAIR, 2026-09-25 (owner): *"two guards at each gate .. one fighter and one
+            //    tank"*, running at *"180(mele)-200(for archers)"*. The town archer became a FIGHTER
+            //    (its id went with it; mob ids are not persisted). Neither WANDERS: a guard holds its
+            //    post between fights (MobAi), so the walk speed below is never used.
+            GuardMob("guard_town_tank", "Town Watchman", 80, 180f,
                 GuardTank(tier: 80, ench: 0, held: ItemCatalog.WarRune), MobRole.Melee, aggroRange: 400f),
-            GuardMob("guard_town_archer", "Town Marksman", 80, 135f,
-                GuardArcher(tier: 80, ench: 0, held: ItemCatalog.WarRune), MobRole.Archer, aggroRange: 600f),
+            GuardMob("guard_town_fighter", "Town Warden", 80, 180f,
+                GuardFighter(tier: 80, ench: 0, held: ItemCatalog.WarRune), MobRole.Melee, aggroRange: 400f),
 
             // THE FIELD PAIR — level 90, S grade Epic, +16, and holding a War Rune. His "pieasfull
             // zone guards have everithing s grade +16 and are 90lvl", posted in the quiet farming
