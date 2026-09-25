@@ -7,12 +7,27 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.210.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.210.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-25 (latest) — 0.210.0: a vendor's tabs are its own (`BL-290`)
+## 2026-09-25 (latest) — 0.210.1: the Armsmaster and the Outfitter in four groups
+
+> *"i wonder if we group the armsmaster to sword/blunt/magic/bow+fang .. 4 groups not 8 ... and same for outfitter"*
+
+| shop | tabs (was) | tabs (now) |
+|---|---|---|
+| Armsmaster | Sword · 2H Sword · Blunt · 2H Blunt · Duals · Bow · Wand · Staff | **Sword · Blunt · Magic · Bow/Dual** (1H + 2H together) |
+| Outfitter | Body · Helm · Gloves · Boots · Shield · Neck · Ring · Ear | **Body · Pieces · Shield · Jewels** (Pieces = helm + gloves + boots) |
+
+- The fourth weapon group is labelled **Bow/Dual**, by what is in it, not by a class: bows belong to the archer path too.
+  "Pieces" rather than "Parts", because parts are a crafting material.
+- Your first Outfitter layout was used, not the second (helm+shield, boots+gloves).
+- With All, each strip is five tabs, so the buttons are back to full width. Every shelf item lands in a tab (checked).
+  This closes the "etc." question from 0.210.0. **A new APK is needed.**
+
+## 2026-09-25 — 0.210.0: a vendor's tabs are its own (`BL-290`)
 
 > *"can we make npc vendors their tabs to be custom per vendor ? Apothecary to have like (pots,scrolls,misc) ; armor
 > vendors to have (body,helm,gloves,boots,Shield,neck,ring,ear); etc... The new npc that sells cobold for essence can

@@ -88,7 +88,6 @@ public static class ShopCatalog
         static bool Scroll(ItemDef d) => d.Slot == EquipSlot.Scroll
             || (d.Slot == EquipSlot.Consumable && d.Id.StartsWith("scroll_"));
         static bool Worn(ItemDef d, ArmorSlot s) => d.Slot == EquipSlot.Armor && d.ArmorSlot == s;
-        static bool Jewel(ItemDef d, JewelType j) => d.Slot == EquipSlot.Jewel && d.JewelType == j;
         var apothecaryTabs = new ShopTab[]
         {
             new("Potions", Potion),
@@ -97,25 +96,22 @@ public static class ShopCatalog
         };
         var weaponTabs = new ShopTab[]
         {
-            new("Sword", d => Wields(d, WeaponType.Sword)),
-            new("2H Sword", d => Wields(d, WeaponType.TwoHandedSword)),
-            new("Blunt", d => Wields(d, WeaponType.Blunt)),
-            new("2H Blunt", d => Wields(d, WeaponType.TwoHandedBlunt)),
-            new("Duals", d => Wields(d, WeaponType.Dual)),
-            new("Bow", d => Wields(d, WeaponType.Bow)),
-            new("Wand", d => Magic(d) && !d.OccupiesOffHand),
-            new("Staff", d => Magic(d) && d.OccupiesOffHand),
+            // 0.210.1 — four GROUPS, not eight kinds (his follow-up: *"sword 1+2h, blunt 1+2h, magic wand+staff,
+            // rogue(or whatever group name u think of) bow+dual"*). The last is labelled by what is in it, not by
+            // a class: bows belong to the archer path too.
+            new("Sword", d => Wields(d, WeaponType.Sword) || Wields(d, WeaponType.TwoHandedSword)),
+            new("Blunt", d => Wields(d, WeaponType.Blunt) || Wields(d, WeaponType.TwoHandedBlunt)),
+            new("Magic", Magic),
+            new("Bow/Dual", d => Wields(d, WeaponType.Bow) || Wields(d, WeaponType.Dual)),
         };
         var armorTabs = new ShopTab[]
         {
+            // 0.210.1 — body / the rest of the set / shield / jewels (his first layout). "Pieces", not "Parts":
+            // parts are a crafting material.
             new("Body", d => Worn(d, ArmorSlot.Body)),
-            new("Helm", d => Worn(d, ArmorSlot.Head)),
-            new("Gloves", d => Worn(d, ArmorSlot.Gloves)),
-            new("Boots", d => Worn(d, ArmorSlot.Boots)),
+            new("Pieces", d => Worn(d, ArmorSlot.Head) || Worn(d, ArmorSlot.Gloves) || Worn(d, ArmorSlot.Boots)),
             new("Shield", d => d.Slot == EquipSlot.Shield),
-            new("Neck", d => Jewel(d, JewelType.Necklace)),
-            new("Ring", d => Jewel(d, JewelType.Ring)),
-            new("Ear", d => Jewel(d, JewelType.Earring)),
+            new("Jewels", d => d.Slot == EquipSlot.Jewel),
         };
         var essenceTabs = new ShopTab[]
         {

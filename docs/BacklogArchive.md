@@ -7574,7 +7574,7 @@ comment quotes "Rare F-grade Potion").
 
 Built as proposed (`ShopDef.Tabs`, All first, the buy side only; the sell side keeps the generic tabs). The Armsmaster's
 "etc." was read as one tab per weapon kind (Sword · 2H Sword · Blunt · 2H Blunt · Duals · Bow · Wand · Staff) and is
-still his to confirm. A box is filed by its contents. A playtest may reopen it. The entry as it stood:
+still his to confirm. **Superseded the same day in 0.210.1**, his ruling: four groups each (Armsmaster Sword · Blunt · Magic · Bow/Dual; Outfitter Body · Pieces · Shield · Jewels). A box is filed by its contents. A playtest may reopen it. The entry as it stood:
 
 ### `BL-290` 🔴 (as it stood) A VENDOR'S TABS ARE ITS OWN
 
