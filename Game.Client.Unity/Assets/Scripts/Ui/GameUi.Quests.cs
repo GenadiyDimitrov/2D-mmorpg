@@ -535,5 +535,153 @@ namespace Game.Client
             foreach (var q in d.Offered) if (q.Id == questId) return q;
             return null;
         }
+
+        // ═══ `BL-294` — THE QUEST ARROW (owner, 2026-09-25) ════════════════════════════════════════
+        //
+        // *"we need to make in the clientside (its only visual) for a tracking quest an arrow to point
+        // the direction of the npc/mob i need (when i get into 200-300 range to disapear)"*.
+        //
+        // 🔑 NO SERVER HELP IS NEEDED, AND NONE IS ASKED FOR. The quest log already says which quest is
+        //    pinned, which step is current and whether it is ready to hand in; the client compiles
+        //    QuestCatalog (what that step targets) and WorldMap (where every NPC stands and every spawn
+        //    zone lies). So the arrow is resolved here, from the same data the server runs on.
+        //
+        // It follows the FIRST pinned quest (the top row of the tracker). A TalkTo step points at the
+        // NPC; a KillMobs step, or an unfinished gathering contract, at the NEAREST zone that spawns
+        // the creature; a ready contract at its giver. Steps with no place (reach a level, do an
+        // action) show nothing. It hides within 250 of an NPC, or once you are inside the mob's zone.
+        //
+        // Drawn ON THE GROUND beside you rather than on the screen edge, so it stays true however the
+        // camera is turned.
+
+        private const float QuestArrowHideRange = 250f;   // server units
+        private const float QuestArrowOffset = 1.4f;      // Unity units from the player (~140 server)
+
+        private Transform _questArrow;
+        private string _questArrowKey;
+        private readonly List<Vector3> _questArrowTargets = new List<Vector3>();   // x, y = server pos; z = hide radius
+
+        private void UpdateQuestArrow()
+        {
+            ResolveQuestArrowTargets();
+            var self = Boot.Entities != null ? Boot.Entities.Find(Boot.SelfId) : null;
+            if (self == null || _questArrowTargets.Count == 0) { HideQuestArrow(); return; }
+
+            var me = WorldMapper.ToServer(self.transform.position);
+            float best = float.MaxValue;
+            Vector3 pick = default;
+            foreach (var t in _questArrowTargets)
+            {
+                float dx = t.x - me.x, dy = t.y - me.y;
+                float d = dx * dx + dy * dy;
+                if (d < best) { best = d; pick = t; }
+            }
+            if (Mathf.Sqrt(best) <= pick.z) { HideQuestArrow(); return; }
+
+            EnsureQuestArrow();
+            var from = self.transform.position;
+            from.y = 0.06f;
+            var to = WorldMapper.ToUnity(pick.x, pick.y);
+            to.y = 0.06f;
+            var dir = to - from;
+            if (dir.sqrMagnitude < 0.0001f) { HideQuestArrow(); return; }
+            dir.Normalize();
+
+            // A gentle bob along the pointing direction, so it reads as "this way" rather than decor.
+            float bob = 0.12f * Mathf.Sin(Time.time * 4f);
+            _questArrow.position = from + dir * (QuestArrowOffset + bob);
+            _questArrow.rotation = Quaternion.LookRotation(dir, Vector3.up);
+            if (!_questArrow.gameObject.activeSelf) _questArrow.gameObject.SetActive(true);
+        }
+
+        private void HideQuestArrow()
+        {
+            if (_questArrow != null && _questArrow.gameObject.activeSelf) _questArrow.gameObject.SetActive(false);
+        }
+
+        /// <summary>Re-resolve only when the pinned quest, its step or its ready flag changes.</summary>
+        private void ResolveQuestArrowTargets()
+        {
+            QuestEntry q = null;
+            var entries = Boot.Quests != null ? Boot.Quests.Entries : null;
+            if (entries != null)
+                foreach (var e in entries)
+                    if (e.Tracked && e.State == QuestAvailability.Active) { q = e; break; }
+
+            string key = q == null ? "" : q.Id + "|" + q.StepIndex + "|" + q.CanComplete;
+            if (key == _questArrowKey) return;
+            _questArrowKey = key;
+            _questArrowTargets.Clear();
+            if (q == null) return;
+
+            var def = QuestCatalog.Get(q.Id);
+            if (def == null) return;
+
+            if (def.Gathers != null && def.Gathers.Length > 0)
+            {
+                if (q.CanComplete) { if (!def.AnyTownNpc) AddNpcArrowTarget(def.OfferNpcId); }
+                else foreach (var g in def.Gathers) AddMobArrowTargets(g.MobId);
+                return;
+            }
+
+            if (q.StepIndex < 0 || q.StepIndex >= def.Steps.Length) return;
+            var step = def.Steps[q.StepIndex];
+            if (step.Type == QuestStepType.TalkTo) AddNpcArrowTarget(step.TargetId);
+            else if (step.Type == QuestStepType.KillMobs) AddMobArrowTargets(step.TargetId);
+        }
+
+        private void AddNpcArrowTarget(string npcId)
+        {
+            if (string.IsNullOrEmpty(npcId)) return;
+            foreach (var n in WorldMap.Npcs)
+                if (n.Id == npcId) { _questArrowTargets.Add(new Vector3(n.X, n.Y, QuestArrowHideRange)); return; }
+        }
+
+        private void AddMobArrowTargets(string mobId)
+        {
+            if (string.IsNullOrEmpty(mobId)) return;
+            foreach (var z in WorldMap.SpawnZones)
+            {
+                bool spawns = System.Array.IndexOf(z.MobTypes, mobId) >= 0;
+                if (!spawns && z.Dedicated != null)
+                    foreach (var d in z.Dedicated) if (d.MobId == mobId) { spawns = true; break; }
+                if (spawns) _questArrowTargets.Add(new Vector3(z.X, z.Y, Mathf.Max(QuestArrowHideRange, z.Radius)));
+            }
+        }
+
+        /// <summary>A flat arrow in the XZ plane, pointing +Z, built once. Both windings are emitted so it
+        /// shows from above whichever way the camera looks down at it.</summary>
+        private void EnsureQuestArrow()
+        {
+            if (_questArrow != null) return;
+
+            var go = new GameObject("QuestArrow");
+            var mesh = new Mesh { name = "QuestArrowMesh" };
+            const float shaftHalf = 0.09f, headHalf = 0.28f, tail = -0.45f, neck = 0.08f, tip = 0.50f;
+            mesh.vertices = new[]
+            {
+                new Vector3(-shaftHalf, 0f, tail), new Vector3(shaftHalf, 0f, tail),
+                new Vector3(shaftHalf, 0f, neck),  new Vector3(-shaftHalf, 0f, neck),
+                new Vector3(-headHalf, 0f, neck),  new Vector3(headHalf, 0f, neck),
+                new Vector3(0f, 0f, tip),
+            };
+            mesh.triangles = new[]
+            {
+                0, 3, 2, 0, 2, 1,   4, 6, 5,     // one winding
+                0, 2, 3, 0, 1, 2,   4, 5, 6,     // and the other
+            };
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var renderer = go.AddComponent<MeshRenderer>();
+            var material = UnlitMaterials.CreateTransparent(new Color(1f, 0.82f, 0.25f, 0.85f));
+            if (material != null) renderer.material = material;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+
+            _questArrow = go.transform;
+            go.SetActive(false);
+        }
     }
 }

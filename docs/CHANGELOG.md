@@ -7,12 +7,27 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.212.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.213.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-25 (latest) — 0.212.1: every town has a gate, and guards hold their post (`BL-293`)
+## 2026-09-25 (latest) — 0.213.0: the quest arrow (`BL-294`)
+
+> *"we need to make in the clientside (its only visual) for a tracking quest an arrow to point the direction of the
+> npc/mob i need (when i get into 200-300 range to disapear)"*
+
+- A **gold arrow on the ground** beside your character points toward what your **top pinned quest** needs next:
+  - a **talk-to** step points at that NPC;
+  - a **kill** step, or an unfinished gathering contract, points at the **nearest zone** that spawns that creature;
+  - a gathering contract that is **ready** points back at its giver.
+- It disappears **within 250** of an NPC, or once you are **inside** the mob's zone. Steps with no place (reach a level,
+  do an action) show no arrow. Pin a different quest to the top to follow that one.
+- **Client only.** It is resolved from the quest log the server already sends, plus the quest and world data compiled into
+  the client, so no server or protocol change was needed. It sits on the ground rather than on the screen edge, so it
+  stays correct however the camera is turned. **A new APK is needed.**
+
+## 2026-09-25 — 0.212.1: every town has a gate, and guards hold their post (`BL-293`)
 
 > *"town guards should walk with 0 speed .. so they wont move from their spot .. and run with normal one like
 > 180(mele)-200(for archers) ... each town must have a gate ... two guards at each gate ... until we have a real gates and

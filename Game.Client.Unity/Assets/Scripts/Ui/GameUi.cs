@@ -140,7 +140,8 @@ namespace Game.Client
 
             if (login) _loginStatus.text = Boot.StatusMessage;
             if (select) RefreshCharacterSelect();
-            if (world) { RefreshWorld(); UpdateKeyboardLift(); }
+            if (world) { RefreshWorld(); UpdateKeyboardLift(); UpdateQuestArrow(); }
+            else HideQuestArrow();   // `BL-294`: a scene object, not under the world root
 
             UpdateBackButton();
             _builtPhase = Boot.Phase;

@@ -7641,3 +7641,12 @@ towers on a piecefull zones -> u can leave them as they are (only unmovable when
 back to the run speed in `EffectiveSpeed`). The field pair is unchanged apart from not wandering. ⚠ **Still owed when real
 walls exist:** the gate on the far side (*"the other side is the same"*) and the walls themselves. Two guards per city,
 at the bottom only, is his interim.
+
+
+## `BL-294` ✅ CLOSED 2026-09-25 in **0.213.0**: the quest arrow
+
+His words, 2026-09-25: *"we need to make in the clientside (its only visual) for a tracking quest an arrow to point the
+direction of the npc/mob i need (when i get into 200-300 range to disapear)"*. **Built as:** a ground arrow beside the
+player, driven by the top pinned quest. TalkTo → the NPC. KillMobs or an unfinished gathering contract → the nearest
+spawn zone of that mob. A ready contract → its giver. It hides within 250 of an NPC or inside the mob's zone. Client
+only (`GameUi.Quests.cs`). ⚠ Unplayed: its size, colour and the 140-unit offset from the player are first guesses.
