@@ -10,7 +10,17 @@ namespace Game.Shared;
 /// <para>`BL-272` part 2: <paramref name="EssenceOnly"/> makes a shelf charge ESSENCE and no gold — every row
 /// is priced by <see cref="Crafting.EssenceShopPrice"/>, and a row with no essence price is not for sale
 /// there. Only the T52 essence shop sets it.</para>
-public record ShopDef(string NpcId, string Title, string[] ItemIds, bool EssenceOnly = false);
+/// <para>`BL-290`: <paramref name="Tabs"/> is the shop's OWN tab strip on the BUY side (*"can we make npc vendors
+/// their tabs to be custom per vendor ?"*). Null = the generic All / Gear / Use / Mats. The client puts an
+/// <b>All</b> tab in front of them itself, so a shop never declares one. The SELL side always keeps the
+/// generic tabs: it lists your bag, and "Ring" or "Scrolls" would hide most of it.</para>
+public record ShopDef(string NpcId, string Title, string[] ItemIds, bool EssenceOnly = false,
+                      ShopTab[]? Tabs = null);
+
+/// <summary>One of a shop's own buy tabs (`BL-290`): a name and the test for what sits under it. A BOX sits
+/// under every tab that holds something inside it (<see cref="ShopCatalog.InTab"/>), so the temporary
+/// weapon box shows on each weapon tab and the armour box on each armour one, with nothing typed per box.</summary>
+public record ShopTab(string Name, Func<ItemDef, bool> Holds);
 
 /// <summary>
 /// Per-NPC shop definitions, keyed by the vendor's NpcDef id (WorldMap.Npcs).
@@ -63,6 +73,56 @@ public static class ShopCatalog
             sets.SelectMany(s => s).Where(IsWeapon).Select(d => d.Id).ToArray();
         string[] ArmorOf(params ItemDef[][] sets) =>
             sets.SelectMany(s => s).Where(d => !IsWeapon(d)).Select(d => d.Id).ToArray();
+
+        // `BL-290` — each shop's OWN buy tabs, from his note: *"Apothecary to have like (pots,scrolls,misc) ; armor
+        // vendors to have (body,helm,gloves,boots,Shield,neck,ring,ear); etc... The new npc that sells cobold for
+        // essence can have (armor,jewels,weapons)"*. The Armsmaster's "etc." is read as one tab per weapon kind.
+        // ⚠ The Training Wand carries no IsMagicWeapon (it is a plain Blunt with M.Atk 7), so it is named here,
+        // or it would sit under "Blunt" beside the maces.
+        static bool Magic(ItemDef d) =>
+            d.Slot == EquipSlot.Weapon && (d.IsMagicWeapon || d.Id == ItemCatalog.TrainingWand);
+        static bool Wields(ItemDef d, WeaponType t) => d.Slot == EquipSlot.Weapon && !Magic(d) && d.WeaponType == t;
+        // Potions, scrolls and reagents are ALL EquipSlot.Consumable (a Scroll of Return is a "BuffPotion" by
+        // subtype), so the id prefix is what tells them apart; every "scroll_" id is named "Scroll of …".
+        static bool Potion(ItemDef d) => d.Slot == EquipSlot.Consumable && d.Id.StartsWith("potion_");
+        static bool Scroll(ItemDef d) => d.Slot == EquipSlot.Scroll
+            || (d.Slot == EquipSlot.Consumable && d.Id.StartsWith("scroll_"));
+        static bool Worn(ItemDef d, ArmorSlot s) => d.Slot == EquipSlot.Armor && d.ArmorSlot == s;
+        static bool Jewel(ItemDef d, JewelType j) => d.Slot == EquipSlot.Jewel && d.JewelType == j;
+        var apothecaryTabs = new ShopTab[]
+        {
+            new("Potions", Potion),
+            new("Scrolls", Scroll),
+            new("Misc", d => !Potion(d) && !Scroll(d)),
+        };
+        var weaponTabs = new ShopTab[]
+        {
+            new("Sword", d => Wields(d, WeaponType.Sword)),
+            new("2H Sword", d => Wields(d, WeaponType.TwoHandedSword)),
+            new("Blunt", d => Wields(d, WeaponType.Blunt)),
+            new("2H Blunt", d => Wields(d, WeaponType.TwoHandedBlunt)),
+            new("Duals", d => Wields(d, WeaponType.Dual)),
+            new("Bow", d => Wields(d, WeaponType.Bow)),
+            new("Wand", d => Magic(d) && !d.OccupiesOffHand),
+            new("Staff", d => Magic(d) && d.OccupiesOffHand),
+        };
+        var armorTabs = new ShopTab[]
+        {
+            new("Body", d => Worn(d, ArmorSlot.Body)),
+            new("Helm", d => Worn(d, ArmorSlot.Head)),
+            new("Gloves", d => Worn(d, ArmorSlot.Gloves)),
+            new("Boots", d => Worn(d, ArmorSlot.Boots)),
+            new("Shield", d => d.Slot == EquipSlot.Shield),
+            new("Neck", d => Jewel(d, JewelType.Necklace)),
+            new("Ring", d => Jewel(d, JewelType.Ring)),
+            new("Ear", d => Jewel(d, JewelType.Earring)),
+        };
+        var essenceTabs = new ShopTab[]
+        {
+            new("Armor", d => d.Slot is EquipSlot.Armor or EquipSlot.Shield),
+            new("Jewels", d => d.Slot == EquipSlot.Jewel),
+            new("Weapons", d => d.Slot == EquipSlot.Weapon),
+        };
 
         var shops = new[]
         {
@@ -138,7 +198,7 @@ public static class ShopCatalog
                 // becomes the chain's reward instead. Deliberately at the Apothecary rather than
                 // beside the class master — the gold is the trial for now, and it should cost a walk.
                 ItemCatalog.FourthClassKey,
-            }),
+            }, Tabs: apothecaryTabs),
             // WEAPONS. The LEGACY generated grid ("Worn Sword" at P.Atk 6, the Fine/Masterwork
             // prefixes) plus Ash Wand and Iron Mace came off this shelf in playtest-13 and were
             // DELETED OUTRIGHT in playtest-22 — taking them out of the shop only hid them; a treasure
@@ -151,7 +211,7 @@ public static class ShopCatalog
                 ItemCatalog.TrainingWand,
             }.Concat(WeaponsOf(ladderGear))
              // `BL-272` part 2: the temporary 2-hour Common weapon box, T40 and T52 (pick one weapon).
-             .Concat(ItemCatalog.TempGearTiers.Select(ItemCatalog.TempWeaponBoxId)).ToArray()),
+             .Concat(ItemCatalog.TempGearTiers.Select(ItemCatalog.TempWeaponBoxId)).ToArray(), Tabs: weaponTabs),
 
             // ARMOR, shields and jewels.
             new ShopDef(ArmorMerchant, "Outfitter — Armor & Jewels", new[]
@@ -171,7 +231,7 @@ public static class ShopCatalog
             }.Concat(ArmorOf(ladderGear))
              // `BL-272` part 2: the temporary 2-hour Common armour box, T40 and T52 (pick heavy / light /
              // robe; every set carries a shield). No temporary jewellery (ruled).
-             .Concat(ItemCatalog.TempGearTiers.Select(ItemCatalog.TempArmorBoxId)).ToArray()),
+             .Concat(ItemCatalog.TempGearTiers.Select(ItemCatalog.TempArmorBoxId)).ToArray(), Tabs: armorTabs),
 
             // `BL-272` part 2 — THE T52 ESSENCE SHOP. One NPC, in Greymarsh (the 40-60 town; his pick
             // 2026-09-24: *"A single new NPC in a T52 town"*). T52 Mythic, every slot, essence ONLY: no
@@ -180,7 +240,7 @@ public static class ShopCatalog
             new ShopDef(EssenceMerchant, "Assayer — Cobalt for Essence", ItemCatalog.AllItems
                 .Where(d => Crafting.EssenceShopPrice(d) is not null)
                 .OrderBy(d => d.Slot).ThenBy(d => d.Name)
-                .Select(d => d.Id).ToArray(), EssenceOnly: true),
+                .Select(d => d.Id).ToArray(), EssenceOnly: true, Tabs: essenceTabs),
 
             // `BL-273` part 2 — THE MASTER CRAFTER'S RECIPE SHELF: the T40 and T52 100% gear recipes (*"master can
             // sell t40 and t52"*), at a placeholder 10% of the piece's price. Generic recipes are not items; he
@@ -219,6 +279,17 @@ public static class ShopCatalog
 
     public static ShopDef? Get(string? npcId) =>
         npcId is null ? null : Shops.GetValueOrDefault(npcId);
+
+    /// <summary>Does this item sit under this shop tab (`BL-290`)? A box with contents is judged by what is INSIDE
+    /// it, never by itself, so a box of scrolls is a scroll and a box of armour is on each piece's tab.</summary>
+    public static bool InTab(ShopTab tab, ItemDef def) => InTab(tab, def, 0);
+
+    private static bool InTab(ShopTab tab, ItemDef def, int depth)
+    {
+        if (def.Slot == EquipSlot.Box && depth < 4 && BoxCatalog.Get(def.Id) is { Entries.Length: > 0 } box)
+            return box.Entries.Any(e => ItemCatalog.Get(e.ItemId) is { } d && InTab(tab, d, depth + 1));
+        return tab.Holds(def);
+    }
 
     public static bool Sells(string npcId, string itemId) =>
         Get(npcId) is ShopDef shop && Array.IndexOf(shop.ItemIds, itemId) >= 0;

@@ -209,7 +209,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 
 ---
 
-## Index — 46 open entries
+## Index — 45 open entries
 
 | id | | what it is | area |
 |---|---|---|---|
@@ -274,7 +274,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-284` | 🔵 | **RECURRING RUNE GRANT** — premium/event: a 1 h rune a day + 1-2 2 h runes a week; needs a premium status or events (neither exists) — split out of `BL-277` | progression |
 | `BL-286` | ⏸ | **CASTLE "NOBLE" CHARISMA** — a castle-holding clan leader gets charisma decay/loss protection or a grant; split out of `BL-283`; waits on castles | social |
 | `BL-288` | ⏸ | **CONSUMABLE RARITY → PLAIN LEVELS 1-6** — potions/scrolls may drop the rarity word entirely; deferred by him, split out of `BL-272` | items |
-| `BL-290` | 🔴 | **PER-VENDOR TABS** — Apothecary Potions/Scrolls/Misc, Armor by slot, Essence Armor/Jewels/Weapons | UI |
 
 ---
 
@@ -2229,26 +2228,3 @@ we can remove the rarity as whole .. and items just have lvls 1,2,3...6"*. Equip
 it is picked up: which families keep a ladder at all, what the level word looks like on a card, and whether the
 pickup filter (`BL-241`, keyed on rarity) moves to the level.
 
-## `BL-290` 🔴 A VENDOR'S TABS ARE ITS OWN
-
-His words, 2026-09-25: *"can we make npc vendors their tabs to be custom per vendor ? Apothecary to have like
-(pots,scrolls,misc) ; armor vendors to have (body,helm,gloves,boots,Shield,neck,ring,ear); etc... The new npc that
-sells cobold for essence can have (armor,jewels,weapons)"*.
-
-**Today:** one fixed tab strip for every vendor, `GameUi.Vendor.cs` `VendorTabs` = All / Gear / Use / Mats
-(`ItemCategory`). Shops are `ShopCatalog` (`Game.Shared/ShopCatalog.cs`): `merchant_potions`, `merchant_gear`,
-`merchant_armor` (armor + shields + jewels) and `merchant_essence` (Assayer Corvane, Greymarsh, T52 for essence).
-
-**Proposed shape:** `ShopDef` gains its own tab list, each tab a name + a filter over the item def (slot / type), and
-the window builds its strip from the shop being shown. Whether the SELL side (your own bag) keeps the generic tabs or
-uses the shop's is decided at build time; the shop's own tabs would hide most of a bag. Starting tabs, from his
-note:
-| shop | tabs |
-|---|---|
-| Apothecary (`merchant_potions`) | Potions · Scrolls · Misc |
-| Armor (`merchant_armor`) | Body · Helm · Gloves · Boots · Shield · Neck · Ring · Ear |
-| Essence (`merchant_essence`) | Armor · Jewels · Weapons |
-| Weapons (`merchant_gear`) | ❓ *"etc..."*: per weapon type (1H / 2H / Blunt / Duals / Bow / Wand / Staff…) is the obvious reading; confirm at build |
-
-⚠ Keep an **All** tab first unless he says otherwise (the other windows all have one). APK (the shop defs and the
-window are both in the client).

@@ -1535,3 +1535,10 @@ Your note is verbatim in [design/Rework-2026-09-23.md](../design/Rework-2026-09-
 | 102.8 | ⏸ Self-centred harmful AoE can be cast **inside town**; it does nothing there (tested every combination) | deferred by you; a refusal at cast time is enough |
 | 102.9 | 🔴 **OPEN** (reported 2026-09-23 in the summoner discussion) — **Elf cleric: the self-heal stays** in the kit after the class change | *"heal should have replaced my self heal"*: the Heal must **replace** the self-heal |
 | 102.10 | 🔴 **OPEN** (same day) — **Mage: Magic Bolt stays** after the class change | *"elemental bolts and holy bolt should replace it"*: each discipline's bolt **replaces** Magic Bolt |
+
+## §103 — FOUND WHILE BUILDING, NOT PLAYED (2026-09-25)
+
+| # | what | the question |
+|---|---|---|
+| 103.1 | ❓ **The Training Wand is not a magic weapon.** It is a plain `Blunt` with M.Atk 7 and no `IsMagicWeapon`, and the caster check (`Entity`) keys on that flag, so a mage holding it is treated as holding a mace. Found by `BL-290`'s Wand tab, which now names it by id. Nothing was changed. | Should it be a magic weapon like every other wand? One flag on one item, but it changes a level-1 mage's casting. |
+| 103.2 | ⚠ **The SmokeTest failed ONE check per run, a different one each time** (0.210.0: "the grant gave him Spellcaster Mastery", then "a jail drained the player's charisma"). Neither touches shops or grades, and each passed on the other run, so they look like timing races in the test, not bugs in the game. | none (for me to harden the two waits) |

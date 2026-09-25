@@ -21873,7 +21873,7 @@ public class GameLoopService : BackgroundService
                     ? new ShopItemDto(d!.Id, d.Name, 0, 0, EssenceCostDto(Crafting.EssenceShopPrice(d)))
                     : new ShopItemDto(d!.Id, d.Name, ItemCatalog.BuyPrice(d), ItemCatalog.PlatinumPrice(d)))
                 .ToArray();
-            shop = new ShopInfo(shopDef.Title, items);
+            shop = new ShopInfo(shopDef.Title, items, shopDef.NpcId);
             SendBuyBack(player);   // the vendor also shows what you recently sold, to re-buy
         }
 

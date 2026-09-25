@@ -7,12 +7,40 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.209.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.210.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-25 (latest) — 0.209.2: a grade only where one exists (`BL-289`)
+## 2026-09-25 (latest) — 0.210.0: a vendor's tabs are its own (`BL-290`)
+
+> *"can we make npc vendors their tabs to be custom per vendor ? Apothecary to have like (pots,scrolls,misc) ; armor
+> vendors to have (body,helm,gloves,boots,Shield,neck,ring,ear); etc... The new npc that sells cobold for essence can
+> have (armor,jewels,weapons)"*
+
+On the **Buy** side the tab strip now comes from the shop you are looking at, with **All** first:
+
+| shop | tabs |
+|---|---|
+| Apothecary | All · Potions · Scrolls · Misc (stones, rune boxes, the Rite of Ascension) |
+| Armsmaster | All · Sword · 2H Sword · Blunt · 2H Blunt · Duals · Bow · Wand · Staff |
+| Outfitter | All · Body · Helm · Gloves · Boots · Shield · Neck · Ring · Ear |
+| Assayer (essence) | All · Armor · Jewels · Weapons |
+| Master Crafter | the generic All / Gear / Use / Mats (no tabs of its own) |
+
+- ❓ **The Armsmaster's tabs are my reading of your "etc."**: one tab per weapon kind. Say if you meant something else.
+- **A box is filed by what is inside it**: the temporary weapon box is on every weapon tab, the armour box on
+  Body/Helm/Gloves/Boots/Shield, the Blessing Box under Scrolls and the rune boxes under Misc. Nothing is typed per box.
+- **The Sell side keeps the generic All / Gear / Use / Mats**, because it lists your bag, and tabs like "Ring" or
+  "Scrolls" would hide most of it. Instant sale still follows those tabs.
+- A long strip gets narrower buttons so nine tabs and the order button fit in one row.
+- Wire: `ShopInfo` gained an **appended** `ShopId`, so an older client ignores it; no protocol bump. **A new APK is
+  needed** to see the tabs.
+- ⚠ Found on the way, **not changed**: the **Training Wand has no `IsMagicWeapon`** (it is a plain Blunt with M.Atk 7),
+  and the caster check keys on that flag. The tab names it by id so it sits under Wand. Whether the wand itself should
+  count as a magic weapon is your call.
+
+## 2026-09-25 — 0.209.2: a grade only where one exists (`BL-289`)
 
 > *"look at boxes they have grade for some reason if it's not a equipment or something that have a grade inside the
 > box grade should show as '-'. (check everything to match it's grade - most won't have any)"*

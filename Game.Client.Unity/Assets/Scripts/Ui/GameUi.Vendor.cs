@@ -52,6 +52,20 @@ namespace Game.Client
         private static readonly ItemCategory[] VendorTabs =
             { ItemCategory.All, ItemCategory.Gear, ItemCategory.Use, ItemCategory.Mats };
 
+        // `BL-290` — A VENDOR'S TABS ARE ITS OWN, on the BUY side: the strip is rebuilt from the shop being
+        // shown (`ShopDef.Tabs`), with "All" in front. The sell side and a shop with no tabs of its own keep
+        // the generic four above. The strip is rebuilt only when WHICH strip it is changes.
+        private Transform _vendorInner;
+        private float _vendorChrome;
+        private Button _vendorOrderButton;
+        private string _vendorStripKey;
+        /// <summary>The shop tabs the strip currently shows; null = the generic ItemCategory tabs.</summary>
+        private ShopTab[] _vendorShopTabs;
+        /// <summary>0 = All, i = <c>_vendorShopTabs[i - 1]</c>. Kept across a Buy/Sell flip, reset for a new shop.</summary>
+        private int _vendorShopTab;
+        private string _vendorShopTabOf = "";
+        private const float VendorRowWidth = 624f, VendorOrderWidth = 86f;
+
         // numpad
         private RectTransform _numpadPanel;
         private TextMeshProUGUI _numpadTitle;
@@ -110,10 +124,12 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_vendorInstantSell.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
                         new Vector2(-18f, -chrome - 66f), new Vector2(152f, 30f));
 
-            _vendorTabButtons = BuildCategoryTabs(inner, VendorTabs, new Vector2(18f, -chrome - 66f), 88f,
-                                                  cat => { _vendorTab = cat; _vendorRevision = -1; });
-            // `BL-117` — same button, same shared order, at the end of this window's four tabs.
-            BuildOrderButton(inner, new Vector2(18f + VendorTabs.Length * 90f, -chrome - 66f), 86f,
+            // `BL-290`: the tab strip itself is built by EnsureVendorTabs, because it depends on the shop.
+            _vendorInner = inner;
+            _vendorChrome = chrome;
+            // `BL-117` — same button, same shared order, at the end of this window's tabs (moved there by
+            // EnsureVendorTabs, since the number of tabs now varies by shop).
+            _vendorOrderButton = BuildOrderButton(inner, new Vector2(18f + VendorTabs.Length * 90f, -chrome - 66f), VendorOrderWidth,
                              // Both lists this window owns: the sell shelf AND the buyback shelf,
                              // which is its own panel with its own revision and would otherwise keep
                              // the previous order until the next sale moved its hash.
@@ -154,8 +170,10 @@ namespace Game.Client
         {
             if (!_vendorPanel.gameObject.activeSelf) return;
 
+            EnsureVendorTabs();
             var items = Boot.Inventory ?? Array.Empty<InventoryItemDto>();
             int revision = (_vendorSell ? 1 : 0) * 92821 + (_vendorDetailed ? 7919 : 0)
+                         + _vendorShopTab * 1299709 + (_vendorShopTabs == null ? 0 : 3571)   // `BL-290`
                          + (_vendorQuickSell ? 15485863 : 0)
                          + (int)_vendorTab * 104729 + (int)(Boot.Gold % 1_000_000)
                          + (int)(Boot.Platinum % 1_000_000) * 7    // `BL-257` — the wallet has two halves now
@@ -182,7 +200,10 @@ namespace Game.Client
             _vendorQSellTab.targetGraphic.color = _vendorQuickSell
                 ? new Color(0.42f, 0.20f, 0.20f, 0.95f)   // the bin's armed red — it skips the confirm too
                 : UiKit.PanelLight;
-            PaintCategoryTabs(_vendorTabButtons, VendorTabs, _vendorTab);
+            if (_vendorShopTabs == null) PaintCategoryTabs(_vendorTabButtons, VendorTabs, _vendorTab);
+            else
+                for (int i = 0; i < _vendorTabButtons.Length; i++)
+                    _vendorTabButtons[i].targetGraphic.color = i == _vendorShopTab ? UiKit.TabActive : UiKit.PanelLight;
 
             for (int i = _vendorList.childCount - 1; i >= 0; i--)
                 Destroy(_vendorList.GetChild(i).gameObject);
@@ -230,6 +251,59 @@ namespace Game.Client
         private bool CanAfford(long gold, long plat, int qty = 1) =>
             Boot.Gold >= gold * qty && Boot.Platinum >= plat * qty;
 
+        /// <summary>`BL-290` — build the tab strip this view needs, if it is not the one already built: the shop's
+        /// own tabs (with "All" first) on the buy side of a shop that has them, the generic four otherwise.
+        /// The width shrinks to fit a long strip in the row, which the buy side has to itself (Instant sale
+        /// is hidden there).</summary>
+        private void EnsureVendorTabs()
+        {
+            string shopId = Boot.Dialog?.Shop?.ShopId ?? "";
+            var tabs = _vendorSell ? null : ShopCatalog.Get(shopId)?.Tabs;
+            if (shopId != _vendorShopTabOf) { _vendorShopTabOf = shopId; _vendorShopTab = 0; }
+            string key = tabs == null ? "generic" : "shop:" + shopId;
+            if (key == _vendorStripKey) return;
+            _vendorStripKey = key;
+
+            if (_vendorTabButtons != null)
+                foreach (var b in _vendorTabButtons)
+                    if (b != null) Destroy(b.gameObject);
+            _vendorShopTabs = tabs;
+            var at = new Vector2(18f, -_vendorChrome - 66f);
+            float width;
+            int count;
+            if (tabs == null)
+            {
+                width = 88f;
+                count = VendorTabs.Length;
+                _vendorTabButtons = BuildCategoryTabs(_vendorInner, VendorTabs, at, width,
+                                                      cat => { _vendorTab = cat; _vendorRevision = -1; });
+            }
+            else
+            {
+                count = tabs.Length + 1;
+                width = Mathf.Min(88f, (VendorRowWidth - VendorOrderWidth - 4f) / count - 2f);
+                float font = width < 70f ? 12f : 14f;
+                _vendorTabButtons = new Button[count];
+                for (int i = 0; i < count; i++)
+                {
+                    int tab = i;
+                    var b = UiKit.TextButton(_vendorInner, i == 0 ? "All" : tabs[i - 1].Name,
+                        () => { _vendorShopTab = tab; _vendorRevision = -1; }, font);
+                    UiKit.Place(UiKit.Rect(b.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                                new Vector2(at.x + i * (width + 2f), at.y), new Vector2(width, 32f));
+                    _vendorTabButtons[i] = b;
+                }
+            }
+            if (_vendorShopTab >= count) _vendorShopTab = 0;
+            UiKit.Place(UiKit.Rect(_vendorOrderButton.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(at.x + count * (width + 2f), at.y), new Vector2(VendorOrderWidth, 32f));
+        }
+
+        /// <summary>Is this ware under the buy tab that is showing? (`BL-290`)</summary>
+        private bool InBuyTab(ItemDef def) =>
+            _vendorShopTabs == null ? InCategory(_vendorTab, def)
+            : _vendorShopTab == 0 || ShopCatalog.InTab(_vendorShopTabs[_vendorShopTab - 1], def);
+
         private void BuildBuyList()
         {
             var shop = Boot.Dialog?.Shop;
@@ -243,7 +317,7 @@ namespace Game.Client
             foreach (var ware in ByOrder(shop.Items))   // `BL-117`: the same cycle as the bag's
             {
                 var def = ItemCatalog.Get(ware.DefId);
-                if (def == null || !InCategory(_vendorTab, def)) continue;
+                if (def == null || !InBuyTab(def)) continue;
                 anyInTab = true;
                 // `BL-272` part 2 — an ESSENCE row (the T52 essence shop): no gold, one piece per purchase.
                 if (ware.Essence is { Length: > 0 } essence)

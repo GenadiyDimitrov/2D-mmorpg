@@ -7569,3 +7569,33 @@ comment quotes "Rare F-grade Potion").
    with the grade shown by rule 1, not written into the name.
 3. APK (the vendor row and the item names are compiled into the client).
 
+
+## `BL-290` ✅ CLOSED 2026-09-25 in **0.210.0**: a vendor's tabs are its own
+
+Built as proposed (`ShopDef.Tabs`, All first, the buy side only; the sell side keeps the generic tabs). The Armsmaster's
+"etc." was read as one tab per weapon kind (Sword · 2H Sword · Blunt · 2H Blunt · Duals · Bow · Wand · Staff) and is
+still his to confirm. A box is filed by its contents. A playtest may reopen it. The entry as it stood:
+
+### `BL-290` 🔴 (as it stood) A VENDOR'S TABS ARE ITS OWN
+
+His words, 2026-09-25: *"can we make npc vendors their tabs to be custom per vendor ? Apothecary to have like
+(pots,scrolls,misc) ; armor vendors to have (body,helm,gloves,boots,Shield,neck,ring,ear); etc... The new npc that
+sells cobold for essence can have (armor,jewels,weapons)"*.
+
+**Today:** one fixed tab strip for every vendor, `GameUi.Vendor.cs` `VendorTabs` = All / Gear / Use / Mats
+(`ItemCategory`). Shops are `ShopCatalog` (`Game.Shared/ShopCatalog.cs`): `merchant_potions`, `merchant_gear`,
+`merchant_armor` (armor + shields + jewels) and `merchant_essence` (Assayer Corvane, Greymarsh, T52 for essence).
+
+**Proposed shape:** `ShopDef` gains its own tab list, each tab a name + a filter over the item def (slot / type), and
+the window builds its strip from the shop being shown. Whether the SELL side (your own bag) keeps the generic tabs or
+uses the shop's is decided at build time; the shop's own tabs would hide most of a bag. Starting tabs, from his
+note:
+| shop | tabs |
+|---|---|
+| Apothecary (`merchant_potions`) | Potions · Scrolls · Misc |
+| Armor (`merchant_armor`) | Body · Helm · Gloves · Boots · Shield · Neck · Ring · Ear |
+| Essence (`merchant_essence`) | Armor · Jewels · Weapons |
+| Weapons (`merchant_gear`) | ❓ *"etc..."*: per weapon type (1H / 2H / Blunt / Duals / Bow / Wand / Staff…) is the obvious reading; confirm at build |
+
+⚠ Keep an **All** tab first unless he says otherwise (the other windows all have one). APK (the shop defs and the
+window are both in the client).

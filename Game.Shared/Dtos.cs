@@ -1260,7 +1260,9 @@ public record ShopItemDto(string DefId, string Name, int BuyPrice, int PlatinumP
 public record ItemCostDto(string DefId, string Name, int Qty);
 
 /// <summary>A vendor's wares, attached to the dialog when talking to a vendor.</summary>
-public record ShopInfo(string Title, ShopItemDto[] Items);
+/// <para>`BL-290`: <paramref name="ShopId"/> is the ShopCatalog key (the vendor NPC id), APPENDED, so the client can
+/// look up the shop's own buy tabs in its compiled ShopCatalog. Empty from an older server = the generic tabs.</para>
+public record ShopInfo(string Title, ShopItemDto[] Items, string ShopId = "");
 
 /// <summary>One entry in the buy-back list: an item you recently SOLD, re-buyable for what you got for it.
 /// Index is the entry's position in the list (the client passes it back to re-buy).</summary>
