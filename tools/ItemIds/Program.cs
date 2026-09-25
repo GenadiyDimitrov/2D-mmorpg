@@ -86,7 +86,7 @@ void Table(IEnumerable<ItemDef> defs)
         if (d.Weight != ArmorWeight.None) notes.Add(d.Weight.ToString());
         if (d.ArmorSlot != ArmorSlot.None) notes.Add(d.ArmorSlot.ToString());
         if (d.JewelType != JewelType.None) notes.Add(d.JewelType.ToString());
-        sb.AppendLine($"| `{d.Id}` | {d.Name} | {d.Grade} | {d.Rarity} | {string.Join(", ", notes)} |");
+        sb.AppendLine($"| `{d.Id}` | {d.Name} | {ItemCatalog.GradeLabel(d)} | {d.Rarity} | {string.Join(", ", notes)} |");
     }
     sb.AppendLine();
 }

@@ -456,7 +456,7 @@ namespace Game.Client
             // cycle would give a setting that silently matches nothing. -1 is this axis's "any".
             if (which == 0) _dropFilterCat = _dropFilterCat >= 4 ? -1 : (_dropFilterCat < 1 ? 1 : _dropFilterCat + 1);
             else if (which == 1) _dropFilterRarity = _dropFilterRarity >= 5 ? -1 : _dropFilterRarity + 1;
-            else _dropFilterGrade = _dropFilterGrade >= 4 ? -1 : _dropFilterGrade + 1;
+            else _dropFilterGrade = _dropFilterGrade >= GradePenalty.GradeNames.Length - 1 ? -1 : _dropFilterGrade + 1;
             _dropShownItem = "";        // narrowing the tree means you are choosing again
             RenderDropSearch();
         }
@@ -505,7 +505,7 @@ namespace Game.Client
                 else if (ItemCatalog.CategoryOf(d) == ItemCategory.Quest) continue;
 
                 if (_dropFilterRarity >= 0 && (int)d.Rarity != _dropFilterRarity) continue;
-                if (_dropFilterGrade >= 0 && (int)d.Grade != _dropFilterGrade) continue;
+                if (_dropFilterGrade >= 0 && System.Array.IndexOf(ItemCatalog.GradeLabel(d).Split('/'), GradePenalty.GradeNames[_dropFilterGrade]) < 0) continue;
                 if (q.Length > 0
                     && d.Name.IndexOf(q, System.StringComparison.OrdinalIgnoreCase) < 0
                     && d.Id.IndexOf(q, System.StringComparison.OrdinalIgnoreCase) < 0) continue;
@@ -557,7 +557,7 @@ namespace Game.Client
         {
             string cat = _dropFilterCat < 0 ? "any" : ((ItemCategory)_dropFilterCat).ToString();
             string rar = _dropFilterRarity < 0 ? "any" : ((ItemRarity)_dropFilterRarity).ToString();
-            string grd = _dropFilterGrade < 0 ? "any" : ((ItemGrade)_dropFilterGrade).ToString();
+            string grd = _dropFilterGrade < 0 ? "any" : GradePenalty.GradeNames[_dropFilterGrade];
             SetButtonText(_dropCatButton, "Type: " + cat);
             SetButtonText(_dropRarityButton, "Rarity: " + rar);
             SetButtonText(_dropGradeButton, "Grade: " + grd);
@@ -590,7 +590,7 @@ namespace Game.Client
                 // The rarity and grade ride along on every row, because they are how he narrows and
                 // seeing them beside the name is what makes the next filter tap an informed one.
                 var row = UiKit.TextButton(_dropSearchList,
-                    d.Name + "   <color=#8a8f98>" + (ItemCatalog.RarityLabel(d) is { Length: > 0 } rw ? rw + " / " : "") + d.Grade + "</color>",
+                    d.Name + "   <color=#8a8f98>" + (ItemCatalog.RarityLabel(d) is { Length: > 0 } rw ? rw + " / " : "") + ItemCatalog.GradeLabel(d) + "</color>",
                     () => ShowDropsFor(id), 15f);
                 var le = row.gameObject.AddComponent<LayoutElement>();
                 le.preferredHeight = 34f;
@@ -1729,7 +1729,7 @@ namespace Game.Client
             // ordinary one, which is the whole point of handing it out with tags.
             string tag58d = ItemTag.For(def, item);
             Line("Name:  " + ItemTag.Name(def, item) + (tag58d.Length > 0 ? "  " + tag58d : ""));
-            Line("Grade:  " + (def.ItemLevel > 0 ? ItemCatalog.TierLetter(def.ItemLevel) : def.Grade.ToString()));
+            Line("Grade:  " + ItemCatalog.GradeLabel(def));     // `BL-289`: "-" where nothing has one
             // `BL-272`: a Mythic piece of equipment is a PLAIN item and shows no rarity row at all; a
             // Common one says what it is, and what it cannot do.
             string rarityWord = ItemCatalog.RarityLabel(def);

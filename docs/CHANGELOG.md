@@ -7,12 +7,29 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.209.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.209.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-24 (latest) — 0.209.1: `/like <name>`, and the staff `-f` that forces charisma
+## 2026-09-25 (latest) — 0.209.2: a grade only where one exists (`BL-289`)
+
+> *"look at boxes they have grade for some reason if it's not a equipment or something that have a grade inside the
+> box grade should show as '-'. (check everything to match it's grade - most won't have any)"*
+
+- **One helper decides every grade the player sees**: `ItemCatalog.GradeLabel`. Gear shows its grade letter. A box
+  shows the grade of the gear inside it, read from its contents (the T40 temporary box is **D**, the T52 one is **C**,
+  the Newbie boxes are **F**). Everything else (potions, scrolls, mats, runes, quest items, recipes, boxes of non-gear)
+  shows **"-"**. The `ItemGrade` enum is still there for prices and sorting, but nothing displays it any more.
+- It is used by the vendor row, the item details "Grade:" line, the staff drop-search list and its Grade filter (which
+  now runs F-E-D-C-B-A-S instead of the enum's five), the server's "You looted: … [grade]" line and `docs/guides/ItemIds.md`.
+  **The check turned up more than the boxes**: every item with no item level printed its enum default, and the id list
+  showed all T40 Common and temporary gear as "B" (they are D).
+- The temporary boxes are renamed **"Temporary Common Weapon Selection Box"** and **"Temporary Common Armor Selection
+  Box"**. The grade is no longer in the name; it comes from the rule above.
+- **A new APK is needed** (the names and the vendor row are compiled into the client).
+
+## 2026-09-24 — 0.209.1: `/like <name>`, and the staff `-f` that forces charisma
 
 > *"Make an admin command "/like <name> [-f 1234]" where a normal player like command stop to the name and admin
 > can add -f(force) option ... if a player have 1000 monthly and admin do "..-f 0" the players score should show 0"*

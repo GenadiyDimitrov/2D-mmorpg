@@ -7540,3 +7540,32 @@ three **proof-of-concept zones**, repeated at **~55-60** and **~75-80**:
 - **The current resist mobs leave the current zones** (all 8 in the measured list, not only the 1-40 two).
 - **Aggression:** aggressive mobs leave the normal zones. **Only 80+ zones and every dungeon are all-aggressive**,
   plus maybe the ground around a field boss.
+
+## `BL-289` ✅ CLOSED 2026-09-25 in **0.209.2**: a grade only where one exists, and the temporary box names
+
+Built as written: one `ItemCatalog.GradeLabel` behind every grade print (gear = its letter, a box = its contents' grade, the
+rest "-"), and the boxes renamed "Temporary Common Weapon/Armor Selection Box". A playtest may reopen it. The entry as it stood:
+
+### `BL-289` 🔴 (as it stood) THE GRADE ON THINGS THAT HAVE NO GRADE — and the temporary boxes' names
+
+His words, 2026-09-25: *"The desciprion in the vendor if the box for comolt and Darksteel are 'common b - grade box'
+make it something like a 'temporary common weapon selection box C/D grade)' look at boxes they have grade for some
+reason if it's not a equipment or something that have a grade inside the box grade should show as '-'. (check
+everything to match it's grade - most won't have any)"*.
+
+**The cause, measured:** the vendor row (`GameUi.Vendor.cs` `WareSummary`) prints `TierLetter(ItemLevel)` when the
+def has an item level and **otherwise the raw `ItemGrade` enum**. Every temporary box is built with `ItemGrade.B`
+(`Items.cs`, `TempWeaponBoxId` / `TempArmorBoxId` / `TempSetBoxId`) and no item level, so a T40 (D) and a T52 (C) box
+both read **"B-grade"**. Every other non-gear def falls through to its enum default the same way (the method's own
+comment quotes "Rare F-grade Potion").
+
+**Owed:**
+1. **A grade only where one exists.** Equipment shows its tier letter; a box shows the grade of the gear INSIDE it
+   (T40 box → D, T52 box → C; derived from the contents, never typed); everything else (potions, scrolls, mats,
+   runes, quest items, boxes of non-gear) shows **"-"**. One shared helper in `Game.Shared` so the vendor row, the
+   bag's details and any other place that prints a grade all say the same thing. ⚠ Grep every grade print (`def.Grade`,
+   `GradeNameOf`, `TierLetter`) and check each against this rule. That is the "check everything" part of his note.
+2. **The box names say what they are:** e.g. *"Temporary Common Weapon Selection Box"* / *"… Armor Selection Box"*,
+   with the grade shown by rule 1, not written into the name.
+3. APK (the vendor row and the item names are compiled into the client).
+

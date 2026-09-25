@@ -16560,7 +16560,7 @@ public class GameLoopService : BackgroundService
                     SendSystemToEntity(to, $"{mob.Name} dropped {rolled}x {def.Name} — only {got} fit!");
 
                 string qtyLabel = got > 1 ? $" x{got}" : "";
-                SendCombatToEntity(to, "LOOT", $"You looted: {def.Name}{qtyLabel} [{def.Grade}{(ItemCatalog.RarityLabel(def) is { Length: > 0 } rl ? "/" + rl : "")}]");
+                SendCombatToEntity(to, "LOOT", $"You looted: {def.Name}{qtyLabel} [{ItemCatalog.GradeLabel(def)}{(ItemCatalog.RarityLabel(def) is { Length: > 0 } rl ? "/" + rl : "")}]");
                 // Let the rest of the in-range party see where it went.
                 if (eligible.Count > 1)
                     foreach (var m in eligible)

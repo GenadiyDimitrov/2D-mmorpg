@@ -2461,7 +2461,7 @@ public static class ItemCatalog
 
             // The weapon box costs one Common TWO-HANDER (his example: *"a T40 temporary 2H = 214k"*),
             // whichever weapon is picked.
-            made.Add(new ItemDef(TempWeaponBoxId(tier), $"Temporary {grade} Weapon", EquipSlot.Box,
+            made.Add(new ItemDef(TempWeaponBoxId(tier), "Temporary Common Weapon Selection Box", EquipSlot.Box,
                 ItemGrade.B, ItemRarity.Common, Tradable: false, BuyPriceOverride: CommonPrice($"sword2h_t{tier}"),
                 SellPriceOverride: 0, NoAttributes: true,
                 Description: $"Choose ONE {grade} weapon. It is a Common piece that lasts 2 hours of WEARING: "
@@ -2472,7 +2472,7 @@ public static class ItemCatalog
             // bodies are one price, so the pick does not change it; heavy is read as the representative.
             int setPrice = CommonPrice($"heavy_t{tier}")
                          + TempArmorShared.Sum(s => CommonPrice($"{s}_t{tier}"));
-            made.Add(new ItemDef(TempArmorBoxId(tier), $"Temporary {grade} Armor", EquipSlot.Box,
+            made.Add(new ItemDef(TempArmorBoxId(tier), "Temporary Common Armor Selection Box", EquipSlot.Box,
                 ItemGrade.B, ItemRarity.Common, Tradable: false, BuyPriceOverride: setPrice,
                 SellPriceOverride: 0, NoAttributes: true,
                 Description: $"Choose ONE {grade} set: heavy, light or robe. Each is body, helmet, gloves, "
@@ -2529,6 +2529,40 @@ public static class ItemCatalog
     public static string TierLetter(int level) =>
         level >= 80 ? "S" : level >= 76 ? "A" : level >= 61 ? "B" : level >= 52 ? "C" : level >= 40 ? "D"
         : level >= 20 ? "E" : "F";
+
+    /// <summary>THE grade a player is shown for an item (`BL-289`) — every UI line and chat message that
+    /// prints a grade reads this, never <see cref="ItemDef.Grade"/> (that enum has no C/D and is a
+    /// pricing/sorting input only; every non-gear def carries its default, which is how a temporary box
+    /// read "B-grade"). Gear = its grade letter; a box = the grade of the GEAR inside it, derived from
+    /// the contents ("D", or "C/D" if it mixes); everything else — potions, scrolls, mats, runes, quest
+    /// items, boxes of non-gear — is <see cref="NoGrade"/>. His words: *"most won't have any"*.</summary>
+    public static string GradeLabel(ItemDef def)
+    {
+        if (Crafting.IsGearSlot(def.Slot)) return GradePenalty.GradeNameOf(def);
+        if (def.Slot != EquipSlot.Box) return NoGrade;
+        var steps = new SortedSet<int>();
+        CollectBoxGrades(def.Id, steps, depth: 0);
+        return steps.Count == 0 ? NoGrade
+            : string.Join("/", steps.Reverse().Select(s => GradePenalty.GradeNames[s]));
+    }
+
+    /// <summary>What <see cref="GradeLabel"/> prints for an item with no grade.</summary>
+    public const string NoGrade = "-";
+
+    /// <summary>True when <see cref="GradeLabel"/> has a letter to show.</summary>
+    public static bool HasGrade(ItemDef def) => GradeLabel(def) != NoGrade;
+
+    private static void CollectBoxGrades(string boxId, SortedSet<int> steps, int depth)
+    {
+        // Boxes nest (the temporary armour box holds three set boxes); 4 levels is far past any real one.
+        if (depth > 4 || BoxCatalog.Get(boxId) is not { } box) return;
+        foreach (var e in box.Entries)
+        {
+            if (Get(e.ItemId) is not { } d) continue;
+            if (Crafting.IsGearSlot(d.Slot)) steps.Add(GradePenalty.StepForLevel(GradePenalty.ItemGradeLevel(d)));
+            else if (d.Slot == EquipSlot.Box) CollectBoxGrades(d.Id, steps, depth + 1);
+        }
+    }
 
     /// <summary>The grade's MATERIAL name — the display prefix that signals grade at a glance (owner
     /// 2026-07-25). Each starts with the grade's LETTER as a mnemonic (D→Darksteel, A→Adamantine…). The

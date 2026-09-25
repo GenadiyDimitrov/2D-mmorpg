@@ -552,8 +552,11 @@ namespace Game.Client
         {
             var t = new StringBuilder();
             if (ItemCatalog.RarityLabel(def) is { Length: > 0 } rw) t.Append(rw).Append(' ');   // Mythic gear is plain (`BL-272`)
-            t.Append(def.ItemLevel > 0 ? ItemCatalog.TierLetter(def.ItemLevel) : def.Grade.ToString())
-             .Append("-grade ").Append(TypeLine(def));
+            // `BL-289`: a grade only where one exists (gear, or a box of gear); the rest says so plainly.
+            string grade = ItemCatalog.GradeLabel(def);
+            if (grade != ItemCatalog.NoGrade) t.Append(grade).Append("-grade ");
+            t.Append(TypeLine(def));
+            if (grade == ItemCatalog.NoGrade) t.Append(" (grade -)");
 
             var stats = new List<string>();
             if (def.AtkBonus > 0)  stats.Add("Atk " + def.AtkBonus);
