@@ -58,6 +58,9 @@ namespace Game.Client
         private int _craftCountIndex;
         private Button _craftCountToggle;
 
+        /// <summary>Three 15pt lines of header above the tabs (§105.4).</summary>
+        private const float CraftHeaderH = 62f;
+
         private void BuildCraftingWindow()
         {
             _craftPanel = UiKit.PanelBox(_worldRoot, "Crafting");
@@ -66,9 +69,11 @@ namespace Game.Client
             var inner = _craftPanel.GetChild(0);
             float chrome = UiKit.WindowChrome(_craftPanel, "Crafting", () => CloseWindow(_craftPanel));
 
+            // §105.4: the header has its own three lines. At one 22px line it wrapped, and "at the anvil" /
+            // "browsing" landed under the tab row, which is drawn on top of it.
             _craftTitle = UiKit.Label(inner, "", 15f, UiKit.TextDim, TextAlignmentOptions.TopLeft);
             UiKit.Place(UiKit.Rect(_craftTitle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(16f, -chrome - 6f), new Vector2(530f, 22f));
+                        new Vector2(16f, -chrome - 6f), new Vector2(530f, CraftHeaderH));
 
             _craftCountToggle = UiKit.TextButton(inner, "", () =>
             {
@@ -91,7 +96,7 @@ namespace Game.Client
                     _craftRevision = -1;
                 }, 15f);
                 UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                            new Vector2(16f + i * (tabW + tabGap), -chrome - 32f), new Vector2(tabW, 34f));
+                            new Vector2(16f + i * (tabW + tabGap), -chrome - 10f - CraftHeaderH), new Vector2(tabW, 34f));
                 _craftTabButtons.Add(button);
             }
 
@@ -103,11 +108,11 @@ namespace Game.Client
                 _craftRevision = -1;
             }, 14f);
             UiKit.Place(UiKit.Rect(_craftKeeperToggle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(16f + CraftTabNames.Length * (tabW + tabGap), -chrome - 32f),
+                        new Vector2(16f + CraftTabNames.Length * (tabW + tabGap), -chrome - 10f - CraftHeaderH),
                         new Vector2(126f, 34f));
 
             _craftList = UiKit.ScrollArea(inner, out var scroll, 4f);
-            UiKit.Stretch((RectTransform)scroll.transform, 14f, chrome + 72f, 14f, 14f);
+            UiKit.Stretch((RectTransform)scroll.transform, 14f, chrome + 50f + CraftHeaderH, 14f, 14f);
 
             _craftPanel.gameObject.SetActive(false);
         }
@@ -205,11 +210,12 @@ namespace Game.Client
             string where = Boot.AtCraftMaster
                 ? "<color=#8CD98C>at the anvil</color>"
                 : Tinted("browsing — craft at a Master Crafter", false);
-            if (!Boot.IsCrafter) return "The Master's Trial   " + where;
-            return "Crafting L" + Boot.CraftLevel
-                 + (Boot.CraftPointsFree > 0 ? "  <color=#E6C35C>" + Boot.CraftPointsFree + " point(s) to spend</color>" : "")
-                 + "  (" + string.Join(" · ", Crafting.SpendableTypes.Select(t => TypeShort(t) + " " + Boot.CraftTypeLevel(t))) + ")"
-                 + "   slots " + Boot.CraftSlotsUsed + "/" + Boot.CraftSlots + "   " + where;
+            if (!Boot.IsCrafter) return "The Master's Trial\n" + where;
+            // One fact per line (§105.4): run together they wrapped into the tab row.
+            return "Crafting L" + Boot.CraftLevel + "   slots " + Boot.CraftSlotsUsed + "/" + Boot.CraftSlots
+                 + (Boot.CraftPointsFree > 0 ? "   <color=#E6C35C>" + Boot.CraftPointsFree + " point(s) to spend</color>" : "")
+                 + "\n" + string.Join(" · ", Crafting.SpendableTypes.Select(t => TypeShort(t) + " " + Boot.CraftTypeLevel(t)))
+                 + "\n" + where;
         }
 
         /// <summary>Not a crafter yet (`BL-273` part 2): there are no professions, just one trial.</summary>

@@ -7,12 +7,20 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.3**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-25 (latest) — 0.214.2: a miss aggroes the mob (§104.1)
+## 2026-09-26 (latest) — 0.214.3: the crafter header is no longer under the tabs (§105.4)
+
+> *"The row where is says "browsing/at anvil" is hidden behind the tabs"*
+
+- The Crafting window's header was one 22px line. With five crafter types in it, it wrapped, and the second line
+  (**at the anvil** / **browsing**) sat under the tab row. It is now **three lines** of its own: level, slots and
+  free points; the five type levels; where you are. The tabs and the list moved down to make room. Client only.
+
+## 2026-09-25 — 0.214.2: a miss aggroes the mob (§104.1)
 
 > *"a 1st misses until an actual hit on mobs the mob dont agrro"* · *"if i miss 10 times and then hit .. he will start to
 > attack at the hit (11th time)"*
