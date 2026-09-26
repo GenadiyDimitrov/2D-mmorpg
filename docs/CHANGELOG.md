@@ -7,12 +7,28 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.24**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.25**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.24: the Master sells recipe books, he teaches nothing (`BL-303` Q3)
+## 2026-09-26 (latest) — 0.214.25: the Anvil stands beside every Master Crafter (`BL-303` Q1-Q2)
+
+> *"Yes anvil and master are always togheter"* · *"The points respec and rcps forget is at master .. The only tabs at
+> anvil are craft+mats"*
+
+- **A new NPC, "Anvil"** (no title), stands 250 from every Master Crafter. **Crafting happens only at the Anvil.**
+  Talking to it opens the crafting window with just **Craft** and **Mats**.
+- **The Master keeps the crafter's book-keeping:** spending points, the respec and forgetting recipes work only
+  beside him, and his "Points" row opens the window on the **Points** tab alone. He still gives the trial and sells
+  the recipe books.
+- From the menu the window still opens with all three tabs, to browse; its buttons light up only at the right NPC.
+- Frostmere's SP broker moved to the south end of the west column to make room for the Anvil.
+- Protocol 51: an older APK can no longer craft, so this needs the new APK.
+- SmokeTest: four new checks (a point refused away from a Master; beside the Master but not the Anvil; forgetting
+  refused at the Anvil; both in reach midway). ALL PASS.
+
+## 2026-09-26 — 0.214.24: the Master sells recipe books, he teaches nothing (`BL-303` Q3)
 
 > *"Yes. Masters "learn for gold" buttons are gone ... They are in the "buy" part of it as items to use from inventory.
 > And my L0~10 rows have which recipes are drop which the master sells"*

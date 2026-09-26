@@ -32,9 +32,17 @@ namespace Game.Client
 
         /// <summary>Which page of the window is showing. Materials is a page rather than a section
         /// because "how many Rare Ingots do I have" is asked on its own, away from any one recipe.</summary>
-        private enum CraftTab { Craft = 0, Slots = 1, Materials = 2 }   // `BL-303`: the Learn tab is gone (recipes are items)
+        private enum CraftTab { Craft = 0, Materials = 1, Slots = 2 }   // `BL-303`: the Learn tab is gone (recipes are items)
         private CraftTab _craftTab = CraftTab.Craft;
-        private static readonly string[] CraftTabNames = { "Craft", "Points", "Mats" };
+        private static readonly string[] CraftTabNames = { "Craft", "Mats", "Points" };
+
+        /// <summary>`BL-303`: which tabs this opening shows, one bit per <see cref="CraftTab"/>. The ANVIL opens Craft +
+        /// Mats (*"The only tabs at anvil are craft+mats"*), the MASTER opens Points (points, respec, forget); the
+        /// menu opens all three, to browse.</summary>
+        private int _craftTabMask = AllCraftTabs;
+        private const int AllCraftTabs = 0b111;
+        private const int AnvilCraftTabs = (1 << (int)CraftTab.Craft) | (1 << (int)CraftTab.Materials);
+        private const int MasterCraftTabs = 1 << (int)CraftTab.Slots;
 
         // ----- `BL-245`: the keeper's shelf counts too ---------------------------------------------
         //
@@ -117,11 +125,16 @@ namespace Game.Client
             _craftPanel.gameObject.SetActive(false);
         }
 
-        public void OpenCraftingWindow() => OpenCraftingWindow(_craftTab);
+        /// <summary>From the menu: every tab, to browse.</summary>
+        public void OpenCraftingWindow() => OpenCraftingWindow(_craftTab, AllCraftTabs);
 
-        /// <summary>Open on a given page.</summary>
-        private void OpenCraftingWindow(CraftTab tab)
+        /// <summary>Open on a given page with a given set of tabs (`BL-303`: the Anvil's, the Master's, or all).
+        /// A page outside the set falls back to the set's first.</summary>
+        private void OpenCraftingWindow(CraftTab tab, int tabMask)
         {
+            _craftTabMask = tabMask;
+            if ((tabMask & (1 << (int)tab)) == 0)
+                tab = (CraftTab)Enumerable.Range(0, CraftTabNames.Length).First(i => (tabMask & (1 << i)) != 0);
             _craftTab = tab;
             _craftRevision = -1;
             OpenWindow(_craftPanel);
@@ -149,7 +162,8 @@ namespace Game.Client
                          + Boot.CraftTypeLevels.Aggregate(0, (h, v) => h * 11 + v) * 7 + Boot.CraftRespecs * 13
                          + Boot.CraftSlots * 17 + (int)(Boot.Gold % 1000003)
                          + (Boot.AtCraftMaster ? 1046527 : 0) + (Boot.DialogNpcId != Guid.Empty ? 3 : 0)
-                         + (_craftUseKeeper ? 15485863 : 0) + _craftCountIndex * 7919;
+                         + (_craftUseKeeper ? 15485863 : 0) + _craftCountIndex * 7919
+                         + (Boot.AtAnvil ? 524287 : 0) + _craftTabMask * 101;
             foreach (var kv in Boot.KnownRecipes) revision = revision * 29 + kv.Key.GetHashCode() + kv.Value;
             foreach (var it in bag) revision = revision * 31 + it.DefId.GetHashCode() + it.Quantity;
             foreach (var it in keeper) revision = revision * 37 + it.DefId.GetHashCode() + it.Quantity;
@@ -165,9 +179,15 @@ namespace Game.Client
             // The tabs are hidden until the trial is done — except while the trial's own recipe is held,
             // because its craft happens in this window too.
             bool open = Boot.IsCrafter || Boot.KnownRecipes.ContainsKey(Crafting.HammerRecipeId);
+            // `BL-303`: only this opening's tabs, packed left in order (the Master's lone Points tab starts at 0).
+            int shown = 0;
             for (int i = 0; i < _craftTabButtons.Count; i++)
             {
-                _craftTabButtons[i].gameObject.SetActive(open);
+                bool inSet = (_craftTabMask & (1 << i)) != 0;
+                var tabRect = (RectTransform)_craftTabButtons[i].transform;
+                tabRect.anchoredPosition = new Vector2(16f + shown * 136f, tabRect.anchoredPosition.y);
+                if (inSet) shown++;
+                _craftTabButtons[i].gameObject.SetActive(open && inSet);
                 _craftTabButtons[i].targetGraphic.color =
                     (int)_craftTab == i ? UiKit.TabActive : UiKit.PanelLight;
             }
@@ -206,9 +226,10 @@ namespace Game.Client
         /// <summary>Who you are as a crafter, how many slots, and whether the buttons below are live.</summary>
         private string CraftHeader()
         {
-            string where = Boot.AtCraftMaster
-                ? "<color=#8CD98C>at the anvil</color>"
-                : Tinted("browsing — craft at a Master Crafter", false);
+            // `BL-303`: the ANVIL makes things; the MASTER spends, respecs and forgets.
+            string where = Boot.AtAnvil ? "<color=#8CD98C>at the anvil</color>"
+                : Boot.AtCraftMaster ? "<color=#8CD98C>at the Master: points, respec, forget</color>"
+                : Tinted("browsing — craft at an Anvil, beside a Master Crafter", false);
             if (!Boot.IsCrafter) return "The Master's Trial\n" + where;
             // One fact per line (§105.4): run together they wrapped into the tab row.
             return "Crafting L" + Boot.CraftLevel + "   slots " + Boot.CraftSlotsUsed + "/" + Boot.CraftSlots
@@ -299,7 +320,7 @@ namespace Game.Client
 
             // ⚠ AWAY FROM THE MASTER every row is dead — the browse mode. The have/need colouring is the
             // whole point of reading this in the field.
-            bool enabled = haveAll && Boot.AtCraftMaster;
+            bool enabled = haveAll && Boot.AtAnvil;
             string label = title + "   <size=13>" + status + "</size>\n<size=13>" + string.Join("   ", parts) + "</size>";
 
             string id = recipe.Id;                 // captured per row
@@ -336,15 +357,16 @@ namespace Game.Client
             {
                 var t = type;                        // captured per row
                 int lvl = Boot.CraftTypeLevel(t);
-                bool can = free > 0 && lvl < Crafting.MaxCraftLevel;
-                CraftRow(TypeName(t) + "  L" + lvl + "   <size=13>" + (can ? "tap to spend a point" : "") + "</size>",
+                bool can = free > 0 && lvl < Crafting.MaxCraftLevel && Boot.AtCraftMaster;
+                CraftRow(TypeName(t) + "  L" + lvl + "   <size=13>" + (can ? "tap to spend a point"
+                         : free > 0 && lvl < Crafting.MaxCraftLevel ? "spend at a Master Crafter" : "") + "</size>",
                          can, () => Ask("Spend a point on " + TypeName(t) + " (L" + lvl + " -> L" + (lvl + 1) + ")?"
                                         + "\n\n<size=15>Points only come back with a respec at a Master Crafter.</size>",
                                         "Spend", () => Boot.SpendCraftPoint(t)));
             }
             int used = Boot.CraftRespecs;
             bool anySpent = Crafting.SpendableTypes.Any(t => Boot.CraftTypeLevel(t) > 0);
-            bool atMaster = Boot.AtCraftMaster && Boot.DialogNpcId != Guid.Empty;
+            bool atMaster = Boot.AtCraftMaster && Boot.Dialog?.CraftMaster != null;   // respec names the Master
             if (used < Crafting.MaxRespecs)
             {
                 long price = Crafting.RespecPrices[used];
@@ -370,8 +392,9 @@ namespace Game.Client
                 if (recipe == null) continue;
                 string name = OutputName(recipe);
                 string id = kv.Key;
-                CraftRow(name + "   <size=13>" + (recipe.IsGear ? kv.Value + "%" : "generic") + " — tap to forget</size>",
-                         true, () => Ask("Forget the " + name + " recipe?\n\n<size=15>Nothing is refunded; you "
+                CraftRow(name + "   <size=13>" + (recipe.IsGear ? kv.Value + "%" : "generic")
+                         + (Boot.AtCraftMaster ? " — tap to forget" : " — forget at a Master Crafter") + "</size>",
+                         Boot.AtCraftMaster, () => Ask("Forget the " + name + " recipe?\n\n<size=15>Nothing is refunded; you "
                                          + "would have to learn it again from a new recipe.</size>",
                                          "Forget", () => Boot.ForgetRecipe(id)));
             }

@@ -1146,6 +1146,9 @@ public class Entity
     /// crafting window's browse-vs-craft mode — see GameLoopService.TickCraftMasterProximity.</summary>
     public bool AtCraftMaster { get; set; }
 
+    /// <summary>Runtime only: is this crafter standing at an ANVIL (`BL-303`)? The craft buttons follow it.</summary>
+    public bool AtAnvil { get; set; }
+
     /// <summary>WIT used for ALL gameplay math (cast speed, MP, magic crit, interrupt,
     /// heals). Stored <see cref="Wit"/> is the persisted base you were BORN with; the only
     /// thing that moves it is <see cref="BonusWit"/> (the level-40 stat-swap passives).

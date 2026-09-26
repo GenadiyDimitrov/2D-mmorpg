@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.214.24";
+    public const string GameVersion = "0.214.25";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -222,7 +222,10 @@ public static class GameConstants
     /// 49 → 50 (2026-09-24, `BL-273` part 3, step 10): the hub's `Craft` takes a 4th argument, the COUNT, and
     /// SignalR binds by argument count, so an old client's 3-argument Craft is refused. The material ids changed
     /// too (`mat_ingot_common` → `mat_iron`). ⚠ A NEW APK IS WANTED.
-    public const int ProtocolVersion = 50;   // 50: step 10, the materials + a count on Craft (`BL-273`)
+    /// 50 → 51 (2026-09-26, `BL-303`): the ANVIL. `NpcRole` gained `Anvil = 9`, `NpcDialog` an `Anvil` flag and
+    /// `CraftingUpdate` an `AtAnvil` one (both appended, with defaults), and the hub lost `LearnRecipeAtMaster`
+    /// (0.214.24). An old client cannot craft at all (it waits for AtMaster). ⚠ A NEW APK IS WANTED.
+    public const int ProtocolVersion = 51;   // 51: the Anvil (`BL-303`)
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means

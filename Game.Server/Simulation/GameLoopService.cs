@@ -3461,12 +3461,12 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(player, gate + " It stays in its slot, locked, until then.");
             return;
         }
-        // ⚠ THE MASTER IS THE WORKSHOP (owner, 2026-09-24: *"crafts happen only at a Master (u need the place
+        // ⚠ THE ANVIL IS THE WORKSHOP (`BL-303`, 0.214.25; before it, the Master: *"crafts happen only at a Master (u need the place
         // and tools to craft)"*). The window still opens anywhere, in browse mode — the have/need colouring
         // is what tells you what to farm — but nothing is made away from an anvil.
-        if (MasterNpcNear(player) is null)
+        if (AnvilNear(player) is null)
         {
-            SendSystemToEntity(player, "Crafting happens at a Master Crafter's workshop, in any town.");
+            SendSystemToEntity(player, "Crafting happens at an Anvil, beside a Master Crafter.");
             return;
         }
 
@@ -3623,13 +3623,19 @@ public class GameLoopService : BackgroundService
               + $"(you are L{player.CraftTypeLevel(recipe.Type)}).";
 
     /// <summary>Spend one free point on a type (the crafter-points model, 0.204.0): *"each generic gives 1
-    /// "skill" point .. u then deside where to put this point into"*. Anywhere; permanent until a respec.</summary>
+    /// "skill" point .. u then deside where to put this point into"*. At a Master Crafter (`BL-303`); permanent until a respec.</summary>
     private void HandleSpendCraftPoint(SpendCraftPointCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player))
             return;
         if (!player.IsCrafter || Array.IndexOf(Crafting.SpendableTypes, cmd.Type) < 0)
             return;
+        // `BL-303` (owner, 2026-09-26): *"The points respec and rcps forget is at master"*.
+        if (MasterOnlyRefusal(player, "Crafting points are spent") is string away)
+        {
+            SendSystemToEntity(player, away);
+            return;
+        }
         if (player.CraftPointsFree <= 0)
         {
             SendSystemToEntity(player, "You have no crafting points to spend. Each crafting level gives one.");
@@ -3700,12 +3706,18 @@ public class GameLoopService : BackgroundService
         SaveEntity(player);
     }
 
-    /// <summary>Forget a learned recipe to free its slot (`BL-273` part 2) — anywhere, and it refunds
+    /// <summary>Forget a learned recipe to free its slot (`BL-273` part 2) — at a Master Crafter (`BL-303`), and it refunds
     /// nothing (*"U can remove learned recipes to free up slots"*).</summary>
     private void HandleForgetRecipe(ForgetRecipeCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player))
             return;
+        // `BL-303` (owner, 2026-09-26): *"The points respec and rcps forget is at master"*.
+        if (MasterOnlyRefusal(player, "Recipes are forgotten") is string away)
+        {
+            SendSystemToEntity(player, away);
+            return;
+        }
         if (!player.KnownRecipes.Remove(cmd.RecipeId))
         {
             SendSystemToEntity(player, "You don't know that recipe.");
@@ -3737,15 +3749,16 @@ public class GameLoopService : BackgroundService
         return true;
     }
 
-    /// <summary>The npc id of a Master Crafter this player is standing at, or null — the gate on actually
-    /// making anything, and what puts the crafting window into browse mode elsewhere.
+    /// <summary>The npc id of an NPC of this role the player is standing at, or null. `BL-303` (0.214.25) split
+    /// the workshop: the ANVIL is where anything is made (and what takes the crafting window out of browse
+    /// mode), the MASTER is where points are spent, respecced and recipes forgotten.
     /// ⚠ Reads the STATIC WorldMap table, not the live entity dictionary: NPCs never move, and this runs
     /// once a second for every crafter.</summary>
-    private static string? MasterNpcNear(Entity player)
+    private static string? NpcNear(Entity player, NpcRole role)
     {
         foreach (var n in WorldMap.Npcs)
         {
-            if (n.Role != NpcRole.CraftMaster) continue;
+            if (n.Role != role) continue;
             float dx = n.X - player.X, dy = n.Y - player.Y;
             if (dx * dx + dy * dy <= GameConstants.TalkRange * GameConstants.TalkRange)
                 return n.Id;
@@ -3753,15 +3766,23 @@ public class GameLoopService : BackgroundService
         return null;
     }
 
-    /// <summary>Once a second: has this crafter (or trial-taker) walked into or out of a Master's range? If
-    /// so push the crafting state so the window's Craft buttons go live or dead on their own. A LATCH: it
-    /// pushes only on the EDGE.</summary>
+    private static string? MasterNpcNear(Entity player) => NpcNear(player, NpcRole.CraftMaster);
+    private static string? AnvilNear(Entity player) => NpcNear(player, NpcRole.Anvil);
+
+    /// <summary>The refusal for a Master-only crafting service (spend, forget) away from one, or null.</summary>
+    private static string? MasterOnlyRefusal(Entity player, string what) =>
+        MasterNpcNear(player) is null ? $"{what} at a Master Crafter." : null;
+
+    /// <summary>Once a second: has this crafter (or trial-taker) walked into or out of an Anvil's or a Master's
+    /// range? If so push the crafting state so the window's buttons go live or dead on their own. A LATCH: it
+    /// pushes only on an EDGE of either.</summary>
     private void TickCraftMasterProximity(Entity player)
     {
         if (!player.IsCrafter && !player.ActiveQuests.ContainsKey(QuestCatalog.QuestBecomeCrafter)) return;
-        bool atMaster = MasterNpcNear(player) is not null;
-        if (atMaster == player.AtCraftMaster) return;
+        bool atMaster = MasterNpcNear(player) is not null, atAnvil = AnvilNear(player) is not null;
+        if (atMaster == player.AtCraftMaster && atAnvil == player.AtAnvil) return;
         player.AtCraftMaster = atMaster;
+        player.AtAnvil = atAnvil;
         SendCrafting(player);
     }
 
@@ -4173,7 +4194,7 @@ public class GameLoopService : BackgroundService
         SendTo(p, "Crafting", new CraftingUpdate(
             p.IsCrafter, p.KnownRecipes.Select(kv => $"{kv.Key}:{kv.Value}").ToArray(),
             p.CraftPoints, (int[])p.CraftTypeLevels.Clone(), p.CraftPointsFree, p.CraftRespecs,
-            p.RecipeSlots, AtMaster: MasterNpcNear(p) is not null));
+            p.RecipeSlots, AtMaster: MasterNpcNear(p) is not null, AtAnvil: AnvilNear(p) is not null));
 
     private void SendSubclasses(Entity p) =>
         SendTo(p, "Subclasses", new SubclassListDto(p.Subclasses
@@ -21976,18 +21997,25 @@ public class GameLoopService : BackgroundService
         if (npc.NpcRole == NpcRole.SkillReset)
             reset = new SkillResetInfo(ResettableSkillsOf(player).OrderBy(s => s.Name).ToArray());
 
-        // The MASTER CRAFTER (`BL-273` part 2): the workshop for a crafter, and his trial (in the normal
-        // Offered list above) for everyone else. His recipe SHELF rides the ordinary vendor ShopInfo.
+        // The MASTER CRAFTER (`BL-273` part 2): his trial (in the normal Offered list above), his recipe SHELF (the
+        // ordinary vendor ShopInfo) and, since `BL-303`, the crafter's points / respec / forget. The ANVIL beside
+        // him is the workshop. Standing at either latches its flag at once, so a window already open from the menu
+        // wakes up without waiting for the proximity tick.
         CraftMasterInfo? craft = null;
         if (npc.NpcRole == NpcRole.CraftMaster)
         {
             craft = new CraftMasterInfo(player.IsCrafter, player.CraftLevel);
-            // Standing here IS the workshop, and the window may already be open from the menu.
             if (!player.AtCraftMaster)
             {
                 player.AtCraftMaster = true;
                 SendCrafting(player);
             }
+        }
+        bool anvil = npc.NpcRole == NpcRole.Anvil;
+        if (anvil && !player.AtAnvil)
+        {
+            player.AtAnvil = true;
+            SendCrafting(player);
         }
 
 
@@ -22011,7 +22039,7 @@ public class GameLoopService : BackgroundService
             npc.Name, npc.NpcRole.ToString(),
             offered, turnable.ToArray(), inProgress.ToArray(), changes.ToArray(), shop, teleport, reset,
             Warehouse: npc.NpcRole == NpcRole.Warehouse,
-            CraftMaster: craft, SpExchange: spExchange, Subclass: subclass));
+            CraftMaster: craft, SpExchange: spExchange, Subclass: subclass, Anvil: anvil));
 
         // Talking can itself advance a TalkTo step.
         AdvanceTalkStep(player, npcId);

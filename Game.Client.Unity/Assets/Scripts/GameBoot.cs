@@ -493,9 +493,13 @@ namespace Game.Client
             }
         }
 
-        /// <summary>Is the character standing at a Master Crafter right now? The craft buttons are live
-        /// only here — away from him the same window is a read-only browse of what to farm.</summary>
+        /// <summary>Is the character standing at a Master Crafter right now? Points, respec and forget are live
+        /// only here (`BL-303`); crafting follows <see cref="AtAnvil"/>.</summary>
         public bool AtCraftMaster { get; private set; }
+
+        /// <summary>`BL-303`: is the character standing at an ANVIL? Since 0.214.25 the craft buttons follow THIS;
+        /// <see cref="AtCraftMaster"/> now gates points, respec and forgetting.</summary>
+        public bool AtAnvil { get; private set; }
 
         /// <summary>Craft one unit. Same rule as every other action: nothing is applied locally — the
         /// inventory push that follows is what tells us it happened. <paramref name="recipePercent"/> is the
@@ -1476,6 +1480,7 @@ namespace Game.Client
                 CraftRespecs = c.Respecs;
                 CraftSlots = c.Slots;
                 AtCraftMaster = c.AtMaster;
+                AtAnvil = c.AtAnvil;
                 Ui?.RefreshCraftingWindow();
             });
             _net.RegionReceived += r => Main(() => Ui?.ShowRegionNotice(r));

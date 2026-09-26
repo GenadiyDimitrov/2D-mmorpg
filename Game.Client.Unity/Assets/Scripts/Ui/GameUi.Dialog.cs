@@ -153,10 +153,10 @@ namespace Game.Client
                           () => { Boot.OpenWarehouse(); OpenWarehouseWindow(); }, UiKit.Text);
             }
 
-            // ----- the MASTER CRAFTER (`BL-273` part 2) ---------------------------------------------
-            // His trial is in the ordinary Offered list above like any quest; his T40/T52 recipe shelf is
-            // the ordinary vendor window. This section is the workshop (crafting happens only here) and,
-            // for a crafter, the generic recipes he teaches.
+            // ----- the MASTER CRAFTER and the ANVIL (`BL-273` part 2, split by `BL-303`) -------------------
+            // His trial is in the ordinary Offered list above like any quest, and his recipe books are the
+            // ordinary vendor window. He keeps the crafter's POINTS, the respec and forgetting recipes; the Anvil
+            // beside him is where things are made (*"The only tabs at anvil are craft+mats"*).
             if (d.CraftMaster != null)
             {
                 var cm = d.CraftMaster;
@@ -164,11 +164,23 @@ namespace Game.Client
                 Header("Master Crafter");
                 if (cm.IsCrafter)
                 {
-                    DialogRow("Work at his anvil — craft, and see what you still need",
-                              "Craft", () => OpenCraftingWindow(), UiKit.Text);
+                    DialogRow("Your crafting points, respec, and forgetting recipes",
+                              "Points", () => OpenCraftingWindow(CraftTab.Slots, MasterCraftTabs), UiKit.Text);
+                    DialogRow("Craft at the Anvil beside him.", null, null, UiKit.TextDim);
                 }
                 else
                     DialogRow("Finish his trial (level " + Crafting.CrafterQuestLevel + ") to become a crafter.", null, null, UiKit.TextDim);
+            }
+            if (d.Anvil)
+            {
+                anything = true;
+                Header("Anvil");
+                if (Boot.IsCrafter || Boot.KnownRecipes.ContainsKey(Crafting.HammerRecipeId))
+                    DialogRow("Work at the anvil — craft, and see what you still need",
+                              "Craft", () => OpenCraftingWindow(CraftTab.Craft, AnvilCraftTabs), UiKit.Text);
+                else
+                    DialogRow("Only a crafter can work here. The Master Crafter beside it gives the trial (level "
+                              + Crafting.CrafterQuestLevel + ").", null, null, UiKit.TextDim);
             }
 
 

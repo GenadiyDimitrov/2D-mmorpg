@@ -1635,7 +1635,9 @@ b.MyId = entered2.EntityId;
 
     // Stand at the Master. ⚠ A spawn carries the BARE name ("Gorran"); the title is split off.
     string masterGivenName = masterNpc.Name.Split(' ')[^1];
-    await b.Hub.SendAsync("DebugTeleport", masterNpc.X, masterNpc.Y);
+    // `BL-303`: stand MIDWAY between the Master and his Anvil, so both are in reach (the trial crafts here).
+    var anvilNpc = WorldMap.Npcs.First(n => n.Id == WorldMap.AnvilId);
+    await b.Hub.SendAsync("DebugTeleport", (masterNpc.X + anvilNpc.X) / 2, (masterNpc.Y + anvilNpc.Y) / 2);
     // 🔑 Poll, never sleep: interest management runs on the SERVER's tick.
     await b.WaitFor(() => b.EntityNames.Any(kv => kv.Value == masterGivenName));
     var masterId = b.EntityNames.FirstOrDefault(kv => kv.Value == masterGivenName).Key;
@@ -1782,6 +1784,19 @@ b.MyId = entered2.EntityId;
         await b.Hub.SendAsync("DebugSetCraftLevels", 6, 0, 0, 0, 0, 0);
         await b.Settle();
         Check("generic L6 = 6 free points, nothing spent", b.Crafting is { FreePoints: 6 }, $"free {b.Crafting?.FreePoints}");
+        // `BL-303`: points are spent AT A MASTER. Away from one the spend is refused; then stand on the Master's
+        // far side from his Anvil, where the Master is in reach and the Anvil is not.
+        var master = WorldMap.Npcs.First(n => n.Id == WorldMap.CraftMasterId);
+        var anvil = WorldMap.Npcs.First(n => n.Id == WorldMap.AnvilId);
+        float awayY = master.Y + (master.Y - anvil.Y) * 0.4f;   // 100 beyond the Master, 350 from the Anvil
+        await b.Hub.SendAsync("SpendCraftPoint", (int)CraftType.Weapon);
+        await b.Settle();
+        Check("🔑 BL-303: a crafting point is NOT spent away from a Master", b.Crafting is { FreePoints: 6 },
+              $"free {b.Crafting?.FreePoints}");
+        await b.Hub.SendAsync("DebugTeleport", master.X, awayY);
+        await b.WaitFor(() => b.Crafting is { AtMaster: true });
+        Check("🔑 BL-303: beside the Master but out of the Anvil's reach, the push says AtMaster and not AtAnvil",
+              b.Crafting is { AtMaster: true, AtAnvil: false }, $"master {b.Crafting?.AtMaster}, anvil {b.Crafting?.AtAnvil}");
         for (int i = 0; i < 6; i++) { await b.Hub.SendAsync("SpendCraftPoint", (int)CraftType.Weapon); await b.Settle(); }
         await b.Hub.SendAsync("SpendCraftPoint", (int)CraftType.Apothecary);
         await b.Settle();
@@ -1809,13 +1824,20 @@ b.MyId = entered2.EntityId;
 
         await b.Hub.SendAsync("Craft", recipeId, false, 40, 1);
         await b.Settle();
-        Check("🔑 a craft AWAY FROM A MASTER is refused, and costs nothing",
+        Check("🔑 a craft AWAY FROM AN ANVIL (even at the Master) is refused, and costs nothing",
               Count(r40) == 3 && Count(scaled[0].ItemId) == mat0, $"r40 {Count(r40)}, mats {Count(scaled[0].ItemId)}/{mat0}");
 
-        var master = WorldMap.Npcs.First(n => n.Id == WorldMap.CraftMasterId);
-        await b.Hub.SendAsync("DebugTeleport", master.X, master.Y);
-        await b.WaitFor(() => b.Crafting is { AtMaster: true });
-        Check("the crafting push says AT MASTER once you stand at one", b.Crafting is { AtMaster: true });
+        // `BL-303`: the ANVIL alone (its far side from the Master): crafting is live there, forgetting is not.
+        await b.Hub.SendAsync("DebugTeleport", anvil.X, anvil.Y + (anvil.Y - master.Y) * 0.4f);
+        await b.WaitFor(() => b.Crafting is { AtAnvil: true });
+        await b.Hub.SendAsync("ForgetRecipe", recipeId);
+        await b.Settle();
+        Check("🔑 BL-303: at the Anvil (out of the Master's reach) crafting is live and FORGETTING is refused",
+              b.Crafting is { AtAnvil: true, AtMaster: false } && Known().Any(k => k.StartsWith(recipeId + ":")),
+              $"anvil {b.Crafting?.AtAnvil}, master {b.Crafting?.AtMaster}, known [{string.Join(",", Known())}]");
+        await b.Hub.SendAsync("DebugTeleport", (master.X + anvil.X) / 2, (master.Y + anvil.Y) / 2);
+        await b.WaitFor(() => b.Crafting is { AtMaster: true, AtAnvil: true });
+        Check("midway, both are in reach", b.Crafting is { AtMaster: true, AtAnvil: true });
 
         await b.Hub.SendAsync("Craft", recipeId, false, 100, 1);
         await b.Settle();

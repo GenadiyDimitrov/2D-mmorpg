@@ -1336,7 +1336,8 @@ public record NpcDialog(
     bool Warehouse = false, // true for a Warehouse Keeper — the client shows an "Open Warehouse" button
     CraftMasterInfo? CraftMaster = null, // crafting master options (null for everyone else)
     SpExchangeInfo? SpExchange = null, // SP broker (null for everyone else) — APPENDED, old clients ignore it
-    SubclassOfferInfo? Subclass = null); // `BL-250` — the class master's SECOND dialogue (null everywhere else)
+    SubclassOfferInfo? Subclass = null, // `BL-250` — the class master's SECOND dialogue (null everywhere else)
+    bool Anvil = false);  // `BL-303` — true at an ANVIL: the client offers "Work at the anvil" (craft + materials)
 
 /// <summary>Server -> client: `BL-250` §7+§8, the class master's SECOND dialogue — the one he opens
 /// when you come back with a main at 76 holding its 4th class.
@@ -1503,10 +1504,11 @@ public record SocialOptionsUpdate(int Options);
 ///   <see cref="CraftType"/> (slot 0 unused); <see cref="FreePoints"/> unspent; <see cref="Respecs"/> used of
 ///   <see cref="Crafting.MaxRespecs"/> (the crafter-points model, 0.204.0).</item>
 /// <item><see cref="Slots"/>: how many slots the generic level gives (10 + 5/level).</item>
-/// <item><see cref="AtMaster"/>: standing at a Master Crafter — the craft buttons go live. Away from one
-///   the window opens in BROWSE mode; learning and forgetting work anywhere.</item>
+/// <item><see cref="AtMaster"/>: standing at a Master Crafter — the point spending, respec and forget buttons go live
+///   (`BL-303`, 0.214.25). <see cref="AtAnvil"/>: standing at an Anvil — the craft buttons go live. Away from one
+///   the window opens in BROWSE mode; learning a recipe from the bag works anywhere.</item>
 /// </list></summary>
 public record CraftingUpdate(
     bool IsCrafter, string[] KnownRecipes,
     int GenericPoints = 0, int[]? TypeLevels = null, int FreePoints = 0, int Respecs = 0,
-    int Slots = 0, bool AtMaster = false);
+    int Slots = 0, bool AtMaster = false, bool AtAnvil = false);

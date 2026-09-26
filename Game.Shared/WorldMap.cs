@@ -378,11 +378,18 @@ public static class WorldMap
         //     🔑 In EVERY town (playtest-19 M11: *"i have no way to go back to the 1st town just to take
         //     it"*). The ring towns' copies are generated in RingTownServices.
         new(CraftMasterId, "Master Crafter Gorran", 22200, 25850, NpcRole.CraftMaster),
+        // `BL-303` — THE ANVIL, where crafting happens, always beside a Master (owner, 2026-09-26: *"anvil and
+        // master are always togheter"*; *"later model will be just an anvil"*, so no title). 250 south of him: the
+        // Spirit Helper at 25550 is inside the label guard's X window.
+        new(AnvilId, "Anvil", 22200, 26100, NpcRole.Anvil),
     }.Concat(RingTownServices()).ToArray();
 
     /// <summary>The Master Crafter's NPC id (the STARTER town's copy — every town's copy answers to it
     /// through <see cref="IsSameService"/>).</summary>
     public const string CraftMasterId = "craft_master";
+
+    /// <summary>The Anvil's NPC id (`BL-303`), the starter town's copy; every town's is <c>anvil_&lt;town&gt;</c>.</summary>
+    public const string AnvilId = "anvil";
 
     /// <summary>Is this NPC id a Master Crafter (any town's copy)?</summary>
     public static bool IsCraftMaster(string npcId) => IsSameService(CraftMasterId, npcId);
@@ -437,6 +444,8 @@ public static class WorldMap
             yield return new NpcDef(
                 $"{CraftMasterId}_{t.Key}", CraftMasterName(t.Key), t.X - 1400, t.Y - 150,
                 NpcRole.CraftMaster);
+            // His ANVIL (`BL-303`), 250 north: the Huntmaster (-650) and the gatekeeper (-900) keep >= 250 of Y.
+            yield return new NpcDef($"{AnvilId}_{t.Key}", "Anvil", t.X - 1400, t.Y - 400, NpcRole.Anvil);
         }
         // The 3rd-class master lives in GREYMARSH (band 34-46) — the first town whose levels reach the
         // level-40 discipline change (owner). He stands on the WEST side, mirroring Brackenford's
@@ -464,7 +473,9 @@ public static class WorldMap
         // jeweler 15650, Spirit Helper 15900, Apothecary 16200, Scribe 16500 — and ValidateNpcLabels
         // wants 200 of Y between any two within 1500 of X. 14600 is the first free slot north of the
         // smith. The boot assert rejected three placements before this one; trust it, not arithmetic.
-        yield return new NpcDef("sp_broker", "Ledgerkeep Mora", 10800, 14600, NpcRole.SpExchange);
+        // `BL-303` (0.214.25): moved from 14600, which the ANVIL now needs (250 north of the Master Crafter). 16400
+        // is the first free Y south of the column: Ossian 16150 and the Spirit Helper 15900 keep >= 250.
+        yield return new NpcDef("sp_broker", "Ledgerkeep Mora", 10800, 16400, NpcRole.SpExchange);
 
         // `BL-274` part 3 (0.208.0) — the three RECIPE GIVERS, one per kind, in Frostmere only (owner, step 13:
         // the 76+ town). Each gives a T76 and a T80 daily and sends you to the other two. A column of their
@@ -760,7 +771,7 @@ public record RoadPath(float Width, MapPoint[] Points)
 }
 
 // ⚠ APPEND ONLY — the client and the persisted spawn rows both read these by NUMBER.
-public enum NpcRole { QuestGiver = 0, ClassChange = 1, Vendor = 2, Teleporter = 3, Buffer = 4, SkillReset = 5, Warehouse = 6, CraftMaster = 7, SpExchange = 8 }
+public enum NpcRole { QuestGiver = 0, ClassChange = 1, Vendor = 2, Teleporter = 3, Buffer = 4, SkillReset = 5, Warehouse = 6, CraftMaster = 7, SpExchange = 8, Anvil = 9 }
 
 /// <summary>A placed NPC. Id is referenced by quests + class-change requirements.</summary>
 /// <param name="CanDie">`BL-115`, his words: *"canDie if false hp can't go below 1"*. FALSE on every
