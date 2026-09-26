@@ -7781,6 +7781,7 @@ item and we leave the 2% chance as well for another one.. Recipes are at 80%"*. 
 0.7 (was the guaranteed `BossGuaranteedPiece` 1.0), accent unchanged; `BossRecipesPerKill` 0.8 at every tier (was 1.0
 below T76, 1.5 at T76/T80). Read as a drop chance, since no recipe item carries 80% and the design note's boss row was
 "80-90% for any book". ⚠ The T76/T80 cut from 1.5 to 0.8 is flagged in the CHANGELOG for him to confirm.
+🔁 **Re-ruled the same day, built in 0.214.17:** *"the rcp drop is at 80% for the t80 bosses ... U can increase as the boss lvl goes down ... (not a formula just interpolate) t40 boss can drop 2 3 recipes and 1 item for sure"*. Authored tables by tier: full item T40 1.0 · T52 0.9 · T61 0.85 · T76 0.75 · T80 0.7; recipes a kill T40 2.5 · T52 2.0 · T61 1.6 · T76 1.0 · T80 0.8.
 
 **As filed:**
 

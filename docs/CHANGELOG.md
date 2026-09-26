@@ -7,12 +7,32 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.16**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.17**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.16: the skill bar comes in four shapes (`BL-299`)
+## 2026-09-26 (latest) — 0.214.17: boss drops scale by tier (`BL-308`, re-ruled)
+
+> *"the rcp drop is at 80% for the t80 bosses ... U can increase as the boss lvl goes down ... (not a formula just
+> interpolate) t40 boss can drop 2 3 recipes and 1 item for sure ... And the t80 boss drops 1 item at 70% and 1rcp at
+> 80% (the 2% are the "lucky drop")"*
+
+- Two authored tables, your T40 and T80 ends with the middle placed by tier number (rounded):
+
+  | boss tier | full Mythic item | recipes a kill |
+  |---|---|---|
+  | T40 | 100% | 2.5 (two for sure, a third half the time) |
+  | T52 | 90% | 2.0 |
+  | T61 | 85% | 1.6 (one for sure, a second 60% of the time) |
+  | T76 | 75% | 1.0 |
+  | T80 | 70% | 0.8 |
+
+- The 2% "lucky drop" accent and the books' own % (100% T40-T61, 60% T76/T80) are unchanged. Bosses below T40 pay
+  T40's row. This replaces 0.214.11's flat 70% / 0.8.
+- Formulas.md updated. SmokeTest ALL PASS. Server only.
+
+## 2026-09-26 — 0.214.16: the skill bar comes in four shapes (`BL-299`)
 
 > *"They work just take all the screen"*
 

@@ -329,10 +329,11 @@ Check("the Blessing is paused in town (BL-300)", await a.WaitFor(() => a.Favor?.
               .All(m => (m.Drops ?? Array.Empty<DropEntry>()).All(d => ItemCatalog.Get(d.ItemId) is not ItemDef p || !ItemCatalog.IsHealPotion(p))));
     Check("a normal mob below T40 or from T76 up drops NO equipment",
           !MobCatalog.GearDrops(30, MobRank.Normal).Any() && !MobCatalog.GearDrops(78, MobRank.Normal).Any());
-    Check("a boss pays ONE Mythic piece at 70% at every tier (BL-308)",
-          new[] { 10, 30, 45, 78, 85 }.All(L =>
-              Math.Abs(GroupSum(MobCatalog.GearDrops(L, MobRank.Boss), MobCatalog.GroupBossGear) - 0.7f) < 1e-5
-              && MobCatalog.GearDrops(L, MobRank.Boss).All(r => ItemCatalog.Get(r.ItemId) is { Rarity: ItemRarity.Mythic })));
+    Check("a boss pays ONE Mythic piece, 100% at T40 down to 70% at T80 (BL-308)",
+          new[] { (10, 1f), (30, 1f), (45, 1f), (55, 0.9f), (65, 0.85f), (78, 0.75f), (85, 0.7f) }.All(p =>
+              Math.Abs(GroupSum(MobCatalog.GearDrops(p.Item1, MobRank.Boss), MobCatalog.GroupBossGear) - p.Item2) < 1e-5)
+          && new[] { 10, 30, 45, 78, 85 }.All(L =>
+              MobCatalog.GearDrops(L, MobRank.Boss).All(r => ItemCatalog.Get(r.ItemId) is { Rarity: ItemRarity.Mythic })));
 
     // `BL-287` (0.201.0): prices + essence, IG-shaped. Mythic T1 x2.2 / T20 x0.65 / T40-T52 x0.5, T61+ as
     // they were; a Common is 0.05 of its Mythic; everything sells for half; break = 0.4 x buy / essence sell.
@@ -503,15 +504,15 @@ Check("the Blessing is paused in town (BL-300)", await a.WaitFor(() => a.Favor?.
           && WorldMap.Npcs.Where(n => n.Role == NpcRole.CraftMaster).All(n => WorldMap.IsCraftMaster(n.Id)),
           $"{WorldMap.Npcs.Count(n => n.Role == NpcRole.CraftMaster)} masters");
     // `BL-274` step 12: a boss's recipes are rows of its table (group "recipe"), 100% below T76 and 60% at T76/T80;
-    // `BL-308`: one book at 80% a kill, every tier.
+    // `BL-308`: 2.5 books a kill at T40 down to 0.8 at T80.
     {
         var b44 = MobCatalog.BossDrops(44).ToList();
         var b90 = MobCatalog.BossDrops(90).ToList();
         var books44 = b44.Where(e => e.GroupId == MobCatalog.GroupRecipe).ToList();
         var books90 = b90.Where(e => e.GroupId == MobCatalog.GroupRecipe).ToList();
-        Check("bosses: T40 pays 100% recipes, T80 60%, one book at 80% a kill (BL-308), a T80 full item, S essence; every id exists",
+        Check("bosses: T40 pays 100% recipes, T80 60%, 2.5 books a kill at T40 and 0.8 at T80 (BL-308), a T80 full item, S essence; every id exists",
               books44.All(e => e.ItemId.EndsWith("_100") && e.ItemId.Contains("_t40"))
-              && Math.Abs(books44.Sum(e => e.Chance) - 0.8f) < 0.001f
+              && Math.Abs(books44.Sum(e => e.Chance) - 2.5f) < 0.001f
               && books90.All(e => e.ItemId.EndsWith("_60") && e.ItemId.Contains("_t80"))
               && Math.Abs(books90.Sum(e => e.Chance) - 0.8f) < 0.001f
               && b90.Any(e => e.GroupId == MobCatalog.GroupBossGear && e.ItemId == "sword2h_t80")
