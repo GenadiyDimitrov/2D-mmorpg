@@ -7722,3 +7722,16 @@ holds the countdown and appends `(Paused)`; each transition pushes the sheet (`F
 > (Paused)`. His case: *"u kill your last mob and the blessing activates and u dont reengage after 30s or
 > whatever the timer for incombat the blessing should say (paused)"*. So "out of combat" is the existing in-combat
 > timer running out, not a new one.
+
+
+## `BL-310` ✅ CLOSED 2026-09-26 in **0.214.7**: town guards twice as far apart, on the town's border
+
+His words, 2026-09-26 (playtest of 0.181.0 → 0.214.2), on 0.212.1: *"give a bit more distance between them like x2 more
+and move them to the border of the town"*. **Built in 0.214.7:** `TownGateHalfWidth` 100 → 200 (400 apart), and the
+gate's Y is the DRAWN octagon's bottom side (`r·cos 22.5°`) + 30 instead of `r + 60`, so it stands on the edge the
+player sees rather than 210-330 units below it. That is inside the safe circle, legal for a guard since `BL-276`.
+
+**As filed:**
+
+> From the same playtest, on 0.212.1 (`BL-293`): *"give a bit more distance between them like x2 more and move them
+> to the border of the town"*. Today the fighter and the tank stand 200 apart at the city's bottom edge.

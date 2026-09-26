@@ -288,7 +288,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-307` | 🔵 | **Full drops below level 40** — F/E-grade Common gear, materials and lucky drops, not only gold | drops |
 | `BL-308` | 🔴 | **Boss drops: 70% for one full item**, the 2% extra roll stays; **recipes at 80%** | drops |
 | `BL-309` | 🔴 | **Essence carries its GRADE** (Darksteel Essence = D) | items |
-| `BL-310` | 🔴 | **Town guards twice as far apart, at the town border** | world |
 
 ---
 
@@ -2341,9 +2340,4 @@ and we leave the 2% chance as well for another one.. Recipes are at 80%"*.
 
 From the same playtest, on 0.209.2 (`BL-289`): *"Essence have grade .. Darksteel essence is D grade ... They
 represent essence for each grade"*. `ItemCatalog.GradeLabel` prints "-" for an essence today.
-
-## `BL-310` 🔴 TOWN GUARDS FURTHER APART, AT THE BORDER
-
-From the same playtest, on 0.212.1 (`BL-293`): *"give a bit more distance between them like x2 more and move them
-to the border of the town"*. Today the fighter and the tank stand 200 apart at the city's bottom edge.
 

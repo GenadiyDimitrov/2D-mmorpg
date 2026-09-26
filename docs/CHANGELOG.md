@@ -7,12 +7,24 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.6**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.7**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.6: the Blessing pauses out of combat and in town (`BL-300`)
+## 2026-09-26 (latest) — 0.214.7: the town gate guards twice as far apart, on the town's border (`BL-310`)
+
+> *"give a bit more distance between them like x2 more and move them to the border of the town"*
+
+- **400 apart** (was 200).
+- **On the border you see.** The drawn town is an octagon inside the safe circle, and its flat bottom side is at
+  0.924 × the radius. The gate stood at radius + 60, so 210-330 units below the drawn edge (330 at Brackenford). It
+  now stands **30 units past the drawn edge**, which is inside the safe circle. That is legal since `BL-276`: a guard
+  may walk and fight an outlaw in town.
+- ⚠ The one cost: a non-outlaw who hits a guard with PvP on while standing inside the safe circle cannot be answered.
+  The same was already true anywhere in town. Server only (`WorldPlan`); boot-checked.
+
+## 2026-09-26 — 0.214.6: the Blessing pauses out of combat and in town (`BL-300`)
 
 > *"works but need to pause if i go out of combat or in town"* · *"u kill your last mob and the blessing activates and u
 > dont reengage after 30s or whatever the timer for incombat the blessing should say (paused)"*

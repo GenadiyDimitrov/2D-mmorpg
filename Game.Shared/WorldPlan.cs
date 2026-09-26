@@ -354,11 +354,10 @@ public static class WorldPlan
     //  piesfull farming zones)", and from playtest 25: "each towns exit will have two guards - a tank
     //  and an archer".
     //
-    //  A TOWN POST is the city's GATE (2026-09-25): a fighter and a tank 200 apart at the BOTTOM of
-    //  the city, just outside its safe radius, until real walls and gates exist. (It used to be a
-    //  tank + archer pair wandering on the bearing of the first hunting field.) Just outside matters
-    //  twice over: a safe zone keeps mobs out entirely, and MobAi skips any candidate standing in
-    //  one, so a guard placed inside would be both illegal and blind.
+    //  A TOWN POST is the city's GATE (2026-09-25): a fighter and a tank at the BOTTOM of the city,
+    //  until real walls and gates exist. (It used to be a tank + archer pair wandering on the bearing
+    //  of the first hunting field.) Since `BL-310` (2026-09-26) they stand 400 apart ON the town's
+    //  drawn border, inside the safe circle — which `BL-276` made legal for a guard.
     //
     //  A FIELD POST sits at the far camp of a quiet farming field — his "peaceful farming zones".
     //  Three of them, spread across the level range rather than clustered, so the feature can be
@@ -370,13 +369,16 @@ public static class WorldPlan
     //  has seen it work.
     // ===================================================================================
 
-    /// <summary>How far beyond a city's safe radius its GATE stands — just outside, so the guards can
-    /// see who walks through (a guard inside a safe zone is blind).</summary>
-    private const float TownGateOffset = 60f;
+    /// <summary>How far beyond the town's DRAWN bottom edge its GATE stands (`BL-310`: *"move them to the
+    /// border of the town"*). The drawn town is the octagon of <see cref="Regions"/>' <c>Town</c>, whose
+    /// flat bottom side is at <c>r·cos 22.5° ≈ 0.924·r</c> — 150-270 units INSIDE the safe circle. The gate
+    /// used to stand at <c>r + 60</c>, i.e. 210-330 units below what the player sees as the town.</summary>
+    private const float TownGateOffset = 30f;
 
     /// <summary>Half the gap between the two gate guards: his *"spaced out like 200 range so u can
-    /// walk in between them"*.</summary>
-    private const float TownGateHalfWidth = 100f;
+    /// walk in between them"*, then *"give a bit more distance between them like x2 more"* (`BL-310`) —
+    /// 400 apart. The octagon's bottom side spans ±0.383·r (±765 at the smallest city), so it fits.</summary>
+    private const float TownGateHalfWidth = 200f;
 
     /// <summary>A gate guard's spawn zone: a few units, so it appears ON its post.</summary>
     private const float TownGuardPostRadius = 5f;
@@ -430,11 +432,14 @@ public static class WorldPlan
         // Each guard gets a zone of its OWN, a few units wide, so it spawns ON its post; and a guard
         // never wanders (MobAi), so between fights that is where it stands. "Bottom" is +Y: the server
         // is screen-style, Y growing DOWN, which the client's WorldMapper preserves.
-        // ⚠ Just OUTSIDE the safe radius, as before: a guard inside one would be blind (MobAi skips
-        //   every candidate standing in a safe zone).
+        // `BL-310`: ON the drawn border, which is INSIDE the safe circle. That is legal since `BL-276`: a
+        // guard may walk the town (MoveToward) and TownShields lets it fight an outlaw there, and the
+        // spawner validators exempt guard posts. ⚠ The one cost: a non-outlaw who hits a guard with
+        // PvP on, from inside the circle, is shielded from its answer — the same as anywhere in town.
+        float drawnEdge = MathF.Cos(MathF.PI / 8f);
         foreach (var city in Cities)
         {
-            float gy = city.Y + city.Radius + TownGateOffset;
+            float gy = city.Y + city.Radius * drawnEdge + TownGateOffset;
             zones.Add(GuardZone(city.X - TownGateHalfWidth, gy, new[] { "guard_town_fighter" }, 80,
                                 TownGuardRespawnSeconds, TownGuardRespawnVariance, TownGuardPostRadius));
             zones.Add(GuardZone(city.X + TownGateHalfWidth, gy, new[] { "guard_town_tank" }, 80,
