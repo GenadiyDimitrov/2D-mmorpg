@@ -284,7 +284,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-303` | 🟡 | **Split the Master Crafter from the ANVIL** — the Master is a vendor of recipe items gated by crafter level; a plain "Anvil" NPC is where you craft | crafting |
 | `BL-305` | 🔵 | **THE GENERIC-RECIPE OVERHAUL** — Apothecary + Scribe merge, buff scrolls and most buff potions go, a new L0-L10 ladder, generic recipes drop | crafting |
 | `BL-307` | 🔵 | **Full drops below level 40** — F/E-grade Common gear, materials and lucky drops, not only gold | drops |
-| `BL-308` | 🔴 | **Boss drops: 70% for one full item**, the 2% extra roll stays; **recipes at 80%** | drops |
 
 ---
 
@@ -2318,9 +2317,4 @@ From the same playtest, on 0.206.0 (`BL-274` part 1): *"Lower lvl mobs also need
 Common equipments and drops for mythic/common. Now <40 players rely solely on gold mob drop .. and no lucky drops
 or any mat to exchange for money (with other players when economy is present)"*.
 ❓ **Open:** the rates and which items (a proposal from me, measured with `BalanceMatrix`, before building).
-
-## `BL-308` 🔴 BOSS DROPS: 70% FOR ONE FULL ITEM, RECIPES AT 80%
-
-From the same playtest, on 0.207.0 (`BL-274` part 2): *"let's not make 100% for 1 item but 70% for one full item
-and we leave the 2% chance as well for another one.. Recipes are at 80%"*.
 

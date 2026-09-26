@@ -7772,3 +7772,17 @@ gave none. Retune any row, or let `BL-305` redraw them.
 
 > From the same playtest, on 0.205.0: *"every craft must cost mp (refines and generics and apoth as well)"*.
 > Today only gear crafts do.
+
+
+## `BL-308` ✅ CLOSED 2026-09-26 in **0.214.11**: boss drops 70% for a full item, recipes at 80%
+
+His words, 2026-09-26 (playtest of 0.181.0 → 0.214.2), on 0.207.0: *"let's not make 100% for 1 item but 70% for one full
+item and we leave the 2% chance as well for another one.. Recipes are at 80%"*. **Built in 0.214.11:** `BossFullItemChance`
+0.7 (was the guaranteed `BossGuaranteedPiece` 1.0), accent unchanged; `BossRecipesPerKill` 0.8 at every tier (was 1.0
+below T76, 1.5 at T76/T80). Read as a drop chance, since no recipe item carries 80% and the design note's boss row was
+"80-90% for any book". ⚠ The T76/T80 cut from 1.5 to 0.8 is flagged in the CHANGELOG for him to confirm.
+
+**As filed:**
+
+> From the same playtest, on 0.207.0 (`BL-274` part 2): *"let's not make 100% for 1 item but 70% for one full item
+> and we leave the 2% chance as well for another one.. Recipes are at 80%"*.

@@ -1081,13 +1081,13 @@ sum per normal kill               14.0%    5.8%     1.7%      (a Common every ~7
 His ranges (T40 1-2%, T52 0.2-1%, T61 0.05-0.3%) and slot order; the linear cells in between are mine.
 
 ```
-boss kill     boss group    1.0   × rates   one Mythic piece, any tier group "boss"   ×1
+boss kill     boss group    0.7   × rates   one Mythic piece, any tier group "boss"   ×1   (0.214.11, BL-308; was 1.0)
               + per family  0.02  × rates   Mythic accent             groups armor/accessory/weapon/jewel ×0.075
 ```
 
 A Common has the Mythic piece's stats, **no set, no attribute, no enchant**, and costs 0.05 × its Mythic
 (prices below). Below T40 no creature drops equipment; T76+ has no Commons (it drops essence instead).
-`MobCatalog.CommonGearSlotChance` / `CommonGearEliteMul` / `BossGuaranteedPiece`.
+`MobCatalog.CommonGearSlotChance` / `CommonGearEliteMul` / `BossFullItemChance`.
 
 **Healing potions** drop (group "always") only from mobs **level ≤ 40** (`BL-287`,
 `MobCatalog.HealingPotionDropMaxLevel`): Minor 2% + Minor/Healing 1% (Healing from 40). Above that, buy them.
@@ -1129,8 +1129,8 @@ A rate above 1 is a quantity band around it with the chance corrected so chance 
 
 ```
 base mats           ×100 the normal curve (150 primary at 90), secondary half, Iron/Gem ×0.5         group mats
-full item           1 guaranteed across all 18 kinds of GearTier (40/52/61/76/80) + 2%/family accent  group boss
-recipes             one group roll, 1.0 a kill at T40-T61 (100%), 1.5 at T76/T80 (60%), family-equal   group recipe
+full item           0.7 across all 18 kinds of GearTier (40/52/61/76/80) + 2%/family accent (BL-308) group boss
+recipes             one group roll, 0.8 a kill at every tier (BL-308); 100% books T40-T61, 60% T76/T80  group recipe
 parts               every kind, PartChance × 10                                               group mats
 Nightsilver + silk  BOTH, plain NightPerKill × 10; rungs 1-4 at the ELITE gates, 0.01 × 10          group mats
 essence (T76/T80)   guaranteed, round(0.1 × a 2H's break) ±25%: T76 288-480 A · T80 720-1200 S     group essence
@@ -1275,7 +1275,7 @@ recipe items     T40 / T52: 100 · T61: 60, 100 · T76: 20, 40, 60 · T80: 40, 6
 spent per craft  one recipe item of % ≤ learned (gear), pass or fail
 recipe price     round(0.10 × piece price × pct/100): 100% → 10%, 60% → 6%, 20% → 2% (Crafting.RecipePrice);
                  the Master sells T40/T52 100% at it; vendor pays half
-recipe drops     by specialty (see "Per-mob drop tables"); bosses: 1 a kill at 100% (T40-T61), 1.5 at 60% (T76/T80)
+recipe drops     by specialty (see "Per-mob drop tables"); bosses: 0.8 a kill (BL-308), 100% books (T40-T61), 60% (T76/T80)
 recipe quests    T76/T80 only (0.208.0): 3 Frostmere givers (weapon/armour/jewel), each a T76 (75-85) + T80 (80+) daily
                  on ONE shared stamp → max 3 books a day; 16 kills; reward 1 × 40% book, uniform in the kind (1/8, 1/7, 1/3)
 generic learn    authored per recipe from the ladder L0 20k · L1 50k · L2 100k · L3 200k · L4 400k · L5 700k · L6 1M

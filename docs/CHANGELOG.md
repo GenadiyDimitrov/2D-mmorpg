@@ -7,12 +7,24 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.10**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.11**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.10: every craft costs MP (`BL-306`)
+## 2026-09-26 (latest) — 0.214.11: boss drops, 70% for a full item and 80% for a recipe (`BL-308`)
+
+> *"let's not make 100% for 1 item but 70% for one full item and we leave the 2% chance as well for another one.. Recipes
+> are at 80%"*
+
+- **The full Mythic piece** of the boss's tier is a **70%** roll (was guaranteed). The 2%-per-family accent that can add
+  another piece is unchanged. `MobCatalog.BossGuaranteedPiece` is renamed `BossFullItemChance`.
+- **Recipes**: one group roll at **80% a kill, every tier**. That is the design note's own boss row ("80-90%" for any
+  book). ⚠ Below T76 this is down from a guaranteed book. **At T76/T80 it is down from 1.5 books a kill.** Say if you
+  meant ×0.8 of those (1.2 there) instead. The books' own % is unchanged: 100% for T40-T61, 60% for T76/T80.
+- Formulas.md updated. SmokeTest 401/401.
+
+## 2026-09-26 — 0.214.10: every craft costs MP (`BL-306`)
 
 > *"every craft must cost mp (refines and generics and apoth as well)"*
 

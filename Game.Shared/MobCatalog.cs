@@ -725,11 +725,11 @@ public static class MobCatalog
         _ => 5,   // the eight weapon lines
     };
 
-    /// <summary>A BOSS's gear: ONE guaranteed Mythic piece of its tier (<see cref="GroupBossGear"/>), plus
+    /// <summary>A BOSS's gear: a 70% chance of ONE Mythic piece of its tier (<see cref="GroupBossGear"/>), plus
     /// the old 2%-per-family Mythic accent, which is unchanged (it still runs under the family groups'
-    /// x0.075). The Epic 70% / Legendary 40% rungs it replaces summed to ~1.1 pieces a kill, so the COUNT
-    /// is about what it was; every piece is now the real one.</summary>
-    public const float BossGuaranteedPiece = 1f, BossMythicAccent = 0.02f;
+    /// x0.075). `BL-308` (owner, 2026-09-26): *"let's not make 100% for 1 item but 70% for one full item and we
+    /// leave the 2% chance as well for another one"* — it was guaranteed (1.0) from 0.207.0.</summary>
+    public const float BossFullItemChance = 0.7f, BossMythicAccent = 0.02f;
     /// <summary>The GEAR half of a mob's drop table at one level and rank. Normal-rank entries are baked
     /// into the template (below); Elite and Boss are built at KILL time by the drop roll, because rank is
     /// a property of the SPAWN — the zone assigns it — and not of the template.</summary>
@@ -847,7 +847,7 @@ public static class MobCatalog
 
         if (rank == MobRank.Boss)
         {
-            foreach (var e in Spread(BossGuaranteedPiece, GroupBossGear, "")) yield return e;
+            foreach (var e in Spread(BossFullItemChance, GroupBossGear, "")) yield return e;
             foreach (var (family, keys) in GearFamilies)
                 foreach (var key in keys)
                     yield return new DropEntry($"{key}_t{tier}", BossMythicAccent / keys.Length,
@@ -1199,10 +1199,10 @@ public static class MobCatalog
 
     // ---- BOSSES (`BL-274` part 2, step 12, 0.207.0; design doc §2.3 Q5/Q5b/Q5c and "Step 12 proposal") ----
 
-    /// <summary>Recipes a boss pays per kill, one GROUP roll across every kind of its tier. T52's *"every kill,
-    /// + an item"* is the 1.0 (a guaranteed book); T76/T80 keep the 1.5 the old three rolls paid (armour 50% +
-    /// weapon 40% + jewel 60%). RULED 2026-09-24.</summary>
-    public static double BossRecipesPerKill(int tier) => tier >= 76 ? 1.5 : 1.0;
+    /// <summary>Recipes a boss pays per kill, one GROUP roll across every kind of its tier: an 80% chance of one
+    /// book, every tier. `BL-308` (owner, 2026-09-26): *"Recipes are at 80%"* — the design note's own boss row
+    /// ("80-90%" for ANY book). It REPLACES the 2026-09-24 ruling (a guaranteed 1.0 below T76, 1.5 at T76/T80).</summary>
+    public static double BossRecipesPerKill(int tier) => 0.8;
     /// <summary>The recipe % a boss pays (0.203.0 source table): T40/T52/T61 100%, T76/T80 60%.</summary>
     public static int BossRecipePct(int tier) => tier >= 76 ? 60 : 100;
     /// <summary>A boss's parts and Nightsilver/Nightsilk against a normal kill's (elite ×4). RULED 2026-09-24.</summary>
@@ -1216,7 +1216,7 @@ public static class MobCatalog
     /// rule (`BL-50`). Replaces the old pile and recipe rolls that lived in the kill path, which no rate knob
     /// reached (`BL-262`).
     /// <list type="bullet">
-    /// <item>the guaranteed full item and the 2%/family accent (<see cref="GearDrops"/>; Q5b, every tier) — never a Common;</item>
+    /// <item>the full item at 70% and the 2%/family accent (<see cref="GearDrops"/>; Q5b, every tier; `BL-308`) — never a Common;</item>
     /// <item>recipes of every kind, <see cref="BossRecipesPerKill"/> at <see cref="BossRecipePct"/>;</item>
     /// <item>parts of every kind and BOTH Nightsilver and Nightsilk, ×<see cref="BossMatMul"/>, higher rungs from the
     /// elite gates (so Legendary from 80, the note's *"legend ds from elit and bosses 80+"*);</item>
