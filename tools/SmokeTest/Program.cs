@@ -712,6 +712,19 @@ Check("a level-1 character is offered the TUTORIAL and only the tutorial",
     Check("...and the Apothecary really gives it again",
           a.Quests?.Active.Any(q => q.Id == QuestCatalog.QuestDailyRunes) == true,
           $"active [{string.Join(",", a.Quests?.Active.Select(q => q.Id) ?? Array.Empty<string>())}]");
+
+    // §105.2 (2026-09-26): *"the quest window dont allow me to untrack it"*. Accepting pins the quest; the
+    // window's Untrack button sends "track", which must toggle the pin OFF, and a second press back on.
+    bool? Pinned() => Runes()?.Tracked;
+    bool pinnedOnAccept = Pinned() == true;
+    await a.Hub.SendAsync("QuestAction", "track", QuestCatalog.QuestDailyRunes, Guid.Empty);
+    await a.Settle();
+    bool afterUntrack = Pinned() == false;
+    await a.Hub.SendAsync("QuestAction", "track", QuestCatalog.QuestDailyRunes, Guid.Empty);
+    await a.Settle();
+    Check("🔑 an accepted quest is pinned, Untrack unpins it, Track pins it again",
+          pinnedOnAccept && afterUntrack && Pinned() == true,
+          $"on accept {pinnedOnAccept}, after untrack {afterUntrack}, after re-track {Pinned()}");
     await a.Hub.SendAsync("QuestAction", "abandon", QuestCatalog.QuestDailyRunes, Guid.Empty);
     await a.Settle();
     // Back to level 1: the marker section below asserts a level-1 offer list, and the levelling
