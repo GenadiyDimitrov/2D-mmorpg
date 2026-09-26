@@ -1266,8 +1266,9 @@ batch gold       Scribe/Apothecary: round10( (0.9 − 0.035 × typeLevel) × Bat
 inputs (gear)    ScaledQty(q, %) = % ≥ 100 ? q : max(1, round_half_away(q × f(%)))
                  f: 20 → 0.30 · 40 → 0.50 · 60 → 0.70 · 100 → 1.00          (the trial's hammer is unscaled)
                  Nightsilver / Nightsilk are NEVER scaled (Crafting.IsFixedInput); everything else is
-MP per attempt   Recipe.MpCost, paid on every attempt (fail too): gear 2H 400 · 1H 300 · body 200 · helmet/shield/
-                 necklace 150 · gloves/boots/earring 100 · ring 50; refines 50/100/150/200 by step; alloy 50, bar 200;
+MP per attempt   Recipe.MpCost, paid on every attempt (fail too): gear by tier (BL-306, 0.214.18), 2H T40 200 · T52 300 ·
+                 T61 400 · T76 700 · T80 800, other slots at the 2H × 1H 0.75 · body 0.5 · helmet/shield/necklace 0.375 ·
+                 gloves/boots/earring 0.25 · ring 0.125 (rounded to 5); refines 50/100/150/200 by step; alloy 50, bar 200;
                  Scribe/Apothecary by the line's grade D 50 · C 100 · B 150 · 70+ 200; the trial hammer 50 (0.214.10, BL-306)
 count            a non-gear craft repeats up to Count (1 … 1000) and stops at the first missing input, MP or gold;
                  gear is always 1

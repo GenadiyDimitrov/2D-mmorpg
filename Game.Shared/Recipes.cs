@@ -227,9 +227,21 @@ public static class RecipeCatalog
         new[] { 1600, 1280,  960,  960,  960,  640,  640,  320,  320,  640,  480,  160 },   // T76 A
         new[] { 2000, 1600, 1200, 1200, 1200,  800,  800,  400,  400,  800,  600,  200 },   // T80 S
     };
-    /// <summary>MP per attempt, by column (the note: *"weapons 1h/2h 300/400, armor body 200,
-    /// gloves/boots/earrings 100, helmet/shield/neckclace 150, rings 50"*). The same on every tier.</summary>
-    private static readonly int[] GearMp = { 400, 300, 200, 200, 200, 150, 150, 100, 100, 150, 100, 50 };
+    /// <summary>MP per attempt, by tier and column. The column RATIOS are the note's (*"weapons 1h/2h 300/400, armor
+    /// body 200, gloves/boots/earrings 100, helmet/shield/neckclace 150, rings 50"*), which was one row for every
+    /// tier; `BL-306` (owner, 2026-09-26) made it rise with the tier: *"a weapon recipe t40 cost 400mp and a fighter
+    /// have 200 ... u can make t40 to need 200 at most and go from there as checking the fighter can craft atleast
+    /// one wepon at that lvl"*. The 2H is placed under the LOWEST fighter pool at the tier's own level in the
+    /// previous tier's gear (`BalanceMatrix --craft-mp`: 203 / 325 / 437 / 778 / 876), the rest keep the note's
+    /// ratios, rounded to 5.</summary>
+    private static readonly int[][] GearMp =
+    {
+        new[] {  200,  150,  100,  100,  100,   75,   75,   50,   50,   75,   50,   25 },   // T40
+        new[] {  300,  225,  150,  150,  150,  115,  115,   75,   75,  115,   75,   40 },   // T52
+        new[] {  400,  300,  200,  200,  200,  150,  150,  100,  100,  150,  100,   50 },   // T61
+        new[] {  700,  525,  350,  350,  350,  265,  265,  175,  175,  265,  175,   90 },   // T76
+        new[] {  800,  600,  400,  400,  400,  300,  300,  200,  200,  300,  200,  100 },   // T80
+    };
 
     /// <summary>The table column a piece of gear reads, or -1.</summary>
     private static int GearColumn(ItemDef d) => d.Slot switch
@@ -286,7 +298,7 @@ public static class RecipeCatalog
             yield return new Recipe(
                 $"craft_{d.Id}", Crafting.TypeOf(d), d.Id, inputs.ToArray(),
                 LearnLevel: d.ItemLevel, UnlockLevel: Crafting.TierGate(d.ItemLevel), GearItemLevel: d.ItemLevel,
-                MpCost: GearMp[c]);
+                MpCost: GearMp[t][c]);
         }
     }
 

@@ -7,12 +7,33 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.17**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.18**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.17: boss drops scale by tier (`BL-308`, re-ruled)
+## 2026-09-26 (latest) — 0.214.18: gear crafts cost MP by tier, and a fighter can pay for one (`BL-306`)
+
+> *"Now a weapon recipe t40 cost 400mp and a fighter have 200 ... I think the weapon,and armor should rise as lvls ...u
+> can make t40 to need 200 at most and go from there as checking the fighter can craft atleast one wepon at that lvl"*
+
+- Measured first (`BalanceMatrix --craft-mp`, new): the lowest fighter pool at each tier's own level, still in the
+  previous tier's gear and unbuffed, is **203 / 325 / 437 / 778 / 876** (T40 / T52 / T61 / T76 / T80).
+- MP per attempt now rises with the tier. The 2H sits under that pool; the other slots keep your note's ratios:
+
+  | tier | 2H | 1H | body | helm / shield / necklace | gloves / boots / earring | ring |
+  |---|---|---|---|---|---|---|
+  | T40 | 200 | 150 | 100 | 75 | 50 | 25 |
+  | T52 | 300 | 225 | 150 | 115 | 75 | 40 |
+  | T61 | 400 | 300 | 200 | 150 | 100 | 50 |
+  | T76 | 700 | 525 | 350 | 265 | 175 | 90 |
+  | T80 | 800 | 600 | 400 | 300 | 200 | 100 |
+
+- T61 is exactly the old table; T40/T52 got cheaper, T76/T80 dearer.
+- The generic-line placeholders from 0.214.10 are unchanged; you said you'll judge them in the playtest.
+- Formulas.md updated. SmokeTest ALL PASS. ⚠ Needs a new APK (the Craft page reads the MP from the shared catalog).
+
+## 2026-09-26 — 0.214.17: boss drops scale by tier (`BL-308`, re-ruled)
 
 > *"the rcp drop is at 80% for the t80 bosses ... U can increase as the boss lvl goes down ... (not a formula just
 > interpolate) t40 boss can drop 2 3 recipes and 1 item for sure ... And the t80 boss drops 1 item at 70% and 1rcp at

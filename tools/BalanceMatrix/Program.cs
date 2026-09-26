@@ -2767,6 +2767,50 @@ if (args.Length > 0 && args[0] == "--drop-value")
 // CraftCost(); everything the code already has (kill clock, gear-drop rate) is measured.
 if (args.Length > 0 && args[0] == "--craft-cost") { CraftCost(); return; }
 
+// `--craft-mp` — CAN A FIGHTER PAY FOR ONE WEAPON (`BL-306`, 2026-09-26: *"u can make t40 to need 200 at most and go
+// from there as checking the fighter can craft atleast one wepon at that lvl"*). Every fighter 2nd class of every
+// race at the tier's own level, in the PREVIOUS tier's gear (what he wears before he can craft this one) and in the
+// tier's own, no buffs; beside the gear recipes' MP as the catalog has them now.
+if (args.Length > 0 && args[0] == "--craft-mp")
+{
+    int[] tiers = Crafting.GearTiers;
+    Console.WriteLine();
+    Console.WriteLine("=== MAX MP of every fighter 2nd class at the tier level (prev-tier gear / own-tier gear), no buffs ===");
+    Console.Write($"  {"class",-22}");
+    foreach (int t in tiers) Console.Write($" {"L" + t,13}");
+    Console.WriteLine();
+    var minPrev = tiers.ToDictionary(t => t, _ => int.MaxValue);
+    foreach (var c in ClassCatalog.Playable.Where(c => c.Base == BaseClass.Fighter).OrderBy(c => c.Archetype).ThenBy(c => c.Race))
+    {
+        Console.Write($"  {c.Name + " (" + c.Race + ")",-22}");
+        for (int i = 0; i < tiers.Length; i++)
+        {
+            int t = tiers[i], prevTier = i == 0 ? 20 : tiers[i - 1];
+            int prev = BuildPlayer(c.Race, BaseClass.Fighter, t, warrior: c.Archetype == Archetype.Warrior,
+                                   secondClass: c.Id, gearTier: prevTier).MaxMp;
+            int own = BuildPlayer(c.Race, BaseClass.Fighter, t, warrior: c.Archetype == Archetype.Warrior,
+                                  secondClass: c.Id, gearTier: t).MaxMp;
+            minPrev[t] = Math.Min(minPrev[t], prev);
+            Console.Write($" {prev,6}/{own,-6}");
+        }
+        Console.WriteLine();
+    }
+    Console.Write($"  {"LOWEST (prev gear)",-22}");
+    foreach (int t in tiers) Console.Write($" {minPrev[t],13}");
+    Console.WriteLine();
+    Console.WriteLine();
+    Console.WriteLine("=== GEAR RECIPE MP per attempt (RecipeCatalog), 2H / 1H / body / helm / gloves / neck / earring / ring ===");
+    foreach (int t in tiers)
+    {
+        int Mp(string key) => RecipeCatalog.Get($"craft_{key}_t{t}")?.MpCost ?? -1;
+        int twoH = Mp("sword2h");
+        Console.WriteLine($"  T{t,-3} {twoH,5} {Mp("sword1h"),5} {Mp("heavy"),5} {Mp("helm"),5} {Mp("gloves"),5} "
+                          + $"{Mp("necklace"),5} {Mp("earring"),5} {Mp("ring"),5}   2H fits the lowest fighter: "
+                          + (twoH <= minPrev[t] ? "yes" : "NO"));
+    }
+    return;
+}
+
 // `--favor-kph` — the KILLS/H TABLE `WayfarerFavor.KillsPerHour` is authored from (`BL-277`). Same M1 clock
 // `--craft-cost` reads; printed as a pasteable C# array. Re-run and re-paste when the pace moves.
 if (args.Length > 0 && args[0] == "--favor-kph") { FavorKph(); return; }

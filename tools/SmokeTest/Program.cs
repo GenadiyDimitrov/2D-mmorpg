@@ -427,15 +427,15 @@ Check("the Blessing is paused in town (BL-300)", await a.WaitFor(() => a.Favor?.
     {
         var t40 = RecipeCatalog.Get("craft_sword2h_t40")!;
         int Q(Recipe r, string id) => r.Inputs.FirstOrDefault(i => i.ItemId == id)?.Qty ?? 0;
-        Check("🔑 T40 2H recipe = 400 wood + 400 iron + 10 alloy + 20 Greatsword Blades + 300 Nightsilver + 400 D essence, 400 MP",
+        Check("🔑 T40 2H recipe = 400 wood + 400 iron + 10 alloy + 20 Greatsword Blades + 300 Nightsilver + 400 D essence, 200 MP (BL-306)",
               Q(t40, "mat_wood") == 400 && Q(t40, "mat_iron") == 400 && Q(t40, Crafting.AlloyId) == 10
               && Q(t40, "part_sword2h_t40") == 20 && Q(t40, Crafting.NightsilverId(0)) == 300 && Q(t40, "essence_d") == 400
-              && t40.Inputs.Length == 6 && t40.MpCost == 400,
+              && t40.Inputs.Length == 6 && t40.MpCost == 200,
               string.Join(" + ", t40.Inputs.Select(i => $"{i.Qty} {i.ItemId}")));
         var ring80 = RecipeCatalog.Get("craft_ring_t80")!;
         var robe61 = RecipeCatalog.Get("craft_robe_t61")!;
-        Check("authored cells: T80 ring = 7 bars + 1 Legendary Nightsilver, 50 MP; T61 robe = 1152 thread + 90 Rare Nightsilk",
-              Q(ring80, ItemCatalog.VolcanicBar) == 7 && Q(ring80, Crafting.NightsilverId(4)) == 1 && ring80.MpCost == 50
+        Check("authored cells: T80 ring = 7 bars + 1 Legendary Nightsilver, 100 MP (BL-306); T61 robe = 1152 thread + 90 Rare Nightsilk",
+              Q(ring80, ItemCatalog.VolcanicBar) == 7 && Q(ring80, Crafting.NightsilverId(4)) == 1 && ring80.MpCost == 100
               && Q(robe61, "mat_thread") == 1152 && Q(robe61, Crafting.NightsilkId(2)) == 90);
         Check("🔑 Nightsilver does NOT scale with the recipe %, everything else does (T76 1H at 20%)",
               RecipeCatalog.Get("craft_sword1h_t76") is { } r76

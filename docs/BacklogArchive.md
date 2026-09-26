@@ -7767,6 +7767,7 @@ His words, 2026-09-26 (playtest of 0.181.0 → 0.214.2), on 0.205.0: *"every cra
 apoth as well)"*. **Built in 0.214.10:** refines already paid; the Scribe/Apothecary lines now pay by grade (D 50 · C 100 ·
 B 150 · 70+ 200) and the trial hammer 50. ⚠ **The numbers are placeholders of mine** on the refine ladder's scale; he
 gave none. Retune any row, or let `BL-305` redraw them.
+🔁 **Follow-up, built in 0.214.18:** *"a weapon recipe t40 cost 400mp and a fighter have 200 ... u can make t40 to need 200 at most and go from there"*. Gear MP is now per tier: 2H T40 200 · T52 300 · T61 400 · T76 700 · T80 800, other slots at the note's ratios (`BalanceMatrix --craft-mp`). The generic placeholders stay for his playtest.
 
 **As filed:**
 
