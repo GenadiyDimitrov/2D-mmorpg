@@ -7,12 +7,24 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.9**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.10**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.9: crafting text says grades, not tiers (`BL-304`)
+## 2026-09-26 (latest) — 0.214.10: every craft costs MP (`BL-306`)
+
+> *"every craft must cost mp (refines and generics and apoth as well)"*
+
+- Gear and refines already paid MP. **The Scribe/Apothecary lines and the trial hammer now pay too**, per attempt
+  (per batch), like everything else: **D (level-40 lines) 50 · C (52) 100 · B (61) 150 · the 70+ lines (rare
+  potions, rune boxes) 200 · the hammer 50.** The Craft page already prints a non-zero MP.
+- ⚠ **Those numbers are mine, placeholders**: you gave none. They sit on the refine ladder's own scale (a refine of the same
+  grade costs the same), and each can be retuned alone. `BL-305` may redraw the whole generic table anyway.
+- SmokeTest: every crafting check passes. The run had one unrelated timing flake ("the clock did not run in the bag":
+  7199 instead of 7200), a different check from the last run's flake.
+
+## 2026-09-26 — 0.214.9: crafting text says grades, not tiers (`BL-304`)
 
 > *"The desciption should not say T40..T80 but grades ... D~S"*
 

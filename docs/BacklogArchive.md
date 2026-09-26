@@ -7759,3 +7759,16 @@ carried a T-number; the debug panel keeps them.
 **As filed:**
 
 > From the same playtest, on 0.203.0: *"The description should not say T40..T80 but grades ... D~S"*.
+
+
+## `BL-306` ✅ CLOSED 2026-09-26 in **0.214.10**: every craft costs MP
+
+His words, 2026-09-26 (playtest of 0.181.0 → 0.214.2), on 0.205.0: *"every craft must cost mp (refines and generics and
+apoth as well)"*. **Built in 0.214.10:** refines already paid; the Scribe/Apothecary lines now pay by grade (D 50 · C 100 ·
+B 150 · 70+ 200) and the trial hammer 50. ⚠ **The numbers are placeholders of mine** on the refine ladder's scale; he
+gave none. Retune any row, or let `BL-305` redraw them.
+
+**As filed:**
+
+> From the same playtest, on 0.205.0: *"every craft must cost mp (refines and generics and apoth as well)"*.
+> Today only gear crafts do.

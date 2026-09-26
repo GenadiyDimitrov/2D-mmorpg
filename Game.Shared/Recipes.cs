@@ -99,7 +99,8 @@ public static class RecipeCatalog
             new RecipeInput(ItemCatalog.CrafterHammerHead, 1),
         },
         SuccessChance: Crafting.HammerRecipePercent / 100f,
-        LearnLevel: Crafting.CrafterQuestLevel, QuestOnly: true);
+        LearnLevel: Crafting.CrafterQuestLevel, QuestOnly: true,
+        MpCost: 50);   // `BL-306`: every craft costs MP; the D-grade placeholder, as a level-40 generic
 
     // =====================================================================================
     //  THE REFINES (`BL-273` part 3, 0.205.0; design doc §2.2 "Step 10", ruled 2026-09-24). General
@@ -308,6 +309,13 @@ public static class RecipeCatalog
     //  • OUT, by his ruling: stones, Return/Resurrection (+ Ultimates), every Dash, the Instant potion, and
     //    enchant + attribute scrolls (never craftable).
     // =====================================================================================
+    /// <summary>`BL-306` — a generic batch's MP, per attempt: *"every craft must cost mp (refines and generics
+    /// and apoth as well)"*. He gave no numbers, so these are PLACEHOLDERS on the refine ladder's own scale
+    /// (<see cref="Crafting.RefineMp"/> 50/100/150/200), keyed to the line's grade: D (40) 50 · C (52) 100 ·
+    /// B (61) 150 · the 70+ lines (rare potions, rune boxes) 200. Any row may be retuned alone.</summary>
+    private static int GenericMp(int charLevel) =>
+        charLevel >= 70 ? 200 : charLevel >= 61 ? 150 : charLevel >= 52 ? 100 : 50;
+
     private static IEnumerable<Recipe> ConsumableRecipes()
     {
         static RecipeInput M(MaterialType t, int n) => new(Crafting.MaterialId(t), n);
@@ -318,7 +326,8 @@ public static class RecipeCatalog
                  params RecipeInput[] inputs) =>
             new($"craft_{output}", type, output, inputs,
                 OutputQty: qty, LearnLevel: charLevel, UnlockLevel: gate,
-                LearnPrice: Crafting.LearnPriceLadder[ladder], BatchValue: batchValue);
+                LearnPrice: Crafting.LearnPriceLadder[ladder], BatchValue: batchValue,
+                MpCost: GenericMp(charLevel));
 
         const CraftType Apo = CraftType.Apothecary, Scr = CraftType.Scribe;
         const int Gem = 0, Wood = 1, Iron = 2, Leather = 3;

@@ -283,7 +283,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-302` | 🔴 | **"Unequip all" as a skill-window ACTION** you can put on the bar (the bag button stays) | client |
 | `BL-303` | 🟡 | **Split the Master Crafter from the ANVIL** — the Master is a vendor of recipe items gated by crafter level; a plain "Anvil" NPC is where you craft | crafting |
 | `BL-305` | 🔵 | **THE GENERIC-RECIPE OVERHAUL** — Apothecary + Scribe merge, buff scrolls and most buff potions go, a new L0-L10 ladder, generic recipes drop | crafting |
-| `BL-306` | 🔴 | **EVERY craft costs MP** — refines, generics and apothecary too | crafting |
 | `BL-307` | 🔵 | **Full drops below level 40** — F/E-grade Common gear, materials and lucky drops, not only gold | drops |
 | `BL-308` | 🔴 | **Boss drops: 70% for one full item**, the 2% extra roll stays; **recipes at 80%** | drops |
 
@@ -2312,11 +2311,6 @@ potion never can get 15%"*. His proposal (*"I think of"*, so not yet a ruling):
 game are also in the NPC buffer shelf and the Potions tab (`BL-243`); what replaces them there; (3) where
 generic recipes drop (which mobs, what rate), since `BL-274`'s per-mob tables are the only drop path;
 (4) the ×0.90 → ×0.55 cost curve of 0.204.0 was priced on the current table; does it carry over.
-
-## `BL-306` 🔴 EVERY CRAFT COSTS MP
-
-From the same playtest, on 0.205.0: *"every craft must cost mp (refines and generics and apoth as well)"*.
-Today only gear crafts do.
 
 ## `BL-307` 🔵 FULL DROPS BELOW LEVEL 40
 

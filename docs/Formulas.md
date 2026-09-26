@@ -1267,7 +1267,8 @@ inputs (gear)    ScaledQty(q, %) = % ≥ 100 ? q : max(1, round_half_away(q × f
                  f: 20 → 0.30 · 40 → 0.50 · 60 → 0.70 · 100 → 1.00          (the trial's hammer is unscaled)
                  Nightsilver / Nightsilk are NEVER scaled (Crafting.IsFixedInput); everything else is
 MP per attempt   Recipe.MpCost, paid on every attempt (fail too): gear 2H 400 · 1H 300 · body 200 · helmet/shield/
-                 necklace 150 · gloves/boots/earring 100 · ring 50; refines 50/100/150/200 by step; Scribe/Apothecary 0
+                 necklace 150 · gloves/boots/earring 100 · ring 50; refines 50/100/150/200 by step; alloy 50, bar 200;
+                 Scribe/Apothecary by the line's grade D 50 · C 100 · B 150 · 70+ 200; the trial hammer 50 (0.214.10, BL-306)
 count            a non-gear craft repeats up to Count (1 … 1000) and stops at the first missing input, MP or gold;
                  gear is always 1
 recipe items     T40 / T52: 100 · T61: 60, 100 · T76: 20, 40, 60 · T80: 40, 60
