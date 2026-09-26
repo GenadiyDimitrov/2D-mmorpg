@@ -1258,6 +1258,10 @@ have still never been played. Check the flag behaviour in the same sitting.
 
 ### 🔴 Still yours to rule
 
+- 🔴 **`BL-307` — drops below 40, the proposal is written** (`docs/design/LowLevelDrops.md`, not built). Today a
+  player under 40 earns 6-25k gold an hour, all coin; at 40-42 it is ~480k. Mine: F/E Common gear, a lucky Mythic
+  piece and base mats from 20, which gives ~2-3× today. Four questions are in §4 of the doc; answer them there or here.
+
 - 🔴 **`BL-94` — the fizzle floor.** *"shouldn't hit at all on the floor"*, carried out of playtest 28
   unbuilt and now a backlog entry rather than a checklist row. It is one line and it changes how it
   feels to fight above your level, so it wants your word: **flat 0 on a fizzle, or 0 only once the fail

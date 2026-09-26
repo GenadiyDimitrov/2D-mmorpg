@@ -2763,6 +2763,102 @@ if (args.Length > 0 && args[0] == "--drop-value")
     return;
 }
 
+// `--low-drops` (`BL-307` PROPOSAL, 2026-09-26) — WHAT A CREATURE UNDER 40 PAYS TODAY, and what the proposal in
+// `docs/design/LowLevelDrops.md` would add. Nothing here changes the game: the proposed rates are the constants just
+// below, and a Common copy that does not exist yet (F/E) is priced at the T40 Common's share of its Mythic.
+// Kills/h and hours are the M1 clock (`WayfarerFavor.KillsPerHour`), solo, same-level creatures.
+if (args.Length > 0 && args[0] == "--low-drops")
+{
+    // ---- THE PROPOSAL (mine, BL-307): change here, re-run. ----
+    double commonScaleF = 1.0, commonScaleE = 1.0;     // x the T40 per-slot Common table (MobCatalog.CommonGearSlotChance(40, rank))
+    double rareF = 1 / 2000.0, rareE = 1 / 3000.0;     // the lucky full (Mythic) piece per kill, one roll split over the kinds
+    int matFrom = 20; double matRate = 0.1;            // base mats per kill from this level up to 34 (35+ is live today at 0.2)
+    if (args.Length >= 6)
+    {
+        commonScaleF = double.Parse(args[1], System.Globalization.CultureInfo.InvariantCulture); commonScaleE = double.Parse(args[2], System.Globalization.CultureInfo.InvariantCulture);
+        rareF = 1 / double.Parse(args[3], System.Globalization.CultureInfo.InvariantCulture); rareE = 1 / double.Parse(args[4], System.Globalization.CultureInfo.InvariantCulture);
+        matRate = double.Parse(args[5], System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    var bands = new[] { (Lo: 1, Hi: 9, Tier: 1), (10, 19, 1), (20, 29, 20), (30, 39, 20) };
+    string[] keysAll = { "sword1h", "sword2h", "blunt1h", "blunt2h", "duals", "bow", "wand", "staff",
+                         "heavy", "light", "robe", "helm", "gloves", "boots", "shield", "necklace", "ring", "earring" };
+    // One AVERAGE creature's specialty mix, as AssignDropProfiles deals it: jewellery 1/7, weapons 0.4, body/small the rest.
+    double wJ = MobCatalog.JewelleryShare, wW = MobCatalog.WeaponShare, wB = (1 - wJ - wW) / 2, wS = wB;
+    double CommonsPerKill(double scale)
+    {
+        double r(int k) => MobCatalog.CommonGearSlotChance(40, k) * scale;
+        return wJ * (r(1) + r(2) + r(3)) + wW * r(5) + wB * r(4) + wS * (r(3) + r(2) + r(2) + r(3));
+    }
+    // The T40 Common's price as a share of its Mythic, averaged over the 18 kinds — the price an F/E Common would carry.
+    double commonShare = keysAll.Average(k =>
+        ItemCatalog.Get($"{k}_t40_common") is { } c && ItemCatalog.Get($"{k}_t40") is { } m && ItemCatalog.SellPrice(m) > 0
+            ? ItemCatalog.SellPrice(c) / (double)ItemCatalog.SellPrice(m) : 0);
+    double MythicSellAvg(int tier) => keysAll.Average(k => ItemCatalog.Get($"{k}_t{tier}") is { } d ? ItemCatalog.SellPrice(d) : 0);
+    double MythicBuyAvg(int tier) => keysAll.Average(k => ItemCatalog.Get($"{k}_t{tier}") is { } d ? Math.Max(0, ItemCatalog.BuyPrice(d)) : 0);
+    double matSell = Enum.GetValues<MaterialType>().Average(t => ItemCatalog.Get(Crafting.MaterialId(t)) is { } d ? ItemCatalog.SellPrice(d) : 0);
+
+    Console.WriteLine("=== BL-307: DROPS BELOW 40 — today, and the proposal (x1 rates, solo, same-level, M1 clock) ===");
+    Console.WriteLine($"  proposal: Commons = T40 table x{commonScaleF} (F) / x{commonScaleE} (E) · lucky Mythic 1/{1 / rareF:0} (F) / 1/{1 / rareE:0} (E)"
+                      + $" · base mats {matRate}/kill from {matFrom} (0.2 from 35 today)");
+    Console.WriteLine($"  T40 Common sells at {commonShare:P1} of its Mythic · a base mat sells for {matSell:N0}");
+    Console.WriteLine($"  gear (avg of 18 kinds): F Mythic buy {MythicBuyAvg(1):N0} / sell {MythicSellAvg(1):N0} · "
+                      + $"E Mythic buy {MythicBuyAvg(20):N0} / sell {MythicSellAvg(20):N0} · D (T40) Mythic buy {MythicBuyAvg(40):N0}");
+    Console.WriteLine();
+    Console.WriteLine($"  {"band",6} {"n",3} {"hours",6} {"kills",6} {"kph",4} | {"coin/h",8} {"drops/h",8} {"TODAY/h",8} | "
+                      + $"{"Commons",8} {"lucky",6} {"mats",6} | {"+common/h",9} {"+lucky/h",8} {"+mats/h",8} {"NEW/h",8} {"x",5}");
+    foreach (var (lo, hi, tier) in bands)
+    {
+        var band = MobCatalog.Templates.Where(m => !m.Dummy && !m.HandPlaced && !m.Guard && m.Drops is not null
+            && m.Level >= lo && m.Level <= hi).ToList();
+        double hours = 0, kills = 0;
+        for (int L = lo; L <= hi; L++)
+        {
+            double k = StatCalculator.ExpToNext(L) / (double)StatCalculator.MobExpReward(L);
+            kills += k; hours += k / WayfarerFavor.KillsPerHour(L);
+        }
+        double kph = kills / hours;
+        double coin = Enumerable.Range(lo, hi - lo + 1).Average(L => (double)StatCalculator.MobGoldReward(L)) * RateConfig.World.Gold;
+        double drops = band.Count == 0 ? 0 : band.Average(m => Marginals(m.Drops!, m.Level)
+            .Where(x => ItemCatalog.Get(x.Entry.ItemId) is not null)
+            .Sum(x => x.Chance * (x.Entry.MinQty + x.Entry.MaxQty) / 2.0 * RateConfig.World.DropAmount
+                      * ItemCatalog.SellPrice(ItemCatalog.Get(x.Entry.ItemId)!)));
+        double scale = tier == 1 ? commonScaleF : commonScaleE, rare = tier == 1 ? rareF : rareE;
+        double cpk = CommonsPerKill(scale);
+        double commonSell = MythicSellAvg(tier) * commonShare, lucky = MythicSellAvg(tier);
+        // Base mats: the proposal's new stretch only (matFrom..34); 35-39 already pays and is in 'drops'.
+        // Per kill = primary + half a secondary, with Iron/Gem halved on average (x1.5 x 0.75).
+        int from = Math.Max(lo, matFrom), to = Math.Min(hi, 34);
+        double matsPerKill = to < from ? 0 : (to - from + 1) / (double)(hi - lo + 1) * matRate * 1.5 * 0.75;
+        double addC = cpk * commonSell * kph, addR = rare * lucky * kph, addM = matsPerKill * matSell * kph;
+        double today = (coin + drops) * kph, now = today + addC + addR + addM;
+        Console.WriteLine($"  {lo + "-" + hi,6} {band.Count,3} {hours,6:0.0} {kills,6:0} {kph,4:0} | {coin * kph,8:N0} {drops * kph,8:N0} {today,8:N0} | "
+                          + $"{cpk * kills,8:0.0} {rare * kills,6:0.00} {matsPerKill * kills,6:0} | {addC,9:N0} {addR,8:N0} {addM,8:N0} {now,8:N0} {now / today,5:0.00}");
+    }
+    Console.WriteLine("  (Commons / lucky / mats = how many one player FINDS levelling through the band)");
+
+    // The comparison he feels: the first hours at 40.
+    {
+        var b40 = MobCatalog.Templates.Where(m => !m.Dummy && !m.HandPlaced && !m.Guard && m.Drops is not null && m.Level is >= 40 and <= 42).ToList();
+        double d40 = b40.Average(m => Marginals(m.Drops!, m.Level).Where(x => ItemCatalog.Get(x.Entry.ItemId) is not null)
+            .Sum(x => x.Chance * (x.Entry.MinQty + x.Entry.MaxQty) / 2.0 * RateConfig.World.DropAmount * ItemCatalog.SellPrice(ItemCatalog.Get(x.Entry.ItemId)!)));
+        double c40 = StatCalculator.MobGoldReward(41) * RateConfig.World.Gold;
+        int k40 = WayfarerFavor.KillsPerHour(41);
+        Console.WriteLine($"  for scale, level 40-42 today: coin {c40 * k40:N0}/h + drops {d40 * k40:N0}/h = {(c40 + d40) * k40:N0}/h ({b40.Count} creatures, {k40} kph)"
+                          + $" · T40 Commons per kill {CommonsPerKill(1):0.000}");
+    }
+    // Is there a creature for every kind? AssignDropProfiles throws if a band cannot source all 18.
+    Console.WriteLine();
+    Console.WriteLine("  roster below 40 (the specialty deal needs enough creatures to source 18 kinds without a wall):");
+    foreach (var (lo, hi) in new[] { (1, 19), (20, 39) })
+    {
+        var band = MobCatalog.Templates.Where(m => !m.Dummy && !m.HandPlaced && !m.Guard && m.Drops is not null
+            && m.Level >= lo && m.Level <= hi).OrderBy(m => m.Level).ToList();
+        Console.WriteLine($"    {lo}-{hi}: {band.Count} — " + string.Join(", ", band.Select(m => $"{m.Name} {m.Level} ({m.Category})")));
+    }
+    return;
+}
+
 // `--craft-cost` — WHAT ONE CRAFTED ITEM COSTS under the 2026-09-23 rework (`BL-282`). Inputs at the top of
 // CraftCost(); everything the code already has (kill clock, gear-drop rate) is measured.
 if (args.Length > 0 && args[0] == "--craft-cost") { CraftCost(); return; }
