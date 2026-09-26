@@ -7,12 +7,23 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.11**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.12**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.11: boss drops, 70% for a full item and 80% for a recipe (`BL-308`)
+## 2026-09-26 (latest) — 0.214.12: Untrack works from the quest log (§105.2)
+
+> *"in the quest window where all quest are listed I have abandon /untrack/details buttons and the untack does nothing"*
+
+- **Root cause:** the client's `GameBoot.QuestAction` refused every action except Abandon while no NPC dialog was open,
+  so the quest log's Track/Untrack never reached the server. It was the same bug Abandon had in playtest 14. The server
+  toggle was fine, and the SmokeTest calls the hub directly, which is why it passed.
+- **Fix:** "track" is exempt like "abandon". This also fixes the Details page's Track/Untrack from 0.214.5. Client only.
+- Also filed: `BL-313`, the missing-font-character chat flood (§105.1). §105.3 closed: the character was 90 and the
+  quest closes after 75.
+
+## 2026-09-26 — 0.214.11: boss drops, 70% for a full item and 80% for a recipe (`BL-308`)
 
 > *"let's not make 100% for 1 item but 70% for one full item and we leave the 2% chance as well for another one.. Recipes
 > are at 80%"*

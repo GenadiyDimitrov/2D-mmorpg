@@ -894,7 +894,10 @@ namespace Game.Client
         public async void QuestAction(string action, string id)
         {
             if (Phase != ClientPhase.InWorld) return;
-            if (action != "abandon" && DialogNpcId == Guid.Empty) return;
+            // §105.2 (2026-09-26): TRACK is the same case — issued from the quest log, never read the npc id,
+            // and swallowed here, so Untrack did nothing unless a dialog happened to be open. The SmokeTest
+            // calls the hub directly and so never saw it. Only the actions that NEED an NPC are gated.
+            if (action != "abandon" && action != "track" && DialogNpcId == Guid.Empty) return;
             try { await _net.QuestActionAsync(action, id, DialogNpcId); }
             catch (Exception ex) { ClientLog.Warn("Quest: " + ex.Message); }
         }

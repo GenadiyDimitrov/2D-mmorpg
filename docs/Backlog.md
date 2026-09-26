@@ -26,7 +26,7 @@ only active"*. Ninety-one closed entries — built, declined, and the old texts 
 **Status marks:** 🔴 ready to build · 🟡 gated on another entry here · 🔵 waiting on you (a
 decision, a CSV, a measurement) · ⏸ you put it on hold · ❓ a question of mine, unanswered.
 
-★ **The newest (2026-09-26, the 0.181.0 → 0.214.2 playtest):** fourteen asks, `BL-299`…`BL-312`. Its
+★ **The newest (2026-09-26, the 0.181.0 → 0.214.2 playtest):** fourteen asks, `BL-299`…`BL-312`, plus `BL-313` (the §105.1 font flood). Its
 four bugs are in [testing/Open-Checklist.md](testing/Open-Checklist.md) §105, with your note verbatim.
 
 ★ **Before that (2026-09-16, the playtest):** ten asks, `BL-238`…`BL-247`.
@@ -284,6 +284,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-303` | 🟡 | **Split the Master Crafter from the ANVIL** — the Master is a vendor of recipe items gated by crafter level; a plain "Anvil" NPC is where you craft | crafting |
 | `BL-305` | 🔵 | **THE GENERIC-RECIPE OVERHAUL** — Apothecary + Scribe merge, buff scrolls and most buff potions go, a new L0-L10 ladder, generic recipes drop | crafting |
 | `BL-307` | 🔵 | **Full drops below level 40** — F/E-grade Common gear, materials and lucky drops, not only gold | drops |
+| `BL-313` | 🔴 | **The "unicode character cannot be found" chat FLOOD** (§105.1): TMP missing-glyph warnings every frame; `→` and Cyrillic are not in the font | client |
 
 ---
 
@@ -2318,3 +2319,25 @@ Common equipments and drops for mythic/common. Now <40 players rely solely on go
 or any mat to exchange for money (with other players when economy is present)"*.
 ❓ **Open:** the rates and which items (a proposal from me, measured with `BalanceMatrix`, before building).
 
+
+## `BL-313` 🔴 THE "UNICODE CHARACTER CANNOT BE FOUND" CHAT FLOOD
+
+Filed 2026-09-26 at his request (§105.1): *"Make it as bl entry because it's the second time it's happening and I'm
+writing it"*. The text, his copy: *"the unicode character [] cannot be found in [LibirationSans SDF] assest and in any
+fallback fonts and was replaced with character [] in text object [lable]"*. First reported in §100 (2026-09-16).
+
+**What it is.** The TMP font atlas is STATIC (about 250 baked glyphs, no source font in the build). A label showing a
+character outside it logs that warning **once per frame**, and `ClientLog` hooks Unity's log, so every warning lands
+in the System tab. §100's fix folds typographic characters (em dash, ×, …) at that sink, which broke the self-feeding
+loop for them, but it **passes Cyrillic through on purpose** (his chat) and it cannot fix the label that caused the
+warning in the first place.
+
+**Known sources:** `→` (U+2192, NOT in the atlas) is the current-step mark on the quest Details page
+(`GameUi.Quests.cs`); any **Cyrillic** text in any label (chat, names, whispers) — none of it is in the atlas.
+
+**Proposed fix, two halves:**
+1. **Stop the flood:** `ClientLog` drops (or shows once per character) TMP's missing-glyph warning instead of
+   appending it every frame.
+2. **Stop the boxes:** replace `→` and any other unbaked mark with a baked one, and add Cyrillic to the atlas (a font
+   asset regenerated with the Cyrillic range, or a Cyrillic fallback font; both are a Unity Editor step).
+❓ Half 2's Cyrillic needs the Editor once. Half 1 and the `→` can ship without it.
