@@ -7689,3 +7689,19 @@ row shorter (114 → 92 px) and the buff bar docks 22 px higher. The Favor text 
 > 1. *"The exp bar need a darker green — a touch darker than the favor one now .. i like the favor one"*: the same
 >    step darker that the current lime is lighter.
 > 2. *"wonder if we can make the blessing and favor on one row (the two bars to be on the same row side to side)"*.
+
+
+## `BL-311` ✅ CLOSED 2026-09-26 in **0.214.5**: choose which tracked quest the arrow follows
+
+His words, 2026-09-26 (playtest of 0.181.0 → 0.214.2), on 0.213.0: *"need (location) to a tracked quest to chose which
+one of all my 5 or whateve can track at once arrow to point at ... if a quest is tracked inside the details panel a
+[location tracking] button must appear and is disabled(or text as "current") so i can select witch one"*. **Built as
+written in 0.214.5:** a tracked quest's details show `Location tracking`, which reads `Location: current` (disabled) on
+the quest the arrow follows; the tracker marks that row with a blue `»`. The same page gained Track / Untrack (§105.2).
+The pick is client-side and lasts the session; unpinned or finished, the arrow falls back to the top pin.
+
+**As filed:**
+
+> From the same playtest, on 0.213.0 (`BL-294`): *"need (location) to a tracked quest to choose which one of all my 5
+> … arrow to point at"*. In the details panel of a TRACKED quest a **[location tracking]** button appears; on the
+> one the arrow already follows it is disabled, or reads "current". The untrack bug beside it is §105.2.

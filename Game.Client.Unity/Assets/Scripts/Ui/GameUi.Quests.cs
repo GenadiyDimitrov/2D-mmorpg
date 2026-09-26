@@ -140,11 +140,15 @@ namespace Game.Client
 
             var pinIds = new List<string>();
             var pinRows = new List<string>();
+            var followed = ArrowQuest();
             foreach (var q in entries)
             {
                 if (!q.Tracked || q.State != QuestAvailability.Active) continue;
 
                 var text = new StringBuilder();
+                // `BL-311`: the row the ground arrow follows. The text is part of the stamp, so a new
+                // pick redraws the tracker. "»" is Latin-1, which the TMP font ships.
+                if (followed != null && followed.Id == q.Id) text.Append("<color=#5BA6FF>»</color> ");
                 text.Append("<b>").Append(q.Name).Append("</b>");
                 if (q.CanComplete) text.Append("   <color=#7CE07C>READY</color>");
 
@@ -380,7 +384,10 @@ namespace Game.Client
         private RectTransform _questDetailPanel;
         private TextMeshProUGUI _questDetailTitle, _questDetailBody;
         private Button _questAcceptButton, _questDeclineButton;
+        // §105.2 / `BL-311`: an ACTIVE quest's page can pin and unpin it, and pick it for the arrow.
+        private Button _questTrackButton, _questArrowButton;
         private string _questDetailId = "";
+        private const float DetailButtonW = 180f, DetailButtonGap = 10f;   // three across: Close · Track · Location
         private object _questDetailLog;         // the log this page was drawn from
 
         private void BuildQuestDetail()
@@ -420,6 +427,23 @@ namespace Game.Client
             }, 16f);
             UiKit.Place(UiKit.Rect(_questAcceptButton.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
                         new Vector2(-18f, 14f), new Vector2(260f, 46f));
+
+            // TRACK / UNTRACK — the same server toggle as the Active row's button (§105.2: *"the quest
+            // window dont allow me to untrack it"* — this page had no way to).
+            _questTrackButton = UiKit.TextButton(inner, "Track", () => ToggleTrackedQuest(_questDetailId), 16f);
+            UiKit.Place(UiKit.Rect(_questTrackButton.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
+                        new Vector2(18f + DetailButtonW + DetailButtonGap, 14f), new Vector2(DetailButtonW, 46f));
+
+            // LOCATION TRACKING (`BL-311`): *"if a quest is tracked inside the details panel a [location
+            // tracking] button must appear and is disabled (or text as "current") so i can select which
+            // one"* the arrow points at. Shown only on a TRACKED quest.
+            _questArrowButton = UiKit.TextButton(inner, "Location tracking", () =>
+            {
+                _arrowQuestId = _questDetailId;
+                ShowQuestDetail(_questDetailId);
+            }, 16f);
+            UiKit.Place(UiKit.Rect(_questArrowButton.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
+                        new Vector2(18f + 2f * (DetailButtonW + DetailButtonGap), 14f), new Vector2(DetailButtonW, 46f));
 
             _questDetailPanel.gameObject.SetActive(false);
         }
@@ -510,10 +534,28 @@ namespace Game.Client
             _questDetailBody.text = text.ToString().TrimEnd();
 
             bool canAccept = offered != null;
+            bool active = !canAccept && entry != null && entry.State == QuestAvailability.Active;
             _questAcceptButton.gameObject.SetActive(canAccept);
             UiKit.SetButtonText(_questDeclineButton, canAccept ? "Decline" : "Close");
             UiKit.Place(UiKit.Rect(_questDeclineButton.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                        new Vector2(18f, 14f), new Vector2(canAccept ? 260f : 560f, 46f));
+                        new Vector2(18f, 14f), new Vector2(canAccept ? 260f : active ? DetailButtonW : 560f, 46f));
+
+            _questTrackButton.gameObject.SetActive(active);
+            bool tracked = active && entry.Tracked;
+            _questArrowButton.gameObject.SetActive(tracked);
+            if (active)
+            {
+                UiKit.SetButtonText(_questTrackButton, tracked ? "Untrack" : "Track");
+                _questTrackButton.targetGraphic.color = tracked ? UiKit.TabActive : UiKit.PanelLight;
+            }
+            if (tracked)
+            {
+                var followed = ArrowQuest();
+                bool current = followed != null && followed.Id == questId;
+                UiKit.SetButtonText(_questArrowButton, current ? "Location: current" : "Location tracking");
+                _questArrowButton.interactable = !current;
+                _questArrowButton.targetGraphic.color = current ? UiKit.TabActive : UiKit.PanelLight;
+            }
 
             OpenWindow(_questDetailPanel);
         }
@@ -546,7 +588,8 @@ namespace Game.Client
         //    QuestCatalog (what that step targets) and WorldMap (where every NPC stands and every spawn
         //    zone lies). So the arrow is resolved here, from the same data the server runs on.
         //
-        // It follows the FIRST pinned quest (the top row of the tracker). A TalkTo step points at the
+        // It follows the pinned quest picked with [Location tracking] in its details (`BL-311`), else the
+        // FIRST pinned quest (the top row of the tracker); see ArrowQuest. A TalkTo step points at the
         // NPC; a KillMobs step, or an unfinished gathering contract, at the NEAREST zone that spawns
         // the creature; a ready contract at its giver. Steps with no place (reach a level, do an
         // action) show nothing. It hides within 250 of an NPC, or once you are inside the mob's zone.
@@ -599,14 +642,31 @@ namespace Game.Client
             if (_questArrow != null && _questArrow.gameObject.activeSelf) _questArrow.gameObject.SetActive(false);
         }
 
-        /// <summary>Re-resolve only when the pinned quest, its step or its ready flag changes.</summary>
+        /// <summary>`BL-311`: the quest picked with [Location tracking] in its details. A view choice, not
+        /// character state, so it lives in the client for the session. Once it is no longer pinned (or is
+        /// finished) the arrow falls back to the top pin.</summary>
+        private string _arrowQuestId = "";
+
+        /// <summary>The quest the arrow follows: the picked one while it is pinned and active, else the
+        /// first pinned quest (the tracker's top row), else null.</summary>
+        private QuestEntry ArrowQuest()
+        {
+            var entries = Boot.Quests != null ? Boot.Quests.Entries : null;
+            if (entries == null) return null;
+            QuestEntry first = null;
+            foreach (var e in entries)
+            {
+                if (!e.Tracked || e.State != QuestAvailability.Active) continue;
+                if (e.Id == _arrowQuestId) return e;
+                if (first == null) first = e;
+            }
+            return first;
+        }
+
+        /// <summary>Re-resolve only when the followed quest, its step or its ready flag changes.</summary>
         private void ResolveQuestArrowTargets()
         {
-            QuestEntry q = null;
-            var entries = Boot.Quests != null ? Boot.Quests.Entries : null;
-            if (entries != null)
-                foreach (var e in entries)
-                    if (e.Tracked && e.State == QuestAvailability.Active) { q = e; break; }
+            QuestEntry q = ArrowQuest();
 
             string key = q == null ? "" : q.Id + "|" + q.StepIndex + "|" + q.CanComplete;
             if (key == _questArrowKey) return;

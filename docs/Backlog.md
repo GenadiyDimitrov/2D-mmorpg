@@ -290,7 +290,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-308` | 🔴 | **Boss drops: 70% for one full item**, the 2% extra roll stays; **recipes at 80%** | drops |
 | `BL-309` | 🔴 | **Essence carries its GRADE** (Darksteel Essence = D) | items |
 | `BL-310` | 🔴 | **Town guards twice as far apart, at the town border** | world |
-| `BL-311` | 🔴 | **Choose which tracked quest the arrow follows** — a `[location tracking]` button in the quest details | client |
 
 ---
 
@@ -2356,10 +2355,4 @@ represent essence for each grade"*. `ItemCatalog.GradeLabel` prints "-" for an e
 
 From the same playtest, on 0.212.1 (`BL-293`): *"give a bit more distance between them like x2 more and move them
 to the border of the town"*. Today the fighter and the tank stand 200 apart at the city's bottom edge.
-
-## `BL-311` 🔴 CHOOSE WHICH TRACKED QUEST THE ARROW FOLLOWS
-
-From the same playtest, on 0.213.0 (`BL-294`): *"need (location) to a tracked quest to choose which one of all my 5
-… arrow to point at"*. In the details panel of a TRACKED quest a **[location tracking]** button appears; on the
-one the arrow already follows it is disabled, or reads "current". The untrack bug beside it is §105.2.
 

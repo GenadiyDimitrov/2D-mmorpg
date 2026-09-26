@@ -7,12 +7,25 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.4**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.5**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.4: EXP bar darker; Favor and Blessing on one row (`BL-312`)
+## 2026-09-26 (latest) — 0.214.5: Track, Untrack and the arrow's quest from the quest details (`BL-311`, §105.2)
+
+> *"the quest window dont allow me to untrack it"* · *"if a quest is tracked inside the details panel a [location tracking]
+> button must appear and is disabled(or text as "current") so i can select witch one"*
+
+- **The Details page of an active quest has Track / Untrack**, the same server toggle as the Active row's button. That page
+  had no way to unpin (§105.2; the row's own button was already fine on the server).
+- **On a tracked quest it also has `Location tracking`**: the ground arrow now follows that quest. On the quest the arrow
+  already follows the button reads **`Location: current`** and is disabled.
+- The tracker marks the followed quest with a blue **»**. With nothing picked, or once the picked quest is unpinned or
+  finished, the arrow follows the top pin as before.
+- ⚠ The pick lasts for the session. After a relog the arrow follows the top pin again until you pick. Client only.
+
+## 2026-09-26 — 0.214.4: EXP bar darker; Favor and Blessing on one row (`BL-312`)
 
 > *"The exp bar need a darker green — a touch darker than the favor one now .. i like the favor one"* · *"wonder if we can
 > make the blessinf and favor on one row (the two bars to be on the same row side to side)"*
