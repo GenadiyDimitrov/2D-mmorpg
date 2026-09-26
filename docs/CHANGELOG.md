@@ -7,12 +7,20 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.7**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.8**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.7: the town gate guards twice as far apart, on the town's border (`BL-310`)
+## 2026-09-26 (latest) — 0.214.8: an essence carries its grade (`BL-309`)
+
+> *"Esseence have grade .. Darksteel essnce is D grade ... They represend essnece for each grade"*
+
+- `ItemCatalog.GradeLabel` now gives each of the five essences its grade (**D, C, B, A, S**), read off
+  `Crafting.EssenceItemLevels`, where it used to print "-". Every place that prints a grade uses it: the item details,
+  the loot line, the vendor row and the bag's grade filter (which now finds essences under their grade).
+
+## 2026-09-26 — 0.214.7: the town gate guards twice as far apart, on the town's border (`BL-310`)
 
 > *"give a bit more distance between them like x2 more and move them to the border of the town"*
 

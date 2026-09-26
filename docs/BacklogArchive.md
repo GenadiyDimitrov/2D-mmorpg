@@ -7735,3 +7735,15 @@ player sees rather than 210-330 units below it. That is inside the safe circle, 
 
 > From the same playtest, on 0.212.1 (`BL-293`): *"give a bit more distance between them like x2 more and move them
 > to the border of the town"*. Today the fighter and the tank stand 200 apart at the city's bottom edge.
+
+
+## `BL-309` ✅ CLOSED 2026-09-26 in **0.214.8**: essence carries its grade
+
+His words, 2026-09-26 (playtest of 0.181.0 → 0.214.2), on 0.209.2: *"Esseence have grade .. Darksteel essnce is D grade
+... They represend essnece for each grade"*. **Built as written in 0.214.8:** `GradeLabel` returns the essence's grade
+from `Crafting.EssenceItemLevels` (D/C/B/A/S), so every grade print and the bag's grade filter follow.
+
+**As filed:**
+
+> From the same playtest, on 0.209.2 (`BL-289`): *"Essence have grade .. Darksteel essence is D grade ... They
+> represent essence for each grade"*. `ItemCatalog.GradeLabel` prints "-" for an essence today.

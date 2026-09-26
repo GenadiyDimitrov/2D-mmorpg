@@ -2534,11 +2534,19 @@ public static class ItemCatalog
     /// prints a grade reads this, never <see cref="ItemDef.Grade"/> (that enum has no C/D and is a
     /// pricing/sorting input only; every non-gear def carries its default, which is how a temporary box
     /// read "B-grade"). Gear = its grade letter; a box = the grade of the GEAR inside it, derived from
-    /// the contents ("D", or "C/D" if it mixes); everything else — potions, scrolls, mats, runes, quest
-    /// items, boxes of non-gear — is <see cref="NoGrade"/>. His words: *"most won't have any"*.</summary>
+    /// the contents ("D", or "C/D" if it mixes); an essence = its grade (below); everything else — potions,
+    /// scrolls, other mats, runes, quest items, boxes of non-gear — is <see cref="NoGrade"/>. His words:
+    /// *"most won't have any"*.
+    ///
+    /// <para>`BL-309` (owner, 2026-09-26): an ESSENCE carries the grade it is the essence OF — *"Darksteel
+    /// essence is D grade ... They represent essence for each grade"* — read off
+    /// <see cref="Crafting.EssenceItemLevels"/>, the same level its break-down source is graded by.</para></summary>
     public static string GradeLabel(ItemDef def)
     {
         if (Crafting.IsGearSlot(def.Slot)) return GradePenalty.GradeNameOf(def);
+        int essence = Array.IndexOf(Crafting.EssenceIds, def.Id);
+        if (essence >= 0)
+            return GradePenalty.GradeNames[GradePenalty.StepForLevel(Crafting.EssenceItemLevels[essence])];
         if (def.Slot != EquipSlot.Box) return NoGrade;
         var steps = new SortedSet<int>();
         CollectBoxGrades(def.Id, steps, depth: 0);
