@@ -7786,3 +7786,26 @@ below T76, 1.5 at T76/T80). Read as a drop chance, since no recipe item carries 
 
 > From the same playtest, on 0.207.0 (`BL-274` part 2): *"let's not make 100% for 1 item but 70% for one full item
 > and we leave the 2% chance as well for another one.. Recipes are at 80%"*.
+
+
+## `BL-301` ✅ CLOSED 2026-09-26 in **0.214.14**: item rows carry (T/B/U), quality words out of item names
+
+His words, 2026-09-26 (playtest of 0.181.0 → 0.214.2), on 0.202.0: *"nowhere on the item unless the details pannel is
+opened I can tell which of my 5 swords is the temporaty"*. **Built in 0.214.14:** `ItemTag.Letters` gives the bag,
+warehouse, vendor-sell and trade rows a `(T/B/U)` suffix off the same three facts as the details tag (T = temporary,
+B = bound: no trade, no sale, U = the "private" case: no trade, still sells). `ItemCatalog.WithoutQualifier` strips a
+trailing `(Lesser|Greater|Superior|Grand|Supreme|Bound|<rarity>)` and the leading rarity of the Healing/Mana potions;
+the Newbie loaner kit lost its `Newbie` prefix. 44 items renamed. The old full name is kept as `ItemDef.BarName`, so
+every skill-bar label is unchanged (`Abbreviations.ForItem`). Potion BUFF names (the wrapper skills) kept theirs.
+
+**As filed:**
+
+> From the same playtest, on 0.202.0's temporary gear: *"nowhere on the item unless the details pannel is opened I
+> can tell which of my 5 swords is the temporaty"*.
+> 1. **Tags after the name**, like the `[L]` lock in front: *Cobalt Blade (T/B/U)*, where **T** = timed, **B** = bound,
+>    **U** = untradable, only the letters that apply.
+> 2. **Qualifier words come OUT of item names**: *Instant Healing Potion (Bound)*, *Alacrity Potion (Lesser)*,
+>    *(Supreme)* and any others like them. *"by the color of the item and the quality/rarity u can understand what
+>    is it"*. *"Only the abbreviation for the skill/buff bar can differ."*
+> ⚠ Where two items would then share a name (a Lesser and a Greater of one potion), the colour is the only thing
+> telling them apart. That is his call, and `BL-288` (consumable rarity → plain levels) is the same direction.

@@ -379,7 +379,7 @@ namespace Game.Client
                 // `BL-242` — THE ENCHANT IS ON THE ROW. *"sale list don't show enchant value"*: a +6
                 // and a +0 of the same piece were two identical lines in the one window where you part
                 // with them for good. The bag has shown "+N " forever; the sell list simply never did.
-                string shownName = (item.Enchant > 0 ? "+" + item.Enchant + " " : "") + def.Name;
+                string shownName = (item.Enchant > 0 ? "+" + item.Enchant + " " : "") + ItemTag.RowName(def, item);
                 string head = Coloured(shownName, def.Rarity) + (item.Quantity > 1 ? "   x" + item.Quantity : "")
                             + "   " + unit.ToString("N0") + " " + GameConstants.CurrencyName + " ea";
                 // The SELL side gets the same second line the buy side has — "the details on the row"

@@ -182,7 +182,7 @@ namespace Game.Client
                 if (!withdraw && Boot.IsLocked(def, item)) continue;
                 any = true;
 
-                string label = Coloured(def.Name, def.Rarity) + (item.Quantity > 1 ? "   x" + item.Quantity : "");
+                string label = Coloured(ItemTag.RowName(def, item), def.Rarity) + (item.Quantity > 1 ? "   x" + item.Quantity : "");
                 var id = item.InstanceId;
                 WarehouseRow(label, () =>
                 {

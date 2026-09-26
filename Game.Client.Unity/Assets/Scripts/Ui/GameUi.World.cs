@@ -1829,7 +1829,7 @@ namespace Game.Client
                 string defId = token.Substring(GameConstants.SkillBarItemPrefix.Length);
                 var idef = ItemCatalog.Get(defId);
                 usable = Boot.FindBagItem(defId) != null;
-                return idef != null ? Abbreviations.For(idef.Name) : "[i]";
+                return idef != null ? Abbreviations.ForItem(idef) : "[i]";
             }
 
             if (GameConstants.IsPresetSlot(token))
@@ -2297,7 +2297,7 @@ namespace Game.Client
                 // an item and acting on it are two different intents, and cramming both into every row is
                 // what the owner called "30 buttons". Details is where the stats, set info, compare and
                 // bin-delete live (GameUi.Items.cs); the row keeps only the fast path.
-                string name = def != null ? def.Name : item.DefId;
+                string name = def != null ? ItemTag.RowName(def, item) : item.DefId;   // `BL-301` (T/B/U)
                 if (item.Enchant > 0) name = "+" + item.Enchant + " " + name;
                 if (item.Quantity > 1) name += "   x" + item.Quantity;
                 if (item.Equipped) name = "* " + name;

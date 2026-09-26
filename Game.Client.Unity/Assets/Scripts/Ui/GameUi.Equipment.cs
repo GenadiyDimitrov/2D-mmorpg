@@ -160,7 +160,7 @@ namespace Game.Client
                 {
                     var def = ItemCatalog.Get(item.DefId);
                     face.text = (item.Enchant > 0 ? "+" + item.Enchant + " " : "")
-                              + Abbreviations.For(def != null ? def.Name : item.DefId);
+                              + (def != null ? Abbreviations.ForItem(def) : Abbreviations.For(item.DefId));
                     // Quality colour, so a worn square says what grade of the piece you have on. Falls
                     // back to the old green when the def is missing (an item id from a newer build).
                     face.color = def != null ? RarityColour(def.Rarity) : UiKit.Good;
@@ -174,7 +174,7 @@ namespace Game.Client
                     // reads as a free slot, which is the one thing it is not: the weapon is holding it.
                     // Not clickable, because there is no second item to open — it is the same weapon
                     // already sitting in the square next to it.
-                    face.text = Abbreviations.For(twoHander.Name);
+                    face.text = Abbreviations.ForItem(twoHander);
                     face.color = Color.Lerp(RarityColour(twoHander.Rarity), UiKit.TextDim, 0.6f);
                     btn.interactable = false;
                 }

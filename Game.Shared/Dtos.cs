@@ -308,6 +308,27 @@ public static class ItemTag
            Tradable(def, i.TradableOverride),
            i.ExpiresAtUtc.HasValue || i.WornSecondsLeft.HasValue);
 
+    /// <summary>`BL-301` — the SHORT form, for list rows: <c>(T/B/U)</c> after the name, only the letters
+    /// that apply, "" when none do. His words: *"nowhere on the item unless the details pannel is opened I
+    /// can tell which of my 5 swords is the temporaty"*. The same three facts as <see cref="Of"/>, one
+    /// letter each, so a row and the details title can never disagree: <b>T</b> = temporary, <b>B</b> =
+    /// bound (no trade, no sale), <b>U</b> = untradable (the "private" case: no trade, still sells).</summary>
+    public static string Letters(ItemDef def, InventoryItemDto i)
+    {
+        bool tradable = Tradable(def, i.TradableOverride);
+        bool timed = i.ExpiresAtUtc.HasValue || i.WornSecondsLeft.HasValue;
+        string letters = (timed ? "T" : "")
+                       + (tradable ? "" : Sellable(def, i.SellPriceOverride, i.TradableOverride) ? "U" : "B");
+        return letters.Length == 0 ? "" : "(" + string.Join("/", letters.ToCharArray()) + ")";
+    }
+
+    /// <summary>A list row's name: the instance's own name plus its <see cref="Letters"/>.</summary>
+    public static string RowName(ItemDef def, InventoryItemDto i)
+    {
+        string letters = Letters(def, i);
+        return letters.Length == 0 ? Name(def, i) : Name(def, i) + " " + letters;
+    }
+
     public static string Of(bool sellable, bool tradable, bool timed)
     {
         string bond = !tradable ? (sellable ? "private" : "bound") : "";

@@ -50,6 +50,13 @@ public static class Abbreviations
         return _byName.TryGetValue(displayName, out var abbrev) ? abbrev : Derive(displayName, 3);
     }
 
+    /// <summary>The label for an ITEM (`BL-301`): its <see cref="ItemDef.BarName"/> when it has one, since
+    /// items that now share a display name still need two labels.</summary>
+    public static string ForItem(ItemDef def) => For(LabelSource(def));
+
+    private static string LabelSource(ItemDef def) =>
+        string.IsNullOrEmpty(def.BarName) ? def.Name : def.BarName;
+
     /// <summary>Every name the catalog covers, with its label. Startup validation reads this.</summary>
     public static IReadOnlyDictionary<string, string> All => _byName ??= Build();
 
@@ -76,7 +83,7 @@ public static class Abbreviations
             yield return skill.Name;
         foreach (var item in ItemCatalog.AllItems)
             if (item.Slot is EquipSlot.Consumable or EquipSlot.Scroll)
-                yield return item.Name;
+                yield return LabelSource(item);
     }
 
     private static Dictionary<string, string> Build()

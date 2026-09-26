@@ -742,6 +742,14 @@ public record ItemDef(
     /// the id is the identity. Keep this override.</summary>
     public override int GetHashCode() => Id?.GetHashCode() ?? 0;
 
+    /// <summary>`BL-301` — the name the SKILL/BUFF BAR labels this item by, when it is not
+    /// <see cref="Name"/> ("" = the name). His rule: the qualifier words came OUT of item names
+    /// (*"by the color of the item and the quality/rarity u can understand what is it"*), and *"Only the
+    /// abbreviation for the skill/buff bar can differ"*. So a Lesser and a plain Swift Potion now share a
+    /// name but keep two labels, and a buff potion's label still matches the buff it lands (its wrapper
+    /// skill kept the old name). Read it through <see cref="Abbreviations.ForItem"/>, never directly.</summary>
+    public string BarName { get; init; } = "";
+
     /// <summary>Does this item merge into a single inventory ROW with a quantity, rather than
     /// occupying one row per unit? Consumables, scrolls and crafting materials stack.
     ///
@@ -2175,6 +2183,8 @@ public static class ItemCatalog
         list.AddRange(BoundCopies(list));
         // The temporary 2-hour Common gear and its vendor boxes (`BL-272` part 2), cloned off the Commons.
         list.AddRange(TempGear(list));
+        // `BL-301` — LAST, so the bound copies' "(Bound)" goes too.
+        for (int i = 0; i < list.Count; i++) list[i] = WithoutQualifier(list[i]);
 
         // ----- Duplicate-key guard + value fill: any item left at Value 0 gets the
         //       formula price (quest items / god one-offs stay 0 = not for trade). -----
@@ -2187,6 +2197,36 @@ public static class ItemCatalog
                     $"Duplicate item id '{item.Id}' ({item.Name} collides with {dict[item.Id].Name}).");
         }
         return dict;
+    }
+
+    /// <summary>The quality words `BL-301` takes out of item names when they trail it in brackets.
+    /// A CLOSED list on purpose: "(Assault)" on an armour-set variant is identity, not quality.
+    /// ⚠ A method, not a static set: the catalog is built from a static initializer ABOVE this point in
+    /// the file, and a static field declared down here would still be null while it runs.</summary>
+    private static bool IsQualifierWord(string w) => w is "Lesser" or "Greater" or "Superior" or "Grand"
+        or "Supreme" or "Bound" or "Common" or "Uncommon" or "Rare" or "Epic" or "Legendary" or "Mythic";
+
+    /// <summary>`BL-301` part 2 — *"Instant Healing Potion (Bound)", "Alacrity Potion (Lesser)", "(Supreme)"
+    /// and any others like them"* come out of the name: *"by the color of the item and the quality/rarity u
+    /// can understand what is it"*. Strips every trailing "(Word)" from <see cref="IsQualifierWord"/> and
+    /// keeps the old full name as the <see cref="ItemDef.BarName"/>, the one place *"can differ"*. Whether an
+    /// item is bound is now the row's (T/B/U) tag (<see cref="ItemTag.Letters"/>), not its name.</summary>
+    private static ItemDef WithoutQualifier(ItemDef d)
+    {
+        string name = d.Name;
+        while (name.EndsWith(")", StringComparison.Ordinal))
+        {
+            int open = name.LastIndexOf(" (", StringComparison.Ordinal);
+            if (open < 0 || !IsQualifierWord(name.Substring(open + 2, name.Length - open - 3))) break;
+            name = name.Substring(0, open);
+        }
+        // The one LEADING form: "Common / Uncommon / Rare Healing|Mana Potion".
+        int space = name.IndexOf(' ');
+        if (space > 0 && name.EndsWith(" Potion", StringComparison.Ordinal)
+            && IsQualifierWord(name.Substring(0, space)))
+            name = name.Substring(space + 1);
+        if (name == d.Name) return d;
+        return d with { Name = name, BarName = string.IsNullOrEmpty(d.BarName) ? d.Name : d.BarName };
     }
 
     /// <summary>Crafting MATERIALS (`BL-273` part 3, 0.205.0). The five BASE mats are one rung each (the old
@@ -2393,7 +2433,7 @@ public static class ItemCatalog
             made.Add(d with
             {
                 Id = BoundId(baseId),
-                Name = $"Newbie {d.Name}",
+                BarName = $"Newbie {d.Name}",   // `BL-301`: the (T/B) tag says it now, the name does not
                 Tradable = false,
                 BuyPriceOverride = -1,
                 SellPriceOverride = 0,
@@ -2409,9 +2449,9 @@ public static class ItemCatalog
             made.Add(d with
             {
                 Id = BoundId(baseId),
-                // Suffixed rather than left identical: a player can hold both, and two stacks under
-                // one name with different rules is the kind of thing that reads as a bug.
-                Name = $"{d.Name} (Bound)",
+                // `BL-301`: the SAME name as the item it copies; the row's (B) tag tells the two stacks
+                // apart, and the bar keeps its own label through BarName.
+                BarName = $"{(string.IsNullOrEmpty(d.BarName) ? d.Name : d.BarName)} (Bound)",
                 Tradable = false,
                 BuyPriceOverride = -1,
                 SellPriceOverride = 0,

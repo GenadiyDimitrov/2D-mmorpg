@@ -210,7 +210,7 @@ namespace Game.Client
         private static string TradeItemLabel(InventoryItemDto item, int showQty = -1)
         {
             var def = ItemCatalog.Get(item.DefId);
-            string name = def?.Name ?? item.DefId;
+            string name = def != null ? ItemTag.RowName(def, item) : item.DefId;
             int qty = showQty >= 0 ? showQty : item.Quantity;
             if (item.Enchant > 0) name += " +" + item.Enchant;
             if (qty > 1) name += "  x" + qty;

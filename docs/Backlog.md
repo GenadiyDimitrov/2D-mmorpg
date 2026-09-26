@@ -279,7 +279,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-288` | ⏸ | **CONSUMABLE RARITY → PLAIN LEVELS 1-6** — potions/scrolls may drop the rarity word entirely; deferred by him, split out of `BL-272` | items |
 | `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
 | `BL-299` | 🔴 | **Extra skill squares: more shapes** — 1×12 rows and vertical 6×1 / 6×2 columns, not only 2×6 + N×6 | client |
-| `BL-301` | 🔴 | **Item name tags `(T/B/U)`** (timed / bound / untradable) after the name, and the `(Lesser)`/`(Bound)`/`(Supreme)` words OUT of item names | items |
 | `BL-302` | 🔴 | **"Unequip all" as a skill-window ACTION** you can put on the bar (the bag button stays) | client |
 | `BL-303` | 🟡 | **Split the Master Crafter from the ANVIL** — the Master is a vendor of recipe items gated by crafter level; a plain "Anvil" NPC is where you craft | crafting |
 | `BL-305` | 🔵 | **THE GENERIC-RECIPE OVERHAUL** — Apothecary + Scribe merge, buff scrolls and most buff potions go, a new L0-L10 ladder, generic recipes drop | crafting |
@@ -2257,18 +2256,6 @@ bar is 2×6 and the extra block is 1×6 … 4×6, horizontal only. He wants:
 - **horizontal:** a 1×12 main bar, with 1×12 / 2×12 extra, or with 1×6 … 4×6 extra;
 - **vertical:** a 6×1 / 6×2 main column, with 6×1 … 6×4 extra.
 Related: `BL-270` (a vertical bar or a wheel for hand-held play). This is the layout-picker half of it.
-
-## `BL-301` 🔴 ITEM NAME TAGS (T/B/U), AND NO QUALIFIER WORDS IN NAMES
-
-From the same playtest, on 0.202.0's temporary gear: *"nowhere on the item unless the details pannel is opened I
-can tell which of my 5 swords is the temporaty"*.
-1. **Tags after the name**, like the `[L]` lock in front: *Cobalt Blade (T/B/U)*, where **T** = timed, **B** = bound,
-   **U** = untradable, only the letters that apply.
-2. **Qualifier words come OUT of item names**: *Instant Healing Potion (Bound)*, *Alacrity Potion (Lesser)*,
-   *(Supreme)* and any others like them. *"by the color of the item and the quality/rarity u can understand what
-   is it"*. *"Only the abbreviation for the skill/buff bar can differ."*
-⚠ Where two items would then share a name (a Lesser and a Greater of one potion), the colour is the only thing
-telling them apart. That is his call, and `BL-288` (consumable rarity → plain levels) is the same direction.
 
 ## `BL-302` 🔴 "UNEQUIP ALL" AS A SKILL-WINDOW ACTION
 

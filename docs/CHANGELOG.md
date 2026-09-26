@@ -7,12 +7,32 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.13**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.14**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.13: the missing-character flood stops (`BL-313`, half 1)
+## 2026-09-26 (latest) — 0.214.14: item rows say (T/B/U), and quality words leave item names (`BL-301`)
+
+> *"nowhere on the item unless the details pannel is opened I can tell which of my 5 swords is the temporaty"* ·
+> *"by the color of the item and the quality/rarity u can understand what is it"* · *"Only the abbreviation for the
+> skill/buff bar can differ."*
+
+- **Tags:** bag, warehouse, vendor-sell and trade rows end in `(T/B/U)`, only the letters that apply. **T** = temporary
+  (a clock of either kind), **B** = bound (cannot be traded or sold), **U** = untradable but still sells. They come from
+  the same three facts as the "(temporary, bound)" text in the details title, so the row and the title always agree.
+  An item has at most one of B and U.
+- **Names:** 44 items renamed. `(Lesser)`, `(Greater)`, `(Superior)`, `(Grand)`, `(Supreme)`, `(Bound)` and the
+  Attribute Scroll's `(Common)` … `(Mythic)` are gone, and so are `Common` / `Uncommon` / `Rare` in front of the
+  Healing and Mana potions and `Newbie` in front of the loaner kit. The colour and the Rarity line tell them apart now.
+  Kept on purpose: *Instant* Healing Potion, *Greater* / *Safe* Scroll of Enchant (different items, not qualities), and
+  armour-set variants like *(Assault)*.
+- **The bar is unchanged:** each renamed item keeps its old full name for its skill-bar label, so "SPL" is still the
+  Lesser Swift Potion and every label is still unique (checked). The potion **buff** names kept their qualifier, since
+  a buff is not an item. Tell me if you want those shortened too.
+- ⚠ Needs a new APK (the names come from the shared catalog).
+
+## 2026-09-26 — 0.214.13: the missing-character flood stops (`BL-313`, half 1)
 
 > *"the unicode character [] cannot be found in [LibirationSans SDF] assest and in any fallback fonts and was replaced
 > with character [] in text object [lable]"*
