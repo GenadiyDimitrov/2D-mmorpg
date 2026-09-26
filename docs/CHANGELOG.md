@@ -7,12 +7,30 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.26**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.27**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.26: major cities and towns (`BL-303` Q1, closes it)
+## 2026-09-26 (latest) — 0.214.27: UI size as ×1, a skill-bar size, Setup from the login screen
+
+> *"At 800 scale the ui size is OK ... change it to x1 to be 800 ... The 480~1100 means nothing"* ·
+> *"decrease the size of the skill bar 3 times and make in the setup another bar for scaling the skill bar
+> (1/5 to 5 times the new size)"* · *"I made the ui scale 480 and it became so big that I had to clear the
+> app data ... can the login ui have a setup button ... the setup window not to be affected by the ui scale"*
+
+- **UI size is a multiplier now:** ×1 = the 800-high design (was 720 by default, so a fresh install is a little
+  smaller than before). The slider runs ×0.60 to ×1.60 and applies **live**. New pref key `ui.scale`; the old raw
+  height is ignored, so a phone stuck at 480 starts over at ×1.
+- **Skill bar size:** a new Setup slider, ×0.20 to ×5. ×1 is **a third of the old bar**, as asked, so ×3 is
+  the old size. It scales the bar as one piece from its bottom-right corner and applies live.
+- **Setup has its own canvas**, fixed at ×1 and drawn above everything, so the UI size can no longer make it
+  unusable. It is reachable from a new **Setup** button on the login screen as well as from the menu.
+- **The menu wraps into columns** when it would run off the bottom of the screen at a large UI size, so Drops,
+  Setup and Leave stay reachable.
+- **Reset to defaults** puts both sizes back at once. The other settings still apply after a restart.
+
+## 2026-09-26 — 0.214.26: major cities and towns (`BL-303` Q1, closes it)
 
 > *"We can make major cities (staring one , 40-65, and the 76+, where class masters are) those can have the
 > craftMaster+anvil, mindweaver and other for respecs..the other "non major" cities(towns) can have only

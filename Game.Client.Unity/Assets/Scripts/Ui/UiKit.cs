@@ -47,15 +47,23 @@ namespace Game.Client
         /// <summary>Design resolution. The scaler matches on HEIGHT, so a taller or narrower phone
         /// changes how much WIDTH you see rather than rescaling everything.
         ///
-        /// Mutable so Settings can change the UI size — but only read at BUILD time, which is why that
-        /// setting is labelled "restart".</summary>
-        public static Vector2 Reference = new Vector2(1280f, 720f);
+        /// Mutable so Setup can change the UI size: <c>Reference.y = ReferenceHeightAtX1 / scale</c>. The
+        /// game canvas's scaler is updated LIVE — every panel is anchored, so it simply rescales.</summary>
+        public static Vector2 Reference = new Vector2(1280f, ReferenceHeightAtX1);
+
+        /// <summary>The design height that UI size ×1 means. Owner, 2026-09-26: *"At 800 scale the ui size
+        /// is OK ... change it to x1 to be 800"* — the old slider showed the raw height (480~1100), which
+        /// ran BACKWARDS (a smaller number = a bigger UI) and meant nothing to a player.</summary>
+        public const float ReferenceHeightAtX1 = 800f;
 
         // ----- root ------------------------------------------------------------------------------
 
         /// <summary>The overlay canvas + the EventSystem uGUI needs to route touches. Without an
         /// EventSystem every button is inert — it looks drawn and simply never fires.</summary>
-        public static Canvas CreateCanvas(string name, int sortOrder = 0)
+        /// <param name="reference">Design resolution; defaults to the player's <see cref="Reference"/>.
+        /// The Setup canvas passes a FIXED one, so the window that repairs the UI size can never be
+        /// broken by it.</param>
+        public static Canvas CreateCanvas(string name, int sortOrder = 0, Vector2? reference = null)
         {
             var go = new GameObject(name, typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             var canvas = go.GetComponent<Canvas>();
@@ -64,7 +72,7 @@ namespace Game.Client
 
             var scaler = go.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = Reference;
+            scaler.referenceResolution = reference ?? Reference;
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 1f;
 

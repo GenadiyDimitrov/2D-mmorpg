@@ -778,6 +778,12 @@ namespace Game.Client
             bool narrow = mainW < 200f;
             float strip = narrow ? 48f : 26f;
             float mainH = mRows * step + pad + strip;
+            // The whole bar is drawn in its build units and SCALED as one piece from its bottom-right
+            // pivot (Setup's "Skill bar size"), so every square, ring and label keeps its proportions.
+            // Only the extra block's OFFSET below has to be multiplied by hand.
+            float k = BarScaleBase * _barScale;
+            _skillBarPanel.localScale = new Vector3(k, k, 1f);
+            _skillBarExtraPanel.localScale = new Vector3(k, k, 1f);
             UiKit.Place(_skillBarPanel, new Vector2(1f, 0f), new Vector2(1f, 0f),
                         new Vector2(-12f, BottomRowY), new Vector2(mainW, mainH));
             float arrowW = narrow ? (mainW - 3f * pad) / 2f : 40f;
@@ -793,8 +799,8 @@ namespace Game.Client
             float extraW = eCols * step + pad, extraH = eRows * step + pad;
             _skillBarExtraPanel.gameObject.SetActive(_extraSlots > 0);
             UiKit.Place(_skillBarExtraPanel, new Vector2(1f, 0f), new Vector2(1f, 0f),
-                        vertical ? new Vector2(-12f - mainW - 6f, BottomRowY + strip)
-                                 : new Vector2(-12f, BottomRowY + mainH + 6f),
+                        vertical ? new Vector2(-12f - (mainW + 6f) * k, BottomRowY + strip * k)
+                                 : new Vector2(-12f, BottomRowY + (mainH + 6f) * k),
                         new Vector2(extraW, extraH));
 
             var mainInner = _skillBarPanel.GetChild(0);
@@ -1093,18 +1099,29 @@ namespace Game.Client
         /// <summary>Stack the VISIBLE menu buttons with no holes, and shrink the panel to fit them. Only
         /// re-runs when admin-ness actually changes (it is known at login, and again on a role change), so
         /// this is not per-frame work.</summary>
-        private void LayoutMenuPanel()
+        /// <para>When the column would run off the bottom of the screen (a large UI size — owner, 2026-09-26:
+        /// *"opening menu I cannot see the below drop button"*) it WRAPS into more columns, growing to the
+        /// left of the corner it is pinned to. <paramref name="force"/> = the UI size changed.</para>
+        private void LayoutMenuPanel(bool force = false)
         {
             bool admin = Boot.CanUseAdminTools;
             // Mirror it for the STATIC card builders (ItemStatsText and friends), which have no Boot.
             // Set before the early-out: the flag has to be right even on the frames where the menu
             // layout has nothing to redo.
             StaffTools = admin;
-            if (admin == _menuLaidOutForAdmin) return;
+            if (admin == _menuLaidOutForAdmin && !force) return;
             _menuLaidOutForAdmin = admin;
 
-            const float rowH = 46f, rowStep = 52f, padTop = 10f, padBottom = 14f;
-            float y = -padTop;
+            const float rowH = 46f, rowStep = 52f, padTop = 10f, padBottom = 14f, colW = 200f;
+            int visibleCount = 0;
+            foreach (var (_, adminOnly) in _menuButtons) if (admin || !adminOnly) visibleCount++;
+
+            // The canvas matches on HEIGHT, so its height in UI units IS the reference height. The panel
+            // hangs from 100 below the top; keep 12 clear at the bottom.
+            float room = UiKit.Reference.y - 100f - 12f - padTop - padBottom;
+            int perColumn = Mathf.Max(1, Mathf.Min(visibleCount, Mathf.FloorToInt((room + rowStep - rowH) / rowStep)));
+            int columns = Mathf.Max(1, Mathf.CeilToInt(visibleCount / (float)perColumn));
+
             int shown = 0;
             foreach (var (button, adminOnly) in _menuButtons)
             {
@@ -1112,12 +1129,12 @@ namespace Game.Client
                 button.gameObject.SetActive(visible);
                 if (!visible) continue;
 
-                UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                            new Vector2(0f, y), new Vector2(180f, rowH));
-                y -= rowStep;
+                int col = shown / perColumn, row = shown % perColumn;
+                UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 1f), new Vector2(0.5f, 1f),
+                            new Vector2(col * colW + colW / 2f, -padTop - row * rowStep), new Vector2(180f, rowH));
                 shown++;
             }
-            _menuPanel.sizeDelta = new Vector2(200f, padTop + shown * rowStep + padBottom);
+            _menuPanel.sizeDelta = new Vector2(columns * colW, padTop + perColumn * rowStep + padBottom);
         }
 
         /// <summary>

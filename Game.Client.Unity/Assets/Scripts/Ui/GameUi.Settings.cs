@@ -20,6 +20,9 @@ namespace Game.Client
     public partial class GameUi : MonoBehaviour
     {
         private RectTransform _settingsPanel;
+        /// <summary>The canvas Setup is drawn on — fixed at ×1 and above the game UI (see EnsureBuilt).</summary>
+        private Canvas _setupCanvas;
+        private RectTransform _setupRoot;
 
         private const string PrefPitch      = "cam.pitch";
         private const string PrefYaw        = "cam.yaw";
@@ -27,7 +30,20 @@ namespace Game.Client
         private const string PrefOrthoSize  = "cam.orthoSize";
         private const string PrefEntity     = "ui.entityScale";
         private const string PrefPlate      = "ui.nameplateHeight";
-        private const string PrefUiScale    = "ui.referenceHeight";
+        /// <summary>UI size as a MULTIPLIER, ×1 = an 800-high design (UiKit.ReferenceHeightAtX1). A new
+        /// key rather than the old "ui.referenceHeight": that one stored the raw height, and a phone still
+        /// holding the 480 that broke the menu should simply start over at ×1.</summary>
+        private const string PrefUiScale    = "ui.scale";
+        /// <summary>The skill bar's own size, on top of the UI size. ×1 is a THIRD of the old bar (owner,
+        /// 2026-09-26: *"decrease the size of the skill bar 3 times ... range from 1/5 to 5 times the new
+        /// size"*).</summary>
+        private const string PrefBarScale   = "ui.skillBarScale";
+        private const float UiScaleMin = 0.6f, UiScaleMax = 1.6f;
+        private const float BarScaleMin = 0.2f, BarScaleMax = 5f;
+        /// <summary>What skill-bar ×1 is in the bar's own build units (SlotSize 78 etc.).</summary>
+        private const float BarScaleBase = 1f / 3f;
+        private float _uiScale = 1f;
+        private float _barScale = 1f;
         private const string PrefDamage     = "ui.damageNumbers";
         private const string PrefZones      = "ui.zoneOverlay";
         /// <summary>`BL-220` — whether the COMBAT TAB prints per-second tick lines (DoT, HoT, the
@@ -51,8 +67,9 @@ namespace Game.Client
         /// player's chosen scale rather than built at the default and resized a frame later.</summary>
         private void LoadLookPrefs()
         {
-            UiKit.Reference = new Vector2(UiKit.Reference.x,
-                PlayerPrefs.GetFloat(PrefUiScale, UiKit.Reference.y));
+            _uiScale = Mathf.Clamp(PlayerPrefs.GetFloat(PrefUiScale, 1f), UiScaleMin, UiScaleMax);
+            UiKit.Reference = new Vector2(UiKit.Reference.x, UiKit.ReferenceHeightAtX1 / _uiScale);
+            _barScale = Mathf.Clamp(PlayerPrefs.GetFloat(PrefBarScale, 1f), BarScaleMin, BarScaleMax);
 
             EntityManager.EntityScale = PlayerPrefs.GetFloat(PrefEntity, EntityManager.EntityScale);
             NameplateHeight = PlayerPrefs.GetFloat(PrefPlate, NameplateHeight);
@@ -76,9 +93,11 @@ namespace Game.Client
 
         private void BuildSettingsWindow()
         {
-            _settingsPanel = UiKit.PanelBox(_worldRoot, "Settings");
+            // On the SETUP canvas, not the world root: it is reachable from the login screen too, and it
+            // must never be scaled by the setting it controls.
+            _settingsPanel = UiKit.PanelBox(_setupRoot, "Settings");
             UiKit.Place(_settingsPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                        Vector2.zero, new Vector2(640f, 610f));   // grown for the camera rows, then the bar-shape row
+                        Vector2.zero, new Vector2(640f, 650f));   // grown for the camera rows, the bar-shape row, then the bar size
             var inner = _settingsPanel.GetChild(0);
             float chrome = UiKit.WindowChrome(_settingsPanel, "Settings", () => CloseWindow(_settingsPanel));
 
@@ -130,11 +149,22 @@ namespace Game.Client
                     PlayerPrefs.SetFloat(PrefPlate, v);
                 }));
 
-            // UI scale needs a REBUILD, not a live update: the canvas scaler reads the reference
-            // resolution when it lays out, and every panel here was positioned against it. Saying so
-            // is better than silently doing half of it.
-            Row(inner, ref y, UiKit.SliderRow(inner, "UI size (restart)", 480f, 1100f,
-                UiKit.Reference.y, "0", v => PlayerPrefs.SetFloat(PrefUiScale, v)));
+            // Both sizes apply LIVE. That is safe only because this window sits on its own fixed canvas:
+            // the game UI rescales behind the slider while the slider itself stays under your finger.
+            Row(inner, ref y, _uiScaleSlider = UiKit.SliderRow(inner, "UI size (x)", UiScaleMin, UiScaleMax,
+                _uiScale, "0.00", v =>
+                {
+                    ApplyUiScale(v);
+                    PlayerPrefs.SetFloat(PrefUiScale, v);
+                }));
+
+            Row(inner, ref y, _barScaleSlider = UiKit.SliderRow(inner, "Skill bar size (x)", BarScaleMin, BarScaleMax,
+                _barScale, "0.00", v =>
+                {
+                    _barScale = v;
+                    ApplyBarLayout();
+                    PlayerPrefs.SetFloat(PrefBarScale, v);
+                }));
 
             var projection = UiKit.TextButton(inner, "", () =>
             {
@@ -225,11 +255,16 @@ namespace Game.Client
             var reset = UiKit.TextButton(inner, "Reset to defaults", () =>
             {
                 foreach (var key in new[] { PrefPitch, PrefYaw, PrefOrtho, PrefOrthoSize,
-                                            PrefEntity, PrefPlate, PrefUiScale, PrefDamage, PrefZones,
-                                            PrefTicks, PrefExtraSlots, PrefBarShape, PrefExtraShape })
+                                            PrefEntity, PrefPlate, PrefUiScale, PrefBarScale, PrefDamage,
+                                            PrefZones, PrefTicks, PrefExtraSlots, PrefBarShape, PrefExtraShape })
                     PlayerPrefs.DeleteKey(key);
                 PlayerPrefs.Save();
-                ClientLog.Info("Look settings reset — restart the app to apply.");
+                // The two sizes come back at once — they are the ones that can make the game unusable.
+                // The rest (camera, shape...) still waits for a restart, as before.
+                // (setting the slider runs its handler, so the label, the live apply and the pref follow)
+                _uiScaleSlider.value = 1f;
+                _barScaleSlider.value = 1f;
+                ClientLog.Info("Look settings reset — UI and skill bar size now, the rest after a restart.");
             }, 16f);
             UiKit.Place(UiKit.Rect(reset.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(170f, 16f), new Vector2(220f, 40f));
@@ -240,6 +275,18 @@ namespace Game.Client
 
         private Button _damageToggle, _zoneToggle, _projectionToggle, _modelToggle, _tickToggle;
         private Button _extraSlotsToggle, _barShapeToggle;   // `BL-269`, `BL-299`
+        private Slider _uiScaleSlider, _barScaleSlider;
+
+        /// <summary>Resize the GAME canvas now. Every panel is anchored, so changing the scaler's design
+        /// height is the whole job — bar the overflow menu, whose column count depends on how tall the
+        /// screen is in UI units.</summary>
+        private void ApplyUiScale(float scale)
+        {
+            _uiScale = Mathf.Clamp(scale, UiScaleMin, UiScaleMax);
+            UiKit.Reference = new Vector2(UiKit.Reference.x, UiKit.ReferenceHeightAtX1 / _uiScale);
+            if (_canvas != null) _canvas.GetComponent<CanvasScaler>().referenceResolution = UiKit.Reference;
+            if (_menuPanel != null) LayoutMenuPanel(force: true);
+        }
 
         private void RefreshSettingsLabels()
         {

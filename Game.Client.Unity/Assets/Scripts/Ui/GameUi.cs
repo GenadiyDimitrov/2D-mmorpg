@@ -87,6 +87,14 @@ namespace Game.Client
             _canvas.transform.SetParent(transform, false);
             _root = (RectTransform)_canvas.transform;
 
+            // Setup lives on its OWN canvas at a fixed ×1 and draws above everything, so the window that
+            // sets the UI size is never itself made unusable by it (owner, 2026-09-26: a 480 UI size
+            // pushed the menu's lower buttons off the screen and only clearing app data got him back).
+            _setupCanvas = UiKit.CreateCanvas("SetupUi", 50,
+                new Vector2(UiKit.Reference.x, UiKit.ReferenceHeightAtX1));
+            _setupCanvas.transform.SetParent(transform, false);
+            _setupRoot = (RectTransform)_setupCanvas.transform;
+
             BuildStatusStrip();
             BuildLogin();
             BuildCharacterSelect();
@@ -296,6 +304,12 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(UiKit.Label(inner, "Sign in", 30f).gameObject),
                         new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -18f),
                         new Vector2(300f, 40f));
+
+            // Setup BEFORE logging in (owner, 2026-09-26): a UI size that breaks the in-game menu must be
+            // fixable without clearing the app's data. It opens the same unscaled window as the menu.
+            var setup = UiKit.TextButton(inner, "Setup", () => ToggleWindow(_settingsPanel), 16f);
+            UiKit.Place(UiKit.Rect(setup.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
+                        new Vector2(-24f, -18f), new Vector2(120f, 40f));
 
             _urlField = UiKit.InputField(inner, "http://127.0.0.1:5238/game");
             UiKit.Place(UiKit.Rect(_urlField.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
