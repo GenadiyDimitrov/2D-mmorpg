@@ -52,7 +52,6 @@ public static partial class SkillCatalog
     public const string SoundBurst         = "sound_burst";        // Elf, bow, hits twice
     public const string SoundSmash         = "sound_smash";        // Demon;Human, blunt
     public const string AcousticShock      = "acoustic_shock";     // Demon only, blunt + STUN
-    public const string WcBowExpertise       = "wc_bow_expertise";      // Elf
     // ---- TOGGLES ----
     public const string Reinforcement      = "reinforcement";
     public const string Sharpening         = "sharpening";
@@ -373,16 +372,8 @@ public static partial class SkillCatalog
             hits: 1, stunTicks: 50,
             desc: "A blow pitched to shatter the senses: damage, and the target reels."));
 
-        // ---- Bow Expertise (Elf) — his own rung, NOT the rogue's. The rogue's `bow_expertise` is
-        //      +8% for 22000 SP; his buffer row is +12% for 42000 and 85 MP. Same BuffKey at a higher
-        //      Rank, so the two never stack and the buffer's wins if a character ever held both. ----
-        list.Add(new SkillDef(WcBowExpertise, "Bow Expertise", BaseClass.Mage, SkillEffect.BuffAtkSpeed,
-            MpCost: 85, CastTicks: 30, CooldownTicks: 20, Range: 0, Power: 0,
-            DurationTicks: 12000, BuffKey: "bow_expertise", Rank: 2,
-            Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly, SpCost: 42_000,
-            RequiredWeapon: WeaponType.Bow,
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtkSpeed, 0.12f) },
-            Description: "Steadies your aim: +12% attack speed while wielding a bow, for 20 minutes."));
+        // (Bow Expertise, Elf, is the archer's two-rung `bow_expertise` at rung 2 — Skills.Fighter.cs.
+        //  `wc_bow_expertise` was deleted 2026-09-26: a second id left the archer holding both.)
 
         // ===== TOGGLES ===========================================================================
         // Both are stances: instant on, instant off, and they burn MP every second while lit

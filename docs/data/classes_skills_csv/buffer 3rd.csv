@@ -185,7 +185,7 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 74,Acoustic Shock,acoustic_shock,Physical/Active,blunt,,40,0,enemy/single,1,3,5,"Deals Physical Damag With Power +4000 and Stuns for 5s, Requre: Blunt;",120,880k,[],Demon,
 ,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------ACTIVE PHYSICAL-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,,,,,---------------------------Bow Expertise----------------------------
-56,Bow Expertise,wc_bow_expertise,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Increase Bow attack speed +12%, Requre: Bow",85,42k,[],Elf,
+56,Bow Expertise,bow_expertise,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Increase Bow attack speed +12%, Requre: Bow",85,42k,[],Elf,
 ,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------ACTIVE TOGGLE-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,,,,,---------------------------Reinforcement----------------------------
 40,Reinforcement,reinforcement,Toggle,,,0,0,self/single,0,0,0,Increase P.Def +240 (Consumes: 12/s),12,36k,[],,

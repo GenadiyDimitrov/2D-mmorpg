@@ -741,14 +741,28 @@ public static partial class SkillCatalog
                     Description: "+30 Evasion, 30% to dodge physical skills outright, for 30s."),
             }),
 
-        // Bow Expertise — long self-buff: +8% bow attack speed (requires a bow) for 20 min.
+        // Bow Expertise — long self-buff: bow attack speed (requires a bow) for 20 min. TWO RUNGS, the
+        // archer's line (owner, 2026-09-26: *"archers is the main .. So bow_expertise is the 2 rung one
+        // and the buffer learns that one just on different lvls"*): rung 1 +8% (rogue 36), rung 2 +12%
+        // (archer 52, Elf Warchanter 56 — who starts at rung 2). It replaced `wc_bow_expertise`, a
+        // separate id that left the archer holding both. Rank derives per rung (1, 2) — see FlatRank.
         new(BowExpertise, "Bow Expertise", BaseClass.Fighter, SkillEffect.BuffAtkSpeed,
             MpCost: 25, CastTicks: 30, CooldownTicks: 20, Range: 0, Power: 0,
-            DurationTicks: 12000, BuffKey: "bow_expertise", Rank: 1,  
+            DurationTicks: 12000, BuffKey: "bow_expertise", Rank: 1,
             Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly, SpCost: 22000,
             RequiredWeapon: WeaponType.Bow,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtkSpeed, 0.08f) },
-            Description: "Steadies your aim: +8% attack speed while wielding a bow, for 20 minutes."),
+            Description: "Steadies your aim: +8% attack speed while wielding a bow, for 20 minutes.",
+            Levels: new[]
+            {
+                new SkillLevel(MpCost: 25, SpCost: 22_000,
+                    Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtkSpeed, 0.08f) },
+                    Description: "Steadies your aim: +8% attack speed while wielding a bow, for 20 minutes."),
+                // 42,000 is the buffer's price at 56; the archer's 37,000 at 52 is a ClassSkill.SpCost.
+                new SkillLevel(MpCost: 85, SpCost: 42_000,
+                    Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtkSpeed, 0.12f) },
+                    Description: "Steadies your aim: +12% attack speed while wielding a bow, for 20 minutes."),
+            }),
 
         new(PowerStrike, "Brutal Strike", BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: 10, CastTicks: 5, CooldownTicks: 30, Range: 0, Power: 30,

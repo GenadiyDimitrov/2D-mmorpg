@@ -7,12 +7,25 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.27**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.28**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.27: UI size as ×1, a skill-bar size, Setup from the login screen
+## 2026-09-27 (latest) — 0.214.28: Bow Expertise is one two-rung skill; `BL-314` filed
+
+> *"Bow expertise L2@52 don't replaces L1"* · *"archers is the main .. So bow_expertise is the 2 rung one and the
+> buffer learns that one just on different lvls ...so we can remove the wc_bow_expertise"*
+
+- **`bow_expertise` has two rungs:** rung 1 +8% (25 MP, rogue at 36), rung 2 +12% (85 MP). The archer learns
+  rung 2 at 52 (37,000 SP) and the Elf Warchanter takes rung 2 directly at 56 (42,000 SP). The archer used to
+  get a second skill (`wc_bow_expertise`) at 52 and kept BOTH in the Skills window; that id is deleted.
+  `archer 3rd.csv` and `buffer 3rd.csv` name `bow_expertise` now. Needs a new APK (the Learn tab is built from
+  the class tables on the phone) and a `game.db` delete for characters that already held the old id.
+- **`BL-314` filed:** split the bundled armor masteries into single-stat passives (regen, speed …) shared across
+  classes — design first.
+
+## 2026-09-26 — 0.214.27: UI size as ×1, a skill-bar size, Setup from the login screen
 
 > *"At 800 scale the ui size is OK ... change it to x1 to be 800 ... The 480~1100 means nothing"* ·
 > *"decrease the size of the skill bar 3 times and make in the setup another bar for scaling the skill bar

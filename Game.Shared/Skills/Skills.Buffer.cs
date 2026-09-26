@@ -349,7 +349,7 @@ public static partial class SkillCatalog
         //    it is a square on the bar that means nothing. Neither is lost — both are still one
         //    `/buff <name>` away when a test actually wants them.
         ShroudingHymn,
-        WcBowExpertise,
+        BowExpertise,
     };
 
     private static string[] BuildAdminBuffSet()

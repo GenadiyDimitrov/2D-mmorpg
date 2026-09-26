@@ -34,7 +34,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,----------------------------Signal Flare----------------------------
 60,Signal Flare,signal_flare,physical active,bow,,0,300,target/aoe,1,20,0,Fires a flare: everyone hidden within 300 is revealed and cannot hide again for 30s. Deals no damage.,28,120,[],
 ,,,,,,,,,,,,,,,,,---------------------------Bow Expertise----------------------------
-52,Bow Expertise,wc_bow_expertise,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Increase Bow attack speed +12%, Requre: Bow",85,37,[],
+52,Bow Expertise,bow_expertise,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Increase Bow attack speed +12%, Requre: Bow",85,37,[],
 ,,,,,,,,,,,,,,,,,---------------------------Bow Blessing----------------------------
 58,Bow Blessing,bow_blessing,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Decrease p.skill cooldown with 10%, Requre: Bow",50,88,[],
 66,Bow Blessing,bow_blessing,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Decrease p.skill cooldown with 15%, Requre: Bow",75,280,[],

@@ -279,6 +279,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-288` | ⏸ | **CONSUMABLE RARITY → PLAIN LEVELS 1-6** — potions/scrolls may drop the rarity word entirely; deferred by him, split out of `BL-272` | items |
 | `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
 | `BL-307` | 🟡 | **Full drops below level 40** — F/E-grade Common gear, materials and lucky drops, not only gold — 📝 PROPOSAL drafted, `docs/design/LowLevelDrops.md`, 4 questions | drops |
+| `BL-314` | 🔵 | **Split passives into single-stat pieces** — regen / P.Def / speed as their own ladders shared across classes, so ten armor masteries become a few mixable passives — design first | skills |
 
 ---
 
@@ -2256,3 +2257,28 @@ copies + a dealt specialty in two new bands (1-19, 20-39), Commons at the T40 ta
 1/1,000 (F) / 1/3,000 (E), base mats 0.1 a kill from 20. That is ~2-3× today and the 40 cliff drops from ~20× to ~9×.
 ❓ **Four questions for you in §4 of the doc** (the rates, mats from 20, the starter creatures, scrolls).
 
+
+## `BL-314` 🔵 SPLIT PASSIVES INTO SINGLE-STAT PIECES
+
+His note, 2026-09-26 (with the Bow Expertise fold, where `wc_bow_expertise` became rung 2 of the archer's
+`bow_expertise`): *"split all passives as single stat changes and that will decrease the number of different
+skills - for example most armor passives have the mp ang hp +regen .. Just different rungs ... And the base
+mastery is the same across classes/deciplines.. So if we take the regen and make it separate passive we can mix
+and Mach passives and won't have 20 different armor masteries"*.
+
+**Today:** 10 armor-mastery passives (`FighterArmorMastery`, `RogueArmorMastery`, `ArcherArmorMastery`,
+`TankArmorMastery`, `WarriorArmorMastery`, `MageArmorMastery`, `BufferArmorMastery`, `HealerArmorMasterySkill`,
+`ArmorMasterySkill`, `HarmonistLightMastery`) and 45 `*Mastery` skills in all. Each one bundles P.Def + evasion +
+speed + HP/MP regen (+ crit resist) for one armor weight, and a later one `Replaces` the earlier — so the same
+regen ladder is re-authored inside every one of them at different rungs.
+
+**The idea:** one ladder per STAT (e.g. `hp_regen_mastery`, `mp_regen_mastery`, a per-weight `light/heavy/robe`
+defence mastery), each a shared skill id that a class's table grants at ITS rung and level — exactly the shape
+`bow_expertise` has now (one id, the archer at rung 2 at 52, the Elf buffer at rung 2 at 56). A class's identity
+is then WHICH pieces and which rungs, not a bespoke bundle.
+
+❓ **Design first, before any code** — it touches every class CSV:
+1. Which stats split out (regen HP / MP, speed, evasion, crit resist) and which stay in the weight-gated mastery.
+2. The CSV shape: one row per piece per class, or a shared "passives" file with a per-class rung column.
+3. Weight gates: regen today pays only in the right armor — does a split-out regen keep that gate?
+4. Migration is a `game.db` delete (pre-release), but every `Replaces` chain between masteries is rewritten.

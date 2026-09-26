@@ -13,7 +13,8 @@ namespace Game.Shared;
 /// <list type="bullet">
 ///   <item><c>archer_bow_mastery</c> → <c>bow_mastery</c></item>
 ///   <item><c>split_volley</c> → <c>archer_twin_arrows</c></item>
-///   <item><c>archer_bow_expertise</c> → <c>wc_bow_expertise</c> (his own cell names the buffer's id)</item>
+///   <item><c>archer_bow_expertise</c> → <c>bow_expertise</c> rung 2 (no Replaces clause any more:
+///   <c>wc_bow_expertise</c>, which carried it, was folded into the archer's ladder 2026-09-26)</item>
 ///   <item><c>killing_focus</c> → <c>bow_mastery</c>, whose crit-damage column replaces it</item>
 /// </list></para>
 ///

@@ -507,7 +507,7 @@ public static partial class ClassSkillTables
         elf.AddRange(Ladder(HarmonistLightMastery, new[] { 40 }));
         elf.AddRange(Ladder(HarmonistBowProficiency, new[] { 40 }));
         elf.AddRange(Ladder(HarmonistBowMastery, band8));
-        elf.AddRange(Ladder(WcBowExpertise, new[] { 56 }));
+        elf.Add(new ClassSkill(BowExpertise, 56, SkillLevel: 2));   // the archer's rung 2 (+12%), not rung 1
         elf.AddRange(Ladder(SoundBurst, band13));
 
         // ---- DEMON: the melee fighter. Heavy armour, blunt, and TWO damage skills — his ruling,
@@ -1188,13 +1188,11 @@ public static partial class ClassSkillTables
     /// the Elf additionally owns the self-Antidote (the same six rows his tank and dual files give the
     /// Elf, one skill shared by all three).</para>
     ///
-    /// <para>⚠ Bow Expertise is the WARCHANTER's <c>wc_bow_expertise</c>, named in his own cell — not a
-    /// clone. Nothing in the learn path gates on <see cref="BaseClass"/>, so a Fighter discipline can
-    /// teach a def declared Mage; the alternative was a second skill sharing its buff key, which is
-    /// what the retired derived kit did and which his cell explicitly does not ask for.
-    /// 🔴 ITS SP DISAGREES BETWEEN HIS TWO FILES — 42,000 in `buffer 3rd.csv`, 37,000 here. One skill
-    /// has one price, and the buffer's is the one the def carries; `--check` will report the archer
-    /// row until he settles it.</para>
+    /// <para>⚠ Bow Expertise is the ARCHER's own two-rung <c>bow_expertise</c> — rung 1 at 36 from
+    /// the rogue 2nd, rung 2 here at 52 (owner, 2026-09-26: *"archers is the main .. So bow_expertise
+    /// is the 2 rung one and the buffer learns that one just on different lvls"*). The Elf Warchanter
+    /// takes rung 2 directly at 56. It was a separate <c>wc_bow_expertise</c> until then, which left
+    /// the archer holding both. SP: 42,000 on the def (the buffer's), 37,000 here via SpCost.</para>
     ///
     /// <para>⚠ Signal Flare is <see cref="RegisterHideKit"/>'s, placed by him at 60 long before this
     /// file existed. Only its SP moved (12,000 → his 120,000).</para></summary>
@@ -1221,7 +1219,7 @@ public static partial class ClassSkillTables
         //    two prices — which is precisely the case `ClassSkill.SpCost` was added for (Shield
         //    Mastery, 2026-08-21): SP in this game is priced by the LEVEL YOU LEARN AT, not by the
         //    ability. Splitting it into two SkillDefs would duplicate a ladder and invite it to drift.
-        shared.Add(new ClassSkill(WcBowExpertise, 52, SpCost: 37_000));
+        shared.Add(new ClassSkill(BowExpertise, 52, SkillLevel: 2, SpCost: 37_000));
         shared.Add(new ClassSkill(BowStance, 60));
         // 🔴 `BL-213` (2026-09-12) — OVERPOWER rung 1 (3%) at 40. THE ARCHER GETS THE MELEE ROGUE'S
         //    LADDER, RUNG FOR RUNG AND LEVEL FOR LEVEL: *"archers must get the same double passives and
