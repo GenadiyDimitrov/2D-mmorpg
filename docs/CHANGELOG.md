@@ -7,12 +7,23 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.3**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.4**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.3: the crafter header is no longer under the tabs (§105.4)
+## 2026-09-26 (latest) — 0.214.4: EXP bar darker; Favor and Blessing on one row (`BL-312`)
+
+> *"The exp bar need a darker green — a touch darker than the favor one now .. i like the favor one"* · *"wonder if we can
+> make the blessinf and favor on one row (the two bars to be on the same row side to side)"*
+
+- **EXP green** is now `(0.19, 0.45, 0.19)`: the step from the old lime to the Favor green, taken once more. The Favor
+  green is unchanged.
+- **Favor and Blessing are side by side** on one row, half width each. The vitals panel is a row shorter (114 → 92 px)
+  and the buff bar docks 22 px higher under it. The Favor text dropped its `/ 20,000` to fit (the fill shows how full
+  it is): `12,345  L2  +100%`. Client only.
+
+## 2026-09-26 — 0.214.3: the crafter header is no longer under the tabs (§105.4)
 
 > *"The row where is says "browsing/at anvil" is hidden behind the tabs"*
 

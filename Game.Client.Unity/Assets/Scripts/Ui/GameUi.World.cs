@@ -356,7 +356,7 @@ namespace Game.Client
         {
             var panel = UiKit.PanelBox(_worldRoot, "SelfPanel");
             UiKit.Place(panel, new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -48f), new Vector2(330f, 114f));
+                        new Vector2(12f, -48f), new Vector2(330f, SelfPanelHeight));
             var inner = panel.GetChild(0);
 
             // TAPPING YOUR OWN PANEL TARGETS YOU.
@@ -402,20 +402,26 @@ namespace Game.Client
                         new Vector2(12f, -36f), new Vector2(306f, 22f));
             _selfMpText = UiKit.BarLabel(_selfMp, 13f);
 
+            // `BL-312`: Favor and Blessing share ONE row, side by side (*"the two bars to be on the same row
+            // side to side"*), and the panel is a row shorter for it.
             // His colour: *"a bit darker than the current lime one"* — the EXP green, darkened, not dark green.
             _selfFavor = UiKit.ValueBar(inner, FavorColour);
             UiKit.Place(UiKit.Rect(_selfFavor.transform.parent.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -62f), new Vector2(306f, 18f));
+                        new Vector2(12f, -62f), new Vector2(151f, 18f));
             _selfFavorText = UiKit.BarLabel(_selfFavor, 11f);
 
             // *"some golden color not so distracting"*; it turns BRIGHT while a Blessing runs.
             _selfBlessing = UiKit.ValueBar(inner, BlessingColour);
             UiKit.Place(UiKit.Rect(_selfBlessing.transform.parent.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -84f), new Vector2(306f, 18f));
+                        new Vector2(167f, -62f), new Vector2(151f, 18f));
             _selfBlessingText = UiKit.BarLabel(_selfBlessing, 11f);
 
             BuildExpStrip();
         }
+
+        /// <summary>HP 26 + MP 22 + the Favor|Blessing row 18, with the gaps (`BL-312`: was 114 with two rows).
+        /// The buff bar docks under it (<see cref="BuffBarTop"/>).</summary>
+        private const float SelfPanelHeight = 92f;
 
         private static readonly Color FavorColour = new Color(0.27f, 0.60f, 0.27f, 1f);
         private static readonly Color BlessingColour = new Color(0.62f, 0.52f, 0.22f, 1f);
@@ -1479,9 +1485,10 @@ namespace Game.Client
             }
 
             UiKit.SetBar(_selfFavor, f.Points, WayfarerFavor.MaxPoints);
-            _selfFavorText.text = f.Points.ToString("N0") + " / " + WayfarerFavor.MaxPoints.ToString("N0")
-                                + "   L" + f.Stage
-                                + "   +" + (WayfarerFavor.BonusPerStage * f.Stage * 100f).ToString("0") + "%";
+            // Half a row since `BL-312`: the fill says "of 20,000", so the text no longer does.
+            _selfFavorText.text = f.Points.ToString("N0")
+                                + "  L" + f.Stage
+                                + "  +" + (WayfarerFavor.BonusPerStage * f.Stage * 100f).ToString("0") + "%";
 
             int left = f.BlessingActive
                 ? Mathf.Max(0, f.BlessingSecondsLeft - (int)(Time.realtimeSinceStartup - Boot.FavorReceivedAt))

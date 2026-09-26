@@ -7672,3 +7672,20 @@ command/button to reset limits -> like instances/quests etc but only for admins"
 `KeepQuestsThroughReset` (drops only race/class/class-chain-locked quests, and rewinds a passed ReachLevel step the new
 level fails), plus `/resetlimits [name]` (daily stamps, farm allowance, likes, Favor potion) and a debug-panel button.
 The premium class change he mentioned is `BL-298`.
+
+
+## `BL-312` ✅ CLOSED 2026-09-26 in **0.214.4**: EXP bar darker; Favor and Blessing on one row
+
+His words, 2026-09-26 (playtest of 0.181.0 → 0.214.2), on 0.214.0: *"The exp bar need a darker green — a touch darker
+than the favor one now .. i like the favor one"* and *"wonder if we can make the blessing and favor on one row"*.
+**Built as written in 0.214.4:** the EXP green is `(0.19, 0.45, 0.19)`, i.e. the lime → Favor step `(−0.08, −0.15, −0.08)`
+taken once more past the Favor green. Favor and Blessing are two half-width bars on one row; the vitals panel is a
+row shorter (114 → 92 px) and the buff bar docks 22 px higher. The Favor text lost its `/ 20,000` to fit half a row
+(the fill shows it). ⚠ Unplayed: whether the half-width texts fit at every value.
+
+**As filed:**
+
+> From the same playtest, on 0.214.0 (`BL-295`):
+> 1. *"The exp bar need a darker green — a touch darker than the favor one now .. i like the favor one"*: the same
+>    step darker that the current lime is lighter.
+> 2. *"wonder if we can make the blessing and favor on one row (the two bars to be on the same row side to side)"*.

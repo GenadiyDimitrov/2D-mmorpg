@@ -279,16 +279,16 @@ namespace Game.Client
         /// <summary>The world-root y the buff bar's first row is drawn at. The layout below works in
         /// bar-local y (0 = the top row) while the collapse buttons are anchored to the world root, so
         /// this is the one place the two coordinate spaces meet.</summary>
-        private const float BuffBarTop = -170f;
+        private const float BuffBarTop = -48f - SelfPanelHeight - 8f;
 
         private void BuildBuffBar()
         {
-            // Docked directly under the self panel (which ends at -164) instead of floating in the
+            // Docked directly under the self panel (8px below its bottom edge) instead of floating in the
             // middle of the world, where it covered the map and belonged to nothing.
             _buffBar = UiKit.Rect(UiKit.Box(_worldRoot, "BuffBar", new Color(0, 0, 0, 0),
                                             blocksInput: false).gameObject);
             UiKit.Place(_buffBar, new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -170f), new Vector2(360f, 220f));
+                        new Vector2(12f, BuffBarTop), new Vector2(360f, 220f));
 
             // The four collapse buttons. Anchored to the WORLD ROOT rather than to the bar, exactly as
             // the single one was: the bar's height changes every time a buff expires, and a button that
@@ -300,7 +300,7 @@ namespace Game.Client
                 _buffCollapse[g] = UiKit.TextButton(_worldRoot, "",
                     () => _buffStages[grp] = (_buffStages[grp] + 1) % 3, 13f);
                 UiKit.Place(UiKit.Rect(_buffCollapse[g].gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                            new Vector2(300f, -170f), new Vector2(58f, 24f));
+                            new Vector2(300f, BuffBarTop), new Vector2(58f, 24f));
                 _buffCollapse[g].gameObject.SetActive(false);
             }
             _buffCountLabel = _buffCollapse[GrpBuff].GetComponentInChildren<TextMeshProUGUI>();

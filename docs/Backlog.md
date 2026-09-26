@@ -291,7 +291,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-309` | 🔴 | **Essence carries its GRADE** (Darksteel Essence = D) | items |
 | `BL-310` | 🔴 | **Town guards twice as far apart, at the town border** | world |
 | `BL-311` | 🔴 | **Choose which tracked quest the arrow follows** — a `[location tracking]` button in the quest details | client |
-| `BL-312` | 🔴 | **EXP bar a touch darker green; Favor and Blessing side by side on one row** | client |
 
 ---
 
@@ -2364,9 +2363,3 @@ From the same playtest, on 0.213.0 (`BL-294`): *"need (location) to a tracked qu
 … arrow to point at"*. In the details panel of a TRACKED quest a **[location tracking]** button appears; on the
 one the arrow already follows it is disabled, or reads "current". The untrack bug beside it is §105.2.
 
-## `BL-312` 🔴 EXP BAR DARKER; FAVOR AND BLESSING ON ONE ROW
-
-From the same playtest, on 0.214.0 (`BL-295`):
-1. *"The exp bar need a darker green — a touch darker than the favor one now .. i like the favor one"*: the same
-   step darker that the current lime is lighter.
-2. *"wonder if we can make the blessing and favor on one row (the two bars to be on the same row side to side)"*.

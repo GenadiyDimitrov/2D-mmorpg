@@ -41,7 +41,7 @@ namespace Game.Client
         public static readonly Color Mp         = new Color(0.25f, 0.45f, 0.85f, 1f);
         /// <summary>EXP is GREEN, not the old gold: gold sat too close to the yellow used for NPC names
         /// and for a buff about to expire, and progress deserves a colour that means only progress.</summary>
-        public static readonly Color Xp         = new Color(0.35f, 0.75f, 0.35f, 1f);
+        public static readonly Color Xp         = new Color(0.19f, 0.45f, 0.19f, 1f);   // `BL-312`: one Favor-step darker than the Favor green
         public static readonly Color BarBg      = new Color(0.08f, 0.09f, 0.11f, 1f);
 
         /// <summary>Design resolution. The scaler matches on HEIGHT, so a taller or narrower phone
