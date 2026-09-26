@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.214.14";
+    public const string GameVersion = "0.214.15";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -948,6 +948,8 @@ public static class GameConstants
     public const string ActionLike          = "like_target";
     public const string ActionBlock         = "block_target";
     public const string ActionUnblock       = "unblock_target";
+    /// <summary>`BL-302` — the bag window's "Unequip all", on the bar. One tap, no target.</summary>
+    public const string ActionUnequipAll    = "unequip_all";
 
     // A new character starts with a COMPLETELY EMPTY bar (owner, 2026-07-20). Nothing is placed for
     // you — not skills, not even the actions. The player builds their own bar from the skills window's

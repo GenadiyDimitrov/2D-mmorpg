@@ -7,12 +7,20 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.14**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.15**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.14: item rows say (T/B/U), and quality words leave item names (`BL-301`)
+## 2026-09-26 (latest) — 0.214.15: "Unequip All" goes on the bar (`BL-302`)
+
+> *"it also need a to bar option -> u can add it as an action in the skills window. it dont have save/equip so its a
+> single click and will work as an action as well (leave the one in the bag also)"*
+
+- **Unequip All** is in the skill window's **Actions** tab. Put it on the bar and one tap takes everything off, exactly
+  like the bag's button (which stays). Its square reads **UAl**. Needs a new APK.
+
+## 2026-09-26 — 0.214.14: item rows say (T/B/U), and quality words leave item names (`BL-301`)
 
 > *"nowhere on the item unless the details pannel is opened I can tell which of my 5 swords is the temporaty"* ·
 > *"by the color of the item and the quality/rarity u can understand what is it"* · *"Only the abbreviation for the

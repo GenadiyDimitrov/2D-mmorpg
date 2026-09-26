@@ -2468,6 +2468,9 @@ namespace Game.Client
                     case GameConstants.ActionPartyLeave:
                         PartyLeave();
                         break;
+                    case GameConstants.ActionUnequipAll:   // `BL-302`
+                        UnequipAll();
+                        break;
                     case GameConstants.ActionPartyKick:
                         if (TargetId.HasValue) PartyKick(TargetId.Value);
                         else ClientLog.Warn("Target a party member to remove.");

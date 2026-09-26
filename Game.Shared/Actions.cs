@@ -113,6 +113,11 @@ public static class ActionCatalog
 
         new(GameConstants.ActionUnblock, "Unblock", "🔊",
             "Stop ignoring the targeted player.", ActionNeeds.PlayerTarget),
+
+        // `BL-302`: *"it also need a to bar option -> u can add it as an action in the skills window ... a
+        // single click"*. The same command as the bag window's button, which stays.
+        new(GameConstants.ActionUnequipAll, "Unequip All", "🧺",
+            "Take off everything you are wearing, in one tap. The same as the button in the bag."),
     };
 
     private static readonly Dictionary<string, ActionDef> ById =

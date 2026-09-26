@@ -7809,3 +7809,16 @@ every skill-bar label is unchanged (`Abbreviations.ForItem`). Potion BUFF names 
 >    is it"*. *"Only the abbreviation for the skill/buff bar can differ."*
 > ⚠ Where two items would then share a name (a Lesser and a Greater of one potion), the colour is the only thing
 > telling them apart. That is his call, and `BL-288` (consumable rarity → plain levels) is the same direction.
+
+
+## `BL-302` ✅ CLOSED 2026-09-26 in **0.214.15**: "Unequip All" is a skill-window action
+
+His words, 2026-09-26 (playtest of 0.181.0 → 0.214.2): *"it also need a to bar option -> u can add it as an action
+in the skills window"*. **Built in 0.214.15:** `ActionCatalog` entry `unequip_all` (Actions tab, bar label `UAl`), one
+tap, the same `UnequipAll` hub call as the bag button, which stays.
+
+**As filed:**
+
+> From the same playtest: *"it also need a to bar option -> u can add it as an action in the skills window. it
+> dont have save/equip so its a single click and will work as an action as well (leave the one in the bag also)"*.
+> One action in the skill window's actions list, placeable on the bar, one tap. The bag button stays.
