@@ -78,7 +78,7 @@ namespace Game.Client
         {
             _settingsPanel = UiKit.PanelBox(_worldRoot, "Settings");
             UiKit.Place(_settingsPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                        Vector2.zero, new Vector2(640f, 560f));   // grown for the camera rows
+                        Vector2.zero, new Vector2(640f, 610f));   // grown for the camera rows, then the bar-shape row
             var inner = _settingsPanel.GetChild(0);
             float chrome = UiKit.WindowChrome(_settingsPanel, "Settings", () => CloseWindow(_settingsPanel));
 
@@ -202,10 +202,16 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(models.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(18f, y), new Vector2(260f, 38f));
             _modelToggle = models;
+            y -= 48f;
 
             // `BL-269` — extra skill squares, 0/6/12/18/24: *"need option to add more 6/12/18/24 skill slots
             // (half of or full the 2nd and 3rd skill bars)"*. A LOOK setting like the rest of this column,
             // so it lives on the phone; what the server stores is the same 60-slot bar either way.
+            // `BL-299` — and the SHAPE beside it: 2x6 / 1x12 / 6x2 / 6x1, each with its own list of extras.
+            var barShape = UiKit.TextButton(inner, "", () => { CycleBarShape(); RefreshSettingsLabels(); }, 15f);
+            UiKit.Place(UiKit.Rect(barShape.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(18f, y), new Vector2(260f, 38f));
+            _barShapeToggle = barShape;
             var extraSlots = UiKit.TextButton(inner, "", () => { CycleExtraSlots(); RefreshSettingsLabels(); }, 15f);
             UiKit.Place(UiKit.Rect(extraSlots.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(292f, y), new Vector2(260f, 38f));
@@ -220,7 +226,7 @@ namespace Game.Client
             {
                 foreach (var key in new[] { PrefPitch, PrefYaw, PrefOrtho, PrefOrthoSize,
                                             PrefEntity, PrefPlate, PrefUiScale, PrefDamage, PrefZones,
-                                            PrefTicks, PrefExtraSlots })
+                                            PrefTicks, PrefExtraSlots, PrefBarShape, PrefExtraShape })
                     PlayerPrefs.DeleteKey(key);
                 PlayerPrefs.Save();
                 ClientLog.Info("Look settings reset — restart the app to apply.");
@@ -233,7 +239,7 @@ namespace Game.Client
         }
 
         private Button _damageToggle, _zoneToggle, _projectionToggle, _modelToggle, _tickToggle;
-        private Button _extraSlotsToggle;   // `BL-269`
+        private Button _extraSlotsToggle, _barShapeToggle;   // `BL-269`, `BL-299`
 
         private void RefreshSettingsLabels()
         {
@@ -246,8 +252,8 @@ namespace Game.Client
             UiKit.SetButtonText(_zoneToggle, zonesOn ? "Zone colours: ON" : "Zone colours: off");
             UiKit.SetButtonText(_modelToggle,
                 EntityManager.ModelsEnabled ? "3D models: ON" : "3D models: off (faster)");
-            UiKit.SetButtonText(_extraSlotsToggle,
-                _extraSlots > 0 ? "Extra skill slots: " + _extraSlots : "Extra skill slots: off");
+            UiKit.SetButtonText(_extraSlotsToggle, ExtraSlotsLabel);
+            UiKit.SetButtonText(_barShapeToggle, BarShapeLabel);
         }
 
         private static void Row(Transform parent, ref float y, Slider slider)

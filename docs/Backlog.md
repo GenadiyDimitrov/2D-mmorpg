@@ -278,7 +278,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-286` | ⏸ | **CASTLE "NOBLE" CHARISMA** — a castle-holding clan leader gets charisma decay/loss protection or a grant; split out of `BL-283`; waits on castles | social |
 | `BL-288` | ⏸ | **CONSUMABLE RARITY → PLAIN LEVELS 1-6** — potions/scrolls may drop the rarity word entirely; deferred by him, split out of `BL-272` | items |
 | `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
-| `BL-299` | 🔴 | **Extra skill squares: more shapes** — 1×12 rows and vertical 6×1 / 6×2 columns, not only 2×6 + N×6 | client |
 | `BL-303` | 🟡 | **Split the Master Crafter from the ANVIL** — the Master is a vendor of recipe items gated by crafter level; a plain "Anvil" NPC is where you craft | crafting |
 | `BL-305` | 🔵 | **THE GENERIC-RECIPE OVERHAUL** — Apothecary + Scribe merge, buff scrolls and most buff potions go, a new L0-L10 ladder, generic recipes drop | crafting |
 | `BL-307` | 🔵 | **Full drops below level 40** — F/E-grade Common gear, materials and lucky drops, not only gold | drops |
@@ -2247,14 +2246,6 @@ exists (`HandleDebugReset`, back to level 1). Since `BL-296` it keeps quests and
 `GameLoopService.KeepQuestsThroughReset` is the quest half this will reuse. ❓ Open when it is picked up: the price
 (platinum?), whether subclasses survive, and what happens to class-chain quests of the old class (today's re-roll
 drops them).
-
-## `BL-299` 🔴 EXTRA SKILL SQUARES: MORE SHAPES
-
-From the 2026-09-26 playtest, on 0.193.0 (`BL-269`): *"They work just take all the screen"*. Today the main
-bar is 2×6 and the extra block is 1×6 … 4×6, horizontal only. He wants:
-- **horizontal:** a 1×12 main bar, with 1×12 / 2×12 extra, or with 1×6 … 4×6 extra;
-- **vertical:** a 6×1 / 6×2 main column, with 6×1 … 6×4 extra.
-Related: `BL-270` (a vertical bar or a wheel for hand-held play). This is the layout-picker half of it.
 
 ## `BL-303` 🟡 SPLIT THE MASTER CRAFTER FROM THE ANVIL
 

@@ -7,12 +7,27 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.15**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.16**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.15: "Unequip All" goes on the bar (`BL-302`)
+## 2026-09-26 (latest) — 0.214.16: the skill bar comes in four shapes (`BL-299`)
+
+> *"They work just take all the screen"*
+
+- **Settings → Bar shape:** 2x6 (as before), **1x12** (one long row), **6x2** or **6x1** (a column on the right edge).
+- **Settings → Extra squares** now offers what the shape allows:
+  - 2x6: 1x6 … 4x6 rows on top, as before;
+  - 1x12: 1x6 … 4x6 rows on top, or 1x12 / 2x12;
+  - 6x2 / 6x1: 6x1 … 6x4 columns to the left.
+- The extra squares **continue** from the last main square, so they never repeat it, and they page along with it. A
+  6x1 column pages **six** at a time (10 pages), and each square still shows its 1-12 number within its page. A column
+  fills top to bottom from the right edge, so the first squares are under your thumb.
+- Changing the shape turns the extras off, because each shape has its own list. A phone that had extra rows keeps them.
+  This is a setting on the phone only; the bar the server keeps is the same 60 slots. Needs a new APK.
+
+## 2026-09-26 — 0.214.15: "Unequip All" goes on the bar (`BL-302`)
 
 > *"it also need a to bar option -> u can add it as an action in the skills window. it dont have save/equip so its a
 > single click and will work as an action as well (leave the one in the bag also)"*

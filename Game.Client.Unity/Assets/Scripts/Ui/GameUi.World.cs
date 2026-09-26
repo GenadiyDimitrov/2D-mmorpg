@@ -52,18 +52,43 @@ namespace Game.Client
         private TMP_InputField _commandField;
 
         // skill bar
-        private const int BarColumns = 6, BarRows = 2;
-        private const int SlotsPerPage = BarColumns * BarRows;
-        private const int BarPages = GameConstants.SkillBarSlots / SlotsPerPage;
-        // `BL-269` — up to 24 EXTRA squares (his 6/12/18/24: half or all of a 2nd and 3rd bar), drawn as
-        // rows of six above the main bar. They SHOW the pages after the main one; the server stores the
-        // same 60-slot bar it always has, so this is a view setting and nothing on the wire moved.
+        /// <summary>The slot NUMBERS run 1-12 whatever the shape: a page of the server's bar is still twelve.</summary>
+        private const int SlotsPerPage = 12;
+        // `BL-269` — up to 24 EXTRA squares (his 6/12/18/24: half or all of a 2nd and 3rd bar). They SHOW
+        // the squares after the main block's; the server stores the same 60-slot bar it always has, so
+        // this is a view setting and nothing on the wire moved.
         private const int ExtraSlotsMax = 24;
         private const int MaxVisibleSlots = SlotsPerPage + ExtraSlotsMax;
-        private const string PrefExtraSlots = "ui.extraSlots";
+        private const string PrefExtraSlots = "ui.extraSlots";   // pre-`BL-299`: a COUNT of 6-rows
         private int _extraSlots;
         private RectTransform _skillBarExtraPanel;
-        private float _barWidth;
+
+        // `BL-299` — THE SHAPE: *"They work just take all the screen"*. The main block is 2x6, 1x12, 6x2 or
+        // 6x1 (rows x columns), and the extra block is picked from the list its shape allows. A horizontal
+        // main grows its extras UPWARD (rows), a vertical one grows them LEFTWARD (columns of six).
+        private enum BarShape { Rows2x6 = 0, Row1x12 = 1, Column6x2 = 2, Column6x1 = 3 }
+        private static readonly string[] BarShapeNames = { "2x6", "1x12", "6x2", "6x1" };
+        private static readonly (int Rows, int Cols)[] MainShapes = { (2, 6), (1, 12), (6, 2), (6, 1) };
+        private static readonly (int Rows, int Cols)[] ExtrasBelowTwelve =
+            { (0, 0), (1, 6), (2, 6), (3, 6), (4, 6) };
+        private static readonly (int Rows, int Cols)[] ExtrasForTheRow =
+            { (0, 0), (1, 6), (2, 6), (3, 6), (4, 6), (1, 12), (2, 12) };
+        private static readonly (int Rows, int Cols)[] ExtrasForTheColumn =
+            { (0, 0), (6, 1), (6, 2), (6, 3), (6, 4) };
+        private const string PrefBarShape = "ui.barShape", PrefExtraShape = "ui.extraShape";
+        private BarShape _barShape;
+        private int _extraOption;             // index into ExtraOptions(_barShape); 0 = none
+        private int _mainCount = SlotsPerPage;
+        private Button _pagePrev, _pageNext;
+        private readonly TextMeshProUGUI[] _slotHotkeys = new TextMeshProUGUI[MaxVisibleSlots];
+        private static readonly string[] SlotNumbers =
+            { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12" };
+
+        private static bool IsVertical(BarShape s) => s == BarShape.Column6x2 || s == BarShape.Column6x1;
+        private static (int Rows, int Cols)[] ExtraOptions(BarShape s) =>
+            s == BarShape.Row1x12 ? ExtrasForTheRow : IsVertical(s) ? ExtrasForTheColumn : ExtrasBelowTwelve;
+        /// <summary>Pages of the 60-slot bar at this shape: a 6-square main block pages six at a time.</summary>
+        private int BarPages => GameConstants.SkillBarSlots / _mainCount;
         /// <summary>Side of one square. A field, not a local, because the reuse overlay resizes itself
         /// against it every frame and the two must not drift apart.</summary>
         private const float SlotSize = 78f;
@@ -595,34 +620,19 @@ namespace Game.Client
         /// </summary>
         private void BuildSkillBar()
         {
-            const float slot = SlotSize, pad = 6f;
-            float w = BarColumns * slot + (BarColumns + 1) * pad;
-            float h = BarRows * slot + (BarRows + 1) * pad + 26f;
+            const float slot = SlotSize;
 
+            // `BL-299` — both panels are built once and SIZED, PLACED and FILLED by ApplyBarLayout, which
+            // also moves every square into the panel and cell its shape gives it.
             _skillBarPanel = UiKit.PanelBox(_worldRoot, "SkillBar");
-            UiKit.Place(_skillBarPanel, new Vector2(1f, 0f), new Vector2(1f, 0f),
-                        new Vector2(-12f, BottomRowY), new Vector2(w, h));
             var inner = _skillBarPanel.GetChild(0);
-            _barWidth = w;
-
-            // `BL-269` — the EXTRA rows' panel, stacked on top of the main bar. Built at full size once;
-            // ApplyExtraSlots shrinks it to the rows the setting asks for and hides the rest.
             _skillBarExtraPanel = UiKit.PanelBox(_worldRoot, "SkillBarExtra");
-            UiKit.Place(_skillBarExtraPanel, new Vector2(1f, 0f), new Vector2(1f, 0f),
-                        new Vector2(-12f, BottomRowY + h + 6f),
-                        new Vector2(w, ExtraSlotsMax / BarColumns * (slot + pad) + pad));
-            var extraInner = _skillBarExtraPanel.GetChild(0);
 
             for (int i = 0; i < MaxVisibleSlots; i++)
             {
                 int index = i;   // captured; the loop variable is shared
-                // `BL-269` — squares 0-11 are the main bar; 12+ are the extra rows, laid out from the top
-                // of their own panel, six to a row.
-                bool extra = i >= SlotsPerPage;
-                int j = extra ? i - SlotsPerPage : i;
-                var host = extra ? extraInner : inner;
-                var at = new Vector2(pad + (j % BarColumns) * (slot + pad),
-                                     -(pad + (j / BarColumns) * (slot + pad)));
+                var host = inner;
+                var at = Vector2.zero;   // ApplyBarLayout places it
 
                 // The auto-use marker: a THIN green frame drawn behind the slot, peeking out 2px.
                 //
@@ -664,9 +674,10 @@ namespace Game.Client
                 _slotFaces[i] = button.GetComponentInChildren<TextMeshProUGUI>();
 
                 // Slot number, top-left, like the WPF squares.
-                var hotkey = UiKit.Label(button.transform, (j % SlotsPerPage + 1).ToString(), 12f, UiKit.TextDim);
+                var hotkey = UiKit.Label(button.transform, "", 12f, UiKit.TextDim);   // `BL-299`: set per refresh
                 UiKit.Place(UiKit.Rect(hotkey.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                             new Vector2(4f, -2f), new Vector2(20f, 16f));
+                _slotHotkeys[i] = hotkey;
 
                 // "A" = the auto-hunt repeats this one. Bottom-RIGHT, because the top-left corner is
                 // the slot number and the middle is the face. The font TMP ships with has no recycle
@@ -731,57 +742,132 @@ namespace Game.Client
                 _slotCancel[i] = cancel;
             }
 
-            var prev = UiKit.TextButton(inner, "<", () => PageBy(-1), 18f);
-            UiKit.Place(UiKit.Rect(prev.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                        new Vector2(pad, 4f), new Vector2(40f, 20f));
-
+            _pagePrev = UiKit.TextButton(inner, "<", () => PageBy(-1), 18f);
             _pageLabel = UiKit.Label(inner, "", 14f, UiKit.TextDim, TextAlignmentOptions.Center);
-            UiKit.Place(UiKit.Rect(_pageLabel.gameObject), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-                        new Vector2(0f, 4f), new Vector2(120f, 20f));
+            _pageNext = UiKit.TextButton(inner, ">", () => PageBy(1), 18f);
 
-            var next = UiKit.TextButton(inner, ">", () => PageBy(1), 18f);
-            UiKit.Place(UiKit.Rect(next.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
-                        new Vector2(-pad, 4f), new Vector2(40f, 20f));
-
-            _extraSlots = Mathf.Clamp(PlayerPrefs.GetInt(PrefExtraSlots, 0) / BarColumns * BarColumns,
-                                      0, ExtraSlotsMax);
-            ApplyExtraSlots();
+            int shape = PlayerPrefs.GetInt(PrefBarShape, 0);
+            _barShape = shape >= 0 && shape < MainShapes.Length ? (BarShape)shape : BarShape.Rows2x6;
+            // A phone that set the old extra-rows count keeps it: on the 2x6 shape, N rows of six IS option N.
+            int option = PlayerPrefs.HasKey(PrefExtraShape) ? PlayerPrefs.GetInt(PrefExtraShape, 0)
+                                                            : PlayerPrefs.GetInt(PrefExtraSlots, 0) / 6;
+            _extraOption = Mathf.Clamp(option, 0, ExtraOptions(_barShape).Length - 1);
+            ApplyBarLayout();
         }
 
-        /// <summary>`BL-269` — show <see cref="_extraSlots"/> extra squares (0/6/12/18/24): resize the
-        /// extra panel to that many rows and hide every square past them.</summary>
-        private void ApplyExtraSlots()
+        /// <summary>`BL-299` — size and place both panels for <see cref="_barShape"/> and the chosen extra
+        /// block, move every square into its panel and cell, and hide the squares past the extras.
+        ///
+        /// <para>Squares 0..main-1 are the main block, the rest the extra block, and they read as ONE run of
+        /// the bar (<see cref="BarIndexOf"/>). A horizontal block fills row by row from its top-left; a
+        /// vertical one fills column by column from the top, RIGHT to LEFT (the right edge is under the
+        /// thumb), so its extra columns simply continue leftward from where the main block stopped.</para></summary>
+        private void ApplyBarLayout()
         {
-            int rows = _extraSlots / BarColumns;
-            _skillBarExtraPanel.gameObject.SetActive(rows > 0);
-            _skillBarExtraPanel.sizeDelta = new Vector2(_barWidth, rows * (SlotSize + 6f) + 6f);
-            for (int i = SlotsPerPage; i < MaxVisibleSlots; i++)
+            const float slot = SlotSize, pad = 6f, step = SlotSize + 6f;
+            var (mRows, mCols) = MainShapes[(int)_barShape];
+            var (eRows, eCols) = ExtraOptions(_barShape)[_extraOption];
+            bool vertical = IsVertical(_barShape);
+            _mainCount = mRows * mCols;
+            _extraSlots = eRows * eCols;
+            _barPage = Mathf.Clamp(_barPage, 0, BarPages - 1);
+
+            // The page strip under the main block: one line (< 1/5 >) when it is wide enough, two when it
+            // is a single column (the label above the arrows), so a 6x1 column keeps both arrows.
+            float mainW = mCols * step + pad;
+            bool narrow = mainW < 200f;
+            float strip = narrow ? 48f : 26f;
+            float mainH = mRows * step + pad + strip;
+            UiKit.Place(_skillBarPanel, new Vector2(1f, 0f), new Vector2(1f, 0f),
+                        new Vector2(-12f, BottomRowY), new Vector2(mainW, mainH));
+            float arrowW = narrow ? (mainW - 3f * pad) / 2f : 40f;
+            UiKit.Place(UiKit.Rect(_pagePrev.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
+                        new Vector2(pad, 4f), new Vector2(arrowW, 20f));
+            UiKit.Place(UiKit.Rect(_pageNext.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
+                        new Vector2(-pad, 4f), new Vector2(arrowW, 20f));
+            UiKit.Place(UiKit.Rect(_pageLabel.gameObject), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+                        new Vector2(0f, narrow ? 26f : 4f), new Vector2(narrow ? mainW : 120f, 20f));
+
+            // The extra block sits ABOVE a horizontal main, right-aligned with it, and to the LEFT of a
+            // vertical one, bottom-aligned with it.
+            float extraW = eCols * step + pad, extraH = eRows * step + pad;
+            _skillBarExtraPanel.gameObject.SetActive(_extraSlots > 0);
+            UiKit.Place(_skillBarExtraPanel, new Vector2(1f, 0f), new Vector2(1f, 0f),
+                        vertical ? new Vector2(-12f - mainW - 6f, BottomRowY + strip)
+                                 : new Vector2(-12f, BottomRowY + mainH + 6f),
+                        new Vector2(extraW, extraH));
+
+            var mainInner = _skillBarPanel.GetChild(0);
+            var extraInner = _skillBarExtraPanel.GetChild(0);
+            for (int i = 0; i < MaxVisibleSlots; i++)
             {
-                bool shown = i < SlotsPerPage + _extraSlots;
+                bool extra = i >= _mainCount;
+                bool shown = i < _mainCount + _extraSlots;
                 _slotButtons[i].gameObject.SetActive(shown);
                 _slotBorders[i].gameObject.SetActive(shown);
                 _slotToggleBorders[i].gameObject.SetActive(shown);
+                if (!shown) continue;
+
+                int j = extra ? i - _mainCount : i;
+                int rows = extra ? eRows : mRows, cols = extra ? eCols : mCols;
+                int row, col;
+                if (vertical) { row = j % rows; col = cols - 1 - j / rows; }   // right to left
+                else          { row = j / cols; col = j % cols; }
+                var at = new Vector2(pad + col * step, -(pad + row * step));
+
+                var host = extra ? extraInner : mainInner;
+                PlaceSquarePart(UiKit.Rect(_slotToggleBorders[i].gameObject), host, at + new Vector2(-5f, 5f), slot + 10f);
+                PlaceSquarePart(UiKit.Rect(_slotBorders[i].gameObject), host, at + new Vector2(-2f, 2f), slot + 4f);
+                PlaceSquarePart(UiKit.Rect(_slotButtons[i].gameObject), host, at, slot);
             }
         }
 
-        /// <summary>`BL-269` — the Settings button: 0 → 6 → 12 → 18 → 24 → 0, remembered on the phone.</summary>
-        private void CycleExtraSlots()
+        /// <summary>Re-home one layer of a square (ring, ring, button — in that order, so the draw order
+        /// stays back-to-front) into <paramref name="host"/> at its top-left cell position.</summary>
+        private static void PlaceSquarePart(RectTransform rt, Transform host, Vector2 at, float side)
         {
-            _extraSlots = _extraSlots >= ExtraSlotsMax ? 0 : _extraSlots + BarColumns;
-            PlayerPrefs.SetInt(PrefExtraSlots, _extraSlots);
-            ApplyExtraSlots();
+            rt.SetParent(host, false);
+            rt.SetAsLastSibling();
+            UiKit.Place(rt, new Vector2(0f, 1f), new Vector2(0f, 1f), at, new Vector2(side, side));
         }
 
-        /// <summary>`BL-269` — which BAR index a visible square shows. Squares 0-11 are the main bar's
-        /// current page; the extra squares show the NEXT pages after it (wrapping), twelve to a page, so
-        /// the extra rows never repeat what the main bar already shows and page along with it.</summary>
-        private int BarIndexOf(int visible)
+        /// <summary>`BL-299` — the Settings "Bar shape" button: 2x6 → 1x12 → 6x2 → 6x1. The extra block is
+        /// reset to none, because each shape offers a different list.</summary>
+        private void CycleBarShape()
         {
-            if (visible < SlotsPerPage) return _barPage * SlotsPerPage + visible;
-            int j = visible - SlotsPerPage;
-            int page = (_barPage + 1 + j / SlotsPerPage) % BarPages;
-            return page * SlotsPerPage + j % SlotsPerPage;
+            _barShape = (BarShape)(((int)_barShape + 1) % MainShapes.Length);
+            _extraOption = 0;
+            PlayerPrefs.SetInt(PrefBarShape, (int)_barShape);
+            PlayerPrefs.SetInt(PrefExtraShape, _extraOption);
+            ApplyBarLayout();
         }
+
+        /// <summary>`BL-269`/`BL-299` — the Settings "Extra squares" button: steps through what the current
+        /// shape allows, then back to none. Remembered on the phone.</summary>
+        private void CycleExtraSlots()
+        {
+            _extraOption = (_extraOption + 1) % ExtraOptions(_barShape).Length;
+            PlayerPrefs.SetInt(PrefExtraShape, _extraOption);
+            ApplyBarLayout();
+        }
+
+        /// <summary>The Settings labels for the two buttons above.</summary>
+        private string BarShapeLabel => "Bar shape: " + BarShapeNames[(int)_barShape];
+        private string ExtraSlotsLabel
+        {
+            get
+            {
+                var (r, c) = ExtraOptions(_barShape)[_extraOption];
+                return _extraSlots > 0 ? "Extra squares: " + r + "x" + c : "Extra squares: off";
+            }
+        }
+
+        /// <summary>`BL-269`/`BL-299` — which BAR index a visible square shows. The main block shows the
+        /// current page, and the extra squares simply CONTINUE the run after it (wrapping at 60), so the
+        /// extras never repeat what the main block shows and page along with it. At 2x6 this is exactly
+        /// the old "the next pages" rule; a 6-square main block pages six at a time.</summary>
+        private int BarIndexOf(int visible) =>
+            (_barPage * _mainCount + visible) % GameConstants.SkillBarSlots;
 
         private void BuildCommandBar()
         {
@@ -1720,10 +1806,13 @@ namespace Game.Client
             _pageLabel.text = (_barPage + 1) + " / " + BarPages;
             var bar = Boot.SkillBar;
 
-            for (int i = 0; i < SlotsPerPage + _extraSlots; i++)   // `BL-269`: the extra rows too
+            for (int i = 0; i < _mainCount + _extraSlots; i++)   // `BL-269`: the extra squares too
             {
                 int index = BarIndexOf(i);
                 string token = bar != null && index < bar.Length ? bar[index] : null;
+                // `BL-299` — the number is the square's place in its PAGE of twelve, which a six-square
+                // block no longer lines up with, so it follows the index rather than the cell.
+                _slotHotkeys[i].text = SlotNumbers[index % SlotsPerPage];
 
                 bool usable;
                 _slotFaces[i].text = SlotFace(token, out usable);

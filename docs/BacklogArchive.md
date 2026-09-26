@@ -7822,3 +7822,20 @@ tap, the same `UnequipAll` hub call as the bag button, which stays.
 > From the same playtest: *"it also need a to bar option -> u can add it as an action in the skills window. it
 > dont have save/equip so its a single click and will work as an action as well (leave the one in the bag also)"*.
 > One action in the skill window's actions list, placeable on the bar, one tap. The bag button stays.
+
+
+## `BL-299` ✅ CLOSED 2026-09-26 in **0.214.16**: the skill bar comes in four shapes
+
+His words, 2026-09-26 (playtest of 0.181.0 → 0.214.2), on 0.193.0: *"They work just take all the screen"*. **Built in
+0.214.16:** Settings has **Bar shape** (2x6 / 1x12 / 6x2 / 6x1) and **Extra squares** (what the shape allows: 1x6-4x6 for
+2x6; 1x6-4x6, 1x12, 2x12 for 1x12; 6x1-6x4 for the columns). `ApplyBarLayout` re-homes the squares; the extras continue
+the run (`BarIndexOf` = page x main + n), a 6-square main pages six at a time. A view setting on the phone; the server bar
+is unchanged. `BL-270` (the wheel) stays open.
+
+**As filed:**
+
+> From the 2026-09-26 playtest, on 0.193.0 (`BL-269`): *"They work just take all the screen"*. Today the main
+> bar is 2×6 and the extra block is 1×6 … 4×6, horizontal only. He wants:
+> - **horizontal:** a 1×12 main bar, with 1×12 / 2×12 extra, or with 1×6 … 4×6 extra;
+> - **vertical:** a 6×1 / 6×2 main column, with 6×1 … 6×4 extra.
+> Related: `BL-270` (a vertical bar or a wheel for hand-held play). This is the layout-picker half of it.
