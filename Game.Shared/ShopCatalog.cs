@@ -222,14 +222,21 @@ public static class ShopCatalog
                 .OrderBy(d => d.Slot).ThenBy(d => d.Name)
                 .Select(d => d.Id).ToArray(), EssenceOnly: true, Tabs: essenceTabs),
 
-            // `BL-273` part 2 — THE MASTER CRAFTER'S RECIPE SHELF: the T40 and T52 100% gear recipes (*"master can
-            // sell t40 and t52"*), at a placeholder 10% of the piece's price. Generic recipes are not items; he
-            // teaches those directly (LearnRecipeAtMaster).
+            // `BL-273` part 2 — THE MASTER CRAFTER'S RECIPE SHELF, and since `BL-303` Q3 (owner, 2026-09-26: *"Masters
+            // "learn for gold" buttons are gone ... They are in the "buy" part of it as items to use from inventory.
+            // And my L0~10 rows have which recipes are drop which the master sells"*) the ONLY way he hands out a
+            // recipe: the T40 and T52 100% gear books (*"master can sell t40 and t52"*), the Apothecary books his
+            // ladder marks "vendor" (L0 and L2, Crafting.MasterSellsGeneric), and every refine book. Order: refines,
+            // then the Apothecary lines, then gear by tier. Each is bought at its type level (HandleBuy).
             new ShopDef(WorldMap.CraftMasterId, "Master Crafter — Recipes", ItemCatalog.AllItems
                 .Where(d => d.RecipePercent == 100 && d.TeachesRecipeId.Length > 0
-                    && RecipeCatalog.Get(d.TeachesRecipeId) is { IsGear: true } r && Crafting.MasterSellsRecipeFor(r.GearItemLevel))
-                .OrderBy(d => RecipeCatalog.Get(d.TeachesRecipeId)!.GearItemLevel).ThenBy(d => d.Name)
-                .Select(d => d.Id).ToArray()),
+                    && RecipeCatalog.Get(d.TeachesRecipeId) is { QuestOnly: false } r
+                    && (r.IsGear ? Crafting.MasterSellsRecipeFor(r.GearItemLevel)
+                        : r.Refine || Crafting.MasterSellsGeneric(r.OutputId)))
+                .Select(d => (d, r: RecipeCatalog.Get(d.TeachesRecipeId)!))
+                .OrderBy(x => x.r.IsGear ? 2 : x.r.Refine ? 0 : 1).ThenBy(x => x.r.GearItemLevel).ThenBy(x => x.r.UnlockLevel)
+                .ThenBy(x => x.d.Name)
+                .Select(x => x.d.Id).ToArray()),
         };
 
         var dict = new Dictionary<string, ShopDef>(StringComparer.OrdinalIgnoreCase);

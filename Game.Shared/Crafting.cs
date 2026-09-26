@@ -281,6 +281,11 @@ public static class Crafting
         return -1;
     }
 
+    /// <summary>Does the Master Crafter SELL this Apothecary line's recipe book? His ladder's "vendor" rows, L0 and
+    /// L2 (the Common and Uncommon HP/MP); every other line is found only (`BL-303` Q3, 2026-09-26: *"my L0~10 rows
+    /// have which recipes are drop which the master sells"*).</summary>
+    public static bool MasterSellsGeneric(string outputId) => GenericLevel(outputId) is 0 or 2;
+
     /// <summary>Which creature TIER drops a generic recipe of this level (`BL-305`: *"T40 is l0 .. T52 is l2 so l1
     /// pots about t40~T52, l4 t61, L6 t76,l8 t80, l10 85+ bosses/instances"*). L1 drops at both T40 and T52; L10 is
     /// a boss's (85+), never a normal creature's.</summary>

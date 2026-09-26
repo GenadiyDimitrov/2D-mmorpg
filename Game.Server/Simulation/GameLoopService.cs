@@ -101,7 +101,6 @@ public class GameLoopService : BackgroundService
             RerollAttributesCmd c => c.ConnectionId,
             CraftCmd c => c.ConnectionId,
             ForgetRecipeCmd c => c.ConnectionId,
-            LearnRecipeAtMasterCmd c => c.ConnectionId,
             BuyItemCmd c => c.ConnectionId,
             SellItemCmd c => c.ConnectionId,
             InstantSellCmd c => c.ConnectionId,   // `BL-240` — a jailed player sells nothing, fast or slow
@@ -231,7 +230,6 @@ public class GameLoopService : BackgroundService
                 case DebugCancelAttrCmd c: HandleDebugCancelAttr(c); break;
                 case CraftCmd c: HandleCraft(c); break;
                 case ForgetRecipeCmd c: HandleForgetRecipe(c); break;
-                case LearnRecipeAtMasterCmd c: HandleLearnRecipeAtMaster(c); break;
                 case SpendCraftPointCmd c: HandleSpendCraftPoint(c); break;
                 case RespecCraftCmd c: HandleRespecCraft(c); break;
                 case DebugBecomeCrafterCmd c: HandleDebugBecomeCrafter(c); break;
@@ -3716,60 +3714,6 @@ public class GameLoopService : BackgroundService
         string name = RecipeCatalog.Get(cmd.RecipeId) is Recipe r
             ? ItemCatalog.Get(r.OutputId)?.Name ?? r.OutputId : cmd.RecipeId;
         SendSystemToEntity(player, $"Forgot the {name} recipe.");
-        SendCrafting(player);
-        SaveEntity(player);
-    }
-
-    /// <summary>Buy and learn a GENERIC recipe at the Master Crafter (`BL-273` part 2): *"the other rcps like
-    /// potions and stuff are bought from master to learn (they also can follow grade to be learned, but
-    /// master unlocks them for buying at generic lvlX)"*. ⚠ Unlock level and price are placeholders.</summary>
-    private void HandleLearnRecipeAtMaster(LearnRecipeAtMasterCmd cmd)
-    {
-        if (!TryGetPlayer(cmd.ConnectionId, out var player))
-            return;
-        if (NpcRefusesService(player, "The Master Crafter will not teach you")) return;
-        if (!CraftMasterAt(player, cmd.NpcEntityId)) return;
-        if (RecipeCatalog.Get(cmd.RecipeId) is not Recipe recipe || recipe.IsGear || recipe.QuestOnly)
-        {
-            SendSystemToEntity(player, "The Master does not teach that recipe.");
-            return;
-        }
-        if (!player.IsCrafter)
-        {
-            SendSystemToEntity(player, "Only a crafter can learn recipes. Take the Master's trial first.");
-            return;
-        }
-        if (player.KnownRecipes.ContainsKey(recipe.Id))
-        {
-            SendSystemToEntity(player, "You already know that recipe.");
-            return;
-        }
-        if (player.Level < recipe.LearnLevel)
-        {
-            SendSystemToEntity(player, $"You must be level {recipe.LearnLevel} to learn it.");
-            return;
-        }
-        if (CraftGateRefusal(player, recipe) is string gate)
-        {
-            SendSystemToEntity(player, gate);
-            return;
-        }
-        if (player.RecipeSlotsUsed >= player.RecipeSlots)
-        {
-            SendSystemToEntity(player,
-                $"No free recipe slot ({player.RecipeSlotsUsed}/{player.RecipeSlots}). Forget one first.");
-            return;
-        }
-        if (player.Gold < recipe.LearnPrice)
-        {
-            SendSystemToEntity(player, $"Not enough {GameConstants.CurrencyName} (need {recipe.LearnPrice:N0}).");
-            return;
-        }
-        player.Gold -= recipe.LearnPrice;
-        player.KnownRecipes[recipe.Id] = 100;
-        SendGold(player);
-        SendSystemToEntity(player,
-            $"Learned the {ItemCatalog.Get(recipe.OutputId)?.Name ?? recipe.OutputId} recipe.");
         SendCrafting(player);
         SaveEntity(player);
     }

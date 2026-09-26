@@ -7,12 +7,28 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.23**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.24**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.23: Bulgarian draws as letters, not boxes (`BL-313`, half 2, closes it)
+## 2026-09-26 (latest) — 0.214.24: the Master sells recipe books, he teaches nothing (`BL-303` Q3)
+
+> *"Yes. Masters "learn for gold" buttons are gone ... They are in the "buy" part of it as items to use from inventory.
+> And my L0~10 rows have which recipes are drop which the master sells"*
+
+- **The Learn tab and the Master's "Learn" row are gone.** Every recipe is now an item you use from the bag.
+- **What the Master's Buy list holds:** the T40/T52 gear books (as before), the Apothecary books your ladder marks
+  "vendor" (**L0** Common HP/MP and **L2** Uncommon HP/MP), and a book for every **refine** (Nightsilver / Nightsilk
+  steps, alloy, Volcanic Bar). Refines weren't in your ladder, but they were taught for gold too, so without a book
+  nobody could learn them. Each book costs what teaching it used to.
+- **Everything else is found only:** Greater buff potions, runes, Rare HP/MP, Instant Healing, Supreme Dash (the drop
+  bands of 0.214.22).
+- You still buy a book at its type level, and you learn it with the same checks as before.
+- SmokeTest: new shelf check, and the "taught for gold" tests are now "buy the book, use it". ALL PASS. Formulas.md
+  updated. ⚠ Needs the new APK.
+
+## 2026-09-26 — 0.214.23: Bulgarian draws as letters, not boxes (`BL-313`, half 2, closes it)
 
 > *"if u can do it alone so do it"*
 

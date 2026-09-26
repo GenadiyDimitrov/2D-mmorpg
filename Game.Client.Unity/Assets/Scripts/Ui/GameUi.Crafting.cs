@@ -32,9 +32,9 @@ namespace Game.Client
 
         /// <summary>Which page of the window is showing. Materials is a page rather than a section
         /// because "how many Rare Ingots do I have" is asked on its own, away from any one recipe.</summary>
-        private enum CraftTab { Craft = 0, Learn = 1, Slots = 2, Materials = 3 }
+        private enum CraftTab { Craft = 0, Slots = 1, Materials = 2 }   // `BL-303`: the Learn tab is gone (recipes are items)
         private CraftTab _craftTab = CraftTab.Craft;
-        private static readonly string[] CraftTabNames = { "Craft", "Learn", "Points", "Mats" };
+        private static readonly string[] CraftTabNames = { "Craft", "Points", "Mats" };
 
         // ----- `BL-245`: the keeper's shelf counts too ---------------------------------------------
         //
@@ -119,7 +119,7 @@ namespace Game.Client
 
         public void OpenCraftingWindow() => OpenCraftingWindow(_craftTab);
 
-        /// <summary>Open on a given page — the Master's "Learn" row lands on the Learn tab.</summary>
+        /// <summary>Open on a given page.</summary>
         private void OpenCraftingWindow(CraftTab tab)
         {
             _craftTab = tab;
@@ -182,7 +182,6 @@ namespace Game.Client
             switch (_craftTab)
             {
                 case CraftTab.Materials: BuildMaterialsPage(counts); return;
-                case CraftTab.Learn: BuildLearnPage(); return;
                 case CraftTab.Slots: BuildSlotsPage(); return;
             }
 
@@ -196,7 +195,7 @@ namespace Game.Client
             if (recipes.Count == 0)
             {
                 CraftNote("You know no recipes yet. Use a recipe item from your bag to learn it (anywhere), "
-                        + "or learn potion, scroll and refine recipes from a Master Crafter (the Learn tab).");
+                        + "buy one from a Master Crafter, or find one on a creature.");
                 return;
             }
             foreach (var recipe in recipes) BuildRecipeRows(recipe, counts);
@@ -320,43 +319,7 @@ namespace Game.Client
             });
         }
 
-        // ---- the Learn page: the Master's generic recipes -----------------------------------------
-
-        /// <summary>The potion, scroll and refine recipes a Master Crafter teaches for gold (`BL-273` part
-        /// 2). Listed everywhere so a crafter can plan; the Learn buttons are live only with the Master's
-        /// dialog open. ⚠ Unlock levels and prices are placeholders until step 9b's table.</summary>
-        private void BuildLearnPage()
-        {
-            bool atMaster = Boot.AtCraftMaster && Boot.DialogNpcId != Guid.Empty;
-            if (!Boot.IsCrafter) { CraftNote("Only a crafter can learn recipes."); return; }
-            if (!atMaster) CraftNote("Talk to a Master Crafter to learn these.");
-            bool slotFree = Boot.CraftSlotsUsed < Boot.CraftSlots;
-            foreach (var recipe in RecipeCatalog.GenericForSale)
-            {
-                var outDef = ItemCatalog.Get(recipe.OutputId);
-                string name = outDef?.Name ?? recipe.OutputId;
-                string title = (outDef != null ? Coloured(name, outDef.Rarity) : name)
-                             + (recipe.OutputQty > 1 ? "  x" + recipe.OutputQty : "");
-                bool known = Boot.KnownRecipes.ContainsKey(recipe.Id);
-                bool lvlOk = SelfLevel() >= recipe.LearnLevel;
-                bool craftOk = Boot.CraftTypeLevel(recipe.Type) >= recipe.UnlockLevel;
-                bool goldOk = Boot.Gold >= recipe.LearnPrice;
-                string status = known ? Tinted("known", true)
-                    : !craftOk ? Tinted(GateName(recipe), false)
-                    : !lvlOk ? Tinted("Needs level " + recipe.LearnLevel, false)
-                    : !slotFree ? Tinted("No free slot", false)
-                    : Tinted(recipe.LearnPrice.ToString("N0") + " " + GameConstants.CurrencyName, goldOk);
-                bool enabled = atMaster && !known && lvlOk && craftOk && goldOk && slotFree;
-                string id = recipe.Id;
-                int price = recipe.LearnPrice;
-                CraftRow(title + "   <size=13>" + status + "</size>", enabled, () =>
-                    Ask("Learn the " + name + " recipe for " + price.ToString("N0") + " "
-                        + GameConstants.CurrencyName + "?\n\n<size=15>It takes one recipe slot.</size>",
-                        "Learn", () => Boot.LearnRecipeAtMaster(id)));
-            }
-        }
-
-        // ---- the Slots page: forget a recipe --------------------------------------------------------
+        // ---- the Points page ----------------------------------------------------------------------
 
         /// <summary>The crafter-points model (0.204.0): spend the generic level's points on the five types, respec
         /// at a Master, then every learned recipe, one slot each; tap one to forget it (anywhere, nothing

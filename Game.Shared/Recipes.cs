@@ -385,9 +385,4 @@ public static class RecipeCatalog
 
     public static Recipe? Get(string id) => id is null ? null : _byId.GetValueOrDefault(id);
     public static IEnumerable<Recipe> All => _byId.Values;
-    /// <summary>The recipes the Master SELLS to learn (generic, not the quest's own): by type, then gate,
-    /// then character level.</summary>
-    public static IEnumerable<Recipe> GenericForSale => _byId.Values
-        .Where(r => !r.IsGear && !r.QuestOnly)
-        .OrderBy(r => r.Type).ThenBy(r => r.UnlockLevel).ThenBy(r => r.LearnLevel).ThenBy(r => r.Id);
 }

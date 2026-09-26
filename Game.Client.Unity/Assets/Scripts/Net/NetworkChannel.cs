@@ -485,10 +485,6 @@ namespace Game.Client
         public Task ForgetRecipeAsync(string recipeId) =>
             _connection.SendAsync("ForgetRecipe", recipeId);
 
-        /// <summary>Buy and learn a generic recipe at the Master Crafter standing in front of you.</summary>
-        public Task LearnRecipeAtMasterAsync(Guid npcEntityId, string recipeId) =>
-            _connection.SendAsync("LearnRecipeAtMaster", npcEntityId, recipeId);
-
         /// <summary>Buy one SP Bottle at an SP broker: 1kkk SP + 100kk gold. The broker has exactly
         /// one trade, so there is nothing to pass but the NPC.</summary>
         /// <summary>`BL-250` §7 — take a subclass at the class master.</summary>

@@ -530,14 +530,6 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("RespecCraft: " + ex.Message); }
         }
 
-        /// <summary>Buy and learn a generic recipe at the Master Crafter whose dialog is open.</summary>
-        public async void LearnRecipeAtMaster(string recipeId)
-        {
-            if (Phase != ClientPhase.InWorld || DialogNpcId == Guid.Empty) return;
-            try { await _net.LearnRecipeAtMasterAsync(DialogNpcId, recipeId); }
-            catch (Exception ex) { ClientLog.Warn("LearnRecipeAtMaster: " + ex.Message); }
-        }
-
         /// <summary>Buy one SP Bottle at an SP broker. The server re-checks SP, gold and inventory
         /// space; this only asks.</summary>
         public async void BuySpBottle()

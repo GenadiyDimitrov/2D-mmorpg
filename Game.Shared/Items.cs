@@ -2139,7 +2139,7 @@ public static class ItemCatalog
         list.AddRange(Essences());
         list.AddRange(VolcanicMaterials());
         list.AddRange(RecipeBooks(tieredGear));
-        list.AddRange(GenericRecipeBooks(list).ToList());   // materialized: it reads the list it joins
+        list.AddRange(GenericRecipeBooks(list).Concat(RefineRecipeBooks(list)).ToList());   // materialized: they read the list they join
         // The tutorial chain's BOUND copies — the 30-day Newbie loaner kit and the completion
         // consumables. Generated last, off the finished list, so a clone always mirrors the real
         // item (see BoundCopies).
@@ -2368,9 +2368,9 @@ public static class ItemCatalog
 
     /// <summary>GENERIC recipe items (`BL-305`, owner, 2026-09-26: *"I want generic recipes to be dropped as well
     /// and found"*): one per Apothecary line of <see cref="Crafting.GenericLadder"/>, always 100% (a generic craft
-    /// never fails and spends no recipe). Using one LEARNS it, through the same gate as the Master's teaching:
-    /// crafter status, the character level and the Apothecary level. Priced at the Master's teaching price for the
-    /// line's level, so a found book is worth what learning it costs. Built off the finished list, for the names.</summary>
+    /// never fails and spends no recipe). Using one LEARNS it, through the one learn gate (HandleLearnRecipe):
+    /// crafter status, the character level and the Apothecary level. Priced at the old teaching price for the
+    /// line's level; the Master sells the L0/L2 ones (Crafting.MasterSellsGeneric). Built off the finished list.</summary>
     private static IEnumerable<ItemDef> GenericRecipeBooks(List<ItemDef> all)
     {
         foreach (var (outputId, level) in Crafting.GenericLadder())
@@ -2382,6 +2382,33 @@ public static class ItemCatalog
                 Value: Crafting.LearnPriceLadder[level], TeachesRecipeId: recipeId, RecipePercent: 100,
                 Description: $"Use it to learn the {output.Name} recipe (Apothecary L{level}; it takes a recipe slot). "
                            + "Generic crafts never fail and spend no recipe.");
+        }
+    }
+
+    /// <summary>REFINE recipe items (`BL-303` Q3, owner, 2026-09-26: *"Masters "learn for gold" buttons are gone
+    /// ... They are in the "buy" part of it as items to use from inventory"*): the Nightsilver / Nightsilk steps,
+    /// the alloy and the Volcanic Bar, which the Master used to teach. Same ids, gates and prices as
+    /// RecipeCatalog.RefineRecipes (SmokeTest checks they agree); the Master sells every one.</summary>
+    private static IEnumerable<ItemDef> RefineRecipeBooks(List<ItemDef> all)
+    {
+        IEnumerable<(string RecipeId, string OutputId, int Gate)> Refines()
+        {
+            for (int rung = 1; rung < Crafting.RefineRungs; rung++)
+            {
+                yield return ($"refine_nightsilver_{rung}", Crafting.NightsilverId(rung), Crafting.RefineGate[rung - 1]);
+                yield return ($"refine_nightsilk_{rung}", Crafting.NightsilkId(rung), Crafting.RefineGate[rung - 1]);
+            }
+            yield return ("refine_alloy", Crafting.AlloyId, 0);
+            yield return ("refine_volcanic_bar", VolcanicBar, 7);
+        }
+        foreach (var (recipeId, outputId, gate) in Refines())
+        {
+            var output = all.First(d => d.Id == outputId);
+            yield return new ItemDef(RecipeBookId(recipeId, 100), $"Recipe: {output.Name}",
+                EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
+                Value: Crafting.LearnPriceLadder[gate], TeachesRecipeId: recipeId, RecipePercent: 100,
+                Description: $"Use it to learn to make {output.Name} (crafting level {gate}; it takes a recipe slot). "
+                           + "Refines never fail and pay no craft points.");
         }
     }
 

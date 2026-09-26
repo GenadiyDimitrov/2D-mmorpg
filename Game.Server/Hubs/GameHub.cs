@@ -808,14 +808,6 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
-    /// <summary>Buy and learn a generic recipe at the Master Crafter.</summary>
-    public Task LearnRecipeAtMaster(Guid npcEntityId, string recipeId)
-    {
-        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
-        _world.Commands.Enqueue(new LearnRecipeAtMasterCmd(Context.ConnectionId, npcEntityId, recipeId));
-        return Task.CompletedTask;
-    }
-
     /// <summary>Admin: become a crafter without the trial quest.</summary>
     public Task DebugBecomeCrafter()
     {

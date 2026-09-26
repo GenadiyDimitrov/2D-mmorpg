@@ -166,9 +166,6 @@ namespace Game.Client
                 {
                     DialogRow("Work at his anvil — craft, and see what you still need",
                               "Craft", () => OpenCraftingWindow(), UiKit.Text);
-                    DialogRow("Learn potion, scroll and refine recipes from him (crafting level "
-                              + cm.GenericLevel + ")",
-                              "Learn", () => OpenCraftingWindow(CraftTab.Learn), UiKit.Text);
                 }
                 else
                     DialogRow("Finish his trial (level " + Crafting.CrafterQuestLevel + ") to become a crafter.", null, null, UiKit.TextDim);

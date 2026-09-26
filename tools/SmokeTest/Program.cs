@@ -498,16 +498,21 @@ Check("the Blessing is paused in town (BL-300)", await a.WaitFor(() => a.Favor?.
               (ItemCatalog.Get(ItemCatalog.RecipeBookId(r.Id, p)) is { } d && d.RecipePercent == p && d.TeachesRecipeId == r.Id)
               == Crafting.RecipePercentsFor(r.GearItemLevel).Contains(p))));
     var shelfIds = ShopCatalog.Get(WorldMap.CraftMasterId)?.ItemIds ?? Array.Empty<string>();
-    Check("🔑 the Master Crafter's shelf sells the T40 and T52 100% gear recipes, and nothing else",
+    string Book(string recipeId) => ItemCatalog.RecipeBookId(recipeId, 100);
+    Check("🔑 BL-303 Q3: the Master's shelf = T40/T52 gear books + the L0/L2 Apothecary books + every refine book, nothing else",
           shelfIds.Length > 0 && shelfIds.All(id => ItemCatalog.Get(id) is { RecipePercent: 100 } d
-              && RecipeCatalog.Get(d.TeachesRecipeId) is { GearItemLevel: 40 or 52 })
-          && shelfIds.Contains(ItemCatalog.RecipeBookId("craft_sword2h_t52", 100)),
+              && RecipeCatalog.Get(d.TeachesRecipeId) is { QuestOnly: false } r
+              && (r.IsGear ? r.GearItemLevel is 40 or 52 : r.Refine || Crafting.GenericLevel(r.OutputId) is 0 or 2)
+              && ItemCatalog.BuyPrice(d) > 0)
+          && shelfIds.Contains(Book("craft_sword2h_t52")) && shelfIds.Contains(Book("craft_" + ItemCatalog.MinorPotion))
+          && shelfIds.Contains(Book("craft_" + ItemCatalog.ManaPotion)) && shelfIds.Contains(Book("refine_volcanic_bar"))
+          && !shelfIds.Contains(Book("craft_" + ItemCatalog.SpeedPotionU)) && !shelfIds.Contains(Book("craft_" + ItemCatalog.BoxWarRune1h))
+          && RecipeCatalog.All.Where(r => r.Refine).All(r => shelfIds.Contains(Book(r.Id))
+              && ItemCatalog.Get(Book(r.Id)) is { Value: var v } && v == r.LearnPrice),
           $"{shelfIds.Length} rows");
-    Check("generic recipes: learned at the Master (unlock 0-10, a price), no recipe item; the trial's hammer is not for sale",
-          RecipeCatalog.GenericForSale.Any() && RecipeCatalog.GenericForSale.All(r => !r.IsGear && !r.QuestOnly
-              && r.UnlockLevel is >= 0 and <= 10 && r.LearnPrice > 0 && r.LearnLevel >= 40)
-          && RecipeCatalog.Get(Crafting.HammerRecipeId) is { QuestOnly: true, SuccessChance: 0.4f }
-          && !RecipeCatalog.GenericForSale.Any(r => r.Id == Crafting.HammerRecipeId));
+    Check("the trial's hammer recipe is quest-only and on no shelf",
+          RecipeCatalog.Get(Crafting.HammerRecipeId) is { QuestOnly: true, SuccessChance: 0.4f }
+          && !shelfIds.Any(id => ItemCatalog.Get(id)?.TeachesRecipeId == Crafting.HammerRecipeId));
     Check("ONE Master Crafter per town (the five profession masters are gone)",
           WorldMap.Npcs.Count(n => n.Role == NpcRole.CraftMaster) == 5
           && WorldMap.Npcs.Where(n => n.Role == NpcRole.CraftMaster).All(n => WorldMap.IsCraftMaster(n.Id)),
@@ -1882,15 +1887,19 @@ b.MyId = entered2.EntityId;
               refused52 && Count(shelf52) == held52 + 1, $"refused {refused52}, held {held52}->{Count(shelf52)}");
         await b.Hub.SendAsync("DebugSetCraftLevels", 0, 0, 0, 0, 0, 0);
         await b.Settle();
-
-        // A GENERIC recipe, taught for gold, crafted with no recipe item, paying 1 generic point only.
-        var generic = RecipeCatalog.GenericForSale.First(r => r.UnlockLevel == 0 && r.Id.StartsWith("craft_"));
+        // A GENERIC recipe, BOUGHT as a book from the Master and used from the bag (`BL-303` Q3: no more teaching
+        // for gold), crafted with no recipe item, paying 1 generic point only.
+        var generic = RecipeCatalog.Get("craft_" + ItemCatalog.MinorPotion)!;
+        string genericBook = ItemCatalog.RecipeBookId(generic.Id, 100);
+        int genericPrice = ItemCatalog.BuyPrice(ItemCatalog.Get(genericBook)!);
         long gold1 = b.Gold;
-        await b.Hub.SendAsync("LearnRecipeAtMaster", masterId, generic.Id);
+        await b.Hub.SendAsync("BuyItem", masterId, genericBook, 1);
         await b.Settle();
-        Check($"🔑 the Master TEACHES a generic recipe ({generic.Id}) for gold, into a slot at 100%",
-              Known().Contains($"{generic.Id}:100") && b.Gold == gold1 - generic.LearnPrice,
-              $"known [{string.Join(",", Known())}], gold {gold1}->{b.Gold} (price {generic.LearnPrice})");
+        bool bought = Count(genericBook) == 1 && b.Gold == gold1 - genericPrice;
+        await Learn(genericBook);
+        Check($"🔑 the Master SELLS a generic recipe book ({genericBook}); using it learns the line at 100%",
+              bought && Known().Contains($"{generic.Id}:100") && Count(genericBook) == 0,
+              $"bought {bought}, known [{string.Join(",", Known())}], gold {gold1}->{b.Gold} (price {genericPrice})");
         foreach (var inp in generic.Inputs) await b.Hub.SendAsync("DebugGive", inp.ItemId, inp.Qty);
         await b.Settle();
         int gIn0 = Count(generic.Inputs[0].ItemId);
@@ -1904,7 +1913,9 @@ b.MyId = entered2.EntityId;
         // 0.205.0 — A REFINE WITH A COUNT: one command repeats until something runs out, pays MP, no gold,
         // and NO craft points (*"refines pay 0"*). 50 normal Nightsilver asked x100 = 5 refines, then stops.
         const string refineId = "refine_nightsilver_1";
-        await b.Hub.SendAsync("LearnRecipeAtMaster", masterId, refineId);
+        await b.Hub.SendAsync("BuyItem", masterId, ItemCatalog.RecipeBookId(refineId, 100), 1);
+        await b.Settle();
+        await Learn(ItemCatalog.RecipeBookId(refineId, 100));
         await b.Hub.SendAsync("DebugGive", Crafting.NightsilverId(0), 50);
         await b.Settle();
         int ns0 = Count(Crafting.NightsilverId(0)), ns1 = Count(Crafting.NightsilverId(1));

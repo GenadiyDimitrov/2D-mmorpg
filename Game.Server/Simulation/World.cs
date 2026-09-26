@@ -497,7 +497,6 @@ public record ForgetRecipeCmd(string ConnectionId, string RecipeId) : IGameComma
 
 /// <summary>Buy a GENERIC recipe (potion, scroll, refine) from the Master Crafter and learn it into a slot
 /// (`BL-273` part 2). Addressed by the master's live entity id and range-checked.</summary>
-public record LearnRecipeAtMasterCmd(string ConnectionId, Guid NpcEntityId, string RecipeId) : IGameCommand;
 
 /// <summary>DEBUG-only: become a crafter without the trial (the class-change precedent, §2.2 #7).</summary>
 public record DebugBecomeCrafterCmd(string ConnectionId) : IAdminCommand;
