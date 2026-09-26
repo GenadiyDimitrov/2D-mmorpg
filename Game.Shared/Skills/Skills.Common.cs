@@ -792,17 +792,20 @@ public static partial class SkillCatalog
             new(SkillEffect.BuffAtkSpeed, 0.33f), "+33% Attack Speed."),
 
         // ---- Potions: 20 minutes, instant, 1s reuse. ----
-        Potion(PotSwiftC, "Swift Potion (Lesser)", BuffSwiftC, SkillEffect.BuffMoveSpeed, "+15 Move Speed"),
-        Potion(PotSwiftU, "Swift Potion",          BuffSwiftU, SkillEffect.BuffMoveSpeed, "+20 Move Speed"),
+        // `BL-305` (owner, 2026-09-26): Swift / Alacrity / Fury are the only potions left, at TWO levels — the
+        // Lesser is the L1 rung (+20 / +23% / +23%), the Greater the L2 rung (+33 / +30% / +33%). The ids stay
+        // (an item names each); only the rung each one lands moved up. The `_r` wrappers carry no item.
+        Potion(PotSwiftC, "Swift Potion (Lesser)", BuffSwiftU, SkillEffect.BuffMoveSpeed, "+20 Move Speed"),
+        Potion(PotSwiftU, "Swift Potion (Greater)",BuffSwiftR, SkillEffect.BuffMoveSpeed, "+33 Move Speed"),
         Potion(PotSwiftR, "Swift Potion (Greater)",BuffSwiftR, SkillEffect.BuffMoveSpeed, "+33 Move Speed"),
-        Potion(PotAlacrityC, "Alacrity Potion (Lesser)", BuffAlacrityC, SkillEffect.BuffCastSpeed, "+15% Cast Speed"),
-        Potion(PotAlacrityU, "Alacrity Potion",          BuffAlacrityU, SkillEffect.BuffCastSpeed, "+23% Cast Speed"),
+        Potion(PotAlacrityC, "Alacrity Potion (Lesser)", BuffAlacrityU, SkillEffect.BuffCastSpeed, "+23% Cast Speed"),
+        Potion(PotAlacrityU, "Alacrity Potion (Greater)",BuffAlacrityR, SkillEffect.BuffCastSpeed, "+30% Cast Speed"),
         Potion(PotAlacrityR, "Alacrity Potion (Greater)",BuffAlacrityR, SkillEffect.BuffCastSpeed, "+30% Cast Speed"),
         Potion(PotAgilityC, "Agility Potion (Lesser)", BuffAgilityC, SkillEffect.BuffEvasion, "+1 Evasion"),
         Potion(PotAgilityU, "Agility Potion",          BuffAgilityU, SkillEffect.BuffEvasion, "+2 Evasion"),
         Potion(PotAgilityR, "Agility Potion (Greater)",BuffAgilityR, SkillEffect.BuffEvasion, "+4 Evasion"),
-        Potion(PotHasteC, "Fury Potion (Lesser)", BuffHasteC, SkillEffect.BuffAtkSpeed, "+15% Attack Speed"),
-        Potion(PotHasteU, "Fury Potion",          BuffHasteU, SkillEffect.BuffAtkSpeed, "+23% Attack Speed"),
+        Potion(PotHasteC, "Fury Potion (Lesser)", BuffHasteU, SkillEffect.BuffAtkSpeed, "+23% Attack Speed"),
+        Potion(PotHasteU, "Fury Potion (Greater)",BuffHasteR, SkillEffect.BuffAtkSpeed, "+33% Attack Speed"),
         Potion(PotHasteR, "Fury Potion (Greater)",BuffHasteR, SkillEffect.BuffAtkSpeed, "+33% Attack Speed"),
 
         // ---- Scrolls: the same tiers for an HOUR, but they take a second to read. ----

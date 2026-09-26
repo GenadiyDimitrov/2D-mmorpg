@@ -2291,6 +2291,16 @@ game are also in the NPC buffer shelf and the Potions tab (`BL-243`); what repla
 generic recipes drop (which mobs, what rate), since `BL-274`'s per-mob tables are the only drop path;
 (4) the ×0.90 → ×0.55 cost curve of 0.204.0 was priced on the current table; does it carry over.
 
+✅ **Answered 2026-09-26** (his words): *"1. It's a ruling at 40lv I noticed that the apothcand scribe are uncompareable
+and scribe always wins over ..so I decide we need to merge. 2. Remove all buff ports except the 3 from the game ... The
+npc buffer don't give a buff potion effect but a npc_buff. Apoth vendor sells only the 3 lesser. Others are drop/craft
+3. Generic rcps are normal mobs g make them from Tires that are close to the equip tires .. T40 is l0 .. T52 is l2 so l1
+pots about t40~T52, l4 t61, L6 t76,l8 t80, l10 85+ bosses/instances 4. Yes the 0.9->0.55 stays"*.
+- ✅ **Part 1, 0.214.20:** only Swift / Alacrity / Fury potions remain, Lesser = L1 rung (shelf), Greater = L2 rung
+  (crafted at Apothecary L1); every buff scroll left crafting (Blessing Box only).
+- 🔜 Part 2: Scribe → Apothecary with the L0-L10 ladder. Part 3: generic recipe ITEMS dropping by tier (L0 T40, L1
+  T40-T52, L2 T52, L4 T61, L6 T76, L8 T80, L10 85+ bosses/instances), the Master's L0/L2 sale overlapping `BL-303` Q3.
+
 ## `BL-307` 🔵 FULL DROPS BELOW LEVEL 40
 
 From the same playtest, on 0.206.0 (`BL-274` part 1): *"Lower lvl mobs also need full drops. F/E grade also need

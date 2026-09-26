@@ -361,47 +361,13 @@ public static class RecipeCatalog
         yield return R(Apo, ItemCatalog.GreaterManaPotion,  10, 76, 10, 5, 100_000,  Mat(Gem, 20), E(2, 2),
                        V(ItemCatalog.VolcanicAsh, 2), V(ItemCatalog.VolcanicStone, 2));
 
-        // ---- BUFF POTIONS: x6. Common = gems + wood, open to all (ladder L1); Uncommon adds the tier's
-        //      essence behind the Apothecary gate (ladder L3). (common, uncommon, the family's tier)
-        foreach (var (c, u, tier) in new[]
-        {
-            (ItemCatalog.MightPotionC,   ItemCatalog.MightPotionU,   40),
-            (ItemCatalog.BulwarkPotionC, ItemCatalog.BulwarkPotionU, 40),
-            (ItemCatalog.CastPotionC,    ItemCatalog.CastPotionU,    40),
-            (ItemCatalog.SpeedPotionC,   ItemCatalog.SpeedPotionU,   40),
-            (ItemCatalog.AimPotionC,     ItemCatalog.AimPotionU,     52),
-            (ItemCatalog.ForcePotionC,   ItemCatalog.ForcePotionU,   52),
-            (ItemCatalog.WardPotionC,    ItemCatalog.WardPotionU,    52),
-            (ItemCatalog.AtkPotionC,     ItemCatalog.AtkPotionU,     52),
-            (ItemCatalog.EvaPotionC,     ItemCatalog.EvaPotionU,     52),
-        })
-        {
-            yield return R(Apo, c, 6, tier, 0, 1, 9_000, Mat(Gem, 3), Mat(Wood, 3));
-            yield return tier >= 52
-                ? R(Apo, u, 6, tier, 2, 3, 30_000, Mat(Gem, 5), Mat(Wood, 5), E(1, 1))
-                : R(Apo, u, 6, tier, 1, 3, 30_000, Mat(Gem, 5), Mat(Wood, 5), E(0, 2));
-        }
-
-        // ---- BUFF SCROLLS: x2, leather + iron. The nine "basic" ones count as the common line (open to
-        //      all, ladder L2); the ten "other" ones are the uncommon line: the Scribe gate + the tier's
-        //      essence (ladder L4).
-        foreach (var (id, tier) in new[]
-        {
-            (ItemCatalog.MightScrollR, 40), (ItemCatalog.BulwarkScrollR, 40), (ItemCatalog.CastScrollR, 40),
-            (ItemCatalog.SpeedScrollR, 40), (ItemCatalog.AimScrollR, 52), (ItemCatalog.ForceScrollR, 52),
-            (ItemCatalog.WardScrollR, 52), (ItemCatalog.AtkScrollR, 52), (ItemCatalog.EvaScrollR, 52),
-        })
-            yield return R(Scr, id, 2, tier, 0, 2, 72_000, Mat(Leather, 3), Mat(Iron, 3));
-        foreach (var (id, tier) in new[]
-        {
-            (ItemCatalog.FocusScrollM, 52), (ItemCatalog.FerocityScrollM, 52), (ItemCatalog.FrenzyScrollM, 52),
-            (ItemCatalog.VigorScrollM, 52), (ItemCatalog.SerenityScrollM, 52),
-            (ItemCatalog.BodyScrollM, 61), (ItemCatalog.SoulScrollM, 61), (ItemCatalog.ResolveScrollM, 61),
-            (ItemCatalog.InsightScrollM, 61), (ItemCatalog.VampScrollM, 61),
-        })
-            yield return tier >= 61
-                ? R(Scr, id, 2, tier, 4, 4, 72_000, Mat(Leather, 5), Mat(Iron, 5), E(2, 2))
-                : R(Scr, id, 2, tier, 2, 4, 72_000, Mat(Leather, 5), Mat(Iron, 5), E(1, 2));
+        // ---- BUFF POTIONS (`BL-305`, owner, 2026-09-26): only the GREATER Swift / Alacrity / Fury are crafted,
+        //      at Apothecary L1 (his ladder: *"L1 | Swift / Alacrity / Fury greater buff potions"*); the Lesser
+        //      is the Apothecary's shelf item and nothing crafts it. The six other potion families and every
+        //      buff scroll left crafting (the scrolls live on in the Blessing Box). Inputs and price are the
+        //      old Uncommon row's, x6.
+        foreach (var greater in new[] { ItemCatalog.SpeedPotionU, ItemCatalog.CastPotionU, ItemCatalog.AtkPotionU })
+            yield return R(Apo, greater, 6, 40, 1, 3, 30_000, Mat(Gem, 5), Mat(Wood, 5), E(0, 2));
 
         // ---- RUNE BOXES: x3 (*"1h from shop cost 450k … 2h x3 shop cost 840"*). The 2h is unreachable until
         //      the Volcanic Bar refine (step 10) and its ash/stone (step 11) exist.

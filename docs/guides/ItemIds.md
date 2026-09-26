@@ -4,7 +4,7 @@
 `dotnet run --project tools/ItemIds` after adding or removing an item. Every id below is a real
 id the server will accept today.
 
-**826 items.** Generated 2026-09-25.
+**814 items.** Generated 2026-09-26.
 
 ```
 /give <player> <itemId> [sellPrice] [tradable] [timed] ["name"] [enchant] [canStorePrivate] [canStoreAccount] [amount]
@@ -37,19 +37,19 @@ is full (it tells you how many fit).
 | id | name | grade | rarity | notes |
 |---|---|---|---|---|
 | `staff_t1` | Ferrite Battlestaff | F | Mythic | TwoHandedBlunt |
+| `staff_t1_bound` | Ferrite Battlestaff | F | Mythic | untradable, TwoHandedBlunt |
 | `sword1h_t1` | Ferrite Blade | F | Mythic | Sword |
+| `sword1h_t1_bound` | Ferrite Blade | F | Mythic | untradable, Sword |
 | `duals_t1` | Ferrite Fangs | F | Mythic | Dual |
+| `duals_t1_bound` | Ferrite Fangs | F | Mythic | untradable, Dual |
 | `sword2h_t1` | Ferrite Greatsword | F | Mythic | TwoHandedSword |
+| `sword2h_t1_bound` | Ferrite Greatsword | F | Mythic | untradable, TwoHandedSword |
 | `bow_t1` | Ferrite Longbow | F | Mythic | Bow |
+| `bow_t1_bound` | Ferrite Longbow | F | Mythic | untradable, Bow |
 | `blunt1h_t1` | Ferrite Mace | F | Mythic | Blunt |
 | `blunt2h_t1` | Ferrite Maul | F | Mythic | TwoHandedBlunt |
 | `wand_t1` | Ferrite Wand | F | Mythic | Blunt |
-| `staff_t1_bound` | Newbie Ferrite Battlestaff | F | Mythic | untradable, TwoHandedBlunt |
-| `sword1h_t1_bound` | Newbie Ferrite Blade | F | Mythic | untradable, Sword |
-| `duals_t1_bound` | Newbie Ferrite Fangs | F | Mythic | untradable, Dual |
-| `sword2h_t1_bound` | Newbie Ferrite Greatsword | F | Mythic | untradable, TwoHandedSword |
-| `bow_t1_bound` | Newbie Ferrite Longbow | F | Mythic | untradable, Bow |
-| `wand_t1_bound` | Newbie Ferrite Wand | F | Mythic | untradable, Blunt |
+| `wand_t1_bound` | Ferrite Wand | F | Mythic | untradable, Blunt |
 
 ### Lv 20
 
@@ -239,15 +239,15 @@ is full (it tells you how many fit).
 |---|---|---|---|---|
 | `heavy_t1` | Ferrite Bulwark | F | Mythic | Heavy, Body |
 | `gloves_t1` | Ferrite Gauntlets | F | Mythic | Gloves |
+| `gloves_t1_bound` | Ferrite Gauntlets | F | Mythic | untradable, Gloves |
 | `boots_t1` | Ferrite Greaves | F | Mythic | Boots |
+| `boots_t1_bound` | Ferrite Greaves | F | Mythic | untradable, Boots |
 | `helm_t1` | Ferrite Helm | F | Mythic | Head |
+| `helm_t1_bound` | Ferrite Helm | F | Mythic | untradable, Head |
 | `light_t1` | Ferrite Leathers | F | Mythic | Light, Body |
+| `light_t1_bound` | Ferrite Leathers | F | Mythic | untradable, Light, Body |
 | `robe_t1` | Ferrite Robe | F | Mythic | Robe, Body |
-| `gloves_t1_bound` | Newbie Ferrite Gauntlets | F | Mythic | untradable, Gloves |
-| `boots_t1_bound` | Newbie Ferrite Greaves | F | Mythic | untradable, Boots |
-| `helm_t1_bound` | Newbie Ferrite Helm | F | Mythic | untradable, Head |
-| `light_t1_bound` | Newbie Ferrite Leathers | F | Mythic | untradable, Light, Body |
-| `robe_t1_bound` | Newbie Ferrite Robe | F | Mythic | untradable, Robe, Body |
+| `robe_t1_bound` | Ferrite Robe | F | Mythic | untradable, Robe, Body |
 
 ### Lv 20
 
@@ -370,11 +370,11 @@ is full (it tells you how many fit).
 | id | name | grade | rarity | notes |
 |---|---|---|---|---|
 | `ring_t1` | Ferrite Band | F | Mythic | Ring |
+| `ring_t1_bound` | Ferrite Band | F | Mythic | untradable, Ring |
 | `necklace_t1` | Ferrite Pendant | F | Mythic | Necklace |
+| `necklace_t1_bound` | Ferrite Pendant | F | Mythic | untradable, Necklace |
 | `earring_t1` | Ferrite Stud | F | Mythic | Earring |
-| `ring_t1_bound` | Newbie Ferrite Band | F | Mythic | untradable, Ring |
-| `necklace_t1_bound` | Newbie Ferrite Pendant | F | Mythic | untradable, Necklace |
-| `earring_t1_bound` | Newbie Ferrite Stud | F | Mythic | untradable, Earring |
+| `earring_t1_bound` | Ferrite Stud | F | Mythic | untradable, Earring |
 
 ### Lv 20
 
@@ -502,41 +502,33 @@ is full (it tells you how many fit).
 | `rune_spell` | Spell Rune | - | Mythic | untradable |
 | `rune_war` | War Rune | - | Mythic | untradable |
 
-## Consumables (potions)  (66)
+## Consumables (potions)  (54)
 
 | id | name | grade | rarity | notes |
 |---|---|---|---|---|
-| `potion_eva_u` | Agility Potion | - | Uncommon | stacks |
-| `potion_eva_c` | Agility Potion (Lesser) | - | Common | stacks |
-| `potion_acc_u` | Aim Potion | - | Uncommon | stacks |
-| `potion_acc_c` | Aim Potion (Lesser) | - | Common | stacks |
+| `potion_cast_c` | Alacrity Potion | - | Common | stacks |
 | `potion_cast_u` | Alacrity Potion | - | Uncommon | stacks |
-| `potion_cast_c` | Alacrity Potion (Lesser) | - | Common | stacks |
-| `potion_pdef_u` | Bulwark Potion | - | Uncommon | stacks |
-| `potion_pdef_c` | Bulwark Potion (Lesser) | - | Common | stacks |
-| `potion_minor` | Common Healing Potion | - | Common | stacks |
-| `potion_mana_minor` | Common Mana Potion | - | Common | stacks |
+| `potion_dash_c` | Dash Potion | - | Common | stacks |
 | `potion_dash_u` | Dash Potion | - | Uncommon | stacks |
-| `potion_dash_l` | Dash Potion (Grand) | - | Legendary | stacks |
-| `potion_dash_r` | Dash Potion (Greater) | - | Rare | stacks |
-| `potion_dash_c` | Dash Potion (Lesser) | - | Common | stacks |
-| `potion_dash_e` | Dash Potion (Superior) | - | Epic | stacks |
-| `potion_dash_m` | Dash Potion (Supreme) | - | Mythic | stacks |
-| `potion_dash_m_bound` | Dash Potion (Supreme) (Bound) | - | Mythic | untradable, stacks |
+| `potion_dash_r` | Dash Potion | - | Rare | stacks |
+| `potion_dash_e` | Dash Potion | - | Epic | stacks |
+| `potion_dash_l` | Dash Potion | - | Legendary | stacks |
+| `potion_dash_m` | Dash Potion | - | Mythic | stacks |
+| `potion_dash_m_bound` | Dash Potion | - | Mythic | untradable, stacks |
 | `elemental_stone` | Elemental Stone | - | Rare | stacks |
 | `potion_favor_restore` | Favor Restore Potion | - | Mythic | untradable, stacks |
-| `potion_matk_u` | Force Potion | - | Uncommon | stacks |
-| `potion_matk_c` | Force Potion (Lesser) | - | Common | stacks |
+| `potion_atk_c` | Fury Potion | - | Common | stacks |
 | `potion_atk_u` | Fury Potion | - | Uncommon | stacks |
-| `potion_atk_c` | Fury Potion (Lesser) | - | Common | stacks |
+| `potion_minor` | Healing Potion | - | Common | stacks |
+| `potion_healing` | Healing Potion | - | Uncommon | stacks |
+| `potion_greater` | Healing Potion | - | Rare | stacks |
 | `holy_stone` | Holy Stone | - | Rare | stacks |
 | `potion_instant` | Instant Healing Potion | - | Rare | stacks |
-| `potion_instant_bound` | Instant Healing Potion (Bound) | - | Rare | untradable, stacks |
-| `potion_patk_u` | Might Potion | - | Uncommon | stacks |
-| `potion_patk_c` | Might Potion (Lesser) | - | Common | stacks |
+| `potion_instant_bound` | Instant Healing Potion | - | Rare | untradable, stacks |
+| `potion_mana_minor` | Mana Potion | - | Common | stacks |
+| `potion_mana` | Mana Potion | - | Uncommon | stacks |
+| `potion_mana_greater` | Mana Potion | - | Rare | stacks |
 | `physical_stone` | Physical Stone | - | Rare | stacks |
-| `potion_greater` | Rare Healing Potion | - | Rare | stacks |
-| `potion_mana_greater` | Rare Mana Potion | - | Rare | stacks |
 | `rune_title_colour` | Rune of Tincture | - | Uncommon | stacks |
 | `scroll_eva_r` | Scroll of Agility | - | Rare | untradable, stacks |
 | `scroll_acc_r` | Scroll of Aim | - | Rare | untradable, stacks |
@@ -562,27 +554,23 @@ is full (it tells you how many fit).
 | `skill_stone` | Skill Stone | - | Uncommon | stacks |
 | `sp_bottle` | SP Bottle | - | Epic | stacks |
 | `subclass_ticket` | Subclass Ticket | - | Mythic | untradable, stacks |
+| `potion_speed_c` | Swift Potion | - | Common | stacks |
 | `potion_speed_u` | Swift Potion | - | Uncommon | stacks |
-| `potion_speed_c` | Swift Potion (Lesser) | - | Common | stacks |
 | `scroll_resurrect_ultimate` | Ultimate Scroll of Resurrection | - | Rare | stacks |
-| `scroll_resurrect_ultimate_bound` | Ultimate Scroll of Resurrection (Bound) | - | Rare | untradable, stacks |
+| `scroll_resurrect_ultimate_bound` | Ultimate Scroll of Resurrection | - | Rare | untradable, stacks |
 | `scroll_return_ultimate` | Ultimate Scroll of Return | - | Rare | untradable, stacks |
-| `scroll_return_ultimate_bound` | Ultimate Scroll of Return (Bound) | - | Rare | untradable, stacks |
-| `potion_healing` | Uncommon Healing Potion | - | Uncommon | stacks |
-| `potion_mana` | Uncommon Mana Potion | - | Uncommon | stacks |
-| `potion_mdef_u` | Ward Potion | - | Uncommon | stacks |
-| `potion_mdef_c` | Ward Potion (Lesser) | - | Common | stacks |
+| `scroll_return_ultimate_bound` | Ultimate Scroll of Return | - | Rare | untradable, stacks |
 
 ## Scrolls  (24)
 
 | id | name | grade | rarity | notes |
 |---|---|---|---|---|
-| `attrscroll_common` | Attribute Scroll (Common) | - | Common | stacks |
-| `attrscroll_epic` | Attribute Scroll (Epic) | - | Epic | stacks |
-| `attrscroll_legendary` | Attribute Scroll (Legendary) | - | Legendary | stacks |
-| `attrscroll_mythic` | Attribute Scroll (Mythic) | - | Mythic | stacks |
-| `attrscroll_rare` | Attribute Scroll (Rare) | - | Rare | stacks |
-| `attrscroll_uncommon` | Attribute Scroll (Uncommon) | - | Uncommon | stacks |
+| `attrscroll_common` | Attribute Scroll | - | Common | stacks |
+| `attrscroll_uncommon` | Attribute Scroll | - | Uncommon | stacks |
+| `attrscroll_rare` | Attribute Scroll | - | Rare | stacks |
+| `attrscroll_epic` | Attribute Scroll | - | Epic | stacks |
+| `attrscroll_legendary` | Attribute Scroll | - | Legendary | stacks |
+| `attrscroll_mythic` | Attribute Scroll | - | Mythic | stacks |
 | `scroll_greater_a` | Greater Scroll of Enchant (A) | - | Legendary | stacks |
 | `scroll_greater_b` | Greater Scroll of Enchant (B) | - | Epic | stacks |
 | `scroll_greater_c` | Greater Scroll of Enchant (C) | - | Rare | stacks |
@@ -829,7 +817,7 @@ is full (it tells you how many fit).
 | `part_heavy_t76` | Adamantine Armor Plate | - | Rare | stacks |
 | `part_ring_t76` | Adamantine Band Setting | - | Rare | stacks |
 | `part_bow_t76` | Adamantine Bow Limb | - | Rare | stacks |
-| `essence_a` | Adamantine Essence | - | Common | stacks |
+| `essence_a` | Adamantine Essence | A | Common | stacks |
 | `part_duals_t76` | Adamantine Fang Hilt | - | Rare | stacks |
 | `part_gloves_t76` | Adamantine Gauntlet Frame | - | Rare | stacks |
 | `part_sword2h_t76` | Adamantine Greatsword Blade | - | Rare | stacks |
@@ -849,7 +837,7 @@ is full (it tells you how many fit).
 | `part_heavy_t61` | Bloodsteel Armor Plate | - | Rare | stacks |
 | `part_ring_t61` | Bloodsteel Band Setting | - | Rare | stacks |
 | `part_bow_t61` | Bloodsteel Bow Limb | - | Rare | stacks |
-| `essence_b` | Bloodsteel Essence | - | Common | stacks |
+| `essence_b` | Bloodsteel Essence | B | Common | stacks |
 | `part_duals_t61` | Bloodsteel Fang Hilt | - | Rare | stacks |
 | `part_gloves_t61` | Bloodsteel Gauntlet Frame | - | Rare | stacks |
 | `part_sword2h_t61` | Bloodsteel Greatsword Blade | - | Rare | stacks |
@@ -868,7 +856,7 @@ is full (it tells you how many fit).
 | `part_heavy_t52` | Cobalt Armor Plate | - | Rare | stacks |
 | `part_ring_t52` | Cobalt Band Setting | - | Rare | stacks |
 | `part_bow_t52` | Cobalt Bow Limb | - | Rare | stacks |
-| `essence_c` | Cobalt Essence | - | Common | stacks |
+| `essence_c` | Cobalt Essence | C | Common | stacks |
 | `part_duals_t52` | Cobalt Fang Hilt | - | Rare | stacks |
 | `part_gloves_t52` | Cobalt Gauntlet Frame | - | Rare | stacks |
 | `part_sword2h_t52` | Cobalt Greatsword Blade | - | Rare | stacks |
@@ -887,7 +875,7 @@ is full (it tells you how many fit).
 | `part_heavy_t40` | Darksteel Armor Plate | - | Rare | stacks |
 | `part_ring_t40` | Darksteel Band Setting | - | Rare | stacks |
 | `part_bow_t40` | Darksteel Bow Limb | - | Rare | stacks |
-| `essence_d` | Darksteel Essence | - | Common | stacks |
+| `essence_d` | Darksteel Essence | D | Common | stacks |
 | `part_duals_t40` | Darksteel Fang Hilt | - | Rare | stacks |
 | `part_gloves_t40` | Darksteel Gauntlet Frame | - | Rare | stacks |
 | `part_sword2h_t40` | Darksteel Greatsword Blade | - | Rare | stacks |
@@ -919,7 +907,7 @@ is full (it tells you how many fit).
 | `part_heavy_t80` | Soulcrystal Armor Plate | - | Rare | stacks |
 | `part_ring_t80` | Soulcrystal Band Setting | - | Rare | stacks |
 | `part_bow_t80` | Soulcrystal Bow Limb | - | Rare | stacks |
-| `essence_s` | Soulcrystal Essence | - | Common | stacks |
+| `essence_s` | Soulcrystal Essence | S | Common | stacks |
 | `part_duals_t80` | Soulcrystal Fang Hilt | - | Rare | stacks |
 | `part_gloves_t80` | Soulcrystal Gauntlet Frame | - | Rare | stacks |
 | `part_sword2h_t80` | Soulcrystal Greatsword Blade | - | Rare | stacks |

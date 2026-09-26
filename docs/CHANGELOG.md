@@ -7,12 +7,36 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.19**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.20**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.19: gear recipes are bought at your smith level (`BL-303`, gear half)
+## 2026-09-26 (latest) — 0.214.20: three buff potions, two levels each (`BL-305`, part 1)
+
+> *"Remove all buff ports except the 3 from the game ... The npc buffer don't give a buff potion effect but a npc_buff.
+> Apoth vendor sells only the 3 lesser. Others are drop/craft"*
+
+- **Gone:** the Agility, Might, Bulwark, Force, Ward and Aim potions (12 items). The NPC buffer is untouched: it lands
+  its own rungs (`npc_buff_shelf.csv`), never a potion.
+- **Swift / Alacrity / Fury, two levels, your numbers:**
+
+  | | Swift | Alacrity | Fury | source |
+  |---|---|---|---|---|
+  | **Lesser** (L1) | +20 move | +23% cast | +23% attack | the Apothecary's shelf, and drops |
+  | **Greater** (L2) | +33 move | +30% cast | +33% attack | crafted at Apothecary L1, and drops |
+
+  Both were one rung lower before (Lesser +15/+15%/+15%, plain +20/+23%/+23%). Prices unchanged (1,500 / 5,000),
+  and the drop bands too (Lesser to 51, Greater 40-60).
+- **The Apothecary's shelf** has only the three Lesser buff potions. I read "sells only the 3 lesser" as being about buff
+  potions, so the HP/MP potions, the Blessing Box and the scrolls/stones stay on the shelf. Say if you meant HP/MP too.
+- **Crafting:** only the three Greater potions are crafted (Apothecary L1). Every buff SCROLL left crafting (the Scribe's
+  19 lines). The scrolls still exist, in the Blessing Box.
+- Next in `BL-305`: the Scribe folds into the Apothecary with your L0-L10 ladder, then generic recipes become drops.
+- `BuffConsumables.md` and `ItemIds.md` regenerated. SmokeTest ALL PASS. ⚠ Needs a new APK (item names and recipes
+  are in the shared catalog).
+
+## 2026-09-26 — 0.214.19: gear recipes are bought at your smith level (`BL-303`, gear half)
 
 > *"a T52 weapon rcp require L2 in weaponsmithing and T52 armor to be L2 armorsmithing"*
 

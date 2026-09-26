@@ -983,24 +983,16 @@ public static class ItemCatalog
     //      dropped on load (PersistenceService), so an old save simply loses them.
     //      Ids spell the STAT, not the display name, which has already changed twice.
     //      See docs/design/BuffLadders.md. ----
+    //      🔑 `BL-305` (owner, 2026-09-26): ONLY Swift / Fury / Alacrity are potions now, at two levels —
+    //      the Lesser (`_c`) is the L1 rung (+20 / +23% / +23%) and the Apothecary sells it; the Greater
+    //      (`_u`) is the L2 rung (+33 / +33% / +30%), crafted or dropped. Agility, Might, Bulwark, Force,
+    //      Ward and Aim potions left the game: the NPC buffer and the class skills own those families.
     public const string SpeedPotionC = "potion_speed_c";   // Swift    (move speed)
     public const string SpeedPotionU = "potion_speed_u";
     public const string CastPotionC = "potion_cast_c";     // Alacrity (cast speed)
     public const string CastPotionU = "potion_cast_u";
     public const string AtkPotionC = "potion_atk_c";       // Fury     (attack speed)
     public const string AtkPotionU = "potion_atk_u";
-    public const string EvaPotionC = "potion_eva_c";       // Agility  (evasion)
-    public const string EvaPotionU = "potion_eva_u";
-    public const string MightPotionC = "potion_patk_c";
-    public const string MightPotionU = "potion_patk_u";
-    public const string BulwarkPotionC = "potion_pdef_c";
-    public const string BulwarkPotionU = "potion_pdef_u";
-    public const string ForcePotionC = "potion_matk_c";
-    public const string ForcePotionU = "potion_matk_u";
-    public const string WardPotionC = "potion_mdef_c";
-    public const string WardPotionU = "potion_mdef_u";
-    public const string AimPotionC = "potion_acc_c";
-    public const string AimPotionU = "potion_acc_u";
     // The 17 SCROLLS — one per buff, top rung, all Rare, all box-only. The nine families that also
     // have a potion top out at rung 3 (`_r`); the eight scroll-only families at rung 6 (`_m`), which
     // is also what finally gives the Mythic rung a source at all.
@@ -1761,25 +1753,17 @@ public static class ItemCatalog
         //       thing you pay for is always the thing at the top. -----
         list.Add(new ItemDef(SpeedPotionC, "Swift Potion (Lesser)", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PotSwiftC, SellPriceOverride: 0, Value: 1500));
-        list.Add(new ItemDef(SpeedPotionU, "Swift Potion", EquipSlot.Consumable,
+        list.Add(new ItemDef(SpeedPotionU, "Swift Potion (Greater)", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PotSwiftU, SellPriceOverride: 0, Value: 5000));
         list.Add(new ItemDef(CastPotionC, "Alacrity Potion (Lesser)", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PotAlacrityC, SellPriceOverride: 0, Value: 1500));
-        list.Add(new ItemDef(CastPotionU, "Alacrity Potion", EquipSlot.Consumable,
+        list.Add(new ItemDef(CastPotionU, "Alacrity Potion (Greater)", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PotAlacrityU, SellPriceOverride: 0, Value: 5000));
         list.Add(new ItemDef(AtkPotionC, "Fury Potion (Lesser)", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PotHasteC, SellPriceOverride: 0, Value: 1500));
-        list.Add(new ItemDef(AtkPotionU, "Fury Potion", EquipSlot.Consumable,
+        list.Add(new ItemDef(AtkPotionU, "Fury Potion (Greater)", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PotHasteU, SellPriceOverride: 0, Value: 5000));
-        list.Add(new ItemDef(EvaPotionC, "Agility Potion (Lesser)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PotAgilityC, SellPriceOverride: 0, Value: 1500));
-        list.Add(new ItemDef(EvaPotionU, "Agility Potion", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PotAgilityU, SellPriceOverride: 0, Value: 5000));
 
-        // ----- The other buff ladders (BuffLadders.md step 6). Same shape as the four speed
-        //       families above, so the prices are the same ladder: potion 1.5k/5k, scroll 36k.
-        //       The SCROLL-ONLY families have no potion at all — for them the ONE scroll is the
-        //       whole consumable ladder, which is what "no potion analogue" means now. -----
         // ⚠ SellPriceOverride: 0 on BOTH ladders (owner, playtest-18 V2b, 2026-08-05): *"buff pots are 0
         // sell (ppl still can sell them to others if they want)"*. He believed this was already done in
         // the playtest-17 vendor rework; it was not, and the ÷10 divisor had just made them 2.5x richer.
@@ -1787,12 +1771,6 @@ public static class ItemCatalog
         // the entire remaining consumable faucet once gear was cut. Value stays: it is still the BUY
         // price, and player-to-player trade is untouched. The point is that a buff potion is something
         // you DRINK or trade, never a coin the vendor mints for you.
-        void BuffPotion(string id, string name, ItemRarity rarity, string skill) =>
-            list.Add(new ItemDef(id, name, EquipSlot.Consumable, ItemGrade.F, rarity,
-                UseSkillId: skill, SellPriceOverride: 0, Value: rarity switch
-                {
-                    ItemRarity.Common => 1500, ItemRarity.Uncommon => 5000, _ => 12000,
-                }));
 
         // ⚠ A buff scroll is BOX-ONLY and BOUND (playtest-17 E3): `Tradable: false` because the box it
         // came out of was the tradable thing, and there is no other source in the game — no drop, no
@@ -1803,22 +1781,6 @@ public static class ItemCatalog
         void BuffScroll(string id, string name, string skill) =>
             list.Add(new ItemDef(id, name, EquipSlot.Consumable, ItemGrade.F, ItemRarity.Rare,
                 UseSkillId: skill, SellPriceOverride: 0, Value: 36000, Tradable: false));
-
-        BuffPotion(MightPotionC, "Might Potion (Lesser)",  ItemRarity.Common,   SkillCatalog.PotMightC);
-        BuffPotion(MightPotionU, "Might Potion",           ItemRarity.Uncommon, SkillCatalog.PotMightU);
-
-        BuffPotion(BulwarkPotionC, "Bulwark Potion (Lesser)",  ItemRarity.Common,   SkillCatalog.PotBulwarkC);
-        BuffPotion(BulwarkPotionU, "Bulwark Potion",           ItemRarity.Uncommon, SkillCatalog.PotBulwarkU);
-
-        BuffPotion(ForcePotionC, "Force Potion (Lesser)",  ItemRarity.Common,   SkillCatalog.PotForceC);
-        BuffPotion(ForcePotionU, "Force Potion",           ItemRarity.Uncommon, SkillCatalog.PotForceU);
-
-        BuffPotion(WardPotionC, "Ward Potion (Lesser)",  ItemRarity.Common,   SkillCatalog.PotWardC);
-        BuffPotion(WardPotionU, "Ward Potion",           ItemRarity.Uncommon, SkillCatalog.PotWardU);
-
-        // Aim — accuracy, the mirror of the Agility (evasion) line and priced identically.
-        BuffPotion(AimPotionC, "Aim Potion (Lesser)",  ItemRarity.Common,   SkillCatalog.PotAimC);
-        BuffPotion(AimPotionU, "Aim Potion",           ItemRarity.Uncommon, SkillCatalog.PotAimU);
 
         // ----- THE 17 SCROLLS. One per buff, top rung, no suffix in the name because there is no
         //       other rung to tell it apart from. The nine with a potion line take their family's

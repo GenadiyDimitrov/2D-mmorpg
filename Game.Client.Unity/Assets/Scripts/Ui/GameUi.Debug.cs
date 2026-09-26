@@ -528,10 +528,9 @@ namespace Game.Client
 
             DebugHeader("Buff potions & scrolls (x5)");
             DebugGive(ItemCatalog.SpeedPotionC, "Swift Potion (Lesser) x5", 5);
-            DebugGive(ItemCatalog.SpeedPotionU, "Swift Potion x5", 5);
-            DebugGive(ItemCatalog.CastPotionU, "Alacrity Potion x5", 5);
-            DebugGive(ItemCatalog.AtkPotionU, "Fury Potion x5", 5);
-            DebugGive(ItemCatalog.EvaPotionU, "Agility Potion x5", 5);
+            DebugGive(ItemCatalog.SpeedPotionU, "Swift Potion (Greater) x5", 5);
+            DebugGive(ItemCatalog.CastPotionU, "Alacrity Potion (Greater) x5", 5);
+            DebugGive(ItemCatalog.AtkPotionU, "Fury Potion (Greater) x5", 5);
             DebugGive(ItemCatalog.SpeedScrollR, "Scroll of Swift x5", 5);
             DebugGive(ItemCatalog.CastScrollR, "Scroll of Alacrity x5", 5);
             DebugGive(ItemCatalog.DashPotionM, "Dash Potion (Supreme) x5", 5);
