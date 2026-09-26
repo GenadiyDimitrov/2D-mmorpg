@@ -1277,6 +1277,9 @@ spent per craft  one recipe item of % ≤ learned (gear), pass or fail
 recipe price     round(0.10 × piece price × pct/100): 100% → 10%, 60% → 6%, 20% → 2% (Crafting.RecipePrice);
                  the Master sells T40/T52 100% at it; vendor pays half
 recipe drops     by specialty (see "Per-mob drop tables"); bosses: 2.5 (T40) … 0.8 (T80) a kill (BL-308), 100% books (T40-T61), 60% (T76/T80)
+generic recipes  items, 100%, one per Apothecary line (BL-305, 0.214.22), valued at the Master's teaching price; normal
+                 creatures of the line's tier drop 1/100 a kill for the whole band (elite ×2, split evenly): T40 L0+L1 ·
+                 T52 L1+L2 · T61 L4 · T76 L6 · T80 L8; L10 only from 85+ bosses, 0.2 a kill (both ⚠ placeholders)
 recipe quests    T76/T80 only (0.208.0): 3 Frostmere givers (weapon/armour/jewel), each a T76 (75-85) + T80 (80+) daily
                  on ONE shared stamp → max 3 books a day; 16 kills; reward 1 × 40% book, uniform in the kind (1/8, 1/7, 1/3)
 generic learn    authored per recipe from the ladder L0 20k · L1 50k · L2 100k · L3 200k · L4 400k · L5 700k · L6 1M

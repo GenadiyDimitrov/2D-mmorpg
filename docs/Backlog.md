@@ -279,7 +279,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-288` | ⏸ | **CONSUMABLE RARITY → PLAIN LEVELS 1-6** — potions/scrolls may drop the rarity word entirely; deferred by him, split out of `BL-272` | items |
 | `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
 | `BL-303` | 🟡 | **Split the Master Crafter from the ANVIL** (gear gate ✅ 0.214.19; split ❓) — the Master is a vendor of recipe items gated by crafter level; a plain "Anvil" NPC is where you craft | crafting |
-| `BL-305` | 🔵 | **THE GENERIC-RECIPE OVERHAUL** — Apothecary + Scribe merge, buff scrolls and most buff potions go, a new L0-L10 ladder, generic recipes drop | crafting |
 | `BL-307` | 🔵 | **Full drops below level 40** — F/E-grade Common gear, materials and lucky drops, not only gold | drops |
 | `BL-313` | 🟡 | **Cyrillic is not in the font** (§105.1): the flood and the `→` were fixed in 0.214.13; Bulgarian still draws as boxes, needs the Editor | client |
 
@@ -2256,52 +2255,17 @@ From the same playtest, on 0.203.0 (`BL-273` part 2):
   armorsmithing"*.
 - **The Anvil is where you craft**: an NPC called just **Anvil**, no title (*"later model will be just an
   anvil"*). It has only today's craft / points / materials tabs, i.e. the current "work at his anvil" view.
-🟡 **Gated on `BL-305`** for which generic recipes exist and at which level. The gear half does not wait.
+✅ `BL-305` closed in 0.214.22: the generic recipes, their Apothecary levels and their recipe ITEMS all exist now (the
+items drop; the Master still TEACHES the lines for gold, see question 3).
 
 ✅ **0.214.19 built the gear half:** the Master refuses to SELL a gear recipe below `Crafting.TierGate` of its smith type
 (T40 L0 · T52 L2 · T61 L4 · T76 L6 · T80 L8), the same `CraftGateRefusal` that learning and crafting read; the shop row
 says `(needs Weaponsmith L2)`.
 
 ❓ **Before the NPC split (asked 2026-09-26):** (1) where the Anvil stands: next to every Master Crafter, in every town
-that has one? (2) the crafter-points / respec tab: Anvil (as the entry says) or Master? (3) until `BL-305` turns the
-generic "learn" rows into recipe items, does the Master keep teaching them as today?
-
-## `BL-305` 🔵 THE GENERIC-RECIPE OVERHAUL
-
-From the same playtest, on 0.203.0. His words: *"I want generic recipes to be dropped as well and found"*. The
-problem he found: *"at t40 scroll of might gives 15% (max lvl) while u can craft a lesser potion for 8 ... And
-potion never can get 15%"*. His proposal (*"I think of"*, so not yet a ruling):
-- **Remove every buff potion except Swift / Fury / Alacrity**, which get two levels: L1 +20% / +23% / +23%,
-  L2 +33% / +33% / +30%. The Lesser ones are sold by the Apothecary; the Uncommon ones are crafted at L1.
-- **Merge the Apothecary and the Scribe** into one profession, and remove every buff scroll from the Scribe.
-- The ladder:
-
-| level | crafts | recipe source |
-|---|---|---|
-| L0 | Common HP/MP potions | vendor |
-| L1 | Swift / Alacrity / Fury greater buff potions | dropped / found |
-| L2 | Uncommon HP/MP potions | vendor |
-| L4 | War / Spell Rune, 1 h | dropped / found |
-| L6 | Rare HP/MP potions | dropped / found |
-| L8 | War / Spell Rune, 2 h | dropped / found |
-| L10 | Instant Healing, Supreme Dash (*"harder to craft"*) | dropped / found |
-
-❓ **Open before building:** (1) is this a ruling or still a proposal; (2) the buff potions removed from the
-game are also in the NPC buffer shelf and the Potions tab (`BL-243`); what replaces them there; (3) where
-generic recipes drop (which mobs, what rate), since `BL-274`'s per-mob tables are the only drop path;
-(4) the ×0.90 → ×0.55 cost curve of 0.204.0 was priced on the current table; does it carry over.
-
-✅ **Answered 2026-09-26** (his words): *"1. It's a ruling at 40lv I noticed that the apothcand scribe are uncompareable
-and scribe always wins over ..so I decide we need to merge. 2. Remove all buff ports except the 3 from the game ... The
-npc buffer don't give a buff potion effect but a npc_buff. Apoth vendor sells only the 3 lesser. Others are drop/craft
-3. Generic rcps are normal mobs g make them from Tires that are close to the equip tires .. T40 is l0 .. T52 is l2 so l1
-pots about t40~T52, l4 t61, L6 t76,l8 t80, l10 85+ bosses/instances 4. Yes the 0.9->0.55 stays"*.
-- ✅ **Part 1, 0.214.20:** only Swift / Alacrity / Fury potions remain, Lesser = L1 rung (shelf), Greater = L2 rung
-  (crafted at Apothecary L1); every buff scroll left crafting (Blessing Box only).
-- ✅ **Part 2, 0.214.21:** the Scribe folded into the Apothecary on his L0-L10 ladder; Instant Healing + Supreme Dash
-  are L10 crafts (placeholder inputs).
-- 🔜 Part 3: generic recipe ITEMS dropping by tier (L0 T40, L1
-  T40-T52, L2 T52, L4 T61, L6 T76, L8 T80, L10 85+ bosses/instances), the Master's L0/L2 sale overlapping `BL-303` Q3.
+that has one? (2) the crafter-points / respec tab: Anvil (as the entry says) or Master? (3) now that `BL-305` made the
+generic recipes ITEMS (0.214.22), should the Master SELL the L0/L2 books (his table said "vendor") and stop teaching
+the lines for gold, or keep teaching as today?
 
 ## `BL-307` 🔵 FULL DROPS BELOW LEVEL 40
 

@@ -7,12 +7,41 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.21**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.22**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.21: the Scribe folds into the Apothecary, on your L0-L10 ladder (`BL-305`, part 2)
+## 2026-09-26 (latest) — 0.214.22: generic recipes drop, by tier (`BL-305`, part 3, closes it)
+
+> *"I want generic recipes to be dropped as well and found"* · *"Generic rcps are normal mobs g make them from Tires
+> that are close to the equip tires .. T40 is l0 .. T52 is l2 so l1 pots about t40~T52, l4 t61, L6 t76,l8 t80, l10 85+
+> bosses/instances"*
+
+- **Every Apothecary line has a recipe item now** ("Recipe: Rare Healing Potion" …), 15 in all, always 100%. Use it
+  from the bag to learn the line, with the same checks as the Master's teaching (crafter, character level, Apothecary
+  level). It is tradable and worth the Master's teaching price for its level.
+- **Who drops them, your bands:**
+
+  | creatures | recipes |
+  |---|---|
+  | level 40-51 (T40) | L0 Common HP/MP, L1 Greater Swift/Alacrity/Fury |
+  | 52-60 (T52) | L1 Greater buff potions, L2 Uncommon HP/MP |
+  | 61-75 (T61) | L4 1 h runes |
+  | 76-79 (T76) | L6 Rare HP/MP |
+  | 80+ (T80) | L8 2 h runes |
+  | bosses 85+ | L10 Instant Healing, Supreme Dash |
+
+- ⚠ **Rates are mine (placeholders):** a normal creature drops one recipe of its band every 100 kills (an elite every
+  50), split evenly; an 85+ boss has a 20% chance at an L10 recipe. They share the recipe group, so the recipe rate knob
+  moves them with the gear books. There are no instances yet.
+- The Master still **teaches** every line for gold as before. Whether he should sell the L0/L2 books instead is
+  question 3 in `BL-303`.
+- `mob_drops.csv` regenerated. It had been stale since 0.206.0 (0.209.0's field creatures were missing), so it also
+  shows specialty changes that were already live. `ItemIds.md` regenerated. Formulas.md updated. New SmokeTest checks
+  (items, bands, bosses), ALL PASS. ⚠ Needs a new APK (the recipe items are in the shared catalog).
+
+## 2026-09-26 — 0.214.21: the Scribe folds into the Apothecary, on your L0-L10 ladder (`BL-305`, part 2)
 
 > *"It's a ruling at 40lv I noticed that the apothcand scribe are uncompareable and scribe always wins over ..so I decide
 > we need to merge"* · *"Yes the 0.9->0.55 stays"*

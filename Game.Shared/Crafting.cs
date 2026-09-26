@@ -259,6 +259,42 @@ public static class Crafting
     /// <summary>The gear tiers whose 100% recipe the Master sells (*"master can sell t40 and t52"*).</summary>
     public static bool MasterSellsRecipeFor(int itemLevel) => itemLevel is 40 or 52;
 
+    /// <summary>THE APOTHECARY LADDER (`BL-305`, owner, 2026-09-26): every generic recipe's output and the type
+    /// level it needs, his table verbatim. The ONE place that level lives: RecipeCatalog gates on it, ItemCatalog
+    /// prices the recipe item by it, and MobCatalog drops the recipe from the creatures of its tier.
+    /// A METHOD, not a field: ItemCatalog reads it during its own static build.</summary>
+    public static (string OutputId, int Level)[] GenericLadder() => new[]
+    {
+        (ItemCatalog.MinorPotion, 0), (ItemCatalog.MinorManaPotion, 0),
+        (ItemCatalog.SpeedPotionU, 1), (ItemCatalog.CastPotionU, 1), (ItemCatalog.AtkPotionU, 1),
+        (ItemCatalog.HealingPotion, 2), (ItemCatalog.ManaPotion, 2),
+        (ItemCatalog.BoxWarRune1h, 4), (ItemCatalog.BoxSpellRune1h, 4),
+        (ItemCatalog.GreaterPotion, 6), (ItemCatalog.GreaterManaPotion, 6),
+        (ItemCatalog.BoxWarRune2h, 8), (ItemCatalog.BoxSpellRune2h, 8),
+        (ItemCatalog.InstantPotion, 10), (ItemCatalog.DashPotionM, 10),
+    };
+
+    /// <summary>The Apothecary level a generic output needs (<see cref="GenericLadder"/>), or -1.</summary>
+    public static int GenericLevel(string outputId)
+    {
+        foreach (var (id, level) in GenericLadder()) if (id == outputId) return level;
+        return -1;
+    }
+
+    /// <summary>Which creature TIER drops a generic recipe of this level (`BL-305`: *"T40 is l0 .. T52 is l2 so l1
+    /// pots about t40~T52, l4 t61, L6 t76,l8 t80, l10 85+ bosses/instances"*). L1 drops at both T40 and T52; L10 is
+    /// a boss's (85+), never a normal creature's.</summary>
+    public static bool GenericDropsAtTier(int level, int tier) => level switch
+    {
+        0 => tier == 40,
+        1 => tier is 40 or 52,
+        2 => tier == 52,
+        4 => tier == 61,
+        6 => tier == 76,
+        8 => tier == 80,
+        _ => false,
+    };
+
     /// <summary>What learning a generic recipe costs at the Master, by the rung it was ruled on (step 9b,
     /// owner 2026-09-24: *"i agree on rcp buy price that you wrote"*): L0 20k · L1 50k · L2 100k · L3 200k ·
     /// L4 400k · L5 700k · L6 1M · L7 1.5M · L8 2M · L9 3M · L10 4M. Each recipe names its rung explicitly.</summary>

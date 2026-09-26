@@ -4,7 +4,7 @@
 `dotnet run --project tools/ItemIds` after adding or removing an item. Every id below is a real
 id the server will accept today.
 
-**814 items.** Generated 2026-09-26.
+**829 items.** Generated 2026-09-26.
 
 ```
 /give <player> <itemId> [sellPrice] [tradable] [timed] ["name"] [enchant] [canStorePrivate] [canStoreAccount] [amount]
@@ -590,7 +590,7 @@ is full (it tells you how many fit).
 | `scroll_common` | Scroll of Enchant (E) | - | Common | stacks |
 | `scroll_enchant_s` | Scroll of Enchant (S) | - | Mythic | stacks |
 
-## Boxes  (215)
+## Boxes  (230)
 
 | id | name | grade | rarity | notes |
 |---|---|---|---|---|
@@ -663,6 +663,7 @@ is full (it tells you how many fit).
 | `recipe_craft_wand_t76_20` | Recipe: Adamantine Wand (20%) | - | Common | stacks |
 | `recipe_craft_wand_t76_40` | Recipe: Adamantine Wand (40%) | - | Common | stacks |
 | `recipe_craft_wand_t76_60` | Recipe: Adamantine Wand (60%) | - | Common | stacks |
+| `recipe_craft_potion_cast_u_100` | Recipe: Alacrity Potion | - | Common | stacks |
 | `recipe_craft_crafter_hammer_40` | Recipe: Blacksmith's Hammer (40%) | - | Common | untradable, stacks |
 | `recipe_craft_shield_t61_100` | Recipe: Bloodsteel Aegis (100%) | - | Common | stacks |
 | `recipe_craft_shield_t61_60` | Recipe: Bloodsteel Aegis (60%) | - | Common | stacks |
@@ -726,6 +727,8 @@ is full (it tells you how many fit).
 | `recipe_craft_earring_t52_100` | Recipe: Cobalt Stud (100%) | - | Common | stacks |
 | `recipe_craft_wand_t52_100` | Recipe: Cobalt Wand (100%) | - | Common | stacks |
 | `recipe_craft_heavy_t52_dmg_100` | Recipe: Cobalt Warplate (100%) | - | Common | stacks |
+| `recipe_craft_potion_minor_100` | Recipe: Common Healing Potion | - | Common | stacks |
+| `recipe_craft_potion_mana_minor_100` | Recipe: Common Mana Potion | - | Common | stacks |
 | `recipe_craft_shield_t40_100` | Recipe: Darksteel Aegis (100%) | - | Common | stacks |
 | `recipe_craft_ring_t40_100` | Recipe: Darksteel Band (100%) | - | Common | stacks |
 | `recipe_craft_staff_t40_100` | Recipe: Darksteel Battlestaff (100%) | - | Common | stacks |
@@ -749,6 +752,11 @@ is full (it tells you how many fit).
 | `recipe_craft_robe_t40_nuke_100` | Recipe: Darksteel Vestments (100%) | - | Common | stacks |
 | `recipe_craft_wand_t40_100` | Recipe: Darksteel Wand (100%) | - | Common | stacks |
 | `recipe_craft_light_t40_mdef_100` | Recipe: Darksteel Wardhide (100%) | - | Common | stacks |
+| `recipe_craft_potion_dash_m_100` | Recipe: Dash Potion | - | Common | stacks |
+| `recipe_craft_potion_atk_u_100` | Recipe: Fury Potion | - | Common | stacks |
+| `recipe_craft_potion_instant_100` | Recipe: Instant Healing Potion | - | Common | stacks |
+| `recipe_craft_potion_greater_100` | Recipe: Rare Healing Potion | - | Common | stacks |
+| `recipe_craft_potion_mana_greater_100` | Recipe: Rare Mana Potion | - | Common | stacks |
 | `recipe_craft_shield_t80_40` | Recipe: Soulcrystal Aegis (40%) | - | Common | stacks |
 | `recipe_craft_shield_t80_60` | Recipe: Soulcrystal Aegis (60%) | - | Common | stacks |
 | `recipe_craft_ring_t80_40` | Recipe: Soulcrystal Band (40%) | - | Common | stacks |
@@ -785,6 +793,13 @@ is full (it tells you how many fit).
 | `recipe_craft_earring_t80_60` | Recipe: Soulcrystal Stud (60%) | - | Common | stacks |
 | `recipe_craft_wand_t80_40` | Recipe: Soulcrystal Wand (40%) | - | Common | stacks |
 | `recipe_craft_wand_t80_60` | Recipe: Soulcrystal Wand (60%) | - | Common | stacks |
+| `recipe_craft_box_spell_rune_1h_100` | Recipe: Spell Rune Box (1h) | - | Common | stacks |
+| `recipe_craft_box_spell_rune_2h_100` | Recipe: Spell Rune Box (2h) | - | Common | stacks |
+| `recipe_craft_potion_speed_u_100` | Recipe: Swift Potion | - | Common | stacks |
+| `recipe_craft_potion_healing_100` | Recipe: Uncommon Healing Potion | - | Common | stacks |
+| `recipe_craft_potion_mana_100` | Recipe: Uncommon Mana Potion | - | Common | stacks |
+| `recipe_craft_box_war_rune_1h_100` | Recipe: War Rune Box (1h) | - | Common | stacks |
+| `recipe_craft_box_war_rune_2h_100` | Recipe: War Rune Box (2h) | - | Common | stacks |
 | `box_daily_rune_choice` | Rune Box (1h) — Daily | - | Common | untradable, stacks |
 | `box_acc_t80` | Soulcrystal Accessory Box | - | Rare | stacks |
 | `box_spell_rune_24h` | Spell Rune Box (1d) | - | Rare | untradable, stacks |

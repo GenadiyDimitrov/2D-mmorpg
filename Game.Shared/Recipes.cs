@@ -332,11 +332,14 @@ public static class RecipeCatalog
         static RecipeInput E(int grade, int n) => new(Crafting.EssenceIds[grade], n);
         static RecipeInput V(string id, int n) => new(id, n);
 
-        Recipe R(string output, int qty, int charLevel, int gate, int batchValue, params RecipeInput[] inputs) =>
-            new($"craft_{output}", CraftType.Apothecary, output, inputs,
+        Recipe R(string output, int qty, int charLevel, int batchValue, params RecipeInput[] inputs)
+        {
+            int gate = Crafting.GenericLevel(output);   // his ladder, one place (Crafting.GenericLadder)
+            return new($"craft_{output}", CraftType.Apothecary, output, inputs,
                 OutputQty: qty, LearnLevel: charLevel, UnlockLevel: gate,
                 LearnPrice: Crafting.LearnPriceLadder[gate], BatchValue: batchValue,
                 MpCost: GenericMp(charLevel));
+        }
 
         const int Gem = 0, Wood = 1, Iron = 2;
         static RecipeInput Mat(int k, int n) => M(k switch
@@ -344,40 +347,40 @@ public static class RecipeCatalog
             0 => MaterialType.Gem, 1 => MaterialType.Wood, _ => MaterialType.Iron,
         }, n);
 
-        //                                             batch char gate  batch value  inputs
+        //                                             batch char  batch value  inputs  (the gate: Crafting.GenericLadder)
         // ---- L0: Common HP / MP ---------------------------------------------------------------------------
-        yield return R(ItemCatalog.MinorPotion,        100, 40,  0,    6_000,   Mat(Gem, 5),  E(0, 1));
-        yield return R(ItemCatalog.MinorManaPotion,    100, 40,  0,   12_000,   Mat(Gem, 10), E(0, 2));
+        yield return R(ItemCatalog.MinorPotion,        100, 40,    6_000,   Mat(Gem, 5),  E(0, 1));
+        yield return R(ItemCatalog.MinorManaPotion,    100, 40,   12_000,   Mat(Gem, 10), E(0, 2));
 
         // ---- L1: the GREATER Swift / Alacrity / Fury (the Lesser is the Apothecary's shelf item; nothing
         //      crafts it). Inputs and price are the old Uncommon row's, x6.
         foreach (var greater in new[] { ItemCatalog.SpeedPotionU, ItemCatalog.CastPotionU, ItemCatalog.AtkPotionU })
-            yield return R(greater,                      6, 40,  1,   30_000,   Mat(Gem, 5),  Mat(Wood, 5), E(0, 2));
+            yield return R(greater,                      6, 40,   30_000,   Mat(Gem, 5),  Mat(Wood, 5), E(0, 2));
 
         // ---- L2: Uncommon HP / MP ---------------------------------------------------------------------------
-        yield return R(ItemCatalog.HealingPotion,       50, 52,  2,   12_500,   Mat(Gem, 10), E(1, 1));
-        yield return R(ItemCatalog.ManaPotion,          50, 52,  2,   25_000,   Mat(Gem, 20), E(1, 2));
+        yield return R(ItemCatalog.HealingPotion,       50, 52,   12_500,   Mat(Gem, 10), E(1, 1));
+        yield return R(ItemCatalog.ManaPotion,          50, 52,   25_000,   Mat(Gem, 20), E(1, 2));
 
         // ---- L4: War / Spell Rune, 1 h, x3 (*"1h from shop cost 450k"*). The character level stays 70.
         foreach (var box in new[] { ItemCatalog.BoxWarRune1h, ItemCatalog.BoxSpellRune1h })
-            yield return R(box,                          3, 70,  4,  450_000,   Mat(Iron, 10), Mat(Gem, 10), Mat(Wood, 10), E(2, 8));
+            yield return R(box,                          3, 70,  450_000,   Mat(Iron, 10), Mat(Gem, 10), Mat(Wood, 10), E(2, 8));
 
         // ---- L6: Rare HP / MP: *"they are not rly sold anywhere so crafting is the only way"*.
-        yield return R(ItemCatalog.GreaterPotion,       10, 76,  6,   50_000,   Mat(Gem, 10), E(2, 1),
+        yield return R(ItemCatalog.GreaterPotion,       10, 76,   50_000,   Mat(Gem, 10), E(2, 1),
                        V(ItemCatalog.VolcanicAsh, 1), V(ItemCatalog.VolcanicStone, 1));
-        yield return R(ItemCatalog.GreaterManaPotion,   10, 76,  6,  100_000,   Mat(Gem, 20), E(2, 2),
+        yield return R(ItemCatalog.GreaterManaPotion,   10, 76,  100_000,   Mat(Gem, 20), E(2, 2),
                        V(ItemCatalog.VolcanicAsh, 2), V(ItemCatalog.VolcanicStone, 2));
 
         // ---- L8: War / Spell Rune, 2 h, x3 (*"2h x3 shop cost 840"*).
         foreach (var box in new[] { ItemCatalog.BoxWarRune2h, ItemCatalog.BoxSpellRune2h })
-            yield return R(box,                          3, 80,  8,  840_000,   V(ItemCatalog.VolcanicBar, 2), E(4, 4));
+            yield return R(box,                          3, 80,  840_000,   V(ItemCatalog.VolcanicBar, 2), E(4, 4));
 
         // ---- L10: Instant Healing and Supreme Dash, *"harder to craft"*: the top type level and character 85 are
         //      what makes them hard. ⚠ PLACEHOLDERS of mine (batch, inputs): x5, BatchValue = 5 × the item's Value,
         //      inputs kept under x0.55 of it so every level still pays gold (Instant = the Rare HP line's inputs).
-        yield return R(ItemCatalog.InstantPotion,        5, 85, 10,   25_000,   Mat(Gem, 10), E(2, 1),
+        yield return R(ItemCatalog.InstantPotion,        5, 85,   25_000,   Mat(Gem, 10), E(2, 1),
                        V(ItemCatalog.VolcanicAsh, 1), V(ItemCatalog.VolcanicStone, 1));
-        yield return R(ItemCatalog.DashPotionM,          5, 85, 10,  250_000,   Mat(Gem, 20), Mat(Wood, 20), E(4, 2));
+        yield return R(ItemCatalog.DashPotionM,          5, 85,  250_000,   Mat(Gem, 20), Mat(Wood, 20), E(4, 2));
     }
 
     public static Recipe? Get(string id) => id is null ? null : _byId.GetValueOrDefault(id);

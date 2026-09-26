@@ -7841,3 +7841,50 @@ is unchanged. `BL-270` (the wheel) stays open.
 > - **horizontal:** a 1×12 main bar, with 1×12 / 2×12 extra, or with 1×6 … 4×6 extra;
 > - **vertical:** a 6×1 / 6×2 main column, with 6×1 … 6×4 extra.
 > Related: `BL-270` (a vertical bar or a wheel for hand-held play). This is the layout-picker half of it.
+
+## `BL-305` ✅ CLOSED 2026-09-26 in **0.214.20 → 0.214.22**: the generic-recipe overhaul
+
+His answers, 2026-09-26, quoted in the filed text below. **Built in three versions:** 0.214.20: only Swift / Alacrity
+/ Fury potions remain (Lesser = L1 rung, on the Apothecary's shelf; Greater = L2 rung, crafted at Apothecary L1), and
+every buff scroll left crafting. 0.214.21: the Scribe folded into the Apothecary on his L0-L10 ladder, with Instant
+Healing and Supreme Dash as new L10 crafts. 0.214.22: every generic recipe is a 100% item that drops from normal
+creatures of its tier, and L10 from 85+ bosses. ⚠ Placeholders of mine, flagged in the CHANGELOG: the L10 inputs, the
+1/100 band rate, the boss 0.2. The Master SELLING the L0/L2 books instead of teaching them is `BL-303`'s question 3.
+
+**As filed:**
+
+>
+> From the same playtest, on 0.203.0. His words: *"I want generic recipes to be dropped as well and found"*. The
+> problem he found: *"at t40 scroll of might gives 15% (max lvl) while u can craft a lesser potion for 8 ... And
+> potion never can get 15%"*. His proposal (*"I think of"*, so not yet a ruling):
+> - **Remove every buff potion except Swift / Fury / Alacrity**, which get two levels: L1 +20% / +23% / +23%,
+>   L2 +33% / +33% / +30%. The Lesser ones are sold by the Apothecary; the Uncommon ones are crafted at L1.
+> - **Merge the Apothecary and the Scribe** into one profession, and remove every buff scroll from the Scribe.
+> - The ladder:
+>
+> | level | crafts | recipe source |
+> |---|---|---|
+> | L0 | Common HP/MP potions | vendor |
+> | L1 | Swift / Alacrity / Fury greater buff potions | dropped / found |
+> | L2 | Uncommon HP/MP potions | vendor |
+> | L4 | War / Spell Rune, 1 h | dropped / found |
+> | L6 | Rare HP/MP potions | dropped / found |
+> | L8 | War / Spell Rune, 2 h | dropped / found |
+> | L10 | Instant Healing, Supreme Dash (*"harder to craft"*) | dropped / found |
+>
+> ❓ **Open before building:** (1) is this a ruling or still a proposal; (2) the buff potions removed from the
+> game are also in the NPC buffer shelf and the Potions tab (`BL-243`); what replaces them there; (3) where
+> generic recipes drop (which mobs, what rate), since `BL-274`'s per-mob tables are the only drop path;
+> (4) the ×0.90 → ×0.55 cost curve of 0.204.0 was priced on the current table; does it carry over.
+>
+> ✅ **Answered 2026-09-26** (his words): *"1. It's a ruling at 40lv I noticed that the apothcand scribe are uncompareable
+> and scribe always wins over ..so I decide we need to merge. 2. Remove all buff ports except the 3 from the game ... The
+> npc buffer don't give a buff potion effect but a npc_buff. Apoth vendor sells only the 3 lesser. Others are drop/craft
+> 3. Generic rcps are normal mobs g make them from Tires that are close to the equip tires .. T40 is l0 .. T52 is l2 so l1
+> pots about t40~T52, l4 t61, L6 t76,l8 t80, l10 85+ bosses/instances 4. Yes the 0.9->0.55 stays"*.
+> - ✅ **Part 1, 0.214.20:** only Swift / Alacrity / Fury potions remain, Lesser = L1 rung (shelf), Greater = L2 rung
+>   (crafted at Apothecary L1); every buff scroll left crafting (Blessing Box only).
+> - ✅ **Part 2, 0.214.21:** the Scribe folded into the Apothecary on his L0-L10 ladder; Instant Healing + Supreme Dash
+>   are L10 crafts (placeholder inputs).
+> - ✅ Part 3, 0.214.22: generic recipe ITEMS dropping by tier (L0 T40, L1
+>   T40-T52, L2 T52, L4 T61, L6 T76, L8 T80, L10 85+ bosses/instances), the Master's L0/L2 sale overlapping `BL-303` Q3.

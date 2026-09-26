@@ -518,7 +518,7 @@ Check("the Blessing is paused in town (BL-300)", await a.WaitFor(() => a.Favor?.
         var b44 = MobCatalog.BossDrops(44).ToList();
         var b90 = MobCatalog.BossDrops(90).ToList();
         var books44 = b44.Where(e => e.GroupId == MobCatalog.GroupRecipe).ToList();
-        var books90 = b90.Where(e => e.GroupId == MobCatalog.GroupRecipe).ToList();
+        var books90 = b90.Where(e => e.GroupId == MobCatalog.GroupRecipe && e.ItemId.Contains("_t80")).ToList();
         Check("bosses: T40 pays 100% recipes, T80 60%, 2.5 books a kill at T40 and 0.8 at T80 (BL-308), a T80 full item, S essence; every id exists",
               books44.All(e => e.ItemId.EndsWith("_100") && e.ItemId.Contains("_t40"))
               && Math.Abs(books44.Sum(e => e.Chance) - 2.5f) < 0.001f
@@ -529,6 +529,33 @@ Check("the Blessing is paused in town (BL-300)", await a.WaitFor(() => a.Favor?.
               && !b44.Any(e => e.GroupId == MobCatalog.GroupEssence || e.ItemId.EndsWith("_common"))
               && b44.Concat(b90).All(e => ItemCatalog.Get(e.ItemId) is not null),
               $"{books44.Count}/{books90.Count} books");
+        // `BL-305` part 3: a level-90 boss adds the two L10 generic books, 0.2 between them.
+        var l10 = b90.Where(e => e.GroupId == MobCatalog.GroupRecipe && !e.ItemId.Contains("_t80")).ToList();
+        Check("🔑 BL-305: an 85+ boss drops the L10 generic recipes (Instant Healing, Supreme Dash), a 44 boss none",
+              l10.Count == 2 && Math.Abs(l10.Sum(e => e.Chance) - (float)MobCatalog.BossL10RecipeChance) < 0.001f
+              && l10.All(e => ItemCatalog.Get(e.ItemId)?.TeachesRecipeId is string r && Crafting.GenericLevel(r["craft_".Length..]) == 10)
+              && !b44.Any(e => e.ItemId.Contains("potion_instant") || e.ItemId.Contains("potion_dash_m")),
+              string.Join(",", l10.Select(e => e.ItemId)));
+    }
+    {
+        // `BL-305` part 3: every generic recipe is an item, and normal creatures drop them by tier band.
+        var ladder = Crafting.GenericLadder();
+        Check("🔑 BL-305: every Apothecary line has a 100% recipe item that teaches it",
+              ladder.All(g => ItemCatalog.Get(ItemCatalog.RecipeBookId($"craft_{g.OutputId}", 100)) is { TeachesRecipeId: var t } && t == $"craft_{g.OutputId}")
+              && RecipeCatalog.All.Where(r => r.Type == CraftType.Apothecary).All(r => r.UnlockLevel == Crafting.GenericLevel(r.OutputId)),
+              $"{ladder.Length} lines");
+        var mob = MobCatalog.Templates.First(m => m.Profile is not null && m.Drops is { Length: > 0 });
+        List<string> Generic(int L) => MobCatalog.KillTable(mob, L, MobRank.Normal)
+            .Where(e => e.ItemId.StartsWith("recipe_craft_") && !e.ItemId.Contains("_t")).Select(e => e.ItemId).ToList();
+        string B(string output) => ItemCatalog.RecipeBookId($"craft_{output}", 100);
+        var at45 = Generic(45); var at55 = Generic(55); var at65 = Generic(65); var at78 = Generic(78); var at85 = Generic(85);
+        Check("🔑 BL-305 bands: T40 = L0 + L1 · T52 = L1 + L2 · T61 = 1h runes · T76 = rare HP/MP · T80 = 2h runes; never L10",
+              at45.Count == 5 && at45.Contains(B(ItemCatalog.MinorPotion)) && at45.Contains(B(ItemCatalog.SpeedPotionU))
+              && at55.Count == 5 && at55.Contains(B(ItemCatalog.HealingPotion)) && at55.Contains(B(ItemCatalog.AtkPotionU))
+              && at65.Count == 2 && at65.Contains(B(ItemCatalog.BoxWarRune1h))
+              && at78.Count == 2 && at78.Contains(B(ItemCatalog.GreaterManaPotion))
+              && at85.Count == 2 && at85.Contains(B(ItemCatalog.BoxSpellRune2h)),
+              $"45:{at45.Count} 55:{at55.Count} 65:{at65.Count} 78:{at78.Count} 85:{at85.Count} ({mob.Id})");
     }
 
     // The "(Lesser)" line is GONE — it became the low QUALITIES of the real ladder.

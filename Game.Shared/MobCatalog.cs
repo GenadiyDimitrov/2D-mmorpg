@@ -1082,6 +1082,15 @@ public static class MobCatalog
     /// RULED (step 11): ONE roll a kill, split across the creature's kinds.</summary>
     public const double RareGearPerKill = 1 / 10000.0;
 
+    /// <summary>`BL-305`: one GENERIC recipe of the creature's tier band per this many normal kills (an elite ×2),
+    /// split evenly over the band. ⚠ PLACEHOLDER of mine — he gave the bands, not a rate; it is the T40 gear
+    /// recipe's own 1 in 100.</summary>
+    public const double GenericRecipePerKill = 1 / 100.0;
+
+    /// <summary>`BL-305`: a level-85+ BOSS's chance at one L10 generic recipe (Instant Healing / Supreme Dash), per
+    /// kill: *"l10 85+ bosses/instances"*. ⚠ PLACEHOLDER of mine; instances do not exist yet.</summary>
+    public const double BossL10RecipeChance = 0.2;
+
     /// <summary>Volcanic Ash and Stone per kill, each, on the creatures of levels 76 / 80 / 85 (RULED: 0.3).</summary>
     public const double VolcanicPerKill = 0.3;
     public static bool DropsVolcanic(MobType t) => t.Level is 76 or 80 or 85;
@@ -1193,6 +1202,16 @@ public static class MobCatalog
                     list.Add(new DropEntry(Metal(rung), (float)(NightHigherPerKill * mul), GroupId: GroupMats));
         }
 
+        // `BL-305`: the GENERIC recipes of this tier (Crafting.GenericDropsAtTier), whatever the specialty, split
+        // evenly inside the band. One group with the gear books, so the recipe rate knob moves both.
+        if (ti >= 0)
+        {
+            var band = Crafting.GenericLadder().Where(g => Crafting.GenericDropsAtTier(g.Level, tier)).ToList();
+            double each = GenericRecipePerKill * (elite ? CommonGearEliteMul : 1f) / Math.Max(1, band.Count);
+            foreach (var (outputId, _) in band)
+                list.Add(new DropEntry(ItemCatalog.RecipeBookId($"craft_{outputId}", 100), (float)each, GroupId: GroupRecipe));
+        }
+
         if (tier >= 76)
         {
             var (ch, lo, hi) = DirectEssence(tier);
@@ -1256,6 +1275,15 @@ public static class MobCatalog
             foreach (var key in keys)
                 yield return new DropEntry(ItemCatalog.RecipeBookId($"craft_{key}_t{tier}", BossRecipePct(tier)),
                     (float)(books / kinds.Length / keys.Length), GroupId: GroupRecipe);
+
+        // `BL-305`: the L10 generic recipes are a boss's, from level 85 (*"l10 85+ bosses/instances"*).
+        if (level >= 85)
+        {
+            var top = Crafting.GenericLadder().Where(g => g.Level == 10).ToList();
+            foreach (var (outputId, _) in top)
+                yield return new DropEntry(ItemCatalog.RecipeBookId($"craft_{outputId}", 100),
+                    (float)(BossL10RecipeChance / top.Count), GroupId: GroupRecipe);
+        }
 
         foreach (var (_, keys) in kinds)
             foreach (var key in keys)

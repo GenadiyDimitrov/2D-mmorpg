@@ -2139,6 +2139,7 @@ public static class ItemCatalog
         list.AddRange(Essences());
         list.AddRange(VolcanicMaterials());
         list.AddRange(RecipeBooks(tieredGear));
+        list.AddRange(GenericRecipeBooks(list).ToList());   // materialized: it reads the list it joins
         // The tutorial chain's BOUND copies — the 30-day Newbie loaner kit and the completion
         // consumables. Generated last, off the finished list, so a clone always mirrors the real
         // item (see BoundCopies).
@@ -2362,6 +2363,25 @@ public static class ItemCatalog
                     Value: Crafting.RecipePrice(piece, pct), TeachesRecipeId: recipeId, RecipePercent: pct, ItemLevel: 0,
                     Description: $"Use it to learn the {d.Name} recipe at {pct}% (it takes a recipe slot). "
                                + "Each craft at a Master spends one recipe of this % or lower.");
+        }
+    }
+
+    /// <summary>GENERIC recipe items (`BL-305`, owner, 2026-09-26: *"I want generic recipes to be dropped as well
+    /// and found"*): one per Apothecary line of <see cref="Crafting.GenericLadder"/>, always 100% (a generic craft
+    /// never fails and spends no recipe). Using one LEARNS it, through the same gate as the Master's teaching:
+    /// crafter status, the character level and the Apothecary level. Priced at the Master's teaching price for the
+    /// line's level, so a found book is worth what learning it costs. Built off the finished list, for the names.</summary>
+    private static IEnumerable<ItemDef> GenericRecipeBooks(List<ItemDef> all)
+    {
+        foreach (var (outputId, level) in Crafting.GenericLadder())
+        {
+            var output = all.First(d => d.Id == outputId);
+            string recipeId = $"craft_{outputId}";
+            yield return new ItemDef(RecipeBookId(recipeId, 100), $"Recipe: {output.Name}",
+                EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
+                Value: Crafting.LearnPriceLadder[level], TeachesRecipeId: recipeId, RecipePercent: 100,
+                Description: $"Use it to learn the {output.Name} recipe (Apothecary L{level}; it takes a recipe slot). "
+                           + "Generic crafts never fail and spend no recipe.");
         }
     }
 
