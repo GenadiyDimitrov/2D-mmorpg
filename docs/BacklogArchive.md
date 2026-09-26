@@ -7747,3 +7747,15 @@ from `Crafting.EssenceItemLevels` (D/C/B/A/S), so every grade print and the bag'
 
 > From the same playtest, on 0.209.2 (`BL-289`): *"Essence have grade .. Darksteel essence is D grade ... They
 > represent essence for each grade"*. `ItemCatalog.GradeLabel` prints "-" for an essence today.
+
+
+## `BL-304` ✅ CLOSED 2026-09-26 in **0.214.9**: crafter level text says grades
+
+His words, 2026-09-26 (playtest of 0.181.0 → 0.214.2), on 0.203.0's crafter levels: *"The desciption should not say
+T40..T80 but grades ... D~S"*. **Built in 0.214.9:** the Points page note (D at L0, C L2, B L4, A L6, S L8), the
+Nightsilver/Nightsilk descriptions and the Volcanic Bar's description say grades. No other player-facing string
+carried a T-number; the debug panel keeps them.
+
+**As filed:**
+
+> From the same playtest, on 0.203.0: *"The description should not say T40..T80 but grades ... D~S"*.

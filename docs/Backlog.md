@@ -282,7 +282,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-301` | 🔴 | **Item name tags `(T/B/U)`** (timed / bound / untradable) after the name, and the `(Lesser)`/`(Bound)`/`(Supreme)` words OUT of item names | items |
 | `BL-302` | 🔴 | **"Unequip all" as a skill-window ACTION** you can put on the bar (the bag button stays) | client |
 | `BL-303` | 🟡 | **Split the Master Crafter from the ANVIL** — the Master is a vendor of recipe items gated by crafter level; a plain "Anvil" NPC is where you craft | crafting |
-| `BL-304` | 🔴 | **Crafter level text says GRADES (D~S)**, not T40…T80 | crafting |
 | `BL-305` | 🔵 | **THE GENERIC-RECIPE OVERHAUL** — Apothecary + Scribe merge, buff scrolls and most buff potions go, a new L0-L10 ladder, generic recipes drop | crafting |
 | `BL-306` | 🔴 | **EVERY craft costs MP** — refines, generics and apothecary too | crafting |
 | `BL-307` | 🔵 | **Full drops below level 40** — F/E-grade Common gear, materials and lucky drops, not only gold | drops |
@@ -2288,10 +2287,6 @@ From the same playtest, on 0.203.0 (`BL-273` part 2):
 - **The Anvil is where you craft**: an NPC called just **Anvil**, no title (*"later model will be just an
   anvil"*). It has only today's craft / points / materials tabs, i.e. the current "work at his anvil" view.
 🟡 **Gated on `BL-305`** for which generic recipes exist and at which level. The gear half does not wait.
-
-## `BL-304` 🔴 CRAFTER LEVELS SAY GRADES, NOT TIERS
-
-From the same playtest, on 0.203.0: *"The description should not say T40..T80 but grades ... D~S"*.
 
 ## `BL-305` 🔵 THE GENERIC-RECIPE OVERHAUL
 

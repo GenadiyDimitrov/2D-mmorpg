@@ -2205,7 +2205,7 @@ public static class ItemCatalog
         for (int rung = 0; rung < Crafting.RefineRungs; rung++, value *= Crafting.RefineRatio)
         {
             string p = Crafting.RefineRungPrefix[rung];
-            string tier = $"T{Crafting.GearTiers[rung]}";
+            string tier = $"{TierLetter(Crafting.GearTiers[rung])}-grade";   // `BL-304`: grades, not tiers
             yield return new ItemDef(Crafting.NightsilverId(rung), $"{p}Nightsilver", EquipSlot.Material, ItemGrade.F,
                 rungRarity[rung], Value: value, NoAttributes: true,
                 Description: $"The smith's metal of the {tier} weapons, earrings and rings. 10 refine into 1 of the next rung.");
@@ -2251,7 +2251,7 @@ public static class ItemCatalog
         yield return new ItemDef(VolcanicStone, "Volcanic Stone", EquipSlot.Material, ItemGrade.F, ItemRarity.Rare,
             Value: 5_000, NoAttributes: true, Description: "Found on creatures of the fire lands (76+).");
         yield return new ItemDef(VolcanicBar, "Volcanic Bar", EquipSlot.Material, ItemGrade.F, ItemRarity.Epic,
-            Value: 200_000, NoAttributes: true, Description: "Refined from volcanic ash and stone. T76/T80 crafting.");
+            Value: 200_000, NoAttributes: true, Description: "Refined from volcanic ash and stone. A- and S-grade crafting.");
     }
 
     private static IEnumerable<ItemDef> Essences()

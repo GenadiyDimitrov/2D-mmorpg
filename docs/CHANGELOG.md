@@ -7,12 +7,21 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.8**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.9**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.8: an essence carries its grade (`BL-309`)
+## 2026-09-26 (latest) — 0.214.9: crafting text says grades, not tiers (`BL-304`)
+
+> *"The desciption should not say T40..T80 but grades ... D~S"*
+
+- The Crafting window's Points page now reads *"Smiths: D grade at L0, C needs L2, B L4, A L6, S L8"* (was "T52 needs
+  L2, T61 L4 …"). The Nightsilver / Nightsilk descriptions say *"of the D-grade weapons"*, and so on up the rungs.
+  The Volcanic Bar says *"A- and S-grade crafting"*. Those were the only player-facing tier numbers; the debug panel
+  keeps its T-numbers.
+
+## 2026-09-26 — 0.214.8: an essence carries its grade (`BL-309`)
 
 > *"Esseence have grade .. Darksteel essnce is D grade ... They represend essnece for each grade"*
 

@@ -364,9 +364,10 @@ namespace Game.Client
         private void BuildSlotsPage()
         {
             int free = Boot.CraftPointsFree;
-            CraftNote("Each crafting level gives one point to spend on a type (" + free + " free). Smiths: T52 needs L2, "
-                    + "T61 L4, T76 L6, T80 L8; L9 and L10 add +5% each. Scribe and Apothecary unlock their uncommon "
-                    + "lines by the same tiers and craft cheaper each level (x0.90 down to x0.55).");
+            // `BL-304`: grades, not tiers — *"should not say T40..T80 but grades ... D~S"*.
+            CraftNote("Each crafting level gives one point to spend on a type (" + free + " free). Smiths: D grade at L0, "
+                    + "C needs L2, B L4, A L6, S L8; L9 and L10 add +5% each. Scribe and Apothecary unlock their uncommon "
+                    + "lines at the same levels and craft cheaper each level (x0.90 down to x0.55).");
             foreach (var type in Crafting.SpendableTypes)
             {
                 var t = type;                        // captured per row
