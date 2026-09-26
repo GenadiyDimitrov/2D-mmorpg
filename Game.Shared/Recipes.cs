@@ -303,28 +303,26 @@ public static class RecipeCatalog
     }
 
     // =====================================================================================
-    //  STEP 9b — THE GENERIC-RECIPE TABLE (owner, 2026-09-24; design doc §2.2 "Your answers" and
-    //  "The crafter-points model"). Every number below is AUTHORED, one literal per row.
+    //  THE GENERIC-RECIPE TABLE — ONE PROFESSION, THE APOTHECARY (`BL-305`, owner, 2026-09-26: *"at 40lv I
+    //  noticed that the apothcand scribe are uncompareable and scribe always wins over ..so I decide we need to
+    //  merge"*). The Scribe is folded in: `CraftType.Scribe` stays in the enum (saved type levels index by it)
+    //  but nothing is spent on it or crafted under it. Every number below is AUTHORED, one literal per row.
     //
-    //  • TYPE LEVEL (UnlockLevel): commons are open to every crafter at L0 (*"all can do T40 crafts + common
-    //    scrolls common buff pots and common regen pots"*). An uncommon needs the type and its tier's gate:
-    //    T40 L1 · T52 L2 · T61 L4 (the smiths' gate, and L1 at T40 because the type must be learned at all).
-    //    Runes 1h L7 / 2h L10; rare HP L7 / rare MP L10 (*"apoth … adds rare pots at the end"*).
-    //  • A BUFF's tier is its class skill's LAST rung (*"if a skill is learned at 40 but last lvl is at 52
-    //    that s T52"*), measured 2026-09-24 over every class table: T40 = Might, Bulwark, Alacrity, Swift;
-    //    T52 = Aim, Force, Ward, Fury, Agility, Focus, Ferocity, Frenzy, Vigor, Serenity; T61 = Body, Soul,
-    //    Resolve, Insight, Vampirism. The tier sets the character level, the gate and the essence (D/C/B).
+    //  • TYPE LEVEL (UnlockLevel) is HIS LADDER, verbatim:
+    //      L0  Common HP/MP            L1  Greater Swift / Alacrity / Fury     L2  Uncommon HP/MP
+    //      L4  War / Spell Rune, 1 h   L6  Rare HP/MP                          L8  War / Spell Rune, 2 h
+    //      L10 Instant Healing, Supreme Dash (*"harder to craft"*)
     //  • PRICE: BatchValue is what the batch costs to buy (shelf price; HP/MP 60/120 · 250/500 · 5000/10000,
-    //    buff potions 1,500 / 5,000, buff scrolls 36,000, rune boxes 150k / 280k). The crafter pays
-    //    ×0.9 → ×0.55 of it by type level (Crafting.PriceFactor); essence and mats are fixed, gold floats.
-    //  • LEARN PRICE: the ladder of the rung each line was ruled on (Crafting.LearnPriceLadder).
-    //  • OUT, by his ruling: stones, Return/Resurrection (+ Ultimates), every Dash, the Instant potion, and
-    //    enchant + attribute scrolls (never craftable).
+    //    buff potions 5,000, rune boxes 150k / 280k). The crafter pays ×0.9 → ×0.55 of it by type level
+    //    (Crafting.PriceFactor; *"Yes the 0.9->0.55 stays"*); essence and mats are fixed, gold floats.
+    //  • LEARN PRICE: the ladder rung of the line's own level (Crafting.LearnPriceLadder).
+    //  • OUT: stones, Return/Resurrection (+ Ultimates), every Dash below Supreme, enchant + attribute scrolls,
+    //    and every buff scroll (Blessing Box only since `BL-305`).
     // =====================================================================================
     /// <summary>`BL-306` — a generic batch's MP, per attempt: *"every craft must cost mp (refines and generics
     /// and apoth as well)"*. He gave no numbers, so these are PLACEHOLDERS on the refine ladder's own scale
     /// (<see cref="Crafting.RefineMp"/> 50/100/150/200), keyed to the line's grade: D (40) 50 · C (52) 100 ·
-    /// B (61) 150 · the 70+ lines (rare potions, rune boxes) 200. Any row may be retuned alone.</summary>
+    /// B (61) 150 · the 70+ lines 200. Any row may be retuned alone; he will judge them in a playtest.</summary>
     private static int GenericMp(int charLevel) =>
         charLevel >= 70 ? 200 : charLevel >= 61 ? 150 : charLevel >= 52 ? 100 : 50;
 
@@ -334,47 +332,52 @@ public static class RecipeCatalog
         static RecipeInput E(int grade, int n) => new(Crafting.EssenceIds[grade], n);
         static RecipeInput V(string id, int n) => new(id, n);
 
-        Recipe R(CraftType type, string output, int qty, int charLevel, int gate, int ladder, int batchValue,
-                 params RecipeInput[] inputs) =>
-            new($"craft_{output}", type, output, inputs,
+        Recipe R(string output, int qty, int charLevel, int gate, int batchValue, params RecipeInput[] inputs) =>
+            new($"craft_{output}", CraftType.Apothecary, output, inputs,
                 OutputQty: qty, LearnLevel: charLevel, UnlockLevel: gate,
-                LearnPrice: Crafting.LearnPriceLadder[ladder], BatchValue: batchValue,
+                LearnPrice: Crafting.LearnPriceLadder[gate], BatchValue: batchValue,
                 MpCost: GenericMp(charLevel));
 
-        const CraftType Apo = CraftType.Apothecary, Scr = CraftType.Scribe;
-        const int Gem = 0, Wood = 1, Iron = 2, Leather = 3;
+        const int Gem = 0, Wood = 1, Iron = 2;
         static RecipeInput Mat(int k, int n) => M(k switch
         {
-            0 => MaterialType.Gem, 1 => MaterialType.Wood, 2 => MaterialType.Iron, _ => MaterialType.Leather,
+            0 => MaterialType.Gem, 1 => MaterialType.Wood, _ => MaterialType.Iron,
         }, n);
 
-        // ---- HP / MP ------------------------------------------------------------------------------------
-        //                                   batch  char gate ladder  batch value    inputs
-        yield return R(Apo, ItemCatalog.MinorPotion,       100, 40, 0, 0,   6_000,   Mat(Gem, 5),  E(0, 1));
-        yield return R(Apo, ItemCatalog.MinorManaPotion,   100, 40, 0, 0,  12_000,   Mat(Gem, 10), E(0, 2));
-        yield return R(Apo, ItemCatalog.HealingPotion,      50, 52, 2, 2,  12_500,   Mat(Gem, 10), E(1, 1));
-        yield return R(Apo, ItemCatalog.ManaPotion,         50, 52, 2, 2,  25_000,   Mat(Gem, 20), E(1, 2));
-        // Rare: *"they are not rly sold anywhere so crafting is the only way"*. Unreachable until the volcanic
-        // ash/stone drop in step 11.
-        yield return R(Apo, ItemCatalog.GreaterPotion,      10, 76, 7, 5,  50_000,   Mat(Gem, 10), E(2, 1),
+        //                                             batch char gate  batch value  inputs
+        // ---- L0: Common HP / MP ---------------------------------------------------------------------------
+        yield return R(ItemCatalog.MinorPotion,        100, 40,  0,    6_000,   Mat(Gem, 5),  E(0, 1));
+        yield return R(ItemCatalog.MinorManaPotion,    100, 40,  0,   12_000,   Mat(Gem, 10), E(0, 2));
+
+        // ---- L1: the GREATER Swift / Alacrity / Fury (the Lesser is the Apothecary's shelf item; nothing
+        //      crafts it). Inputs and price are the old Uncommon row's, x6.
+        foreach (var greater in new[] { ItemCatalog.SpeedPotionU, ItemCatalog.CastPotionU, ItemCatalog.AtkPotionU })
+            yield return R(greater,                      6, 40,  1,   30_000,   Mat(Gem, 5),  Mat(Wood, 5), E(0, 2));
+
+        // ---- L2: Uncommon HP / MP ---------------------------------------------------------------------------
+        yield return R(ItemCatalog.HealingPotion,       50, 52,  2,   12_500,   Mat(Gem, 10), E(1, 1));
+        yield return R(ItemCatalog.ManaPotion,          50, 52,  2,   25_000,   Mat(Gem, 20), E(1, 2));
+
+        // ---- L4: War / Spell Rune, 1 h, x3 (*"1h from shop cost 450k"*). The character level stays 70.
+        foreach (var box in new[] { ItemCatalog.BoxWarRune1h, ItemCatalog.BoxSpellRune1h })
+            yield return R(box,                          3, 70,  4,  450_000,   Mat(Iron, 10), Mat(Gem, 10), Mat(Wood, 10), E(2, 8));
+
+        // ---- L6: Rare HP / MP: *"they are not rly sold anywhere so crafting is the only way"*.
+        yield return R(ItemCatalog.GreaterPotion,       10, 76,  6,   50_000,   Mat(Gem, 10), E(2, 1),
                        V(ItemCatalog.VolcanicAsh, 1), V(ItemCatalog.VolcanicStone, 1));
-        yield return R(Apo, ItemCatalog.GreaterManaPotion,  10, 76, 10, 5, 100_000,  Mat(Gem, 20), E(2, 2),
+        yield return R(ItemCatalog.GreaterManaPotion,   10, 76,  6,  100_000,   Mat(Gem, 20), E(2, 2),
                        V(ItemCatalog.VolcanicAsh, 2), V(ItemCatalog.VolcanicStone, 2));
 
-        // ---- BUFF POTIONS (`BL-305`, owner, 2026-09-26): only the GREATER Swift / Alacrity / Fury are crafted,
-        //      at Apothecary L1 (his ladder: *"L1 | Swift / Alacrity / Fury greater buff potions"*); the Lesser
-        //      is the Apothecary's shelf item and nothing crafts it. The six other potion families and every
-        //      buff scroll left crafting (the scrolls live on in the Blessing Box). Inputs and price are the
-        //      old Uncommon row's, x6.
-        foreach (var greater in new[] { ItemCatalog.SpeedPotionU, ItemCatalog.CastPotionU, ItemCatalog.AtkPotionU })
-            yield return R(Apo, greater, 6, 40, 1, 3, 30_000, Mat(Gem, 5), Mat(Wood, 5), E(0, 2));
-
-        // ---- RUNE BOXES: x3 (*"1h from shop cost 450k … 2h x3 shop cost 840"*). The 2h is unreachable until
-        //      the Volcanic Bar refine (step 10) and its ash/stone (step 11) exist.
-        foreach (var box in new[] { ItemCatalog.BoxWarRune1h, ItemCatalog.BoxSpellRune1h })
-            yield return R(Scr, box, 3, 70, 7, 7, 450_000, Mat(Iron, 10), Mat(Gem, 10), Mat(Wood, 10), E(2, 8));
+        // ---- L8: War / Spell Rune, 2 h, x3 (*"2h x3 shop cost 840"*).
         foreach (var box in new[] { ItemCatalog.BoxWarRune2h, ItemCatalog.BoxSpellRune2h })
-            yield return R(Scr, box, 3, 80, 10, 10, 840_000, V(ItemCatalog.VolcanicBar, 2), E(4, 4));
+            yield return R(box,                          3, 80,  8,  840_000,   V(ItemCatalog.VolcanicBar, 2), E(4, 4));
+
+        // ---- L10: Instant Healing and Supreme Dash, *"harder to craft"*: the top type level and character 85 are
+        //      what makes them hard. ⚠ PLACEHOLDERS of mine (batch, inputs): x5, BatchValue = 5 × the item's Value,
+        //      inputs kept under x0.55 of it so every level still pays gold (Instant = the Rare HP line's inputs).
+        yield return R(ItemCatalog.InstantPotion,        5, 85, 10,   25_000,   Mat(Gem, 10), E(2, 1),
+                       V(ItemCatalog.VolcanicAsh, 1), V(ItemCatalog.VolcanicStone, 1));
+        yield return R(ItemCatalog.DashPotionM,          5, 85, 10,  250_000,   Mat(Gem, 20), Mat(Wood, 20), E(4, 2));
     }
 
     public static Recipe? Get(string id) => id is null ? null : _byId.GetValueOrDefault(id);

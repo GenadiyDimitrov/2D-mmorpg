@@ -460,22 +460,31 @@ Check("the Blessing is paused in town (BL-300)", await a.WaitFor(() => a.Favor?.
           Crafting.TierGate(40) == 0 && Crafting.TierGate(52) == 2 && Crafting.TierGate(61) == 4
           && Crafting.TierGate(76) == 6 && Crafting.TierGate(80) == 8
           && RecipeCatalog.All.Where(r => r.IsGear).All(r => r.UnlockLevel == Crafting.TierGate(r.GearItemLevel)));
-    Check("🔑 Scribe/Apothecary price: x0.90 at L0 → x0.55 at L10, and every batch still costs gold",
+    Check("🔑 Apothecary price: x0.90 at L0 → x0.55 at L10, and every batch still costs gold",
           Math.Abs(Crafting.PriceFactor(0) - 0.9f) < 1e-6 && Math.Abs(Crafting.PriceFactor(10) - 0.55f) < 1e-6
           && RecipeCatalog.All.Where(r => r.BatchValue > 0).All(r => r.GoldAt(10) >= 10
               && r.GoldAt(0) > r.GoldAt(10)));
     var nine = RecipeCatalog.All.Where(r => r.Type is CraftType.Apothecary or CraftType.Scribe).ToList();
-    Check("🔑 step 9b: every Scribe/Apothecary recipe succeeds 100% and is priced; the OUT list has no recipe",
-          nine.Count > 0 && nine.All(r => r.SuccessChance == 1f && r.BatchValue > 0 && r.LearnPrice > 0 && r.LearnLevel >= 40)
+    Check("🔑 BL-305: no Scribe recipe and no Scribe point; every Apothecary recipe succeeds 100% and is priced; the OUT list has no recipe",
+          nine.Count > 0 && nine.All(r => r.Type == CraftType.Apothecary)
+          && Array.IndexOf(Crafting.SpendableTypes, CraftType.Scribe) < 0
+          && nine.All(r => r.SuccessChance == 1f && r.BatchValue > 0 && r.LearnPrice > 0 && r.LearnLevel >= 40)
           && new[] { ItemCatalog.SkillStone, ItemCatalog.ElementalStone, ItemCatalog.ScrollReturn, ItemCatalog.ScrollResurrect,
-                     ItemCatalog.ScrollReturnUltimate, ItemCatalog.ScrollResurrectUltimate, ItemCatalog.InstantPotion,
-                     ItemCatalog.DashPotionC, ItemCatalog.DashPotionM, ItemCatalog.ScrollNormalD, ItemCatalog.AttrScrollRare }
+                     ItemCatalog.ScrollReturnUltimate, ItemCatalog.ScrollResurrectUltimate,
+                     ItemCatalog.DashPotionC, ItemCatalog.ScrollNormalD, ItemCatalog.AttrScrollRare,
+                     ItemCatalog.SpeedPotionC, ItemCatalog.SpeedScrollR, ItemCatalog.MightScrollR }
                  .All(id => !RecipeCatalog.All.Any(r => r.OutputId == id)),
           $"{nine.Count} recipes");
-    Check("step 9b rows: minor HP x100 @40 L0 · rare MP x10 @76 Apothecary L10 · 2h rune x3 @80 Scribe L10",
-          RecipeCatalog.Get("craft_" + ItemCatalog.MinorPotion) is { OutputQty: 100, LearnLevel: 40, UnlockLevel: 0, Type: CraftType.Apothecary }
-          && RecipeCatalog.Get("craft_" + ItemCatalog.GreaterManaPotion) is { OutputQty: 10, LearnLevel: 76, UnlockLevel: 10 }
-          && RecipeCatalog.Get("craft_" + ItemCatalog.BoxWarRune2h) is { OutputQty: 3, LearnLevel: 80, UnlockLevel: 10, Type: CraftType.Scribe });
+    int Gate(string output) => RecipeCatalog.Get("craft_" + output)?.UnlockLevel ?? -1;
+    Check("🔑 BL-305 ladder: HP/MP L0 · Greater buff potions L1 · better HP/MP L2 · 1h runes L4 · rare HP/MP L6 · 2h runes L8 · Instant + Supreme Dash L10",
+          Gate(ItemCatalog.MinorPotion) == 0 && Gate(ItemCatalog.MinorManaPotion) == 0
+          && new[] { ItemCatalog.SpeedPotionU, ItemCatalog.CastPotionU, ItemCatalog.AtkPotionU }.All(id => Gate(id) == 1)
+          && Gate(ItemCatalog.HealingPotion) == 2 && Gate(ItemCatalog.ManaPotion) == 2
+          && Gate(ItemCatalog.BoxWarRune1h) == 4 && Gate(ItemCatalog.BoxSpellRune1h) == 4
+          && Gate(ItemCatalog.GreaterPotion) == 6 && Gate(ItemCatalog.GreaterManaPotion) == 6
+          && Gate(ItemCatalog.BoxWarRune2h) == 8 && Gate(ItemCatalog.BoxSpellRune2h) == 8
+          && Gate(ItemCatalog.InstantPotion) == 10 && Gate(ItemCatalog.DashPotionM) == 10
+          && RecipeCatalog.Get("craft_" + ItemCatalog.MinorPotion) is { OutputQty: 100, LearnLevel: 40 });
     Check("🔑 the mat curve: 20 → 30%, 40 → 50%, 60 → 70%, 100 → 100% (20 heads at 20% = 6)",
           Crafting.ScaledQty(20, 20) == 6 && Crafting.ScaledQty(20, 40) == 10 && Crafting.ScaledQty(20, 60) == 14
           && Crafting.ScaledQty(20, 100) == 20 && Crafting.ScaledQty(1, 20) == 1);
@@ -1742,11 +1751,11 @@ b.MyId = entered2.EntityId;
         await b.Settle();
         Check("generic L6 = 6 free points, nothing spent", b.Crafting is { FreePoints: 6 }, $"free {b.Crafting?.FreePoints}");
         for (int i = 0; i < 6; i++) { await b.Hub.SendAsync("SpendCraftPoint", (int)CraftType.Weapon); await b.Settle(); }
-        await b.Hub.SendAsync("SpendCraftPoint", (int)CraftType.Scribe);
+        await b.Hub.SendAsync("SpendCraftPoint", (int)CraftType.Apothecary);
         await b.Settle();
         Check("🔑 spending: six points make Weaponsmith L6, and a seventh with none free is refused",
               b.Crafting is { FreePoints: 0 } cp && cp.TypeLevels?[(int)CraftType.Weapon] == 6
-              && cp.TypeLevels?[(int)CraftType.Scribe] == 0,
+              && cp.TypeLevels?[(int)CraftType.Apothecary] == 0,
               $"free {b.Crafting?.FreePoints}, levels [{string.Join(",", b.Crafting?.TypeLevels ?? Array.Empty<int>())}]");
         int genBase = b.Crafting?.GenericPoints ?? 0;
 

@@ -25,7 +25,7 @@ rather than wasted. **Slot** = does it occupy one of the 20 buff squares (the se
 | **Bulwark** | `def_phys` | — | rung 3 | box (Blessing Box) | yes — identical rung | **yes** |
 | **Common Healing** | `potion_heal` | burst: rung 1 / rung 2 / rung 3 | — | box (Newbie Box), box (Treasure Chest), craft, drop, vendor (Apothecary) | no | no |
 | **Common Mana** | `potion_mana` | burst: rung 1 / rung 2 / rung 3 | — | craft, vendor (Apothecary) | no | no |
-| **Dash** | `dash` | burst: rung 1 / rung 2 / rung 4 / rung 5 / rung 6 / rung 7 / rung 7 | — | drop | no | no |
+| **Dash** | `dash` | burst: rung 1 / rung 2 / rung 4 / rung 5 / rung 6 / rung 7 / rung 7 | — | craft, drop | no | no |
 | **Ferocity** | `crit_dmg` | — | rung 6 | box (Blessing Box) | yes — identical rung | **yes** |
 | **Focus** | `crit_rate` | — | rung 6 | box (Blessing Box) | yes — identical rung | **yes** |
 | **Force** | `atk_mag` | — | rung 4 | box (Blessing Box) | yes — identical rung | **yes** |
@@ -179,7 +179,7 @@ not apply the way it does to the table above.
 | Dash Potion | Rare | None | Dash — +45 Move Speed | 4 | 15s | **nothing grants it** | Consumable | no |
 | Dash Potion | Epic | None | Dash — +50 Move Speed | 5 | 15s | **nothing grants it** | Consumable | no |
 | Dash Potion | Legendary | None | Dash — +55 Move Speed | 6 | 15s | **nothing grants it** | Consumable | no |
-| Dash Potion | Mythic | None | Dash — +60 Move Speed | 7 | 15s | **nothing grants it** | Consumable | no |
+| Dash Potion | Mythic | None | Dash — +60 Move Speed | 7 | 15s | craft | Consumable | no |
 | Dash Potion | Mythic | None | Dash — +60 Move Speed | 7 | 15s | **nothing grants it** | Consumable | no |
 | Scroll of Ferocity | Rare | Scroll | Ferocity — +35% critical damage | 6 | 60 min | box (Blessing Box) | Consumable | yes |
 | Scroll of Focus | Rare | Scroll | Focus — +30% critical rate | 6 | 60 min | box (Blessing Box) | Consumable | yes |

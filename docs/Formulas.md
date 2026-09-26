@@ -1249,19 +1249,19 @@ generic-recipe number are **playtest placeholders**.
 ```
 crafter          the Master's Trial, level 40 (for good; no quitting)
 slots            10 + 5 × genericLevel                     (L0 10 … L10 60; type levels give no slots)
-points/attempt   gear: T40 1 · T52 2 · T61 3 · T76 5 · T80 8   Scribe/Apothecary: 1 a batch   refine: 0   (a FAIL pays too)
+points/attempt   gear: T40 1 · T52 2 · T61 3 · T76 5 · T80 8   Apothecary: 1 a batch   refine: 0   (a FAIL pays too)
                  every attempt pays the GENERIC level only
 | armour+shield | jewels); generic pays generic only
 level from pts   level N starts at 10·N·(N+1)              (L1 20 · L2 60 · L5 300 · L10 1100), max 10
-type points      1 per generic level (10 at L10), spent on weapon · armour · jewels · apothecary · scribe (0-10 each)
-type gate        T40 L0 · T52 L2 · T61 L4 · T76 L6 · T80 L8  (learn AND craft; gear, and the uncommon Scribe/Apothecary
-                 lines by their tier with T40 = L1); runes 1h L7 / 2h L10; rare HP L7 / rare MP L10
+type points      1 per generic level (10 at L10), spent on weapon · armour · jewels · apothecary (0-10 each; the Scribe folded into the Apothecary, BL-305)
+type gate        gear T40 L0 · T52 L2 · T61 L4 · T76 L6 · T80 L8 (learn AND craft). Apothecary (BL-305, 0.214.21): HP/MP L0 ·
+                 Greater Swift/Alacrity/Fury L1 · Uncommon HP/MP L2 · rune 1h L4 · rare HP/MP L6 · rune 2h L8 · Instant + Supreme Dash L10
                  General recipes (refines, the hammer) gate on the generic level
 respec           5 a lifetime, 1M · 2M · 4M · 8M · 16M  ⚠ placeholder; all points back; recipes kept, LOCKED below gate
 success (gear)   recipe item % / 100 + bonus
 bonus            typeLevel 10 ? 0.10 : typeLevel 9 ? 0.05 : 0
 success (generic) 100%                                      (trial hammer 40%)
-batch gold       Scribe/Apothecary: round10( (0.9 − 0.035 × typeLevel) × BatchValue − Σ inputs × their sell price ), ≥ 10
+batch gold       Apothecary: round10( (0.9 − 0.035 × typeLevel) × BatchValue − Σ inputs × their sell price ), ≥ 10
                  BatchValue = the batch at its buy price (HP/MP 60/120 · 250/500 · 5000/10000 each)
 inputs (gear)    ScaledQty(q, %) = % ≥ 100 ? q : max(1, round_half_away(q × f(%)))
                  f: 20 → 0.30 · 40 → 0.50 · 60 → 0.70 · 100 → 1.00          (the trial's hammer is unscaled)
@@ -1269,7 +1269,7 @@ inputs (gear)    ScaledQty(q, %) = % ≥ 100 ? q : max(1, round_half_away(q × f
 MP per attempt   Recipe.MpCost, paid on every attempt (fail too): gear by tier (BL-306, 0.214.18), 2H T40 200 · T52 300 ·
                  T61 400 · T76 700 · T80 800, other slots at the 2H × 1H 0.75 · body 0.5 · helmet/shield/necklace 0.375 ·
                  gloves/boots/earring 0.25 · ring 0.125 (rounded to 5); refines 50/100/150/200 by step; alloy 50, bar 200;
-                 Scribe/Apothecary by the line's grade D 50 · C 100 · B 150 · 70+ 200; the trial hammer 50 (0.214.10, BL-306)
+                 Apothecary by the line's grade D 50 · C 100 · B 150 · 70+ 200; the trial hammer 50 (0.214.10, BL-306)
 count            a non-gear craft repeats up to Count (1 … 1000) and stops at the first missing input, MP or gold;
                  gear is always 1
 recipe items     T40 / T52: 100 · T61: 60, 100 · T76: 20, 40, 60 · T80: 40, 60

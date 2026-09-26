@@ -366,8 +366,9 @@ namespace Game.Client
             int free = Boot.CraftPointsFree;
             // `BL-304`: grades, not tiers — *"should not say T40..T80 but grades ... D~S"*.
             CraftNote("Each crafting level gives one point to spend on a type (" + free + " free). Smiths: D grade at L0, "
-                    + "C needs L2, B L4, A L6, S L8; L9 and L10 add +5% each. Scribe and Apothecary unlock their uncommon "
-                    + "lines at the same levels and craft cheaper each level (x0.90 down to x0.55).");
+                    + "C needs L2, B L4, A L6, S L8; L9 and L10 add +5% each. The Apothecary: HP/MP L0, Greater buff potions "
+                    + "L1, better HP/MP L2, 1h runes L4, rare HP/MP L6, 2h runes L8, Instant Healing and Supreme Dash L10; "
+                    + "it crafts cheaper each level (x0.90 down to x0.55).");
             foreach (var type in Crafting.SpendableTypes)
             {
                 var t = type;                        // captured per row

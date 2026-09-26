@@ -6,7 +6,7 @@ namespace Game.Shared;
 /// spends on a type (*"at L10 generic u are a L10 single type or L2 on 5types"*). The type level is what
 /// tells a weaponsmith from an apothecary. <see cref="General"/> is the refines and the trial's hammer; its
 /// "type level" is the generic level itself.</summary>
-public enum CraftType { General = 0, Weapon = 1, Armour = 2, Jewels = 3, Apothecary = 4, Scribe = 5 }
+public enum CraftType { General = 0, Weapon = 1, Armour = 2, Jewels = 3, Apothecary = 4, Scribe = 5 }   // Scribe: retired into the Apothecary (`BL-305`)
 
 /// <summary>The five BASE materials (`BL-273` part 3, 0.205.0): one rung each, no rarity ladder. The old
 /// Uncommon…Mythic rungs are gone; what climbs a ladder now is Nightsilver / Nightsilk. <see cref="Iron"/>
@@ -123,15 +123,16 @@ public static class Crafting
 
     // ----- THE CRAFTER-POINTS MODEL (owner, 2026-09-24, his "Idea-1"; design doc §2.2) ------------------
 
-    /// <summary>The five types a point can be spent on, in window order.</summary>
+    /// <summary>The four types a point can be spent on, in window order. The Scribe folded into the Apothecary
+    /// (`BL-305`, 2026-09-26); its enum value stays, since saved type levels index by it, but nothing spends on it.</summary>
     public static readonly CraftType[] SpendableTypes =
-        { CraftType.Weapon, CraftType.Armour, CraftType.Jewels, CraftType.Apothecary, CraftType.Scribe };
+        { CraftType.Weapon, CraftType.Armour, CraftType.Jewels, CraftType.Apothecary };
 
     /// <summary>Points a generic level gives: one per level, so 10 at L10.</summary>
     public static int PointsAtGenericLevel(int genericLevel) => System.Math.Clamp(genericLevel, 0, MaxCraftLevel);
 
     /// <summary>The TYPE level a gear tier needs (*"an armor smith need L2 for T52 L4 61 L6 76 L8 80"*). The
-    /// same gate serves the Scribe's and the Apothecary's uncommon lines, one tier per row.</summary>
+    /// Apothecary has its own ladder (`BL-305`), authored per row in RecipeCatalog.</summary>
     public static int TierGate(int itemLevel) => itemLevel switch
     {
         >= 80 => 8,
@@ -146,7 +147,7 @@ public static class Crafting
     public static float GearSuccessBonus(int typeLevel) =>
         typeLevel >= 10 ? 0.10f : typeLevel >= 9 ? 0.05f : 0f;
 
-    /// <summary>What a Scribe/Apothecary batch costs as a fraction of its base price: ×0.9 at L0, falling
+    /// <summary>What an Apothecary batch costs as a fraction of its base price: ×0.9 at L0, falling
     /// 0.035 a level to ×0.55 at L10 (*"all scribe/apoth crafts are x0.9 of base and going to x0.55 at
     /// L10"*). The floor stays above the vendor's 50%, so crafting to vendor is 0 or a small loss.</summary>
     public static float PriceFactor(int typeLevel) =>
@@ -161,7 +162,7 @@ public static class Crafting
     public static readonly long[] RespecPrices = { 1_000_000, 2_000_000, 4_000_000, 8_000_000, 16_000_000 };
 
     /// <summary>Craft points one ATTEMPT is worth (his pick, 2026-09-24: tier-weighted, and a FAIL counts).
-    /// Gear by its tier: T40 1 · T52 2 · T61 3 · T76 5 · T80 8. A Scribe/Apothecary recipe is 1 a BATCH, and a
+    /// Gear by its tier: T40 1 · T52 2 · T61 3 · T76 5 · T80 8. An Apothecary recipe is 1 a BATCH, and a
     /// REFINE (Nightsilver/Nightsilk, alloy, the bar) is **0** (step 10, ruled 2026-09-24: one T61 weapon is
     /// 1,650 refines, which at 1 each would pass generic L10 on conversions alone). Every attempt feeds the
     /// generic level only; type levels are bought with its points. ⚠ Playtest placeholders.</summary>

@@ -2298,7 +2298,9 @@ npc buffer don't give a buff potion effect but a npc_buff. Apoth vendor sells on
 pots about t40~T52, l4 t61, L6 t76,l8 t80, l10 85+ bosses/instances 4. Yes the 0.9->0.55 stays"*.
 - ✅ **Part 1, 0.214.20:** only Swift / Alacrity / Fury potions remain, Lesser = L1 rung (shelf), Greater = L2 rung
   (crafted at Apothecary L1); every buff scroll left crafting (Blessing Box only).
-- 🔜 Part 2: Scribe → Apothecary with the L0-L10 ladder. Part 3: generic recipe ITEMS dropping by tier (L0 T40, L1
+- ✅ **Part 2, 0.214.21:** the Scribe folded into the Apothecary on his L0-L10 ladder; Instant Healing + Supreme Dash
+  are L10 crafts (placeholder inputs).
+- 🔜 Part 3: generic recipe ITEMS dropping by tier (L0 T40, L1
   T40-T52, L2 T52, L4 T61, L6 T76, L8 T80, L10 85+ bosses/instances), the Master's L0/L2 sale overlapping `BL-303` Q3.
 
 ## `BL-307` 🔵 FULL DROPS BELOW LEVEL 40

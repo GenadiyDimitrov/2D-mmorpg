@@ -7,12 +7,40 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.20**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.21**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.20: three buff potions, two levels each (`BL-305`, part 1)
+## 2026-09-26 (latest) — 0.214.21: the Scribe folds into the Apothecary, on your L0-L10 ladder (`BL-305`, part 2)
+
+> *"It's a ruling at 40lv I noticed that the apothcand scribe are uncompareable and scribe always wins over ..so I decide
+> we need to merge"* · *"Yes the 0.9->0.55 stays"*
+
+- **One profession.** The Points page offers four types (Weaponsmith, Armoursmith, Jeweler, Apothecary); the Scribe is
+  gone and every generic recipe is an Apothecary one.
+- **Your ladder**, as the type level each line needs to learn and craft:
+
+  | Apothecary | crafts |
+  |---|---|
+  | L0 | Common HP / MP potions |
+  | L1 | Greater Swift / Alacrity / Fury |
+  | L2 | Uncommon HP / MP potions |
+  | L4 | War / Spell Rune box, 1 h (was Scribe L7) |
+  | L6 | Rare HP / MP potions (were L7 / L10) |
+  | L8 | War / Spell Rune box, 2 h (was Scribe L10) |
+  | L10 | **Instant Healing Potion** and **Supreme Dash Potion** (new) |
+
+- Price: still ×0.90 at L0 down to ×0.55 at L10. The learn price is now the ladder rung of the line's own level.
+- ⚠ **The two L10 recipes are my placeholders**: x5 a batch, character level 85. Instant Healing takes the Rare HP line's
+  inputs (10 gems, 1 B essence, 1 volcanic ash, 1 volcanic stone); Supreme Dash takes 20 gems, 20 wood, 2 S essence.
+  They cost 25k / 250k at the shelf's price scale (x0.55 at L10), and neither vendors for more than it costs.
+- The 1 h runes keep character level 70 even though their recipe will drop from T61 creatures (part 3). Say if the
+  character level should follow the tier.
+- Generic recipes are still taught by the Master for gold until part 3 turns them into items.
+- Formulas.md updated. SmokeTest ALL PASS. ⚠ Needs a new APK (Points page and recipe table).
+
+## 2026-09-26 — 0.214.20: three buff potions, two levels each (`BL-305`, part 1)
 
 > *"Remove all buff ports except the 3 from the game ... The npc buffer don't give a buff potion effect but a npc_buff.
 > Apoth vendor sells only the 3 lesser. Others are drop/craft"*
