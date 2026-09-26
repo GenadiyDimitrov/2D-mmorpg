@@ -513,10 +513,24 @@ Check("the Blessing is paused in town (BL-300)", await a.WaitFor(() => a.Favor?.
     Check("the trial's hammer recipe is quest-only and on no shelf",
           RecipeCatalog.Get(Crafting.HammerRecipeId) is { QuestOnly: true, SuccessChance: 0.4f }
           && !shelfIds.Any(id => ItemCatalog.Get(id)?.TeachesRecipeId == Crafting.HammerRecipeId));
-    Check("ONE Master Crafter per town (the five profession masters are gone)",
-          WorldMap.Npcs.Count(n => n.Role == NpcRole.CraftMaster) == 5
-          && WorldMap.Npcs.Where(n => n.Role == NpcRole.CraftMaster).All(n => WorldMap.IsCraftMaster(n.Id)),
-          $"{WorldMap.Npcs.Count(n => n.Role == NpcRole.CraftMaster)} masters");
+    // `BL-303`: only the MAJOR cities (the three with a class master) hold a Master Crafter, his Anvil within reach
+    // and a Mindwright; Stonewatch and Ironreach hold none of them.
+    {
+        var zones = new[] { "brackenford", "greymarsh", "frostmere", "stonewatch", "ironreach" }
+            .ToDictionary(k => k, k => WorldMap.Npcs.First(n => n.Id == $"gatekeeper_{k}"));
+        int In(string town, NpcRole role) => WorldMap.Npcs.Count(n => n.Role == role
+            && WorldMap.SafeZoneAt(n.X, n.Y) is { } z && WorldMap.SafeZoneAt(zones[town].X, zones[town].Y)?.Id == z.Id);
+        bool Major(string t) => In(t, NpcRole.CraftMaster) == 1 && In(t, NpcRole.Anvil) == 1 && In(t, NpcRole.SkillReset) == 1;
+        bool Minor(string t) => In(t, NpcRole.CraftMaster) == 0 && In(t, NpcRole.Anvil) == 0 && In(t, NpcRole.SkillReset) == 0
+                                && In(t, NpcRole.Vendor) >= 3 && In(t, NpcRole.Buffer) == 1 && In(t, NpcRole.Warehouse) == 1;
+        var masters = WorldMap.Npcs.Where(n => n.Role == NpcRole.CraftMaster).ToList();
+        Check("🔑 BL-303: Master + Anvil + Mindwright in Brackenford, Greymarsh, Frostmere only; every Anvil within reach of its Master",
+              Major("brackenford") && Major("greymarsh") && Major("frostmere") && Minor("stonewatch") && Minor("ironreach")
+              && masters.Count == 3 && masters.All(n => WorldMap.IsCraftMaster(n.Id))
+              && WorldMap.Npcs.Where(n => n.Role == NpcRole.Anvil).All(a => masters.Any(m =>
+                  (m.X - a.X) * (m.X - a.X) + (m.Y - a.Y) * (m.Y - a.Y) <= GameConstants.TalkRange * GameConstants.TalkRange)),
+              string.Join(" ", zones.Keys.Select(t => $"{t}:{In(t, NpcRole.CraftMaster)}/{In(t, NpcRole.Anvil)}/{In(t, NpcRole.SkillReset)}")));
+    }
     // `BL-274` step 12: a boss's recipes are rows of its table (group "recipe"), 100% below T76 and 60% at T76/T80;
     // `BL-308`: 2.5 books a kill at T40 down to 0.8 at T80.
     {

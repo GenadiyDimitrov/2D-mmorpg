@@ -242,7 +242,7 @@ namespace Game.Client
         private void BuildCrafterInvitation()
         {
             _craftTitle.text = "You are not a crafter yet.";
-            CraftNote("Every town's Master Crafter gives a trial at level " + Crafting.CrafterQuestLevel
+            CraftNote("The Master Crafter in Brackenford, Greymarsh or Frostmere gives a trial at level " + Crafting.CrafterQuestLevel
                     + ": gather materials, learn a recipe, and forge a hammer at his anvil. Finish it and "
                     + "you craft everything — weapons, armour, jewels, potions and scrolls — with "
                     + Crafting.BaseSlots + " recipe slots, growing with your crafting level.");

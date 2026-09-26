@@ -375,8 +375,8 @@ public static class WorldMap
         //     to craft)"*). Learning and forgetting recipes happens anywhere. Replaces `BL-05`'s five
         //     profession masters; he stands where the Master Smith stood.
         //
-        //     🔑 In EVERY town (playtest-19 M11: *"i have no way to go back to the 1st town just to take
-        //     it"*). The ring towns' copies are generated in RingTownServices.
+        //     🔑 In every MAJOR city since `BL-303` (Brackenford, Greymarsh, Frostmere — see IsMajorCity); it was every
+        //     town (playtest-19 M11: *"i have no way to go back to the 1st town just to take it"*). The ring towns' copies are generated in RingTownServices.
         new(CraftMasterId, "Master Crafter Gorran", 22200, 25850, NpcRole.CraftMaster),
         // `BL-303` — THE ANVIL, where crafting happens, always beside a Master (owner, 2026-09-26: *"anvil and
         // master are always togheter"*; *"later model will be just an anvil"*, so no title). 250 south of him: the
@@ -398,7 +398,8 @@ public static class WorldMap
     /// warehouse keeper, the THREE vendors and a gatekeeper. A town you cannot resupply in is a town
     /// you teleport out of, which made the ring towns waypoints rather than places.
     ///
-    /// Only the STARTER town differs, and only by holding what you use once: the class masters and the
+    /// ⚠ Since `BL-303` the three MAJOR cities (<see cref="IsMajorCity"/>) also hold the Master Crafter, his Anvil and a
+    /// Mindwright; Stonewatch and Ironreach do not. Otherwise only the STARTER town differs, by holding what you use once: the class masters and the
     /// skill-resetter (hand-placed above). The 3rd-class Grandmaster moved OUT to Greymarsh, the first
     /// town whose band spans level 40 — you should not be walking back to the newbie town to take a
     /// level-40 quest. Later 3rd-class quest NPCs belong beside him there.
@@ -441,11 +442,18 @@ public static class WorldMap
             // The MASTER CRAFTER (`BL-273` part 2), west, clear of the east shopping cluster by more than
             // the label guard's 1500. One per town since 0.203.0: the five profession masters are gone. He
             // stands where the Master Smith stood.
+            // `BL-303` (owner, 2026-09-26): only a MAJOR city has him — *"major cities (staring one, 40-65, and the
+            // 76+, where class masters are) those can have the craftMaster+anvil, mindweaver and other for
+            // respecs..the other "non major" cities(towns) can have only shops/buffer/gk/keeper"*.
+            if (!IsMajorCity(t.Key)) continue;
             yield return new NpcDef(
                 $"{CraftMasterId}_{t.Key}", CraftMasterName(t.Key), t.X - 1400, t.Y - 150,
                 NpcRole.CraftMaster);
             // His ANVIL (`BL-303`), 250 north: the Huntmaster (-650) and the gatekeeper (-900) keep >= 250 of Y.
             yield return new NpcDef($"{AnvilId}_{t.Key}", "Anvil", t.X - 1400, t.Y - 400, NpcRole.Anvil);
+            // The MINDWRIGHT (skill reset) of a major city, bottom-centre and 800 below the buffer, as in
+            // Brackenford. In Frostmere the SP broker (10800, 16400) keeps 300 of Y.
+            yield return new NpcDef($"{ResetterId}_{t.Key}", MindwrightName(t.Key), t.X, t.Y + 1700, NpcRole.SkillReset);
         }
         // The 3rd-class master lives in GREYMARSH (band 34-46) — the first town whose levels reach the
         // level-40 discipline change (owner). He stands on the WEST side, mirroring Brackenford's
@@ -485,6 +493,17 @@ public static class WorldMap
         yield return new NpcDef(QuestCatalog.RecipeArmourGiver, "Armourer Edda",       11000, 15650, NpcRole.QuestGiver);
         yield return new NpcDef(QuestCatalog.RecipeJewelGiver,  "Jeweller Ossian",     11000, 16150, NpcRole.QuestGiver);
     }
+
+    /// <summary>`BL-303`: is this ring town a MAJOR city — Greymarsh (the 3rd-class master, 40-65) or Frostmere (the
+    /// 4th-class master, 76+)? With Brackenford (hand-placed) they are the three that hold the Master Crafter, his
+    /// Anvil and a Mindwright; Stonewatch and Ironreach keep shops, buffer, gatekeeper, keeper and Huntmaster.
+    /// A METHOD: it is read while <see cref="Npcs"/> is being built.</summary>
+    public static bool IsMajorCity(string townKey) => townKey is "greymarsh" or "frostmere";
+
+    /// <summary>The Mindwright's (skill reset) NPC id — Brackenford's; a major city's is <c>resetter_main_&lt;town&gt;</c>.</summary>
+    public const string ResetterId = "resetter_main";
+
+    private static string MindwrightName(string townKey) => "Mindwright " + (townKey == "greymarsh" ? "Ivo" : "Rhosa");
 
     /// <summary>A ring town's Master Crafter's display name. One ORDER with a chapter in every town, so the
     /// TITLE is constant and only the given name changes (the old Master Smiths' names, kept).</summary>

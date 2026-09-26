@@ -7,12 +7,28 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.25**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.26**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.25: the Anvil stands beside every Master Crafter (`BL-303` Q1-Q2)
+## 2026-09-26 (latest) — 0.214.26: major cities and towns (`BL-303` Q1, closes it)
+
+> *"We can make major cities (staring one , 40-65, and the 76+, where class masters are) those can have the
+> craftMaster+anvil, mindweaver and other for respecs..the other "non major" cities(towns) can have only
+> shops/buffer/gk/keeper - something like that"*
+
+- **Major cities:** Brackenford, Greymarsh and Frostmere (the three with a class master). Each has the Master
+  Crafter, his Anvil and a **Mindwright** (skill reset). Greymarsh and Frostmere get their Mindwright for the first
+  time (Mindwright Ivo, Mindwright Rhosa), at the bottom-centre of town like Brackenford's.
+- **Towns:** Stonewatch and Ironreach lose their Master Crafter. They keep the three shops, the buffer, the
+  gatekeeper, the warehouse keeper and the Huntmaster. I kept the Huntmaster because his hunting contracts are for
+  the fields around that town; say if he should go too.
+- The crafting window's "not a crafter yet" text names the three cities.
+- SmokeTest: a new layout check (each major city has all three, each town none, every Anvil within reach of its
+  Master). ALL PASS. ⚠ Needs the new APK (the client draws NPCs from its own copy of the map).
+
+## 2026-09-26 — 0.214.25: the Anvil stands beside every Master Crafter (`BL-303` Q1-Q2)
 
 > *"Yes anvil and master are always togheter"* · *"The points respec and rcps forget is at master .. The only tabs at
 > anvil are craft+mats"*

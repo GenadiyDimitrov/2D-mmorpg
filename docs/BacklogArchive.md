@@ -7923,3 +7923,38 @@ drawn them does not on the phone (cause unknown). ⚠ Waiting on his phone check
 > ✅ **0.214.13 built half 1 and the `→`**: `ClientLog` keeps ONE line per missing character per session, and both `→`
 > label uses show `->` (a sweep of every client literal found nothing else outside the atlas). 🟡 **What is left: Cyrillic.**
 > Waiting on him for the Editor step. 📘 **His guide: `docs/guides/CyrillicFont.md`** (2026-09-26, he asked for it and will do it "in few days"): the .ttf ALREADY has Cyrillic and the dynamic fallback is wired but fails on the phone, so the guide bakes a STATIC `LiberationSans SDF - Cyrillic` atlas (86 pt, pad 9, SDFAA, decimal `1024-1119, 8592-8597, 9632, 9675, 9679`) and hangs it first in the main font's fallback list. Offered: a headless editor-script bake instead.
+
+## `BL-303` ✅ CLOSED 2026-09-26 in **0.214.19 + 0.214.24 → 0.214.26**: the Master Crafter and the Anvil
+
+His answers, 2026-09-26: *"1. Yes anvil and master are always togheter. We can make major cities (staring one , 40-65, and
+the 76+, where class masters are) those can have the craftMaster+anvil, mindweaver and other for respecs..the other "non
+major" cities(towns) can have only shops/buffer/gk/keeper - something like that ... 2. The points respec and rcps forget is
+at master .. The only tabs at anvil are craft+mats 3. Yes. Masters "learn for gold" buttons are gone ... They are in the
+"buy" part of it as items to use from inventory. And my L0~10 rows have which recipes are drop which the master sells"*.
+**Built:** 0.214.19 the gear books bought at the smith level; 0.214.24 no teaching, the Master sells the gear books, the
+L0/L2 Apothecary books and a book for every refine; 0.214.25 `NpcRole.Anvil` beside every Master (crafting there, Craft +
+Mats tabs), points / respec / forget only at the Master (Points tab); 0.214.26 Master + Anvil + Mindwright in the three
+major cities only (Brackenford, Greymarsh, Frostmere), none in Stonewatch / Ironreach. ❓ Left to him: whether the
+Huntmaster also leaves the minor towns.
+
+**As filed:**
+
+>
+> From the same playtest, on 0.203.0 (`BL-273` part 2):
+> - **The Master Crafter is a VENDOR**: buy / sell / buyback, the T40/T52 recipes, and the generic recipes. The
+>   generic "learn" rows become **recipe items** on the buy side, like the gear recipes, gated by crafter level +
+>   gold. The gear recipes are gated too: *"a T52 weapon rcp require L2 in weaponsmithing and T52 armor to be L2
+>   armorsmithing"*.
+> - **The Anvil is where you craft**: an NPC called just **Anvil**, no title (*"later model will be just an
+>   anvil"*). It has only today's craft / points / materials tabs, i.e. the current "work at his anvil" view.
+> ✅ `BL-305` closed in 0.214.22: the generic recipes, their Apothecary levels and their recipe ITEMS all exist now (the
+> items drop; the Master still TEACHES the lines for gold, see question 3).
+>
+> ✅ **0.214.19 built the gear half:** the Master refuses to SELL a gear recipe below `Crafting.TierGate` of its smith type
+> (T40 L0 · T52 L2 · T61 L4 · T76 L6 · T80 L8), the same `CraftGateRefusal` that learning and crafting read; the shop row
+> says `(needs Weaponsmith L2)`.
+>
+> ❓ **Before the NPC split (asked 2026-09-26):** (1) where the Anvil stands: next to every Master Crafter, in every town
+> that has one? (2) the crafter-points / respec tab: Anvil (as the entry says) or Master? (3) now that `BL-305` made the
+> generic recipes ITEMS (0.214.22), should the Master SELL the L0/L2 books (his table said "vendor") and stop teaching
+> the lines for gold, or keep teaching as today?

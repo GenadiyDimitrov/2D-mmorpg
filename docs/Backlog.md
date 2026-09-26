@@ -278,7 +278,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-286` | ⏸ | **CASTLE "NOBLE" CHARISMA** — a castle-holding clan leader gets charisma decay/loss protection or a grant; split out of `BL-283`; waits on castles | social |
 | `BL-288` | ⏸ | **CONSUMABLE RARITY → PLAIN LEVELS 1-6** — potions/scrolls may drop the rarity word entirely; deferred by him, split out of `BL-272` | items |
 | `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
-| `BL-303` | 🟡 | **Split the Master Crafter from the ANVIL** (gear gate ✅ 0.214.19; split ❓) — the Master is a vendor of recipe items gated by crafter level; a plain "Anvil" NPC is where you craft | crafting |
 | `BL-307` | 🔵 | **Full drops below level 40** — F/E-grade Common gear, materials and lucky drops, not only gold | drops |
 
 ---
@@ -2244,27 +2243,6 @@ exists (`HandleDebugReset`, back to level 1). Since `BL-296` it keeps quests and
 `GameLoopService.KeepQuestsThroughReset` is the quest half this will reuse. ❓ Open when it is picked up: the price
 (platinum?), whether subclasses survive, and what happens to class-chain quests of the old class (today's re-roll
 drops them).
-
-## `BL-303` 🟡 SPLIT THE MASTER CRAFTER FROM THE ANVIL
-
-From the same playtest, on 0.203.0 (`BL-273` part 2):
-- **The Master Crafter is a VENDOR**: buy / sell / buyback, the T40/T52 recipes, and the generic recipes. The
-  generic "learn" rows become **recipe items** on the buy side, like the gear recipes, gated by crafter level +
-  gold. The gear recipes are gated too: *"a T52 weapon rcp require L2 in weaponsmithing and T52 armor to be L2
-  armorsmithing"*.
-- **The Anvil is where you craft**: an NPC called just **Anvil**, no title (*"later model will be just an
-  anvil"*). It has only today's craft / points / materials tabs, i.e. the current "work at his anvil" view.
-✅ `BL-305` closed in 0.214.22: the generic recipes, their Apothecary levels and their recipe ITEMS all exist now (the
-items drop; the Master still TEACHES the lines for gold, see question 3).
-
-✅ **0.214.19 built the gear half:** the Master refuses to SELL a gear recipe below `Crafting.TierGate` of its smith type
-(T40 L0 · T52 L2 · T61 L4 · T76 L6 · T80 L8), the same `CraftGateRefusal` that learning and crafting read; the shop row
-says `(needs Weaponsmith L2)`.
-
-❓ **Before the NPC split (asked 2026-09-26):** (1) where the Anvil stands: next to every Master Crafter, in every town
-that has one? (2) the crafter-points / respec tab: Anvil (as the entry says) or Master? (3) now that `BL-305` made the
-generic recipes ITEMS (0.214.22), should the Master SELL the L0/L2 books (his table said "vendor") and stop teaching
-the lines for gold, or keep teaching as today?
 
 ## `BL-307` 🔵 FULL DROPS BELOW LEVEL 40
 
