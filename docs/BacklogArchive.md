@@ -7888,3 +7888,38 @@ creatures of its tier, and L10 from 85+ bosses. ⚠ Placeholders of mine, flagge
 >   are L10 crafts (placeholder inputs).
 > - ✅ Part 3, 0.214.22: generic recipe ITEMS dropping by tier (L0 T40, L1
 >   T40-T52, L2 T52, L4 T61, L6 T76, L8 T80, L10 85+ bosses/instances), the Master's L0/L2 sale overlapping `BL-303` Q3.
+
+## `BL-313` ✅ CLOSED 2026-09-26 in **0.214.13 + 0.214.23**: the missing-glyph flood, then Cyrillic in the font
+
+0.214.13 built half 1 (one log line per missing character, `→` shown as `->`). Half 2, his words 2026-09-26: *"if u can
+do it alone so do it"*. **Built in 0.214.23 without the Editor:** `Assets/Editor/TmpCyrillic.cs`, run once in batchmode,
+baked a STATIC `LiberationSans SDF - Cyrillic` (86 pt, pad 9, SDFAA, 1024², 105 characters: U+0400-045F, ←-↕, ■ ○ ●),
+first in the main font's fallback list. The .ttf always had these characters; the dynamic fallback that should have
+drawn them does not on the phone (cause unknown). ⚠ Waiting on his phone check. Record: `docs/guides/CyrillicFont.md`.
+
+**As filed:**
+
+>
+> Filed 2026-09-26 at his request (§105.1): *"Make it as bl entry because it's the second time it's happening and I'm
+> writing it"*. The text, his copy: *"the unicode character [] cannot be found in [LibirationSans SDF] assest and in any
+> fallback fonts and was replaced with character [] in text object [lable]"*. First reported in §100 (2026-09-16).
+>
+> **What it is.** The TMP font atlas is STATIC (about 250 baked glyphs, no source font in the build). A label showing a
+> character outside it logs that warning **once per frame**, and `ClientLog` hooks Unity's log, so every warning lands
+> in the System tab. §100's fix folds typographic characters (em dash, ×, …) at that sink, which broke the self-feeding
+> loop for them, but it **passes Cyrillic through on purpose** (his chat) and it cannot fix the label that caused the
+> warning in the first place.
+>
+> **Known sources:** `→` (U+2192, NOT in the atlas) is the current-step mark on the quest Details page
+> (`GameUi.Quests.cs`); any **Cyrillic** text in any label (chat, names, whispers) — none of it is in the atlas.
+>
+> **Proposed fix, two halves:**
+> 1. **Stop the flood:** `ClientLog` drops (or shows once per character) TMP's missing-glyph warning instead of
+>    appending it every frame.
+> 2. **Stop the boxes:** replace `→` and any other unbaked mark with a baked one, and add Cyrillic to the atlas (a font
+>    asset regenerated with the Cyrillic range, or a Cyrillic fallback font; both are a Unity Editor step).
+> ❓ Half 2's Cyrillic needs the Editor once. Half 1 and the `→` can ship without it.
+>
+> ✅ **0.214.13 built half 1 and the `→`**: `ClientLog` keeps ONE line per missing character per session, and both `→`
+> label uses show `->` (a sweep of every client literal found nothing else outside the atlas). 🟡 **What is left: Cyrillic.**
+> Waiting on him for the Editor step. 📘 **His guide: `docs/guides/CyrillicFont.md`** (2026-09-26, he asked for it and will do it "in few days"): the .ttf ALREADY has Cyrillic and the dynamic fallback is wired but fails on the phone, so the guide bakes a STATIC `LiberationSans SDF - Cyrillic` atlas (86 pt, pad 9, SDFAA, decimal `1024-1119, 8592-8597, 9632, 9675, 9679`) and hangs it first in the main font's fallback list. Offered: a headless editor-script bake instead.

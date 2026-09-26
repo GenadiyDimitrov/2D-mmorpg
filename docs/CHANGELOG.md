@@ -7,12 +7,26 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.22**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.23**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.22: generic recipes drop, by tier (`BL-305`, part 3, closes it)
+## 2026-09-26 (latest) — 0.214.23: Bulgarian draws as letters, not boxes (`BL-313`, half 2, closes it)
+
+> *"if u can do it alone so do it"*
+
+- **Cyrillic is in the font now.** I baked it without the Editor: a second, fixed font atlas with the whole Cyrillic
+  alphabet, the arrows `← ↑ → ↓` and `■ ○ ●`, at the same size and weight as the English letters. It sits right behind
+  the main font, so any label that meets a Cyrillic letter draws it from there: chat, whispers, names, everything.
+- Checked on the files: 105 characters in the new atlas (Б and → among them), the main font's own 250 characters and
+  its atlas unchanged (byte for byte), and the new one first in its fallback list.
+- ⚠ **Please check on the phone:** say or whisper something in Bulgarian. It should show letters, with nothing new in
+  the System tab.
+- `docs/guides/CyrillicFont.md` now records how it was done; you don't need to do anything in Unity.
+- ⚠ Needs the new APK (client only).
+
+## 2026-09-26 — 0.214.22: generic recipes drop, by tier (`BL-305`, part 3, closes it)
 
 > *"I want generic recipes to be dropped as well and found"* · *"Generic rcps are normal mobs g make them from Tires
 > that are close to the equip tires .. T40 is l0 .. T52 is l2 so l1 pots about t40~T52, l4 t61, L6 t76,l8 t80, l10 85+

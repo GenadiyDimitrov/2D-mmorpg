@@ -1,73 +1,38 @@
-# Adding Cyrillic to the client font (`BL-313`, half 2)
+# Cyrillic in the client font (`BL-313`, half 2)
 
-**Why:** Bulgarian text (chat, names, whispers) shows as boxes on the phone. Once, in the Unity Editor, you bake a
-second font atlas that holds the Cyrillic letters and hang it behind the main font. After that it ships in every APK
-and nobody has to open the Editor again. It takes about 10 minutes.
+✅ **Done without the Editor in 0.214.23** (the owner, 2026-09-26: *"if u can do it alone so do it"*). This page records
+what was done and how to redo it. **Nobody needs to open Unity for it.**
 
-## What is already true (checked 2026-09-26, so you don't have to)
+## What was wrong
 
-- The main font, `LiberationSans SDF`, is a **static** atlas of about 250 baked characters. Nothing outside that set can
+- The main font, `LiberationSans SDF`, is a **static** atlas of 250 baked characters. Nothing outside that set can
   draw from it.
 - The source font file, `Assets/TextMesh Pro/Fonts/LiberationSans.ttf`, **does contain Cyrillic** (А-я, Ё, Й, …) and
-  the arrows. You need no new font file.
-- A dynamic fallback, `LiberationSans SDF - Fallback`, is already hung behind the main font, and it should draw
-  those characters on demand. **On the phone it does not**, so a Cyrillic letter still falls through to the box.
-  I could not find the cause without the phone's own log. The fix below works around it: it bakes the letters ahead of
-  time, so nothing has to be generated on the phone.
+  the arrows.
+- A dynamic fallback, `LiberationSans SDF - Fallback`, sits behind the main font and should draw those characters on
+  demand. **On the phone it did not**, so Cyrillic fell through to boxes. The cause is unknown (it would need the
+  phone's own log), so the fix avoids runtime generation altogether.
 
-## The steps
+## What 0.214.23 did
 
-1. **Open the project** `Game.Client.Unity` in Unity 6 (the same version the build uses). Let it finish importing.
+`Assets/Editor/TmpCyrillic.cs` baked a **static** font asset, `LiberationSans SDF - Cyrillic`, in the same folder as the
+main font and with the main font's settings (86 pt, padding 9, SDFAA, 1024×1024). It holds 105 characters:
 
-2. **Open the Font Asset Creator:** menu **Window → TextMeshPro → Font Asset Creator**.
+- U+0400-045F, the whole basic Cyrillic block (Bulgarian, Russian, Serbian, Ukrainian …);
+- the arrows `← ↑ → ↓ ↔ ↕`;
+- `■ ○ ●`.
 
-3. **Fill it in exactly like this** (these match the main font, so the letters come out the same size and weight):
+It is **first** in the main font's fallback list, ahead of the old dynamic one. Everything is committed, so a normal
+APK build ships it; the script does not run during builds.
 
-   | Field | Value |
-   |---|---|
-   | Source Font File | `LiberationSans` (drag in `Assets/TextMesh Pro/Fonts/LiberationSans.ttf`) |
-   | Sampling Point Size | **Custom Size**, `86` |
-   | Padding | `9` |
-   | Packing Method | `Optimum` |
-   | Atlas Resolution | `2048` × `1024` |
-   | Character Set | **Unicode Range (Decimal)** |
-   | Character Sequence (Decimal) | `1024-1119, 8592-8597, 9632, 9675, 9679` |
-   | Render Mode | `SDFAA` |
+## Re-running it (only if the character set changes)
 
-   The sequence is: `1024-1119` = the whole basic Cyrillic block (Bulgarian, Russian, Serbian, Ukrainian …),
-   `8592-8597` = the arrows `← ↑ → ↓ ↔ ↕`, and `■ ○ ●`, which have boxed before.
+Close Unity, then from the repo root:
 
-4. Press **Generate Font Atlas**. When it finishes, the panel on the right reports the characters it included.
-   **"Missing" must read 0.** If it doesn't, change Atlas Resolution to `2048 × 2048` and generate again.
+```
+"C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Unity.exe" -quit -batchmode -nographics ^
+  -projectPath Game.Client.Unity -executeMethod Game.Client.Editor.TmpCyrillic.Bake -logFile cyrillic.log
+```
 
-5. Press **Save as…** and save it **in the same folder as the main font**:
-   `Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF - Cyrillic.asset`
-   (the name matters only so I can find it later).
-
-6. **Hang it behind the main font:** in the Project window, click `LiberationSans SDF` (the main one, in that same
-   folder). In the Inspector open **Fallback Font Assets**, press **+**, and drag `LiberationSans SDF - Cyrillic` into
-   the new slot. **Put it FIRST**, above the existing `LiberationSans SDF - Fallback`, so the baked atlas is tried before
-   the dynamic one. Leave the dynamic one in place; it costs nothing.
-
-7. **File → Save Project**, then close Unity.
-
-8. **Tell me it's done.** I then:
-   - check the new asset has the glyphs (a grep for `m_Unicode: 1041`, the Б) and that the main font lists it;
-   - commit the two changed assets (the new `.asset` + `.meta`, and `LiberationSans SDF.asset`);
-   - build and publish a new APK the usual way.
-
-## How you'll know it worked
-
-Whisper yourself or say something in Bulgarian in chat: it shows letters, not boxes, and the System tab stays quiet.
-A name with Cyrillic letters in it shows normally over the character's head.
-
-## If something goes wrong
-
-- **The Font Asset Creator menu item is missing:** the TextMeshPro essentials are not imported. The headless build does
-  that itself (`Assets/Editor/TmpSetup.cs`); in the Editor use **Window → TextMeshPro → Import TMP Essential
-  Resources**, then start again from step 2.
-- **The letters look thinner or bolder than the English ones:** a field in step 3 differs from the table (usually the
-  point size or the render mode). Generate again with the table's values and overwrite the same asset.
-- **You'd rather not open Unity at all:** say so. The same bake can be done by a small editor script that runs
-  headlessly, like `TmpSetup.cs` does for the essentials. I haven't done that yet because I can't check the result on
-  the phone before you do, and you asked for the Editor route.
+The log's `[cyrillic] baked N characters …` line lists the fallback order. A rerun replaces the asset and keeps one
+fallback entry for it. To add characters, extend `TmpCyrillic.Characters()`.
