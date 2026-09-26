@@ -1434,7 +1434,7 @@ namespace Game.Client
                 string label = Coloured((it.Enchant > 0 ? "+" + it.Enchant + " " : "") + d.Name, d.Rarity)
                              + (it.Equipped ? "  (worn)" : "")
                              + "\n<size=13>" + EnchantRules.GradeName(EnchantRules.GradeOf(d))
-                             + " grade  →  +" + value + "</size>";
+                             + " grade  ->  +" + value + "</size>";
                 options.Add((label, () =>
                 {
                     Boot.AdminEnchant(target.InstanceId, value);

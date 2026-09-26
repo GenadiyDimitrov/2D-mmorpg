@@ -496,7 +496,7 @@ namespace Game.Client
                     // all of them as plain dots: it is a plan, not progress. ASCII-safe marks on
                     // purpose — the TMP font ships Latin-1, and a tick would render as a box.
                     string mark = step.Done ? "<color=#7CE07C>[x]</color>"
-                                : step.Current ? "<color=#5BA6FF>→</color>" : "<color=#AEB6C2>·</color>";
+                                : step.Current ? "<color=#5BA6FF>-></color>" : "<color=#AEB6C2>·</color>";
                     string line = mark + " " + step.Text;
                     if (step.Needed > 1 && (step.Current || step.Done))
                         line += "   " + step.Counter + " / " + step.Needed;

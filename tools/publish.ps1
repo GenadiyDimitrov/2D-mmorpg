@@ -81,11 +81,17 @@ if ($Apk) {
     #
     # -executeMethod needs the FULLY QUALIFIED name; a bare class name fails with "executeMethod class
     # could not be found" and Unity can still exit 0, so the log is checked below either way.
-    $unity = Start-Process -FilePath $UnityExe -Wait -PassThru -NoNewWindow -ArgumentList @(
+    #
+    # ⚠ WaitForExit(), NOT -Wait: -Wait also waits for every DESCENDANT, and Unity leaves its Roslyn
+    # compiler server (VBCSCompiler) running ~10 minutes after it exits, so the script sat idle long after
+    # the APK was written (0.214.12).
+    $unity = Start-Process -FilePath $UnityExe -PassThru -NoNewWindow -ArgumentList @(
         "-quit", "-batchmode", "-nographics",
         "-projectPath", $unityProject,
         "-executeMethod", "Game.Client.Editor.CommandLineBuild.BuildAndroid",
         "-logFile", $log)
+    $null = $unity.Handle   # cache the handle now, or ExitCode reads back empty after the exit
+    $unity.WaitForExit()
     $unityExit = $unity.ExitCode
 
     if (Test-Path $log) {

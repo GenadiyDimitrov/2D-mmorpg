@@ -284,7 +284,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-303` | 🟡 | **Split the Master Crafter from the ANVIL** — the Master is a vendor of recipe items gated by crafter level; a plain "Anvil" NPC is where you craft | crafting |
 | `BL-305` | 🔵 | **THE GENERIC-RECIPE OVERHAUL** — Apothecary + Scribe merge, buff scrolls and most buff potions go, a new L0-L10 ladder, generic recipes drop | crafting |
 | `BL-307` | 🔵 | **Full drops below level 40** — F/E-grade Common gear, materials and lucky drops, not only gold | drops |
-| `BL-313` | 🔴 | **The "unicode character cannot be found" chat FLOOD** (§105.1): TMP missing-glyph warnings every frame; `→` and Cyrillic are not in the font | client |
+| `BL-313` | 🟡 | **Cyrillic is not in the font** (§105.1): the flood and the `→` were fixed in 0.214.13; Bulgarian still draws as boxes, needs the Editor | client |
 
 ---
 
@@ -2320,7 +2320,7 @@ or any mat to exchange for money (with other players when economy is present)"*.
 ❓ **Open:** the rates and which items (a proposal from me, measured with `BalanceMatrix`, before building).
 
 
-## `BL-313` 🔴 THE "UNICODE CHARACTER CANNOT BE FOUND" CHAT FLOOD
+## `BL-313` 🟡 THE "UNICODE CHARACTER CANNOT BE FOUND" CHAT FLOOD
 
 Filed 2026-09-26 at his request (§105.1): *"Make it as bl entry because it's the second time it's happening and I'm
 writing it"*. The text, his copy: *"the unicode character [] cannot be found in [LibirationSans SDF] assest and in any
@@ -2341,3 +2341,7 @@ warning in the first place.
 2. **Stop the boxes:** replace `→` and any other unbaked mark with a baked one, and add Cyrillic to the atlas (a font
    asset regenerated with the Cyrillic range, or a Cyrillic fallback font; both are a Unity Editor step).
 ❓ Half 2's Cyrillic needs the Editor once. Half 1 and the `→` can ship without it.
+
+✅ **0.214.13 built half 1 and the `→`**: `ClientLog` keeps ONE line per missing character per session, and both `→`
+label uses show `->` (a sweep of every client literal found nothing else outside the atlas). 🟡 **What is left: Cyrillic.**
+Waiting on him for the Editor step.

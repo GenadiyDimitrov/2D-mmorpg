@@ -7,12 +7,29 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.12**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.13**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.12: Untrack works from the quest log (§105.2)
+## 2026-09-26 (latest) — 0.214.13: the missing-character flood stops (`BL-313`, half 1)
+
+> *"the unicode character [] cannot be found in [LibirationSans SDF] assest and in any fallback fonts and was replaced
+> with character [] in text object [lable]"*
+
+- **The flood:** TMP logs that warning every time a label with a missing character redraws, which for a live
+  label is every frame, and each one became a new line in the System tab. Now each missing character is reported
+  **once per session**, then never again. Other warnings are untouched.
+- **The `→` boxes:** the current-step mark on the quest Details page and the admin enchant menu used `→`, which the
+  font does not have. Both now show `->`. A sweep of every client label found no other character missing from the
+  font (em dash, `…`, `»` and `·` are all in it).
+- ❓ **Half 2 is yours:** Cyrillic is still not in the font, so Bulgarian text still draws as boxes (the flood no longer
+  follows it). Adding it needs the Unity Editor once: regenerate the font asset with the Cyrillic range, or add a
+  Cyrillic fallback font. Client only.
+- Tooling: `publish.ps1 -Apk` waited ~10 minutes after the APK was written, because `Start-Process -Wait` also waits
+  for Unity's leftover compiler server. It now waits for Unity alone.
+
+## 2026-09-26 — 0.214.12: Untrack works from the quest log (§105.2)
 
 > *"in the quest window where all quest are listed I have abandon /untrack/details buttons and the untack does nothing"*
 

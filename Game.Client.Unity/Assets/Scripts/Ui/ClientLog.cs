@@ -84,6 +84,7 @@ namespace Game.Client
             // Our own Add() already routes through Debug.Log, so only pick up messages that did NOT
             // come from us (they are tagged) to avoid duplicating every line.
             if (condition != null && condition.StartsWith("[hud] ")) return;
+            if (type == LogType.Warning && !FirstMissingGlyph(condition)) return;
 
             // Unity's own log — always System; nothing here is chat.
             Color c;
@@ -96,6 +97,32 @@ namespace Game.Client
                 default:              c = new Color(0.85f, 0.85f, 0.85f); break;
             }
             Append(condition, c);
+        }
+
+        /// <summary>The characters TMP has already reported missing this session.</summary>
+        private static readonly HashSet<string> _missingGlyphs = new HashSet<string>();
+
+        /// 🔴 `BL-313` (§105.1, and §100 before it): TMP logs *"The character with Unicode value \uXXXX was
+        /// not found in the [font] font asset or any potential fallbacks …"* EVERY TIME a label with that
+        /// character rebuilds its mesh — every frame for a live label — and every one landed in the System
+        /// tab as a new line. The atlas is static, so the second report says nothing the first did not.
+        /// <para>One line per CHARACTER per session, then silence. Keyed by the code, not the whole text:
+        /// the text also names the label, and a Cyrillic letter in chat touches a new label per line.
+        /// Returns true when the line should be kept (not a glyph warning, or the first for its character).</para>
+        private static bool FirstMissingGlyph(string condition)
+        {
+            if (condition == null || condition.IndexOf("potential fallbacks", StringComparison.Ordinal) < 0)
+                return true;
+            const string marker = "Unicode value ";
+            int at = condition.IndexOf(marker, StringComparison.Ordinal);
+            string key = condition;
+            if (at >= 0)
+            {
+                int from = at + marker.Length;
+                int end = condition.IndexOf(' ', from);
+                key = end > from ? condition.Substring(from, end - from) : condition.Substring(from);
+            }
+            lock (_missingGlyphs) return _missingGlyphs.Add(key);
         }
 
         public static void Info(string text) => AddTagged(text, new Color(0.85f, 0.9f, 1f));
