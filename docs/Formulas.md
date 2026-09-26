@@ -1354,6 +1354,8 @@ at 100    fires automatically: 180 s of blessing = +1.0 in the bonus sum above
 while on  gauge parked at 100, nothing fills; a non-boss kill does NOT drain the Favor and
           ADDS the drain it would have cost:  favor += drain   (clamp 20000)
 ends      gauge = 0
+paused    dead OR !IsInCombat (30 s window) OR in a safe zone (town): neither the 180 s clock
+          nor the +1/60 combat fill runs                                          (0.214.6, BL-300)
 ```
 
 - The clock counts only while the character is in the world (paused offline, saved with the character);

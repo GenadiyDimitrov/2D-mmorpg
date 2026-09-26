@@ -279,7 +279,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-288` | ⏸ | **CONSUMABLE RARITY → PLAIN LEVELS 1-6** — potions/scrolls may drop the rarity word entirely; deferred by him, split out of `BL-272` | items |
 | `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
 | `BL-299` | 🔴 | **Extra skill squares: more shapes** — 1×12 rows and vertical 6×1 / 6×2 columns, not only 2×6 + N×6 | client |
-| `BL-300` | 🔴 | **The Blessing PAUSES** out of combat and in town, and says `(Paused)` | progression |
 | `BL-301` | 🔴 | **Item name tags `(T/B/U)`** (timed / bound / untradable) after the name, and the `(Lesser)`/`(Bound)`/`(Supreme)` words OUT of item names | items |
 | `BL-302` | 🔴 | **"Unequip all" as a skill-window ACTION** you can put on the bar (the bag button stays) | client |
 | `BL-303` | 🟡 | **Split the Master Crafter from the ANVIL** — the Master is a vendor of recipe items gated by crafter level; a plain "Anvil" NPC is where you craft | crafting |
@@ -2262,14 +2261,6 @@ bar is 2×6 and the extra block is 1×6 … 4×6, horizontal only. He wants:
 - **horizontal:** a 1×12 main bar, with 1×12 / 2×12 extra, or with 1×6 … 4×6 extra;
 - **vertical:** a 6×1 / 6×2 main column, with 6×1 … 6×4 extra.
 Related: `BL-270` (a vertical bar or a wheel for hand-held play). This is the layout-picker half of it.
-
-## `BL-300` 🔴 THE BLESSING PAUSES OUT OF COMBAT AND IN TOWN
-
-From the same playtest, on 0.196.0 (`BL-277` part 2): *"works but need to pause if i go out of combat or in
-town"*. Out of combat or in town the clock stops and the bar reads `Blessing x% (Paused)` / `Blessing 1:23
-(Paused)`. His case: *"u kill your last mob and the blessing activates and u dont reengage after 30s or
-whatever the timer for incombat the blessing should say (paused)"*. So "out of combat" is the existing in-combat
-timer running out, not a new one.
 
 ## `BL-301` 🔴 ITEM NAME TAGS (T/B/U), AND NO QUALIFIER WORDS IN NAMES
 

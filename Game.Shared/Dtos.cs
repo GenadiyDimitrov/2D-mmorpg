@@ -1130,7 +1130,10 @@ public record FavorUpdate(int Points, int Stage, float ExpRate, float SpRate, fl
                           long CharismaLifetime = 0, int CharismaCurrent = 0,
                           // `BL-295` — the running Blessing's seconds left, stamped at SEND time; the HUD
                           // counts it down itself between pushes. Appended: JSON, so an older client ignores it.
-                          int BlessingSecondsLeft = 0);
+                          int BlessingSecondsLeft = 0,
+                          // `BL-300` — out of combat, dead or in town: the clock (and the combat fill) is
+                          // stopped, so the HUD holds BlessingSecondsLeft and says "(Paused)". Appended too.
+                          bool BlessingPaused = false);
 
 /// <summary>One member row in the party window. Debuffs = the names of the debuffs currently on this
 /// member, so a healer sees at a glance who to cleanse without selecting each one.</summary>

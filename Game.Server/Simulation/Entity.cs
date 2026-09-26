@@ -757,6 +757,8 @@ public class Entity
     public bool BlessingActive => BlessingSecondsLeft > 0;
     /// <summary>The whole-percent value the client was last sent. Runtime only; -1 = never sent.</summary>
     public int BlessingSentPercent { get; set; } = -1;
+    /// <summary>`BL-300` — whether the client was last told the Blessing is paused. Runtime only.</summary>
+    public bool BlessingSentPaused { get; set; }
 
     // ----- `BL-277` part 3 — the Wayfarer's items -----
     /// <summary>When the Favor Restore Potion may be drunk again (wall clock, so a relog does not reset the

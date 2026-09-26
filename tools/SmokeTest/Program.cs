@@ -115,6 +115,10 @@ Check("character starts with exactly one class", a.Subclasses?.Classes.Length ==
 Check("server pushed a skill bar", a.Bar is not null);
 Check("server pushed the warehouse on login", a.Ware is not null);
 
+// `BL-300`: a fresh character stands in town, out of combat, so the Blessing is PAUSED and the sheet says so.
+Check("the Blessing is paused in town (BL-300)", await a.WaitFor(() => a.Favor?.BlessingPaused == true, 3000),
+      a.Favor is null ? "no Favor push" : $"paused={a.Favor.BlessingPaused}");
+
 // -------------------------------------------------------------------------------------------
 // 1a-0. THE TUTORIAL CANNOT DEAD-END (0.60.1). The owner opened BOTH creation boxes before Cera gave
 //     him the quest, so its "open a box" beat had nothing to open and the chain could not continue —
@@ -3648,6 +3652,9 @@ sealed class Session : IAsyncDisposable
     /// whether a granted skill was ever folded in.</summary>
     public StatsUpdate? Stats;
 
+    /// <summary>The last "Favor" push (the Wayfarer's Favor and Blessing sheet).</summary>
+    public FavorUpdate? Favor;
+
     // Delta-snapshot capture — the live world push. Accumulated so a test can assert an entity was
     // SPAWNED (full), UPDATED (lean), or DESPAWNED, and reset the tallies between phases.
     public readonly HashSet<Guid> Spawned = new();
@@ -3739,6 +3746,7 @@ sealed class Session : IAsyncDisposable
         Hub.On<WarehouseUpdate>("Warehouse", w => Ware = w);
         Hub.On<LearnedSkills>("Learned", l => Learned = l);
         Hub.On<StatsUpdate>("Stats", s => Stats = s);
+        Hub.On<FavorUpdate>("Favor", f => Favor = f);
         Hub.On<SubclassListDto>("Subclasses", s => Subclasses = s);
         Hub.On<SnapshotDelta>("SnapshotDelta", d =>
         {

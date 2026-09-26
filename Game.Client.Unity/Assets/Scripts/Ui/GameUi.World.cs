@@ -1490,20 +1490,23 @@ namespace Game.Client
                                 + "  L" + f.Stage
                                 + "  +" + (WayfarerFavor.BonusPerStage * f.Stage * 100f).ToString("0") + "%";
 
-            int left = f.BlessingActive
-                ? Mathf.Max(0, f.BlessingSecondsLeft - (int)(Time.realtimeSinceStartup - Boot.FavorReceivedAt))
-                : 0;
+            // `BL-300`: paused (out of combat, dead, in town) the server's clock is stopped, so the HUD holds the
+            // seconds it was sent instead of counting down, and both texts say so.
+            int left = !f.BlessingActive ? 0
+                     : f.BlessingPaused ? f.BlessingSecondsLeft
+                     : Mathf.Max(0, f.BlessingSecondsLeft - (int)(Time.realtimeSinceStartup - Boot.FavorReceivedAt));
+            string paused = f.BlessingPaused ? " (Paused)" : "";
             if (f.BlessingActive && left > 0)
             {
                 _selfBlessing.color = BlessingActiveColour;
                 UiKit.SetBar(_selfBlessing, left, WayfarerBlessing.DurationSeconds);
-                _selfBlessingText.text = "Blessing  " + (left / 60) + ":" + (left % 60).ToString("00");
+                _selfBlessingText.text = "Blessing " + (left / 60) + ":" + (left % 60).ToString("00") + paused;
             }
             else
             {
                 _selfBlessing.color = BlessingColour;
                 UiKit.SetBar(_selfBlessing, f.BlessingPercent, 100);
-                _selfBlessingText.text = "Blessing  " + f.BlessingPercent + "%";
+                _selfBlessingText.text = "Blessing " + f.BlessingPercent + "%" + paused;
             }
         }
 

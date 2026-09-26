@@ -7705,3 +7705,20 @@ The pick is client-side and lasts the session; unpinned or finished, the arrow f
 > From the same playtest, on 0.213.0 (`BL-294`): *"need (location) to a tracked quest to choose which one of all my 5
 > … arrow to point at"*. In the details panel of a TRACKED quest a **[location tracking]** button appears; on the
 > one the arrow already follows it is disabled, or reads "current". The untrack bug beside it is §105.2.
+
+
+## `BL-300` ✅ CLOSED 2026-09-26 in **0.214.6**: the Blessing pauses out of combat and in town
+
+His words, 2026-09-26 (playtest of 0.181.0 → 0.214.2), on 0.196.0: *"works but need to pause if i go out of combat or in
+town"*, *"`Blessing x%`/`Blessing 1:23` should say `Blessing x% (Paused)`/`Blessing 1:23 (Paused)` and not going down"*.
+**Built as written in 0.214.6:** `BlessingPaused` = dead, or out of combat (`IsInCombat`'s 30 s window), or in a safe
+zone. Paused, neither the running clock nor the combat fill ticks; the +100% stays on (it only pays on kills). The HUD
+holds the countdown and appends `(Paused)`; each transition pushes the sheet (`FavorUpdate.BlessingPaused`).
+
+**As filed:**
+
+> From the same playtest, on 0.196.0 (`BL-277` part 2): *"works but need to pause if i go out of combat or in
+> town"*. Out of combat or in town the clock stops and the bar reads `Blessing x% (Paused)` / `Blessing 1:23
+> (Paused)`. His case: *"u kill your last mob and the blessing activates and u dont reengage after 30s or
+> whatever the timer for incombat the blessing should say (paused)"*. So "out of combat" is the existing in-combat
+> timer running out, not a new one.

@@ -7,12 +7,26 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.5**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.6**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.5: Track, Untrack and the arrow's quest from the quest details (`BL-311`, §105.2)
+## 2026-09-26 (latest) — 0.214.6: the Blessing pauses out of combat and in town (`BL-300`)
+
+> *"works but need to pause if i go out of combat or in town"* · *"u kill your last mob and the blessing activates and u
+> dont reengage after 30s or whatever the timer for incombat the blessing should say (paused)"*
+
+- **A running Blessing's 3-minute clock now stops** while you are **out of combat** (the same 30 s window as before, no new
+  timer), **dead**, or **in a town**. It starts again when you fight outside town. The +100% stays on while paused; it
+  only pays on kills anyway.
+- The gauge's own 1%-per-combat-minute fill stops under the same rule (it already needed combat; now town stops it too).
+- The HUD says so: **`Blessing 1:23 (Paused)`** / **`Blessing 40% (Paused)`**, and a paused countdown holds still. Each
+  pause and resume pushes the sheet (`FavorUpdate.BlessingPaused`, appended: an older client ignores it).
+- SmokeTest: a fresh character in town is told the Blessing is paused. 400/400 on the second run; the first run had one
+  flake, "Focus Mastery gathers Focus from basic attacks" (pool read 0), which passed on the re-run.
+
+## 2026-09-26 — 0.214.5: Track, Untrack and the arrow's quest from the quest details (`BL-311`, §105.2)
 
 > *"the quest window dont allow me to untrack it"* · *"if a quest is tracked inside the details panel a [location tracking]
 > button must appear and is disabled(or text as "current") so i can select witch one"*

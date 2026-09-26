@@ -11708,18 +11708,30 @@ public class GameLoopService : BackgroundService
     /// 1%/60s"*). "In combat" is <see cref="IsInCombat"/> — the same 30 s window the logout gate uses — so
     /// a farm that kills every ~50 s counts for most of the hour, which is what his "100 minutes" assumed.
     /// Nothing ticks while logged out (*"not offline"*); an offline-FARMER is still in the world, so for it
-    /// both halves run, the same way it drains the Favor.</summary>
+    /// both halves run, the same way it drains the Favor.
+    ///
+    /// <para>🔑 `BL-300` (owner, 2026-09-26): a RUNNING Blessing's clock PAUSES too — *"need to pause if i go out
+    /// of combat or in town"*, and *"u kill your last mob and the blessing activates and u dont reengage after
+    /// 30s ... the blessing should say (paused)"*. So "out of combat" is the same 30 s window, not a new timer.
+    /// Every pause/resume pushes the sheet, which re-stamps the seconds the HUD counts down from.</para></summary>
     private void TickBlessing(Entity p)
     {
+        bool paused = BlessingPaused(p);
+        if (paused != p.BlessingSentPaused) SendFavor(p);
+        if (paused) return;
         if (p.BlessingActive)
         {
-            if (--p.BlessingSecondsLeft <= 0) { EndBlessing(p); return; }
+            if (--p.BlessingSecondsLeft <= 0) EndBlessing(p);
             return;
         }
-        if (p.Dead || !IsInCombat(p)) return;
         AddBlessing(p, WayfarerBlessing.PerCombatMinute / 60.0);
         PushFavorIfMoved(p);
     }
+
+    /// <summary>`BL-300` — neither the Blessing's clock nor its combat fill runs while dead, out of combat
+    /// (<see cref="IsInCombat"/>'s 30 s window), or inside a town (a safe zone).</summary>
+    private bool BlessingPaused(Entity p) =>
+        p.Dead || !IsInCombat(p) || GameConstants.InSafeZone(p.X, p.Y);
 
     /// <summary>The FINISHED personal EXP/SP multiplier for mob kills: 1 + the Favor's bonus + the
     /// Blessing's +100% while one runs. ADDITIVE, his arithmetic (*"when blessing activates the SP/EXP start
@@ -11756,10 +11768,11 @@ public class GameLoopService : BackgroundService
         p.FavorSentPoints = FavorShown(p);
         p.BlessingSentPercent = BlessingShown(p);
         p.CharismaSentCurrent = CharismaCurrent(p);
+        p.BlessingSentPaused = BlessingPaused(p);
         SendTo(p, "Favor", new FavorUpdate(p.FavorSentPoints, WayfarerFavor.Stage(p.FavorPoints),
             rates.Exp * bonus, rates.Sp * bonus, rates.Gold, rates.DropChance,
             p.BlessingSentPercent, BlessingFillRate(p), p.BlessingActive,
-            p.CharismaLifetime, p.CharismaSentCurrent, p.BlessingSecondsLeft));
+            p.CharismaLifetime, p.CharismaSentCurrent, p.BlessingSecondsLeft, p.BlessingSentPaused));
     }
 
     // (The old RuneBuffKeys array is gone: SkillCatalog.IsRuneBuff answers the same question from the
