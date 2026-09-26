@@ -26,7 +26,10 @@ only active"*. Ninety-one closed entries — built, declined, and the old texts 
 **Status marks:** 🔴 ready to build · 🟡 gated on another entry here · 🔵 waiting on you (a
 decision, a CSV, a measurement) · ⏸ you put it on hold · ❓ a question of mine, unanswered.
 
-★ **The ones you named most recently (2026-09-16, the playtest):** ten asks, `BL-238`…`BL-247`.
+★ **The newest (2026-09-26, the 0.181.0 → 0.214.2 playtest):** fourteen asks, `BL-299`…`BL-312`. Its
+four bugs are in [testing/Open-Checklist.md](testing/Open-Checklist.md) §105, with your note verbatim.
+
+★ **Before that (2026-09-16, the playtest):** ten asks, `BL-238`…`BL-247`.
 The twelve BUGS from the same pass are in [testing/Open-Checklist.md](testing/Open-Checklist.md) §100,
 not here — and **nine of those thirteen are fixed** (0.146.1 / 0.147.0 / 0.148.0).
 
@@ -209,7 +212,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 
 ---
 
-## Index — 45 open entries
+## Index — 59 open entries
 
 | id | | what it is | area |
 |---|---|---|---|
@@ -275,6 +278,20 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-286` | ⏸ | **CASTLE "NOBLE" CHARISMA** — a castle-holding clan leader gets charisma decay/loss protection or a grant; split out of `BL-283`; waits on castles | social |
 | `BL-288` | ⏸ | **CONSUMABLE RARITY → PLAIN LEVELS 1-6** — potions/scrolls may drop the rarity word entirely; deferred by him, split out of `BL-272` | items |
 | `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
+| `BL-299` | 🔴 | **Extra skill squares: more shapes** — 1×12 rows and vertical 6×1 / 6×2 columns, not only 2×6 + N×6 | client |
+| `BL-300` | 🔴 | **The Blessing PAUSES** out of combat and in town, and says `(Paused)` | progression |
+| `BL-301` | 🔴 | **Item name tags `(T/B/U)`** (timed / bound / untradable) after the name, and the `(Lesser)`/`(Bound)`/`(Supreme)` words OUT of item names | items |
+| `BL-302` | 🔴 | **"Unequip all" as a skill-window ACTION** you can put on the bar (the bag button stays) | client |
+| `BL-303` | 🟡 | **Split the Master Crafter from the ANVIL** — the Master is a vendor of recipe items gated by crafter level; a plain "Anvil" NPC is where you craft | crafting |
+| `BL-304` | 🔴 | **Crafter level text says GRADES (D~S)**, not T40…T80 | crafting |
+| `BL-305` | 🔵 | **THE GENERIC-RECIPE OVERHAUL** — Apothecary + Scribe merge, buff scrolls and most buff potions go, a new L0-L10 ladder, generic recipes drop | crafting |
+| `BL-306` | 🔴 | **EVERY craft costs MP** — refines, generics and apothecary too | crafting |
+| `BL-307` | 🔵 | **Full drops below level 40** — F/E-grade Common gear, materials and lucky drops, not only gold | drops |
+| `BL-308` | 🔴 | **Boss drops: 70% for one full item**, the 2% extra roll stays; **recipes at 80%** | drops |
+| `BL-309` | 🔴 | **Essence carries its GRADE** (Darksteel Essence = D) | items |
+| `BL-310` | 🔴 | **Town guards twice as far apart, at the town border** | world |
+| `BL-311` | 🔴 | **Choose which tracked quest the arrow follows** — a `[location tracking]` button in the quest details | client |
+| `BL-312` | 🔴 | **EXP bar a touch darker green; Favor and Blessing side by side on one row** | client |
 
 ---
 
@@ -2239,3 +2256,117 @@ exists (`HandleDebugReset`, back to level 1). Since `BL-296` it keeps quests and
 `GameLoopService.KeepQuestsThroughReset` is the quest half this will reuse. ❓ Open when it is picked up: the price
 (platinum?), whether subclasses survive, and what happens to class-chain quests of the old class (today's re-roll
 drops them).
+
+## `BL-299` 🔴 EXTRA SKILL SQUARES: MORE SHAPES
+
+From the 2026-09-26 playtest, on 0.193.0 (`BL-269`): *"They work just take all the screen"*. Today the main
+bar is 2×6 and the extra block is 1×6 … 4×6, horizontal only. He wants:
+- **horizontal:** a 1×12 main bar, with 1×12 / 2×12 extra, or with 1×6 … 4×6 extra;
+- **vertical:** a 6×1 / 6×2 main column, with 6×1 … 6×4 extra.
+Related: `BL-270` (a vertical bar or a wheel for hand-held play). This is the layout-picker half of it.
+
+## `BL-300` 🔴 THE BLESSING PAUSES OUT OF COMBAT AND IN TOWN
+
+From the same playtest, on 0.196.0 (`BL-277` part 2): *"works but need to pause if i go out of combat or in
+town"*. Out of combat or in town the clock stops and the bar reads `Blessing x% (Paused)` / `Blessing 1:23
+(Paused)`. His case: *"u kill your last mob and the blessing activates and u dont reengage after 30s or
+whatever the timer for incombat the blessing should say (paused)"*. So "out of combat" is the existing in-combat
+timer running out, not a new one.
+
+## `BL-301` 🔴 ITEM NAME TAGS (T/B/U), AND NO QUALIFIER WORDS IN NAMES
+
+From the same playtest, on 0.202.0's temporary gear: *"nowhere on the item unless the details pannel is opened I
+can tell which of my 5 swords is the temporaty"*.
+1. **Tags after the name**, like the `[L]` lock in front: *Cobalt Blade (T/B/U)*, where **T** = timed, **B** = bound,
+   **U** = untradable, only the letters that apply.
+2. **Qualifier words come OUT of item names**: *Instant Healing Potion (Bound)*, *Alacrity Potion (Lesser)*,
+   *(Supreme)* and any others like them. *"by the color of the item and the quality/rarity u can understand what
+   is it"*. *"Only the abbreviation for the skill/buff bar can differ."*
+⚠ Where two items would then share a name (a Lesser and a Greater of one potion), the colour is the only thing
+telling them apart. That is his call, and `BL-288` (consumable rarity → plain levels) is the same direction.
+
+## `BL-302` 🔴 "UNEQUIP ALL" AS A SKILL-WINDOW ACTION
+
+From the same playtest: *"it also need a to bar option -> u can add it as an action in the skills window. it
+dont have save/equip so its a single click and will work as an action as well (leave the one in the bag also)"*.
+One action in the skill window's actions list, placeable on the bar, one tap. The bag button stays.
+
+## `BL-303` 🟡 SPLIT THE MASTER CRAFTER FROM THE ANVIL
+
+From the same playtest, on 0.203.0 (`BL-273` part 2):
+- **The Master Crafter is a VENDOR**: buy / sell / buyback, the T40/T52 recipes, and the generic recipes. The
+  generic "learn" rows become **recipe items** on the buy side, like the gear recipes, gated by crafter level +
+  gold. The gear recipes are gated too: *"a T52 weapon rcp require L2 in weaponsmithing and T52 armor to be L2
+  armorsmithing"*.
+- **The Anvil is where you craft**: an NPC called just **Anvil**, no title (*"later model will be just an
+  anvil"*). It has only today's craft / points / materials tabs, i.e. the current "work at his anvil" view.
+🟡 **Gated on `BL-305`** for which generic recipes exist and at which level. The gear half does not wait.
+
+## `BL-304` 🔴 CRAFTER LEVELS SAY GRADES, NOT TIERS
+
+From the same playtest, on 0.203.0: *"The description should not say T40..T80 but grades ... D~S"*.
+
+## `BL-305` 🔵 THE GENERIC-RECIPE OVERHAUL
+
+From the same playtest, on 0.203.0. His words: *"I want generic recipes to be dropped as well and found"*. The
+problem he found: *"at t40 scroll of might gives 15% (max lvl) while u can craft a lesser potion for 8 ... And
+potion never can get 15%"*. His proposal (*"I think of"*, so not yet a ruling):
+- **Remove every buff potion except Swift / Fury / Alacrity**, which get two levels: L1 +20% / +23% / +23%,
+  L2 +33% / +33% / +30%. The Lesser ones are sold by the Apothecary; the Uncommon ones are crafted at L1.
+- **Merge the Apothecary and the Scribe** into one profession, and remove every buff scroll from the Scribe.
+- The ladder:
+
+| level | crafts | recipe source |
+|---|---|---|
+| L0 | Common HP/MP potions | vendor |
+| L1 | Swift / Alacrity / Fury greater buff potions | dropped / found |
+| L2 | Uncommon HP/MP potions | vendor |
+| L4 | War / Spell Rune, 1 h | dropped / found |
+| L6 | Rare HP/MP potions | dropped / found |
+| L8 | War / Spell Rune, 2 h | dropped / found |
+| L10 | Instant Healing, Supreme Dash (*"harder to craft"*) | dropped / found |
+
+❓ **Open before building:** (1) is this a ruling or still a proposal; (2) the buff potions removed from the
+game are also in the NPC buffer shelf and the Potions tab (`BL-243`); what replaces them there; (3) where
+generic recipes drop (which mobs, what rate), since `BL-274`'s per-mob tables are the only drop path;
+(4) the ×0.90 → ×0.55 cost curve of 0.204.0 was priced on the current table; does it carry over.
+
+## `BL-306` 🔴 EVERY CRAFT COSTS MP
+
+From the same playtest, on 0.205.0: *"every craft must cost mp (refines and generics and apoth as well)"*.
+Today only gear crafts do.
+
+## `BL-307` 🔵 FULL DROPS BELOW LEVEL 40
+
+From the same playtest, on 0.206.0 (`BL-274` part 1): *"Lower lvl mobs also need full drops. F/E grade also need
+Common equipments and drops for mythic/common. Now <40 players rely solely on gold mob drop .. and no lucky drops
+or any mat to exchange for money (with other players when economy is present)"*.
+❓ **Open:** the rates and which items (a proposal from me, measured with `BalanceMatrix`, before building).
+
+## `BL-308` 🔴 BOSS DROPS: 70% FOR ONE FULL ITEM, RECIPES AT 80%
+
+From the same playtest, on 0.207.0 (`BL-274` part 2): *"let's not make 100% for 1 item but 70% for one full item
+and we leave the 2% chance as well for another one.. Recipes are at 80%"*.
+
+## `BL-309` 🔴 ESSENCE CARRIES ITS GRADE
+
+From the same playtest, on 0.209.2 (`BL-289`): *"Essence have grade .. Darksteel essence is D grade ... They
+represent essence for each grade"*. `ItemCatalog.GradeLabel` prints "-" for an essence today.
+
+## `BL-310` 🔴 TOWN GUARDS FURTHER APART, AT THE BORDER
+
+From the same playtest, on 0.212.1 (`BL-293`): *"give a bit more distance between them like x2 more and move them
+to the border of the town"*. Today the fighter and the tank stand 200 apart at the city's bottom edge.
+
+## `BL-311` 🔴 CHOOSE WHICH TRACKED QUEST THE ARROW FOLLOWS
+
+From the same playtest, on 0.213.0 (`BL-294`): *"need (location) to a tracked quest to choose which one of all my 5
+… arrow to point at"*. In the details panel of a TRACKED quest a **[location tracking]** button appears; on the
+one the arrow already follows it is disabled, or reads "current". The untrack bug beside it is §105.2.
+
+## `BL-312` 🔴 EXP BAR DARKER; FAVOR AND BLESSING ON ONE ROW
+
+From the same playtest, on 0.214.0 (`BL-295`):
+1. *"The exp bar need a darker green — a touch darker than the favor one now .. i like the favor one"*: the same
+   step darker that the current lime is lighter.
+2. *"wonder if we can make the blessing and favor on one row (the two bars to be on the same row side to side)"*.

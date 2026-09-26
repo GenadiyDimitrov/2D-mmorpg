@@ -181,6 +181,7 @@ Check("server pushed the warehouse on login", a.Ware is not null);
     await a.Settle();
 }
 
+
 // -------------------------------------------------------------------------------------------
 // 1a-2. QUEST MARKERS. The "!" over an NPC's head is per-PLAYER (level, race, class and what you
 //     have already done all decide it), so it is computed server-side and pushed with the quest log.
@@ -679,6 +680,45 @@ Check("server pushed quest markers on login", a.Marks is not null);
 Check("a level-1 character is offered the TUTORIAL and only the tutorial",
       a.Marks is not null && a.Marks.Marks.Length == 1,
       $"{a.Marks?.Marks.Length ?? 0} marks");
+
+// -------------------------------------------------------------------------------------------
+// 1a-0b. THE DAILY RUNE QUEST AND /resetlimits (§105.3, 2026-09-26: *"the reset limits don't reset my daily
+//     apoth rune quest"*). The recipe dailies are reset-checked in section 5; this one is offered by EVERY
+//     town's Apothecary and only at 6-75, so it gets its own run while the protagonist is still low.
+// -------------------------------------------------------------------------------------------
+{
+    await a.Hub.SendAsync("AdminCommand", "lvl", $"{name} 10");
+    await a.Settle();
+    var apo = WorldMap.Npcs.First(n => n.Id == "merchant_potions");
+    await a.Hub.SendAsync("DebugTeleport", apo.X + 60, apo.Y);
+    await a.WaitFor(() => a.EntityNames.Any(kv => apo.Name.EndsWith(kv.Value)));
+    Guid apoId = a.EntityNames.FirstOrDefault(kv => apo.Name.EndsWith(kv.Value)).Key;
+    QuestEntry? Runes() => a.Quests?.Entries.FirstOrDefault(e => e.Id == QuestCatalog.QuestDailyRunes);
+
+    await a.Hub.SendAsync("QuestAction", "accept", QuestCatalog.QuestDailyRunes, apoId);
+    await a.Settle();
+    await a.Hub.SendAsync("QuestAction", "complete", QuestCatalog.QuestDailyRunes, apoId);
+    await a.Settle();
+    Check("the daily rune quest, handed in, is closed for today",
+          apoId != Guid.Empty && Runes()?.State == QuestAvailability.Completed,
+          $"apothecary {apoId}, state {Runes()?.State} '{Runes()?.Status}'");
+
+    await a.Hub.SendAsync("AdminCommand", "resetlimits", "");
+    await a.Settle();
+    Check("🔑 /resetlimits hands the daily rune quest back", Runes()?.State == QuestAvailability.Available,
+          $"state {Runes()?.State} '{Runes()?.Status}', stamps [{string.Join(",", a.Quests?.Completed.Where(c => c.Contains('@')) ?? Array.Empty<string>())}]");
+    await a.Hub.SendAsync("QuestAction", "accept", QuestCatalog.QuestDailyRunes, apoId);
+    await a.Settle();
+    Check("...and the Apothecary really gives it again",
+          a.Quests?.Active.Any(q => q.Id == QuestCatalog.QuestDailyRunes) == true,
+          $"active [{string.Join(",", a.Quests?.Active.Select(q => q.Id) ?? Array.Empty<string>())}]");
+    await a.Hub.SendAsync("QuestAction", "abandon", QuestCatalog.QuestDailyRunes, Guid.Empty);
+    await a.Settle();
+    // Back to level 1: the marker section below asserts a level-1 offer list, and the levelling
+    // sections count up from 1.
+    await a.Hub.SendAsync("AdminCommand", "lvl", $"{name} 1");
+    await a.Settle();
+}
 
 // -------------------------------------------------------------------------------------------
 // 1c. WAREHOUSE (private bank). Deposit an item in the spawn town, then let the RELOG below prove it
@@ -1943,6 +1983,21 @@ b.MyId = entered2.EntityId;
         Check("...and the other kinds keep their OWN stamp: Edda still gives hers",
               b.Quests!.Active.Any(q => q.Id == armour76), $"active [{string.Join(",", b.Quests.Active.Select(q => q.Id))}]");
         await b.Hub.SendAsync("QuestAction", "abandon", armour76, Guid.Empty);
+        await b.Settle();
+
+        // `BL-296` / playtest 0.214.1: *"the reset limits don't reset my daily apoth rune quest"*. The
+        // weapon group is stamped for today (checked above); /resetlimits must hand it straight back.
+        await At(QuestCatalog.RecipeWeaponGiver);
+        await b.Hub.SendAsync("AdminCommand", "resetlimits", "");
+        await b.Settle();
+        Check("🔑 /resetlimits clears today's stamp: the T76 quest is Available again",
+              Entry(t76)?.State == QuestAvailability.Available,
+              $"t76 {Entry(t76)?.State} '{Entry(t76)?.Status}'");
+        await b.Hub.SendAsync("QuestAction", "accept", t76, harrowId);
+        await b.Settle();
+        Check("...and Harrow really hands it over", b.Quests!.Active.Any(q => q.Id == t76),
+              $"active [{string.Join(",", b.Quests.Active.Select(q => q.Id))}]");
+        await b.Hub.SendAsync("QuestAction", "abandon", t76, Guid.Empty);
         await b.Settle();
     }
 }

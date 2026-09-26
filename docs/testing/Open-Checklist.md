@@ -1549,3 +1549,141 @@ Your note is verbatim in [design/Rework-2026-09-23.md](../design/Rework-2026-09-
 |---|---|---|
 | 104.1 | ✅ **FIXED 0.214.2** — **A miss did not aggro the mob**; it attacked only from the first landed hit. A no-damage hostile act left 1 threat, equal to `ThreatFloor`, and the first one-second decay pruned it, so the mob went home. It now leaves `ProvokeThreat` = 10. Debuff-only pulls had the same bug. | *"if i miss 10 times and then hit .. he will start to attack at the hit (11th time)"*: a miss must aggro |
 | 104.2 | ✅ **FIXED 0.214.1** (`BL-296`) — **The admin re-roll wiped all quests and today's dailies** (the chain restarted, the rune could be taken twice) | reset only class and stats; quests and limits stay; an admin `/resetlimits` for the limits |
+
+## §105 — YOUR PLAYTEST OF 0.181.0 → 0.214.2 (2026-09-26), the BUGS
+
+The asks from the same pass are `BL-299`…`BL-312` in [Backlog.md](../Backlog.md). Your note is copied
+verbatim at the end of this section, so `tmp.md` can be cleared.
+
+| # | bug | your words / the rule |
+|---|---|---|
+| 105.1 | ❓ **The chat floods with an "invalid character" message.** No string like it exists in the server or the client, so I cannot find the loop yet. | *"I Still get the chat message flood for invalid character"*. ❓ **Need the exact text** (a screenshot is best), and what you were doing: typing, whispering, `/like`, a name with Cyrillic? |
+| 105.2 | 🔴 **The quest window will not UNTRACK a quest** (0.213.0, the quest arrow). | *"the quest window dont allow me to untrack it"* |
+| 105.3 | ❓ **NOT REPRODUCED** — **`/resetlimits` does not give back the daily Apothecary rune quest** (0.214.1, `BL-296`). The SmokeTest now plays exactly this: a level-10 character hands the rune quest in at the Apothecary, it reads "Done today", `/resetlimits`, it reads Available and the Apothecary gives it again. The recipe dailies pass the same check. | *"rerol OK but the reset limits don't reset my daily apoth rune quest"*. ❓ **Was the character below level 6 at the time?** The re-roll takes you back to level 1, and the rune quest only opens at **6** (and closes after 75), so right after a re-roll the Apothecary has nothing to offer, reset or not. If you were 6-75, tell me what you saw (no `!`, the quest window's status text), and whether her dialog was already open when you reset. |
+| 105.4 | 🔴 **The crafter window's "browsing / at anvil" row is hidden behind the tabs** (0.203.0). | *"The row where is says "browsing/at anvil" is hidden behind the tabs"* |
+
+**Not played yet in this pass** (no mark from you): 0.204.0's **respec**; 0.205.0's **materials that drop
+from nothing yet, refines, parts, the 2H at 100%**; 0.208.0's **daily recipe quests**; 0.211.0's vendor-row
+details (marked `[~]` with no comment).
+
+<details><summary>Your note, verbatim</summary>
+
+```
+# Playtest - 0.181.0 ~ 0.214.2
+## Bugs
+- [!] I Still get the chat message flood for invalid character ...  
+## Tests
+- [x] 0.181.0 the auto-potion MP rows sit under the HP rows (§102.1) -> work
+- [x] 0.182.0: Fury Sigil and Physical Proficiency proc on basic attacks only (§102.2)
+- [x] 0.183.0: the warrior's `deflection` is gone (§102.3)
+- [x] 0.184.0: a cast's item is spent when the cast STARTS (§102.4)
+- [x] 0.185.0: smallest stack first, and partial stacks merge (§102.5)
+- [x] 0.186.0: `/stat patk` reaches basic attacks (§102.6)
+- [x] 0.187.0: his warrior CSV edits, built (`BL-275`)
+- [x] 0.188.0: equipment locks per ITEM (`BL-267`)
+- [x] 0.189.0: landscape both ways, whatever the rotation lock says (`BL-268`)
+- [x] 0.190.0: quest rewards are printed in the combat channel (`BL-271`)
+- [x] 0.191.0: the watch looks like the watch, and follows a PK into town (`BL-276`, §102.7)
+  - [x] **They stay mobs in the simulation, and are drawn as NPCs.**
+  - [x] **The town no longer shields a PK from the watch.**
+  - [x] **§102.7 — a PvP-off AoE no longer reaches a guard.**
+- [x] 0.192.0: a custom auto-hunt delay per skill, exact or added
+- [~] 0.193.0: up to 24 extra skill squares on screen (`BL-269`) - They work just take all the screen so (row x columns) 
+  - now i can only do 2x6 + 1x6/2x6/3x6/4x6 (horizontal)
+  - i would like to be able to make 1x12 + 1x12/2x12 | 1x12 + 1x6/2x6/3x6/4x6 (horizontal)
+  - also 6x1/6x2 + 6x1/6x2/6x3/6x4 (vertical)
+- [x] 0.194.0: boss regen is a clock (`BL-278`); the boss band is 8 levels
+- [x] 0.195.0: the Wayfarer's Favor gauge (`BL-277` part 1) 
+- [~] 0.196.0: the Wayfarer's Blessing (`BL-277` part 2)
+  - works but need to pause if i go out of combat or in town
+  - when in town or out of combat the `Blessing x%`/`Blessing 1:23` should say `Blessing x% (Paused)`/`Blessing 1:23 (Paused)` and not going down
+  - u kill your last mob and the blessing activates and u dont reengage after 30s or whatever the timer for incombat the blessing should say (paused)
+- [x] 0.197.0: the Wayfarer's items and the raid-boss Favor grant (`BL-277` part 3, closes `BL-277`)
+- [x] 0.198.0: Charisma (`BL-283`, closes step 5 of the rework order)
+- [x] 0.199.0: the rarity collapse (`BL-272` part 1, step 6 of the rework order)
+- [x] 0.200.0: essence (`BL-273` part 1, step 7 of the rework order)
+- [x] 0.201.0: prices + essence, IG-shaped (`BL-287`, step 7b of the rework order)
+- [~] 0.202.0: the shops (`BL-272` part 2, step 8 of the rework order)
+  - [x] **The T52 essence shop: Assayer Corvane, in Greymarsh only**
+  - [x] **Temporary Common gear, T40 and T52**
+  - [~] **A temporary piece has 2 hours of WEARING.** 
+    - nowhere on the item unless the details pannel is opened I can tell which of my 5 swords is the temporaty 
+    - add after the name like the [L] infront *Cobalt Blade (T/B/U)* T for timed, B for bound, U untradable
+    - the same can be made for the *Instant Healing Porion (Bound)* the *(Bound)* or *(Lesser)* *(Supreme)* and any other names that contains stuff like that can be removed .. for example the *Alacrity Potion **(Lesser)*** can be just *Alacrity Potion* - Its a common rarity .. buy the color of the item and the quality/rarity u can understand what is it
+    - Only the abriviation for the skill/buff bar can differ
+  - [~] **"Unequip all"** - it also need a to bar option -> u can add it as an action in the skills window . it dont have save/equip so its a single click and willwork as an action as well (leave the one in the bag also)
+- [~] 0.203.0: becoming a crafter (`BL-273` part 2, step 9 of the rework order)
+  - [~] The row where is says "browsing/at anvil" is hidden behind the tabs
+  - [~] Need to separate the Master Crafter and the Anvil
+    - Crafter is the vendor (recipies T40/52) + learn generic rafts -> buy/sell/buyback + Learn potions/scrolls etc ...
+      - The generic learn things .. can be actual recipies scroll item .. like the equipment ones and go to the "buy" part of the nps .. and just require crafter lvl + gold
+      - same goes for the actual T40/T52 recipies .. a T52 weapon rcp require L2 in weaponsmithing and T52 armor to be L2 armorsmithing
+    - Anvil is the Crafting place (a npc called Anvil - no title nothing - later model will be just an anvil) - the current "work at his anvil" - only craft/points/mats tabs
+  - [x] **The Master Crafter** - it's OK as length and drop rates - not hard nor annoyingly long
+  - [x] **Crafting happens only at a Master; learning and forgetting happen anywhere** 
+  - [~] **Levels:** 
+		- The desciption should not say T40..T80 but grades ... D~S
+  - [x] **The bonus**
+  - [x] **Gear recipes are ITEMS with a %**
+  - [x] **The Master's shelf**
+  - [~] **Generic recipes**
+	  - I want generic recipes to be dropped as well and found.
+	  - the problem is at t40 scroll of might gives 15%(max lvl) while u can craft  a lesser potion for 8 ... And potion never can get 15%
+	  - I think  of removing from the game all buf pots except the swift/fury/alactity (having 2 lvls +20/+23%/+23% and l2 +33/+33%/+30%)
+      -  the lesser pots are apoth vendor and the uncommon are L1 apoth crafted
+      - we merge apoth+scribe - removing any buff scroll from scribe as well. 
+          - L0 - common hp/mp pots (rcps are at vendor)
+          - L1 - swift/alac/fury greater buff pots (rcps are dropped and found)
+          - L2 - uncommon hp/mp pots (rcps are at vendor)
+          - L4 - war/spell rune 1h (rcps are dropped found)
+          - L6 - rare hp/mp pots (rcps are dropped found)
+          - L8 - war/spell rune 2h (dropped found)
+          - L10 - instant healing, supreme dash (dropped found) - harder to craft 
+  - [x] **Debug window:**
+  - [x] **Deleted:**
+  - [x] **Quest engine:**
+- [ ] 0.204.0: the crafter-points model + the generic-recipe table (`BL-273`, step 9b)
+  - [x] **Tier gates.**
+  - [x] **Everyone at L0**
+  - [x] **Scribe/Apothecary crafts cost ×0.90 of the batch's buy price at L0, falling to ×0.55 at L10.**
+  - [ ] **Respec**
+  - [x] **The table (all 100% success):**
+  - [x] **Removed recipes:**
+  - [x] **Rare potion Values**
+  - [x] **New items: Volcanic Ash, Volcanic Stone, Volcanic Bar.**
+- [ ] 0.205.0: the crafting materials and the gear recipe tables (`BL-273` part 3, step 10)
+  - [ ] **Nightsilver, Nightsilk, parts, volcanic ash and stone drop from nothing yet.**
+  - [ ] **Refines**
+  - [ ] **Parts**
+  - [ ] **A 2H at 100%:**
+  - [~] **Every craft costs MP** every craft must cost mp (refines and generics and apoth as well)
+  - [x] **A count on non-gear crafts.**
+- [~] 0.206.0: per-mob drop tables (`BL-274` part 1, step 11)
+  - Lower lvl mobs also need full drops 
+    - F/E grade also need Common equipments and drops for mythic/common
+  - Now <40 players rely soley on gold mob drop .. and no lucky drops or any mat to exchange for money (with other players when economy is present)
+- [~] 0.207.0: boss drops (`BL-274` part 2, step 12; closes `BL-50` + `BL-262`) let's not make 100% for 1 item but 70% for one full item and we leave the 2% chance as well for another one.. Recipes are at 80%
+- [ ] 0.208.0: the daily recipe quests (`BL-274` part 3, step 13; closes `BL-274`)
+- [x] 0.209.0: the anti-type zones, and aggression only from level 80 (`BL-280`)
+- [x] 0.209.1: `/like <name>`, and the staff `-f` that forces charisma
+- [~] 0.209.2: a grade only where one exists (`BL-289`)
+  - [~] Esseence have grade .. Darksteel essnce is D grade ... They represend essnece for each grade
+- [x] 0.210.0: a vendor's tabs are its own (`BL-290`)
+- [x] 0.210.1: the Armsmaster and the Outfitter in four groups
+- [x] 0.210.2: saves land in order; **§102.9 / §102.10 (Heal replaces Self Heal; Holy/Elemental Bolt replace Magic Bolt) do not reproduce.**
+- [~] 0.211.0: a vendor row opens the item's details first (`BL-291`)
+- [x] 0.212.0: a new character starts with an empty bag (`BL-292`)
+- [~] 0.212.1: every town has a gate, and guards hold their post (`BL-293`) give a bit more distance between them like x2 more and move them to the border of the town
+- [!] 0.213.0: the quest arrow (`BL-294`)
+  - [x] the arrow points to the hunter i have on tracking
+  - [!] the quest window dont allow me to untrack it ...
+  - [~] need (location) to a tracked quest to chose which one of all my 5 or whateve can track at once arrow to point at ... 
+    - if a quest is tracked inside the details panel a [location tracking] button must appear and is disabled(or text as "current") so i can select witch one 
+- [~] 0.214.0: Favor and Blessing are bars; EXP runs along the bottom (`BL-295`)
+  - The exp bar need a draker green - a tuch darker than the favor one now .. i like the favor one .. same differense as the current lime just to the darker side (the current lime is the start,) 
+  - Also wonder if we can make the blessinf and favor on one row (the two bars to be on the same row side to side)
+- [!] 0.214.1: a re-roll keeps your quests and limits; `/resetlimits` (`BL-296`) - rerol OK but the reset limits don't reset my daily apoth rune quest
+- [x] 0.214.2: a miss aggroes the mob (§104.1)
+```
+
+</details>
