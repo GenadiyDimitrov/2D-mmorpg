@@ -2315,4 +2315,4 @@ warning in the first place.
 
 ✅ **0.214.13 built half 1 and the `→`**: `ClientLog` keeps ONE line per missing character per session, and both `→`
 label uses show `->` (a sweep of every client literal found nothing else outside the atlas). 🟡 **What is left: Cyrillic.**
-Waiting on him for the Editor step.
+Waiting on him for the Editor step. 📘 **His guide: `docs/guides/CyrillicFont.md`** (2026-09-26, he asked for it and will do it "in few days"): the .ttf ALREADY has Cyrillic and the dynamic fallback is wired but fails on the phone, so the guide bakes a STATIC `LiberationSans SDF - Cyrillic` atlas (86 pt, pad 9, SDFAA, decimal `1024-1119, 8592-8597, 9632, 9675, 9679`) and hangs it first in the main font's fallback list. Offered: a headless editor-script bake instead.
