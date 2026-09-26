@@ -20689,6 +20689,16 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // `BL-303` — a RECIPE ITEM is bought at its crafter type level, the same gate learning and crafting read
+        // (*"a T52 weapon rcp require L2 in weaponsmithing and T52 armor to be L2 armorsmithing"*), so nobody pays
+        // for a book he could not open.
+        if (def.TeachesRecipeId.Length > 0 && RecipeCatalog.Get(def.TeachesRecipeId) is Recipe taught
+            && CraftGateRefusal(player, taught) is string gate)
+        {
+            SendSystemToEntity(player, gate);
+            return;
+        }
+
         // `BL-257` — TWO PRICES, EITHER OR BOTH. *"any item that have a platinum or/and gold must be
         // bought with the value."* A `BuyPrice` of -1 means "no gold price", not "not for sale": an
         // item priced in platinum alone carries exactly that, so it is floored to 0 here and the

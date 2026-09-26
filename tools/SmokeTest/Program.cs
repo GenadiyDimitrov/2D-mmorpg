@@ -1832,6 +1832,21 @@ b.MyId = entered2.EntityId;
               && price > 1 && ItemCatalog.Get(shelf)!.Value == Math.Max(1, (int)Math.Round(ItemCatalog.Get("sword1h_t40")!.Value * 0.10)),
               $"held {held0}->{Count(shelf)}, gold {gold0}->{b.Gold}, price {price}");
 
+        // `BL-303`: the T52 recipe needs Weaponsmith L2 to BUY.
+        string shelf52 = ItemCatalog.RecipeBookId("craft_sword1h_t52", 100);
+        int held52 = Count(shelf52);
+        await b.Hub.SendAsync("BuyItem", masterId, shelf52, 1);
+        await b.Settle();
+        bool refused52 = Count(shelf52) == held52;
+        await b.Hub.SendAsync("DebugSetCraftLevels", 2, 2, 0, 0, 0, 0);
+        await b.Settle();
+        await b.Hub.SendAsync("BuyItem", masterId, shelf52, 1);
+        await b.Settle();
+        Check("🔑 a T52 weapon recipe is refused at Weaponsmith L0 and sold at L2 (BL-303)",
+              refused52 && Count(shelf52) == held52 + 1, $"refused {refused52}, held {held52}->{Count(shelf52)}");
+        await b.Hub.SendAsync("DebugSetCraftLevels", 0, 0, 0, 0, 0, 0);
+        await b.Settle();
+
         // A GENERIC recipe, taught for gold, crafted with no recipe item, paying 1 generic point only.
         var generic = RecipeCatalog.GenericForSale.First(r => r.UnlockLevel == 0 && r.Id.StartsWith("craft_"));
         long gold1 = b.Gold;

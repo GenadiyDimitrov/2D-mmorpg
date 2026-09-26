@@ -7,12 +7,25 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.18**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.19**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-26 (latest) — 0.214.18: gear crafts cost MP by tier, and a fighter can pay for one (`BL-306`)
+## 2026-09-26 (latest) — 0.214.19: gear recipes are bought at your smith level (`BL-303`, gear half)
+
+> *"a T52 weapon rcp require L2 in weaponsmithing and T52 armor to be L2 armorsmithing"*
+
+- The Master Crafter now refuses to **sell** a gear recipe below its crafter type level: the one gate that already
+  applied to learning and crafting it (T40 L0 · T52 L2 · T61 L4 · T76 L6 · T80 L8, by Weaponsmith / Armoursmith /
+  Jeweler). Before, you could pay for a book you couldn't open.
+- The shop row says so: dimmed, with a red `(needs Weaponsmith L2)` after the name.
+- The NPC split (Master = vendor, a plain "Anvil" to craft at) is not done; it waits on your answers in the
+  `BL-303` entry (three questions there).
+- SmokeTest: a new check (T52 refused at L0, sold at L2), ALL PASS. ⚠ Needs a new APK for the row text; the gate
+  itself is server-side.
+
+## 2026-09-26 — 0.214.18: gear crafts cost MP by tier, and a fighter can pay for one (`BL-306`)
 
 > *"Now a weapon recipe t40 cost 400mp and a fighter have 200 ... I think the weapon,and armor should rise as lvls ...u
 > can make t40 to need 200 at most and go from there as checking the fighter can craft atleast one wepon at that lvl"*

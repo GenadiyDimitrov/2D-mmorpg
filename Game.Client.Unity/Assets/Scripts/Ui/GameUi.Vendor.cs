@@ -304,6 +304,14 @@ namespace Game.Client
             _vendorShopTabs == null ? InCategory(_vendorTab, def)
             : _vendorShopTab == 0 || ShopCatalog.InTab(_vendorShopTabs[_vendorShopTab - 1], def);
 
+        /// <summary>"needs Weaponsmith L2" when this is a recipe item whose crafter type level the player lacks, else null.</summary>
+        private string RecipeBuyGate(ItemDef def)
+        {
+            if (string.IsNullOrEmpty(def.TeachesRecipeId) || RecipeCatalog.Get(def.TeachesRecipeId) is not Recipe r) return null;
+            if (Boot.CraftTypeLevel(r.Type) >= r.UnlockLevel) return null;
+            return "needs " + TypeName(r.Type) + " L" + r.UnlockLevel;
+        }
+
         private void BuildBuyList()
         {
             var shop = Boot.Dialog?.Shop;
@@ -335,7 +343,10 @@ namespace Game.Client
                 }
                 long unit = Math.Max(0, ware.BuyPrice);   // -1 = no GOLD price, not "unbuyable"
                 long unitPlat = ware.PlatinumPrice;
-                bool afford = CanAfford(unit, unitPlat);
+                // `BL-303`: a recipe the Master sells needs its crafter type level to BUY, the same gate the
+                // server's HandleBuy asks (*"a T52 weapon rcp require L2 in weaponsmithing"*).
+                string gate = RecipeBuyGate(def);
+                bool afford = gate == null && CanAfford(unit, unitPlat);
                 string defId = ware.DefId;
                 string name = ware.Name;
 
@@ -345,6 +356,7 @@ namespace Game.Client
                 // own colour for that span, so a coloured name ignored the dimming that says "you can't
                 // buy this" — the quality cue was quietly cancelling the affordability cue.
                 string head = (afford ? Coloured(name, def.Rarity) : name)
+                              + (gate == null ? "" : "  <color=#C86464>(" + gate + ")</color>")
                               + "   " + Price(unit, unitPlat);
                 // DETAIL view adds a second line saying WHAT the thing is (owner: "i hve no idea which
                 // is which"). Compact view is the old one-line row, for scrolling a long ladder fast.
