@@ -7,12 +7,32 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.29**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.30**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-27 (latest) — 0.214.29: drop chances read as odds
+## 2026-09-27 (latest) — 0.214.30: Binding Trap holds; recipe prices and rune drops cut; craft exp shown
+
+> *"Still binding trap don't hold the enemy in place"* · *"the rcps for war/spell Runes are 200k each .. And I just
+> made 4kk out of them .. Decrease their chance ~10 times ... Decrease the price of rcps for buff potions ~3 times
+> ... And equip rcps as well 3 times"* · *"I cannot see nowhere what rcp homuch points it give nr how much progress
+> I have made"*
+
+- 🔴 **Binding Trap roots again, and so does every weapon-gated debuff.** `Entity.RefreshBuffSuppression` asked the
+  *victim* whether it held the skill's weapon: a bow-gated Root on a mob with no bow was switched off the tick it
+  landed (the icon stayed, the legs kept walking). Debuffs are now never suppressed; the gate still holds for the
+  caster's own buffs (Bow Expertise without a bow).
+- **War / Spell Rune recipes drop at 1/10** (`MobCatalog.GenericRecipeDropMul`, L4 and L8 lines): 1/100 → 1/1000
+  at T61 and T80. The recipe items' prices are unchanged (400k / 2M value).
+- **Buff-potion recipes (Greater Swift / Alacrity / Fury, L1) cost a third**: 50k → 17k (`Crafting.GenericRecipePrice`).
+- **Gear recipes cost a third**: `ShopRecipePriceFraction` 10% → 1/30 of the item's price, on every % and on the
+  Master's T40/T52 shelf.
+- **The crafting window shows `+N craft exp` on every recipe and `(done/needed exp)` beside your crafting level.**
+- `BL-315` filed: his MP-based craft exp, measured by `BalanceMatrix --craft-points` into
+  [design/CraftPoints.md](design/CraftPoints.md). Not built; two answers owed.
+
+## 2026-09-27 — 0.214.29: drop chances read as odds
 
 > *"not 1% but 1/100 not 0.33% but 1/300 etc... Over 100% is 5/1 … mats when u get 100 per kill is 100/1.. Or if
 > it's a range 20~100/1"* · *"1/1000000 is unreadable it's 1/1M"*

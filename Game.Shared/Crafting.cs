@@ -246,9 +246,10 @@ public static class Crafting
     /// <summary>A 100% recipe book's price (the Master's T40/T52 shelf, and so its 50% vendor sale) as a fraction
     /// of its item's own buy price; a lower-% book costs its SHARE of that (owner, 2026-09-24, `BL-274` part 1:
     /// *"Recipe 100% can be a 10% of its prise .. So a 20% recipe will cost 2%"*). See <see cref="RecipePrice"/>.</summary>
-    public const float ShopRecipePriceFraction = 0.10f;
+    // Cut to a THIRD, 10% → 1/30 (owner, 2026-09-27: *"equip rcps as well 3 times"*).
+    public const float ShopRecipePriceFraction = 1f / 30f;
 
-    /// <summary>A recipe book's Value: 10% of its item's price × its own % (100% → 10%, 60% → 6%, 20% → 2%).</summary>
+    /// <summary>A recipe book's Value: 1/30 of its item's price × its own % (100% → 3.3%, 60% → 2%, 20% → 0.67%).</summary>
     public static int RecipePrice(int itemPrice, int percent) =>
         Math.Max(1, (int)Math.Round(itemPrice * (double)ShopRecipePriceFraction * percent / 100.0));
 
@@ -305,6 +306,11 @@ public static class Crafting
     /// L4 400k · L5 700k · L6 1M · L7 1.5M · L8 2M · L9 3M · L10 4M. Each recipe names its rung explicitly.</summary>
     public static readonly int[] LearnPriceLadder =
         { 20_000, 50_000, 100_000, 200_000, 400_000, 700_000, 1_000_000, 1_500_000, 2_000_000, 3_000_000, 4_000_000 };
+
+    /// <summary>A GENERIC (Apothecary) recipe item's price at its line's level: the ladder, except L1 — the Greater
+    /// Swift / Alacrity / Fury, the buff potions — at a third, 50k → 17k (owner, 2026-09-27: *"Decrease the price of
+    /// rcps for buff potions ~3 times"*). The item and the recipe record both read this.</summary>
+    public static int GenericRecipePrice(int level) => level == 1 ? 17_000 : LearnPriceLadder[level];
 
     // ----- THE CRAFTER QUEST'S OWN RECIPE --------------------------------------------------------------
 

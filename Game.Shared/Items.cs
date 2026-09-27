@@ -2379,7 +2379,7 @@ public static class ItemCatalog
             string recipeId = $"craft_{outputId}";
             yield return new ItemDef(RecipeBookId(recipeId, 100), $"Recipe: {output.Name}",
                 EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
-                Value: Crafting.LearnPriceLadder[level], TeachesRecipeId: recipeId, RecipePercent: 100,
+                Value: Crafting.GenericRecipePrice(level), TeachesRecipeId: recipeId, RecipePercent: 100,
                 Description: $"Use it to learn the {output.Name} recipe (Apothecary L{level}; it takes a recipe slot). "
                            + "Generic crafts never fail and spend no recipe.");
         }

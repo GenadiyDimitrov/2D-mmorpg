@@ -232,7 +232,12 @@ namespace Game.Client
                 : Tinted("browsing — craft at an Anvil, beside a Master Crafter", false);
             if (!Boot.IsCrafter) return "The Master's Trial\n" + where;
             // One fact per line (§105.4): run together they wrapped into the tab row.
-            return "Crafting L" + Boot.CraftLevel + "   slots " + Boot.CraftSlotsUsed + "/" + Boot.CraftSlots
+            // Progress to the next level (2026-09-27, his *"nor how much progress I have made"*).
+            int lv = Boot.CraftLevel;
+            string progress = lv >= Crafting.MaxCraftLevel ? " (max)"
+                : " (" + (Boot.CraftPoints - Crafting.PointsForLevel(lv)).ToString("N0") + "/"
+                  + (Crafting.PointsForLevel(lv + 1) - Crafting.PointsForLevel(lv)).ToString("N0") + " exp)";
+            return "Crafting L" + lv + progress + "   slots " + Boot.CraftSlotsUsed + "/" + Boot.CraftSlots
                  + (Boot.CraftPointsFree > 0 ? "   <color=#E6C35C>" + Boot.CraftPointsFree + " point(s) to spend</color>" : "")
                  + "\n" + string.Join(" · ", Crafting.SpendableTypes.Select(t => TypeShort(t) + " " + Boot.CraftTypeLevel(t)))
                  + "\n" + where;
@@ -310,6 +315,10 @@ namespace Game.Client
             // MP is shown, not tinted: it regenerates every tick, and a colour that follows it would rebuild this
             // list every frame. The server refuses an attempt it cannot pay for.
             if (recipe.MpCost > 0) parts.Add(recipe.MpCost + " MP");
+            // What an attempt pays toward the crafting level (owner, 2026-09-27: *"I cannot see nowhere what rcp
+            // homuch points it give"*). A refine pays none today, and says so.
+            int craftExp = recipe.QuestOnly ? 0 : Crafting.CraftPoints(recipe);
+            parts.Add(craftExp > 0 ? "+" + craftExp + " craft exp" : "no craft exp");   // info, never a have/need tint
 
             int shown = Mathf.RoundToInt(chance * 100f);
             // LOCKED after a respec (0.204.0): the recipe keeps its slot but will not craft below its gate.

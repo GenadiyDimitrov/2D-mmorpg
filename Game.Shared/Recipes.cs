@@ -337,7 +337,7 @@ public static class RecipeCatalog
             int gate = Crafting.GenericLevel(output);   // his ladder, one place (Crafting.GenericLadder)
             return new($"craft_{output}", CraftType.Apothecary, output, inputs,
                 OutputQty: qty, LearnLevel: charLevel, UnlockLevel: gate,
-                LearnPrice: Crafting.LearnPriceLadder[gate], BatchValue: batchValue,
+                LearnPrice: Crafting.GenericRecipePrice(gate), BatchValue: batchValue,
                 MpCost: GenericMp(charLevel));
         }
 

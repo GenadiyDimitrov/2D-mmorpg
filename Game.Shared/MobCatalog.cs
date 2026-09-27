@@ -1123,6 +1123,11 @@ public static class MobCatalog
     /// recipe's own 1 in 100.</summary>
     public const double GenericRecipePerKill = 1 / 100.0;
 
+    /// <summary>A generic line's share of <see cref="GenericRecipePerKill"/>, by its Apothecary level. The War / Spell
+    /// Rune lines (L4, L8) drop at ONE TENTH (owner, 2026-09-27: *"the rcps for war/spell Runes are 200k each .. And I
+    /// just made 4kk out of them .. Decrease their chance ~10 times"*); every other line at the full rate.</summary>
+    public static double GenericRecipeDropMul(int level) => level is 4 or 8 ? 0.1 : 1.0;
+
     /// <summary>`BL-305`: a level-85+ BOSS's chance at one L10 generic recipe (Instant Healing / Supreme Dash), per
     /// kill: *"l10 85+ bosses/instances"*. ⚠ PLACEHOLDER of mine; instances do not exist yet.</summary>
     public const double BossL10RecipeChance = 0.2;
@@ -1244,8 +1249,9 @@ public static class MobCatalog
         {
             var band = Crafting.GenericLadder().Where(g => Crafting.GenericDropsAtTier(g.Level, tier)).ToList();
             double each = GenericRecipePerKill * (elite ? CommonGearEliteMul : 1f) / Math.Max(1, band.Count);
-            foreach (var (outputId, _) in band)
-                list.Add(new DropEntry(ItemCatalog.RecipeBookId($"craft_{outputId}", 100), (float)each, GroupId: GroupRecipe));
+            foreach (var (outputId, glevel) in band)
+                list.Add(new DropEntry(ItemCatalog.RecipeBookId($"craft_{outputId}", 100),
+                    (float)(each * GenericRecipeDropMul(glevel)), GroupId: GroupRecipe));
         }
 
         if (tier >= 76)

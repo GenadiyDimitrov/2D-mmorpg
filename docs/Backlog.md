@@ -280,6 +280,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
 | `BL-307` | 🟡 | **Full drops below level 40** — F/E-grade Common gear, materials and lucky drops, not only gold — 📝 PROPOSAL drafted, `docs/design/LowLevelDrops.md`, 4 questions | drops |
 | `BL-314` | 🔵 | **Split passives into single-stat pieces** — regen / P.Def / speed as their own ladders shared across classes, so ten armor masteries become a few mixable passives — design first | skills |
+| `BL-315` | 🔵 | **Craft exp from MP** — MP/10 × batch mult (1 out ×5 … >50 ×1, refines ×1); level table ×20/50/100 and the refine weight to pick — [design/CraftPoints.md](design/CraftPoints.md) | crafting |
 
 ---
 
@@ -2282,3 +2283,17 @@ is then WHICH pieces and which rungs, not a bespoke bundle.
 2. The CSV shape: one row per piece per class, or a shared "passives" file with a per-class rung column.
 3. Weight gates: regen today pays only in the right armor — does a split-out regen keep that gate?
 4. Migration is a `game.db` delete (pre-release), but every `Replaces` chain between masteries is rewritten.
+
+
+## `BL-315` 🔵 CRAFT EXP FROM MP
+
+His note, 2026-09-27: *"the refinement need to give points for crafting ... base the points that a craft gives by
+the mp it requires ... an rcp that gives 1 item is multiplied by x5, a 100item output is x1, 2~5 is x4, 6~10 x3,
+11~50 x2 and >50 x1 ... generics are x1 ... before u build give me a table per lvl"*.
+
+**Measured** (`BalanceMatrix --craft-points`), all tables in [design/CraftPoints.md](design/CraftPoints.md): a T40
+2H pays 100, a T80 2H 400, a War Rune batch 80, Alloy 5, a Legendary refine 20. ⚠ §4: at ×1 the Nightsilver
+refines behind ONE weapon pay 7× (T52) to 158× (T80) what the weapon does, so refining becomes the levelling.
+❓ **Two answers:** the level factor (×20 / ×50 / ×100, mine ×50) and the refine weight (×1, or Nightsilver /
+Nightsilk steps ×0.1 with Alloy and the Bar kept at ×1 — mine). The window already shows +exp per recipe and
+level progress (0.214.30).

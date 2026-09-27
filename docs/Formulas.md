@@ -1274,16 +1274,17 @@ count            a non-gear craft repeats up to Count (1 … 1000) and stops at 
                  gear is always 1
 recipe items     T40 / T52: 100 · T61: 60, 100 · T76: 20, 40, 60 · T80: 40, 60
 spent per craft  one recipe item of % ≤ learned (gear), pass or fail
-recipe price     round(0.10 × piece price × pct/100): 100% → 10%, 60% → 6%, 20% → 2% (Crafting.RecipePrice);
+recipe price     round(piece price / 30 × pct/100): 100% → 3.3%, 60% → 2%, 20% → 0.67% (Crafting.RecipePrice, 0.214.30);
                  the Master sells T40/T52 100% at it, plus the L0/L2 Apothecary books and every refine book (BL-303, 0.214.24);
                  nothing is TAUGHT for gold any more; vendor pays half
 recipe drops     by specialty (see "Per-mob drop tables"); bosses: 2.5 (T40) … 0.8 (T80) a kill (BL-308), 100% books (T40-T61), 60% (T76/T80)
 generic recipes  items, 100%, one per Apothecary line (BL-305, 0.214.22), valued at the old teaching price; normal
-                 creatures of the line's tier drop 1/100 a kill for the whole band (elite ×2, split evenly): T40 L0+L1 ·
+                 creatures of the line's tier drop 1/100 a kill for the whole band (elite ×2, split evenly; the War / Spell Rune lines
+                 L4 + L8 at ×0.1, so 1/1000 — GenericRecipeDropMul, 0.214.30): T40 L0+L1 ·
                  T52 L1+L2 · T61 L4 · T76 L6 · T80 L8; L10 only from 85+ bosses, 0.2 a kill (both ⚠ placeholders)
 recipe quests    T76/T80 only (0.208.0): 3 Frostmere givers (weapon/armour/jewel), each a T76 (75-85) + T80 (80+) daily
                  on ONE shared stamp → max 3 books a day; 16 kills; reward 1 × 40% book, uniform in the kind (1/8, 1/7, 1/3)
-recipe book price  Apothecary / refine books = the ladder L0 20k · L1 50k · L2 100k · L3 200k · L4 400k · L5 700k · L6 1M
+recipe book price  Apothecary / refine books = the ladder L0 20k · L1 50k (the L1 buff-potion books 17k, GenericRecipePrice) · L2 100k · L3 200k · L4 400k · L5 700k · L6 1M
                  · L7 1.5M · L8 2M · L9 3M · L10 4M; char level = the item's tier (a buff's = its class skill's LAST rung)
 learn level      gear: the piece's own item level (T52 recipe at 52)
 ```

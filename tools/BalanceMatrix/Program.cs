@@ -2907,6 +2907,76 @@ if (args.Length > 0 && args[0] == "--craft-mp")
     return;
 }
 
+// `--craft-points` — HIS POINTS-FROM-MP PROPOSAL, MEASURED BEFORE IT IS BUILT (owner, 2026-09-27): a craft pays
+// MP/10 × a batch-size multiplier (1 out ×5 · 2-5 ×4 · 6-10 ×3 · 11-50 ×2 · >50 ×1; refines ×1), and the level
+// table is today's PointsForLevel times 20 / 50 / 100 — he picks the factor off this print.
+if (args.Length > 0 && args[0] == "--craft-points")
+{
+    static int Mult(Recipe r) => r.Refine ? 1 : r.OutputQty switch { 1 => 5, <= 5 => 4, <= 10 => 3, <= 50 => 2, _ => 1 };
+    static int Proposed(Recipe r) => Math.Max(1, (int)Math.Round(r.MpCost / 10.0 * Mult(r)));
+    string Name(Recipe r) => ItemCatalog.Get(r.OutputId)?.Name ?? r.OutputId;
+
+    Console.WriteLine();
+    Console.WriteLine("=== POINTS PER CRAFT (proposed = MP/10 × mult), one attempt ===");
+    Console.WriteLine($"  {"recipe",-34} {"gate",5} {"char",4} {"MP",5} {"out",4} {"mult",4} {"NEW",5} {"now",4}");
+    var shown = RecipeCatalog.All.Where(r => !r.QuestOnly)
+        .Where(r => !r.IsGear || r.OutputId.StartsWith("sword2h_") || r.OutputId.StartsWith("sword1h_")
+                    || r.OutputId.StartsWith("heavy_") && ItemCatalog.IsBaseTier(r.OutputId)
+                    || r.OutputId.StartsWith("gloves_") || r.OutputId.StartsWith("ring_"))
+        .Where(r => !r.IsGear || ItemCatalog.IsBaseTier(r.OutputId))
+        .OrderBy(r => r.IsGear ? 1 : r.Refine ? 0 : 2).ThenBy(r => r.LearnLevel).ThenBy(r => r.UnlockLevel).ThenBy(r => r.Id);
+    string? section = null;
+    foreach (var r in shown)
+    {
+        string s = r.Refine ? "REFINES (generic, ×1)" : r.IsGear ? "GEAR (1 out, ×5) — 2H / 1H / body / gloves / ring" : "APOTHECARY";
+        if (s != section) { Console.WriteLine($"  -- {s}"); section = s; }
+        Console.WriteLine($"  {Name(r),-34} {"L" + r.UnlockLevel,5} {r.LearnLevel,4} {r.MpCost,5} {r.OutputQty,4} "
+                          + $"{"×" + Mult(r),4} {Proposed(r),5} {Crafting.CraftPoints(r),4}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("=== LEVEL TABLE: points for the NEXT level (cumulative in brackets), today × factor ===");
+    int[] factors = { 1, 20, 50, 100 };
+    Console.Write($"  {"level",-6}");
+    foreach (int f in factors) Console.Write($" {(f == 1 ? "today" : "×" + f),20}");
+    Console.WriteLine();
+    for (int lv = 1; lv <= Crafting.MaxCraftLevel; lv++)
+    {
+        Console.Write($"  {"L" + (lv - 1) + "→" + lv,-6}");
+        foreach (int f in factors)
+        {
+            int step = (Crafting.PointsForLevel(lv) - Crafting.PointsForLevel(lv - 1)) * f;
+            Console.Write($" {step,9:N0} [{Crafting.PointsForLevel(lv) * f,8:N0}]");
+        }
+        Console.WriteLine();
+    }
+
+    // What a level COSTS in crafts, at each factor, for the craft a crafter would naturally be making there.
+    Console.WriteLine();
+    Console.WriteLine("=== CRAFTS PER LEVEL-UP at each factor (the natural craft for that stage) ===");
+    (int From, string Id, string Label)[] stage =
+    {
+        (0, "refine_alloy", "Alloy"), (0, "craft_sword2h_t40", "T40 2H"), (0, "craft_ring_t40", "T40 ring"),
+        (0, $"craft_{ItemCatalog.MinorPotion}", "Common HP x100"),
+        (2, "craft_sword2h_t52", "T52 2H"), (2, $"craft_{ItemCatalog.HealingPotion}", "Uncommon HP x50"),
+        (4, "craft_sword2h_t61", "T61 2H"), (4, $"craft_{ItemCatalog.BoxWarRune1h}", "War Rune 1h x3"),
+        (6, "craft_sword2h_t76", "T76 2H"), (8, "craft_sword2h_t80", "T80 2H"),
+    };
+    Console.Write($"  {"craft",-16} {"pts",5} {"from",5}");
+    foreach (int f in factors.Skip(1)) Console.Write($" {"×" + f + " L→L+1",14}");
+    Console.WriteLine();
+    foreach (var (from, id, label) in stage)
+    {
+        if (RecipeCatalog.Get(id) is not Recipe r) { Console.WriteLine($"  {label,-16} (missing {id})"); continue; }
+        int p = Proposed(r);
+        int step = Crafting.PointsForLevel(from + 1) - Crafting.PointsForLevel(from);
+        Console.Write($"  {label,-16} {p,5} {"L" + from,5}");
+        foreach (int f in factors.Skip(1)) Console.Write($" {Math.Ceiling(step * f / (double)p),14:N0}");
+        Console.WriteLine();
+    }
+    return;
+}
+
 // `--favor-kph` — the KILLS/H TABLE `WayfarerFavor.KillsPerHour` is authored from (`BL-277`). Same M1 clock
 // `--craft-cost` reads; printed as a pasteable C# array. Re-run and re-paste when the pace moves.
 if (args.Length > 0 && args[0] == "--favor-kph") { FavorKph(); return; }

@@ -2998,7 +2998,10 @@ public class Entity
         for (int i = 0; i < Buffs.Count; i++)
         {
             var b = Buffs[i];
-            if (string.IsNullOrEmpty(b.SkillId)) { b.Suppressed = false; continue; }
+            // 🔴 A DEBUFF IS NEVER THE HOLDER'S WEAPON'S BUSINESS (owner, 2026-09-27: *"binding trap
+            //    don't hold the enemy in place"*). The gate belongs to the CASTER's hand; asked of the
+            //    victim, a bow-gated Root on a mob without a bow was suppressed the tick it landed.
+            if (string.IsNullOrEmpty(b.SkillId) || b.IsDebuff) { b.Suppressed = false; continue; }
             var def = SkillCatalog.Get(b.SkillId);
             if (def is null || (def.RequiredWeapon == WeaponType.None && def.RequiredHands == WeaponHands.Any))
             {
