@@ -666,6 +666,42 @@ public static class MobCatalog
         return whole + (roll < chance - whole ? 1 : 0);
     }
 
+    /// <summary>A per-kill drop rate as the player reads it — ODDS, never a percent (owner, 2026-09-27:
+    /// *"not 1% but 1/100 not 0.33% but 1/300 … Over 100% is 5/1 … mats when u get 100 per kill is 100/1
+    /// .. Or if it's a range 20~100/1"*, and *"1/1000000 is unreadable it's 1/1M"*).
+    /// <para>Below one per kill: <c>1/N</c>, N exact under 1000 and two significant digits above
+    /// (1/1200, 1/12K, 1/1M). At one or more: the HAUL per kill, <see cref="DropCopies"/> copies times
+    /// the quantity one copy pays — a range when either can land two ways (250% gear = 2~3/1, a 20-100
+    /// stack at 100% = 20~100/1).</para>
+    /// <paramref name="minQty"/>/<paramref name="maxQty"/> = what ONE copy pays, already stack-rated;
+    /// 1/1 for gear. Below 1/1 the caller shows the quantity itself — this returns the odds only.</summary>
+    public static string DropOddsText(double perKill, int minQty = 1, int maxQty = 1)
+    {
+        if (perKill <= 0) return "never";
+        if (perKill < 1.0 - 1e-6) return "1/" + CompactCount(Math.Round(1.0 / perKill), roundLarge: true);
+        double c = Math.Min(perKill, MaxDropCopies);
+        double lo = Math.Floor(c + 1e-6) * minQty, hi = Math.Ceiling(c - 1e-6) * maxQty;
+        return (lo == hi ? CompactCount(lo) : CompactCount(lo) + "~" + CompactCount(hi)) + "/1";
+    }
+
+    /// <summary>1234 → "1234", 12345 → "12K", 2500000 → "2.5M". With <paramref name="roundLarge"/>, a
+    /// number of 1000+ is cut to two significant digits first (1234 → 1200): a "1 in N" past a thousand
+    /// is an order of magnitude, and four exact digits only read as noise.</summary>
+    public static string CompactCount(double n, bool roundLarge = false)
+    {
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        if (roundLarge && n >= 1000)
+        {
+            double mag = Math.Pow(10, Math.Floor(Math.Log10(n)) - 1);
+            n = Math.Round(n / mag) * mag;
+        }
+        static string Short(double x) => x < 10 ? x.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)
+                                                : x.ToString("0", System.Globalization.CultureInfo.InvariantCulture);
+        if (n >= 1e6) return Short(n / 1e6) + "M";
+        if (n >= 1e4) return Short(n / 1e3) + "K";
+        return n.ToString("0", inv);
+    }
+
     // The tables below are PROPERTIES, not static readonly fields, and that is load-bearing: `All =
     // Build()` is declared at the top of this class and C# runs static field initializers in declaration
     // order, so any field declared here would still be null when Build() reaches StandardDrops. Same

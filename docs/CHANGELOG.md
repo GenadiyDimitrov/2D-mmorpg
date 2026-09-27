@@ -7,12 +7,25 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.28**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.29**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-27 (latest) — 0.214.28: Bow Expertise is one two-rung skill; `BL-314` filed
+## 2026-09-27 (latest) — 0.214.29: drop chances read as odds
+
+> *"not 1% but 1/100 not 0.33% but 1/300 etc... Over 100% is 5/1 … mats when u get 100 per kill is 100/1.. Or if
+> it's a range 20~100/1"* · *"1/1000000 is unreadable it's 1/1M"*
+
+- **The mob's Drops tab and the Drops database show odds, not percentages** (`MobCatalog.DropOddsText`, one
+  formatter for both). Below one per kill: `1/N`, N exact under 1000 and two significant digits above it
+  (`1/1200`, `1/12K`, `1/1M`). At one or more: the haul per kill: `5/1`, `100/1`, `20~100/1`.
+- **Gear above 100% reads `2~3/1`, not `1/1`**: the kill roll really does pay extra copies of gear above 100%
+  (`DropCopies`), so the text shows what lands.
+- Stack quantities now include the stack-size rate (`DropAmount`), as the kill roll already did.
+- Server-side text only; the version bump is the one reason a new APK is needed.
+
+## 2026-09-27 — 0.214.28: Bow Expertise is one two-rung skill; `BL-314` filed
 
 > *"Bow expertise L2@52 don't replaces L1"* · *"archers is the main .. So bow_expertise is the 2 rung one and the
 > buffer learns that one just on different lvls ...so we can remove the wc_bow_expertise"*

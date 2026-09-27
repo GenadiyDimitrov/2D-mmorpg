@@ -19824,10 +19824,8 @@ public class GameLoopService : BackgroundService
         var index = _world.Drops;
         float lookMult = player.Runes.DropChance;
 
-        // Above 100% a percentage stops meaning anything, so the label switches to copies per kill —
-        // the same `Odds` the inspect list uses, plain "x" and never "×" (the client's TMP atlas is
-        // static and carries no multiplication sign).
-        static string Odds(double c) => c >= 1.0 ? $"x{c:0.##}/kill" : c >= 0.0001 ? $"{c * 100:0.##}%" : $"{c * 100:0.0000}%";
+        // Odds, the same `MobCatalog.DropOddsText` the inspect list uses: 1/100 below one per kill, the
+        // haul per kill (5/1, 20~100/1) at or above it.
 
         var items = new List<DropLookupItem>();
         int shown = 0;
@@ -19847,7 +19845,13 @@ public class GameLoopService : BackgroundService
 
                 var bits = new List<string>();
                 if (s.MinLevel != s.MaxLevel && s.BestLevel != s.MinLevel) bits.Add($"from lvl {s.BestLevel}");
-                if (s.MaxQty > 1) bits.Add($"x{s.MinQty}-{s.MaxQty}");
+                // Stack quantity, rated the way Award rates it. At one or more per kill it is part of the
+                // odds text instead ("20~100/1"), so the note only carries it below that.
+                bool stackable = ItemCatalog.Get(s.ItemId)?.IsStackable == true;
+                int Rated(int q) => stackable ? Math.Max(1, (int)(q * RateConfig.World.DropAmount)) : 1;
+                int qMin = Rated(s.MinQty), qMax = Rated(s.MaxQty);
+                bool haul = chance >= 1.0 - 1e-6;
+                if (!haul && qMax > 1) bits.Add(qMin == qMax ? $"x{qMin}" : $"x{qMin}~{qMax}");
                 if (gap <= 0f) bits.Add("TOO FAR from your level — drops nothing for you");
                 else if (gap < 0.999f) bits.Add($"level gap: cut to {gap * 100:0.#}%");
 
@@ -19856,7 +19860,7 @@ public class GameLoopService : BackgroundService
                     s.Rank switch { MobRank.Boss => "BOSS", MobRank.Elite => "elite", _ => "normal" },
                     s.Rank switch { MobRank.Boss => 2, MobRank.Elite => 1, _ => 0 },
                     s.Location,
-                    (float)chance, Odds(chance),
+                    (float)chance, haul ? MobCatalog.DropOddsText(chance, qMin, qMax) : MobCatalog.DropOddsText(chance),
                     string.Join("; ", bits)));
 
                 if (rows.Count >= MaxLookupRowsPerItem) break;
@@ -19969,10 +19973,24 @@ public class GameLoopService : BackgroundService
         if (cmd.WithDrops && isMob && t.MobTypeId is not null && MobCatalog.Get(t.MobTypeId).Drops is { } table)
         {
             var rows = MobCatalog.KillTable(MobCatalog.Get(t.MobTypeId), t.Level, t.Rank);
-            string ItemLine(DropEntry d)
+            // What ONE copy of the row pays, with the stack-size knob applied exactly as Award applies it,
+            // so "100/1" on screen is the 100 that lands in the bag. Gear is always 1.
+            (int Min, int Max) Qty(DropEntry d)
+            {
+                if (ItemCatalog.Get(d.ItemId) is not { IsStackable: true }) return (1, 1);
+                int Rated(int q) => Math.Max(1, (int)(q * RateConfig.World.DropAmount));
+                return (Rated(d.MinQty), Rated(d.MaxQty));
+            }
+            // "Name  (1/100)" below one per kill — the quantity stays on the name there ("x20~100"), since
+            // it is what one lucky kill pays. At one or more the odds ARE the haul ("20~100/1"), so the
+            // name goes bare.
+            string Line(DropEntry d, double perKill)
             {
                 string name = ItemCatalog.Get(d.ItemId)?.Name ?? d.ItemId;
-                return d.MaxQty > 1 ? $"{name} x{d.MinQty}-{d.MaxQty}" : name;
+                var (min, max) = Qty(d);
+                if (perKill >= 1.0 - 1e-6) return $"{name}  ({MobCatalog.DropOddsText(perKill, min, max)})";
+                string qty = max > 1 ? (min == max ? $" x{min}" : $" x{min}~{max}") : "";
+                return $"{name}{qty}  ({MobCatalog.DropOddsText(perKill)})";
             }
             // "Armor", "Common", "Boss", "Mats" — the group's tuning name (the word /droprate takes). The
             // rarity suffix went with `BL-272`: a family group now only ever holds the Mythic rung.
@@ -20002,11 +20020,6 @@ public class GameLoopService : BackgroundService
             float lookGap = isMob ? ExpCurve.LevelGapMultiplier(player.Level - t.Level) : 1f;
             float Shown(DropEntry d) => MobCatalog.EffectiveChance(d, lookMult) * lookGap;
 
-            // Above 100% a percentage stops meaning anything ("250%" is not a chance), so the label
-            // switches to what the roll actually does at that rate: copies per kill. Plain "x", never
-            // "×" — the client's TMP atlas is static and does not carry the multiplication sign.
-            static string Odds(double c) => c >= 1.0 ? $"x{c:0.##}/kill" : $"{c * 100:0.##}%";
-
             var lines = new List<string>();
             // The header states the penalty rather than leaving the reader to wonder why a 5% row reads
             // 1.4%. Silent at ×1.00 — an in-band kill is the common case and needs no explanation — and
@@ -20020,7 +20033,7 @@ public class GameLoopService : BackgroundService
             }
             // GroupId 0 rolls independently, so each entry is its own row carrying its own chance.
             foreach (var d in rows.Where(d => d.GroupId == 0))
-                lines.Add($"{ItemLine(d)}  ({Odds(Shown(d))})");
+                lines.Add(Line(d, Shown(d)));
             // A GROUP is ONE roll shared by its members, so it reads as a TREE (32f): a title line with
             // the group's own chance, then the items it can land on indented beneath. As flat rows a
             // single 5% group looked like five separate 5% drops, which is five times the truth.
@@ -20040,11 +20053,12 @@ public class GameLoopService : BackgroundService
                 lines.Add(GroupTitle(g.Key));
                 double weightSum = g.Sum(d => (double)MobCatalog.ItemWeight(d));
                 double trigger = g.Sum(d => (double)MobCatalog.EffectiveChance(d, lookMult)) * lookGap;
-                foreach (var d in g.GroupBy(ItemLine))
+                foreach (var d in g.GroupBy(x => (x.ItemId, x.MinQty, x.MaxQty)))
                 {
-                    if (weightSum <= 0) { lines.Add("   " + d.Key); continue; }
+                    var first = d.First();
+                    if (weightSum <= 0) { lines.Add("   " + (ItemCatalog.Get(first.ItemId)?.Name ?? first.ItemId)); continue; }
                     double share = d.Sum(x => (double)MobCatalog.ItemWeight(x)) / weightSum;
-                    lines.Add($"   {d.Key}  ({Odds(trigger * share)})");
+                    lines.Add("   " + Line(first, trigger * share));
                 }
             }
             drops = lines.ToArray();
