@@ -7,12 +7,29 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.30**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.31**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-27 (latest) — 0.214.30: Binding Trap holds; recipe prices and rune drops cut; craft exp shown
+## 2026-09-27 (latest) — 0.214.31: craft exp from what a craft consumes (`BL-315`)
+
+> *"Each base item to have a weight (points) and based on those points a craft total to be calculated"* ·
+> *"increase the curve about 4 times .. 1~2 weapon is low amount for lvl up ... Leave the points"* · *"Potion crafts
+> need ... some sort of modifier to match wepons armors.. May be match rings ... not to skyrocket"*
+
+- **A craft attempt pays the weight of everything it consumed** (`Crafting.CraftWeight`, `CraftPoints(recipe, pct)`):
+  a fail too, refines too, and a 20/40/60% gear recipe pays for the 30/50/70% it consumes. 100%: 2H T40 300 · T52 5,880
+  · T61 49,470 · T76 132,660 · T80 276,500; ring 30 … 27,650; Alloy 6, Legendary Nightsilver 6,500. The weights are
+  authored literals, generated once by `BalanceMatrix --craft-weights`.
+- **A potion batch pays the ring of its tier** (War Rune 1h = a T61 ring, 4,947).
+- **The level curve is his, ×4**: 800 · 2,000 · 28,000 · 120,000 · 240,000 · 400,000 · 600,000 · 880,000 · 1.2M · 1.6M
+  (L10 = 5,070,800). About 5-9 of the tier's 2H per level (21 at L3→4, before T61 opens); a potion-only crafter
+  needs ~477 batches before Rare HP/MP and ~690 before Instant. `BalanceMatrix --craft-points` prints it all live.
+- ⚠ An existing crafter's exp now reads as a much LOWER level while its spent type levels stay, so its free points go
+  negative: re-set it from the Debug window's crafting levels (or delete `game.db`).
+
+## 2026-09-27 — 0.214.30: Binding Trap holds; recipe prices and rune drops cut; craft exp shown
 
 > *"Still binding trap don't hold the enemy in place"* · *"the rcps for war/spell Runes are 200k each .. And I just
 > made 4kk out of them .. Decrease their chance ~10 times ... Decrease the price of rcps for buff potions ~3 times

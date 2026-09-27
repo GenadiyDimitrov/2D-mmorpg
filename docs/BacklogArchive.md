@@ -7958,3 +7958,28 @@ Huntmaster also leaves the minor towns.
 > that has one? (2) the crafter-points / respec tab: Anvil (as the entry says) or Master? (3) now that `BL-305` made the
 > generic recipes ITEMS (0.214.22), should the Master SELL the L0/L2 books (his table said "vendor") and stop teaching
 > the lines for gold, or keep teaching as today?
+
+## `BL-315` ✅ CLOSED 2026-09-27 in **0.214.31**: craft exp from what a craft consumes
+
+His answers, 2026-09-27: *"increase the curve about 4 times .. So need alot of crafts to lvl up.. 1~2 weapon is low
+amount for lvl up ... Leave the points. Potion crafts need curve as well some sort of modifier to match wepons armors..
+May be match rings as crafts .. But a potion crafter not to skyrocket and start selling rare/instant pots in the 2st
+day"*. Built: the round-2 weights verbatim (`Crafting.CraftWeight`), the curve ×4 (`Crafting.LevelStep`, 800 … 1.6M,
+L10 = 5,070,800), a potion batch pays the RING of its tier. A potion-only crafter needs ~477 batches (and character
+76) before Rare HP/MP, ~690 (and 85) before Instant / Supreme Dash (`BalanceMatrix --craft-points`).
+
+The open entry as it stood:
+
+
+His note, 2026-09-27, round 2 (round 1's MP/10 × batch multiplier is superseded): *"make a curve ... L0->l1 to need
+200 but l1 to l2 to need like 500 .. Then 7k then 30 .. Etc ... Each base item to have a weight (points) and based
+on those points a craft total to be calculated .. So cheaper crafts give less points an a expensive one will lvlup
+close to lvup atleast"*.
+
+**Measured** (`BalanceMatrix --craft-weights`), all tables in [design/CraftPoints.md](design/CraftPoints.md): a craft
+pays Σ qty × weight of what it consumes; weights generated so each tier's 2H ≈ one level-step at its gate. T40 2H 300
+· T52 5,880 · T61 49k · T76 133k · T80 277k; curve 200 / 500 / 7k / 30k / 60k … 400k (L10 = 1.27M). Refines behind a
+weapon ≈ the weapon (0.1-1.1×), no longer 158×.
+❓ **Three answers:** the curve past 30k (mine, or flat → T80 2H ≈ 40k) · how many tier 2H per level-up (today 2) ·
+the Apothecary, which pays 1-100 a batch and cannot level (a accept / b pay from shelf value — mine / c own weights).
+The window already shows +exp per recipe and level progress (0.214.30).

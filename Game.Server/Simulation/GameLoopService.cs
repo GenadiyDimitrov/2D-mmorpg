@@ -3544,7 +3544,7 @@ public class GameLoopService : BackgroundService
                 AddItem(player, recipe.OutputId, recipe.OutputQty);
                 made++;
             }
-            if (!trial) AwardCraftPoints(player, recipe);
+            if (!trial) AwardCraftPoints(player, recipe, pct);
         }
         if (goldCost > 0) SendGold(player);
         // The keeper's shelf is PUSHED state on this client, so a craft that spent from it MUST say so.
@@ -3582,12 +3582,12 @@ public class GameLoopService : BackgroundService
         SendInventory(player);
     }
 
-    /// <summary>Craft points for one ATTEMPT (his pick, 2026-09-24: tier-weighted, and a FAIL counts, since
+    /// <summary>Craft exp for one ATTEMPT (`BL-315`: the weight of what it consumed, and a FAIL counts, since
     /// the materials are spent either way). They feed the GENERIC level only (the crafter-points model,
     /// 0.204.0): each generic level gives one point, and the player spends it on a type himself.</summary>
-    private void AwardCraftPoints(Entity player, Recipe recipe)
+    private void AwardCraftPoints(Entity player, Recipe recipe, int pct)
     {
-        int pts = Crafting.CraftPoints(recipe);
+        int pts = Crafting.CraftPoints(recipe, pct);   // `BL-315`: the weight of what this attempt consumed
         if (pts <= 0) return;
         int cap = Crafting.PointsForLevel(Crafting.MaxCraftLevel);
         int genBefore = player.CraftLevel;

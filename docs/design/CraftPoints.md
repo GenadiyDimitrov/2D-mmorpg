@@ -1,3 +1,5 @@
+**✅ BUILT in 0.214.31** — the round-2 weights, the curve ×4, potions paid as the ring of their tier. The live numbers: `BalanceMatrix --craft-points`.
+
 # Craft exp — `BL-315` (PROPOSAL, round 2, not built)
 
 Owner, 2026-09-27, round 2 (replaces the MP/10 × batch-multiplier idea of round 1, which is in git history):

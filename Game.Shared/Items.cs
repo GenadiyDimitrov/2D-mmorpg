@@ -2408,7 +2408,7 @@ public static class ItemCatalog
                 EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
                 Value: Crafting.LearnPriceLadder[gate], TeachesRecipeId: recipeId, RecipePercent: 100,
                 Description: $"Use it to learn to make {output.Name} (crafting level {gate}; it takes a recipe slot). "
-                           + "Refines never fail and pay no craft points.");
+                           + "Refines never fail, and pay craft exp for what they consume.");
         }
     }
 

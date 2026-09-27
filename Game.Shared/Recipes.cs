@@ -24,7 +24,7 @@ public record RecipeInput(string ItemId, int Qty);
 /// and crafts again once the level is back. For <see cref="CraftType.General"/> it reads the generic level.
 /// <see cref="LearnLevel"/> is the CHARACTER level (*"i cannot learn T52 rcp @50"*).</para>
 /// <para><see cref="MpCost"/> is charged per ATTEMPT (the note's MP table, 0.205.0). <see cref="Refine"/> marks the
-/// Nightsilver / Nightsilk / alloy / bar conversions, which pay no craft points.</para>
+/// Nightsilver / Nightsilk / alloy / bar conversions (they pay craft exp like any craft since `BL-315`).</para>
 /// <para><see cref="BatchValue"/> (Scribe / Apothecary only) is what the batch costs to BUY. The crafter pays
 /// <see cref="Crafting.PriceFactor"/> of it in all, the fixed inputs counted at their vendor sell price and
 /// gold making up the rest: <see cref="GoldAt"/>.</para>
@@ -104,8 +104,8 @@ public static class RecipeCatalog
 
     // =====================================================================================
     //  THE REFINES (`BL-273` part 3, 0.205.0; design doc §2.2 "Step 10", ruled 2026-09-24). General
-    //  recipes, open to every crafter: no gold, always succeed, one output a craft, and they pay NO craft
-    //  points (Crafting.CraftPoints). A count on the craft command makes the thousands of them one tap.
+    //  recipes, open to every crafter: no gold, always succeed, one output a craft, and they pay craft
+    //  exp by what they consume (Crafting.CraftPoints, `BL-315`). A count on the craft command makes the thousands one tap.
     // =====================================================================================
     private static IEnumerable<Recipe> RefineRecipes()
     {

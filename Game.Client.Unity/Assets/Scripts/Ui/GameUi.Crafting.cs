@@ -316,8 +316,8 @@ namespace Game.Client
             // list every frame. The server refuses an attempt it cannot pay for.
             if (recipe.MpCost > 0) parts.Add(recipe.MpCost + " MP");
             // What an attempt pays toward the crafting level (owner, 2026-09-27: *"I cannot see nowhere what rcp
-            // homuch points it give"*). A refine pays none today, and says so.
-            int craftExp = recipe.QuestOnly ? 0 : Crafting.CraftPoints(recipe);
+            // homuch points it give"*).
+            int craftExp = Crafting.CraftPoints(recipe, pct);   // at THIS row's % (a lower % consumes, and pays, less)
             parts.Add(craftExp > 0 ? "+" + craftExp + " craft exp" : "no craft exp");   // info, never a have/need tint
 
             int shown = Mathf.RoundToInt(chance * 100f);

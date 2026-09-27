@@ -384,12 +384,16 @@ Check("the Blessing is paused in town (BL-300)", await a.WaitFor(() => a.Favor?.
     // `BL-273` part 2 (0.203.0): BECOMING A CRAFTER — the arithmetic and the catalogue, no server needed.
     Check("craft slots: L0 = 10, +5 per generic level, L10 = 60",
           Crafting.Slots(0) == 10 && Crafting.Slots(1) == 15 && Crafting.Slots(10) == 60);
-    Check("craft levels: level N costs 20·N points (L1 at 20, L10 at 1100)",
-          Crafting.LevelForPoints(19) == 0 && Crafting.LevelForPoints(20) == 1 && Crafting.LevelForPoints(60) == 2
-          && Crafting.LevelForPoints(1099) == 9 && Crafting.LevelForPoints(1100) == 10 && Crafting.LevelForPoints(99999) == 10);
-    Check("craft points per attempt: T40 1 · T52 2 · T61 3 · T76 5 · T80 8",
-          Crafting.CraftPoints(40) == 1 && Crafting.CraftPoints(52) == 2 && Crafting.CraftPoints(61) == 3
-          && Crafting.CraftPoints(76) == 5 && Crafting.CraftPoints(80) == 8);
+    Check("craft levels (`BL-315`): the ×4 curve, L1 at 800, L2 at 2,800, L10 at 5,070,800",
+          Crafting.LevelForPoints(799) == 0 && Crafting.LevelForPoints(800) == 1 && Crafting.LevelForPoints(2800) == 2
+          && Crafting.LevelForPoints(5_070_799) == 9 && Crafting.LevelForPoints(5_070_800) == 10 && Crafting.LevelForPoints(int.MaxValue) == 10);
+    Check("craft exp (`BL-315`): Σ consumed × weight — T40 2H 300, T80 2H 276,500, a 20% T76 2H less than its 100%, "
+          + "a War Rune 1h batch = a T61 ring",
+          RecipeCatalog.Get("craft_sword2h_t40") is { } c40 && Crafting.CraftPoints(c40) == 300
+          && RecipeCatalog.Get("craft_sword2h_t80") is { } c80 && Crafting.CraftPoints(c80) == 276_500
+          && RecipeCatalog.Get("craft_sword2h_t76") is { } c76 && Crafting.CraftPoints(c76, 20) < Crafting.CraftPoints(c76, 100)
+          && Crafting.CraftPoints(RecipeCatalog.Get($"craft_{ItemCatalog.BoxWarRune1h}")!)
+             == Crafting.CraftPoints(RecipeCatalog.Get("craft_ring_t61")!));
     // 0.205.0 — STEP 10: the materials and the authored per-slot tables (`BL-273` part 3).
     Check("🔑 step 10: the old mat ladder is gone (one rung per base mat; Iron replaces Ingot)",
           ItemCatalog.Get("mat_ingot_uncommon") is null && ItemCatalog.Get("mat_wood_common") is null
@@ -442,8 +446,8 @@ Check("the Blessing is paused in town (BL-300)", await a.WaitFor(() => a.Favor?.
               && r76.Inputs.All(i => Crafting.InputQty(r76, i, 20) == (Crafting.IsFixedInput(i.ItemId) ? i.Qty : Crafting.ScaledQty(i.Qty, 20)))
               && r76.Inputs.Any(i => Crafting.IsFixedInput(i.ItemId)));
         var refines = RecipeCatalog.All.Where(r => r.Refine).ToList();
-        Check("🔑 the refines: 8 ladder steps + alloy + bar, 10:1, gated L0/40 · L3/52 · L5/61 · L8/76 (bar L7/76), 0 points, no gold",
-              refines.Count == 10 && refines.All(r => r.Type == CraftType.General && r.GoldAt(0) == 0 && Crafting.CraftPoints(r) == 0)
+        Check("🔑 the refines: 8 ladder steps + alloy + bar, 10:1, gated L0/40 · L3/52 · L5/61 · L8/76 (bar L7/76), exp by what they consume, no gold",
+              refines.Count == 10 && refines.All(r => r.Type == CraftType.General && r.GoldAt(0) == 0 && Crafting.CraftPoints(r) > 0)
               && RecipeCatalog.Get("refine_nightsilver_1") is { UnlockLevel: 0, LearnLevel: 40, MpCost: 50 }
               && RecipeCatalog.Get("refine_nightsilk_2") is { UnlockLevel: 3, LearnLevel: 52, MpCost: 100 }
               && RecipeCatalog.Get("refine_nightsilver_3") is { UnlockLevel: 5, LearnLevel: 61, MpCost: 150 }

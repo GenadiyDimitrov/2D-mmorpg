@@ -1249,10 +1249,17 @@ generic-recipe number are **playtest placeholders**.
 ```
 crafter          the Master's Trial, level 40 (for good; no quitting)
 slots            10 + 5 × genericLevel                     (L0 10 … L10 60; type levels give no slots)
-points/attempt   gear: T40 1 · T52 2 · T61 3 · T76 5 · T80 8   Apothecary: 1 a batch   refine: 0   (a FAIL pays too)
+exp/attempt      gear + refines: round(Σ consumed qty × CraftWeight) — a 20/40/60% recipe consumes (and pays) less;
+                 Apothecary: what the RING of its tier pays at 100% (tier = highest of 40/52/61/76/80 ≤ its char level)
+                 (a FAIL pays too; BL-315, 0.214.31). 100%: 2H T40 300 · T52 5,880 · T61 49,470 · T76 132,660 · T80 276,500;
+                 ring 30 · 588 · 4,947 · 13,266 · 27,650; refines Refined 2 · Alloy 6 · Rare 86 · Bar 560 · RR 990 · Legendary 6,500
+weights          iron/wood/thread/leather 0.1 · gem 0.2 · alloy 6 · volcanic ash/stone 14 · bar 540;
+                 by tier T40…T80: part 3.2 · 110 · 990 · 2,300 · 4,900 · Nightsilver/silk rung 0.16 · 8.6 · 99 · 650 · 7,000 ·
+                 essence D…S 0.12 · 2.1 · 12 · 20 · 35   (authored; generated once by BalanceMatrix --craft-weights)
                  every attempt pays the GENERIC level only
 | armour+shield | jewels); generic pays generic only
-level from pts   level N starts at 10·N·(N+1)              (L1 20 · L2 60 · L5 300 · L10 1100), max 10
+level from exp   steps L0→1 … L9→10: 800 · 2,000 · 28,000 · 120,000 · 240,000 · 400,000 · 600,000 · 880,000 · 1.2M · 1.6M
+                 (Crafting.LevelStep; cumulative L1 800 · L2 2,800 · L5 390,800 · L10 5,070,800), max 10
 type points      1 per generic level (10 at L10), spent on weapon · armour · jewels · apothecary (0-10 each; the Scribe folded into the Apothecary, BL-305)
 type gate        gear T40 L0 · T52 L2 · T61 L4 · T76 L6 · T80 L8 (learn AND craft). Apothecary (BL-305, 0.214.21): HP/MP L0 ·
                  Greater Swift/Alacrity/Fury L1 · Uncommon HP/MP L2 · rune 1h L4 · rare HP/MP L6 · rune 2h L8 · Instant + Supreme Dash L10
@@ -1300,7 +1307,7 @@ refinable        Nightsilver (weapons, earrings, rings) / Nightsilk (armour, shi
                  rung 0 normal · 1 Refined · 2 Rare · 3 Refined Rare · 4 Legendary; a tier eats its own rung
                  (T40 0 · T52 1 · T61 2 · T76 3 · T80 4); Value 20 × 10^rung  ⚠ placeholder
 refine           10 of rung r → 1 of r+1; gate (generic L / char L): →1 L0/40 · →2 L3/52 · →3 L5/61 · →4 L8/76;
-                 MP 50 · 100 · 150 · 200; no gold; 0 craft points
+                 MP 50 · 100 · 150 · 200; no gold; craft exp by what they consume (BL-315)
 alloy            20 gem + 20 iron → 1 (L0/40, MP 50, Value 200)
 volcanic bar     20 ash + 20 stone → 1 (L7/76, MP 200)
 parts            one per KIND per tier (18 × 5 = 90), "{grade} {part}"; Value = 1% of the full item's price (Crafting.PartPriceFraction)

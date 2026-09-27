@@ -161,29 +161,81 @@ public static class Crafting
     /// "increasing", not the numbers.</summary>
     public static readonly long[] RespecPrices = { 1_000_000, 2_000_000, 4_000_000, 8_000_000, 16_000_000 };
 
-    /// <summary>Craft points one ATTEMPT is worth (his pick, 2026-09-24: tier-weighted, and a FAIL counts).
-    /// Gear by its tier: T40 1 · T52 2 · T61 3 · T76 5 · T80 8. An Apothecary recipe is 1 a BATCH, and a
-    /// REFINE (Nightsilver/Nightsilk, alloy, the bar) is **0** (step 10, ruled 2026-09-24: one T61 weapon is
-    /// 1,650 refines, which at 1 each would pass generic L10 on conversions alone). Every attempt feeds the
-    /// generic level only; type levels are bought with its points. ⚠ Playtest placeholders.</summary>
-    public static int CraftPoints(Recipe recipe) =>
-        recipe.Refine ? 0 : recipe.IsGear ? CraftPoints(recipe.GearItemLevel) : 1;
+    // ----- CRAFT EXP (`BL-315`, owner, 2026-09-27, docs/design/CraftPoints.md) ------------------------------
+    //
+    // *"Each base item to have a weight (points) and based on those points a craft total to be calculated .. So
+    // cheaper crafts give less points an a expensive one will lvlup close to lvup"*. An ATTEMPT pays the weight of
+    // everything it CONSUMED (a fail too, and refines too, no special case), so a lower-% gear recipe, which
+    // consumes less, pays less. The Apothecary pays as a RING of its tier (*"Potion crafts need ... some sort of
+    // modifier to match wepons armors.. May be match rings"*): its inputs are gems and a pinch of essence, and by
+    // weight alone a potion-maker could never level.
+    //
+    // 🔑 THE WEIGHTS ARE AUTHORED, generated ONCE by `BalanceMatrix --craft-weights` (each tier's 2H ≈ one level-step
+    //    of the round-2 curve at its gate) and pasted here. Retune a cell by hand; nothing recomputes them.
 
-    /// <summary>The gear half of <see cref="CraftPoints(Recipe)"/>, by tier.</summary>
-    public static int CraftPoints(int gearItemLevel) => gearItemLevel switch
+    /// <summary>Weight of one base material / refine product: Iron, Wood, Thread, Leather 0.1 · Gem 0.2 · Alloy 6
+    /// (= the 20 gem + 20 iron it consumed) · Volcanic Ash / Stone 14 · Volcanic Bar 540.</summary>
+    private static readonly Dictionary<string, double> BaseWeights = new()
     {
-        >= 80 => 8,
-        >= 76 => 5,
-        >= 61 => 3,
-        >= 52 => 2,
-        _ => 1,
+        ["mat_iron"] = 0.1, ["mat_wood"] = 0.1, ["mat_thread"] = 0.1, ["mat_leather"] = 0.1, ["mat_gem"] = 0.2,
+        ["mat_alloy"] = 6, ["mat_volcanic_ash"] = 14, ["mat_volcanic_stone"] = 14, ["mat_volcanic_bar"] = 540,
     };
+    /// <summary>A PART's weight by gear tier (any kind), index = <see cref="GearTiers"/>.</summary>
+    private static readonly double[] PartWeight = { 3.2, 110, 990, 2_300, 4_900 };
+    /// <summary>Nightsilver / Nightsilk by rung, 0 (normal) … 4 (Legendary).</summary>
+    private static readonly double[] NightWeight = { 0.16, 8.6, 99, 650, 7_000 };
+    /// <summary>Essence by grade, D … S (<see cref="EssenceIds"/>).</summary>
+    private static readonly double[] EssenceWeight = { 0.12, 2.1, 12, 20, 35 };
 
-    /// <summary>Cumulative points at which a craft level begins: level N costs 20·N more than N-1, so
-    /// L1 = 20, L2 = 60, L3 = 120 … L10 = 1100. The generic and the type levels read the same table.
-    /// ⚠ Playtest placeholders (design doc §2.2, 0.203.0 answers #1).</summary>
-    public static int PointsForLevel(int level) =>
-        10 * System.Math.Clamp(level, 0, MaxCraftLevel) * (System.Math.Clamp(level, 0, MaxCraftLevel) + 1);
+    /// <summary>The craft-exp weight of ONE of an item consumed, or 0 (recipe books, quest items).</summary>
+    public static double CraftWeight(string itemId)
+    {
+        if (BaseWeights.TryGetValue(itemId, out var w)) return w;
+        if (itemId.StartsWith("part_", StringComparison.Ordinal))
+        {
+            int ti = System.Array.IndexOf(GearTiers, ItemCatalog.Get(itemId)?.ItemLevel ?? -1);
+            if (ti < 0 && int.TryParse(itemId.Substring(itemId.LastIndexOf("_t", StringComparison.Ordinal) + 2), out int lvl))
+                ti = System.Array.IndexOf(GearTiers, lvl);
+            return ti >= 0 ? PartWeight[ti] : 0;
+        }
+        if (itemId.StartsWith("nightsilver_", StringComparison.Ordinal) || itemId.StartsWith("nightsilk_", StringComparison.Ordinal))
+            return int.TryParse(itemId.Substring(itemId.LastIndexOf('_') + 1), out int rung) && rung >= 0 && rung < NightWeight.Length
+                ? NightWeight[rung] : 0;
+        int g = System.Array.IndexOf(EssenceIds, itemId);
+        return g >= 0 ? EssenceWeight[g] : 0;
+    }
+
+    /// <summary>Craft exp one ATTEMPT pays, spending a recipe of <paramref name="percent"/> (gear; ignored
+    /// otherwise). Gear and refines: Σ consumed × <see cref="CraftWeight"/>. Apothecary: what the RING of its
+    /// tier pays at 100% (the tier = the highest gear tier at or below the line's character level). The trial's
+    /// hammer pays nothing (it never reaches here: the trial is not a crafter yet).</summary>
+    public static int CraftPoints(Recipe recipe, int percent = 100)
+    {
+        if (recipe.QuestOnly) return 0;
+        if (recipe.Type == CraftType.Apothecary)
+        {
+            int tier = GearTiers.LastOrDefault(t => t <= recipe.LearnLevel);
+            return tier > 0 && RecipeCatalog.Get($"craft_ring_t{tier}") is { } ring ? CraftPoints(ring) : 0;
+        }
+        int pct = percent <= 0 ? 100 : percent;
+        double sum = 0;
+        foreach (var i in recipe.Inputs) sum += InputQty(recipe, i, pct) * CraftWeight(i.ItemId);
+        return (int)System.Math.Round(sum, System.MidpointRounding.AwayFromZero);
+    }
+
+    /// <summary>Exp for the NEXT level, L0→1 … L9→10: his curve (*"L0->l1 to need 200 but l1 to l2 to need like 500
+    /// .. Then 7k then 30"*), extended to 400k, then ×4 (*"increase the curve about 4 times .. 1~2 weapon is low amount
+    /// for lvl up"*). A tier's 2H is now about a QUARTER to half of a level-step at its gate. Authored.</summary>
+    public static readonly int[] LevelStep =
+        { 800, 2_000, 28_000, 120_000, 240_000, 400_000, 600_000, 880_000, 1_200_000, 1_600_000 };
+
+    /// <summary>Cumulative exp at which a craft level begins (L1 800 … L10 5,070,800). The generic level reads it.</summary>
+    public static int PointsForLevel(int level)
+    {
+        int sum = 0;
+        for (int i = 0; i < System.Math.Clamp(level, 0, MaxCraftLevel); i++) sum += LevelStep[i];
+        return sum;
+    }
 
     /// <summary>The craft level a point total is worth, 0-10.</summary>
     public static int LevelForPoints(int points)
