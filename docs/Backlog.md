@@ -280,7 +280,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
 | `BL-307` | 🟡 | **Full drops below level 40** — F/E-grade Common gear, materials and lucky drops, not only gold — 📝 PROPOSAL drafted, `docs/design/LowLevelDrops.md`, 4 questions | drops |
 | `BL-314` | 🔵 | **Split passives into single-stat pieces** — regen / P.Def / speed as their own ladders shared across classes, so ten armor masteries become a few mixable passives — design first | skills |
-| `BL-315` | 🔵 | **Craft exp from MP** — MP/10 × batch mult (1 out ×5 … >50 ×1, refines ×1); level table ×20/50/100 and the refine weight to pick — [design/CraftPoints.md](design/CraftPoints.md) | crafting |
+| `BL-315` | 🔵 | **Craft exp from what a craft consumes** — a weight per input item, a steep level curve (200 / 500 / 7k / 30k …); curve, 2H-per-level and the Apothecary to pick — [design/CraftPoints.md](design/CraftPoints.md) | crafting |
 
 ---
 
@@ -2285,15 +2285,17 @@ is then WHICH pieces and which rungs, not a bespoke bundle.
 4. Migration is a `game.db` delete (pre-release), but every `Replaces` chain between masteries is rewritten.
 
 
-## `BL-315` 🔵 CRAFT EXP FROM MP
+## `BL-315` 🔵 CRAFT EXP FROM WHAT A CRAFT CONSUMES
 
-His note, 2026-09-27: *"the refinement need to give points for crafting ... base the points that a craft gives by
-the mp it requires ... an rcp that gives 1 item is multiplied by x5, a 100item output is x1, 2~5 is x4, 6~10 x3,
-11~50 x2 and >50 x1 ... generics are x1 ... before u build give me a table per lvl"*.
+His note, 2026-09-27, round 2 (round 1's MP/10 × batch multiplier is superseded): *"make a curve ... L0->l1 to need
+200 but l1 to l2 to need like 500 .. Then 7k then 30 .. Etc ... Each base item to have a weight (points) and based
+on those points a craft total to be calculated .. So cheaper crafts give less points an a expensive one will lvlup
+close to lvup atleast"*.
 
-**Measured** (`BalanceMatrix --craft-points`), all tables in [design/CraftPoints.md](design/CraftPoints.md): a T40
-2H pays 100, a T80 2H 400, a War Rune batch 80, Alloy 5, a Legendary refine 20. ⚠ §4: at ×1 the Nightsilver
-refines behind ONE weapon pay 7× (T52) to 158× (T80) what the weapon does, so refining becomes the levelling.
-❓ **Two answers:** the level factor (×20 / ×50 / ×100, mine ×50) and the refine weight (×1, or Nightsilver /
-Nightsilk steps ×0.1 with Alloy and the Bar kept at ×1 — mine). The window already shows +exp per recipe and
-level progress (0.214.30).
+**Measured** (`BalanceMatrix --craft-weights`), all tables in [design/CraftPoints.md](design/CraftPoints.md): a craft
+pays Σ qty × weight of what it consumes; weights generated so each tier's 2H ≈ one level-step at its gate. T40 2H 300
+· T52 5,880 · T61 49k · T76 133k · T80 277k; curve 200 / 500 / 7k / 30k / 60k … 400k (L10 = 1.27M). Refines behind a
+weapon ≈ the weapon (0.1-1.1×), no longer 158×.
+❓ **Three answers:** the curve past 30k (mine, or flat → T80 2H ≈ 40k) · how many tier 2H per level-up (today 2) ·
+the Apothecary, which pays 1-100 a batch and cannot level (a accept / b pay from shelf value — mine / c own weights).
+The window already shows +exp per recipe and level progress (0.214.30).

@@ -1,114 +1,116 @@
-# Craft exp from MP — `BL-315` (PROPOSAL, not built)
+# Craft exp — `BL-315` (PROPOSAL, round 2, not built)
 
-Owner, 2026-09-27: *"the refinement need to give points for crafting ... It's hard to lvl up crafting on alloy
-alone ... base the points that a craft gives by the mp it requires ... an rcp that gives 1 item is multiplied by
-x5, a 100item output is x1, 2~5 is x4, 6~10 x3, 11~50 x2 and >50 x1 ... generics are x1 (refinements alloy,
-volcanic etc) ... before u build give me a table per lvl what points are needed and each craft how much will
-give by that formula and I'll tell u increase lvl up points by 20,50 or 100."*
+Owner, 2026-09-27, round 2 (replaces the MP/10 × batch-multiplier idea of round 1, which is in git history):
+*"make a curve then not each lvlup to need same amount of points.. L0->l1 to need 200 but l1 to l2 to need like
+500 .. Then 7k then 30 .. Etc and the Tier to give different multiplier ... a weapon not giving 400 at t80 but 4k
+or even 40k .. Each base item to have a weight (points) and based on those points a craft total to be calculated
+.. So cheaper crafts give less points an a expensive one will lvlup close to lvup atleast"*.
 
-**Measured, not hand-made:** `dotnet run --project tools/BalanceMatrix -- --craft-points` prints every table
-below off the live `RecipeCatalog`. Re-run it after any MP change.
+**Measured, not hand-made:** `dotnet run --project tools/BalanceMatrix -- --craft-weights`. The weights below were
+GENERATED from two authored inputs, the level curve and what each tier's 2H should pay. Once you rule, they get
+pasted into the code as fixed numbers (like the essence break tables: written once, never recomputed).
 
-## The formula
+## The rule
 
-`exp per attempt = MP / 10 × mult`, rounded, never below 1. A fail still pays (today's rule, kept).
+**A craft pays Σ (qty consumed × the item's weight).** Refines too, no special case. A fail still pays (it
+consumed its inputs). A lower-% gear recipe consumes less, so it pays less.
 
-| output of one attempt | mult |
+How the weights were set: each tier's **2H pays about one level-step at its gate** (T40 at L0, T52 at L2, T61 at
+L4, T76 at L6, T80 at L8). Base mats and alloy are fixed small numbers; what the 2H still needs is split over that
+tier's own items: parts 40% / Nightsilver 30% / essence 30%, and at T76/T80 parts 35 / Nightsilver 25 /
+essence 25 / Volcanic Bar 15. Every other slot follows, because its recipe is the 2H's scaled down.
+
+## §1 The curve (your first four; the rest mine)
+
+| level | points | cumulative |
+|---|---|---|
+| L0→1 | 200 | 200 |
+| L1→2 | 500 | 700 |
+| L2→3 | 7,000 | 7,700 |
+| L3→4 | 30,000 | 37,700 |
+| L4→5 | 60,000 | 97,700 |
+| L5→6 | 100,000 | 197,700 |
+| L6→7 | 150,000 | 347,700 |
+| L7→8 | 220,000 | 567,700 |
+| L8→9 | 300,000 | 867,700 |
+| L9→10 | 400,000 | 1,267,700 |
+
+## §2 The weights (points per ONE item consumed)
+
+| item | weight |
 |---|---|
-| 1 item (every gear piece) | ×5 |
-| 2-5 | ×4 |
-| 6-10 | ×3 |
-| 11-50 | ×2 |
-| more than 50 | ×1 |
-| a REFINE (Nightsilver/Nightsilk steps, Alloy, Volcanic Bar) | ×1 |
+| Iron / Wood / Thread / Leather | 0.1 |
+| Gem | 0.2 |
+| Alloy | 6 (= what the alloy consumed) |
+| Volcanic Ash / Stone | 14 · Volcanic Bar 540 |
 
-## §1 What each craft pays (NEW) vs today
-
-| craft | gate | MP | out | mult | **NEW** | today |
-|---|---|---|---|---|---|---|
-| Alloy, Refined Nightsilver/-silk | L0 | 50 | 1 | ×1 | **5** | 0 |
-| Rare Nightsilver/-silk | L3 | 100 | 1 | ×1 | **10** | 0 |
-| Refined Rare Nightsilver/-silk | L5 | 150 | 1 | ×1 | **15** | 0 |
-| Volcanic Bar, Legendary Nightsilver/-silk | L7/L8 | 200 | 1 | ×1 | **20** | 0 |
-| T40 ring / gloves / shield / 1H / 2H | L0 | 25/50/100/150/200 | 1 | ×5 | **12 / 25 / 50 / 75 / 100** | 1 |
-| T52 same five | L2 | 40/75/150/225/300 | 1 | ×5 | **20 / 38 / 75 / 112 / 150** | 2 |
-| T61 same five | L4 | 50/100/200/300/400 | 1 | ×5 | **25 / 50 / 100 / 150 / 200** | 3 |
-| T76 same five | L6 | 90/175/350/525/700 | 1 | ×5 | **45 / 88 / 175 / 262 / 350** | 5 |
-| T80 same five | L8 | 100/200/400/600/800 | 1 | ×5 | **50 / 100 / 200 / 300 / 400** | 8 |
-| Common HP / MP (x100) | L0 | 50 | 100 | ×1 | **5** | 1 |
-| Greater Swift / Alacrity / Fury (x6) | L1 | 50 | 6 | ×3 | **15** | 1 |
-| Uncommon HP / MP (x50) | L2 | 100 | 50 | ×2 | **20** | 1 |
-| War / Spell Rune 1h (x3) | L4 | 200 | 3 | ×4 | **80** | 1 |
-| Rare HP / MP (x10) | L6 | 200 | 10 | ×3 | **60** | 1 |
-| War / Spell Rune 2h (x3) | L8 | 200 | 3 | ×4 | **80** | 1 |
-| Instant Healing, Supreme Dash (x5) | L10 | 200 | 5 | ×4 | **80** | 1 |
-
-## §2 Exp per level — today × 20 / 50 / 100
-
-Today's ladder is `PointsForLevel(N) = 10·N·(N+1)` (each level costs 20 more than the last). Cells: the step to
-the next level, with the cumulative total in brackets.
-
-| level | today | ×20 | ×50 | ×100 |
-|---|---|---|---|---|
-| L0→1 | 20 [20] | 400 [400] | 1,000 [1,000] | 2,000 [2,000] |
-| L1→2 | 40 [60] | 800 [1,200] | 2,000 [3,000] | 4,000 [6,000] |
-| L2→3 | 60 [120] | 1,200 [2,400] | 3,000 [6,000] | 6,000 [12,000] |
-| L3→4 | 80 [200] | 1,600 [4,000] | 4,000 [10,000] | 8,000 [20,000] |
-| L4→5 | 100 [300] | 2,000 [6,000] | 5,000 [15,000] | 10,000 [30,000] |
-| L5→6 | 120 [420] | 2,400 [8,400] | 6,000 [21,000] | 12,000 [42,000] |
-| L6→7 | 140 [560] | 2,800 [11,200] | 7,000 [28,000] | 14,000 [56,000] |
-| L7→8 | 160 [720] | 3,200 [14,400] | 8,000 [36,000] | 16,000 [72,000] |
-| L8→9 | 180 [900] | 3,600 [18,000] | 9,000 [45,000] | 18,000 [90,000] |
-| L9→10 | 200 [1,100] | 4,000 [22,000] | 10,000 [55,000] | 20,000 [110,000] |
-
-## §3 Crafts per level-up (the craft you would naturally be making at that stage)
-
-| craft | exp | from | ×20 | ×50 | ×100 |
-|---|---|---|---|---|---|
-| Alloy | 5 | L0→1 | 80 | 200 | 400 |
-| T40 2H | 100 | L0→1 | 4 | 10 | 20 |
-| T40 ring | 12 | L0→1 | 34 | 84 | 167 |
-| Common HP x100 | 5 | L0→1 | 80 | 200 | 400 |
-| T52 2H | 150 | L2→3 | 8 | 20 | 40 |
-| Uncommon HP x50 | 20 | L2→3 | 60 | 150 | 300 |
-| T61 2H | 200 | L4→5 | 10 | 25 | 50 |
-| War Rune 1h x3 | 80 | L4→5 | 25 | 63 | 125 |
-| T76 2H | 350 | L6→7 | 8 | 20 | 40 |
-| T80 2H | 400 | L8→9 | 9 | 23 | 45 |
-
-## §4 ⚠ The refines behind ONE weapon outweigh the weapon itself
-
-Refines paid 0 until now because one weapon needs thousands of them. At ×1 they pay, and the steps stack
-(10 of a rung make 1 of the next), so here is what the refines alone behind one **2H** pay, beside the
-weapon's own exp. The 2H's Nightsilver: 300 normal (dropped, no refine) / 200 Refined / 150 Rare /
-50 Refined Rare / 10 Legendary; plus its Alloy (10…50) and, at T76/T80, its Volcanic Bars (40 / 70).
-
-| tier | refines behind one 2H | the 2H's own exp | refines ÷ weapon |
+| tier | part (any kind) | Nightsilver / Nightsilk (its rung) | essence (its grade) |
 |---|---|---|---|
-| T40 | 50 (10 alloy) | 100 | 0.5× |
-| T52 | 1,100 (200 Refined + 20 alloy) | 150 | 7× |
-| T61 | 9,150 (150 Rare + 1,500 Refined + 30 alloy) | 200 | 46× |
-| T76 | 31,750 (50 RR + 500 Rare + 5,000 Refined + 40 alloy + 40 bars) | 350 | 91× |
-| T80 | 63,350 (10 Leg + 100 RR + 1,000 Rare + 10,000 Refined + 50 alloy + 70 bars) | 400 | 158× |
+| T40 | 3.2 | 0.16 (normal) | 0.12 (D) |
+| T52 | 110 | 8.6 (Refined) | 2.1 (C) |
+| T61 | 990 | 99 (Rare) | 12 (B) |
+| T76 | 2,300 | 650 (Refined Rare) | 20 (A) |
+| T80 | 4,900 | 7,000 (Legendary) | 35 (S) |
 
-So from T52 up, **the refining is the levelling, and the craft itself is a rounding error**. The curve also
-turns upside down: at ×100 the early levels are slow (L0→2 is 6,000 exp, or 60 T40 2H's worth, since T40
-has almost no refines), and the late ones are fast (a single T80 2H's refine chain, 63k, is more than the
-whole L7→L10 stretch, 56k).
+## §3 What each craft pays
 
-The price stays fair either way: the refine MP was paid. But if the item is meant to be what levels you,
-the refines need their own weight. **My pick:** keep your ×1 for **Alloy and the Volcanic Bar** (single
-steps, which is where your *"hard on alloy alone"* came from), and give the **Nightsilver/Nightsilk steps
-×0.1**, one tenth, the same as the 10:1 ratio, so a refined rung pays what its share of the next one would.
-That puts the T61 chain at ~1,050 and the T80 chain at ~7,800 (still more than the item, but not 158×). The
-half-points (a 50-MP step at ×0.1 = 0.5) would be carried as a fraction, not rounded up to 1 per craft.
+| craft | T40 | T52 | T61 | T76 | T80 |
+|---|---|---|---|---|---|
+| 2H | 300 | 5,880 | 49,470 | 132,660 | 276,500 |
+| 1H | 240 | 4,704 | 39,576 | 106,128 | 221,200 |
+| heavy body | 180 | 3,528 | 29,682 | 79,596 | 165,900 |
+| helm / necklace | 120 | 2,352 | 19,788 | 53,064 | 110,600 |
+| gloves | 60 | 1,176 | 9,894 | 26,532 | 55,300 |
+| ring | 30 | 588 | 4,947 | 13,266 | 27,650 |
+
+| refine | pays | apothecary | pays |
+|---|---|---|---|
+| Alloy | 6 | Common HP / MP x100 | 1 / 2 |
+| Refined Nightsilver | 2 | Greater buff potion x6 | 2 |
+| Rare Nightsilver | 86 | Uncommon HP / MP x50 | 4 / 8 |
+| Refined Rare Nightsilver | 990 | War / Spell Rune 1h x3 | 100 |
+| Legendary Nightsilver | 6,500 | Rare HP / MP x10 | 42 / 84 |
+| Volcanic Bar | 560 | War / Spell Rune 2h x3 | 1,220 |
+| | | Instant Healing / Supreme Dash x5 | 42 / 76 |
+
+**Refines behind one 2H vs the 2H:** T40 0.2× · T52 0.1× · T61 0.3× · T76 0.9× · T80 1.1×. Round 1's problem
+(the refines paying 158× the weapon) is gone, because a refine now pays for what it consumes and the rungs'
+weights follow the 10:1 ratio closely enough.
+
+## §4 Crafts per level-up
+
+| level | craft | crafts |
+|---|---|---|
+| L0→1 | T40 2H / T40 ring / Alloy | 1 / 7 / 34 |
+| L1→2 | T40 2H | 2 |
+| L2→3 | T52 2H | 2 |
+| L3→4 | T52 2H | 6 |
+| L4→5 | T61 2H / T61 ring | 2 / 13 |
+| L5→6 | T61 2H | 3 |
+| L6→7 · L7→8 | T76 2H | 2 · 2 |
+| L8→9 · L9→10 | T80 2H | 2 · 2 |
+
+## ⚠ Two things this exposes
+
+1. **The Apothecary cannot level.** Potions consume gems and one or two essence, so they pay 1-8. L2→3 takes
+   **1,708** Uncommon HP batches, L4→5 **600** War Rune batches. That is your *"cheaper crafts give less"*, but
+   followed all the way a potion-maker can only level by making gear. Options:
+   **(a)** accept it: the generic level is the smith's, and the Apothecary rides on it.
+   **(b)** potions pay from their SHELF value instead of their inputs (a War Rune 1h batch is sold at 450k, a
+   T61 2H at 60M, so it would pay ~1/130 of the 2H, ~370, and L4→5 would take ~160 batches).
+   **(c)** an authored weight per Apothecary line.
+   **Mine: (b)**, because it keeps "expensive pays more" and needs no new table.
+2. **A T80 2H pays ~276k, not your "4k or even 40k".** That follows from your own curve. Once L3→4 is 30k and
+   the steps keep rising, a T80 weapon has to be worth a big step, or L8→10 takes dozens of T80 weapons. If you
+   want T80 near 40k, the curve has to flatten after 30k (e.g. 30k → 35k → 40k … ~60k at L9→10), and then the
+   T61/T76 weapons shrink with it. Either way, the thing to decide is **how many top-tier weapons one level-up
+   should take**; today's print says 2.
 
 ## ❓ For you
 
-1. **Factor: ×20, ×50 or ×100?** (mine: **×50**. At ×50, L0→1 is 10 T40 2H's or 200 alloy, and L10 is
-   55,000.)
-2. **The refine weight (§4): ×1 as you wrote, or Nightsilver/Nightsilk at ×0.1?**
+1. **The curve past L3→4**: mine (60k … 400k, T80 2H ≈ 280k), or flat after 30k (T80 2H ≈ 40k)?
+2. **How many of the tier's 2H per level-up?** (today: 1-2 early, 2 late; changing it scales every weight, one number)
+3. **The Apothecary: (a), (b) or (c)?**
 
-Already built in 0.214.30, independent of both answers: the crafting window shows each recipe's
-**+N craft exp** and your progress **(done/needed exp)** beside your level. It reads the live numbers,
-so it will follow whatever you pick.
+Already built in 0.214.30: the crafting window shows each recipe's **+N craft exp** and your **(done/needed)**
+progress, reading the live numbers, so it follows whatever is built.

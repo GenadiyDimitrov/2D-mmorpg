@@ -2977,6 +2977,99 @@ if (args.Length > 0 && args[0] == "--craft-points")
     return;
 }
 
+// `--craft-weights` — `BL-315` second round (owner, 2026-09-27): *"make a curve ... L0->l1 to need 200 but l1 to l2
+// to need like 500 .. Then 7k then 30 .. Etc ... Each base item to have a weight (points) and based on those points a
+// craft total to be calculated .. So cheaper crafts give less points an a expensive one will lvlup close to lvup"*.
+// A craft pays Σ qty × weight over what it CONSUMES (refines too, no special case). The weights are GENERATED here
+// once from two authored inputs — the level curve and what each tier's 2H should pay — and, once he rules, pasted into
+// Crafting as literals (the break-table pattern: written once, never recomputed).
+if (args.Length > 0 && args[0] == "--craft-weights")
+{
+    // ---- the two authored inputs ----
+    long[] step = { 200, 500, 7_000, 30_000, 60_000, 100_000, 150_000, 220_000, 300_000, 400_000 };   // L0→1 … L9→10; first four his
+    double[] twoH = { 300, 6_000, 50_000, 130_000, 280_000 };   // what a tier's 2H pays: ~the step at its gate (L0/L2/L4/L6/L8)
+    // Tier items split what the base mats and alloy leave: parts / Nightsilver / essence (/ Volcanic Bar at T76+).
+    double[] shareT = { 0.40, 0.30, 0.30, 0.00 }, shareV = { 0.35, 0.25, 0.25, 0.15 };
+
+    var w = new Dictionary<string, double>();
+    foreach (var m in Crafting.MaterialTypes) w[Crafting.MaterialId(m)] = m == MaterialType.Gem ? 0.2 : 0.1;
+    w[Crafting.AlloyId] = 20 * 0.2 + 20 * 0.1;   // what the alloy consumed: the weight is conserved through a refine
+    var tiers = Crafting.GearTiers;
+    var barFrom = new List<double>();
+    for (int ti = 0; ti < tiers.Length; ti++)
+    {
+        var r = RecipeCatalog.Get($"craft_sword2h_t{tiers[ti]}")!;
+        double baseSum = r.Inputs.Where(i => w.ContainsKey(i.ItemId)).Sum(i => i.Qty * w[i.ItemId]);
+        double rest = twoH[ti] - baseSum;
+        var sh = tiers[ti] >= 76 ? shareV : shareT;
+        int Qty(Func<string, bool> p) => r.Inputs.Where(i => p(i.ItemId)).Sum(i => i.Qty);
+        double part = sh[0] * rest / Qty(id => id.StartsWith("part_"));
+        double night = sh[1] * rest / Qty(id => id.StartsWith("nightsilver_"));
+        double ess = sh[2] * rest / Qty(id => id.StartsWith("essence_"));
+        foreach (var k in Crafting.PartNames.Keys) w[Crafting.PartId(k, tiers[ti])] = part;
+        w[Crafting.NightsilverId(ti)] = w[Crafting.NightsilkId(ti)] = night;
+        w[Crafting.EssenceIds[ti]] = ess;
+        if (sh[3] > 0) barFrom.Add(sh[3] * rest / Qty(id => id == ItemCatalog.VolcanicBar));
+    }
+    w[ItemCatalog.VolcanicBar] = barFrom.Average();
+    w[ItemCatalog.VolcanicAsh] = w[ItemCatalog.VolcanicStone] = w[ItemCatalog.VolcanicBar] / 40;
+    static double Sig2(double v) { if (v <= 0) return 0; double m = Math.Pow(10, Math.Floor(Math.Log10(v)) - 1); return Math.Round(v / m) * m; }
+    foreach (var k in w.Keys.ToList()) w[k] = Sig2(w[k]);   // authored-looking: two significant digits
+
+    double Pay(Recipe r) => r.Inputs.Sum(i => i.Qty * w.GetValueOrDefault(i.ItemId));
+    string Name(Recipe r) => ItemCatalog.Get(r.OutputId)?.Name ?? r.OutputId;
+
+    Console.WriteLine("\n=== WEIGHTS (points per ONE item consumed) ===");
+    Console.WriteLine($"  base mats: iron/wood/thread/leather {w["mat_iron"]} · gem {w["mat_gem"]} · alloy {w[Crafting.AlloyId]} · "
+                      + $"volcanic ash/stone {w[ItemCatalog.VolcanicAsh]} · Volcanic Bar {w[ItemCatalog.VolcanicBar]}");
+    Console.WriteLine($"  {"tier",-5} {"part (any kind)",16} {"Nightsilver/silk",17} {"essence",9}");
+    for (int ti = 0; ti < tiers.Length; ti++)
+        Console.WriteLine($"  T{tiers[ti],-4} {w[Crafting.PartId("sword2h", tiers[ti])],16:N1} {w[Crafting.NightsilverId(ti)],17:N2} {w[Crafting.EssenceIds[ti]],9:N2}   (rung {ti}, grade {"DCBAS"[ti]})");
+
+    Console.WriteLine("\n=== POINTS PER CRAFT (one attempt, 100% recipe; a lower % consumes less and pays less) ===");
+    foreach (var r in RecipeCatalog.All.Where(r => !r.QuestOnly && (!r.IsGear || ItemCatalog.IsBaseTier(r.OutputId)))
+                 .Where(r => !r.IsGear || new[] { "sword2h_", "sword1h_", "heavy_", "helm_", "gloves_", "necklace_", "ring_" }.Any(r.OutputId.StartsWith))
+                 .Where(r => !r.Id.StartsWith("refine_nightsilk_"))
+                 .OrderBy(r => r.IsGear ? 1 : r.Refine ? 0 : 2).ThenBy(r => r.LearnLevel).ThenBy(r => r.Id))
+        Console.WriteLine($"  {Name(r) + (r.OutputQty > 1 ? " x" + r.OutputQty : ""),-34} L{r.UnlockLevel,-3} {Pay(r),10:N0}");
+
+    Console.WriteLine("\n=== THE CURVE: points for the next level [cumulative] ===");
+    long cum = 0;
+    for (int lv = 0; lv < step.Length; lv++) { cum += step[lv]; Console.WriteLine($"  L{lv}→{lv + 1,-3} {step[lv],10:N0} [{cum,11:N0}]"); }
+
+    Console.WriteLine("\n=== REFINES behind ONE 2H vs the 2H itself ===");
+    for (int ti = 0; ti < tiers.Length; ti++)
+    {
+        var r = RecipeCatalog.Get($"craft_sword2h_t{tiers[ti]}")!;
+        double refines = 0;
+        foreach (var i in r.Inputs)
+        {
+            if (i.ItemId == Crafting.AlloyId) refines += i.Qty * Pay(RecipeCatalog.Get("refine_alloy")!);
+            if (i.ItemId == ItemCatalog.VolcanicBar) refines += i.Qty * Pay(RecipeCatalog.Get("refine_volcanic_bar")!);
+        }
+        double n = r.Inputs.Where(i => i.ItemId.StartsWith("nightsilver_")).Sum(i => i.Qty);
+        for (int rung = ti; rung >= 1; rung--) { refines += n * Pay(RecipeCatalog.Get($"refine_nightsilver_{rung}")!); n *= 10; }
+        Console.WriteLine($"  T{tiers[ti],-4} refines {refines,10:N0}   the 2H {Pay(r),10:N0}   ({refines / Pay(r):0.0}×)");
+    }
+
+    Console.WriteLine("\n=== CRAFTS PER LEVEL-UP (the natural craft at that stage) ===");
+    (int From, string Id, string Label)[] stage =
+    {
+        (0, "refine_alloy", "Alloy"), (0, "craft_sword2h_t40", "T40 2H"), (0, "craft_ring_t40", "T40 ring"),
+        (0, $"craft_{ItemCatalog.MinorPotion}", "Common HP x100"), (1, "craft_sword2h_t40", "T40 2H"),
+        (2, "craft_sword2h_t52", "T52 2H"), (2, $"craft_{ItemCatalog.HealingPotion}", "Uncommon HP x50"), (3, "craft_sword2h_t52", "T52 2H"),
+        (4, "craft_sword2h_t61", "T61 2H"), (4, "craft_ring_t61", "T61 ring"), (4, $"craft_{ItemCatalog.BoxWarRune1h}", "War Rune 1h x3"),
+        (5, "craft_sword2h_t61", "T61 2H"), (6, "craft_sword2h_t76", "T76 2H"), (7, "craft_sword2h_t76", "T76 2H"),
+        (8, "craft_sword2h_t80", "T80 2H"), (8, $"craft_{ItemCatalog.BoxWarRune2h}", "War Rune 2h x3"), (9, "craft_sword2h_t80", "T80 2H"),
+    };
+    foreach (var (from, id, label) in stage)
+    {
+        double p = Pay(RecipeCatalog.Get(id)!);
+        Console.WriteLine($"  L{from}→{from + 1,-3} {label,-16} pays {p,9:N0}  → {Math.Ceiling(step[from] / p),7:N0} crafts");
+    }
+    return;
+}
+
 // `--favor-kph` — the KILLS/H TABLE `WayfarerFavor.KillsPerHour` is authored from (`BL-277`). Same M1 clock
 // `--craft-cost` reads; printed as a pasteable C# array. Re-run and re-paste when the pace moves.
 if (args.Length > 0 && args[0] == "--favor-kph") { FavorKph(); return; }
