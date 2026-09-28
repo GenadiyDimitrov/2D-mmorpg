@@ -1875,8 +1875,8 @@ b.MyId = entered2.EntityId;
         Check("🔑 each attempt spends ONE 40% recipe and the inputs scaled to 50%, pass or fail",
               Count(r40) == 3 - attempts && Count(scaled[0].ItemId) == mat0 - attempts * scaled[0].Qty,
               $"r40 {Count(r40)}, {scaled[0].ItemId} {Count(scaled[0].ItemId)} (expected {mat0 - attempts * scaled[0].Qty})");
-        Check("🔑 every attempt pays T76 points (5) to the GENERIC level only — a fail too",
-              b.Crafting is { } cu && cu.GenericPoints == genBase + 5 * attempts && cu.TypeLevels?[(int)CraftType.Weapon] == 6,
+        Check($"🔑 every attempt pays the weight it consumed ({Crafting.CraftPoints(recipe, 40)}, BL-315) to the GENERIC level only — a fail too",
+              b.Crafting is { } cu && cu.GenericPoints == genBase + Crafting.CraftPoints(recipe, 40) * attempts && cu.TypeLevels?[(int)CraftType.Weapon] == 6,
               $"generic {b.Crafting?.GenericPoints} (from {genBase}), weapon L{b.Crafting?.TypeLevels?[(int)CraftType.Weapon]}");
         Console.WriteLine($"  (info) {Count(recipe.OutputId) - made0} of {attempts} 40% attempts succeeded");
 
@@ -1896,7 +1896,7 @@ b.MyId = entered2.EntityId;
         await b.Settle();
         Check("...and a forgotten recipe cannot be crafted", Count(r40) == r40Before);
 
-        // THE SHELF: the Master sells the T40 100% recipe at 10% of the piece.
+        // THE SHELF: the Master sells the T40 100% recipe at 1/30 of the piece (0.214.30).
         string masterGiven = master.Name.Split(' ')[^1];
         await b.WaitFor(() => b.EntityNames.Any(kv => kv.Value == masterGiven));
         var masterId = b.EntityNames.FirstOrDefault(kv => kv.Value == masterGiven).Key;
@@ -1908,9 +1908,9 @@ b.MyId = entered2.EntityId;
         int held0 = Count(shelf);
         await b.Hub.SendAsync("BuyItem", masterId, shelf, 1);
         await b.Settle();
-        Check("🔑 the Master Crafter SELLS the T40 100% recipe, at 10% of the piece",
+        Check("🔑 the Master Crafter SELLS the T40 100% recipe, at 1/30 of the piece (0.214.30)",
               Count(shelf) == held0 + 1 && b.Gold == gold0 - price
-              && price > 1 && ItemCatalog.Get(shelf)!.Value == Math.Max(1, (int)Math.Round(ItemCatalog.Get("sword1h_t40")!.Value * 0.10)),
+              && price > 1 && ItemCatalog.Get(shelf)!.Value == Crafting.RecipePrice(ItemCatalog.Get("sword1h_t40")!.Value, 100),
               $"held {held0}->{Count(shelf)}, gold {gold0}->{b.Gold}, price {price}");
 
         // `BL-303`: the T52 recipe needs Weaponsmith L2 to BUY.
@@ -1945,9 +1945,9 @@ b.MyId = entered2.EntityId;
         int gIn0 = Count(generic.Inputs[0].ItemId);
         await b.Hub.SendAsync("Craft", generic.Id, false, 0, 1);
         await b.Settle();
-        Check("a generic craft spends its inputs (no recipe item) and pays 1 GENERIC point, no type point",
+        Check($"a generic craft spends its inputs (no recipe item) and pays its weight ({Crafting.CraftPoints(generic)}) as GENERIC points, no type point",
               Count(generic.Inputs[0].ItemId) == gIn0 - generic.Inputs[0].Qty
-              && b.Crafting is { GenericPoints: 1 },
+              && b.Crafting?.GenericPoints == Crafting.CraftPoints(generic),
               $"input {gIn0}->{Count(generic.Inputs[0].ItemId)}, generic {b.Crafting?.GenericPoints}");
 
         // 0.205.0 — A REFINE WITH A COUNT: one command repeats until something runs out, pays MP, no gold,
@@ -1962,9 +1962,10 @@ b.MyId = entered2.EntityId;
         int gp0 = b.Crafting?.GenericPoints ?? -1;
         await b.Hub.SendAsync("Craft", refineId, false, 0, 100);
         await b.Settle();
-        Check("🔑 a refine x100 with 50 normal Nightsilver makes 5 Refined, spends all 50, and pays NO craft point",
+        Check($"🔑 a refine x100 with 50 normal Nightsilver makes 5 Refined, spends all 50, and pays 5 × its weight ({Crafting.CraftPoints(RecipeCatalog.Get(refineId)!)}, BL-315)",
               Known().Contains($"{refineId}:100") && Count(Crafting.NightsilverId(0)) == ns0 - 50
-              && Count(Crafting.NightsilverId(1)) == ns1 + 5 && b.Crafting?.GenericPoints == gp0,
+              && Count(Crafting.NightsilverId(1)) == ns1 + 5
+              && b.Crafting?.GenericPoints == gp0 + 5 * Crafting.CraftPoints(RecipeCatalog.Get(refineId)!),
               $"known {Known().Contains($"{refineId}:100")}, normal {ns0}->{Count(Crafting.NightsilverId(0))}, "
               + $"refined {ns1}->{Count(Crafting.NightsilverId(1))}, generic {gp0}->{b.Crafting?.GenericPoints}");
 
@@ -2541,12 +2542,17 @@ await c.DisposeAsync();
             var d = new Dictionary<string, double>(StringComparer.Ordinal);
             foreach (var l in lines ?? Array.Empty<string>())
             {
+                // 0.214.29: a row reads as ODDS, `(1/1200)`, `(1/12K)`, `(1/1M)` — or a haul `(2~3/1)`, which is
+                // at or over one per kill and so clamped anyway. Back to a percent: 1/N → 100/N.
                 int i = l.LastIndexOf('(');
                 if (i < 0) continue;
-                if (double.TryParse(l.Substring(i + 1).TrimEnd(')', '%', ' '),
-                        System.Globalization.NumberStyles.Float,
-                        System.Globalization.CultureInfo.InvariantCulture, out var v))
-                    d[l.Substring(0, i).TrimEnd()] = v;
+                string odds = l.Substring(i + 1).TrimEnd(')', ' ');
+                if (!odds.StartsWith("1/")) continue;
+                string n = odds.Substring(2);
+                double mul = n.EndsWith("M") ? 1e6 : n.EndsWith("K") ? 1e3 : 1;
+                if (double.TryParse(n.TrimEnd('K', 'M'), System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture, out var v) && v > 0)
+                    d[l.Substring(0, i).TrimEnd()] = 100.0 / (v * mul);
             }
             return d;
         }
