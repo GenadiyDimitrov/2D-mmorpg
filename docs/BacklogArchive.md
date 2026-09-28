@@ -8031,3 +8031,14 @@ The window already shows +exp per recipe and level progress (0.214.30).
 > Playtest of 0.214.5 (`BL-311`), 2026-09-28: *"Need to be able to disable the arrow for the current quest as well ->
 > [Location:Current] to be clickable and to stop the arrow (no quest location is tracked when done that)"*.
 > Client only: clicking the tracked quest's location line clears the arrow's quest.
+
+
+## `BL-318` ✅ CLOSED — BUILT 0.214.37 (the Mindwright off the road)
+
+2026-09-28 — built in 0.214.37. Brackenford (24000, 25800) → (24700, 25300); the major ring cities (X, Y+1700) → (X+700, Y+1250). ValidateNpcLabels passes at boot. The whole-town layout is `BL-319`.
+
+**As filed:**
+
+> Playtest of 0.214.7 (`BL-310`), 2026-09-28: *"the guards are ok now .. the mindweaver i dont like his position in
+> the middle of the gate ... move it on the side .. think of the town as it will have roads and houses ... and shops
+> .. its not an open field"*.

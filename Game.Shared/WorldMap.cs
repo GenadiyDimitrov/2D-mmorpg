@@ -336,9 +336,10 @@ public static class WorldMap
         new("buffer_newbie",    "Spirit Helper Nyra", 23400, 25550, NpcRole.Buffer),
         // Skill reset: un-learns the PERMANENT, mutually-exclusive picks (the level-40 stat swaps)
         // so a bad commitment can be re-chosen. Free to forget — the gold is NOT refunded.
-        // BOTTOM-CENTRE, on its own: it is a service, not a shop, and it used to stand 500 from the
-        // Apothecary where the two read as one clump (owner).
-        new("resetter_main",    "Mindwright Sela",   24000, 25800, NpcRole.SkillReset),
+        // On its own: it is a service, not a shop, and it used to stand 500 from the Apothecary where the two read
+        // as one clump (owner). `BL-318` (2026-09-28): moved off the south road's centre line (24000, 25800) to
+        // the south-EAST, *"move it on the side .. its not an open field"*. 250 of Y from the Spirit Helper.
+        new("resetter_main",    "Mindwright Sela",   24700, 25300, NpcRole.SkillReset),
         // --- Gatekeepers: one in every town (stands at its centre) so the whole
         //     travel network is reachable in both directions. ---
         // Brackenford's stands alone at TOP-CENTRE (owner) — it is the one NPC you walk to from
@@ -451,9 +452,11 @@ public static class WorldMap
                 NpcRole.CraftMaster);
             // His ANVIL (`BL-303`), 250 north: the Huntmaster (-650) and the gatekeeper (-900) keep >= 250 of Y.
             yield return new NpcDef($"{AnvilId}_{t.Key}", "Anvil", t.X - 1400, t.Y - 400, NpcRole.Anvil);
-            // The MINDWRIGHT (skill reset) of a major city, bottom-centre and 800 below the buffer, as in
-            // Brackenford. In Frostmere the SP broker (10800, 16400) keeps 300 of Y.
-            yield return new NpcDef($"{ResetterId}_{t.Key}", MindwrightName(t.Key), t.X, t.Y + 1700, NpcRole.SkillReset);
+            // The MINDWRIGHT (skill reset) of a major city. `BL-318` (owner, 2026-09-28): *"i dont like his position
+            // in the middle of the gate ... move it on the side .. think of the town as it will have roads"*. It stood
+            // at (X, Y+1700), on the south road's centre line; now south-EAST, below the keeper (Y+550) and 700 off
+            // the road axis, so the road is clear. >= 350 of Y from the buffer (Y+900) and the keeper.
+            yield return new NpcDef($"{ResetterId}_{t.Key}", MindwrightName(t.Key), t.X + 700, t.Y + 1250, NpcRole.SkillReset);
         }
         // The 3rd-class master lives in GREYMARSH (band 34-46) — the first town whose levels reach the
         // level-40 discipline change (owner). He stands on the WEST side, mirroring Brackenford's

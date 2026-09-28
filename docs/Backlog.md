@@ -280,7 +280,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
 | `BL-307` | 🟡 | **Full drops below level 40** — F/E-grade Common gear, materials and lucky drops, not only gold — 📝 PROPOSAL drafted, `docs/design/LowLevelDrops.md`, 4 questions | drops |
 | `BL-314` | 🔵 | **Split passives into single-stat pieces** — regen / P.Def / speed as their own ladders shared across classes, so ten armor masteries become a few mixable passives — design first | skills |
-| `BL-318` | 🟢 | **The Mindwright off the gate** — stands to the side, not in the middle of the road | world |
 | `BL-319` | 🔵 | **Towns that look like towns** — Y (3 gates) / X (4 gates) roads, buildings beside the roads and side paths, a church in the big cities — sketch first | world |
 | `BL-321` | 🔵 | **120 bar entries: main pages 1-5, additional pages 6-10** — full 12-slot additional bars only (0/1/2), shape follows main, `[To bar]` never disabled — proposal first | ui |
 
@@ -2287,13 +2286,6 @@ is then WHICH pieces and which rungs, not a bespoke bundle.
 4. Migration is a `game.db` delete (pre-release), but every `Replaces` chain between masteries is rewritten.
 
 
-
-
-## `BL-318` 🟢 THE MINDWRIGHT OFF THE GATE
-
-Playtest of 0.214.7 (`BL-310`), 2026-09-28: *"the guards are ok now .. the mindweaver i dont like his position in
-the middle of the gate ... move it on the side .. think of the town as it will have roads and houses ... and shops
-.. its not an open field"*.
 
 
 ## `BL-319` 🔵 TOWNS THAT LOOK LIKE TOWNS

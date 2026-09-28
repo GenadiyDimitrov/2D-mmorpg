@@ -7,12 +7,21 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.36**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.37**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-28 (latest) — 0.214.36: the quest arrow can be turned off (`BL-316`)
+## 2026-09-28 (latest) — 0.214.37: the Mindwright stands off the road (`BL-318`)
+
+> *"the mindweaver i dont like his position in the middle of the gate ... move it on the side .. think of the town as it
+> will have roads and houses ... and shops .. its not an open field"*
+
+- **Every Mindwright moved off the south road's centre line**, to the south-east: Brackenford's from (24000, 25800) to
+  (24700, 25300), Greymarsh's and Frostmere's from (centre, +1700) to (+700, +1250), below the Keeper. The town
+  layouts themselves are `BL-319` (a sketch first).
+
+## 2026-09-28 — 0.214.36: the quest arrow can be turned off (`BL-316`)
 
 > *"[Location:Current] to be clickable and to stop the arrow (no quest location is tracked when done that)"*
 
