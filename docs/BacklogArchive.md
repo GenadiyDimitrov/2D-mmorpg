@@ -8009,3 +8009,14 @@ The window already shows +exp per recipe and level progress (0.214.30).
 
 > His note, 2026-09-28: *"also charge need to be able to be used in auto mode as well .. its not a taunt .. phantom jump
 > is used but charge is not"*.
+
+
+## `BL-320` ✅ CLOSED — BUILT 0.214.35 (skill bar ×2.5, ×1.5-×4.5)
+
+2026-09-28 — built in 0.214.35. `BarScaleMin/Max/Default` = 1.5 / 4.5 / 2.5 (current numbers, ×1 still a third of the old bar); new pref key `ui.skillBarSize` so an old ×1 does not clamp to 1.5.
+
+**As filed:**
+
+> Playtest of 0.214.27, 2026-09-28: *"I didnt think when we decrease the size of a skill bar 3 times it will become
+> so small ... are u sure its 3 times ? make the dafualt of skill bar current x2.5 .. and to range from 1.5 to 4.5
+> (current numbers)"*. (It was 3× — per side, so a ninth of the area, which is why it looks so much smaller.)

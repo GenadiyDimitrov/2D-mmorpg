@@ -36,14 +36,16 @@ namespace Game.Client
         private const string PrefUiScale    = "ui.scale";
         /// <summary>The skill bar's own size, on top of the UI size. ×1 is a THIRD of the old bar (owner,
         /// 2026-09-26: *"decrease the size of the skill bar 3 times ... range from 1/5 to 5 times the new
-        /// size"*).</summary>
-        private const string PrefBarScale   = "ui.skillBarScale";
+        /// size"*).
+        /// `BL-320` (2026-09-28): *"make the dafualt of skill bar current x2.5 .. and to range from 1.5 to 4.5
+        /// (current numbers)"*. ×1 stays a third of the old bar, so the default is 2.5/3 of it.</summary>
+        private const string PrefBarScale   = "ui.skillBarSize";   // new key: an old ×1 would clamp to 1.5, not start at 2.5
         private const float UiScaleMin = 0.6f, UiScaleMax = 1.6f;
-        private const float BarScaleMin = 0.2f, BarScaleMax = 5f;
+        private const float BarScaleMin = 1.5f, BarScaleMax = 4.5f, BarScaleDefault = 2.5f;
         /// <summary>What skill-bar ×1 is in the bar's own build units (SlotSize 78 etc.).</summary>
         private const float BarScaleBase = 1f / 3f;
         private float _uiScale = 1f;
-        private float _barScale = 1f;
+        private float _barScale = BarScaleDefault;
         private const string PrefDamage     = "ui.damageNumbers";
         private const string PrefZones      = "ui.zoneOverlay";
         /// <summary>`BL-220` — whether the COMBAT TAB prints per-second tick lines (DoT, HoT, the
@@ -69,7 +71,7 @@ namespace Game.Client
         {
             _uiScale = Mathf.Clamp(PlayerPrefs.GetFloat(PrefUiScale, 1f), UiScaleMin, UiScaleMax);
             UiKit.Reference = new Vector2(UiKit.Reference.x, UiKit.ReferenceHeightAtX1 / _uiScale);
-            _barScale = Mathf.Clamp(PlayerPrefs.GetFloat(PrefBarScale, 1f), BarScaleMin, BarScaleMax);
+            _barScale = Mathf.Clamp(PlayerPrefs.GetFloat(PrefBarScale, BarScaleDefault), BarScaleMin, BarScaleMax);
 
             EntityManager.EntityScale = PlayerPrefs.GetFloat(PrefEntity, EntityManager.EntityScale);
             NameplateHeight = PlayerPrefs.GetFloat(PrefPlate, NameplateHeight);
@@ -263,7 +265,7 @@ namespace Game.Client
                 // The rest (camera, shape...) still waits for a restart, as before.
                 // (setting the slider runs its handler, so the label, the live apply and the pref follow)
                 _uiScaleSlider.value = 1f;
-                _barScaleSlider.value = 1f;
+                _barScaleSlider.value = BarScaleDefault;
                 ClientLog.Info("Look settings reset — UI and skill bar size now, the rest after a restart.");
             }, 16f);
             UiKit.Place(UiKit.Rect(reset.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),

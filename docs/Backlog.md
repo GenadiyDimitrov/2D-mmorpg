@@ -283,7 +283,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-316` | 🟢 | **The arrow can be turned off** — `[Location: Current]` in the quest details is clickable and stops the arrow, nothing tracked | quests |
 | `BL-318` | 🟢 | **The Mindwright off the gate** — stands to the side, not in the middle of the road | world |
 | `BL-319` | 🔵 | **Towns that look like towns** — Y (3 gates) / X (4 gates) roads, buildings beside the roads and side paths, a church in the big cities — sketch first | world |
-| `BL-320` | 🟢 | **Skill bar size: default ×2.5, range ×1.5-×4.5** (today's numbers) | ui |
 | `BL-321` | 🔵 | **120 bar entries: main pages 1-5, additional pages 6-10** — full 12-slot additional bars only (0/1/2), shape follows main, `[To bar]` never disabled — proposal first | ui |
 
 ---
@@ -2314,13 +2313,6 @@ also big towns can have a chirch to contain the class master and a mindweaver �
 one shop, apoth(+ essence one) is his own, keeper is his onw building, anvil+craft also.."*.
 ❓ **Sketch first** (his ask): layouts for a Y town and an X city, with the NPCs grouped by building. Touches
 `BL-281` (roads, models).
-
-
-## `BL-320` 🟢 SKILL BAR SIZE: DEFAULT ×2.5, RANGE ×1.5-×4.5
-
-Playtest of 0.214.27, 2026-09-28: *"I didnt think when we decrease the size of a skill bar 3 times it will become
-so small ... are u sure its 3 times ? make the dafualt of skill bar current x2.5 .. and to range from 1.5 to 4.5
-(current numbers)"*. (It was 3× — per side, so a ninth of the area, which is why it looks so much smaller.)
 
 
 ## `BL-321` 🔵 120 BAR ENTRIES — MAIN PAGES 1-5, ADDITIONAL PAGES 6-10
