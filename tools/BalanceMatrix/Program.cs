@@ -2675,7 +2675,8 @@ if (args.Length > 0 && args[0] == "--dump-drop-csv")
         var (pri, sec) = MobCatalog.MatFlavor(m.Category);
         bool mats = m.Level >= MobCatalog.BaseMatMinLevel;
         int tier = MobCatalog.CraftTier(m.Level);
-        string metal = p is null ? "" : p.Kind is MobSpecialty.Weapons or MobSpecialty.Jewellery ? "Nightsilver" : "Nightsilk";
+        // `BL-307`: a creature under 40 has a specialty (Commons + the lucky piece) but no Nightsilver: tier 0.
+        string metal = p is null || tier == 0 ? "" : p.Kind is MobSpecialty.Weapons or MobSpecialty.Jewellery ? "Nightsilver" : "Nightsilk";
         double commonPct = MobCatalog.CreatureDrops(m, m.Level, MobRank.Normal)
             .Where(e => e.GroupId == MobCatalog.GroupCommonGear).Sum(e => (double)e.Chance) * 100;
         string recipe = p is null ? "" : string.Join(" / ", p.Keys
@@ -2689,8 +2690,8 @@ if (args.Length > 0 && args[0] == "--dump-drop-csv")
     }
     File.WriteAllLines(outPath, rows);
     Console.WriteLine($"Wrote {rows.Count - 1} creatures to {outPath}.");
-    foreach (int t in Crafting.GearTiers)
-        Console.WriteLine($"  T{t}: " + string.Join("  ", Enum.GetValues<MobSpecialty>().Skip(1)
+    foreach (int t in Crafting.GearTiers.Prepend(0))
+        Console.WriteLine((t == 0 ? "  <40: " : $"  T{t}: ") + string.Join("  ", Enum.GetValues<MobSpecialty>().Skip(1)
             .Select(k => $"{k} {countBy.GetValueOrDefault((t, k))}")));
     return;
 }
@@ -2769,10 +2770,12 @@ if (args.Length > 0 && args[0] == "--drop-value")
 // Kills/h and hours are the M1 clock (`WayfarerFavor.KillsPerHour`), solo, same-level creatures.
 if (args.Length > 0 && args[0] == "--low-drops")
 {
-    // ---- THE PROPOSAL (mine, BL-307): change here, re-run. ----
-    double commonScaleF = 1.0, commonScaleE = 1.0;     // x the T40 per-slot Common table (MobCatalog.CommonGearSlotChance(40, rank))
-    double rareF = 1 / 2000.0, rareE = 1 / 3000.0;     // the lucky full (Mythic) piece per kill, one roll split over the kinds
-    int matFrom = 20; double matRate = 0.1;            // base mats per kill from this level up to 34 (35+ is live today at 0.2)
+    // ---- THE RATES, read from the game since BL-307 was BUILT (0.214.35); pass five args to try others. ----
+    // ⚠ Since 0.214.35 the TODAY columns already hold these drops (they are in the real tables), so the "+" columns
+    // count them a second time. Read TODAY for what the game pays; the rest is only for trying other numbers.
+    double commonScaleF = MobCatalog.CommonScaleF, commonScaleE = MobCatalog.CommonScaleE;   // x the T40 per-slot Common table
+    double rareF = MobCatalog.RareGearChance(1), rareE = MobCatalog.RareGearChance(20);      // the lucky full (Mythic) piece per kill
+    int matFrom = MobCatalog.BaseMatMinLevel; double matRate = MobCatalog.BaseMatLowPerKill;  // base mats per kill, matFrom..34
     if (args.Length >= 6)
     {
         commonScaleF = double.Parse(args[1], System.Globalization.CultureInfo.InvariantCulture); commonScaleE = double.Parse(args[2], System.Globalization.CultureInfo.InvariantCulture);

@@ -8042,3 +8042,20 @@ The window already shows +exp per recipe and level progress (0.214.30).
 > Playtest of 0.214.7 (`BL-310`), 2026-09-28: *"the guards are ok now .. the mindweaver i dont like his position in
 > the middle of the gate ... move it on the side .. think of the town as it will have roads and houses ... and shops
 > .. its not an open field"*.
+
+
+## `BL-307` ✅ CLOSED — BUILT 0.214.38 (full drops below level 40)
+
+2026-09-28 — built in 0.214.38, exactly as `docs/design/LowLevelDrops.md` proposed (his *"build the BL-307 as u proposed - looks good on paper"*, which answered the four §4 questions with the proposal). `CommonMinLevel` 1 (36 items), `ProfileBands` + (1,19) (20,39), `CommonGearSlotChance` F = T40 ×1 / E ×0.35, `RareGearChance` 1/1,000 · 1/3,000, `BaseMatMinLevel` 20 at 0.1 to 34. Recipes/parts/Nightsilver stay on `CraftTier` (0 below 40).
+
+**As filed:**
+
+> From the same playtest, on 0.206.0 (`BL-274` part 1): *"Lower lvl mobs also need full drops. F/E grade also need
+> Common equipments and drops for mythic/common. Now <40 players rely solely on gold mob drop .. and no lucky drops
+> or any mat to exchange for money (with other players when economy is present)"*.
+> ❓ **Open:** the rates and which items (a proposal from me, measured with `BalanceMatrix`, before building).
+> 📝 **2026-09-26: THE PROPOSAL IS WRITTEN, not built — `docs/design/LowLevelDrops.md`.** Measured with the new
+> `BalanceMatrix --low-drops`: below 40 a player earns 6-25k/h, all coin, against ~480k/h at 40-42. Mine: F/E Common
+> copies + a dealt specialty in two new bands (1-19, 20-39), Commons at the T40 table ×1 (F) / ×0.35 (E), a lucky Mythic
+> 1/1,000 (F) / 1/3,000 (E), base mats 0.1 a kill from 20. That is ~2-3× today and the 40 cliff drops from ~20× to ~9×.
+> ❓ **Four questions for you in §4 of the doc** (the rates, mats from 20, the starter creatures, scrolls).

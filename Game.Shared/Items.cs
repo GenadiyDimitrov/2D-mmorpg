@@ -2283,9 +2283,11 @@ public static class ItemCatalog
     //     defense"*. A fresh Mythic is ahead from day one through its set and its attribute slot.
     // Consumables and materials keep all six rarities; this is about equipment only.
 
-    /// <summary>The item-level window a COMMON copy exists in: T40, T52 and T61 (*"common equip are only
-    /// available T40 ~ T61"*). Above it, T76+ essence drops directly instead (`BL-273`).</summary>
-    public const int CommonMinLevel = 40, CommonMaxLevel = 61;
+    /// <summary>The item-level window a COMMON copy exists in: F, E, T40, T52 and T61. `BL-307` (2026-09-28, *"build
+    /// the BL-307 as u proposed"*) opened it down to F: *"F/E grade also need Common equipments"*; it was T40-T61
+    /// (*"common equip are only available T40 ~ T61"*). Above it, T76+ essence drops directly instead (`BL-273`).
+    /// The catalog has exactly 18 base kinds at 1 and 20 and nothing else under 40, so this adds 36 items.</summary>
+    public const int CommonMinLevel = 1, CommonMaxLevel = 61;
 
     /// <summary>Does a Common copy exist at this item level?</summary>
     public static bool HasCommonTier(int itemLevel) =>

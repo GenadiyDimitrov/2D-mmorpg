@@ -1242,6 +1242,7 @@ have still never been played. Check the flag behaviour in the same sitting.
 
 ### ✅ Closed since the last update
 
+- ✅ ~~**`BL-307` — drops below 40**~~ — **built in 0.214.38** as proposed (your *"looks good on paper"*).
 - ✅ ~~**`BL-78` item 3, the player HP half**~~ — **built in 0.91.0** (§93A). The cause was named and it
   was ours: 0.73.0 raised creature attack ~×1.65 and the player side was never re-run. **No mob number
   moved.** ⚠ You sent two IG tables **3.46× apart** and ruled the per-class one; the CON curve is IG's,
@@ -1258,9 +1259,10 @@ have still never been played. Check the flag behaviour in the same sitting.
 
 ### 🔴 Still yours to rule
 
-- 🔴 **`BL-307` — drops below 40, the proposal is written** (`docs/design/LowLevelDrops.md`, not built). Today a
-  player under 40 earns 6-25k gold an hour, all coin; at 40-42 it is ~480k. Mine: F/E Common gear, a lucky Mythic
-  piece and base mats from 20, which gives ~2-3× today. Four questions are in §4 of the doc; answer them there or here.
+- 🔴 **`BL-321` — the 120-entry skill bar, a proposal** (`docs/design/SkillBar120.md`, not built). Four questions in §4:
+  drop the 6x1 shape?, which page the second additional bar shows, `[To bar]` moves or copies, page labels.
+
+- 🔴 **`BL-319` — towns that look like towns**: a sketch is owed first (Y / X roads, buildings by the roads, a church).
 
 - 🔴 **`BL-94` — the fizzle floor.** *"shouldn't hit at all on the floor"*, carried out of playtest 28
   unbuilt and now a backlog entry rather than a checklist row. It is one line and it changes how it

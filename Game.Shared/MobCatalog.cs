@@ -738,11 +738,19 @@ public static class MobCatalog
     /// tiers HAVE a Common (<see cref="ItemCatalog.HasCommonTier"/>); any other tier returns 0.</summary>
     public static float CommonGearSlotChance(int tier, int rank) => tier switch
     {
+        // `BL-307` (ruled 2026-09-28, "as u proposed"): F and E read the T40 row, F at ×1 and E at ×0.35.
+        1  => CommonGearSlotChance(40, rank) * CommonScaleF,
+        20 => CommonGearSlotChance(40, rank) * CommonScaleE,
         40 => 0.0200f - 0.0025f   * (rank - 1),
         52 => 0.0100f - 0.0020f   * (rank - 1),
         61 => 0.0030f - 0.000625f * (rank - 1),
         _ => 0f,
     };
+
+    /// <summary>`BL-307`: the F (1-19) and E (20-39) Common tables as a share of T40's. E is a third because its band
+    /// is ten times longer (77 hours): at ×1 a player would find ~190 E Commons, every slot ten times over
+    /// (`docs/design/LowLevelDrops.md` §2).</summary>
+    public const float CommonScaleF = 1f, CommonScaleE = 0.35f;
 
     /// <summary>`BL-287`: the highest mob level that still drops a HEALING potion (the always group).
     /// Above it, potions come from the town merchant: *"go town buy potions"*.</summary>
@@ -961,8 +969,10 @@ public static class MobCatalog
     internal static string[] ArmourKeys => BodyKeys.Concat(SmallKeys).ToArray();
     internal static string[] JewelKeys => new[] { "necklace", "ring", "earring" };
 
-    /// <summary>The level bands a specialty is dealt across, one per crafted tier.</summary>
-    private static (int Lo, int Hi)[] ProfileBands => new[] { (40, 51), (52, 60), (61, 75), (76, 79), (80, 999) };
+    /// <summary>The level bands a specialty is dealt across, one per crafted tier, and since `BL-307` one per gear
+    /// grade below it (F 1-19, E 20-39), where a specialty decides the Commons and the lucky piece only.</summary>
+    private static (int Lo, int Hi)[] ProfileBands =>
+        new[] { (1, 19), (20, 39), (40, 51), (52, 60), (61, 75), (76, 79), (80, 999) };
 
     /// <summary>Share of a band dealt jewellery (at least one) and weapons (at least three).</summary>
     public const double JewelleryShare = 1 / 7.0, WeaponShare = 0.4;
@@ -1016,7 +1026,7 @@ public static class MobCatalog
         return h;
     }
 
-    /// <summary>DEALS every roster template of level 40+ its <see cref="MobDropProfile"/>, then appends its
+    /// <summary>DEALS every roster template (every level since `BL-307`) its <see cref="MobDropProfile"/>, then appends its
     /// normal-rank <see cref="CreatureDrops"/> to its table. Runs once, at the end of Build(), because a
     /// band's hand needs the whole band. Throws if a band leaves any of the 18 gear kinds unsourced.</summary>
     private static void AssignDropProfiles(Dictionary<string, MobType> dict)
@@ -1084,10 +1094,16 @@ public static class MobCatalog
     // ---- The numbers. Each is from `--craft-cost`'s solve or a ruling, tagged; tier index 0-4 = T40-T80. ----
 
     /// <summary>Base mats per NORMAL kill of the creature's PRIMARY type (the note: ~0.2 @40 → 1-2 @90, the
-    /// `--craft-cost` C0 curve). The secondary drops half; Iron and Gem are "twice as hard" (×0.5).</summary>
-    public static double BaseMatPerKill(int level) => 0.2 + 1.3 * Math.Clamp((level - 40) / 50.0, 0, 1);
-    /// <summary>The note: *"wood/metal can be dropped from 35~90"*. Below it a creature drops no mats.</summary>
-    public const int BaseMatMinLevel = 35;
+    /// `--craft-cost` C0 curve). The secondary drops half; Iron and Gem are "twice as hard" (×0.5).
+    /// `BL-307`: 20-34 drop <see cref="BaseMatLowPerKill"/>, a trade good for the T40 crafters.</summary>
+    public static double BaseMatPerKill(int level) =>
+        level < BaseMatFullLevel ? BaseMatLowPerKill : 0.2 + 1.3 * Math.Clamp((level - 40) / 50.0, 0, 1);
+    /// <summary>Below this a creature drops no base mats. `BL-307` (2026-09-28) moved it 35 → 20; the note's *"wood/metal
+    /// can be dropped from 35~90"* curve still starts at <see cref="BaseMatFullLevel"/>.</summary>
+    public const int BaseMatMinLevel = 20;
+    /// <summary>`BL-307`: the level the note's 0.2 → 1.5 curve starts; below it (from <see cref="BaseMatMinLevel"/>) 0.1.</summary>
+    public const int BaseMatFullLevel = 35;
+    public const double BaseMatLowPerKill = 0.1;
     /// <summary>The note: *"@90 can drop 10-20 from elits ... normal 1-2"*.</summary>
     public const double BaseMatEliteMul = 10;
     /// <summary>Everything else an elite drops by the note's *"elit x4"*: parts and Nightsilver/Nightsilk.</summary>
@@ -1117,6 +1133,16 @@ public static class MobCatalog
     /// <summary>The RARE full item per kill of a creature that drops its Common: *"1/10000~20000"*.
     /// RULED (step 11): ONE roll a kill, split across the creature's kinds.</summary>
     public const double RareGearPerKill = 1 / 10000.0;
+
+    /// <summary>The lucky full (Mythic) piece per kill by GEAR tier. `BL-307`: F 1/1,000 and E 1/3,000, so it keeps
+    /// about the weight in an hour it has at 40 (E's pays ~12k/h in expected value, T40's 1/10,000 the same), and F
+    /// is richer because its band is short: at 1/3,000 nobody would ever see one.</summary>
+    public static double RareGearChance(int gearTier) => gearTier switch
+    {
+        1 => 1 / 1000.0,
+        20 => 1 / 3000.0,
+        _ => RareGearPerKill,
+    };
 
     /// <summary>`BL-305`: one GENERIC recipe of the creature's tier band per this many normal kills (an elite ×2),
     /// split evenly over the band. ⚠ PLACEHOLDER of mine — he gave the bands, not a rate; it is the T40 gear
@@ -1209,25 +1235,29 @@ public static class MobCatalog
 
         int tier = CraftTier(level);
         int ti = Array.IndexOf(Crafting.GearTiers, tier);
+        // `BL-307`: the GEAR grade (F 1 / E 20 below 40, the craft tier from 40) decides the Commons and the lucky
+        // piece; the CRAFT tier (0 below 40) decides recipes, parts and Nightsilver, so none of those drop under 40.
+        int gearTier = GearTier(level);
         double mul = elite ? EliteMatMul : 1;
-        if (t.Profile is { } p && ti >= 0)
+        var p = t.Profile;
+        if (p is not null && ItemCatalog.HasCommonTier(gearTier))
         {
-            if (ItemCatalog.HasCommonTier(tier))
+            // A slot's chance is the `BL-287` table's; the body splits it over its three weights and the
+            // weapon slot over the lines THIS creature carries (not all eight).
+            float cm = elite ? CommonGearEliteMul : 1f;
+            int lines = p.Keys.Count(k => CommonSlotRank(k) == 5);
+            foreach (var key in p.Keys)
             {
-                // A slot's chance is the `BL-287` table's; the body splits it over its three weights and the
-                // weapon slot over the lines THIS creature carries (not all eight).
-                float cm = elite ? CommonGearEliteMul : 1f;
-                int lines = p.Keys.Count(k => CommonSlotRank(k) == 5);
-                foreach (var key in p.Keys)
-                {
-                    int rk = CommonSlotRank(key);
-                    float each = CommonGearSlotChance(tier, rk) * cm / (rk == 4 ? 3 : rk == 5 ? lines : 1);
-                    list.Add(new DropEntry($"{key}_t{tier}_common", each, GroupId: GroupCommonGear));
-                }
-                float rare = (float)(RareGearPerKill * cm / p.Keys.Length);
-                foreach (var key in p.Keys)
-                    list.Add(new DropEntry($"{key}_t{tier}", rare, GroupId: GroupRareGear));
+                int rk = CommonSlotRank(key);
+                float each = CommonGearSlotChance(gearTier, rk) * cm / (rk == 4 ? 3 : rk == 5 ? lines : 1);
+                list.Add(new DropEntry($"{key}_t{gearTier}_common", each, GroupId: GroupCommonGear));
             }
+            float rare = (float)(RareGearChance(gearTier) * cm / p.Keys.Length);
+            foreach (var key in p.Keys)
+                list.Add(new DropEntry($"{key}_t{gearTier}", rare, GroupId: GroupRareGear));
+        }
+        if (p is not null && ti >= 0)
+        {
             foreach (var key in p.Keys)
                 if (RecipeDrop(tier, rank, key) is { } rd)
                     list.Add(new DropEntry(ItemCatalog.RecipeBookId($"craft_{key}_t{tier}", rd.Pct), (float)rd.Chance,

@@ -4,7 +4,7 @@
 `dotnet run --project tools/ItemIds` after adding or removing an item. Every id below is a real
 id the server will accept today.
 
-**829 items.** Generated 2026-09-26.
+**875 items.** Generated 2026-09-28.
 
 ```
 /give <player> <itemId> [sellPrice] [tradable] [timed] ["name"] [enchant] [canStorePrivate] [canStoreAccount] [amount]
@@ -23,7 +23,7 @@ is full (it tells you how many fit).
 > 🔑 **Ids are also on the item card in game**, under the enchant line, for staff only —
 > so you can read one off the thing in your bag instead of coming here.
 
-## Weapons  (104)
+## Weapons  (120)
 
 ### no tier (training / one-off)
 
@@ -36,6 +36,14 @@ is full (it tells you how many fit).
 
 | id | name | grade | rarity | notes |
 |---|---|---|---|---|
+| `staff_t1_common` | Ferrite Battlestaff | F | Common | TwoHandedBlunt |
+| `sword1h_t1_common` | Ferrite Blade | F | Common | Sword |
+| `duals_t1_common` | Ferrite Fangs | F | Common | Dual |
+| `sword2h_t1_common` | Ferrite Greatsword | F | Common | TwoHandedSword |
+| `bow_t1_common` | Ferrite Longbow | F | Common | Bow |
+| `blunt1h_t1_common` | Ferrite Mace | F | Common | Blunt |
+| `blunt2h_t1_common` | Ferrite Maul | F | Common | TwoHandedBlunt |
+| `wand_t1_common` | Ferrite Wand | F | Common | Blunt |
 | `staff_t1` | Ferrite Battlestaff | F | Mythic | TwoHandedBlunt |
 | `staff_t1_bound` | Ferrite Battlestaff | F | Mythic | untradable, TwoHandedBlunt |
 | `sword1h_t1` | Ferrite Blade | F | Mythic | Sword |
@@ -55,6 +63,14 @@ is full (it tells you how many fit).
 
 | id | name | grade | rarity | notes |
 |---|---|---|---|---|
+| `staff_t20_common` | Electrum Battlestaff | E | Common | TwoHandedBlunt |
+| `sword1h_t20_common` | Electrum Blade | E | Common | Sword |
+| `duals_t20_common` | Electrum Fangs | E | Common | Dual |
+| `sword2h_t20_common` | Electrum Greatsword | E | Common | TwoHandedSword |
+| `bow_t20_common` | Electrum Longbow | E | Common | Bow |
+| `blunt1h_t20_common` | Electrum Mace | E | Common | Blunt |
+| `blunt2h_t20_common` | Electrum Maul | E | Common | TwoHandedBlunt |
+| `wand_t20_common` | Electrum Wand | E | Common | Blunt |
 | `staff_t20` | Electrum Battlestaff | E | Mythic | TwoHandedBlunt |
 | `sword1h_t20` | Electrum Blade | E | Mythic | Sword |
 | `duals_t20` | Electrum Fangs | E | Mythic | Dual |
@@ -169,7 +185,7 @@ is full (it tells you how many fit).
 | `blunt2h_t80` | Soulcrystal Maul | S | Mythic | TwoHandedBlunt |
 | `wand_t80` | Soulcrystal Wand | S | Mythic | Blunt |
 
-## Shields  (13)
+## Shields  (15)
 
 ### no tier (training / one-off)
 
@@ -181,12 +197,14 @@ is full (it tells you how many fit).
 
 | id | name | grade | rarity | notes |
 |---|---|---|---|---|
+| `shield_t1_common` | Ferrite Aegis | F | Common |  |
 | `shield_t1` | Ferrite Aegis | F | Mythic |  |
 
 ### Lv 20
 
 | id | name | grade | rarity | notes |
 |---|---|---|---|---|
+| `shield_t20_common` | Electrum Aegis | E | Common |  |
 | `shield_t20` | Electrum Aegis | E | Mythic |  |
 
 ### Lv 40
@@ -224,7 +242,7 @@ is full (it tells you how many fit).
 |---|---|---|---|---|
 | `shield_t80` | Soulcrystal Aegis | S | Mythic |  |
 
-## Armor  (89)
+## Armor  (101)
 
 ### no tier (training / one-off)
 
@@ -237,6 +255,12 @@ is full (it tells you how many fit).
 
 | id | name | grade | rarity | notes |
 |---|---|---|---|---|
+| `heavy_t1_common` | Ferrite Bulwark | F | Common | Heavy, Body |
+| `gloves_t1_common` | Ferrite Gauntlets | F | Common | Gloves |
+| `boots_t1_common` | Ferrite Greaves | F | Common | Boots |
+| `helm_t1_common` | Ferrite Helm | F | Common | Head |
+| `light_t1_common` | Ferrite Leathers | F | Common | Light, Body |
+| `robe_t1_common` | Ferrite Robe | F | Common | Robe, Body |
 | `heavy_t1` | Ferrite Bulwark | F | Mythic | Heavy, Body |
 | `gloves_t1` | Ferrite Gauntlets | F | Mythic | Gloves |
 | `gloves_t1_bound` | Ferrite Gauntlets | F | Mythic | untradable, Gloves |
@@ -253,6 +277,12 @@ is full (it tells you how many fit).
 
 | id | name | grade | rarity | notes |
 |---|---|---|---|---|
+| `heavy_t20_common` | Electrum Bulwark | E | Common | Heavy, Body |
+| `gloves_t20_common` | Electrum Gauntlets | E | Common | Gloves |
+| `boots_t20_common` | Electrum Greaves | E | Common | Boots |
+| `helm_t20_common` | Electrum Helm | E | Common | Head |
+| `light_t20_common` | Electrum Leathers | E | Common | Light, Body |
+| `robe_t20_common` | Electrum Robe | E | Common | Robe, Body |
 | `heavy_t20` | Electrum Bulwark | E | Mythic | Heavy, Body |
 | `gloves_t20` | Electrum Gauntlets | E | Mythic | Gloves |
 | `boots_t20` | Electrum Greaves | E | Mythic | Boots |
@@ -355,7 +385,7 @@ is full (it tells you how many fit).
 | `light_t80` | Soulcrystal Leathers | S | Mythic | Light, Body |
 | `robe_t80` | Soulcrystal Robe | S | Mythic | Robe, Body |
 
-## Jewels  (36)
+## Jewels  (42)
 
 ### no tier (training / one-off)
 
@@ -369,6 +399,9 @@ is full (it tells you how many fit).
 
 | id | name | grade | rarity | notes |
 |---|---|---|---|---|
+| `ring_t1_common` | Ferrite Band | F | Common | Ring |
+| `necklace_t1_common` | Ferrite Pendant | F | Common | Necklace |
+| `earring_t1_common` | Ferrite Stud | F | Common | Earring |
 | `ring_t1` | Ferrite Band | F | Mythic | Ring |
 | `ring_t1_bound` | Ferrite Band | F | Mythic | untradable, Ring |
 | `necklace_t1` | Ferrite Pendant | F | Mythic | Necklace |
@@ -380,6 +413,9 @@ is full (it tells you how many fit).
 
 | id | name | grade | rarity | notes |
 |---|---|---|---|---|
+| `ring_t20_common` | Electrum Band | E | Common | Ring |
+| `necklace_t20_common` | Electrum Pendant | E | Common | Necklace |
+| `earring_t20_common` | Electrum Stud | E | Common | Earring |
 | `ring_t20` | Electrum Band | E | Mythic | Ring |
 | `necklace_t20` | Electrum Pendant | E | Mythic | Necklace |
 | `earring_t20` | Electrum Stud | E | Mythic | Earring |
@@ -590,7 +626,7 @@ is full (it tells you how many fit).
 | `scroll_common` | Scroll of Enchant (E) | - | Common | stacks |
 | `scroll_enchant_s` | Scroll of Enchant (S) | - | Mythic | stacks |
 
-## Boxes  (230)
+## Boxes  (240)
 
 | id | name | grade | rarity | notes |
 |---|---|---|---|---|
@@ -664,6 +700,7 @@ is full (it tells you how many fit).
 | `recipe_craft_wand_t76_40` | Recipe: Adamantine Wand (40%) | - | Common | stacks |
 | `recipe_craft_wand_t76_60` | Recipe: Adamantine Wand (60%) | - | Common | stacks |
 | `recipe_craft_potion_cast_u_100` | Recipe: Alacrity Potion | - | Common | stacks |
+| `recipe_refine_alloy_100` | Recipe: Alloy | - | Common | stacks |
 | `recipe_craft_crafter_hammer_40` | Recipe: Blacksmith's Hammer (40%) | - | Common | untradable, stacks |
 | `recipe_craft_shield_t61_100` | Recipe: Bloodsteel Aegis (100%) | - | Common | stacks |
 | `recipe_craft_shield_t61_60` | Recipe: Bloodsteel Aegis (60%) | - | Common | stacks |
@@ -755,8 +792,16 @@ is full (it tells you how many fit).
 | `recipe_craft_potion_dash_m_100` | Recipe: Dash Potion | - | Common | stacks |
 | `recipe_craft_potion_atk_u_100` | Recipe: Fury Potion | - | Common | stacks |
 | `recipe_craft_potion_instant_100` | Recipe: Instant Healing Potion | - | Common | stacks |
+| `recipe_refine_nightsilk_4_100` | Recipe: Legendary Nightsilk | - | Common | stacks |
+| `recipe_refine_nightsilver_4_100` | Recipe: Legendary Nightsilver | - | Common | stacks |
 | `recipe_craft_potion_greater_100` | Recipe: Rare Healing Potion | - | Common | stacks |
 | `recipe_craft_potion_mana_greater_100` | Recipe: Rare Mana Potion | - | Common | stacks |
+| `recipe_refine_nightsilk_2_100` | Recipe: Rare Nightsilk | - | Common | stacks |
+| `recipe_refine_nightsilver_2_100` | Recipe: Rare Nightsilver | - | Common | stacks |
+| `recipe_refine_nightsilk_1_100` | Recipe: Refined Nightsilk | - | Common | stacks |
+| `recipe_refine_nightsilver_1_100` | Recipe: Refined Nightsilver | - | Common | stacks |
+| `recipe_refine_nightsilk_3_100` | Recipe: Refined Rare Nightsilk | - | Common | stacks |
+| `recipe_refine_nightsilver_3_100` | Recipe: Refined Rare Nightsilver | - | Common | stacks |
 | `recipe_craft_shield_t80_40` | Recipe: Soulcrystal Aegis (40%) | - | Common | stacks |
 | `recipe_craft_shield_t80_60` | Recipe: Soulcrystal Aegis (60%) | - | Common | stacks |
 | `recipe_craft_ring_t80_40` | Recipe: Soulcrystal Band (40%) | - | Common | stacks |
@@ -798,6 +843,7 @@ is full (it tells you how many fit).
 | `recipe_craft_potion_speed_u_100` | Recipe: Swift Potion | - | Common | stacks |
 | `recipe_craft_potion_healing_100` | Recipe: Uncommon Healing Potion | - | Common | stacks |
 | `recipe_craft_potion_mana_100` | Recipe: Uncommon Mana Potion | - | Common | stacks |
+| `recipe_refine_volcanic_bar_100` | Recipe: Volcanic Bar | - | Common | stacks |
 | `recipe_craft_box_war_rune_1h_100` | Recipe: War Rune Box (1h) | - | Common | stacks |
 | `recipe_craft_box_war_rune_2h_100` | Recipe: War Rune Box (2h) | - | Common | stacks |
 | `box_daily_rune_choice` | Rune Box (1h) — Daily | - | Common | untradable, stacks |

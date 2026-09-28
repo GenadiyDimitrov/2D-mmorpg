@@ -7,12 +7,29 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.37**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.38**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-28 (latest) — 0.214.37: the Mindwright stands off the road (`BL-318`)
+## 2026-09-28 (latest) — 0.214.38: full drops below level 40 (`BL-307`)
+
+> *"Lower lvl mobs also need full drops. F/E grade also need Common equipments and drops for mythic/common"* ·
+> *"build the BL-307 as u proposed - looks good on paper"*
+
+Built exactly as `docs/design/LowLevelDrops.md` proposed:
+- **36 new items: a Common copy of every F and E piece** (`CommonMinLevel` 40 → 1). Same stats as the Mythic, no set,
+  no attribute, no enchant, 5% of its price. They cannot be broken (no essence below D) and no shop sells them.
+- **Every creature under 40 is dealt a specialty**, in two new bands, 1-19 and 20-39, by the same rule as 40+. The
+  three starter creatures are dealt one like the rest.
+- **Commons: F at the T40 table ×1 (14% a kill in all), E at ×0.35 (4.9%)**, elites ×2.
+- **The lucky Mythic piece: F 1 in 1,000, E 1 in 3,000**, split over the creature's kinds (40+ stays 1 in 10,000).
+- **Base mats from 20**: 0.1 a kill from 20 to 34, and the old curve from 35.
+- No recipes, parts or Nightsilver below 40: crafting still starts at T40.
+- ⚠ **Needs the new APK**: the client holds the item catalog, and an unknown id shows as a blank row.
+- `ItemIds.md` and `mob_drops.csv` regenerated; Formulas.md's drop section follows.
+
+## 2026-09-28 — 0.214.37: the Mindwright stands off the road (`BL-318`)
 
 > *"the mindweaver i dont like his position in the middle of the gate ... move it on the side .. think of the town as it
 > will have roads and houses ... and shops .. its not an open field"*

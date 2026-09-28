@@ -4,7 +4,10 @@
 > players rely solely on gold mob drop .. and no lucky drops or any mat to exchange for money (with other players when
 > economy is present)"* (playtest of 0.206.0)
 
-**Status: a PROPOSAL, not built.** Every number below is mine and waits on you. It was measured with
+**Status: BUILT in 0.214.38**, exactly as proposed (owner, 2026-09-28: *"build the BL-307 as u proposed - looks good on
+paper"*), which also answers §4: the rates stand, mats from 20, the starter creatures are dealt a specialty like the rest,
+and nothing more on scrolls. The rates live in `MobCatalog` (`CommonScaleF/E`, `RareGearChance`, `BaseMatMinLevel`,
+`BaseMatLowPerKill`); `--low-drops` now reads them from there. It was measured with
 `dotnet run --project tools/BalanceMatrix -- --low-drops [F-scale E-scale F-lucky E-lucky mats]`. That mode reads the
 real catalogs and the M1 kill clock, and it changes nothing in the game. To try other numbers, run it with your own
 five values (for example `--low-drops 1 0.35 1000 3000 0.1`).

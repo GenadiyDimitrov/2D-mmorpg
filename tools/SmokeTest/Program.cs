@@ -295,8 +295,8 @@ Check("the Blessing fill is paused out of combat (BL-317)", await a.WaitFor(() =
                 && cm.AtkBonus == m.AtkBonus && cm.MAtkBonus == m.MAtkBonus && ItemCatalog.IsCommonGear(cm),
               $"{cm?.AtkBonus} vs {m?.AtkBonus}");
     }
-    Check("no Common outside T40-T61 (T20, T76, S)",
-          ItemCatalog.Get("sword1h_t20_common") is null && ItemCatalog.Get("sword1h_t76_common") is null
+    Check("no Common above T61 (T76, S); F and E have one since BL-307",
+          ItemCatalog.Get("sword1h_t20_common") is not null && ItemCatalog.Get("sword1h_t76_common") is null
           && ItemCatalog.Get($"sword1h_t{ItemCatalog.SGradeLevel}_common") is null);
     int midRungs = ItemCatalog.AllItems.Count(d => Crafting.IsGearSlot(d.Slot)
         && d.Rarity is ItemRarity.Uncommon or ItemRarity.Rare or ItemRarity.Epic or ItemRarity.Legendary);
@@ -327,8 +327,29 @@ Check("the Blessing fill is paused out of combat (BL-317)", await a.WaitFor(() =
     Check("no healing potion drops from a mob above level 40 (BL-287)",
           MobCatalog.Templates.Where(m => m.Level > MobCatalog.HealingPotionDropMaxLevel)
               .All(m => (m.Drops ?? Array.Empty<DropEntry>()).All(d => ItemCatalog.Get(d.ItemId) is not ItemDef p || !ItemCatalog.IsHealPotion(p))));
-    Check("a normal mob below T40 or from T76 up drops NO equipment",
-          !MobCatalog.GearDrops(30, MobRank.Normal).Any() && !MobCatalog.GearDrops(78, MobRank.Normal).Any());
+    Check("a normal mob from T76 up drops NO equipment",
+          !MobCatalog.GearDrops(78, MobRank.Normal).Any());
+    // `BL-307` (2026-09-28): F and E have Commons now, the T40 table x1 (F) and x0.35 (E).
+    Check("BL-307: a normal F / E kill rolls Commons at 14% / 4.9% in total (the T40 table x1 / x0.35)",
+          Math.Abs(GroupSum(MobCatalog.GearDrops(10, MobRank.Normal), MobCatalog.GroupCommonGear) - 0.14f) < 1e-5
+          && Math.Abs(GroupSum(MobCatalog.GearDrops(30, MobRank.Normal), MobCatalog.GroupCommonGear) - 0.049f) < 1e-5,
+          $"F {GroupSum(MobCatalog.GearDrops(10, MobRank.Normal), MobCatalog.GroupCommonGear)}, E {GroupSum(MobCatalog.GearDrops(30, MobRank.Normal), MobCatalog.GroupCommonGear)}");
+    {
+        var low = MobCatalog.Templates.Where(m => !m.Dummy && !m.HandPlaced && !m.Guard && m.Drops is not null && m.Level < 40).ToList();
+        bool Has(MobType m, Func<DropEntry, bool> f) => m.Drops!.Any(f);
+        Check("BL-307: every creature under 40 has a specialty, drops its grade's Commons and a lucky Mythic of its kinds",
+              low.Count > 0 && low.All(m => m.Profile is not null
+                  && Has(m, d => d.GroupId == MobCatalog.GroupCommonGear && d.ItemId.EndsWith($"_t{(m.Level >= 20 ? 20 : 1)}_common"))
+                  && Has(m, d => d.GroupId == MobCatalog.GroupRareGear && ItemCatalog.Get(d.ItemId) is { Rarity: ItemRarity.Mythic })),
+              string.Join(", ", low.Where(m => m.Profile is null).Select(m => m.Id)));
+        Check("BL-307: no recipe and no part drops under 40; base mats from 20, none below",
+              low.All(m => !Has(m, d => d.GroupId == MobCatalog.GroupRecipe || d.ItemId.StartsWith("part_")))
+              && low.Where(m => m.Level >= 20).All(m => Has(m, d => d.GroupId == MobCatalog.GroupMats))
+              && low.Where(m => m.Level < 20).All(m => !Has(m, d => d.GroupId == MobCatalog.GroupMats)));
+        Check("BL-307: an F/E Common exists, is Common, has no set and no attribute (so it cannot be enchanted)",
+              new[] { "sword1h_t1_common", "robe_t20_common" }.All(id => ItemCatalog.Get(id) is { } c
+                  && ItemCatalog.IsCommonGear(c) && c.SetId == "" && c.NoAttributes));
+    }
     Check("a boss pays ONE Mythic piece, 100% at T40 down to 70% at T80 (BL-308)",
           new[] { (10, 1f), (30, 1f), (45, 1f), (55, 0.9f), (65, 0.85f), (78, 0.75f), (85, 0.7f) }.All(p =>
               Math.Abs(GroupSum(MobCatalog.GearDrops(p.Item1, MobRank.Boss), MobCatalog.GroupBossGear) - p.Item2) < 1e-5)
@@ -593,8 +614,8 @@ Check("the Blessing fill is paused out of combat (BL-317)", await a.WaitFor(() =
           fSword is { Rarity: ItemRarity.Mythic, ItemLevel: ItemCatalog.FGradeLevel },
           $"{fSword?.Name} {fSword?.Rarity} lvl {fSword?.ItemLevel}");
     Check("...and it is themed Ferrite (F grade)", fSword?.Name.StartsWith("Ferrite") == true, fSword?.Name);
-    Check("F grade has NO Common (Commons are T40-T61 only, BL-272)",
-          ItemCatalog.Get($"sword1h_t{ItemCatalog.FGradeLevel}_common") is null);
+    Check("F grade HAS a Common since BL-307 (it was T40-T61 only, BL-272), and the newbie kit is still the Mythic",
+          ItemCatalog.Get($"sword1h_t{ItemCatalog.FGradeLevel}_common") is { Rarity: ItemRarity.Common });
 
     // A set is joined to its pieces by an id STRING and nothing else, so a mismatch is a bonus that
     // silently never applies — exactly what happened when the newbie kit became the F tier and its set

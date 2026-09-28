@@ -278,7 +278,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-286` | ⏸ | **CASTLE "NOBLE" CHARISMA** — a castle-holding clan leader gets charisma decay/loss protection or a grant; split out of `BL-283`; waits on castles | social |
 | `BL-288` | ⏸ | **CONSUMABLE RARITY → PLAIN LEVELS 1-6** — potions/scrolls may drop the rarity word entirely; deferred by him, split out of `BL-272` | items |
 | `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
-| `BL-307` | 🟡 | **Full drops below level 40** — F/E-grade Common gear, materials and lucky drops, not only gold — 📝 PROPOSAL drafted, `docs/design/LowLevelDrops.md`, 4 questions | drops |
 | `BL-314` | 🔵 | **Split passives into single-stat pieces** — regen / P.Def / speed as their own ladders shared across classes, so ten armor masteries become a few mixable passives — design first | skills |
 | `BL-319` | 🔵 | **Towns that look like towns** — Y (3 gates) / X (4 gates) roads, buildings beside the roads and side paths, a church in the big cities — sketch first | world |
 | `BL-321` | 🔵 | **120 bar entries: main pages 1-5, additional pages 6-10** — full 12-slot additional bars only (0/1/2), shape follows main, `[To bar]` never disabled — proposal first | ui |
@@ -2246,19 +2245,6 @@ exists (`HandleDebugReset`, back to level 1). Since `BL-296` it keeps quests and
 `GameLoopService.KeepQuestsThroughReset` is the quest half this will reuse. ❓ Open when it is picked up: the price
 (platinum?), whether subclasses survive, and what happens to class-chain quests of the old class (today's re-roll
 drops them).
-
-## `BL-307` 🔵 FULL DROPS BELOW LEVEL 40
-
-From the same playtest, on 0.206.0 (`BL-274` part 1): *"Lower lvl mobs also need full drops. F/E grade also need
-Common equipments and drops for mythic/common. Now <40 players rely solely on gold mob drop .. and no lucky drops
-or any mat to exchange for money (with other players when economy is present)"*.
-❓ **Open:** the rates and which items (a proposal from me, measured with `BalanceMatrix`, before building).
-📝 **2026-09-26: THE PROPOSAL IS WRITTEN, not built — `docs/design/LowLevelDrops.md`.** Measured with the new
-`BalanceMatrix --low-drops`: below 40 a player earns 6-25k/h, all coin, against ~480k/h at 40-42. Mine: F/E Common
-copies + a dealt specialty in two new bands (1-19, 20-39), Commons at the T40 table ×1 (F) / ×0.35 (E), a lucky Mythic
-1/1,000 (F) / 1/3,000 (E), base mats 0.1 a kill from 20. That is ~2-3× today and the 40 cliff drops from ~20× to ~9×.
-❓ **Four questions for you in §4 of the doc** (the rates, mats from 20, the starter creatures, scrolls).
-
 
 ## `BL-314` 🔵 SPLIT PASSIVES INTO SINGLE-STAT PIECES
 

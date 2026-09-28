@@ -1079,6 +1079,8 @@ sum per normal kill               14.0%    5.8%     1.7%      (a Common every ~7
 ```
 
 His ranges (T40 1-2%, T52 0.2-1%, T61 0.05-0.3%) and slot order; the linear cells in between are mine.
+**F and E (`BL-307`, 0.214.38)** read the T40 column: **F (1-19) ×1** (sum 14.0%) and **E (20-39) ×0.35** (sum 4.9%)
+(`MobCatalog.CommonScaleF` / `CommonScaleE`).
 
 ```
 boss kill     boss group    T40 1.0 · T52 0.9 · T61 0.85 · T76 0.75 · T80 0.7  × rates   one Mythic piece, group "boss" ×1 (0.214.17, BL-308)
@@ -1086,17 +1088,18 @@ boss kill     boss group    T40 1.0 · T52 0.9 · T61 0.85 · T76 0.75 · T80 0.
 ```
 
 A Common has the Mythic piece's stats, **no set, no attribute, no enchant**, and costs 0.05 × its Mythic
-(prices below). Below T40 no creature drops equipment; T76+ has no Commons (it drops essence instead).
+(prices below). Since `BL-307` every grade from F drops them (F and E cannot be broken: no essence below D); T76+ has no Commons (it drops essence instead).
 `MobCatalog.CommonGearSlotChance` / `CommonGearEliteMul` / `BossFullItemChance`.
 
 **Healing potions** drop (group "always") only from mobs **level ≤ 40** (`BL-287`,
 `MobCatalog.HealingPotionDropMaxLevel`): Minor 2% + Minor/Healing 1% (Healing from 40). Above that, buy them.
 
-**Per-mob drop tables (`BL-274` part 1, 0.206.0).** Every roster creature of 40+ has ONE dealt specialty
+**Per-mob drop tables (`BL-274` part 1, 0.206.0; every level since `BL-307`).** Every roster creature has ONE dealt specialty
 (`MobCatalog.AssignDropProfiles`; readable: `docs/data/mobs/mob_drops.csv`, `--dump-drop-csv`):
 
 ```
-deal, per band 40-51 / 52-60 / 61-75 / 76-79 / 80+   jewellery max(1, round(n/7)) · weapons max(3, round(0.4n))
+deal, per band 1-19 / 20-39 / 40-51 / 52-60 / 61-75 / 76-79 / 80+
+                    jewellery max(1, round(n/7)) · weapons max(3, round(0.4n))
                                                      (≥1 body and ≥1 small kept) · rest body / small
 who takes what      category affinity first, then FNV hash of id; a weapon carrier takes the line it holds
 weapons             1-3 of the 8 lines (four each in the 5-creature 76-79 band); boot fails on an unsourced kind
@@ -1107,8 +1110,9 @@ kinds               weapons: its lines · body: heavy/light/robe · small: helm/
 Per kill, what `MobCatalog.CreatureDrops(type, level, rank)` gives (normal; elite multiplier after `|`):
 
 ```
-Common (T40-T61)    the slot % above, only its kinds; weapon % ÷ ITS lines, body % ÷ 3       | ×2   group common
-rare full item      1/10,000 a kill, split over its kinds (T40-T61)                           | ×2   group rare
+Common (F-T61)      the slot % above, only its kinds; weapon % ÷ ITS lines, body % ÷ 3       | ×2   group common
+rare full item      F 1/1,000 · E 1/3,000 · T40-T61 1/10,000 a kill, split over its kinds     | ×2   group rare
+                    (MobCatalog.RareGearChance). Below 40 only these two rows: no recipe, part or Nightsilver
 recipe, per kind    T40 100% 1/100 · T52 100% 1/175 · T61 60% 1/250 · T76 20% slot table B
                     | T40 1/50 · T52 1/88 · T61 100% 1/250 · T76 40% table A · T80 40% table B  group recipe
                     table A (2H,1H,body,helm,shield,gloves,boots,neck,earring,ring) 1/500,500,400,300,300,200,200,300,250,150
@@ -1117,7 +1121,8 @@ part, per kind      1% · 0.5% · 0.25% · 0.1% · 0.1%  (T40…T80)            
 Nightsilver (weapons, jewellery) / Nightsilk (armour), plain rung
                     0.155 · 0.96 · 7.25 · 23.2 · 42.8  (T40…T80)                             | ×4   group mats
   higher rungs      1% each: Refined 62+ | 50+ · Rare 76+ | 60+ · Refined Rare 80+ | 76+ · Legendary – | 80+
-base mats (35+)     primary 0.2 + 1.3·clamp((L−40)/50, 0, 1); secondary ×0.5; Iron/Gem ×0.5 | ×10  group mats
+base mats (20+)     primary 0.1 at 20-34 (BL-307), 0.2 + 1.3·clamp((L−40)/50, 0, 1) from 35;
+                    secondary ×0.5; Iron/Gem ×0.5                                            | ×10  group mats
 volcanic            ash 0.3 + stone 0.3, the creatures of level exactly 76 / 80 / 85, normals only   group mats
 direct essence      T76 1% × 30-50 A · T80 0.5% × 30-50 S                                    | ×2   group essence
 ```
