@@ -1360,6 +1360,10 @@ Follow-up, same day: *"the page to have 10 slots ... not 12 .. that why the tabl
 
 ### 🔴 Still yours to rule
 
+- 🔴 **`BL-314` — the SP budget is measured** (`docs/design/SpBudget.md`): at ×1, buying everything, 20-75 has no SP to
+  spare (the spare is the Favor), and a flat passive ×3-4 treats the classes very unevenly (healers are already short).
+  Four questions in §5: a flat ×3-4 or one target for all (my pick 0.65 at ×1)?, the target?, the healers?, count the Favor?
+
 - 🔴 **`BL-94` — the fizzle floor.** *"shouldn't hit at all on the floor"*, carried out of playtest 28
   unbuilt and now a backlog entry rather than a checklist row. It is one line and it changes how it
   feels to fight above your level, so it wants your word: **flat 0 on a fizzle, or 0 only once the fail

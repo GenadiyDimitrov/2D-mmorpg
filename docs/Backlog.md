@@ -278,7 +278,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-286` | ⏸ | **CASTLE "NOBLE" CHARISMA** — a castle-holding clan leader gets charisma decay/loss protection or a grant; split out of `BL-283`; waits on castles | social |
 | `BL-288` | ⏸ | **CONSUMABLE RARITY → PLAIN LEVELS 1-6** — potions/scrolls may drop the rarity word entirely; deferred by him, split out of `BL-272` | items |
 | `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
-| `BL-314` | 🔵 | **Split passives into single-stat pieces** — regen / P.Def / speed as their own ladders shared across classes, so ten armor masteries become a few mixable passives — design first | skills |
+| `BL-314` | 🔵 | **Split passives into single-stat pieces** — 📝 MEASURED (`SpBudget.md`, 4 Qs) — regen / P.Def / speed as their own ladders shared across classes, so ten armor masteries become a few mixable passives — design first | skills |
 | `BL-323` | ⏸ | **Server-side collision (geodata)** — the server checks walls/buildings too, not only the 3D models; waits on `BL-281` | world |
 | `BL-324` | 🔵 | **Town sprint** — in a town, a move click shows a "Sprint" button after 1-2 s (or a Setup auto-sprint) for +50 move speed, cap 250 | world |
 
@@ -2285,6 +2285,10 @@ desitions .. not 1 passive 200 stats in one go ... now 200 passive -> chose wise
 - 🔑 **Measure before designing** (next step, mine): a BalanceMatrix print of SP earned per level vs the SP a class's
   whole kit costs per level, 1-85, for each discipline — the "after 20 you have SP to spare" gap in numbers, and the
   size of the 3-4× budget the split has to absorb.
+- 📝 **2026-09-28: MEASURED — `docs/design/SpBudget.md`** (`BalanceMatrix --sp-budget [path]`). At ×1, buying the whole
+  kit, 20-75 is **not** spare: daggers 1.9-2.3×, bows/warriors 1.5-1.9×, tanks/Magus 1.2-1.3×, **healers 0.78-0.93× (short)**.
+  The "spare" is the Favor (+400%), Blessing and runes. A flat passive ×3-4 leaves daggers and bows near 1 and halves the healers;
+  ❓ **four questions in §5 of the doc** (flat vs one target — my pick 0.65 at ×1, the healers, whether to count the Favor).
 
 
 ## `BL-323` ⏸ SERVER-SIDE COLLISION (GEODATA)
