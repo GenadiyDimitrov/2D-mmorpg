@@ -5569,6 +5569,8 @@ public class GameLoopService : BackgroundService
         if (!TryGetPlayer(cmd.ConnectionId, out var p))
             return;
         p.ActiveSkillBar = cmd.Slots ?? Array.Empty<string>();   // the bar belongs to the class you're playing
+        if (p.ActiveSkillBar.Length > GameConstants.SkillBarSlots)   // nothing past the last page is ever shown
+            p.ActiveSkillBar = p.ActiveSkillBar[..GameConstants.SkillBarSlots];
         // The tutorial's "put something on your bar" beat (63j). This command is the ONLY one the client
         // sends on a player edit — the server's own pushes never come back through here — so a bar that
         // arrives with anything in it is a bar the player just built.

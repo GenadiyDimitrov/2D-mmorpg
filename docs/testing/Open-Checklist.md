@@ -1243,8 +1243,9 @@ have still never been played. Check the flag behaviour in the same sitting.
 
 No bugs this pass. What it asked for:
 - **0.214.35, the bar size** → **0.214.39**: the slider shows today's ×2.5 as **×1**, from **×0.5 to ×2** (stored ×1.25-×5).
-- **`BL-321`, the four answers** → built in **0.214.40** (see the CHANGELOG): shapes 1x12 / 2x6 / 6x2, each page owns
-  its own main + two additional rows, `[To bar]` copies, "n/5" on the main only.
+- **`BL-321`, the four answers** → built in **0.214.40**: shapes **2x5 / 1x10 / 5x2** (your follow-up: *"the page to have
+  10 slots ... not 12 .. that why the table is 150"*), each page owns its own main + two additional bars (150 entries),
+  `[To bar]` copies and is never disabled, "n/5" on the main only.
 - **`BL-314`, the why** (SP scarcity until 76) → copied verbatim into the Backlog entry.
 - **Not played yet** (no mark): 0.214.34 (Charge in auto-hunt, *"later will test"*).
 
@@ -1309,11 +1310,13 @@ and spliting the passives gives the player that desitions .. not 1 passive 200 s
 ---
 ```
 
+Follow-up, same day: *"the page to have 10 slots ... not 12 .. that why the table is 150 but the settings is left x12 ... my bad to balance both ... should have made the example with settings 2x5/1x10 .."*
 </details>
 ## 0. ANSWERS I OWE YOU — read, don't test
 
 ### ✅ Closed since the last update
 
+- ✅ ~~**`BL-321` — the skill bar**~~ — **built in 0.214.40** from your four answers (§107, `SkillBar120.md` §5).
 - ✅ ~~**`BL-307` — drops below 40**~~ — **built in 0.214.38** as proposed (your *"looks good on paper"*).
 - ✅ ~~**`BL-78` item 3, the player HP half**~~ — **built in 0.91.0** (§93A). The cause was named and it
   was ours: 0.73.0 raised creature attack ~×1.65 and the player side was never re-run. **No mob number
@@ -1331,10 +1334,8 @@ and spliting the passives gives the player that desitions .. not 1 passive 200 s
 
 ### 🔴 Still yours to rule
 
-- 🔴 **`BL-321` — the 120-entry skill bar, a proposal** (`docs/design/SkillBar120.md`, not built). Four questions in §4:
-  drop the 6x1 shape?, which page the second additional bar shows, `[To bar]` moves or copies, page labels.
 
-- 🔴 **`BL-319` — towns that look like towns**: a sketch is owed first (Y / X roads, buildings by the roads, a church).
+- 🔴 **`BL-319` — towns that look like towns**: **the sketch is ready**: https://claude.ai/artifact/6GVfFFjotDCfKUWZ3pFr5N (a Y town and an X city, to scale). Five questions in the Backlog entry: solid walls?, which towns are Y/X, majors to radius 3000?, NPC at the door?, where the Huntmaster stands.
 
 - 🔴 **`BL-94` — the fizzle floor.** *"shouldn't hit at all on the floor"*, carried out of playtest 28
   unbuilt and now a backlog entry rather than a checklist row. It is one line and it changes how it

@@ -1,0 +1,258 @@
+<title>Town Plans</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:wght@500;700&family=Alegreya+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F3F5F1; --ground:#E4E9E1; --ink:#1E2A2F; --muted:#5F6E72; --rule:#C9D1CB;
+  --road:#D3C2A3; --road-edge:#A8946F; --plaza:#DCCDB0;
+  --bld:#8497A2; --bld-edge:#34454F; --house:#BAC4C6; --house-edge:#7D8A8E;
+  --church:#8C5A7A; --craft:#9A6B3E; --wall:#56656B; --accent:#1F6F77; --gate:#B4452E;
+  --card:#FFFFFF;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#121719; --ground:#1B2326; --ink:#E1E7E5; --muted:#93A2A5; --rule:#2E393C;
+    --road:#5A4F3F; --road-edge:#80705A; --plaza:#4C4336;
+    --bld:#566A75; --bld-edge:#B3C3CA; --house:#34403F; --house-edge:#66767A;
+    --church:#A0708F; --craft:#A97C4E; --wall:#90A1A6; --accent:#67BDC4; --gate:#E0735A;
+    --card:#182022;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121719; --ground:#1B2326; --ink:#E1E7E5; --muted:#93A2A5; --rule:#2E393C;
+  --road:#5A4F3F; --road-edge:#80705A; --plaza:#4C4336;
+  --bld:#566A75; --bld-edge:#B3C3CA; --house:#34403F; --house-edge:#66767A;
+  --church:#A0708F; --craft:#A97C4E; --wall:#90A1A6; --accent:#67BDC4; --gate:#E0735A;
+  --card:#182022;
+  color-scheme:dark;
+}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 "Alegreya Sans",system-ui,sans-serif;padding-inline:16px;padding-block:24px 48px}
+main{max-width:1060px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+h1,h2,h3{font-family:Alegreya,Georgia,serif;text-wrap:balance;margin:0}
+h1{font-size:2.3rem;line-height:1.1}
+h2{font-size:1.6rem}
+h3{font-size:1.1rem}
+p{margin:0;max-width:68ch}
+.lede{display:flex;flex-direction:column;gap:12px}
+.eyebrow{font:500 12px/1 "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.plan{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:820px){.plan{grid-template-columns:1fr}}
+.map{background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:8px}
+.map svg{display:block;width:100%;height:auto}
+.side{display:flex;flex-direction:column;gap:14px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;vertical-align:top;padding:7px 8px;border-bottom:1px solid var(--rule)}
+th{font:500 11px/1.2 "IBM Plex Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td:first-child{white-space:nowrap;font-weight:700}
+.num{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted)}
+.sw{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:6px;vertical-align:-1px;border:1px solid var(--bld-edge)}
+.qs{display:flex;flex-direction:column;gap:14px;counter-reset:q}
+.q{background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.q b.pick{color:var(--accent)}
+.scroll{overflow-x:auto}
+ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:72ch}
+code{font-family:"IBM Plex Mono",monospace;font-size:.88em}
+/* svg */
+.g{fill:var(--ground);stroke:var(--wall);stroke-width:26}
+.rd{stroke:var(--road);fill:none;stroke-linecap:butt}
+.rde{stroke:var(--road-edge);fill:none;stroke-linecap:butt}
+.pz{fill:var(--plaza);stroke:var(--road-edge);stroke-width:10}
+.pth{stroke:var(--road-edge);stroke-width:26;stroke-dasharray:40 26;fill:none}
+.b{fill:var(--bld);stroke:var(--bld-edge);stroke-width:12}
+.h{fill:var(--house);stroke:var(--house-edge);stroke-width:8}
+.ch{fill:var(--church);stroke:var(--bld-edge);stroke-width:12}
+.cr{fill:var(--craft);stroke:var(--bld-edge);stroke-width:12}
+.yard{fill:none;stroke:var(--craft);stroke-width:12;stroke-dasharray:36 22}
+.gt{stroke:var(--gate);stroke-width:46}
+.gd{fill:var(--gate)}
+.npc{fill:var(--accent);stroke:var(--card);stroke-width:10}
+.lb{font:600 104px "Alegreya Sans",sans-serif;fill:var(--ink);paint-order:stroke;stroke:var(--card);stroke-width:18px;stroke-linejoin:round}
+.lbs{font:500 80px "Alegreya Sans",sans-serif;fill:var(--muted);paint-order:stroke;stroke:var(--card);stroke-width:14px}
+.mono{font:400 72px "IBM Plex Mono",monospace;fill:var(--muted)}
+.sc{stroke:var(--ink);stroke-width:12}
+</style>
+
+<main>
+  <section class="lede">
+    <span class="eyebrow">BL-319 · sketch for review · nothing built</span>
+    <h1>Two town plans: a Y town and an X city</h1>
+    <p>Drawn to scale in world units, north up, the town centre at 0,0. Grey walls are the town's octagon (the one the gate guards already stand on since <code>BL-310</code>). Roads are 220-280 wide, buildings stand back from the road with a dashed side path to their door, and every NPC (teal dot) stands at a door, not in the road.</p>
+    <p>Grouping is yours: weapons + armour in one shop, the Apothecary with the essence seller, the Keeper in his own house, the Master Crafter with his Anvil, and a church in the big cities for the class master and the Mindwright.</p>
+  </section>
+
+  <!-- ============================ Y TOWN ============================ -->
+  <section class="plan">
+    <div class="map">
+      <svg viewBox="-2200 -2200 4400 4550" role="img" aria-label="Plan of a Y-shaped town with three gates">
+        <polygon class="g" points="1848,765 765,1848 -765,1848 -1848,765 -1848,-765 -765,-1848 765,-1848 1848,-765"/>
+        <!-- roads: edge then fill -->
+        <g class="rde" stroke-width="240"><line x1="0" y1="0" x2="0" y2="1848"/><line x1="0" y1="0" x2="-1307" y2="-1307"/><line x1="0" y1="0" x2="1307" y2="-1307"/></g>
+        <g class="rd" stroke-width="210"><line x1="0" y1="0" x2="0" y2="1848"/><line x1="0" y1="0" x2="-1307" y2="-1307"/><line x1="0" y1="0" x2="1307" y2="-1307"/></g>
+        <circle class="pz" cx="0" cy="0" r="330"/>
+        <!-- side paths -->
+        <path class="pth" d="M110 640 H200 M-110 670 H-220 M110 90 H420 M-110 90 H-420 M0 -330 V-600 M1010 -1010 L1120 -900"/>
+        <!-- houses -->
+        <g class="h">
+          <rect x="240" y="1000" width="260" height="220"/><rect x="240" y="1320" width="240" height="200"/>
+          <rect x="-500" y="1000" width="280" height="220"/><rect x="-480" y="1320" width="260" height="200"/>
+          <rect x="-1120" y="-560" width="240" height="200" transform="rotate(45 -1000 -460)"/>
+          <rect x="-800" y="-900" width="230" height="190" transform="rotate(45 -685 -805)"/>
+          <rect x="560" y="-680" width="220" height="190" transform="rotate(-45 670 -585)"/>
+        </g>
+        <!-- shops -->
+        <rect class="b" x="200" y="450" width="440" height="380"/>
+        <rect class="b" x="-560" y="520" width="340" height="300"/>
+        <rect class="b" x="420" y="-60" width="340" height="300"/>
+        <rect class="b" x="-760" y="-60" width="340" height="300"/>
+        <rect class="b" x="-230" y="-1000" width="460" height="400"/>
+        <rect class="b" x="1030" y="-930" width="300" height="230" transform="rotate(-45 1180 -815)"/>
+        <!-- gates + guards -->
+        <line class="gt" x1="-150" y1="1848" x2="150" y2="1848"/>
+        <line class="gt" x1="-1413" y1="-1201" x2="-1201" y2="-1413"/>
+        <line class="gt" x1="1201" y1="-1413" x2="1413" y2="-1201"/>
+        <g class="gd"><circle cx="-200" cy="1790" r="44"/><circle cx="200" cy="1790" r="44"/>
+          <circle cx="-1110" cy="-1390" r="44"/><circle cx="-1390" cy="-1110" r="44"/>
+          <circle cx="1110" cy="-1390" r="44"/><circle cx="1390" cy="-1110" r="44"/></g>
+        <!-- NPCs -->
+        <g class="npc"><circle cx="0" cy="-80" r="55"/><circle cx="200" cy="640" r="55"/><circle cx="-220" cy="670" r="55"/>
+          <circle cx="420" cy="90" r="55"/><circle cx="-420" cy="90" r="55"/><circle cx="0" cy="-600" r="55"/><circle cx="1120" cy="-900" r="55"/></g>
+        <!-- labels -->
+        <text class="lb" x="0" y="140" text-anchor="middle">Plaza · Gatekeeper</text>
+        <text class="lb" x="420" y="880" text-anchor="middle">Arms &amp; Armour</text>
+        <text class="lb" x="-390" y="900" text-anchor="middle">Apothecary</text>
+        <text class="lb" x="590" y="330" text-anchor="middle">Keeper</text>
+        <text class="lb" x="-590" y="330" text-anchor="middle">Shrine</text>
+        <text class="lbs" x="-590" y="415" text-anchor="middle">Spirit Helper</text>
+        <text class="lb" x="0" y="-1060" text-anchor="middle">Town hall</text>
+        <text class="lbs" x="0" y="-1150" text-anchor="middle">quests, notices</text>
+        <text class="lb" x="1330" y="-560" text-anchor="middle">Hunt lodge</text>
+        <text class="lbs" x="0" y="1270" text-anchor="middle">houses</text>
+        <text class="lb" x="0" y="2080" text-anchor="middle" fill="var(--gate)">S gate</text>
+        <text class="lb" x="-1500" y="-1560" text-anchor="middle">NW gate</text>
+        <text class="lb" x="1500" y="-1560" text-anchor="middle">NE gate</text>
+        <!-- scale -->
+        <line class="sc" x1="-2100" y1="2250" x2="-1100" y2="2250"/><line class="sc" x1="-2100" y1="2200" x2="-2100" y2="2300"/><line class="sc" x1="-1100" y1="2200" x2="-1100" y2="2300"/>
+        <text class="mono" x="-1000" y="2275">1000 units · radius 2000</text>
+      </svg>
+    </div>
+    <div class="side">
+      <span class="eyebrow">Plan A · minor town · 3 gates</span>
+      <h2>Y town</h2>
+      <p>For Stonewatch and Ironreach (radius 2000, as today). The stem runs south to the main gate, two arms fork north. Shops line the stem, services sit in the wedges on side paths, and the Huntmaster's lodge stands at the gate that faces his fields.</p>
+      <div class="scroll"><table>
+        <tr><th>Building</th><th>Who stands at the door</th></tr>
+        <tr><td><span class="sw" style="background:var(--plaza)"></span>Plaza</td><td>Gatekeeper, on the centre stone</td></tr>
+        <tr><td><span class="sw" style="background:var(--bld)"></span>Arms &amp; Armour</td><td>Armsmaster + Outfitter</td></tr>
+        <tr><td><span class="sw" style="background:var(--bld)"></span>Apothecary</td><td>Apothecary (+ the essence Assayer where the town has one)</td></tr>
+        <tr><td><span class="sw" style="background:var(--bld)"></span>Keeper</td><td>Warehouse Keeper</td></tr>
+        <tr><td><span class="sw" style="background:var(--bld)"></span>Shrine</td><td>Spirit Helper (buffer)</td></tr>
+        <tr><td><span class="sw" style="background:var(--bld)"></span>Town hall</td><td>Quest givers</td></tr>
+        <tr><td><span class="sw" style="background:var(--bld)"></span>Hunt lodge</td><td>Huntmaster, by the gate out to his fields</td></tr>
+        <tr><td><span class="sw" style="background:var(--gate)"></span>Gates ×3</td><td>Two guards each, 400 apart on the wall</td></tr>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- ============================ X CITY ============================ -->
+  <section class="plan">
+    <div class="map">
+      <svg viewBox="-3300 -3300 6600 6800" role="img" aria-label="Plan of an X-shaped city with four gates">
+        <polygon class="g" points="2772,1148 1148,2772 -1148,2772 -2772,1148 -2772,-1148 -1148,-2772 1148,-2772 2772,-1148"/>
+        <g class="rde" stroke-width="300"><line x1="0" y1="-2772" x2="0" y2="2772"/><line x1="-2772" y1="0" x2="2772" y2="0"/></g>
+        <g class="rd" stroke-width="270"><line x1="0" y1="-2772" x2="0" y2="2772"/><line x1="-2772" y1="0" x2="2772" y2="0"/></g>
+        <circle class="pz" cx="0" cy="0" r="480"/>
+        <!-- side paths -->
+        <path class="pth" d="M-140 -1100 H-550 M140 -1150 H380 M140 -510 H380 M550 140 V380 M-900 140 V380 M140 -2150 H420"/>
+        <!-- houses -->
+        <g class="h">
+          <rect x="1300" y="-1500" width="380" height="300"/><rect x="1400" y="-900" width="340" height="290"/>
+          <rect x="1150" y="450" width="360" height="300"/><rect x="1250" y="950" width="360" height="300"/><rect x="450" y="1300" width="380" height="300"/>
+          <rect x="-1700" y="1350" width="360" height="300"/><rect x="-800" y="1500" width="360" height="300"/>
+          <rect x="-2150" y="-500" width="340" height="280"/><rect x="-600" y="-2300" width="320" height="280"/>
+          <rect x="450" y="2000" width="340" height="280"/><rect x="-800" y="2050" width="340" height="280"/>
+        </g>
+        <!-- church (cross) -->
+        <polygon class="ch" points="-1650,-1300 -1250,-1300 -1250,-1650 -950,-1650 -950,-1300 -550,-1300 -550,-900 -950,-900 -950,-550 -1250,-550 -1250,-900 -1650,-900"/>
+        <!-- market -->
+        <rect class="b" x="380" y="-1400" width="720" height="500"/>
+        <rect class="b" x="380" y="-700" width="540" height="380"/>
+        <!-- keeper -->
+        <rect class="b" x="380" y="380" width="540" height="440"/>
+        <!-- crafthall + anvil yard -->
+        <rect class="cr" x="-1350" y="380" width="820" height="500"/>
+        <rect class="yard" x="-1350" y="900" width="420" height="320"/>
+        <!-- shrine pavilion + hunt lodge -->
+        <circle class="b" cx="-360" cy="-360" r="130"/>
+        <rect class="b" x="420" y="-2350" width="360" height="300"/>
+        <!-- gates + guards -->
+        <line class="gt" x1="-180" y1="-2772" x2="180" y2="-2772"/><line class="gt" x1="-180" y1="2772" x2="180" y2="2772"/>
+        <line class="gt" x1="-2772" y1="-180" x2="-2772" y2="180"/><line class="gt" x1="2772" y1="-180" x2="2772" y2="180"/>
+        <g class="gd"><circle cx="-200" cy="-2700" r="50"/><circle cx="200" cy="-2700" r="50"/><circle cx="-200" cy="2700" r="50"/><circle cx="200" cy="2700" r="50"/>
+          <circle cx="-2700" cy="-200" r="50"/><circle cx="-2700" cy="200" r="50"/><circle cx="2700" cy="-200" r="50"/><circle cx="2700" cy="200" r="50"/></g>
+        <!-- NPCs -->
+        <g class="npc"><circle cx="0" cy="-120" r="65"/><circle cx="-550" cy="-1150" r="65"/><circle cx="-550" cy="-1020" r="65"/>
+          <circle cx="380" cy="-1200" r="65"/><circle cx="380" cy="-1080" r="65"/><circle cx="380" cy="-510" r="65"/>
+          <circle cx="550" cy="380" r="65"/><circle cx="-900" cy="380" r="65"/><circle cx="-1140" cy="1060" r="65"/>
+          <circle cx="-360" cy="-360" r="65"/><circle cx="420" cy="-2150" r="65"/></g>
+        <!-- labels -->
+        <text class="lb" x="0" y="190" text-anchor="middle">Plaza · Gatekeeper</text>
+        <text class="lb" x="-1100" y="-1740" text-anchor="middle">Church</text>
+        <text class="lbs" x="-1100" y="-450" text-anchor="middle">Class Master · Mindwright</text>
+        <text class="lb" x="740" y="-1470" text-anchor="middle">Arms &amp; Armour</text>
+        <text class="lb" x="650" y="-230" text-anchor="middle">Apothecary</text>
+        <text class="lbs" x="650" y="-150" text-anchor="middle">+ Assayer (essence)</text>
+        <text class="lb" x="650" y="920" text-anchor="middle">Keeper</text>
+        <text class="lb" x="-940" y="330" text-anchor="middle">Crafthall</text>
+        <text class="lbs" x="-1140" y="1320" text-anchor="middle">Anvil yard</text>
+        <text class="lbs" x="-360" y="-540" text-anchor="middle">Shrine</text>
+        <text class="lb" x="600" y="-1960" text-anchor="start">Hunt lodge</text>
+        <text class="lbs" x="1500" y="1700" text-anchor="middle">houses</text>
+        <text class="lb" x="0" y="-2850" text-anchor="middle" fill="var(--gate)">N gate</text>
+        <text class="lb" x="0" y="3060" text-anchor="middle" fill="var(--gate)">S gate</text>
+        <text class="lb" x="-2600" y="-420" text-anchor="middle" fill="var(--gate)">W gate</text>
+        <text class="lb" x="2600" y="-420" text-anchor="middle" fill="var(--gate)">E gate</text>
+        <line class="sc" x1="-3100" y1="3380" x2="-2100" y2="3380"/><line class="sc" x1="-3100" y1="3330" x2="-3100" y2="3430"/><line class="sc" x1="-2100" y1="3330" x2="-2100" y2="3430"/>
+        <text class="mono" x="-2000" y="3405">1000 units · radius 3000</text>
+      </svg>
+    </div>
+    <div class="side">
+      <span class="eyebrow">Plan B · major city · 4 gates</span>
+      <h2>X city</h2>
+      <p>For Brackenford, Greymarsh and Frostmere. Four roads cross at the plaza, and each quarter has one job: the church in the north-west, the market in the north-east, the Keeper in the south-east and the crafthall in the south-west. Everything you use daily is one side path off a main road.</p>
+      <div class="scroll"><table>
+        <tr><th>Building</th><th>Who stands at the door</th></tr>
+        <tr><td><span class="sw" style="background:var(--church)"></span>Church</td><td>Class Master, Mindwright; the Grandmaster (Greymarsh) or Archmaster (Frostmere); Brackenford's High Priest + Elder</td></tr>
+        <tr><td><span class="sw" style="background:var(--bld)"></span>Arms &amp; Armour</td><td>Armsmaster + Outfitter</td></tr>
+        <tr><td><span class="sw" style="background:var(--bld)"></span>Apothecary</td><td>Apothecary + Assayer (essence)</td></tr>
+        <tr><td><span class="sw" style="background:var(--bld)"></span>Keeper</td><td>Warehouse Keeper (+ Frostmere's SP Ledgerkeep)</td></tr>
+        <tr><td><span class="sw" style="background:var(--craft)"></span>Crafthall</td><td>Master Crafter inside, the Anvil in the yard behind; Frostmere's three recipe givers</td></tr>
+        <tr><td><span class="sw" style="background:var(--bld)"></span>Shrine</td><td>Spirit Helper, on the plaza's edge</td></tr>
+        <tr><td><span class="sw" style="background:var(--bld)"></span>Hunt lodge</td><td>Huntmaster, by the gate out to his fields</td></tr>
+        <tr><td><span class="sw" style="background:var(--gate)"></span>Gates ×4</td><td>Two guards each</td></tr>
+      </table></div>
+    </div>
+  </section>
+
+  <section class="side">
+    <span class="eyebrow">Before I build · your call</span>
+    <h2>Five questions</h2>
+    <div class="qs">
+      <div class="q"><h3>1. Are walls solid?</h3><p>Visual only means footprints drawn on the ground (like the field overlay), and you can walk through them. Solid means the server needs collision and pathing around buildings, for players, mobs and auto-hunt, which is a much bigger job. <b class="pick">My pick: visual first</b>, solid later with the 3D models (<code>BL-281</code>).</p></div>
+      <div class="q"><h3>2. Which towns get which shape?</h3><p><b class="pick">My pick:</b> the three major cities (Brackenford, Greymarsh, Frostmere) are X, and Stonewatch and Ironreach are Y. A Y town's gates should face where its fields are, so each Y is rotated to fit its own map.</p></div>
+      <div class="q"><h3>3. Do the major cities grow?</h3><p>Greymarsh and Frostmere are radius 2000 today. That fits a Y, but an X with four quarters is cramped at that size. <b class="pick">My pick: 3000 for the major cities</b> (Brackenford is already 3500). Check that the fields around them still clear the wall.</p></div>
+      <div class="q"><h3>4. Door or counter?</h3><p>In this sketch the NPC stands at the door, facing the side path, and you never go inside. <b class="pick">My pick: the door</b>, because interiors need rooms, walls and a camera that works indoors.</p></div>
+      <div class="q"><h3>5. Where does the Huntmaster stand?</h3><p>Here he has a lodge by one gate. Keep him beside the Gatekeeper on the plaza (as today), or give him the lodge? This also settles the open question of whether he stays in the minor towns.</p></div>
+    </div>
+  </section>
+
+  <section class="side">
+    <span class="eyebrow">What building it touches</span>
+    <ul>
+      <li>A <code>TownLayout</code> per town in <code>Game.Shared</code>: road polylines, building polygons and door points. NPC positions come from the doors, so the label-spacing asserts keep working.</li>
+      <li>The client draws roads and footprints flat on the ground, the way it draws fields today, so it needs a new APK. The models come later with <code>BL-281</code>.</li>
+      <li>The guards move to 3 or 4 gates. Spawn points and the respawn spot move to the plaza.</li>
+    </ul>
+  </section>
+</main>

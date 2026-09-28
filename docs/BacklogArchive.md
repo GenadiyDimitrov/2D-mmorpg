@@ -8059,3 +8059,23 @@ The window already shows +exp per recipe and level progress (0.214.30).
 > copies + a dealt specialty in two new bands (1-19, 20-39), Commons at the T40 table ×1 (F) / ×0.35 (E), a lucky Mythic
 > 1/1,000 (F) / 1/3,000 (E), base mats 0.1 a kill from 20. That is ~2-3× today and the 40 cliff drops from ~20× to ~9×.
 > ❓ **Four questions for you in §4 of the doc** (the rates, mats from 20, the starter creatures, scrolls).
+
+
+## `BL-321` ✅ CLOSED — built in 0.214.40
+
+2026-09-28, **built in 0.214.40** from his four answers (see `docs/design/SkillBar120.md` §5, which overrides the
+proposal): shapes 2x5 / 1x10 / 5x2 (his follow-up: *"the page to have 10 slots ... not 12"*), each main page owns its own
+two additional bars (page p = entries p·30 … p·30+29, 150 in all), `[To bar]` copies and is never disabled, "n/5" on the
+main only. Protocol 52.
+
+**As filed:**
+
+> His finished 0.214.16 comment (`BL-299`), 2026-09-28: *"to have 120 entries .. the 5x12 for the main bar and 5x12 for
+> the additional bar .. the main bar to be 0~60 (1~5) and additonal to be 61~120 (6~10) and the main bar still to move
+> the additonal +-1 with it self .. now when i move my bar from 1 to 2 .. the 1 goes up (on the additonal place) and its
+> ackward — the [to bar] in the skills tab never to be disabled so once a skill is at index 77 for example and i have no
+> open aditional bars to be able to move that skill on my main bar .. also remove the half bars ... the addtional bar can
+> only be a full bar (12 slots not 6) and it follos the position of the main .. if main is vertical 2x6 the addtional is
+> vertical 2x6 as well -> the current additional bar button in the setup can only be 0/1/2 .. so no addtional bars .. one
+> or two .. the shape fowlows main"*.
+> ❓ **A proposal first** (his ask): `docs/design/SkillBar120.md`.

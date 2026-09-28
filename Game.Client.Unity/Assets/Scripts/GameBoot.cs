@@ -1574,7 +1574,7 @@ namespace Game.Client
             _net.TradeStateReceived += t => Main(() => Ui?.OnTradeState(t));
             _net.SkillBarReceived += b => Main(() =>
             {
-                // Copy into a fixed 60 rather than trusting the length: the bar is rendered by index
+                // Copy into a fixed SkillBarSlots rather than trusting the length: the bar is rendered by index
                 // and a short array from an older server would throw on every frame.
                 var slots = new string[GameConstants.SkillBarSlots];
                 if (b?.Slots != null)

@@ -280,7 +280,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
 | `BL-314` | 🔵 | **Split passives into single-stat pieces** — regen / P.Def / speed as their own ladders shared across classes, so ten armor masteries become a few mixable passives — design first | skills |
 | `BL-319` | 🔵 | **Towns that look like towns** — Y (3 gates) / X (4 gates) roads, buildings beside the roads and side paths, a church in the big cities — sketch first | world |
-| `BL-321` | 🔵 | **120 bar entries: main pages 1-5, additional pages 6-10** — full 12-slot additional bars only (0/1/2), shape follows main, `[To bar]` never disabled — proposal first | ui |
 
 ---
 
@@ -2299,17 +2298,16 @@ one shop, apoth(+ essence one) is his own, keeper is his onw building, anvil+cra
 ❓ **Sketch first** (his ask): layouts for a Y town and an X city, with the NPCs grouped by building. Touches
 `BL-281` (roads, models).
 
-
-## `BL-321` 🔵 120 BAR ENTRIES — MAIN PAGES 1-5, ADDITIONAL PAGES 6-10
-
-His finished 0.214.16 comment (`BL-299`), 2026-09-28: *"to have 120 entries .. the 5x12 for the main bar and 5x12 for
-the additional bar .. the main bar to be 0~60 (1~5) and additonal to be 61~120 (6~10) and the main bar still to move
-the additonal +-1 with it self .. now when i move my bar from 1 to 2 .. the 1 goes up (on the additonal place) and its
-ackward — the [to bar] in the skills tab never to be disabled so once a skill is at index 77 for example and i have no
-open aditional bars to be able to move that skill on my main bar .. also remove the half bars ... the addtional bar can
-only be a full bar (12 slots not 6) and it follos the position of the main .. if main is vertical 2x6 the addtional is
-vertical 2x6 as well -> the current additional bar button in the setup can only be 0/1/2 .. so no addtional bars .. one
-or two .. the shape fowlows main"*.
-❓ **A proposal first** (his ask): `docs/design/SkillBar120.md`.
+**SKETCH DONE, 2026-09-28 — https://claude.ai/artifact/6GVfFFjotDCfKUWZ3pFr5N** (the source is `docs/design/TownPlans.html`). A Y town (Stonewatch/Ironreach,
+r 2000, S gate + NW/NE gates, shops on the stem, Keeper and Shrine in the wedges on side paths, a town hall for
+quests, a hunt lodge by a gate) and an X city (the majors, r 3000: church NW = Class Master + Mindwright (+ Grandmaster
+/ Archmaster / Brackenford's priest + elder), market NE = Arms & Armour + Apothecary/Assayer, Keeper SE, crafthall SW =
+Master Crafter + Anvil yard (+ Frostmere's recipe givers), Shrine on the plaza, Gatekeeper on the centre stone).
+❓ **Five questions before building** (my pick first):
+1. Walls: **visual footprints first** (walk-through), or solid (server collision + pathing for players, mobs, auto-hunt)?
+2. **Majors = X, Stonewatch/Ironreach = Y**, each Y rotated so its gates face its fields?
+3. **Major cities grow 2000 → 3000** (an X is cramped at 2000; Brackenford is 3500)?
+4. NPC **at the door** (never inside), or interiors?
+5. Huntmaster: a **lodge by the gate** to his fields, or beside the Gatekeeper as today? (settles "does he stay in the minor towns")
 
 

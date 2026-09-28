@@ -296,7 +296,6 @@ namespace Game.Client
                 // category-only passives onto the bar, where they sit as buttons that can never do
                 // anything.
                 bool passive = def.Passive != null || def.Category == SkillCategory.Passive;
-                bool onBar = Boot.SkillBar != null && System.Array.IndexOf(Boot.SkillBar, def.Id) >= 0;
 
                 if (passive)
                 {
@@ -309,13 +308,13 @@ namespace Game.Client
                 // "Use" here as well as on the Actions tab: casting from the list is the natural thing
                 // to try, and requiring a bar slot first is a detour.
                 //
-                // "To bar" goes DISABLED once the skill is on the bar, replacing the old "* on bar"
-                // text. The state belongs to the control that acts on it — a greyed button says "no,
-                // and here is why" in the place you were about to press.
+                // `BL-321` — "To bar" is NEVER disabled and places a COPY: *"i can make 10slots with 1 skill
+                // ... one page to be for solo fighting .. the other to be for party .. some skills will be on
+                // both pages"*. It also reaches a skill parked on a bar you are not showing.
                 Row2Buttons(SkillLetters(def) + "  " + def.NameAt(rung) + level,
                             "Use", () => Boot.UseSlot(token),
                             _pendingAssign == token ? "Cancel" : "To bar",
-                            onBar && _pendingAssign != token ? null : (System.Action)(() => BeginAssign(token)),
+                            () => BeginAssign(token),
                             def.Id, Boot.Learned[def.Id]);
             }
         }

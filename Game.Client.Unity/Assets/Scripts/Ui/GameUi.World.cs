@@ -52,43 +52,39 @@ namespace Game.Client
         private TMP_InputField _commandField;
 
         // skill bar
-        /// <summary>The slot NUMBERS run 1-12 whatever the shape: a page of the server's bar is still twelve.</summary>
-        private const int SlotsPerPage = 12;
-        // `BL-269` — up to 24 EXTRA squares (his 6/12/18/24: half or all of a 2nd and 3rd bar). They SHOW
-        // the squares after the main block's; the server stores the same 60-slot bar it always has, so
-        // this is a view setting and nothing on the wire moved.
-        private const int ExtraSlotsMax = 24;
+        /// <summary>`BL-321`: a bar is TEN squares whatever the shape (*"the page to have 10 slots ... not 12"*).</summary>
+        private const int SlotsPerPage = 10;
+        // `BL-321` — THE BAR IS FIVE PAGES OF THREE TENS (150 entries): each page owns its main bar and its two
+        // additional bars (his table: *"1/5 → 0~10 + 11~20 + 21~30, 2/5 → 31~40 ..."*), so paging the main pages
+        // the additional bars WITH it and nothing ever slides from one bar into another (0.214.16's *"the 1 goes
+        // up ... its ackward"*). Page p's main = p·30 + n, its additional bar b (1-2) = p·30 + 10·b + n.
+        private const int BarsPerPage = 3;
+        private const int PageSpan = SlotsPerPage * BarsPerPage;
+        private const int ExtraBarsMax = BarsPerPage - 1;
+        private const int ExtraSlotsMax = SlotsPerPage * ExtraBarsMax;
         private const int MaxVisibleSlots = SlotsPerPage + ExtraSlotsMax;
-        private const string PrefExtraSlots = "ui.extraSlots";   // pre-`BL-299`: a COUNT of 6-rows
         private int _extraSlots;
         private RectTransform _skillBarExtraPanel;
 
-        // `BL-299` — THE SHAPE: *"They work just take all the screen"*. The main block is 2x6, 1x12, 6x2 or
-        // 6x1 (rows x columns), and the extra block is picked from the list its shape allows. A horizontal
-        // main grows its extras UPWARD (rows), a vertical one grows them LEFTWARD (columns of six).
-        private enum BarShape { Rows2x6 = 0, Row1x12 = 1, Column6x2 = 2, Column6x1 = 3 }
-        private static readonly string[] BarShapeNames = { "2x6", "1x12", "6x2", "6x1" };
-        private static readonly (int Rows, int Cols)[] MainShapes = { (2, 6), (1, 12), (6, 2), (6, 1) };
-        private static readonly (int Rows, int Cols)[] ExtrasBelowTwelve =
-            { (0, 0), (1, 6), (2, 6), (3, 6), (4, 6) };
-        private static readonly (int Rows, int Cols)[] ExtrasForTheRow =
-            { (0, 0), (1, 6), (2, 6), (3, 6), (4, 6), (1, 12), (2, 12) };
-        private static readonly (int Rows, int Cols)[] ExtrasForTheColumn =
-            { (0, 0), (6, 1), (6, 2), (6, 3), (6, 4) };
-        private const string PrefBarShape = "ui.barShape", PrefExtraShape = "ui.extraShape";
+        // `BL-299`/`BL-321` — THE SHAPE: 2x5, 1x10 or 5x2 (rows x columns; *"the page to have 10 slots ... not
+        // 12 ... should have made the example with settings 2x5/1x10"*). An additional bar is always a FULL ten in
+        // the main's own shape: 1x10 → 2x10, 2x5 → 4x5, 5x2 → 5x4. A horizontal main stacks them UPWARD, a
+        // vertical one LEFTWARD, bar 1 next to the main and bar 2 beyond it.
+        private enum BarShape { Rows2x5 = 0, Row1x10 = 1, Column5x2 = 2 }
+        private static readonly string[] BarShapeNames = { "2x5", "1x10", "5x2" };
+        private static readonly (int Rows, int Cols)[] MainShapes = { (2, 5), (1, 10), (5, 2) };
+        private const string PrefBarShape = "ui.barShape", PrefExtraBars = "ui.extraBars";
         private BarShape _barShape;
-        private int _extraOption;             // index into ExtraOptions(_barShape); 0 = none
+        private int _extraBars;               // `BL-321`: 0, 1 or 2 additional bars
         private int _mainCount = SlotsPerPage;
         private Button _pagePrev, _pageNext;
         private readonly TextMeshProUGUI[] _slotHotkeys = new TextMeshProUGUI[MaxVisibleSlots];
         private static readonly string[] SlotNumbers =
-            { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12" };
+            { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" };
 
-        private static bool IsVertical(BarShape s) => s == BarShape.Column6x2 || s == BarShape.Column6x1;
-        private static (int Rows, int Cols)[] ExtraOptions(BarShape s) =>
-            s == BarShape.Row1x12 ? ExtrasForTheRow : IsVertical(s) ? ExtrasForTheColumn : ExtrasBelowTwelve;
-        /// <summary>Pages of the 60-slot bar at this shape: a 6-square main block pages six at a time.</summary>
-        private int BarPages => GameConstants.SkillBarSlots / _mainCount;
+        private static bool IsVertical(BarShape s) => s == BarShape.Column5x2;
+        /// <summary>Pages of the bar: five, whatever the shape.</summary>
+        private const int BarPages = GameConstants.SkillBarSlots / PageSpan;
         /// <summary>Side of one square. A field, not a local, because the reuse overlay resizes itself
         /// against it every frame and the two must not drift apart.</summary>
         private const float SlotSize = 78f;
@@ -747,33 +743,31 @@ namespace Game.Client
             _pageNext = UiKit.TextButton(inner, ">", () => PageBy(1), 18f);
 
             int shape = PlayerPrefs.GetInt(PrefBarShape, 0);
-            _barShape = shape >= 0 && shape < MainShapes.Length ? (BarShape)shape : BarShape.Rows2x6;
-            // A phone that set the old extra-rows count keeps it: on the 2x6 shape, N rows of six IS option N.
-            int option = PlayerPrefs.HasKey(PrefExtraShape) ? PlayerPrefs.GetInt(PrefExtraShape, 0)
-                                                            : PlayerPrefs.GetInt(PrefExtraSlots, 0) / 6;
-            _extraOption = Mathf.Clamp(option, 0, ExtraOptions(_barShape).Length - 1);
+            _barShape = shape >= 0 && shape < MainShapes.Length ? (BarShape)shape : BarShape.Rows2x5;
+            // A new key: the old one indexed a per-shape list of half and whole bars that no longer exists.
+            _extraBars = Mathf.Clamp(PlayerPrefs.GetInt(PrefExtraBars, 0), 0, ExtraBarsMax);
             ApplyBarLayout();
         }
 
         /// <summary>`BL-299` — size and place both panels for <see cref="_barShape"/> and the chosen extra
         /// block, move every square into its panel and cell, and hide the squares past the extras.
         ///
-        /// <para>Squares 0..main-1 are the main block, the rest the extra block, and they read as ONE run of
-        /// the bar (<see cref="BarIndexOf"/>). A horizontal block fills row by row from its top-left; a
-        /// vertical one fills column by column from the top, RIGHT to LEFT (the right edge is under the
-        /// thumb), so its extra columns simply continue leftward from where the main block stopped.</para></summary>
+        /// <para>Squares 0..9 are the main block, 10..19 additional bar 1 and 20..29 bar 2 (<see
+        /// cref="BarIndexOf"/>). A horizontal bar fills row by row from its top-left, and the additional
+        /// bars stack UPWARD from the main, bar 1 lowest; a vertical one fills column by column from the top,
+        /// RIGHT to LEFT (the right edge is under the thumb), so its bars simply continue leftward.</para></summary>
         private void ApplyBarLayout()
         {
             const float slot = SlotSize, pad = 6f, step = SlotSize + 6f;
             var (mRows, mCols) = MainShapes[(int)_barShape];
-            var (eRows, eCols) = ExtraOptions(_barShape)[_extraOption];
             bool vertical = IsVertical(_barShape);
+            int eRows = vertical ? mRows : mRows * _extraBars, eCols = vertical ? mCols * _extraBars : mCols;
             _mainCount = mRows * mCols;
             _extraSlots = eRows * eCols;
             _barPage = Mathf.Clamp(_barPage, 0, BarPages - 1);
 
             // The page strip under the main block: one line (< 1/5 >) when it is wide enough, two when it
-            // is a single column (the label above the arrows), so a 6x1 column keeps both arrows.
+            // is narrow (the label above the arrows), so the 5x2 column keeps both arrows.
             float mainW = mCols * step + pad;
             bool narrow = mainW < 200f;
             float strip = narrow ? 48f : 26f;
@@ -818,7 +812,13 @@ namespace Game.Client
                 int rows = extra ? eRows : mRows, cols = extra ? eCols : mCols;
                 int row, col;
                 if (vertical) { row = j % rows; col = cols - 1 - j / rows; }   // right to left
-                else          { row = j / cols; col = j % cols; }
+                else
+                {
+                    // bar b's own rows, counted up from the bottom of the extra block so bar 1 sits on the main
+                    int b = j / SlotsPerPage, n = j % SlotsPerPage;
+                    row = (extra ? (_extraBars - 1 - b) * mRows : 0) + n / cols;
+                    col = n % cols;
+                }
                 var at = new Vector2(pad + col * step, -(pad + row * step));
 
                 var host = extra ? extraInner : mainInner;
@@ -837,43 +837,30 @@ namespace Game.Client
             UiKit.Place(rt, new Vector2(0f, 1f), new Vector2(0f, 1f), at, new Vector2(side, side));
         }
 
-        /// <summary>`BL-299` — the Settings "Bar shape" button: 2x6 → 1x12 → 6x2 → 6x1. The extra block is
-        /// reset to none, because each shape offers a different list.</summary>
+        /// <summary>`BL-299` — the Settings "Bar shape" button: 2x5 → 1x10 → 5x2. The additional bars keep
+        /// their count: they follow the main's shape, so every count fits every shape.</summary>
         private void CycleBarShape()
         {
             _barShape = (BarShape)(((int)_barShape + 1) % MainShapes.Length);
-            _extraOption = 0;
             PlayerPrefs.SetInt(PrefBarShape, (int)_barShape);
-            PlayerPrefs.SetInt(PrefExtraShape, _extraOption);
             ApplyBarLayout();
         }
 
-        /// <summary>`BL-269`/`BL-299` — the Settings "Extra squares" button: steps through what the current
-        /// shape allows, then back to none. Remembered on the phone.</summary>
+        /// <summary>`BL-321` — the Settings "Additional bars" button: 0 → 1 → 2 → 0. Remembered on the phone.</summary>
         private void CycleExtraSlots()
         {
-            _extraOption = (_extraOption + 1) % ExtraOptions(_barShape).Length;
-            PlayerPrefs.SetInt(PrefExtraShape, _extraOption);
+            _extraBars = (_extraBars + 1) % (ExtraBarsMax + 1);
+            PlayerPrefs.SetInt(PrefExtraBars, _extraBars);
             ApplyBarLayout();
         }
 
         /// <summary>The Settings labels for the two buttons above.</summary>
         private string BarShapeLabel => "Bar shape: " + BarShapeNames[(int)_barShape];
-        private string ExtraSlotsLabel
-        {
-            get
-            {
-                var (r, c) = ExtraOptions(_barShape)[_extraOption];
-                return _extraSlots > 0 ? "Extra squares: " + r + "x" + c : "Extra squares: off";
-            }
-        }
+        private string ExtraSlotsLabel => "Additional bars: " + _extraBars;
 
-        /// <summary>`BL-269`/`BL-299` — which BAR index a visible square shows. The main block shows the
-        /// current page, and the extra squares simply CONTINUE the run after it (wrapping at 60), so the
-        /// extras never repeat what the main block shows and page along with it. At 2x6 this is exactly
-        /// the old "the next pages" rule; a 6-square main block pages six at a time.</summary>
-        private int BarIndexOf(int visible) =>
-            (_barPage * _mainCount + visible) % GameConstants.SkillBarSlots;
+        /// <summary>`BL-321` — which BAR index a visible square shows: the current page's own block of 36,
+        /// main first, then additional bar 1, then bar 2 (squares are numbered the same way).</summary>
+        private int BarIndexOf(int visible) => _barPage * PageSpan + visible;
 
         private void BuildCommandBar()
         {
@@ -1827,7 +1814,7 @@ namespace Game.Client
             {
                 int index = BarIndexOf(i);
                 string token = bar != null && index < bar.Length ? bar[index] : null;
-                // `BL-299` — the number is the square's place in its PAGE of twelve, which a six-square
+                // `BL-299` — the number is the square's place in its bar of ten, which a five-square
                 // block no longer lines up with, so it follows the index rather than the cell.
                 _slotHotkeys[i].text = SlotNumbers[index % SlotsPerPage];
 

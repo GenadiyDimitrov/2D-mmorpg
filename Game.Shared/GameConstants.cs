@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.214.39";
+    public const string GameVersion = "0.214.40";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -225,7 +225,10 @@ public static class GameConstants
     /// 50 → 51 (2026-09-26, `BL-303`): the ANVIL. `NpcRole` gained `Anvil = 9`, `NpcDialog` an `Anvil` flag and
     /// `CraftingUpdate` an `AtAnvil` one (both appended, with defaults), and the hub lost `LearnRecipeAtMaster`
     /// (0.214.24). An old client cannot craft at all (it waits for AtMaster). ⚠ A NEW APK IS WANTED.
-    public const int ProtocolVersion = 51;   // 51: the Anvil (`BL-303`)
+    /// 52 (0.214.40) — the skill bar is 150 entries, not 60 (`BL-321`): an old client reads only the first 60
+    /// and writes a 60-entry bar back, cutting every entry past 60 (pages 3-5).
+    /// ⚠ A NEW APK AND SERVER TOGETHER.
+    public const int ProtocolVersion = 52;   // 52: the 150-entry skill bar (`BL-321`)
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
@@ -891,17 +894,18 @@ public static class GameConstants
     public static int CharismaModerationPenalty(int basePerHour, int minutes) =>
         basePerHour * (Math.Max(0, minutes) / 60 + 1);
 
-    /// <summary>Skill-bar slots — 5 rows of 12. The bar is ONE FLAT collection of ids; "rows" are purely a
-    /// client visualization (it slices this list into chunks of <see cref="SkillBarColumns"/>). Shared,
-    /// because the SERVER owns the bar — see SyncSkillBar. Old saved bars are shorter and just pad with
-    /// empties on load.
+    /// <summary>Skill-bar slots — 5 pages × 3 bars × 10 (`BL-321`, 2026-09-28: each page owns its main bar and
+    /// its two additional bars, page p = entries p·30 … p·30+29). The bar is ONE FLAT collection of ids; pages
+    /// and bars are purely a client visualization. Shared, because the SERVER owns the bar — see SyncSkillBar.
+    /// Old saved bars are shorter and just pad with empties on load (a 60-entry bar keeps its indices, so its
+    /// old entries simply land in the new layout by index — pre-release, nothing to migrate).
     ///
     /// The server no longer AUTO-PLACES newly-learned skills (owner, 2026-07-20): it only validates.
     /// See SyncSkillBar for why.</summary>
-    public const int SkillBarSlots = 60;
+    public const int SkillBarSlots = 150;
 
-    /// <summary>Slots per visual row (the client draws up to 5 rows of this).</summary>
-    public const int SkillBarColumns = 12;
+    /// <summary>Slots per bar (the main and each additional bar are this many).</summary>
+    public const int SkillBarColumns = 10;
 
     /// <summary>A bar slot may hold an INVENTORY ITEM instead of a skill: the entry is
     /// "item:&lt;defId&gt;". Clicking it USES the item (like a potion), and the slot greys out when you

@@ -6,7 +6,7 @@
 > disabled … also remove the half bars ... the addtional bar can only be a full bar (12 slots not 6) and it follos the
 > position of the main … the current additional bar button in the setup can only be 0/1/2"* (playtest of 0.214.16)
 
-**Status: a PROPOSAL, not built.** Four questions at the end.
+**Status: RULED and BUILT in 0.214.40** — his answers (§5) changed the model: see §5, it overrides §2-§3.
 
 ## 1. What it is today (0.214.16, `BL-299`)
 
@@ -53,3 +53,29 @@
 2. **Two additional bars: *p+5* and *p+6*, wrapping inside 6-10** — or should bar 2 be fixed to one page you choose?
 3. **Moving with `[To bar]`:** move (clear the old slot, my pick), or copy (the skill on two slots)?
 4. The page label: **"1/5"** on the main only, or also a small "6"-"10" on each additional bar?
+
+## 5. His answers (2026-09-28) — what was built in 0.214.40
+
+1. **Shapes 1x10 / 2x5 / 5x2**, and the additional bars follow the main: *"main bar is 1x12 .. want 1 extra -> got
+   2x12 -> 2 extra is 3x12"* — then corrected: *"the page to have 10 slots ... not 12 .. that why the table is 150 but
+   the settings is left x12 ... my bad ... should have made the example with settings 2x5/1x10"*. So 1x10 → 2x10 → 3x10,
+   2x5 → 4x5 → 6x5, 5x2 → 5x4 → 5x6.
+2. **Each main page owns its own two additional bars** (not p+5 / p+6): *"they move with the main one ... each page
+   1/5 will have 10/20/30 slots ... so max we will have 150 skill slots"*. His table:
+
+   | main page | 0 extra bars | 1 extra bar | 2 extra bars |
+   | :-------: | :----------: | :---------: | :----------: |
+   | 1/5 | 1-10 | + 11-20 | + 21-30 |
+   | 2/5 | 31-40 | + 41-50 | + 51-60 |
+   | … | … | … | … |
+   | 5/5 | 121-130 | + 131-140 | + 141-150 |
+
+   (his 4/5 and 5/5 rows skipped and overlapped a block; read as the evident 30-per-page pattern). In code: page p
+   (0-4) main = `p·30 + n`, additional bar b (1-2) = `p·30 + 10·b + n`. `GameConstants.SkillBarSlots` = **150**.
+3. **`[To bar]` COPIES** and is never disabled: *"i can make 10slots with 1 skill ... one page to be for solo fighting
+   .. the other to be for party .. some skills will be on both pages"*.
+4. **"1/5" on the main only**; the additional bars look as before (separate, stuck to the main).
+
+- Setup: "Bar shape: 2x5 / 1x10 / 5x2" and "Additional bars: 0 / 1 / 2" (new pref key `ui.extraBars`).
+- Protocol 51 → 52 (new APK + server together). No `game.db` delete: an old 60-entry bar keeps its indices and
+  lands in the new layout by index (its 11th/12th squares now sit at the start of page 1's additional bar 1).

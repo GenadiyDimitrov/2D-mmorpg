@@ -7,12 +7,30 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.39**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.40**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-28 (latest) — 0.214.39: the skill-bar size reads ×1 (`BL-320`)
+## 2026-09-28 (latest) — 0.214.40: the skill bar is five pages of three tens (`BL-321`)
+
+> *"each page 1/5 will have 10/20/30 slots ... so max we will have 150 skill slots"* · *"the page to have 10 slots ...
+> not 12 ... should have made the example with settings 2x5/1x10"* · *"I would like to have a copy"*
+
+- **A bar is ten squares now, in three shapes: 2x5, 1x10, 5x2** (the 6x1 and the half bars are gone).
+- **Each page owns its main bar and its own two additional bars**: page 1 = entries 1-10, + 11-20, + 21-30; page 2 =
+  31-40, + 41-50, + 51-60 … page 5 = 121-150. Paging the main pages the additional bars with it, so nothing slides from
+  one bar into another any more. **150 entries** in all.
+- Setup: **"Additional bars: 0 / 1 / 2"**, each one a full ten in the main's shape: 1x10 → 2x10 → 3x10, 2x5 → 4x5 →
+  6x5, 5x2 → 5x4 → 5x6. Bar 1 sits next to the main (above it, or left of the 5x2), bar 2 beyond it.
+- **`[To bar]` is never disabled and places a COPY**: one skill can sit on as many squares as you like (a solo page and
+  a party page).
+- "1/5" stays on the main bar only.
+- ⚠ **Protocol 51 → 52: install the new APK and the new server together.** No `game.db` delete: an old bar keeps
+  its entries by index, so they land in the new layout shifted (the old squares 11-12 now sit on page 1's bar 1). Re-arrange once.
+- SmokeTest: the bar is 150 long, and a copy of a placed skill on the very last square survives the relog.
+
+## 2026-09-28 — 0.214.39: the skill-bar size reads ×1 (`BL-320`)
 
 > *"make the x2.5 to show as x1 .. the bar that way will go from 0.6(make it 0.5) to 1.8(make it 2) .. so from 0.5 to 2
 > default x1 (old numbers x1.25~5 default 2.5)"*

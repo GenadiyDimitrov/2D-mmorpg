@@ -1250,10 +1250,11 @@ Check("subclass kept its own level while parked",
 // -------------------------------------------------------------------------------------------
 // 4b. Bar CAPACITY + ITEM SLOTS. Both are 2026-07-17 changes that live in persistence and would look
 //     perfect in the running client while being wrong on the next login — exactly this test's remit.
-//       - the bar is now 60 slots (5x12), not 24;
+//       - the bar is 150 slots (5 pages x 3 bars x 10, `BL-321`), not 24 or 60;
 //       - a slot may hold an ITEM ("item:<defId>"), which SyncSkillBar must NOT wipe as an unknown skill.
+//       - a skill may sit on TWO slots (`BL-321`: [To bar] copies), and the last page's bar 2 persists.
 // -------------------------------------------------------------------------------------------
-Check("skill bar is 60 slots (5 rows x 12)",
+Check("skill bar is 150 slots (5 pages x 3 bars x 10)",
       a.Bar!.Slots.Length == GameConstants.SkillBarSlots,
       $"got {a.Bar!.Slots.Length}, expected {GameConstants.SkillBarSlots}");
 
@@ -1269,7 +1270,9 @@ if (freeIdx >= 0) withItem[freeIdx] = itemToken;
 int presetIdx = Array.FindIndex(withItem, string.IsNullOrEmpty);
 Check("the bar has a second free slot for a preset token", presetIdx >= 0);
 if (presetIdx >= 0) withItem[presetIdx] = presetToken;
-mainBar = withItem;                       // this is now the canonical main bar the relog must reproduce
+// `BL-321` — a COPY of the first placed skill on the LAST slot of the bar (page 5, additional bar 2).
+if (toPlace.Count > 0) withItem[GameConstants.SkillBarSlots - 1] = toPlace[0];
+mainBar = withItem;                      // this is now the canonical main bar the relog must reproduce
 await a.Hub.SendAsync("SetSkillBar", mainBar);
 await a.Settle();
 // SetSkillBar stores without echoing a fresh push, so we don't re-read a.Bar here — the RELOG assertion

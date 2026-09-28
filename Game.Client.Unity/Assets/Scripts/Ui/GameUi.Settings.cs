@@ -244,7 +244,7 @@ namespace Game.Client
             // `BL-269` — extra skill squares, 0/6/12/18/24: *"need option to add more 6/12/18/24 skill slots
             // (half of or full the 2nd and 3rd skill bars)"*. A LOOK setting like the rest of this column,
             // so it lives on the phone; what the server stores is the same 60-slot bar either way.
-            // `BL-299` — and the SHAPE beside it: 2x6 / 1x12 / 6x2 / 6x1, each with its own list of extras.
+            // `BL-299` — and the SHAPE beside it: 2x5 / 1x10 / 5x2. `BL-321`: the extras are now 0/1/2 whole bars in that shape.
             var barShape = UiKit.TextButton(inner, "", () => { CycleBarShape(); RefreshSettingsLabels(); }, 15f);
             UiKit.Place(UiKit.Rect(barShape.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(18f, y), new Vector2(260f, 38f));
@@ -263,7 +263,7 @@ namespace Game.Client
             {
                 foreach (var key in new[] { PrefPitch, PrefYaw, PrefOrtho, PrefOrthoSize,
                                             PrefEntity, PrefPlate, PrefUiScale, PrefBarScale, PrefDamage,
-                                            PrefZones, PrefTicks, PrefExtraSlots, PrefBarShape, PrefExtraShape })
+                                            PrefZones, PrefTicks, PrefBarShape, PrefExtraBars })
                     PlayerPrefs.DeleteKey(key);
                 PlayerPrefs.Save();
                 // The two sizes come back at once — they are the ones that can make the game unusable.
