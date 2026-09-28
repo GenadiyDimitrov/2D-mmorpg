@@ -12,6 +12,15 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-09-28 (latest) — 0.214.33: the Blessing pauses only out of combat (`BL-317`)
+
+> *"remove the tawn/active pause — only when u go out of combat to say (paused) … entering in town dont automattically
+> pauses it … we will make it an exploit if acive blessing is paused"*
+
+- **Only the gauge's fill pauses**, and only out of combat (the 30 s window) or dead. A town no longer pauses it.
+- **A running Blessing's 3 minutes never pause.** Pausing it let a player park the clock in town and spend it only on
+  the kills that pay most.
+
 ## 2026-09-28 — 0.214.32: the Learn row goes, the Drop window lines up, the Warehouse tabs wrap (§106)
 
 - **§106.3 — a learned skill's row now leaves the Learn tab at once.** The window redraws only when its stamp
