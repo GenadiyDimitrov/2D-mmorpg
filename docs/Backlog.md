@@ -280,6 +280,11 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
 | `BL-307` | 🟡 | **Full drops below level 40** — F/E-grade Common gear, materials and lucky drops, not only gold — 📝 PROPOSAL drafted, `docs/design/LowLevelDrops.md`, 4 questions | drops |
 | `BL-314` | 🔵 | **Split passives into single-stat pieces** — regen / P.Def / speed as their own ladders shared across classes, so ten armor masteries become a few mixable passives — design first | skills |
+| `BL-316` | 🟢 | **The arrow can be turned off** — `[Location: Current]` in the quest details is clickable and stops the arrow, nothing tracked | quests |
+| `BL-317` | 🟢 | **The Blessing pauses only out of combat** — no town pause; a RUNNING Blessing never pauses (the town-wait exploit) | favor |
+| `BL-318` | 🟢 | **The Mindwright off the gate** — stands to the side, not in the middle of the road | world |
+| `BL-319` | 🔵 | **Towns that look like towns** — Y (3 gates) / X (4 gates) roads, buildings beside the roads and side paths, a church in the big cities — sketch first | world |
+| `BL-320` | 🟢 | **Skill bar size: default ×2.5, range ×1.5-×4.5** (today's numbers) | ui |
 
 ---
 
@@ -2284,3 +2289,47 @@ is then WHICH pieces and which rungs, not a bespoke bundle.
 4. Migration is a `game.db` delete (pre-release), but every `Replaces` chain between masteries is rewritten.
 
 
+
+
+## `BL-316` 🟢 THE ARROW CAN BE TURNED OFF
+
+Playtest of 0.214.5 (`BL-311`), 2026-09-28: *"Need to be able to disable the arrow for the current quest as well ->
+[Location:Current] to be clickable and to stop the arrow (no quest location is tracked when done that)"*.
+Client only: clicking the tracked quest's location line clears the arrow's quest.
+
+
+## `BL-317` 🟢 THE BLESSING PAUSES ONLY OUT OF COMBAT
+
+Re-rules `BL-300` (0.214.6), playtest of 2026-09-28: *"maybe to remove the tawn/active pause — only when u go out
+of combat to say (paused) so u know u dont gain passively %/60s … entering in town dont automattically pauses it -
+it now waits for the 'out of combat' … the active blessing is working and its never paused -> we will make it an
+exploit if acive blessing is paused ... (some1 activates it goes in town and w8 for a specific mob to spawn then
+goes kills it gains massive favor then goes back to town …)"*.
+- The **gauge's fill** (1%/min) pauses when out of combat (the 30 s window) or dead, and says `(Paused)`. A town
+  no longer pauses it by itself.
+- A **running Blessing's 3 minutes never pause.**
+
+
+## `BL-318` 🟢 THE MINDWRIGHT OFF THE GATE
+
+Playtest of 0.214.7 (`BL-310`), 2026-09-28: *"the guards are ok now .. the mindweaver i dont like his position in
+the middle of the gate ... move it on the side .. think of the town as it will have roads and houses ... and shops
+.. its not an open field"*.
+
+
+## `BL-319` 🔵 TOWNS THAT LOOK LIKE TOWNS
+
+Same note: *"how can we make it so a town looks like a town .. can u sketch some polygones — let say some towns
+are Y shaped road (so 3 gates) or a X(+) shaped with 4 gates .. and the position of the shops and houses are on
+the side of roads .. can also have a small paths that lead to the shops not everihing is on the main road ...
+also big towns can have a chirch to contain the class master and a mindweaver — weaon and armor vendors are in
+one shop, apoth(+ essence one) is his own, keeper is his onw building, anvil+craft also.."*.
+❓ **Sketch first** (his ask): layouts for a Y town and an X city, with the NPCs grouped by building. Touches
+`BL-281` (roads, models).
+
+
+## `BL-320` 🟢 SKILL BAR SIZE: DEFAULT ×2.5, RANGE ×1.5-×4.5
+
+Playtest of 0.214.27, 2026-09-28: *"I didnt think when we decrease the size of a skill bar 3 times it will become
+so small ... are u sure its 3 times ? make the dafualt of skill bar current x2.5 .. and to range from 1.5 to 4.5
+(current numbers)"*. (It was 3× — per side, so a ninth of the area, which is why it looks so much smaller.)

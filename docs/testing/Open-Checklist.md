@@ -1691,3 +1691,89 @@ details (marked `[~]` with no comment).
 ```
 
 </details>
+
+## §106 — YOUR PLAYTEST OF 0.214.3 → 0.214.31 (2026-09-28), the BUGS
+
+The asks from the same pass are `BL-316`…`BL-320` in [Backlog.md](../Backlog.md); `BL-307` is ruled (*"build the
+BL-307 as u proposed"*). Your note is copied verbatim at the end of this section, so `tmp.md` can be cleared.
+
+| # | bug | your words / the rule |
+|---|---|---|
+| 106.1 | 🔴 **The Keeper window's tab buttons run out of the window.** | *"make all tabs to be in sort of a wrap panel so when the window is smaller they jsut to wrap or become [...] of sorts"* |
+| 106.2 | 🔴 **The Drop window's layout**: the table columns are not in their places, the Back button sits lower than the text box, the buttons are all over the place. | *"the Back buton is lower than the textbox and its like offset"* |
+| 106.3 | 🔴 **Learn tab: a learned skill's row stays** until the tab is opened again (human apprentice, Elemental Bolt; seen on other characters too). | *"u click to learn it learns but the row stays .. i click again to learn and i learn it"* |
+
+**Open from this pass:**
+- ❓ **0.214.16, your comment is cut off**: *"now we have 60 entires for the"*. What did you mean?
+- **Not played yet** (no mark): 0.214.11 (boss drops 70/80%, since re-ruled by 0.214.17) and 0.214.30 (Binding Trap, the
+  recipe price and rune-drop cuts, craft exp shown).
+
+<details><summary>Your note, verbatim</summary>
+
+```
+# Tests 0.214.3 ~ 0.214.26
+## Bugs
+1. Keeper buttons go out of his window ( make all tabs to be in sort of a wrap panel so when the window is smaller they jsut to wrap or become [...] of sorts)
+2. Drop window the table columns is not on the right places ... 
+   - the Back buton is lower than the textbox and its like offset   
+   - the buttons are allover the place ... 
+3. I become a human apprentice and learned the "elemental bolt" it didnt update to remove the row.. when i clicked the Learn tab again it updated and the row disappeared ...
+   - its not only on this char .. before ive seen it as well 
+   - u click to learn it learns but the row stays .. i click again to learn and i learn it (rpobably updates the row and disappear)
+## Builds
+- [x] 0.214.3: the crafter header is no longer under the tabs (§105.4)
+- [x] 0.214.4: EXP bar darker; Favor and Blessing on one row (`BL-312`)
+- [~] 0.214.5: Track, Untrack and the arrow's quest from the quest details (`BL-311`, §105.2)
+  - Need to be able to disable the arrow for the current quest as well -> [Location:Current] to be clickable and to stop the arrow (no quest location is tracked when done that)
+- [~] 0.214.6: the Blessing pauses out of combat and in town (`BL-300`)
+  - Just wonder if thats not to OP .. 
+  - maybe to remove the tawn/active pause 
+    - only when u go out of combat to say (paused) so u know u dont gain passively %/60s
+  - so the the %/min is active in combat then after the 30s it pauses
+  - entering in town dont automattically pauses it - it now waits for the 'out of combat'
+  - the active blessing is working and its never paused -> we will make it an exploit if acive blessing is paused ... (some1 activates it goes in town and w8 for a specific mob to spawn then goes kills it gains massive favor then goes back to town .. i he kills one elite mob/min with every ultimate he have and need to go to w8 for his ultimates cooldowns for 15mins and do it 2 more times again .. its an exploit ) 
+- [~] 0.214.7: the town gate guards twice as far apart, on the town's border (`BL-310`)
+  - the guards are ok now .. the mindweaver i dont like his position in the middle of the gate ... move it on the side .. think of the town as it will have roads and houses ... and shops .. its not an open field ... 
+  - how can we make it so a town looks like a town .. can u sketch some polygones 
+    - let say some towns are Y shaped road (so 3 gates) or a X(+) shaped with 4 gates .. 
+    - and the position of the shops and houses are on the side of roads .. 
+    - can also have a small paths that lead to the shops not everihing is on the main road ...
+    - also big towns can have a chirch to contain the class master and a mindweaver
+    - weaon and armor vendors are in one shop, apoth(+ essence one) is his own, keeper is his onw building, anvil+craft also..
+- [x] 0.214.8: an essence carries its grade (`BL-309`)
+- [x] 0.214.9: crafting text says grades, not tiers (`BL-304`)
+- [x] 0.214.10: every craft costs MP (`BL-306`)
+- [ ] 0.214.11: boss drops, 70% for a full item and 80% for a recipe (`BL-308`)
+- [x] 0.214.12: Untrack works from the quest log (§105.2)
+- [~] 0.214.13: the missing-character flood stops (`BL-313`, half 1)
+  - For now it hasnt show .. but its not very often so a long playtrue and a playing will show .. now we close it and until it happen again (hope it doesnt) we wont reopen
+- [x] 0.214.14: item rows say (T/B/U), and quality words leave item names (`BL-301`)
+- [x] 0.214.15: "Unequip All" goes on the bar (`BL-302`)
+- [~] 0.214.16: the skill bar comes in four shapes (`BL-299`)
+  - now we have 60 entires for the 
+- [x] 0.214.17: boss drops scale by tier (`BL-308`, re-ruled)
+- [x] 0.214.18: gear crafts cost MP by tier, and a fighter can pay for one (`BL-306`)
+- [x] 0.214.19: gear recipes are bought at your smith level (`BL-303`, gear half)
+- [x] 0.214.20: three buff potions, two levels each (`BL-305`, part 1)
+- [x] 0.214.21: the Scribe folds into the Apothecary, on your L0-L10 ladder (`BL-305`, part 2)
+- [x] 0.214.22: generic recipes drop, by tier (`BL-305`, part 3, closes it)
+- [x] 0.214.23: Bulgarian draws as letters, not boxes (`BL-313`, half 2, closes it)
+- [x] 0.214.24: the Master sells recipe books, he teaches nothing (`BL-303` Q3)
+- [x] 0.214.25: the Anvil stands beside every Master Crafter (`BL-303` Q1-Q2)
+- [x] 0.214.26: major cities and towns (`BL-303` Q1, closes it)
+- [~] 0.214.27: UI size as ×1, a skill-bar size, Setup from the login screen
+  - I didnt think when we decrease the size of a skill bar 3 times it will become so small ... are u sure its 3 times ? 
+  - make the dafualt of skill bar current x2.5 .. and to range from 1.5 to 4.5 (current numbers) 
+- [x] 0.214.28: Bow Expertise is one two-rung skill; `BL-314` filed
+- [x] 0.214.29: drop chances read as odds
+- [ ] 0.214.30: Binding Trap holds; recipe prices and rune drops cut; craft exp shown
+- [x] 0.214.31: craft exp from what a craft consumes (`BL-315`)
+## Conclusion
+- Fix bugs 
+- mark BL entries
+- make the changes what dont cost much
+- build the BL-307 as u proposed. - looks good on paper
+- make the bigger changes that need are not blocking 
+```
+
+</details>
