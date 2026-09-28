@@ -38,10 +38,15 @@ namespace Game.Client
         /// 2026-09-26: *"decrease the size of the skill bar 3 times ... range from 1/5 to 5 times the new
         /// size"*).
         /// `BL-320` (2026-09-28): *"make the dafualt of skill bar current x2.5 .. and to range from 1.5 to 4.5
-        /// (current numbers)"*. ×1 stays a third of the old bar, so the default is 2.5/3 of it.</summary>
+        /// (current numbers)"*. ×1 stays a third of the old bar, so the default is 2.5/3 of it.
+        /// `BL-320` again (2026-09-28): *"make the x2.5 to show as x1 ... from 0.5 to 2 default x1 (old numbers
+        /// x1.25~5 default 2.5)"*. The stored value keeps its old units, so a phone keeps its size; only the
+        /// slider shows it divided by <see cref="BarScaleShown"/>.</summary>
         private const string PrefBarScale   = "ui.skillBarSize";   // new key: an old ×1 would clamp to 1.5, not start at 2.5
         private const float UiScaleMin = 0.6f, UiScaleMax = 1.6f;
-        private const float BarScaleMin = 1.5f, BarScaleMax = 4.5f, BarScaleDefault = 2.5f;
+        private const float BarScaleMin = 1.25f, BarScaleMax = 5f, BarScaleDefault = 2.5f;
+        /// <summary>The stored bar scale the slider calls ×1.</summary>
+        private const float BarScaleShown = 2.5f;
         /// <summary>What skill-bar ×1 is in the bar's own build units (SlotSize 78 etc.).</summary>
         private const float BarScaleBase = 1f / 3f;
         private float _uiScale = 1f;
@@ -160,12 +165,12 @@ namespace Game.Client
                     PlayerPrefs.SetFloat(PrefUiScale, v);
                 }));
 
-            Row(inner, ref y, _barScaleSlider = UiKit.SliderRow(inner, "Skill bar size (x)", BarScaleMin, BarScaleMax,
-                _barScale, "0.00", v =>
+            Row(inner, ref y, _barScaleSlider = UiKit.SliderRow(inner, "Skill bar size (x)", BarScaleMin / BarScaleShown,
+                BarScaleMax / BarScaleShown, _barScale / BarScaleShown, "0.00", v =>
                 {
-                    _barScale = v;
+                    _barScale = v * BarScaleShown;
                     ApplyBarLayout();
-                    PlayerPrefs.SetFloat(PrefBarScale, v);
+                    PlayerPrefs.SetFloat(PrefBarScale, _barScale);
                 }));
 
             var projection = UiKit.TextButton(inner, "", () =>
@@ -265,7 +270,7 @@ namespace Game.Client
                 // The rest (camera, shape...) still waits for a restart, as before.
                 // (setting the slider runs its handler, so the label, the live apply and the pref follow)
                 _uiScaleSlider.value = 1f;
-                _barScaleSlider.value = BarScaleDefault;
+                _barScaleSlider.value = BarScaleDefault / BarScaleShown;
                 ClientLog.Info("Look settings reset — UI and skill bar size now, the rest after a restart.");
             }, 16f);
             UiKit.Place(UiKit.Rect(reset.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),

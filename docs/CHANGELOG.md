@@ -7,12 +7,22 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.38**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.39**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-28 (latest) — 0.214.38: full drops below level 40 (`BL-307`)
+## 2026-09-28 (latest) — 0.214.39: the skill-bar size reads ×1 (`BL-320`)
+
+> *"make the x2.5 to show as x1 .. the bar that way will go from 0.6(make it 0.5) to 1.8(make it 2) .. so from 0.5 to 2
+> default x1 (old numbers x1.25~5 default 2.5)"*
+
+- **Setup's "Skill bar size" slider now shows the default as ×1**, and runs **×0.5 to ×2** (the old ×1.25 to ×5, a
+  little wider than 0.214.35's 1.5-4.5 at both ends).
+- The stored value keeps its old units, so a phone that already set a size keeps it. Client only.
+- Your 0.214.32-38 note is §107 in `Open-Checklist.md`; its `BL-314` reasoning (SP scarcity until 76) is in the Backlog.
+
+## 2026-09-28 — 0.214.38: full drops below level 40 (`BL-307`)
 
 > *"Lower lvl mobs also need full drops. F/E grade also need Common equipments and drops for mythic/common"* ·
 > *"build the BL-307 as u proposed - looks good on paper"*

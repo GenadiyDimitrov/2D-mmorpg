@@ -2271,6 +2271,21 @@ is then WHICH pieces and which rungs, not a bespoke bundle.
 3. Weight gates: regen today pays only in the right armor — does a split-out regen keep that gate?
 4. Migration is a `game.db` delete (pre-release), but every `Replaces` chain between masteries is rewritten.
 
+**His WHY, 2026-09-28** (the note on 0.214.32-38): *"currenlty the SP for each class is over enough ... (lvls 0~75) at
+first u need a bit ore mobs when u lvl up so u can learn skills .. but after lvl 20 or so u have SP to spare ... so
+spliting the passives and keeping the SP (or alteast the sum of all the passives is 3-4 times more that the current
+single one - until 75 .. after the sum should be x1 .. 76 is hard SP wise) so each lvl up its a desition: "Should i
+learn this one it gives me more survavbiliy or should i learn this one for more dmg .. or that one ..." ... knowing
+your sp is not enough for the current lvl ull start making desition should u lvl up your aoe skill if never going to
+use it .. or lvl up that heal because its slower .. ull catchup after 76 ... lets make ppl to use their brains not
+maindlesly like auto_learn skills and just changing farm spots .. spliting the passives gives the player that
+desitions .. not 1 passive 200 stats in one go ... now 200 passive -> chose wisely"*.
+- So the split is an **SP-scarcity** feature, not only a tidy-up: below 76 the pieces together cost **3-4×** the one
+  bundled passive they replace (so you cannot buy everything at your level); from 76 on the sum is ×1 and you catch up.
+- 🔑 **Measure before designing** (next step, mine): a BalanceMatrix print of SP earned per level vs the SP a class's
+  whole kit costs per level, 1-85, for each discipline — the "after 20 you have SP to spare" gap in numbers, and the
+  size of the 3-4× budget the split has to absorb.
+
 
 
 

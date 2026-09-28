@@ -1238,6 +1238,78 @@ have still never been played. Check the flag behaviour in the same sitting.
 
 ---
 
+
+## §107 — YOUR PLAYTEST OF 0.214.32 → 0.214.38 (2026-09-28), no bugs
+
+No bugs this pass. What it asked for:
+- **0.214.35, the bar size** → **0.214.39**: the slider shows today's ×2.5 as **×1**, from **×0.5 to ×2** (stored ×1.25-×5).
+- **`BL-321`, the four answers** → built in **0.214.40** (see the CHANGELOG): shapes 1x12 / 2x6 / 6x2, each page owns
+  its own main + two additional rows, `[To bar]` copies, "n/5" on the main only.
+- **`BL-314`, the why** (SP scarcity until 76) → copied verbatim into the Backlog entry.
+- **Not played yet** (no mark): 0.214.34 (Charge in auto-hunt, *"later will test"*).
+
+<details><summary>Your note, verbatim</summary>
+
+```
+# Tests 0.214.32 ~ 0.214.38
+## Bugs
+## Builds
+- [x] 0.214.32: the Learn row goes, the Drop window lines up, the Warehouse tabs wrap (§106)
+- [x] 0.214.33: the Blessing pauses only out of combat (`BL-317`)
+- [ ] 0.214.34: Charge fires in auto-hunt (`BL-322`) - later will test (probably work)
+- [~] 0.214.35: the skill bar is ×2.5 by default, ×1.5 to ×4.5 (`BL-320`)
+  - make the x2.5 to show as x1
+  - the bar that way will go from 0.6(make it 0.5) to 1.8(make it 2)
+  - so from 0.5 to 2 default x1 (old numbers x1.25~5 default 2.5)
+  - somehwere the
+- [x] 0.214.36: the quest arrow can be turned off (`BL-316`)
+- [x] 0.214.37: the Mindwright stands off the road (`BL-318`)
+- [x] 0.214.38: full drops below level 40 (`BL-307`)
+---
+## Backlog Entries
+### BL-321
+  1. **The 6x1 main shape** i want to be only 1x12/2x6/6x2 .. and it follows the main bar 
+     - main bar is 1x12 .. want 1 extra -> got 2x12 -> 2 extra is 3x12 
+     - main bar is 2x6 .. want 1 extra -> got 4x6 -> 2 extra is 6x6
+     - main bar is 6x2 .. want 1 extra -> got 6x4 -> 2 extra is 6x6
+  2. **Two additional bars: *p+5* and *p+6*, wrapping inside 6-10**
+     - the two additonal bars can look as they are now -> like a separate bars but they move with the main one
+     - we will change it a bit ... each page 1/5 will have 10/20/30 slots ... 
+     - so max we will have 150 skill slots .. 
+     - here is a table to show in which page of the main bar which slots are shown
+
+      | main page | 0 extra bars | 1 extra bars | 2 extra bars |
+      | :-------: | :----------: | :----------: | :----------: |
+      |    1/5    |     0~10     |   + 11~20    |   + 21~30    |
+      |    2/5    |    31~40     |   + 41~50    |   + 51~60    |
+      |    3/5    |    61~70     |   + 71~80    |   + 81~90    |
+      |    4/5    |    91~100    |  + 111~120   |  + 121~130   |
+      |    5/5    |   121~130    |  + 131~140   |  + 141~150   |
+
+  3. **Moving with `[To bar]`:** - I would like to have a copy -> i can make 10slots with 1 skill (current attack/targetcloses work this way)
+     - i want it like that because if i have a buffer (current class) and later new classes that can change weapons or playstyles one page to be for solo fighting .. the other to be for party .. etc .. some skills will be on both pages
+  4. The page label: **"1/5"** - only on main .. dont change the look on the extra one it looks separate but sticked to the main .. and with .1 and .2 this will work best ..
+
+### `BL-319`
+
+After the skill bar can u sketch and make one or two towns with the new model ? 
+Or tell me if i need to give a picture or a sketch or explain more.. 
+
+### `BL-314`
+
+My general idea is that currenlty the SP for each class is over enough ... (lvls 0~75)
+at first u need a bit ore mobs when u lvl up so u can learn skills .. but after lvl 20 or so u have SP to spare ...
+so spliting the passives and keeping the SP (or alteast the sum of all the passives is 3-4 times more that the current single one - until 75 .. after the sum should be x1 .. 76 is hard SP wise) 
+so each lvl up its a desition: "Should i learn this one it gives me more survavbiliy or should i learn this one for more dmg .. or that one ..." etc .. 
+knowing your sp is not enough for the current lvl ull start making desition should u lvl up your aoe skill if never going to use it .. or lvl up that heal because its slower .. etc ...
+ull catchup after 76 ... but still lets make ppl to use their brains not maindlesly like auto_learn skills and just changing farm spots ..
+its a strategy to become stronger vs players or vs mobs .. to heal more or to defend more ... etc ..
+and spliting the passives gives the player that desitions .. not 1 passive 200 stats in one go ... now 200 passive -> chose wisely 
+
+---
+```
+
+</details>
 ## 0. ANSWERS I OWE YOU — read, don't test
 
 ### ✅ Closed since the last update
