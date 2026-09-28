@@ -162,6 +162,11 @@ namespace Game.Client
         /// <summary>Learned skill id → level, for greying out what isn't castable.</summary>
         public readonly Dictionary<string, int> Learned = new Dictionary<string, int>();
 
+        /// <summary>Bumped on every Learned push. The Skills window's rebuild stamp reads it: a purchase that
+        /// REPLACES a skill (Elemental Bolt over Magic Bolt) keeps the count, and a gold-priced one keeps the SP,
+        /// so neither could tell the window its list had changed and the bought row stayed (§106.3).</summary>
+        public int LearnedRevision { get; private set; }
+
         /// <summary>A running reuse timer, as the BAR sees it: when it ends (client clock) and how long
         /// it ran for, which is the denominator of the shrinking overlay.</summary>
         public struct Reuse { public float EndsAt; public float Total; }
@@ -1546,6 +1551,7 @@ namespace Game.Client
                 Learned.Clear();
                 if (l?.Skills != null)
                     foreach (var s in l.Skills) Learned[s.Id] = s.Level;
+                LearnedRevision++;
             });
             _net.SubclassesReceived += s => Main(() =>
             {

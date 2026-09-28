@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Game.Shared;
 using TMPro;
 using UnityEngine;
@@ -51,32 +52,35 @@ namespace Game.Client
                         new Vector2(-18f, -chrome - 6f), new Vector2(150f, 22f));
 
             _warehouseDepositTab = UiKit.TextButton(inner, "Deposit", () => SetWarehouseMode(false), 15f);
-            UiKit.Place(UiKit.Rect(_warehouseDepositTab.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(18f, -chrome - 32f), new Vector2(130f, 30f));
             _warehouseWithdrawTab = UiKit.TextButton(inner, "Withdraw", () => SetWarehouseMode(true), 15f);
-            UiKit.Place(UiKit.Rect(_warehouseWithdrawTab.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(154f, -chrome - 32f), new Vector2(130f, 30f));
-
             _warehousePrivateTab = UiKit.TextButton(inner, "Private", () => SetWarehouseBank(false), 15f);
-            UiKit.Place(UiKit.Rect(_warehousePrivateTab.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(18f, -chrome - 66f), new Vector2(130f, 30f));
             _warehouseAccountTab = UiKit.TextButton(inner, "Account", () => SetWarehouseBank(true), 15f);
-            UiKit.Place(UiKit.Rect(_warehouseAccountTab.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(154f, -chrome - 66f), new Vector2(130f, 30f));
-
-            // The category strip shares the Private/Account row rather than taking a fourth one — the
-            // window is 660 wide and those two buttons use only its left half, so a row of its own would
-            // cost list height for nothing.
-            _warehouseTabButtons = BuildCategoryTabs(inner, WarehouseTabs, new Vector2(296f, -chrome - 66f), 80f,
+            _warehouseTabButtons = BuildCategoryTabs(inner, WarehouseTabs, Vector2.zero, 80f,
                                                      cat => { _warehouseTab = cat; _warehouseRevision = -1; });
-            // `BL-117` — same button again. The strip starts at 296 here (it shares its row with two
-            // other controls), so the order button follows the four tabs from there.
-            BuildOrderButton(inner, new Vector2(296f + WarehouseTabs.Length * 82f, -chrome - 66f), 86f,
-                             () => _warehouseRevision = -1);
+            // `BL-117` — same button again.
+            var order = BuildOrderButton(inner, Vector2.zero, 86f, () => _warehouseRevision = -1);
+
+            // §106.1 — ONE wrap panel for all of them. The old layout put the category strip and the order
+            // button at hard-coded x (296 on), which ended 50 px past the window's right edge. Flowed, the
+            // four mode buttons are one group and the tabs + order another, each wrapping on its own, so a
+            // narrow window never splits "All" from "Gear".
+            const float stripWidth = 660f - 36f, gap = 4f;
+            var modes = new List<RectTransform>();
+            foreach (var b in new[] { _warehouseDepositTab, _warehouseWithdrawTab, _warehousePrivateTab, _warehouseAccountTab })
+            {
+                var rt = UiKit.Rect(b.gameObject);
+                rt.sizeDelta = new Vector2(130f, 30f);
+                modes.Add(rt);
+            }
+            var tabs = new List<RectTransform>();
+            foreach (var b in _warehouseTabButtons) tabs.Add(UiKit.Rect(b.gameObject));
+            tabs.Add(UiKit.Rect(order.gameObject));
+            float stripHeight = UiKit.Flow(modes.ToArray(), new Vector2(18f, -chrome - 32f), stripWidth, 30f, gap) + gap;
+            stripHeight += UiKit.Flow(tabs.ToArray(), new Vector2(18f, -chrome - 32f - stripHeight), stripWidth, 30f, gap);
 
             ScrollRect scroll;
             _warehouseList = UiKit.ScrollArea(inner, out scroll, 3f);
-            UiKit.Stretch((RectTransform)scroll.transform, 16f, chrome + 102f, 16f, 16f);
+            UiKit.Stretch((RectTransform)scroll.transform, 16f, chrome + 32f + stripHeight + 6f, 16f, 16f);
 
             _warehousePanel.gameObject.SetActive(false);
         }

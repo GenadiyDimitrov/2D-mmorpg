@@ -366,6 +366,12 @@ namespace Game.Client
         private bool _dropSortDesc = true;
 
         private const float DropSearchWidth = 660f, DropSearchHeight = 560f;
+        // §106.2: every control here is placed by its TOP-LEFT corner (pivot 0,1), so x is the LEFT edge.
+        // It used to be written as a centre (`x + w/2`), which pushed each filter button, header cell and
+        // table cell half its own width to the right, and started the header at the middle of the window.
+        // The header and the rows share one left edge and one width, so the columns line up.
+        private const float DropBackWidth = 108f;
+        private const float DropTableLeft = 10f, DropTableWidth = DropSearchWidth - 32f;
         private const int DropMaxCandidates = 60;
 
         private void BuildDropSearchWindow()
@@ -379,7 +385,7 @@ namespace Game.Client
 
             _dropSearchInput = UiKit.InputField(inner, "type an item name...", size: 17f);
             UiKit.Place(UiKit.Rect(_dropSearchInput.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(14f, -chrome - 6f), new Vector2(DropSearchWidth - 150f, 44f));
+                        new Vector2(14f, -chrome - 6f), new Vector2(DropSearchWidth - 28f - DropBackWidth - 8f, 44f));
             // Every keystroke re-predicts locally — that is the whole point of holding the catalogue on
             // the phone. Enter takes the top prediction, so the keyboard's own action key finishes the job.
             _dropSearchInput.onValueChanged.AddListener(_ => { _dropShownItem = ""; RenderDropSearch(); });
@@ -387,21 +393,21 @@ namespace Game.Client
 
             _dropBackButton = UiKit.TextButton(inner, "Back", () => { _dropShownItem = ""; RenderDropSearch(); }, 15f);
             UiKit.Place(UiKit.Rect(_dropBackButton.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
-                        new Vector2(-66f, -chrome - 28f), new Vector2(108f, 44f));
+                        new Vector2(-14f, -chrome - 6f), new Vector2(DropBackWidth, 44f));
 
             // The filter tree, as three CYCLING buttons rather than three dropdowns. A dropdown on a phone
             // is a second window over a window; a button that reads "Rarity: Epic" and advances on tap says
             // the same thing in one control and one tap, and it is legible while it is being used.
-            float fw = (DropSearchWidth - 40f) / 3f;
+            float fw = (DropSearchWidth - 28f) / 3f;
             _dropCatButton = UiKit.TextButton(inner, "", () => CycleDropFilter(0), 15f);
             UiKit.Place(UiKit.Rect(_dropCatButton.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(14f + fw / 2f, -chrome - 74f), new Vector2(fw - 6f, 38f));
+                        new Vector2(14f, -chrome - 74f), new Vector2(fw - 6f, 38f));
             _dropRarityButton = UiKit.TextButton(inner, "", () => CycleDropFilter(1), 15f);
             UiKit.Place(UiKit.Rect(_dropRarityButton.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(14f + fw * 1.5f, -chrome - 74f), new Vector2(fw - 6f, 38f));
+                        new Vector2(14f + fw, -chrome - 74f), new Vector2(fw - 6f, 38f));
             _dropGradeButton = UiKit.TextButton(inner, "", () => CycleDropFilter(2), 15f);
             UiKit.Place(UiKit.Rect(_dropGradeButton.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(14f + fw * 2.5f, -chrome - 74f), new Vector2(fw - 6f, 38f));
+                        new Vector2(14f + fw * 2f, -chrome - 74f), new Vector2(fw - 6f, 38f));
 
             _dropSearchNote = UiKit.Label(inner, "", 14f, UiKit.TextDim, TextAlignmentOptions.Left);
             UiKit.Place(UiKit.Rect(_dropSearchNote.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
@@ -412,7 +418,7 @@ namespace Game.Client
             // caption would make the sort invisible to anyone who was not told about it.
             _dropHeaderRow = UiKit.Rect(UiKit.Box(inner, "DropHeader", new Color(0, 0, 0, 0), blocksInput: false).gameObject);
             UiKit.Place(_dropHeaderRow, new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(DropSearchWidth / 2f, -chrome - 140f), new Vector2(DropSearchWidth - 28f, 26f));
+                        new Vector2(DropTableLeft, -chrome - 140f), new Vector2(DropTableWidth, 26f));
             BuildDropHeader();
 
             ScrollRect scroll;
@@ -429,13 +435,13 @@ namespace Game.Client
         {
             string[] names = { "Creature", "Lvl", "Rank", "Where", "Per kill" };
             float[] widths = { 0.30f, 0.10f, 0.12f, 0.26f, 0.22f };
-            float x = 0f, total = DropSearchWidth - 28f;
+            float x = 0f, total = DropTableWidth;
             for (int i = 0; i < names.Length; i++)
             {
                 int col = i;
                 var b = UiKit.TextButton(_dropHeaderRow, names[i], () => SortDropTable(col), 14f);
                 UiKit.Place(UiKit.Rect(b.gameObject), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
-                            new Vector2(x + total * widths[i] / 2f, 0f), new Vector2(total * widths[i] - 4f, 24f));
+                            new Vector2(x, 0f), new Vector2(total * widths[i] - 4f, 24f));
                 x += total * widths[i];
             }
         }
@@ -622,7 +628,7 @@ namespace Game.Client
             _dropSearchNote.text = item.Name + " — " + rows.Count + " source(s), sorted by "
                                  + DropSortName() + (_dropSortDesc ? " (high to low)" : " (low to high)");
 
-            float total = DropSearchWidth - 28f;
+            float total = DropTableWidth;
             float[] widths = { 0.30f, 0.10f, 0.12f, 0.26f, 0.22f };
             foreach (var r in rows)
             {
@@ -640,7 +646,7 @@ namespace Game.Client
                         c == 4 ? new Color(0.88f, 0.71f, 0.29f) : UiKit.Text,
                         c == 4 ? TextAlignmentOptions.TopRight : TextAlignmentOptions.TopLeft);
                     UiKit.Place(UiKit.Rect(lab.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                                new Vector2(x + total * widths[c] / 2f, -2f),
+                                new Vector2(x, -2f),
                                 new Vector2(total * widths[c] - 4f, 22f));
                     x += total * widths[c];
                 }
@@ -648,7 +654,7 @@ namespace Game.Client
                 {
                     var note = UiKit.Label(lrt, "   " + r.Note, 12f, UiKit.TextDim, TextAlignmentOptions.TopLeft);
                     UiKit.Place(UiKit.Rect(note.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                                new Vector2(total / 2f, -22f), new Vector2(total - 8f, 14f));
+                                new Vector2(0f, -22f), new Vector2(total - 8f, 14f));
                 }
             }
         }

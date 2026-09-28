@@ -101,6 +101,25 @@ namespace Game.Client
             return rt;
         }
 
+        /// <summary>§106.1 — a WRAP panel: lay controls out left to right from <paramref name="topLeft"/>, each
+        /// keeping its own width, and start a new row whenever the next one would cross
+        /// <paramref name="maxWidth"/>. Returns the height used, so the caller can put what comes below it
+        /// under the last row instead of under a hard-coded one. Every control is pinned top-left.</summary>
+        public static float Flow(RectTransform[] items, Vector2 topLeft, float maxWidth,
+                                 float rowHeight = 30f, float gap = 6f)
+        {
+            float x = 0f, y = 0f;
+            foreach (var rt in items)
+            {
+                float w = rt.sizeDelta.x;
+                if (x > 0f && x + w > maxWidth) { x = 0f; y += rowHeight + gap; }
+                Place(rt, new Vector2(0f, 1f), new Vector2(0f, 1f),
+                      new Vector2(topLeft.x + x, topLeft.y - y), new Vector2(w, rowHeight));
+                x += w + gap;
+            }
+            return y + rowHeight;
+        }
+
         /// <summary>Stretch to fill the parent, inset by the given margins.</summary>
         public static RectTransform Stretch(RectTransform rt, float left, float top, float right, float bottom)
         {

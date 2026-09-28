@@ -1699,9 +1699,9 @@ BL-307 as u proposed"*). Your note is copied verbatim at the end of this section
 
 | # | bug | your words / the rule |
 |---|---|---|
-| 106.1 | 🔴 **The Keeper window's tab buttons run out of the window.** | *"make all tabs to be in sort of a wrap panel so when the window is smaller they jsut to wrap or become [...] of sorts"* |
-| 106.2 | 🔴 **The Drop window's layout**: the table columns are not in their places, the Back button sits lower than the text box, the buttons are all over the place. | *"the Back buton is lower than the textbox and its like offset"* |
-| 106.3 | 🔴 **Learn tab: a learned skill's row stays** until the tab is opened again (human apprentice, Elemental Bolt; seen on other characters too). | *"u click to learn it learns but the row stays .. i click again to learn and i learn it"* |
+| 106.1 | ✅ **FIXED 0.214.32** (a wrap panel, `UiKit.Flow`: modes on one row, tabs + order on the next) — **The Keeper window's tab buttons run out of the window.** | *"make all tabs to be in sort of a wrap panel so when the window is smaller they jsut to wrap or become [...] of sorts"* |
+| 106.2 | ✅ **FIXED 0.214.32** — every control was placed by its top-left corner with a CENTRE x, so each sat half its width to the right and the header began mid-window; Back now shares the text box's top. — **The Drop window's layout**: the table columns are not in their places, the Back button sits lower than the text box, the buttons are all over the place. | *"the Back buton is lower than the textbox and its like offset"* |
+| 106.3 | ✅ **FIXED 0.214.32** — the window's redraw stamp counted skills + SP; a REPLACING skill (Elemental over Magic Bolt) keeps the count and a gold-priced one keeps the SP, so the answer changed nothing it looked at. It now reads a counter bumped on every Learned push. — **Learn tab: a learned skill's row stays** until the tab is opened again (human apprentice, Elemental Bolt; seen on other characters too). | *"u click to learn it learns but the row stays .. i click again to learn and i learn it"* |
 
 **Open from this pass:**
 - ❓ **0.214.16, your comment is cut off**: *"now we have 60 entires for the"*. What did you mean?

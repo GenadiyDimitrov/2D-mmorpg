@@ -7,12 +7,25 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.31**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.32**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-27 (latest) — 0.214.31: craft exp from what a craft consumes (`BL-315`)
+## 2026-09-28 (latest) — 0.214.32: the Learn row goes, the Drop window lines up, the Warehouse tabs wrap (§106)
+
+- **§106.3 — a learned skill's row now leaves the Learn tab at once.** The window redraws only when its stamp
+  changes, and the stamp counted learned skills plus SP. A skill that REPLACES another (Elemental Bolt over Magic
+  Bolt) keeps the count, and a gold-priced one keeps the SP, so the server's answer changed nothing the window
+  looked at. The click's own redraw ran before that answer arrived. `Boot.LearnedRevision` is bumped on every
+  Learned push and the stamp reads it.
+- **§106.2 — the Drop window lines up.** Every control there is pinned by its top-left corner, but its x was written
+  as a centre (`x + w/2`): the filter buttons sat half a width to the right, the header started at the middle of the
+  window and each column was half its width off. The Back button now shares the text box's top edge.
+- **§106.1 — the Warehouse's buttons wrap** instead of running out of the window (`UiKit.Flow`, a wrap panel): the
+  four mode buttons on one row, the category tabs and the order button on the next.
+
+## 2026-09-27 — 0.214.31: craft exp from what a craft consumes (`BL-315`)
 
 > *"Each base item to have a weight (points) and based on those points a craft total to be calculated"* ·
 > *"increase the curve about 4 times .. 1~2 weapon is low amount for lvl up ... Leave the points"* · *"Potion crafts

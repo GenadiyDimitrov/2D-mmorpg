@@ -234,7 +234,7 @@ namespace Game.Client
 
             // Rebuild only when something that changes the LIST changed. Rows carry captured ids and
             // registered listeners, so a per-frame rebuild would leak both.
-            int revision = _skillsTab * 7919 + Boot.Learned.Count * 31 + Boot.SkillPoints
+            int revision = _skillsTab * 7919 + Boot.LearnedRevision * 104729 + Boot.SkillPoints
                          + (Boot.ActiveClass != null ? Boot.ActiveClass.Level * 13 : 0)
                          + (_pendingAssign != null ? _pendingAssign.GetHashCode() : 0)
                          + BarStamp() + SwapStageStamp();
