@@ -6222,6 +6222,12 @@ public class GameLoopService : BackgroundService
         // which is the exploit wearing a different skill's coat. Every threat-generating skill, his
         // 40+ kits included: he named no exception, and a tank's kit is where the exceptions would be.
         if (def.TauntPower > 0 || (e & SkillEffect.Taunt) != 0) return AutoSkillKind.Other;
+        // `BL-322` (owner, 2026-09-28): *"charge need to be able to be used in auto mode as well .. its not a
+        // taunt .. phantom jump is used but charge is not"*. A charge carries no damage flag (Charge is
+        // `SkillEffect.None`; the Warlord's variants are debuffs at most), so it fell to `Other`. It is how an
+        // attacker closes on the mob, so it joins the attack chain. After the taunt test, so a charge that
+        // also taunts stays manual; the chain skips it inside its MinChargeDistance (see TryAutoChain).
+        if (def.ChargesToTarget) return AutoSkillKind.Attack;
         // 🔑 A LIFESTEAL attack is a HEAL and NOTHING ELSE (him, 2026-08-13): *"I want it only with a
         // treshold .. if I want it permanent ill do cycle or 100% treshold"*. Checked BEFORE the damage
         // test, which would otherwise claim it for the attack chain. Vampiric Bolt is the only skill in
@@ -6535,6 +6541,10 @@ public class GameLoopService : BackgroundService
                 // (BL-83 removed the Taunt case that sat here with the rung it served.)
                 case AutoSkillKind.Attack:
                     if (target is null) continue;
+                    // `BL-322` — a charge the tap would refuse ("needs at least 150 distance") is skipped,
+                    // not attempted: in melee it would otherwise refuse every turn and fill the chat.
+                    if (def.MinChargeDistance > 0f
+                        && DistanceSq(p, target) < def.MinChargeDistance * def.MinChargeDistance) continue;
                     tgtId = SelfCentredArea(def) ? p.Id : target.Id; break;
                 default:
                     continue;   // Other → never auto-cast

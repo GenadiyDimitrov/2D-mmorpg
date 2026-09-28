@@ -7,12 +7,21 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.33**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.34**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-28 (latest) — 0.214.33: the Blessing pauses only out of combat (`BL-317`)
+## 2026-09-28 (latest) — 0.214.34: Charge fires in auto-hunt (`BL-322`)
+
+> *"charge need to be able to be used in auto mode as well .. its not a taunt .. phantom jump is used but charge is not"*
+
+- **A charge is an auto-hunt attack now.** Charge has no damage of its own, so the auto chain filed it with the skills it
+  never casts. It joins the attack rotation. A charge that also taunts stays manual (`BL-83`).
+- **It is skipped, not attempted, while the mob is closer than 150**, where a tap is refused, so it cannot fill the chat
+  in melee.
+
+## 2026-09-28 — 0.214.33: the Blessing pauses only out of combat (`BL-317`)
 
 > *"remove the tawn/active pause — only when u go out of combat to say (paused) … entering in town dont automattically
 > pauses it … we will make it an exploit if acive blessing is paused"*

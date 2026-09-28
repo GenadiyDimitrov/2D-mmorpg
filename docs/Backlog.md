@@ -285,7 +285,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-319` | 🔵 | **Towns that look like towns** — Y (3 gates) / X (4 gates) roads, buildings beside the roads and side paths, a church in the big cities — sketch first | world |
 | `BL-320` | 🟢 | **Skill bar size: default ×2.5, range ×1.5-×4.5** (today's numbers) | ui |
 | `BL-321` | 🔵 | **120 bar entries: main pages 1-5, additional pages 6-10** — full 12-slot additional bars only (0/1/2), shape follows main, `[To bar]` never disabled — proposal first | ui |
-| `BL-322` | 🟢 | **Charge fires in auto-hunt** — it is not a taunt | auto-hunt |
 
 ---
 
@@ -2337,7 +2336,3 @@ or two .. the shape fowlows main"*.
 ❓ **A proposal first** (his ask): `docs/design/SkillBar120.md`.
 
 
-## `BL-322` 🟢 CHARGE FIRES IN AUTO-HUNT
-
-His note, 2026-09-28: *"also charge need to be able to be used in auto mode as well .. its not a taunt .. phantom jump
-is used but charge is not"*.

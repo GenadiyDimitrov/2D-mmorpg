@@ -7999,3 +7999,13 @@ The window already shows +exp per recipe and level progress (0.214.30).
 > - The **gauge's fill** (1%/min) pauses when out of combat (the 30 s window) or dead, and says `(Paused)`. A town
 >   no longer pauses it by itself.
 > - A **running Blessing's 3 minutes never pause.**
+
+
+## `BL-322` ✅ CLOSED — BUILT 0.214.34 (Charge fires in auto-hunt)
+
+2026-09-28 — built in 0.214.34. A charge (`ChargesToTarget`) classifies as an auto-hunt ATTACK; it had no damage flag and fell to `Other`, the never-cast bucket. Asked after the taunt test, so a taunting charge stays manual; the chain skips it while the mob is inside its `MinChargeDistance` (150), where the tap would refuse.
+
+**As filed:**
+
+> His note, 2026-09-28: *"also charge need to be able to be used in auto mode as well .. its not a taunt .. phantom jump
+> is used but charge is not"*.
