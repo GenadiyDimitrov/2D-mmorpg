@@ -30,9 +30,9 @@ public static class Towns
     {
         new SafeZone("town_brackenford", "Brackenford",     24000, 24000, 3500),   // 1-16
         new SafeZone("town_stonewatch",  "Stonewatch",      24000, 10000, 2000),   // 16-40
-        new SafeZone("town_greymarsh",   "Greymarsh",       36000, 33000, 2000),   // 40-60
+        new SafeZone("town_greymarsh",   "Greymarsh",       36000, 33000, 3000),   // 40-60 (`BL-319`: a major city, 2000 → 3000)
         new SafeZone("castle_ironreach", "Ironreach Keep",  24000, 38000, 2200),   // 60-75
-        new SafeZone("town_frostmere",   "Frostmere",       12000, 15000, 2000),   // 76-90
+        new SafeZone("town_frostmere",   "Frostmere",       12000, 15000, 3000),   // 76-90 (`BL-319`: a major city, 2000 → 3000)
         // Small outpost beside the Training Grounds, so you can buff up and teleport out without leaving
         // the dummies. Sits just SOUTH of the dummy row (y=4000, radius 200), clear of them — a safe zone
         // keeps mobs out, and the dummies ARE mobs.

@@ -53,7 +53,7 @@ namespace Game.Client
         /// <summary>Drop the marker at a ground position (Unity space).</summary>
         public void ShowAt(Vector3 groundPos)
         {
-            _target = new Vector3(groundPos.x, 0.03f, groundPos.z);   // just above the grid
+            _target = new Vector3(groundPos.x, 0.07f, groundPos.z);   // above the grid, the town streets (`BL-319`, 0.035-0.045) and the outlines (0.06)
             _shownAt = Time.time;
             transform.position = _target;
             _disc.gameObject.SetActive(true);

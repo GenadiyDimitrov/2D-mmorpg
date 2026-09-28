@@ -8079,3 +8079,37 @@ main only. Protocol 52.
 > vertical 2x6 as well -> the current additional bar button in the setup can only be 0/1/2 .. so no addtional bars .. one
 > or two .. the shape fowlows main"*.
 > ❓ **A proposal first** (his ask): `docs/design/SkillBar120.md`.
+
+
+## `BL-319` ✅ CLOSED — built in 0.214.41
+
+2026-09-28, **built in 0.214.41** from his five answers: (1) walls are visual first; server-side collision is filed as
+`BL-323`. (2) The majors are X and Stonewatch/Ironreach are Y, as a proof of concept (*"later we can sketch other shapes"*). (3) The majors grow to
+r 3000 (*"a major city requires u to walk for a bit"*); the town sprint he floated beside it is `BL-324`. (4) NPCs stand at the door
+(*"until maybe bl-281 lands"*). (5) The hunt lodge is the **Adventurers Guild** and the Huntmaster is its **Guild Receptionist**
+(*"this one will give/reward quests"*). The data is `Game.Shared/TownLayout.cs`; `BalanceMatrix --town-svg` draws it as built.
+
+**As filed:**
+
+
+Same note: *"how can we make it so a town looks like a town .. can u sketch some polygones — let say some towns
+are Y shaped road (so 3 gates) or a X(+) shaped with 4 gates .. and the position of the shops and houses are on
+the side of roads .. can also have a small paths that lead to the shops not everihing is on the main road ...
+also big towns can have a chirch to contain the class master and a mindweaver — weaon and armor vendors are in
+one shop, apoth(+ essence one) is his own, keeper is his onw building, anvil+craft also.."*.
+❓ **Sketch first** (his ask): layouts for a Y town and an X city, with the NPCs grouped by building. Touches
+`BL-281` (roads, models).
+
+**SKETCH DONE, 2026-09-28 — https://claude.ai/artifact/6GVfFFjotDCfKUWZ3pFr5N** (the source is `docs/design/TownPlans.html`). A Y town (Stonewatch/Ironreach,
+r 2000, S gate + NW/NE gates, shops on the stem, Keeper and Shrine in the wedges on side paths, a town hall for
+quests, a hunt lodge by a gate) and an X city (the majors, r 3000: church NW = Class Master + Mindwright (+ Grandmaster
+/ Archmaster / Brackenford's priest + elder), market NE = Arms & Armour + Apothecary/Assayer, Keeper SE, crafthall SW =
+Master Crafter + Anvil yard (+ Frostmere's recipe givers), Shrine on the plaza, Gatekeeper on the centre stone).
+❓ **Five questions before building** (my pick first):
+1. Walls: **visual footprints first** (walk-through), or solid (server collision + pathing for players, mobs, auto-hunt)?
+2. **Majors = X, Stonewatch/Ironreach = Y**, each Y rotated so its gates face its fields?
+3. **Major cities grow 2000 → 3000** (an X is cramped at 2000; Brackenford is 3500)?
+4. NPC **at the door** (never inside), or interiors?
+5. Huntmaster: a **lodge by the gate** to his fields, or beside the Gatekeeper as today? (settles "does he stay in the minor towns")
+
+

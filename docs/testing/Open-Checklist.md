@@ -1239,6 +1239,31 @@ have still never been played. Check the flag behaviour in the same sitting.
 ---
 
 
+## §108 — THE TOWNS, BUILT (0.214.41, `BL-319`) — your five answers, 2026-09-28
+
+Built from your answers to the sketch (https://claude.ai/artifact/6GVfFFjotDCfKUWZ3pFr5N): visual walls, majors X and
+minor towns Y, the majors at r 3000, NPCs at the door, and the **Adventurers Guild** with its **Guild Receptionist**.
+Your two side ideas are filed: server-side collision is **`BL-323`** (waits on the models) and the town sprint is **`BL-324`**.
+⚠ **New APK.** The old one still connects but draws no streets.
+
+- `108a` [ ] - **Brackenford is an X.** Four roads from the plaza to four gates, with two guards at each. The church is
+  north-west (Vael, Oren, Marius, and the Mindwright at its north door). Arms & Armour and the Apothecary are north-east,
+  the Keeper south-east, and the crafthall south-west (Master Crafter at the south door, Anvil right behind him). Does it
+  read as a town? ->
+- `108b` [ ] - **Greymarsh and Frostmere are the same X, now r 3000**, with their fields 1000 further out. Greymarsh
+  has the Grandmaster at the church and the Assayer beside the Apothecary; Frostmere has the Archmaster, Ledgerkeep Mora at
+  the Keeper's side door, and the three recipe givers at the crafthall. Is the walk too long? (That is `BL-324`'s job.) ->
+- `108c` [ ] - **Stonewatch and Ironreach are Ys.** Stonewatch's stem points south at Brackenford; Ironreach is the
+  same Y turned round (stem north). Guild up the short road, shrine and keeper in the side wedges, shops on the stem. ->
+- `108d` [ ] - **The Guild Receptionist** (was the Huntmaster) gives the same contracts under the new name; the
+  tutorial's first step now says "Pell on the plaza". ->
+- `108e` [ ] - **The roads between towns leave through a gate** and meet the other town's gate. Tap to move inside a
+  building's footprint: the move marker must still show on top. ->
+- - ->
+
+---
+
+
 ## §107 — YOUR PLAYTEST OF 0.214.32 → 0.214.38 (2026-09-28), no bugs
 
 No bugs this pass. What it asked for:
@@ -1316,6 +1341,7 @@ Follow-up, same day: *"the page to have 10 slots ... not 12 .. that why the tabl
 
 ### ✅ Closed since the last update
 
+- ✅ ~~**`BL-319` — towns that look like towns**~~ — **built in 0.214.41** from your five answers (§108).
 - ✅ ~~**`BL-321` — the skill bar**~~ — **built in 0.214.40** from your four answers (§107, `SkillBar120.md` §5).
 - ✅ ~~**`BL-307` — drops below 40**~~ — **built in 0.214.38** as proposed (your *"looks good on paper"*).
 - ✅ ~~**`BL-78` item 3, the player HP half**~~ — **built in 0.91.0** (§93A). The cause was named and it
@@ -1333,9 +1359,6 @@ Follow-up, same day: *"the page to have 10 slots ... not 12 .. that why the tabl
   `93o`: buff scrolls at 9 is the only cap a player meets.
 
 ### 🔴 Still yours to rule
-
-
-- 🔴 **`BL-319` — towns that look like towns**: **the sketch is ready**: https://claude.ai/artifact/6GVfFFjotDCfKUWZ3pFr5N (a Y town and an X city, to scale). Five questions in the Backlog entry: solid walls?, which towns are Y/X, majors to radius 3000?, NPC at the door?, where the Huntmaster stands.
 
 - 🔴 **`BL-94` — the fizzle floor.** *"shouldn't hit at all on the floor"*, carried out of playtest 28
   unbuilt and now a backlog entry rather than a checklist row. It is one line and it changes how it

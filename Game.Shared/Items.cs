@@ -2089,7 +2089,7 @@ public static class ItemCatalog
         foreach (var (id, name) in GatherTokens)
             list.Add(new ItemDef(id, name, EquipSlot.QuestItem, ItemGrade.F, ItemRarity.Common,
                 Description: "A hunting trophy. Worth nothing to a merchant — bring it to the "
-                           + "Huntmaster who asked for it."));
+                           + "Guild Receptionist who asked for it."));
 
         // ===================================================================
         //  (The two GOD-TIER debug one-offs — God's Judgment / God's Robes — were DELETED

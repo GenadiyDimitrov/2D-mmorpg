@@ -2656,6 +2656,8 @@ if (args.Length > 0 && args[0] == "--goldflow")
 // `--drops <text>` — WHERE DOES THIS COME FROM (`BL-253`). Walks every spawner × its roster, so the
 // answer knows about RANK, which is where half the top-end faucets live. See DropFinder.cs.
 if (args.Length > 0 && args[0] == "--drops") { DropFinder.Run(args); return; }
+// `BL-319` — the towns as built (roads, footprints, NPCs at their doors, gate guards), one SVG per town.
+if (args.Length > 0 && args[0] == "--town-svg") { TownSvg.Run(args); return; }
 
 // `--dump-drop-csv` (`BL-274` part 1) — WRITES `docs/data/mobs/mob_drops.csv`, the READABLE per-mob drop table:
 // every roster creature's dealt specialty, the gear kinds it drops, its base mats and its refinable metal. It is

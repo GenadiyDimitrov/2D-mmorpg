@@ -54,7 +54,7 @@ public static partial class QuestCatalog
         Register(new QuestDef(
             Id: QuestHuntBrackenford,
             Name: "Bracken Contract",
-            Description: "Huntmaster Cera keeps a standing bounty on everything that comes out of the "
+            Description: "Guild Receptionist Cera keeps a standing bounty on everything that comes out of the "
                        + "hollow and the downs. Bring back what you take off them — she pays by the "
                        + "piece, and the contract never closes.",
             OfferNpcId: "hunter_brackenford",
@@ -63,7 +63,7 @@ public static partial class QuestCatalog
             Steps: new[]
             {
                 new QuestStep(QuestStepType.TalkTo,
-                    "Hunt in the Bracken fields, then return to Huntmaster Cera",
+                    "Hunt in the Bracken fields, then return to Guild Receptionist Cera",
                     TargetId: "hunter_brackenford"),
             },
             Reward: new QuestReward(),
@@ -78,7 +78,7 @@ public static partial class QuestCatalog
         Register(new QuestDef(
             Id: QuestHuntStonewatch,
             Name: "Stonewatch Contract",
-            Description: "The moor, the ridge and the barrens all feed the same ledger. Huntmaster "
+            Description: "The moor, the ridge and the barrens all feed the same ledger. Guild Receptionist "
                        + "Radd does not care which of them you work — only what you carry back.",
             OfferNpcId: "hunter_stonewatch",
             MinLevel: 15, MaxLevel: 44,
@@ -86,7 +86,7 @@ public static partial class QuestCatalog
             Steps: new[]
             {
                 new QuestStep(QuestStepType.TalkTo,
-                    "Hunt in the Stonewatch fields, then return to Huntmaster Radd",
+                    "Hunt in the Stonewatch fields, then return to Guild Receptionist Radd",
                     TargetId: "hunter_stonewatch"),
             },
             Reward: new QuestReward(),
@@ -101,7 +101,7 @@ public static partial class QuestCatalog
         Register(new QuestDef(
             Id: QuestHuntGreymarsh,
             Name: "Marsh Contract",
-            Description: "Huntmaster Sela has a list as long as the mire is deep. Work any of it. "
+            Description: "Guild Receptionist Sela has a list as long as the mire is deep. Work any of it. "
                        + "She counts what you bring and pays the same day.",
             OfferNpcId: "hunter_greymarsh",
             MinLevel: 38, MaxLevel: 64,
@@ -109,7 +109,7 @@ public static partial class QuestCatalog
             Steps: new[]
             {
                 new QuestStep(QuestStepType.TalkTo,
-                    "Hunt in the Greymarsh fields, then return to Huntmaster Sela",
+                    "Hunt in the Greymarsh fields, then return to Guild Receptionist Sela",
                     TargetId: "hunter_greymarsh"),
             },
             Reward: new QuestReward(),
@@ -124,7 +124,7 @@ public static partial class QuestCatalog
         Register(new QuestDef(
             Id: QuestHuntIronreach,
             Name: "March Contract",
-            Description: "Ironreach keeps its borders by paying for them. Huntmaster Torv writes the "
+            Description: "Ironreach keeps its borders by paying for them. Guild Receptionist Torv writes the "
                        + "receipts; the march writes the rest.",
             OfferNpcId: "hunter_ironreach",
             MinLevel: 58, MaxLevel: 79,
@@ -132,7 +132,7 @@ public static partial class QuestCatalog
             Steps: new[]
             {
                 new QuestStep(QuestStepType.TalkTo,
-                    "Hunt in the Ironreach fields, then return to Huntmaster Torv",
+                    "Hunt in the Ironreach fields, then return to Guild Receptionist Torv",
                     TargetId: "hunter_ironreach"),
             },
             Reward: new QuestReward(),
@@ -147,7 +147,7 @@ public static partial class QuestCatalog
         Register(new QuestDef(
             Id: QuestHuntFrostmere,
             Name: "Frostmere Contract",
-            Description: "Huntmaster Ingra has outlived three garrisons and every creature on her "
+            Description: "Guild Receptionist Ingra has outlived three garrisons and every creature on her "
                        + "list. Bring proof, take payment, take the contract again.",
             OfferNpcId: "hunter_frostmere",
             MinLevel: 74,
@@ -155,7 +155,7 @@ public static partial class QuestCatalog
             Steps: new[]
             {
                 new QuestStep(QuestStepType.TalkTo,
-                    "Hunt in the Frostmere fields, then return to Huntmaster Ingra",
+                    "Hunt in the Frostmere fields, then return to Guild Receptionist Ingra",
                     TargetId: "hunter_frostmere"),
             },
             Reward: new QuestReward(),
@@ -171,7 +171,7 @@ public static partial class QuestCatalog
             Id: QuestHuntCullBears,
             Name: "Thin the Herd",
             Description: "The bears on the moor have stopped being wary of people, which is how "
-                       + "people stop coming back. Huntmaster Radd wants twenty of them gone. He will "
+                       + "people stop coming back. Guild Receptionist Radd wants twenty of them gone. He will "
                        + "want twenty more after that.",
             OfferNpcId: "hunter_stonewatch",
             MinLevel: 18, MaxLevel: 34,
@@ -180,7 +180,7 @@ public static partial class QuestCatalog
             {
                 new QuestStep(QuestStepType.KillMobs, "Slay 20 Grizzly Bears",
                     TargetId: "grizzly_bear", Count: 20),
-                new QuestStep(QuestStepType.TalkTo, "Return to Huntmaster Radd",
+                new QuestStep(QuestStepType.TalkTo, "Return to Guild Receptionist Radd",
                     TargetId: "hunter_stonewatch"),
             },
             Reward: KillsWorth(22, 5)));
@@ -188,7 +188,7 @@ public static partial class QuestCatalog
         Register(new QuestDef(
             Id: QuestHuntRedhorn,
             Name: "Standing Orders",
-            Description: "The Redhorn keep sending footmen down the march, and Huntmaster Torv keeps "
+            Description: "The Redhorn keep sending footmen down the march, and Guild Receptionist Torv keeps "
                        + "sending people to meet them. Twenty-five at a time, as often as you like.",
             OfferNpcId: "hunter_ironreach",
             MinLevel: 68, MaxLevel: 79,
@@ -197,7 +197,7 @@ public static partial class QuestCatalog
             {
                 new QuestStep(QuestStepType.KillMobs, "Slay 25 Redhorn Footmen",
                     TargetId: "redhorn_footman", Count: 25),
-                new QuestStep(QuestStepType.TalkTo, "Return to Huntmaster Torv",
+                new QuestStep(QuestStepType.TalkTo, "Return to Guild Receptionist Torv",
                     TargetId: "hunter_ironreach"),
             },
             Reward: KillsWorth(72, 5)));

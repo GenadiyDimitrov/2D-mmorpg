@@ -244,12 +244,12 @@ public static class WorldPlan
         new("town_stonewatch", "field_stone_barrens_4", "Cinderflat Barrens", 23.80f, 18581f,
             new[] { B(32, 36), B(36, 40) }),
 
-        // ── Greymarsh (south-east, 36000/33000, r2000) — levels 40-60 ─────────────────────────────
-        new("town_greymarsh", "field_marsh_shallows", "Marsh Shallows", 0f, 4300f,
+        // ── Greymarsh (south-east, 36000/33000, r3000 since `BL-319`, so its fields moved 4300 → 5300) — levels 40-60 ─────────────────────────────
+        new("town_greymarsh", "field_marsh_shallows", "Marsh Shallows", 0f, 5300f,
             new[] { B(40, 44), B(44, 48) }),
-        new("town_greymarsh", "field_marsh_mire", "Blackwater Mire", 90f, 4300f,
+        new("town_greymarsh", "field_marsh_mire", "Blackwater Mire", 90f, 5300f,
             new[] { B(48, 52), B(52, 56) }),
-        new("town_greymarsh", "field_marsh_hollow", "Sunken Hollow", 270f, 4300f,
+        new("town_greymarsh", "field_marsh_hollow", "Sunken Hollow", 270f, 5300f,
             new[] { B(56, 60) }),
 
         // ── Ironreach (south, 24000/38000, r2200) — levels 60-75 ──────────────────────────────────
@@ -267,7 +267,7 @@ public static class WorldPlan
         new("castle_ironreach", "field_iron_crags", "Sunland Crags", 270f, 4600f,
             new[] { B(72, 75) }, EliteLevels: new[] { 75 }),
 
-        // ── Frostmere (north-west, 12000/15000, r2000) — levels 76-90, the endgame city ───────────
+        // ── Frostmere (north-west, 12000/15000, r3000 since `BL-319`, fields 5000 → 6000) — levels 76-90, the endgame city ───────────
         // Two-level bands, and one ELITE camp per field at the band cap (owner's 80 / 84 / 90).
         //
         // ⚠ THE WASTES HAS TWO ELITE CAMPS, 78 AND 80 (`BL-247`). Its three bands straddle the enchant
@@ -275,11 +275,11 @@ public static class WorldPlan
         // S, so the A band had no elite anywhere in the world and `scroll_enchant_a` was reachable from a
         // single creature. The 78 camp is the A band's, and it is also the only Epic-material faucet
         // between 66 and 79.
-        new("town_frostmere", "field_frost_wastes", "Frostmere Wastes", 180f, 5000f,
+        new("town_frostmere", "field_frost_wastes", "Frostmere Wastes", 180f, 6000f,
             new[] { B(76, 77), B(78, 79), B(80, 80) }, EliteLevels: new[] { 78, 80 }),
-        new("town_frostmere", "field_frost_expanse", "Radiant Expanse", 90f, 5000f,
+        new("town_frostmere", "field_frost_expanse", "Radiant Expanse", 90f, 6000f,
             new[] { B(81, 82), B(83, 84) }, EliteLevels: new[] { 84 }),
-        new("town_frostmere", "field_frost_summit", "Dawnbreak Summit", 270f, 5000f,
+        new("town_frostmere", "field_frost_summit", "Dawnbreak Summit", 270f, 6000f,
             new[] { B(85, 86, force: true),
                     B(87, 88, SummitRoster, force: true),
                     B(89, 90, SummitRoster, force: true) }, EliteLevels: new[] { 90 }),
@@ -290,14 +290,14 @@ public static class WorldPlan
         // (resist blades/blunt, weak to magic or the bow) and the AoE zone (half-HP swarms, packed tight).
         // Their creatures are `OwnField` — they live nowhere else, and nothing else lives here. ForceZoneLevel
         // spreads each two-creature roster across the field's five levels.
-        new("town_greymarsh", "field_marsh_shellback", "Shellback Flats", 180f, 4300f,
+        new("town_greymarsh", "field_marsh_shellback", "Shellback Flats", 180f, 5300f,
             new[] { B(55, 57, AntiBowMage58, force: true), B(58, 60, AntiBowMage58, force: true) }),
         new("town_greymarsh", "field_marsh_harpyfen", "Harpy Fen", 315f, 8600f,
             new[] { B(55, 57, AntiMelee58, force: true), B(58, 60, AntiMelee58, force: true) }),
         new("town_greymarsh", "field_marsh_swarm", "Swarming Mire", 45f, 8600f,
             new[] { B(55, 57, Swarm58, force: true, count: SwarmCount, radius: SwarmRadius),
                     B(58, 60, Swarm58, force: true, count: SwarmCount, radius: SwarmRadius) }),
-        new("town_frostmere", "field_frost_ironshell", "Ironshell Drifts", 0f, 5000f,
+        new("town_frostmere", "field_frost_ironshell", "Ironshell Drifts", 0f, 6000f,
             new[] { B(75, 77, AntiBowMage78, force: true), B(78, 80, AntiBowMage78, force: true) }),
         new("town_frostmere", "field_frost_stormcrest", "Stormcrest Ridge", 135f, 9000f,
             new[] { B(75, 77, AntiMelee78, force: true), B(78, 80, AntiMelee78, force: true) }),
@@ -436,14 +436,25 @@ public static class WorldPlan
         // guard may walk the town (MoveToward) and TownShields lets it fight an outlaw there, and the
         // spawner validators exempt guard posts. ⚠ The one cost: a non-outlaw who hits a guard with
         // PvP on, from inside the circle, is shielded from its answer — the same as anywhere in town.
-        float drawnEdge = MathF.Cos(MathF.PI / 8f);
+        // `BL-319` (2026-09-28): a pair at EVERY gate — three for a Y town, four for an X city — where the town's
+        // own road crosses its wall (TownLayout). The pair stands across the road, ± TownGateHalfWidth along the
+        // wall, TownGateOffset outside it, so you still walk between them.
         foreach (var city in Cities)
         {
-            float gy = city.Y + city.Radius * drawnEdge + TownGateOffset;
-            zones.Add(GuardZone(city.X - TownGateHalfWidth, gy, new[] { "guard_town_fighter" }, 80,
-                                TownGuardRespawnSeconds, TownGuardRespawnVariance, TownGuardPostRadius));
-            zones.Add(GuardZone(city.X + TownGateHalfWidth, gy, new[] { "guard_town_tank" }, 80,
-                                TownGuardRespawnSeconds, TownGuardRespawnVariance, TownGuardPostRadius));
+            var plan = TownLayout.PlanOf(city.Id);
+            if (plan is null) continue;
+            foreach (var gate in plan.Gates)
+            {
+                float ox = MathF.Cos(gate.Angle), oy = MathF.Sin(gate.Angle);   // outward
+                float px = -oy, py = ox;                                          // along the wall
+                float gx = gate.Centre.X + ox * TownGateOffset, gy = gate.Centre.Y + oy * TownGateOffset;
+                zones.Add(GuardZone(gx - px * TownGateHalfWidth, gy - py * TownGateHalfWidth,
+                                    new[] { "guard_town_fighter" }, 80,
+                                    TownGuardRespawnSeconds, TownGuardRespawnVariance, TownGuardPostRadius));
+                zones.Add(GuardZone(gx + px * TownGateHalfWidth, gy + py * TownGateHalfWidth,
+                                    new[] { "guard_town_tank" }, 80,
+                                    TownGuardRespawnSeconds, TownGuardRespawnVariance, TownGuardPostRadius));
+            }
         }
 
         // ---- One post at the far camp of each guarded field ----

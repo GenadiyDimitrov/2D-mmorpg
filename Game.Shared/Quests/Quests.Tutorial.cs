@@ -81,7 +81,7 @@ public static partial class QuestCatalog
 {
     // The cast, in the order a new character meets them. Ids from WorldMap's Brackenford roster.
     private const string NpcGatekeeper = "gatekeeper_brackenford";   // Gatekeeper Pell
-    private const string NpcHuntmaster = "hunter_brackenford";       // Huntmaster Cera
+    private const string NpcHuntmaster = "hunter_brackenford";       // Guild Receptionist Cera
     private const string NpcBuffer     = "buffer_newbie";            // Spirit Helper Nyra
     private const string NpcApothecary = "merchant_potions";         // Apothecary Miren
     private const string NpcArmsmaster = "merchant_gear";            // Armsmaster Dolan
@@ -111,15 +111,16 @@ public static partial class QuestCatalog
         // ---- PART 1 (beats 1-3): Pell, five pups, level 3, back to Cera. -------------------------
         // Cera GIVES it rather than Pell: beat 1 is "go and meet the gatekeeper", and a quest whose
         // first step is "talk to the man who just gave it to you" reads as a bug. She stands beside
-        // him at top-centre, so the walk is the same one.
+        // him at top-centre, so the walk is the same one. (`BL-319`: she is the Adventurers Guild's receptionist now, up
+        // the north road; Pell is on the plaza, one straight walk back.)
         // A CEILING of 20 (the only one in the chain): this is the tutorial, and a level-60 alt has
         // no business farming it. Parts 2-5 are uncapped so that out-levelling it mid-chain — which a
         // player who wanders off and hunts will do — can never strand them halfway.
         Register(new QuestDef(
             Id: QuestTutorialWelcome,
             Name: "Welcome, Traveller",
-            Description: "Huntmaster Cera looks you over. \"New, then. Go and say hello to Pell at the "
-                       + "gate first — he'll move you between the towns for nothing until you're 40, and "
+            Description: "Guild Receptionist Cera looks you over. \"New, then. Go and say hello to Pell on the "
+                       + "plaza first — he'll move you between the towns for nothing until you're 40, and "
                        + "you'll want that. Then blood yourself on the pups down the road and come back.\"",
             OfferNpcId: NpcHuntmaster,
             MinLevel: 1,
@@ -180,7 +181,7 @@ public static partial class QuestCatalog
                     TargetId: "ridgeback_pup", Count: 5),
                 new QuestStep(QuestStepType.ReachLevel, "Reach level 3", Count: 3),
                 new QuestStep(QuestStepType.TalkTo,
-                    "Return to Huntmaster Cera — her hunting contracts pay gold and exp, over and over",
+                    "Return to Guild Receptionist Cera — her hunting contracts pay gold and exp, over and over",
                     TargetId: NpcHuntmaster),
             },
             // ~50% of a level at 3 (level 3->4 costs 805), plus enough gold to replace a training

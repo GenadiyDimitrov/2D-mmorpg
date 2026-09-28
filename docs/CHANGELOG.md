@@ -7,12 +7,36 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.40**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.41**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-28 (latest) — 0.214.40: the skill bar is five pages of three tens (`BL-321`)
+## 2026-09-28 (latest) — 0.214.41: towns that look like towns (`BL-319`)
+
+> *"Visuals 1st -> as u said the 3d models will do the collision"* · *"expand as much as u need to fit everithing .. a
+> major city requires u to walk for a bit"* · *"until maybe bl-281 lands we can leave them at the door"* · *"the Hunt
+> Lodge we can call it "Adventurers Guild" and behind the "counter" can stay the "Guild Receptionist""*
+
+- **Every town has streets now**, drawn flat on the ground: main roads out to the gates, a plaza, side paths to the
+  doors, building footprints and a wall with a gap at each gate. The walls are **visual**, so you still walk through them.
+- **The three major cities are X-shaped, with four gates**: Brackenford, Greymarsh and Frostmere. Each quarter has one
+  job. The **church** (north-west) holds the class master and the Mindwright, plus Brackenford's High Priest and Elder.
+  The **market** (north-east) is Arms & Armour, with the Apothecary beside it (and Greymarsh's Assayer). The
+  **Keeper** is south-east, with Frostmere's Ledgerkeep at his side door. The **crafthall** is south-west: the Master
+  Crafter at its south door, the Anvil in the yard behind him, and Frostmere's three recipe givers.
+- **Stonewatch and Ironreach are Y-shaped, with three gates**. Stonewatch's stem points south at Brackenford.
+  Ironreach is the same Y turned round, with its stem north toward Brackenford and its arms toward its fields.
+- **Greymarsh and Frostmere grow from radius 2000 to 3000**, and their fields moved out by 1000 to keep clear of the wall.
+- **Every NPC stands at a door**, not in the road. The Gatekeeper stands on the plaza.
+- **The Huntmaster is the Guild Receptionist now**, at the **Adventurers Guild** up the north road. Same ids, same
+  contracts; the quest text says "Guild Receptionist".
+- **Two guards at every gate** (three or four per town) instead of one pair at the bottom.
+- **The roads between towns leave through the gates**, not through the wall.
+- New APK for the drawing. The server still speaks protocol 52, so a 0.214.40 APK works but shows no streets. No
+  `game.db` delete. SmokeTest ALL PASS. `BalanceMatrix --town-svg out.html` draws the towns as built.
+
+## 2026-09-28 — 0.214.40: the skill bar is five pages of three tens (`BL-321`)
 
 > *"each page 1/5 will have 10/20/30 slots ... so max we will have 150 skill slots"* · *"the page to have 10 slots ...
 > not 12 ... should have made the example with settings 2x5/1x10"* · *"I would like to have a copy"*

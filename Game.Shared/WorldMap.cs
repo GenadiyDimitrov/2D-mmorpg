@@ -297,93 +297,23 @@ public static class WorldMap
 
     /// <summary>NPCs placed in the world (quest givers, class-change masters).
     /// Stationary, non-combat. Add NPCs here; quests/class-changes reference
-    /// them by Id.</summary>
-    public static readonly NpcDef[] Npcs = new NpcDef[]
+    /// them by Id.
+    ///
+    /// <para>🔑 `BL-319` (2026-09-28): every town NPC stands AT THE DOOR of its building — see
+    /// <see cref="TownLayout"/>, which owns the buildings and the named door points (<see cref="TownLayout.XDoor"/>,
+    /// <see cref="TownLayout.YDoor"/>). His grouping, from the `BL-319` note: *"weaon and armor vendors are in one
+    /// shop, apoth(+ essence one) is his own, keeper is his onw building, anvil+craft also"*, a church in the big
+    /// cities for the class master and the Mindwright, and the old Huntmaster is the Adventurers Guild's
+    /// GUILD RECEPTIONIST (*"this one will give/reward quests"*). The hand-placed clusters and their staircase
+    /// arithmetic are gone; the ≥ 200 Y stagger now lives in the door points, and <see cref="ValidateNpcLabels"/>
+    /// still guards it at boot.</para></summary>
+    public static readonly NpcDef[] Npcs = TownNpcs().Concat(new NpcDef[]
     {
-        // --- Starter town: Brackenford (map centre, 24000,24000, radius 3500). NPCs
-        //     are spread ~2000 units apart (≈360px on screen) so labels don't overlap;
-        //     the centre is left clear (where new characters spawn). ---
-        // ===== BRACKENFORD TOWN LAYOUT (owner, 2026-07-29) ==========================================
-        // Grouped by WHAT YOU CAME FOR instead of scattered: everyone who sells stands together on the
-        // EAST side, everyone who gives a quest or changes your class on the WEST, the gatekeeper alone
-        // at top-centre and the skill-resetter alone at bottom-centre. Each cluster is ~450 apart —
-        // close enough to be one stop, far enough that the name labels do not overlap.
-        // (The Apothecary and the Mindwright used to sit 500 apart on the same side, which read as one
-        // clump and put a vendor next to a service that is nothing to do with shopping.)
-        //
-        // Smaller Y is NORTH on screen (WorldMapper flips Y), so 22200 is "above" the 24000 centre.
-
-        // ⚠ NO TWO NPCs IN A CLUSTER SHARE A Y (owner, 2026-07-30). Side-by-side NPCs at the same Y put
-        // their name labels on the same screen line, and a long name then covers the neighbour's plate —
-        // including its quest "!"/"?", which is the one thing you are scanning the town for. Every
-        // cluster is a DIAGONAL staircase instead: each NPC steps ~450 across and ~300 down from the
-        // last, so labels never share a line and are still one short walk apart.
-
-        // --- WEST: quests + class changes ---
-        new("master_class",  "Class Master Vael",  22900, 23650, NpcRole.ClassChange),
-        new("priest_oren",   "High Priest Oren",   22450, 23950, NpcRole.QuestGiver),
-        new("elder_marius",  "Elder Marius",       22000, 24250, NpcRole.QuestGiver),
-        // (The 3rd-class Grandmaster is NOT here — he stands in Greymarsh, below. See RingTownServices.)
-        // --- EAST: the three vendors, one stop ---
-        // (their wares are defined by ShopCatalog, keyed on these ids)
-        new("merchant_potions", "Apothecary Miren", 25100, 23750, NpcRole.Vendor),
-        // The gear trade is split in two (owner, playtest-13): one Armsmaster selling WEAPONS, one
-        // Outfitter selling ARMOR, shields and jewels. A single vendor stocking the whole F/E/D ladder
-        // at three qualities is ~150 rows, which is most of why the list read as "no idea which is which".
-        new("merchant_gear",    "Armsmaster Dolan",  25550, 24050, NpcRole.Vendor),
-        new("merchant_armor",   "Outfitter Bryn",    25000, 24350, NpcRole.Vendor),
-        // Newbie buffer: blesses lvl 6-75 characters with a buffer's full buff set.
-        new("buffer_newbie",    "Spirit Helper Nyra", 23400, 25550, NpcRole.Buffer),
-        // Skill reset: un-learns the PERMANENT, mutually-exclusive picks (the level-40 stat swaps)
-        // so a bad commitment can be re-chosen. Free to forget — the gold is NOT refunded.
-        // On its own: it is a service, not a shop, and it used to stand 500 from the Apothecary where the two read
-        // as one clump (owner). `BL-318` (2026-09-28): moved off the south road's centre line (24000, 25800) to
-        // the south-EAST, *"move it on the side .. its not an open field"*. 250 of Y from the Spirit Helper.
-        new("resetter_main",    "Mindwright Sela",   24700, 25300, NpcRole.SkillReset),
-        // --- Gatekeepers: one in every town (stands at its centre) so the whole
-        //     travel network is reachable in both directions. ---
-        // Brackenford's stands alone at TOP-CENTRE (owner) — it is the one NPC you walk to from
-        // anywhere in town, so it should not be inside either cluster.
-        new("gatekeeper_brackenford", "Gatekeeper Pell",   24000, 22200, NpcRole.Teleporter),
-        // The HUNTMASTER stands beside the gatekeeper, in every city (the ring towns' are generated
-        // below). He hands out the repeatable hunting contracts for the fields THIS city manages, and
-        // taking one is the errand immediately before "teleport me to the field" — so he belongs on
-        // that walk rather than in the quest cluster on the far side of town.
-        new("hunter_brackenford",     "Huntmaster Cera",   23300, 22500, NpcRole.QuestGiver),
-        // The ring towns' gatekeepers stand TOP-CENTRE too, 900 above the town centre. They used to sit
-        // on the centre point itself, which put them on the same screen line as the generated armsmaster
-        // (and, in Greymarsh, the Grandmaster) — the exact label overlap the ⚠ note is about.
-        new("gatekeeper_stonewatch",  "Gatekeeper Soren",  24000,  9100, NpcRole.Teleporter),
-        new("gatekeeper_greymarsh",   "Gatekeeper Maela",  36000, 32100, NpcRole.Teleporter),
-        new("gatekeeper_ironreach",   "Gatekeeper Vurst",  24000, 37100, NpcRole.Teleporter),
-        new("gatekeeper_frostmere",   "Gatekeeper Khaz",   12000, 14100, NpcRole.Teleporter),
-
-        // --- Training Outpost (24000, 5000, r=400), beside the dummies. The two NPCs are OFFSET
-        //     from each other so their labels don't overlap: gatekeeper at the north edge, buffer
-        //     at the south. Buff up, walk 800 north to the dummies, teleport out when done. ---
+        // --- Training Outpost (24000, 5000, r=400), beside the dummies. Not a town plan — the two NPCs are
+        //     OFFSET so their labels don't overlap: gatekeeper at the north edge, buffer at the south. ---
         new("gatekeeper_training", "Gatekeeper Vess",    24000, 4800, NpcRole.Teleporter),
         new("buffer_training",     "Spirit Helper Ilva", 24000, 5200, NpcRole.Buffer),
-
-        // --- Warehouse Keepers: one per MAIN town (offset from the gatekeeper so labels don't overlap).
-        //     Talking opens the private warehouse (deposit/withdraw). ---
-        // Brackenford's keeper joins the VENDOR cluster (owner): banking and shopping are the same
-        // errand — you sell, you stash, you buy — so they belong in one stop.
-        new("warehouse_brackenford", "Keeper Bram",   25450, 24650, NpcRole.Warehouse),
-
-        // --- THE MASTER CRAFTER (`BL-273` part 2, 0.203.0). ONE per town: he gives the level-40 crafter
-        //     quest, sells the T40/T52 gear recipes and the generic recipes, and is the ONLY place a craft
-        //     can be made (owner, 2026-09-24: *"crafts happen only at a Master (u need the place and tools
-        //     to craft)"*). Learning and forgetting recipes happens anywhere. Replaces `BL-05`'s five
-        //     profession masters; he stands where the Master Smith stood.
-        //
-        //     🔑 In every MAJOR city since `BL-303` (Brackenford, Greymarsh, Frostmere — see IsMajorCity); it was every
-        //     town (playtest-19 M11: *"i have no way to go back to the 1st town just to take it"*). The ring towns' copies are generated in RingTownServices.
-        new(CraftMasterId, "Master Crafter Gorran", 22200, 25850, NpcRole.CraftMaster),
-        // `BL-303` — THE ANVIL, where crafting happens, always beside a Master (owner, 2026-09-26: *"anvil and
-        // master are always togheter"*; *"later model will be just an anvil"*, so no title). 250 south of him: the
-        // Spirit Helper at 25550 is inside the label guard's X window.
-        new(AnvilId, "Anvil", 22200, 26100, NpcRole.Anvil),
-    }.Concat(RingTownServices()).ToArray();
+    }).ToArray();
 
     /// <summary>The Master Crafter's NPC id (the STARTER town's copy — every town's copy answers to it
     /// through <see cref="IsSameService"/>).</summary>
@@ -395,113 +325,114 @@ public static class WorldMap
     /// <summary>Is this NPC id a Master Crafter (any town's copy)?</summary>
     public static bool IsCraftMaster(string npcId) => IsSameService(CraftMasterId, npcId);
 
-    /// <summary>Every MAIN town carries the same service set (owner, 2026-07-29): a buffer, a
-    /// warehouse keeper, the THREE vendors and a gatekeeper. A town you cannot resupply in is a town
-    /// you teleport out of, which made the ring towns waypoints rather than places.
+    /// <summary>Every town carries the same service set (owner, 2026-07-29): a gatekeeper, a buffer, a
+    /// warehouse keeper, the three vendors and (since `BL-319`) the Guild Receptionist. A town you cannot
+    /// resupply in is a town you teleport out of.
     ///
     /// ⚠ Since `BL-303` the three MAJOR cities (<see cref="IsMajorCity"/>) also hold the Master Crafter, his Anvil and a
-    /// Mindwright; Stonewatch and Ironreach do not. Otherwise only the STARTER town differs, by holding what you use once: the class masters and the
-    /// skill-resetter (hand-placed above). The 3rd-class Grandmaster moved OUT to Greymarsh, the first
-    /// town whose band spans level 40 — you should not be walking back to the newbie town to take a
-    /// level-40 quest. Later 3rd-class quest NPCs belong beside him there.
+    /// Mindwright; Stonewatch and Ironreach do not. Each class master stands in the major city whose band
+    /// reaches his change: Vael in Brackenford, the Grandmaster in Greymarsh (40), the Archmaster in Frostmere (76).
     ///
-    /// Generated rather than hand-listed: six towns × five NPCs is thirty rows that must all agree
-    /// about their own layout, and the previous hand-listing had already drifted (keepers at the town
-    /// edge, no vendors or buffer at all outside Brackenford).</summary>
-    private static IEnumerable<NpcDef> RingTownServices()
+    /// ⚠ Brackenford's ids mostly carry no town suffix (<c>merchant_potions</c>, <c>resetter_main</c>, …): they
+    /// predate the ring towns and quests name them. Every other town's id is <c>&lt;service&gt;_&lt;town&gt;</c>.</summary>
+    private static IEnumerable<NpcDef> TownNpcs()
     {
-        // (id-suffix, display town, centre X, centre Y, keeper name, buffer name, apothecary,
-        //  armsmaster, outfitter)
-        var towns = new (string Key, float X, float Y, string Keeper, string Buffer,
-                         string Potions, string Weapons, string Armor, string Hunter)[]
+        // (town id, id suffix, gatekeeper, keeper, buffer, apothecary, armsmaster, outfitter, receptionist)
+        var towns = new (string Id, string Key, string Gate, string Keeper, string Buffer,
+                         string Potions, string Weapons, string Armor, string Guild)[]
         {
-            ("stonewatch", 24000, 10000, "Keeper Osric", "Spirit Helper Aven",
-                "Apothecary Rilla", "Armsmaster Toren", "Outfitter Maeve", "Huntmaster Radd"),
-            ("greymarsh",  36000, 33000, "Keeper Wyn",   "Spirit Helper Cael",
-                "Apothecary Thessa", "Armsmaster Rurik", "Outfitter Nerys", "Huntmaster Sela"),
-            ("ironreach",  24000, 38000, "Keeper Dagr",  "Spirit Helper Orla",
-                "Apothecary Venn", "Armsmaster Hakon", "Outfitter Brida", "Huntmaster Torv"),
-            ("frostmere",  12000, 15000, "Keeper Hald",  "Spirit Helper Ylva",
-                "Apothecary Nim", "Armsmaster Bors", "Outfitter Sigrid", "Huntmaster Ingra"),
+            ("town_brackenford", "brackenford", "Gatekeeper Pell",  "Keeper Bram",  "Spirit Helper Nyra",
+                "Apothecary Miren", "Armsmaster Dolan", "Outfitter Bryn",   "Guild Receptionist Cera"),
+            ("town_stonewatch",  "stonewatch",  "Gatekeeper Soren", "Keeper Osric", "Spirit Helper Aven",
+                "Apothecary Rilla", "Armsmaster Toren", "Outfitter Maeve",  "Guild Receptionist Radd"),
+            ("town_greymarsh",   "greymarsh",   "Gatekeeper Maela", "Keeper Wyn",   "Spirit Helper Cael",
+                "Apothecary Thessa", "Armsmaster Rurik", "Outfitter Nerys", "Guild Receptionist Sela"),
+            ("castle_ironreach", "ironreach",   "Gatekeeper Vurst", "Keeper Dagr",  "Spirit Helper Orla",
+                "Apothecary Venn", "Armsmaster Hakon", "Outfitter Brida",   "Guild Receptionist Torv"),
+            ("town_frostmere",   "frostmere",   "Gatekeeper Khaz",  "Keeper Hald",  "Spirit Helper Ylva",
+                "Apothecary Nim", "Armsmaster Bors", "Outfitter Sigrid",    "Guild Receptionist Ingra"),
         };
 
         foreach (var t in towns)
         {
-            // Same shape as Brackenford, scaled to the ring towns' smaller radius (2000): the three
-            // vendors + the keeper cluster EAST as one shopping stop, the buffer sits bottom-centre,
-            // and the gatekeeper stands alone at the centre. A DIAGONAL staircase (~300 across, ~300
-            // down per step) so no two of them share a Y — see the ⚠ note on the Brackenford block.
-            yield return new NpcDef($"merchant_potions_{t.Key}", t.Potions, t.X + 600, t.Y - 350, NpcRole.Vendor);
-            yield return new NpcDef($"merchant_gear_{t.Key}",    t.Weapons, t.X + 900, t.Y -  50, NpcRole.Vendor);
-            yield return new NpcDef($"merchant_armor_{t.Key}",   t.Armor,   t.X + 600, t.Y + 250, NpcRole.Vendor);
-            yield return new NpcDef($"warehouse_{t.Key}",        t.Keeper,  t.X + 900, t.Y + 550, NpcRole.Warehouse);
-            yield return new NpcDef($"buffer_{t.Key}",           t.Buffer,  t.X,       t.Y + 900, NpcRole.Buffer);
-            // Beside the gatekeeper (top-centre, Y-900), west of it and on its own Y — see the
-            // Brackenford Huntmaster for why he stands on the way OUT of town.
-            yield return new NpcDef($"hunter_{t.Key}",           t.Hunter,  t.X - 700, t.Y - 650, NpcRole.QuestGiver);
+            bool starter = t.Key == "brackenford";
+            string Id(string service, string brackenford) => starter ? brackenford : $"{service}_{t.Key}";
+            NpcDef At(string id, string name, Vec2 door, NpcRole role)
+            {
+                var p = TownLayout.At(t.Id, door);
+                return new NpcDef(id, name, p.X, p.Y, role);
+            }
 
-            // The MASTER CRAFTER (`BL-273` part 2), west, clear of the east shopping cluster by more than
-            // the label guard's 1500. One per town since 0.203.0: the five profession masters are gone. He
-            // stands where the Master Smith stood.
-            // `BL-303` (owner, 2026-09-26): only a MAJOR city has him — *"major cities (staring one, 40-65, and the
-            // 76+, where class masters are) those can have the craftMaster+anvil, mindweaver and other for
-            // respecs..the other "non major" cities(towns) can have only shops/buffer/gk/keeper"*.
-            if (!IsMajorCity(t.Key)) continue;
-            yield return new NpcDef(
-                $"{CraftMasterId}_{t.Key}", CraftMasterName(t.Key), t.X - 1400, t.Y - 150,
-                NpcRole.CraftMaster);
-            // His ANVIL (`BL-303`), 250 north: the Huntmaster (-650) and the gatekeeper (-900) keep >= 250 of Y.
-            yield return new NpcDef($"{AnvilId}_{t.Key}", "Anvil", t.X - 1400, t.Y - 400, NpcRole.Anvil);
-            // The MINDWRIGHT (skill reset) of a major city. `BL-318` (owner, 2026-09-28): *"i dont like his position
-            // in the middle of the gate ... move it on the side .. think of the town as it will have roads"*. It stood
-            // at (X, Y+1700), on the south road's centre line; now south-EAST, below the keeper (Y+550) and 700 off
-            // the road axis, so the road is clear. >= 350 of Y from the buffer (Y+900) and the keeper.
-            yield return new NpcDef($"{ResetterId}_{t.Key}", MindwrightName(t.Key), t.X + 700, t.Y + 1250, NpcRole.SkillReset);
+            if (TownLayout.PlanOf(t.Id)?.Shape == TownShape.Y)
+            {
+                // ---- A Y TOWN: guild up the north path, shrine and keeper in the wedges, shops on the stem ----
+                yield return At($"gatekeeper_{t.Key}", t.Gate, TownLayout.YDoor.Gatekeeper, NpcRole.Teleporter);
+                yield return At($"hunter_{t.Key}", t.Guild, TownLayout.YDoor.Guild, NpcRole.QuestGiver);
+                yield return At($"buffer_{t.Key}", t.Buffer, TownLayout.YDoor.Shrine, NpcRole.Buffer);
+                yield return At($"warehouse_{t.Key}", t.Keeper, TownLayout.YDoor.Keeper, NpcRole.Warehouse);
+                yield return At($"merchant_potions_{t.Key}", t.Potions, TownLayout.YDoor.Apothecary, NpcRole.Vendor);
+                // The gear trade is split in two (owner, playtest-13): weapons, then armour/shields/jewels — one shop.
+                yield return At($"merchant_gear_{t.Key}", t.Weapons, TownLayout.YDoor.Arms1, NpcRole.Vendor);
+                yield return At($"merchant_armor_{t.Key}", t.Armor, TownLayout.YDoor.Arms2, NpcRole.Vendor);
+                continue;
+            }
+
+            // ---- AN X CITY ----
+            yield return At($"gatekeeper_{t.Key}", t.Gate, TownLayout.XDoor.Gatekeeper, NpcRole.Teleporter);
+            yield return At($"hunter_{t.Key}", t.Guild, TownLayout.XDoor.Guild, NpcRole.QuestGiver);
+            yield return At(Id("buffer", "buffer_newbie"), t.Buffer, TownLayout.XDoor.Shrine, NpcRole.Buffer);
+            yield return At($"warehouse_{t.Key}", t.Keeper, TownLayout.XDoor.Keeper, NpcRole.Warehouse);
+            yield return At(Id("merchant_potions", "merchant_potions"), t.Potions, TownLayout.XDoor.Apothecary, NpcRole.Vendor);
+            yield return At(Id("merchant_gear", "merchant_gear"), t.Weapons, TownLayout.XDoor.Arms1, NpcRole.Vendor);
+            yield return At(Id("merchant_armor", "merchant_armor"), t.Armor, TownLayout.XDoor.Arms2, NpcRole.Vendor);
+            // The Master Crafter at the crafthall, his ANVIL in the yard behind (*"anvil and master are always
+            // togheter"*, `BL-303`; *"later model will be just an anvil"*, so no title).
+            yield return At(Id(CraftMasterId, CraftMasterId), CraftMasterName(t.Key), TownLayout.XDoor.Crafter, NpcRole.CraftMaster);
+            yield return At(Id(AnvilId, AnvilId), "Anvil", TownLayout.XDoor.Anvil, NpcRole.Anvil);
+
+            switch (t.Key)
+            {
+                case "brackenford":
+                    // THE CHURCH: the 2nd-class master, the two tutorial quest givers, and the Mindwright at the
+                    // north door. Skill reset un-learns the PERMANENT picks (the level-40 stat swaps); the gold
+                    // is not refunded.
+                    yield return At("master_class", "Class Master Vael", TownLayout.XDoor.Church1, NpcRole.ClassChange);
+                    yield return At("priest_oren", "High Priest Oren", TownLayout.XDoor.Church2, NpcRole.QuestGiver);
+                    yield return At("elder_marius", "Elder Marius", TownLayout.XDoor.Church3, NpcRole.QuestGiver);
+                    yield return At(ResetterId, "Mindwright Sela", TownLayout.XDoor.ChurchNorth, NpcRole.SkillReset);
+                    break;
+
+                case "greymarsh":
+                    // The 3rd-class master: Greymarsh is the first town whose band spans the level-40 change.
+                    yield return At("master_class3", "Grandmaster Thorne", TownLayout.XDoor.Church1, NpcRole.ClassChange);
+                    yield return At($"{ResetterId}_{t.Key}", MindwrightName(t.Key), TownLayout.XDoor.Church2, NpcRole.SkillReset);
+                    // `BL-272` part 2 — the T52 ESSENCE SHOP, in the one town whose band (40-60) is T52's, in the
+                    // Apothecary's building (*"apoth(+ essence one) is his own"*).
+                    yield return At(ShopCatalog.EssenceMerchant, "Assayer Corvane", TownLayout.XDoor.Assayer, NpcRole.Vendor);
+                    break;
+
+                case "frostmere":
+                    // The 4th-class master: the only town whose neighbours reach the level-76 ascension.
+                    yield return At("master_class4", "Archmaster Sevrin", TownLayout.XDoor.Church1, NpcRole.ClassChange);
+                    yield return At($"{ResetterId}_{t.Key}", MindwrightName(t.Key), TownLayout.XDoor.Church2, NpcRole.SkillReset);
+                    // The SP BROKER at the Keeper's side door — SP bottles are a 76+ concept.
+                    yield return At("sp_broker", "Ledgerkeep Mora", TownLayout.XDoor.KeeperSide, NpcRole.SpExchange);
+                    // `BL-274` part 3 (0.208.0) — the three RECIPE GIVERS, at the crafthall. Each gives a T76 and a
+                    // T80 daily and sends you to the other two.
+                    yield return At(QuestCatalog.RecipeWeaponGiver, "Weaponwright Harrow", TownLayout.XDoor.CraftWest1, NpcRole.QuestGiver);
+                    yield return At(QuestCatalog.RecipeArmourGiver, "Armourer Edda", TownLayout.XDoor.CraftWest2, NpcRole.QuestGiver);
+                    yield return At(QuestCatalog.RecipeJewelGiver, "Jeweller Ossian", TownLayout.XDoor.CraftWest3, NpcRole.QuestGiver);
+                    break;
+            }
         }
-        // The 3rd-class master lives in GREYMARSH (band 34-46) — the first town whose levels reach the
-        // level-40 discipline change (owner). He stands on the WEST side, mirroring Brackenford's
-        // "services east, class business west" split, and this is where the other 3rd-class quest NPCs
-        // should join him rather than accumulating back in the starter town.
-        yield return new NpcDef("master_class3", "Grandmaster Thorne", 34800, 33400, NpcRole.ClassChange);
-
-        // `BL-272` part 2 — the T52 ESSENCE SHOP, one NPC in the one town whose band (40-60) is T52's (his
-        // pick, 2026-09-24). East with the other shops, on the gatekeeper's side of the staircase: +1200 /
-        // -650 keeps 250 of Y from the gatekeeper (-900) and 300 from the Apothecary (-350), and the
-        // Huntmaster on the same Y stands 1900 away to the west, outside the label guard's 1500.
-        yield return new NpcDef(ShopCatalog.EssenceMerchant, "Assayer Corvane", 37200, 32350, NpcRole.Vendor);
-
-        // The 4th-class master lives in FROSTMERE — the last town on the level path out of
-        // Brackenford (north to Stonewatch, round to Greymarsh, Ironreach, and finally here), so it
-        // is the only town whose neighbours reach the level-76 ascension. Same west-side offset as
-        // Thorne (-1200, +400), which is a Y the ring-town layout already leaves free: the crafting
-        // quarter's jeweler was bumped to +650 for exactly this gap, and +400 clears the armorsmith
-        // (+150) and the jeweler by 250 each — over ValidateNpcLabels' 200 minimum.
-        yield return new NpcDef("master_class4", "Archmaster Sevrin", 10800, 15400, NpcRole.ClassChange);
-
-        // The SP BROKER shares Frostmere with the 4th-class master, and for the same reason: SP
-        // bottles are a 76+ concept, and this is the only town whose neighbours reach the ascension.
-        // ⚠ Frostmere's west column is DENSE — Master Smith 14850, armorsmith 15150, Sevrin 15400,
-        // jeweler 15650, Spirit Helper 15900, Apothecary 16200, Scribe 16500 — and ValidateNpcLabels
-        // wants 200 of Y between any two within 1500 of X. 14600 is the first free slot north of the
-        // smith. The boot assert rejected three placements before this one; trust it, not arithmetic.
-        // `BL-303` (0.214.25): moved from 14600, which the ANVIL now needs (250 north of the Master Crafter). 16400
-        // is the first free Y south of the column: Ossian 16150 and the Spirit Helper 15900 keep >= 250.
-        yield return new NpcDef("sp_broker", "Ledgerkeep Mora", 10800, 16400, NpcRole.SpExchange);
-
-        // `BL-274` part 3 (0.208.0) — the three RECIPE GIVERS, one per kind, in Frostmere only (owner, step 13:
-        // the 76+ town). Each gives a T76 and a T80 daily and sends you to the other two. A column of their
-        // own at X 11000, south of the gatekeeper line: 15100 / 15650 / 16150 each keep >= 250 of Y from the
-        // Master Crafter (14850), Sevrin (15400) and the Spirit Helper (15900); the east shops are > 1500 away.
-        yield return new NpcDef(QuestCatalog.RecipeWeaponGiver, "Weaponwright Harrow", 11000, 15100, NpcRole.QuestGiver);
-        yield return new NpcDef(QuestCatalog.RecipeArmourGiver, "Armourer Edda",       11000, 15650, NpcRole.QuestGiver);
-        yield return new NpcDef(QuestCatalog.RecipeJewelGiver,  "Jeweller Ossian",     11000, 16150, NpcRole.QuestGiver);
     }
 
-    /// <summary>`BL-303`: is this ring town a MAJOR city — Greymarsh (the 3rd-class master, 40-65) or Frostmere (the
-    /// 4th-class master, 76+)? With Brackenford (hand-placed) they are the three that hold the Master Crafter, his
-    /// Anvil and a Mindwright; Stonewatch and Ironreach keep shops, buffer, gatekeeper, keeper and Huntmaster.
-    /// A METHOD: it is read while <see cref="Npcs"/> is being built.</summary>
-    public static bool IsMajorCity(string townKey) => townKey is "greymarsh" or "frostmere";
+    /// <summary>`BL-303`: is this town a MAJOR city — Brackenford (the start), Greymarsh (the 3rd-class master, 40-65)
+    /// or Frostmere (the 4th-class master, 76+)? They hold the Master Crafter, his Anvil and a Mindwright, and since
+    /// `BL-319` they are the X-shaped cities (<see cref="TownLayout"/>); Stonewatch and Ironreach are Y towns with
+    /// shops, buffer, gatekeeper, keeper and the Guild Receptionist. A METHOD: it is read while <see cref="Npcs"/> is
+    /// being built.</summary>
+    public static bool IsMajorCity(string townKey) => townKey is "brackenford" or "greymarsh" or "frostmere";
 
     /// <summary>The Mindwright's (skill reset) NPC id — Brackenford's; a major city's is <c>resetter_main_&lt;town&gt;</c>.</summary>
     public const string ResetterId = "resetter_main";
@@ -512,6 +443,7 @@ public static class WorldMap
     /// TITLE is constant and only the given name changes (the old Master Smiths' names, kept).</summary>
     private static string CraftMasterName(string townKey) => "Master Crafter " + townKey switch
     {
+        "brackenford" => "Gorran",
         "stonewatch" => "Bern",
         "greymarsh" => "Kell",
         "ironreach" => "Odric",
@@ -542,16 +474,24 @@ public static class WorldMap
                 "WorldMap.Npcs):\n  " + string.Join("\n  ", bad));
     }
 
+    /// <summary>The roads between the cities: Brackenford out to each of the other four, the level path through
+    /// the world (north to Stonewatch, round to Greymarsh, Ironreach and finally Frostmere).
+    ///
+    /// `BL-319`: each runs centre → its own GATE → the other town's gate → centre, so a road leaves town where the
+    /// guards stand rather than through the wall. Kept 600 wide — it is the strip mobs are kept off.</summary>
     public static readonly RoadPath[] Roads =
+        new[] { "town_stonewatch", "town_greymarsh", "castle_ironreach", "town_frostmere" }
+            .Select(to => GateRoad("town_brackenford", to)).ToArray();
+
+    private static RoadPath GateRoad(string fromId, string toId)
     {
-        // Spokes from Brackenford (centre) out to each of the four other cities. The Emberfall and
-        // Duskvale spokes went with their towns; the remaining four are the level path through the
-        // world — north to Stonewatch, then round to Greymarsh, Ironreach and finally Frostmere.
-        new(Width: 600, Points: new[] { new MapPoint(24000, 24000), new MapPoint(24000, 10000) }), // Stonewatch (N)
-        new(Width: 600, Points: new[] { new MapPoint(24000, 24000), new MapPoint(36000, 33000) }), // Greymarsh (SE)
-        new(Width: 600, Points: new[] { new MapPoint(24000, 24000), new MapPoint(24000, 38000) }), // Ironreach (S)
-        new(Width: 600, Points: new[] { new MapPoint(24000, 24000), new MapPoint(12000, 15000) }), // Frostmere (NW)
-    };
+        var a = Towns.ById(fromId)!; var b = Towns.ById(toId)!;
+        var ga = TownLayout.GateToward(a.Id, b.X, b.Y); var gb = TownLayout.GateToward(b.Id, a.X, a.Y);
+        return new RoadPath(Width: 600, Points: new[]
+        {
+            new MapPoint(a.X, a.Y), new MapPoint(ga.X, ga.Y), new MapPoint(gb.X, gb.Y), new MapPoint(b.X, b.Y),
+        });
+    }
 
     /// <summary>True if (x,y) lies on a road strip (used to keep mobs off roads).</summary>
     public static bool OnRoad(float x, float y)

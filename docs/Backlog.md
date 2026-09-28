@@ -279,7 +279,8 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-288` | ⏸ | **CONSUMABLE RARITY → PLAIN LEVELS 1-6** — potions/scrolls may drop the rarity word entirely; deferred by him, split out of `BL-272` | items |
 | `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
 | `BL-314` | 🔵 | **Split passives into single-stat pieces** — regen / P.Def / speed as their own ladders shared across classes, so ten armor masteries become a few mixable passives — design first | skills |
-| `BL-319` | 🔵 | **Towns that look like towns** — Y (3 gates) / X (4 gates) roads, buildings beside the roads and side paths, a church in the big cities — sketch first | world |
+| `BL-323` | ⏸ | **Server-side collision (geodata)** — the server checks walls/buildings too, not only the 3D models; waits on `BL-281` | world |
+| `BL-324` | 🔵 | **Town sprint** — in a town, a move click shows a "Sprint" button after 1-2 s (or a Setup auto-sprint) for +50 move speed, cap 250 | world |
 
 ---
 
@@ -2286,28 +2287,22 @@ desitions .. not 1 passive 200 stats in one go ... now 200 passive -> chose wise
   size of the 3-4× budget the split has to absorb.
 
 
+## `BL-323` ⏸ SERVER-SIDE COLLISION (GEODATA)
 
+His `BL-319` answer 1, 2026-09-28: *"Visuals 1st -> as u said the 3d models will do the collision. - dont know hwat
+exactly Geodata means in games but we need something serverside to check collisons as well"*.
+"Geodata" is the server's own map of what blocks movement: walls, buildings, cliffs. The client's 3D models only stop
+the **picture**. Without a server copy, a modified client, auto-hunt, a mob chase or a knockback can still walk through
+a wall. The town walls and footprints of `BL-319` (`TownLayout`) are the first data it would read.
+⏸ Waits on `BL-281` (the models), so that both sides are built from one shape. The work then: a blocked-cell grid (or
+polygons) per town on the server, movement and knockback clamped against it, and mob chasing and auto-hunt pathing
+around it.
 
-## `BL-319` 🔵 TOWNS THAT LOOK LIKE TOWNS
+## `BL-324` 🔵 TOWN SPRINT
 
-Same note: *"how can we make it so a town looks like a town .. can u sketch some polygones — let say some towns
-are Y shaped road (so 3 gates) or a X(+) shaped with 4 gates .. and the position of the shops and houses are on
-the side of roads .. can also have a small paths that lead to the shops not everihing is on the main road ...
-also big towns can have a chirch to contain the class master and a mindweaver — weaon and armor vendors are in
-one shop, apoth(+ essence one) is his own, keeper is his onw building, anvil+craft also.."*.
-❓ **Sketch first** (his ask): layouts for a Y town and an X city, with the NPCs grouped by building. Touches
-`BL-281` (roads, models).
-
-**SKETCH DONE, 2026-09-28 — https://claude.ai/artifact/6GVfFFjotDCfKUWZ3pFr5N** (the source is `docs/design/TownPlans.html`). A Y town (Stonewatch/Ironreach,
-r 2000, S gate + NW/NE gates, shops on the stem, Keeper and Shrine in the wedges on side paths, a town hall for
-quests, a hunt lodge by a gate) and an X city (the majors, r 3000: church NW = Class Master + Mindwright (+ Grandmaster
-/ Archmaster / Brackenford's priest + elder), market NE = Arms & Armour + Apothecary/Assayer, Keeper SE, crafthall SW =
-Master Crafter + Anvil yard (+ Frostmere's recipe givers), Shrine on the plaza, Gatekeeper on the centre stone).
-❓ **Five questions before building** (my pick first):
-1. Walls: **visual footprints first** (walk-through), or solid (server collision + pathing for players, mobs, auto-hunt)?
-2. **Majors = X, Stonewatch/Ironreach = Y**, each Y rotated so its gates face its fields?
-3. **Major cities grow 2000 → 3000** (an X is cramped at 2000; Brackenford is 3500)?
-4. NPC **at the door** (never inside), or interiors?
-5. Huntmaster: a **lodge by the gate** to his fields, or beside the Gatekeeper as today? (settles "does he stay in the minor towns")
-
-
+His `BL-319` answer 3, 2026-09-28: *"later we can make `srpint popup` when u click to move a after a second or two a
+popup button shows and u click it ot (settings auto-sprint in towns) ur char sets its move to +50 (max still 250) -
+something like that for only cities/towns"*.
+The major cities are now r 3000, so a walk across one takes a while. Only inside a safe zone: a click-to-move shows a
+**Sprint** button after 1-2 s, or a Setup toggle **"auto-sprint in towns"** does it for you. Sprinting adds **+50 run
+speed**, still capped at 250, and ends at the town wall. Marked "later" by him; not started.
