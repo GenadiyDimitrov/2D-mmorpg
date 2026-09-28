@@ -7983,3 +7983,19 @@ weapon ≈ the weapon (0.1-1.1×), no longer 158×.
 ❓ **Three answers:** the curve past 30k (mine, or flat → T80 2H ≈ 40k) · how many tier 2H per level-up (today 2) ·
 the Apothecary, which pays 1-100 a batch and cannot level (a accept / b pay from shelf value — mine / c own weights).
 The window already shows +exp per recipe and level progress (0.214.30).
+
+
+## `BL-317` ✅ CLOSED — BUILT 0.214.33 (the Blessing pauses only out of combat)
+
+2026-09-28 — built in 0.214.33. Only the gauge's FILL pauses, and only out of combat (the 30 s window) or dead; a town no longer pauses it by itself, and a RUNNING Blessing's 3 minutes never pause. `BlessingPaused` = `!BlessingActive && (Dead || !IsInCombat)`; the HUD's `(Paused)` follows it.
+
+**As filed:**
+
+> Re-rules `BL-300` (0.214.6), playtest of 2026-09-28: *"maybe to remove the tawn/active pause — only when u go out
+> of combat to say (paused) so u know u dont gain passively %/60s … entering in town dont automattically pauses it -
+> it now waits for the 'out of combat' … the active blessing is working and its never paused -> we will make it an
+> exploit if acive blessing is paused ... (some1 activates it goes in town and w8 for a specific mob to spawn then
+> goes kills it gains massive favor then goes back to town …)"*.
+> - The **gauge's fill** (1%/min) pauses when out of combat (the 30 s window) or dead, and says `(Paused)`. A town
+>   no longer pauses it by itself.
+> - A **running Blessing's 3 minutes never pause.**

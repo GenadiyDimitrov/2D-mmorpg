@@ -115,8 +115,8 @@ Check("character starts with exactly one class", a.Subclasses?.Classes.Length ==
 Check("server pushed a skill bar", a.Bar is not null);
 Check("server pushed the warehouse on login", a.Ware is not null);
 
-// `BL-300`: a fresh character stands in town, out of combat, so the Blessing is PAUSED and the sheet says so.
-Check("the Blessing is paused in town (BL-300)", await a.WaitFor(() => a.Favor?.BlessingPaused == true, 3000),
+// `BL-317`: a fresh character is out of combat, so the Blessing's FILL is paused and the sheet says so.
+Check("the Blessing fill is paused out of combat (BL-317)", await a.WaitFor(() => a.Favor?.BlessingPaused == true, 3000),
       a.Favor is null ? "no Favor push" : $"paused={a.Favor.BlessingPaused}");
 
 // -------------------------------------------------------------------------------------------

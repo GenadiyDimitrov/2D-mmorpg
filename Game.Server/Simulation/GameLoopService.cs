@@ -11675,28 +11675,29 @@ public class GameLoopService : BackgroundService
     /// Nothing ticks while logged out (*"not offline"*); an offline-FARMER is still in the world, so for it
     /// both halves run, the same way it drains the Favor.
     ///
-    /// <para>🔑 `BL-300` (owner, 2026-09-26): a RUNNING Blessing's clock PAUSES too — *"need to pause if i go out
-    /// of combat or in town"*, and *"u kill your last mob and the blessing activates and u dont reengage after
-    /// 30s ... the blessing should say (paused)"*. So "out of combat" is the same 30 s window, not a new timer.
-    /// Every pause/resume pushes the sheet, which re-stamps the seconds the HUD counts down from.</para></summary>
+    /// <para>🔑 `BL-317` (owner, 2026-09-28, re-ruling `BL-300`): only the gauge's FILL pauses, and only out of
+    /// combat or dead: *"remove the tawn/active pause — only when u go out of combat to say (paused)"*. A town no
+    /// longer pauses anything by itself. A RUNNING Blessing's 3 minutes never pause: *"we will make it an exploit if
+    /// acive blessing is paused ... (some1 activates it goes in town and w8 for a specific mob to spawn"*. Every
+    /// pause/resume pushes the sheet, so the HUD's `(Paused)` follows it.</para></summary>
     private void TickBlessing(Entity p)
     {
-        bool paused = BlessingPaused(p);
-        if (paused != p.BlessingSentPaused) SendFavor(p);
-        if (paused) return;
         if (p.BlessingActive)
         {
             if (--p.BlessingSecondsLeft <= 0) EndBlessing(p);
             return;
         }
+        bool paused = BlessingPaused(p);
+        if (paused != p.BlessingSentPaused) SendFavor(p);
+        if (paused) return;
         AddBlessing(p, WayfarerBlessing.PerCombatMinute / 60.0);
         PushFavorIfMoved(p);
     }
 
-    /// <summary>`BL-300` — neither the Blessing's clock nor its combat fill runs while dead, out of combat
-    /// (<see cref="IsInCombat"/>'s 30 s window), or inside a town (a safe zone).</summary>
+    /// <summary>`BL-317` — the gauge's combat fill does not run while dead or out of combat
+    /// (<see cref="IsInCombat"/>'s 30 s window). A running Blessing is never paused.</summary>
     private bool BlessingPaused(Entity p) =>
-        p.Dead || !IsInCombat(p) || GameConstants.InSafeZone(p.X, p.Y);
+        !p.BlessingActive && (p.Dead || !IsInCombat(p));
 
     /// <summary>The FINISHED personal EXP/SP multiplier for mob kills: 1 + the Favor's bonus + the
     /// Blessing's +100% while one runs. ADDITIVE, his arithmetic (*"when blessing activates the SP/EXP start

@@ -1593,8 +1593,8 @@ namespace Game.Client
                                 + "  L" + f.Stage
                                 + "  +" + (WayfarerFavor.BonusPerStage * f.Stage * 100f).ToString("0") + "%";
 
-            // `BL-300`: paused (out of combat, dead, in town) the server's clock is stopped, so the HUD holds the
-            // seconds it was sent instead of counting down, and both texts say so.
+            // `BL-317`: only the gauge FILL pauses (out of combat or dead). A running Blessing never does, so the
+            // countdown branch below only holds its seconds for an old server that still pauses it.
             int left = !f.BlessingActive ? 0
                      : f.BlessingPaused ? f.BlessingSecondsLeft
                      : Mathf.Max(0, f.BlessingSecondsLeft - (int)(Time.realtimeSinceStartup - Boot.FavorReceivedAt));

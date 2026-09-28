@@ -281,10 +281,11 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-307` | 🟡 | **Full drops below level 40** — F/E-grade Common gear, materials and lucky drops, not only gold — 📝 PROPOSAL drafted, `docs/design/LowLevelDrops.md`, 4 questions | drops |
 | `BL-314` | 🔵 | **Split passives into single-stat pieces** — regen / P.Def / speed as their own ladders shared across classes, so ten armor masteries become a few mixable passives — design first | skills |
 | `BL-316` | 🟢 | **The arrow can be turned off** — `[Location: Current]` in the quest details is clickable and stops the arrow, nothing tracked | quests |
-| `BL-317` | 🟢 | **The Blessing pauses only out of combat** — no town pause; a RUNNING Blessing never pauses (the town-wait exploit) | favor |
 | `BL-318` | 🟢 | **The Mindwright off the gate** — stands to the side, not in the middle of the road | world |
 | `BL-319` | 🔵 | **Towns that look like towns** — Y (3 gates) / X (4 gates) roads, buildings beside the roads and side paths, a church in the big cities — sketch first | world |
 | `BL-320` | 🟢 | **Skill bar size: default ×2.5, range ×1.5-×4.5** (today's numbers) | ui |
+| `BL-321` | 🔵 | **120 bar entries: main pages 1-5, additional pages 6-10** — full 12-slot additional bars only (0/1/2), shape follows main, `[To bar]` never disabled — proposal first | ui |
+| `BL-322` | 🟢 | **Charge fires in auto-hunt** — it is not a taunt | auto-hunt |
 
 ---
 
@@ -2298,18 +2299,6 @@ Playtest of 0.214.5 (`BL-311`), 2026-09-28: *"Need to be able to disable the arr
 Client only: clicking the tracked quest's location line clears the arrow's quest.
 
 
-## `BL-317` 🟢 THE BLESSING PAUSES ONLY OUT OF COMBAT
-
-Re-rules `BL-300` (0.214.6), playtest of 2026-09-28: *"maybe to remove the tawn/active pause — only when u go out
-of combat to say (paused) so u know u dont gain passively %/60s … entering in town dont automattically pauses it -
-it now waits for the 'out of combat' … the active blessing is working and its never paused -> we will make it an
-exploit if acive blessing is paused ... (some1 activates it goes in town and w8 for a specific mob to spawn then
-goes kills it gains massive favor then goes back to town …)"*.
-- The **gauge's fill** (1%/min) pauses when out of combat (the 30 s window) or dead, and says `(Paused)`. A town
-  no longer pauses it by itself.
-- A **running Blessing's 3 minutes never pause.**
-
-
 ## `BL-318` 🟢 THE MINDWRIGHT OFF THE GATE
 
 Playtest of 0.214.7 (`BL-310`), 2026-09-28: *"the guards are ok now .. the mindweaver i dont like his position in
@@ -2333,3 +2322,22 @@ one shop, apoth(+ essence one) is his own, keeper is his onw building, anvil+cra
 Playtest of 0.214.27, 2026-09-28: *"I didnt think when we decrease the size of a skill bar 3 times it will become
 so small ... are u sure its 3 times ? make the dafualt of skill bar current x2.5 .. and to range from 1.5 to 4.5
 (current numbers)"*. (It was 3× — per side, so a ninth of the area, which is why it looks so much smaller.)
+
+
+## `BL-321` 🔵 120 BAR ENTRIES — MAIN PAGES 1-5, ADDITIONAL PAGES 6-10
+
+His finished 0.214.16 comment (`BL-299`), 2026-09-28: *"to have 120 entries .. the 5x12 for the main bar and 5x12 for
+the additional bar .. the main bar to be 0~60 (1~5) and additonal to be 61~120 (6~10) and the main bar still to move
+the additonal +-1 with it self .. now when i move my bar from 1 to 2 .. the 1 goes up (on the additonal place) and its
+ackward — the [to bar] in the skills tab never to be disabled so once a skill is at index 77 for example and i have no
+open aditional bars to be able to move that skill on my main bar .. also remove the half bars ... the addtional bar can
+only be a full bar (12 slots not 6) and it follos the position of the main .. if main is vertical 2x6 the addtional is
+vertical 2x6 as well -> the current additional bar button in the setup can only be 0/1/2 .. so no addtional bars .. one
+or two .. the shape fowlows main"*.
+❓ **A proposal first** (his ask): `docs/design/SkillBar120.md`.
+
+
+## `BL-322` 🟢 CHARGE FIRES IN AUTO-HUNT
+
+His note, 2026-09-28: *"also charge need to be able to be used in auto mode as well .. its not a taunt .. phantom jump
+is used but charge is not"*.
