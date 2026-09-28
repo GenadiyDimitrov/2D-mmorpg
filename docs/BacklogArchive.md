@@ -8020,3 +8020,14 @@ The window already shows +exp per recipe and level progress (0.214.30).
 > Playtest of 0.214.27, 2026-09-28: *"I didnt think when we decrease the size of a skill bar 3 times it will become
 > so small ... are u sure its 3 times ? make the dafualt of skill bar current x2.5 .. and to range from 1.5 to 4.5
 > (current numbers)"*. (It was 3× — per side, so a ninth of the area, which is why it looks so much smaller.)
+
+
+## `BL-316` ✅ CLOSED — BUILT 0.214.36 (the quest arrow can be turned off)
+
+2026-09-28 — built in 0.214.36. `[Location: current]` is clickable: it sets `_arrowOff` (client session field) and `ArrowQuest()` returns null until `[Location tracking]` is pressed on a quest.
+
+**As filed:**
+
+> Playtest of 0.214.5 (`BL-311`), 2026-09-28: *"Need to be able to disable the arrow for the current quest as well ->
+> [Location:Current] to be clickable and to stop the arrow (no quest location is tracked when done that)"*.
+> Client only: clicking the tracked quest's location line clears the arrow's quest.

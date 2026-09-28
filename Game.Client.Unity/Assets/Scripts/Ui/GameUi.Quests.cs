@@ -437,9 +437,14 @@ namespace Game.Client
             // LOCATION TRACKING (`BL-311`): *"if a quest is tracked inside the details panel a [location
             // tracking] button must appear and is disabled (or text as "current") so i can select which
             // one"* the arrow points at. Shown only on a TRACKED quest.
+            // `BL-316`: *"[Location:Current] to be clickable and to stop the arrow (no quest location is tracked
+            // when done that)"* — pressed on the followed quest it turns the arrow OFF until another is picked.
             _questArrowButton = UiKit.TextButton(inner, "Location tracking", () =>
             {
-                _arrowQuestId = _questDetailId;
+                var followed = ArrowQuest();
+                bool current = followed != null && followed.Id == _questDetailId;
+                _arrowOff = current;
+                _arrowQuestId = current ? "" : _questDetailId;
                 ShowQuestDetail(_questDetailId);
             }, 16f);
             UiKit.Place(UiKit.Rect(_questArrowButton.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
@@ -553,7 +558,6 @@ namespace Game.Client
                 var followed = ArrowQuest();
                 bool current = followed != null && followed.Id == questId;
                 UiKit.SetButtonText(_questArrowButton, current ? "Location: current" : "Location tracking");
-                _questArrowButton.interactable = !current;
                 _questArrowButton.targetGraphic.color = current ? UiKit.TabActive : UiKit.PanelLight;
             }
 
@@ -646,11 +650,15 @@ namespace Game.Client
         /// character state, so it lives in the client for the session. Once it is no longer pinned (or is
         /// finished) the arrow falls back to the top pin.</summary>
         private string _arrowQuestId = "";
+        /// <summary>`BL-316`: the arrow was switched off with [Location: current]; no quest is followed until
+        /// [Location tracking] is pressed on one.</summary>
+        private bool _arrowOff;
 
         /// <summary>The quest the arrow follows: the picked one while it is pinned and active, else the
         /// first pinned quest (the tracker's top row), else null.</summary>
         private QuestEntry ArrowQuest()
         {
+            if (_arrowOff) return null;
             var entries = Boot.Quests != null ? Boot.Quests.Entries : null;
             if (entries == null) return null;
             QuestEntry first = null;

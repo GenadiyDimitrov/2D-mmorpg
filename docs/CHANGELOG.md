@@ -7,12 +7,19 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.35**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.36**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-28 (latest) — 0.214.35: the skill bar is ×2.5 by default, ×1.5 to ×4.5 (`BL-320`)
+## 2026-09-28 (latest) — 0.214.36: the quest arrow can be turned off (`BL-316`)
+
+> *"[Location:Current] to be clickable and to stop the arrow (no quest location is tracked when done that)"*
+
+- **Press `[Location: current]`** in the followed quest's details and the arrow goes away: no quest is followed until you
+  press `[Location tracking]` on one again. It no longer falls back to the top pin while it is off.
+
+## 2026-09-28 — 0.214.35: the skill bar is ×2.5 by default, ×1.5 to ×4.5 (`BL-320`)
 
 > *"make the dafualt of skill bar current x2.5 .. and to range from 1.5 to 4.5 (current numbers)"*
 
