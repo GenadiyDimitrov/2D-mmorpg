@@ -1,85 +1,85 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST (x1000),REPLACES,RACE,COMMENT
 ,,,,,,,,,,,,,,,,,----------------------------Shield Mastery----------------------------
-40,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +25%, Shield Rate +85%; +10% P.Def, bow resistance 16%",0,28,[]
-43,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +25%, Shield Rate +85%; +10% P.Def, bow resistance 24%",0,35,[]
-46,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +25%, Shield Rate +85%; +10% P.Def, bow resistance 32%",0,40,[]
-49,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +25%, Shield Rate +85%; +10% P.Def, bow resistance 40%",0,50,[]
-52,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +30%, Shield Rate +100%; +10% P.Def, bow resistance 40%",0,74,[]
+40,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +25%, Shield Rate +85%; +10% P.Def, bow resistance 16%",0,100,[]
+43,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +25%, Shield Rate +85%; +10% P.Def, bow resistance 24%",0,125,[]
+46,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +25%, Shield Rate +85%; +10% P.Def, bow resistance 32%",0,143,[]
+49,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +25%, Shield Rate +85%; +10% P.Def, bow resistance 40%",0,179,[]
+52,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +30%, Shield Rate +100%; +10% P.Def, bow resistance 40%",0,265,[]
 ,,,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
-40,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +65",0,7
-43,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +70",0,35
-46,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +76",0,20
-49,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +81",0,50
-52,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +94",0,74
-55,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +107",0,40
-58,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +113",0,44
-60,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +120",0,60
-62,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +127",0,170
-64,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +135",0,95
-66,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +142",0,280
-68,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +150",0,320
-70,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +157",0,390
-72,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +165",0,325
-74,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +173",0,880
+40,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +65",0,25.1
+43,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +70",0,125
+46,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +76",0,71.6
+49,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +81",0,179
+52,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +94",0,265
+55,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +107",0,143
+58,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +113",0,158
+60,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +120",0,215
+62,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +127",0,609
+64,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +135",0,340
+66,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +142",0,1000
+68,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +150",0,1150
+70,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +157",0,1400
+72,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +165",0,1160
+74,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +173",0,3150
 ,,,,,,,,,,,,,,,,,----------------------------Tank Defence----------------------------
-40,Tank Defence,tank_defence_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: p.def x1.11 and eva -2;",0,7
-58,Tank Defence,tank_defence_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: p.def x1.15 and eva -2;",0,44
+40,Tank Defence,tank_defence_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: p.def x1.11 and eva -2;",0,25.1
+58,Tank Defence,tank_defence_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: p.def x1.15 and eva -2;",0,158
 ,,,,,,,,,,,,,,,,,----------------------------Critical Damage Resist----------------------------
-40,Critical Damage Resist,tank_crit_resist,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: crit dmg reduction 25%;",0,7
-60,Critical Damage Resist,tank_crit_resist,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: crit dmg reduction 35%;",0,60
+40,Critical Damage Resist,tank_crit_resist,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: crit dmg reduction 25%;",0,25.1
+60,Critical Damage Resist,tank_crit_resist,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: crit dmg reduction 35%;",0,215
 ,,,,,,,,,,,,,,,,,----------------------------MpRegen----------------------------
-40,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +3.5;",0,7
-46,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +3.9;",0,20
-55,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +4.3;",0,40
-64,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +4.7;",0,95
-72,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +5.1;",0,325
+40,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +3.5;",0,25.1
+46,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +3.9;",0,71.6
+55,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +4.3;",0,143
+64,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +4.7;",0,340
+72,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +5.1;",0,1160
 ,,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
-40,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +51",0,14
-43,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +55",0,35
-46,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +59",0,40
-49,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +67",0,50
-52,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +75",0,37
-55,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +84",0,81
-58,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +89",0,88
-60,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +94",0,120
-62,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +98",0,85
-64,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +103",0,190
-66,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +109",0,280
-68,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +114",0,320
-70,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +119",0,195
-72,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +124",0,650
-74,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +130",0,880
+40,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +51",0,50.1
+43,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +55",0,125
+46,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +59",0,143
+49,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +67",0,179
+52,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +75",0,132
+55,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +84",0,290
+58,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +89",0,315
+60,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +94",0,430
+62,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +98",0,304
+64,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +103",0,680
+66,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +109",0,1000
+68,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +114",0,1150
+70,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +119",0,698
+72,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +124",0,2330
+74,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +130",0,3150
 ,,,,,,,,,,,,,,,,,----------------------------Magic Resistance----------------------------
-40,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +5%",0,14
-52,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +10%",0,37
-62,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +15%",0,85
-70,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +20%",0,195
+40,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +5%",0,50.1
+52,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +10%",0,132
+62,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +15%",0,304
+70,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +20%",0,698
 ,,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
-40,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +19",0,28
-43,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +22",0,35
-46,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +26",0,40
-49,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +31",0,50
-52,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +36",0,74
-55,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +41",0,81
-58,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +46",0,88
-60,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +50",0,120
-62,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +54",0,170
-64,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +59",0,190
-66,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +63",0,280
-68,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +67",0,320
-70,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +72",0,390
-72,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +76",0,650
-74,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +81",0,880
+40,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +19",0,100
+43,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +22",0,125
+46,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +26",0,143
+49,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +31",0,179
+52,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +36",0,265
+55,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +41",0,290
+58,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +46",0,315
+60,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +50",0,430
+62,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +54",0,609
+64,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +59",0,680
+66,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +63",0,1000
+68,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +67",0,1150
+70,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +72",0,1400
+72,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +76",0,2330
+74,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +81",0,3150
 ,,,,,,,,,,,,,,,,,----------------------------Final Defense----------------------------
-40,Final Defense,final_defense,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Def with 5%, when HP is below 50% increase P.Def with 10% and M.Def with 2.5%, when HP is below 25% increase P.Def with 15% and M.Def with 5%",0,28
-52,Final Defense,final_defense,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Def with 7%, when HP is below 50% increase P.Def with 14% and M.Def with 3.5%, when HP is below 25% increase P.Def with 21% and M.Def with 7%",0,74
-60,Final Defense,final_defense,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Def with 10%, when HP is below 50% increase P.Def with 20% and M.Def with 5%, when HP is below 25% increase P.Def with 30% and M.Def with 10%",0,120
+40,Final Defense,final_defense,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Def with 5%, when HP is below 50% increase P.Def with 10% and M.Def with 2.5%, when HP is below 25% increase P.Def with 15% and M.Def with 5%",0,100
+52,Final Defense,final_defense,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Def with 7%, when HP is below 50% increase P.Def with 14% and M.Def with 3.5%, when HP is below 25% increase P.Def with 21% and M.Def with 7%",0,265
+60,Final Defense,final_defense,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Def with 10%, when HP is below 50% increase P.Def with 20% and M.Def with 5%, when HP is below 25% increase P.Def with 30% and M.Def with 10%",0,430
 ,,,,,,,,,,,,,,,,,----------------------------Aggravated State----------------------------
-52,Aggravated State,tank_aggravated_state,Passive,,,0,900,party/aoe,0,25,30,"When dmg is received with 15% chance increase P.Atk and Attack speed of party memebrs with 2% and owner with 3% and P.Skill.Power with 10%",0,74
-60,Aggravated State,tank_aggravated_state,Passive,,,0,900,party/aoe,0,25,30,"When dmg is received with 15% chance increase P.Atk and Attack speed of party memebrs with 3% and owner with 5% and P.Skill.Power with 15%",0,120
-68,Aggravated State,tank_aggravated_state,Passive,,,0,900,party/aoe,0,25,30,"When dmg is received with 15% chance increase P.Atk and Attack speed of party memebrs with 5% and owner with 7% and P.Skill.Power with 20%",0,320
+52,Aggravated State,tank_aggravated_state,Passive,,,0,900,party/aoe,0,25,30,"When dmg is received with 15% chance increase P.Atk and Attack speed of party memebrs with 2% and owner with 3% and P.Skill.Power with 10%",0,265
+60,Aggravated State,tank_aggravated_state,Passive,,,0,900,party/aoe,0,25,30,"When dmg is received with 15% chance increase P.Atk and Attack speed of party memebrs with 3% and owner with 5% and P.Skill.Power with 15%",0,430
+68,Aggravated State,tank_aggravated_state,Passive,,,0,900,party/aoe,0,25,30,"When dmg is received with 15% chance increase P.Atk and Attack speed of party memebrs with 5% and owner with 7% and P.Skill.Power with 20%",0,1150
 ,,,,,,,,,,,,,,,,,----------------------------Whisp Mastery----------------------------
-60,Whisp Mastery,whisp_mastery,Passive,,,0,0,self/single,0,0,0,"Increase the limit of active whisps to 2",0,120
+60,Whisp Mastery,whisp_mastery,Passive,,,0,0,self/single,0,0,0,"Increase the limit of active whisps to 2",0,430
 ,,,,,,,,,,,,,,,,,----------------------------Taunting Whisps----------------------------
 40,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 6500), Consumes 4 skill stones",50,28,,Human,uses whisp_taunt
 46,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 7500); Consumes 4 skill stones",54,40,,Human,uses whisp_taunt

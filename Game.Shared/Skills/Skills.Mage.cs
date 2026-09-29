@@ -13,8 +13,6 @@ public static partial class SkillCatalog
     //  `mana_barrier` → `mana_barrier` was — pre-release, nobody outside this machine holds the
     //  old string, and two defs with one payload is how a number drifts. Don't reinstate it.)
     public const string Might = "might";
-    public const string MageAntiMagic = "anti_magic_mage";
-    public const string WeaponMastery = "weapon_mastery";
     public const string Weakness = "weakness";
     public const string GreaterWeakness = "greater_weakness";
     // (`greater_heal` — deleted 2026-08-07 with the God layer, playtest-19 `0b`.)
@@ -133,34 +131,6 @@ public static partial class SkillCatalog
                     Description: "+15% P.Atk, +15% P.Def, 9% melee vampirism, +4 Accuracy."),
             }),
 
-        // Anti-Magic — learnable mage passive: +M.Def and MAGIC RESISTANCE (damage reduction).
-        // Lvls 1-2 = base mage; the Healer/Nuker CONTINUE it at lvls 3-6 (20/25/30/35).
-        // ⚠ The CSVs' "mRes +5%" WAS built here as a fizzle floor, purely because no magic
-        // damage-reduction stat existed (owner, 2026-08-10: *"the problem was we didn't have a mdmg
-        // reduction, that's why we converted them to a floor"*). It is a damage reduction now, and
-        // the mage@14 rung's old "5% chance for spells to fizzle on you" wording went with it.
-        // The numbers are straight from cleric/nuker 2nd.csv — don't retune them here.
-        new(MageAntiMagic, "Anti-Magic", BaseClass.Mage, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive,
-            Description: "Passive. Hardens you against hostile magic.",
-            Levels: new[]
-            {
-                new SkillLevel(SpCost: 480,   Passive: new PassiveEffect(MagicDefence: 12), Description: "+12 magic defence."),
-                new SkillLevel(SpCost: 2200,  Passive: new PassiveEffect(MagicDefence: 16, MagicResist: 0.05f),
-                    Description: "+16 magic defence and 5% magic resistance."),
-                new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(MagicDefence: 20, MagicResist: 0.05f),
-                    Description: "+20 magic defence and 5% magic resistance."),
-                new SkillLevel(SpCost: 6400,  Passive: new PassiveEffect(MagicDefence: 25, MagicResist: 0.05f),
-                    Description: "+25 magic defence and 5% magic resistance."),
-                new SkillLevel(SpCost: 12800, Passive: new PassiveEffect(MagicDefence: 30, MagicResist: 0.10f),
-                    Description: "+30 magic defence and 10% magic resistance."),
-                new SkillLevel(SpCost: 25000, Passive: new PassiveEffect(MagicDefence: 36, MagicResist: 0.10f),
-                    Description: "+36 magic defence and 10% magic resistance."),
-                // Level 7 = the healer's level-40 row (`healer 3rd.csv`, his).
-                new SkillLevel(SpCost: 36000, Passive: new PassiveEffect(MagicDefence: 43, MagicResist: 0.15f),
-                    Description: "+43 magic defence and 15% magic resistance."),
-            }.Concat(HealerAntiMagicRungs()).Concat(HealerFourthAntiMagicRungs()).ToArray()),
 
         // Elemental Bolt — the Nuker's MAIN nuke (replaces Magic Bolt). 13 levels, learned
         // every 5 levels from 20 to 80.
@@ -278,14 +248,6 @@ public static partial class SkillCatalog
                 new SkillLevel(Power: 94,  HpCost: 272, SpCost: 280000, Description: "Burns 272 HP to restore 94 MP."),   // 66
             }),
 
-        // Weapon Mastery — flat attack passive (asymmetric: more M.Atk than P.Atk).
-        // Also carries the caster bow penalty (half cast speed while wielding a bow).
-        new(WeaponMastery, "Weapon Mastery", BaseClass.Mage, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive, SpCost: 2200,
-            WeaponMasteryLevels: new[] { CasterMastery(new PassiveEffect(MagAtk: 4, PhysAtk: 2)) },
-            Description: "Passive. With a sword or blunt: +4 M.Atk and +2 P.Atk. Casting with "
-                       + "anything else (bow, dagger, or bare-handed) is half speed."),
 
         // (Dispel Magic DELETED 2026-08-07, playtest-19 `0a`/G1 — it was on no class table, so it
         //  was in the catalog and learnable by nobody. The Cancel EFFECT and DispelCount stay in the

@@ -107,51 +107,11 @@ public static partial class SkillCatalog
     //  (or Skills.Masteries.cs, for the armour) concatenates it.
     // ═══════════════════════════════════════════════════════════════════════════════════════════
 
-    /// <summary>ARMOR MASTERY rungs 21-35. P.Def 124 → 155 (+2 a rung, widening to +3 at the top),
-    /// HP regen FLAT at 4.0, light evasion 10 → 12, heavy a further 60 → 80 P.Def and 200 → 300 HP.
-    /// <para>⚠ His level-87 cell reads 146 where the +2 stride wants 147 — left exactly as authored,
-    /// because the ladder still RISES (145 → 146 → 149) and only a DIP is a defect. Listed in `BL-237`
-    /// as cosmetic and untouched.</para></summary>
-    private static readonly int[] W4ArmorDef =
-        { 124, 126, 128, 130, 132, 134, 136, 138, 140, 142, 145, 146, 149, 152, 155 };
-    private static readonly int[] W4ArmorLightEva =
-        { 10, 10, 10, 10, 11, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12 };
-    private static readonly int[] W4ArmorHeavyDef =
-        { 60, 60, 60, 60, 70, 70, 70, 70, 70, 80, 80, 80, 80, 80, 80 };
-    private static readonly int[] W4ArmorHeavyHp =
-        { 200, 200, 200, 200, 250, 250, 250, 250, 250, 300, 300, 300, 300, 300, 300 };
-    private const float W4ArmorHpReg = 4.0f;
 
-    internal static SkillLevel[] WarriorArmorMasteryFourthRungs() => F4Rungs(15, 1, (i, sp, gold) =>
-        new SkillLevel(SpCost: sp, GoldCost: gold,
-            Description: $"+{W4ArmorDef[i]} P.Def and +{W4ArmorHpReg:0.0} HP regen/s in light or heavy; "
-                       + $"light armor +{W4ArmorLightEva[i]} evasion; heavy armor a further "
-                       + $"+{W4ArmorHeavyDef[i]} P.Def and +{W4ArmorHeavyHp[i]} max HP."));
 
-    internal static ArmorMasteryProfile[] WarriorArmorMasteryFourthProfiles() =>
-        Enumerable.Range(0, Warrior4thLevels.Length).Select(i =>
-            WarriorArmor(W4ArmorDef[i], lightEva: W4ArmorLightEva[i], hpRegen: W4ArmorHpReg,
-                         heavyDef: W4ArmorHeavyDef[i], heavyHp: W4ArmorHeavyHp[i])).ToArray();
 
-    /// <summary>TWO-HAND MASTERY (sword) rungs 16-30. Crit damage 632 → 860, P.Atk 153 → 200.
-    /// <para>✅ 678 at level 79 is HIS RULING, not the +17 stride's 683 — *"Two-Hand Mastery 4th:
-    /// 666 → 678 → 690 (+12 on both steps, so 80 onward is unchanged)"*. The stride resumes at 81.</para>
-    /// <para>⚠ THE WARLORD HAS NO 4th-TIER BLUNT LADDER — `war_aoe 4th.csv` is a placeholder. This is
-    /// the Ravager's alone, and it is why the sword and blunt masteries are separate ids.</para></summary>
-    private static readonly int[] W4SwordCritDmg =
-        { 632, 649, 666, 678, 690, 707, 724, 741, 758, 775, 792, 809, 826, 843, 860 };
-    private static readonly int[] W4SwordAtk =
-        { 153, 156, 159, 162, 165, 168, 171, 174, 177, 180, 184, 188, 192, 196, 200 };
 
-    internal static SkillLevel[] WarriorSwordMasteryFourthRungs() => F4Rungs(15, 1, (i, sp, gold) =>
-        new SkillLevel(SpCost: sp, GoldCost: gold,
-            Description: $"Two-handed sword: +{W4SwordAtk[i]} P.Atk, +{W4SwordCritDmg[i]} critical damage."));
 
-    internal static WeaponMasteryProfile[] WarriorSwordMasteryFourthProfiles() =>
-        Enumerable.Range(0, Warrior4thLevels.Length).Select(i => new WeaponMasteryProfile(
-            Sword: new PassiveEffect(PhysAtk: W4SwordAtk[i], CritDamageFlat: W4SwordCritDmg[i]),
-            RequiredWeapon: WeaponType.AnySword,
-            RequiredHands: WeaponHands.Two)).ToArray();
 
     // ═══════════════════════════════════════════════════════════════════════════════════════════
     //  THE FOUR NEW SKILLS — all at 78, all one rung, all race-gated.

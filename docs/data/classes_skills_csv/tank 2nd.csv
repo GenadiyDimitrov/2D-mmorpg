@@ -1,32 +1,32 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,Comment
 ,,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
-20,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +20,0,567,[]
-24,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +27,0,3200,[]
-28,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +34,0,6000,[]
-32,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +41,0,11000,[]
-36,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +60,0,10000,[]
+20,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +20,0,2030,[]
+24,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +27,0,11500,[]
+28,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +34,0,21500,[]
+32,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +41,0,39400,[]
+36,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +60,0,35800,[]
 ,,,,,,,,,,,,,,,,----------------------------MpRegen----------------------------
-36,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,increase mpReg +3.1,0,10000,[]
+36,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,increase mpReg +3.1,0,35800,[]
 ,,,,,,,,,,,,,,,,----------------------------Tank Defence----------------------------
-20,Tank Defence,tank_defence_mastery,passive,,heavy,0,0,self/single,0,0,0,with heavy: p.def x1.07; eva -2,0,567,[]
-20,Critical Damage Resist,tank_crit_resist,passive,,heavy,0,0,self/single,0,0,0,with heavy: crit dmg reduction 15%,0,567,[]
+20,Tank Defence,tank_defence_mastery,passive,,heavy,0,0,self/single,0,0,0,with heavy: p.def x1.07; eva -2,0,2030,[]
+20,Critical Damage Resist,tank_crit_resist,passive,,heavy,0,0,self/single,0,0,0,with heavy: crit dmg reduction 15%,0,2030,[]
 ,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
-20,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +25,0,1700,[]
-24,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +30,0,3200,[]
-28,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +35,0,6000,[]
-32,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +40,0,11000,[]
-36,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +45,0,20000,[]
+20,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +25,0,6090,[]
+24,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +30,0,11500,[]
+28,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +35,0,21500,[]
+32,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +40,0,39400,[]
+36,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +45,0,71600,[]
 ,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
-20,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +6,0,3400,[]
-24,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +8,0,6400,[]
-28,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +10,0,12000,[]
-32,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +12,0,22000,[]
-36,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +15,0,40000,[]
+20,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +6,0,12200,[]
+24,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +8,0,22900,[]
+28,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +10,0,43000,[]
+32,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +12,0,78800,[]
+36,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +15,0,143000,[]
 ,,,,,,,,,,,,,,,,----------------------------Defensive Wall----------------------------
 20,Defensive Wall,defensive_wall,pfysical buff,,,0,0,self/single,0.5,900,30,increase p.def +1800; m.def +1600; buff cancel resist x1.8; ms x0.5,20,3400,[]
 ,,,,,,,,,,,,,,,,----------------------------Shield Mastery----------------------------
-20,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +15%, Shield Rate +50%;",0,3200,[]
-28,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +20%, Shield Rate +70%; bow resistance 16%",0,3200,[]
+20,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +15%, Shield Rate +50%;",0,11500,[]
+28,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +20%, Shield Rate +70%; bow resistance 16%",0,11500,[]
 ,,,,,,,,,,,,,,,,----------------------------Taunt----------------------------
 24,Taunt,provoke,physical active,,,400,0,enemy/single,0,6,1.5,Agro enemy (power 4500) - locks it onto you for 1.5s then leaves you 4500 aggro ahead,0,6400,[],Human;Demon
 28,Taunt,provoke,physical active,,,400,0,enemy/single,0,6,1.5,Agro enemy (power 5000) - locks it onto you for 1.5s then leaves you 5000 aggro ahead,0,12000,[],Human;Demon

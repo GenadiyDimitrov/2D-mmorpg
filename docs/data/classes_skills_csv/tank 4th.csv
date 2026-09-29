@@ -42,7 +42,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +158",0,0,100kk
 90,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +160",0,0,100kk
 ,,,,,,,,,,,,,,,,,----------------------------Magic Protection----------------------------
-80,Magic Protection,magic_protection,Passive,,,0,0,self/single,0,0,0,"Twice more chance magic to fail against you",0,0,2.5kk
+80,Magic Protection,magic_protection,Passive,,,0,0,self/single,0,0,0,"Twice more chance magic to fail against you",0,150kk,10kk,,,"BL-314: its own skill bought at 80 - his ruling 2026-09-29: 150kk SP + 10kk gold"
 ,,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
 76,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +90",0,3.3kk,500k
 77,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +98",0,11kk,1kk

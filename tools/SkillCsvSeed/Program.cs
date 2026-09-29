@@ -36,6 +36,12 @@ Directory.CreateDirectory(outDir);
 // `-v` additionally prints what the DESCR reader could NOT verify (⚪ lines): a value whose stat the
 // code has no field for, a percent authored against a flat field, and any number in the text the reader
 // failed to bind to a stat. Defects (🟡) always print. Read it when you want the COVERAGE, not the bugs.
+// `--gen-passives` — `BL-314`: generate the shared passive ladders and every class's learn rows for them from the
+// CSVs (PassiveGen.cs). `--base` reads the SP column as the x1 base instead of the scaled price the player pays.
+if (args.Contains("--gen-passives")) return PassiveGen.Run(outDir, dir.FullName, args.Contains("--base"));
+// `--apply-k` — `BL-314`, ONE-TIME: scale the 20-75 passive SP cells by each class's ×k (PassiveGen.ApplyK).
+if (args.Contains("--apply-k")) return PassiveGen.ApplyK(outDir);
+
 if (args.Contains("--check")) { Check.Verbose = args.Contains("-v") || args.Contains("--verbose"); return Check.Run(outDir); }
 
 // --retarget rewrites the TARGET column of every file into his `[scope]/[breadth]` scheme (2026-08-27).

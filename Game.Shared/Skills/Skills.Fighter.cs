@@ -42,8 +42,6 @@ public static partial class SkillCatalog
     public const string Strike = "strike";                    // sword/blunt attack (can double)
     public const string Stab = "stab";                        // dual BLOW (full on crit, else 10%)
     public const string Shot = "shot";                        // bow ranged attack
-    public const string FighterArmorMastery = "fighter_armor_mastery";   // all-weight flat P.Def
-    public const string FighterWeaponMastery = "fighter_weapon_mastery"; // any-weapon +p.Atk
     // 🔑 THE ×1.1 MP REGEN LEFT `fighter_armor_mastery` AND BECAME A SKILL OF ITS OWN, 2026-09-11 —
     //  his `fighter 1st.csv` edit, in his own words: *"fixed fighter 1st all fighters to get a passive
     //  for x1.1 (i was mistaken when i though it was a multi/additive mistake .. so all fighters now
@@ -80,7 +78,6 @@ public static partial class SkillCatalog
 
     // --- Tank 2nd-class (CSV tank 2nd) ---
     public const string TankShieldMastery = "tank_shield_mastery"; // passive: +shield def/rate + bow resist
-    public const string TankAntiMagic = "tank_anti_magic";         // passive: +magic def
     public const string DefensiveWall = "defensive_wall";          // huge def buff (self, -move)
     public const string ShieldShock = "shield_shock";       // stun 9s
     public const string Stay = "stay";                    // root/hold 15s
@@ -193,19 +190,6 @@ public static partial class SkillCatalog
                 new SkillLevel(Power: 187, MpCost: 34,  SpCost: 910,   Description: "Shot — power 187."),
             }),
 
-        // Armor Mastery — base fighter, all-weight defence + MP regen (data-driven).
-        new(FighterArmorMastery, "Armor Mastery", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive,
-            Description: "Passive. Improves defence with any armor weight "
-                       + "(light armor also aids evasion at higher levels).",
-            Levels: new[]
-            {
-                new SkillLevel(SpCost: 160),
-                new SkillLevel(SpCost: 910),
-                new SkillLevel(SpCost: 910),
-            },
-            ArmorMasteryLevels: FighterArmorLevels),
 
         // Spirit Mastery — base fighter, ×1.1 MP regen on ANY weight, ONE rung at 5 (SP 160).
         // 🔑 NOTHING REPLACES IT, which is the entire reason it is its own skill rather than a line
@@ -219,17 +203,6 @@ public static partial class SkillCatalog
                 new SkillLevel(SpCost: 160, Passive: new PassiveEffect(MpRegenPct: 0.1f)),
             }),
 
-        // Weapon Mastery — base fighter, flat + % attack power with ANY weapon.
-        new(FighterWeaponMastery, "Weapon Mastery", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive,
-            Description: "Passive. Increases physical attack power with any weapon equipped.",
-            Levels: new[]
-            {
-                new SkillLevel(SpCost: 160, Passive: new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 2)),
-                new SkillLevel(SpCost: 910, Passive: new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 3)),
-                new SkillLevel(SpCost: 910, Passive: new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 4)),
-            }),
 
         // ===== 2nd-class attack-chain continuations (each REPLACES the base skill(s)) =====
 
@@ -563,19 +536,6 @@ public static partial class SkillCatalog
                 new SkillLevel(SpCost: 74000, Passive: new PassiveEffect(RequiresShield: true, RequiredArmor: ArmorWeights.Heavy, BlockReductionPct: 0.30f, BlockChancePct: 1.00f, DefencePct: 0.10f, BowResist: 0.40f)),   // 52 — the only rung above 40 that moves the shield's own numbers again
             }),
 
-        // Tank Anti-Magic — passive flat magic defence (5 levels @20/24/28/32/36).
-        new(TankAntiMagic, "Tank Anti-Magic", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive,
-            Description: "Passive. Increases your magic defence.",
-            Levels: new[]
-            {
-                new SkillLevel(SpCost: 1700,  Passive: new PassiveEffect(MagicDefence: 25)),
-                new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(MagicDefence: 30)),
-                new SkillLevel(SpCost: 6000,  Passive: new PassiveEffect(MagicDefence: 35)),
-                new SkillLevel(SpCost: 11000, Passive: new PassiveEffect(MagicDefence: 40)),
-                new SkillLevel(SpCost: 20000, Passive: new PassiveEffect(MagicDefence: 45)),
-            }.Concat(TankAntiMagicThirdRungs()).Concat(TankFourthAntiMagicRungs()).ToArray()),
 
         // Defensive Wall — the tank's panic button: enormous P.Def & M.Def (flat + ×2), high
         // cancel resistance, but move speed halved, for 30s (long reuse). All channels are

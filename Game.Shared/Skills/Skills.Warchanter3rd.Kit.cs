@@ -41,12 +41,7 @@ public static partial class SkillCatalog
     // `warlock_weapon_mastery` can never move without orphaning every save that holds them. The
     // C# const identifiers were renamed to match the new names — those are compile-checked and cost
     // nothing — and the id strings stayed. Read the string as a serial number, not as a name.
-    public const string WcBufferHeavy        = "wc_chanter_heavy_mastery";      // Human;Demon
-    public const string HarmonistLightMastery     = "harmonist_light_mastery";    // Elf
     public const string HarmonistBowProficiency   = "harmonist_bow_proficiency";  // Elf
-    public const string HarmonistBowMastery   = "harmonist_bow_mastery";      // Elf
-    public const string WarlockWeaponMastery      = "warlock_weapon_mastery";  // Demon
-    public const string DoctorBluntMastery   = "doctor_blunt_mastery";          // Human, 1H blunt
     // ---- ACTIVES ----
     public const string HarmonyOfRestoration = "harmony_of_restoration";
     public const string SoundBurst         = "sound_burst";        // Elf, bow, hits twice
@@ -81,62 +76,7 @@ public static partial class SkillCatalog
 
         // ===== PASSIVES ==========================================================================
 
-        // ---- Heavy Armor Mastery (Human + Demon) — the heavy-armour half of the caster penalty,
-        //      bought back. Spellcaster Mastery charges light/heavy/none cast x0.5 and attack x0.5;
-        //      his row restores them to "90%(x1.8)" and "100%(x2)", which is why the numbers look
-        //      like over-corrections in isolation: 1.8 x 0.5 = 0.9 and 2.0 x 0.5 = 1.0. Same
-        //      arithmetic as the cleric's light row (see HealerArmorMastery). ----
-        // ⚠ RENAMED 2026-08-29, his call: *"'chanter heavy mastery' should become 'heavy armor mastery'
-        //   as human and demon are no longer 'chanter' as class name"*. The Human buffer is a Doctor and
-        //   the Demon a Dreadcaller since `BL-100`/`BL-101`; "Chanter" named a class that no longer
-        //   exists. 🔑 The TANK already has a "Heavy Armor Mastery" and that is fine: one is Fighter and
-        //   one is Mage, no character can hold both, and `Abbreviations` de-duplicates names so the two
-        //   simply share a bar label they can never both draw.
-        //
-        // 🔴 IT REPLACES `armor_mastery` SINCE 2026-09-02 (`BL-119`) — his find: *"I managed to make x4
-        //    cast speed with light armor ... both remove the light penalty"*. The cleric's rung 4 also
-        //    cancels the Spellcaster penalty, armour masteries stack multiplicatively, and a buffer who
-        //    had not yet bought the 40 rung still held it. Superseding it here means the cancel can
-        //    only ever be applied once, whichever of the two the character happens to own. The 40+
-        //    ladder is `buffer_armor_mastery` now and is NOT replaced: it carries no speed clause, so
-        //    the two are additive by design, not duplicates.
-        list.Add(new SkillDef(WcBufferHeavy, "Heavy Armor Mastery", BaseClass.Mage, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive,
-            Replaces: new[] { ArmorMasterySkill },
-            Description: "Passive. Heavy armour stops hindering you — full attack speed, near-full "
-                       + "casting speed — and blunts critical damage against you.",
-            Levels: new[] { new SkillLevel(SpCost: 36_000) },
-            ArmorMasteryLevels: new[]
-            {
-                // 🔑 MpRegenPct 0.2 (the ×1.2) MOVED HERE from Armor Mastery on 2026-08-27 — *"the mp
-                //    regen is moved to the represented masteries per race"*. Heavy is the Human/Demon
-                //    buffer's own weight, so this is the one place he can earn it; Spellcaster Mastery
-                //    pays heavy nothing. Still exactly one ×1.2 per mage (`BL-92`).
-                new ArmorMasteryProfile(
-                    Heavy: new StatMods(CastSpeedPct: 0.80f, AtkSpeedPct: 1.00f, CritDmgResist: 0.15f,
-                                        MpRegenPct: 0.2f)),
-            }));
 
-        // ---- Harmonist Light Mastery (Elf) — the same trade in light armour, and the elf's own
-        //      evasion / crit-rate lean on top. ----
-        // 🔴 REPLACES `armor_mastery` — see Heavy Armor Mastery above; this is the exact skill his ×4
-        //    cast-speed reading came from, and light is the weight the cleric's rung 4 also covers.
-        list.Add(new SkillDef(HarmonistLightMastery, "Harmonist Light Mastery", BaseClass.Mage, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive,
-            Replaces: new[] { ArmorMasterySkill },
-            Description: "Passive. Light armour stops hindering you — full attack speed, near-full "
-                       + "casting speed — and you dodge better and are critted less often.",
-            Levels: new[] { new SkillLevel(SpCost: 36_000) },
-            ArmorMasteryLevels: new[]
-            {
-                // 🔑 MpRegenPct 0.2 moved here from Armor Mastery the same day, same reasoning — light
-                //    is the ELF buffer's represented weight.
-                new ArmorMasteryProfile(
-                    Light: new StatMods(CastSpeedPct: 0.80f, AtkSpeedPct: 1.00f,
-                                        Evasion: 6, CritRateResist: 0.15f, MpRegenPct: 0.2f)),
-            }));
 
         // ---- Harmonist Bow Proficiency (Elf) — *"Bow: Removed Penalty [cast(x2), mAtk(x2),
         //      mAcc(x0.04)]"*. THE FIRST SKILL THAT UNDOES THE UNTRAINED-WEAPON RULE rather than
@@ -159,17 +99,6 @@ public static partial class SkillCatalog
         //      ladder; only the P.Atk does), and the P.Atk climbs 100 to 600. ----
         int[] bowMastAtk = { 100, 200, 300, 400, 500, 540, 560, 600 };
         int[] raceMastSp = { 36_000, 64_000, 81_000, 120_000, 190_000, 320_000, 390_000, 880_000 };
-        list.Add(new SkillDef(HarmonistBowMastery, "Harmonist Bow Mastery", BaseClass.Mage, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive,
-            Description: "Passive. Your bow reaches much further and hits much harder.",
-            // Rungs 1-8 are his 40-74 band; 9-16 are `buffer 4th.csv`'s 76-90 (`BL-108`), where the
-            // P.Atk jumps 600 → 650 → 1000 and the +400 range stays flat as it always has.
-            Levels: raceMastSp.Select(sp => new SkillLevel(SpCost: sp))
-                .Concat(BufferFourthEvenRungs(i => $"Bow: +{Wc4BowAtk[i]} P.Atk, +400 range.")).ToArray(),
-            WeaponMasteryLevels: bowMastAtk
-                .Select(a => new WeaponMasteryProfile(Bow: new PassiveEffect(PhysAtk: a, BowRange: 400f)))
-                .Concat(BufferFourthBowProfiles()).ToArray()));
 
         // ---- Warlock Weapon Mastery (Demon) — 8 rungs, the demon's answer to the elf's bow line.
         //      Flat P.Atk 30 to 100 and a constant +3 accuracy. ----
@@ -191,45 +120,7 @@ public static partial class SkillCatalog
         //    *"the spell mastery ... they share one so we gate only the type, and their additional
         //    passives are hands gated"*. Do not push hands up into BufferMastery.
         int[] bluntAtk = { 30, 40, 50, 60, 70, 80, 90, 100 };
-        list.Add(new SkillDef(WarlockWeaponMastery, "Warlock Weapon Mastery", BaseClass.Mage, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive,
-            Description: "Passive. A TWO-HANDED blunt weapon — a maul or a staff — strikes harder "
-                       + "and truer in your hands. No effect one-handed.",
-            Levels: raceMastSp.Select(sp => new SkillLevel(SpCost: sp))
-                .Concat(BufferFourthEvenRungs(i =>
-                    $"Two-handed blunt: +{Wc4BluntAtk[i]} P.Atk, +{Wc4WarlockAcc[i]} accuracy.")).ToArray(),
-            WeaponMasteryLevels: bluntAtk
-                .Select(a => new WeaponMasteryProfile(Blunt: new PassiveEffect(PhysAtk: a, Accuracy: 3),
-                                                     RequiredWeapon: WeaponType.AnyBlunt,
-                                                     RequiredHands: WeaponHands.Two))
-                .Concat(BufferFourthWarlockProfiles()).ToArray()));
 
-        // ---- Doctor Weapon Mastery (HUMAN) — his 2026-09-02 addition to `buffer 3rd.csv`, and the
-        //      row that finally gives the third buffer a weapon line of its own. Eight rungs on the
-        //      same 40/48/56/60/64/68/70/74 band and the same P.Atk 30 → 100 as the Demon's, one axis
-        //      apart: `blunt/1`, ONE-HANDED, because the Human buffer is the shield one (`BL-107` —
-        //      all four Shield Mastery rungs are his) and a maul would cost him the shield. That is
-        //      also why he gets no accuracy where the Demon gets +3: the shield is the compensation.
-        //
-        // ⚠ HIS DESCR CELL READ "2h Blunt:" ON ALL EIGHT ROWS while the WEAPON column read `blunt/1` —
-        //   the prose was a copy of the Warlock block above it. Raised, and he settled it the same day
-        //   (2026-09-02): the cells now read "Blunt:", matching his own 76-90 rows, and the hands stay
-        //   in the WEAPON column where they are checkable. That is the `BL-105` rule working — a
-        //   requirement written in prose cannot be compared to the one the engine enforces.
-        list.Add(new SkillDef(DoctorBluntMastery, "Doctor Weapon Mastery", BaseClass.Mage, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive,
-            Description: "Passive. A ONE-HANDED blunt weapon — a mace or a wand, the hand that keeps "
-                       + "your shield — strikes harder in your hands. No effect two-handed.",
-            Levels: raceMastSp.Select(sp => new SkillLevel(SpCost: sp))
-                .Concat(BufferFourthEvenRungs(i =>
-                    $"One-handed blunt: +{Wc4BluntAtk[i]} P.Atk, +{Wc4DoctorAcc[i]} accuracy.")).ToArray(),
-            WeaponMasteryLevels: bluntAtk
-                .Select(a => new WeaponMasteryProfile(Blunt: new PassiveEffect(PhysAtk: a),
-                                                     RequiredWeapon: WeaponType.AnyBlunt,
-                                                     RequiredHands: WeaponHands.One))
-                .Concat(BufferFourthDoctorProfiles()).ToArray()));
 
         // ---- Mana Vampirism — 3 rungs @40/60/70. His only mana-return line, and the reason the
         //      blunt buffer can keep buffing: a slice of a BASIC attack.s damage back as MP.

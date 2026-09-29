@@ -11,13 +11,10 @@ public static partial class SkillCatalog
     public const string PartyHeal = "party_heal";
     public const string HolySpeed = "holy_speed";   // "Speed" buff (cast + move + evasion)
     public const string HolyBody  = "holy_body";    // "Body" buff (+HP regen)
-    public const string SpellMastery = "spell_mastery";
     public const string RestoreMana = "restore_mana";
-    public const string ArmorMasterySkill = "armor_mastery";   // data-driven, replaces Robe Mastery
     /// <summary>The BUFFER's 40+ armour ladder — his own id since 2026-09-02 (`BL-119`). It was rungs
     /// 5-18 of <see cref="ArmorMasterySkill"/>, and being the same skill is what let the cleric's rung 4
     /// sit alive underneath the race mastery and cancel the caster penalty TWICE. See the def.</summary>
-    public const string BufferArmorMastery = "buffer_armor_mastery";
     public const string HolyForce = "holy_force";    // "Force" — interrupt resist (+M.Atk @rank 2)
     public const string HolyFocus = "holy_focus";    // "Focus" — physical crit-rate buff
     public const string ShieldBlessAndHarden = "shield_bless_and_harden";  // "Shield Bless and Harden" — the SHIELD group
@@ -57,61 +54,7 @@ public static partial class SkillCatalog
             Light: new StatMods(MpRegenPct: 0.2f, PDef: 35, CastSpeedPct: 0.90f, AtkSpeedPct: 1.00f, Evasion: 2)),
     };
 
-    /// <summary>THE BUFFER'S OWN ARMOUR LADDER, @40 to 74 — `buffer_armor_mastery`, fourteen rungs
-    /// (`buffer 3rd.csv`, 2026-08-20: *"Continue the line"*; completed 2026-08-21). The healer branches
-    /// away at 40 onto his robe-only Healer Armor Mastery (Skills.Lightbringer.cs), so from here this
-    /// ladder belongs to the Warchanter alone.
-    ///
-    /// <para>🔴 IT BECAME ITS OWN SKILL ID ON 2026-09-02 (`BL-119`), and the reason is a bug he found:
-    /// *"I managed to make x4 cast speed with light armor ...I'm 40lvl harmonist with 35lvl
-    /// armor_mastery and harmonist_light_mastery — both remove the light penalty"*. While these were
-    /// rungs 5-18 of <see cref="ArmorMasterySkill"/>, a level-40 elf who had not yet BOUGHT rung 5 still
-    /// held the cleric's rung 4 — whose Light row cancels the Spellcaster penalty — underneath
-    /// Harmonist Light Mastery, which cancels the very same penalty. Armour masteries stack
-    /// multiplicatively (Entity.ApplyArmorMastery), so the cancel was applied twice.</para>
-    ///
-    /// <para>🔑 SPLITTING THE ID IS WHAT FIXES IT, not deleting a number. His own prescription: the 40+
-    /// rungs become their own skill that REPLACES `armor_mastery`, and both race masteries replace it
-    /// too — so no buffer can ever hold the cleric's speed clause beside his race's. `Replaces` is
-    /// enforced on LOAD as well as at learn time (PersistenceService.ParseLearnedSkills), so this
-    /// reaches characters that already exist.</para>
-    ///
-    /// <para>🔑 THE THREE WEIGHTS ARE IDENTICAL HERE AND THE SPEED CLAUSES ARE ABSENT — his rows read
-    /// *"Robe/Light/Heavy: pDef +N, maxMP +M;"*, one line covering all three, with no cast/attack-speed
-    /// clause anywhere. That is not an omission: from 40 the penalty-cancelling belongs to the RACE
-    /// masteries, and a copy here would apply it twice. Rungs 15-29 (@76-90, `buffer 4th.csv`) belong on
-    /// THIS id when `BL-108` builds them, not back on `armor_mastery`.</para></summary>
-    private static readonly ArmorMasteryProfile[] BufferArmorMasteryLevels =
-    {
-        // ⚠ THE ×1.2 MP REGEN IS NOT HERE EITHER — it moved to the race masteries on 2026-08-27 with
-        //   the speed clauses, and for the same reason. `BL-92`'s "exactly one ×1.2 per mage" holds:
-        //   robe gets it from the born Spellcaster Mastery, light/heavy from the race mastery.
-        // ⚠ An earlier rung 5 carried `CastSpeedPct 0.90, AtkSpeedPct 1.00` on its Light row, written
-        //   before the race masteries existed. Do not put them back — that is the bug above, twice.
-        BufferArmor(39, 70), BufferArmor(44, 70), BufferArmor(50, 100), BufferArmor(50, 100),
-        BufferArmor(53, 140), BufferArmor(56, 140), BufferArmor(58, 150), BufferArmor(64, 150),
-        BufferArmor(68, 150), BufferArmor(72, 180), BufferArmor(75, 180), BufferArmor(79, 180),
-        BufferArmor(83, 200), BufferArmor(87, 200),
-    };
 
-    /// <summary>One Warchanter Armor Mastery rung: flat P.Def and Max MP in EVERY armour weight, and
-    /// NOTHING ELSE — which is exactly what his one-line "Robe/Light/Heavy: pDef +X, max mp +Y;" rows say.
-    ///
-    /// <para>🔑 THE ×1.2 MP REGEN LEFT THIS SKILL ON 2026-08-27 — *"the mp regen is moved to the
-    /// represented masteries per race (human/ork heavy, elf light)"*. It now rides on
-    /// <c>WcBufferHeavy</c> (Human;Demon) and <c>HarmonistLightMastery</c> (Elf) instead, in
-    /// Skills.Warchanter3rd.Kit.cs. Same outcome for a buffer wearing his race's armour, and it makes
-    /// the grant a REWARD FOR WEARING IT: a Human Warchanter in light armour now gets no ×1.2 at all,
-    /// where this skill used to hand it to him regardless.</para>
-    ///
-    /// <para>⚠ The "exactly one ×1.2 per mage" rule (`BL-92`) still holds and still matters — robe gets
-    /// it from the born Spellcaster Mastery, light/heavy from the race mastery. Never re-add
-    /// <c>MpRegenPct</c> here: that is what made every robed mage ×1.44 the first time.</para></summary>
-    private static ArmorMasteryProfile BufferArmor(int pDef, int maxMp)
-    {
-        var m = new StatMods(PDef: pDef, MaxMp: maxMp);
-        return new ArmorMasteryProfile(Robe: m, Light: m, Heavy: m);
-    }
 
     private static SkillDef[] HealerSkills() => new SkillDef[]
     {
@@ -203,55 +146,7 @@ public static partial class SkillCatalog
                     Description: "Move +33, Cast +30%, Evasion +4, Attack Speed +33%."),
             }),
 
-        // Armor Mastery — DATA-DRIVEN passive that replaces Robe Mastery: its effect
-        // depends on the BODY armor weight worn (see HealerArmorMastery). Levels carry
-        // only the SP cost + max-level; the per-weight stats live in ArmorMasteryLevels.
-        new(ArmorMasterySkill, "Armor Mastery", BaseClass.Mage, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive, Replaces: new[] { MasteryRobe },
-            Description: "Passive. Adapts to your armor: ROBE boosts MP, MP-regen and defence; "
-                       + "LIGHT keeps you casting while sturdier; HEAVY weighs your casting and attacks down.",
-            Levels: new[]
-            {
-                // 3200 / 6400 / 12800 / 25000 — his re-priced `cleric 2nd.csv` (2026-08-19). The first
-                // two rungs were 9600 / 12800, which made Armor Mastery the single most expensive
-                // thing a level-20 cleric could buy.
-                new SkillLevel(SpCost: 3200),
-                new SkillLevel(SpCost: 6400),
-                new SkillLevel(SpCost: 12800),
-                new SkillLevel(SpCost: 25000),
-            // 🔴 FOUR RUNGS AND IT STOPS. Rungs 5-18 were the Warchanter's 40-74 band and are now
-            // `buffer_armor_mastery` (`BL-119`, below) — see BufferArmorMasteryLevels for why.
-            },
-            ArmorMasteryLevels: HealerArmorMastery),
 
-        // Buffer Armor Mastery — the Warchanter's own 40-74 ladder, split off `armor_mastery` on
-        // 2026-09-02 (`BL-119`). Full reasoning on BufferArmorMasteryLevels; the short version is that
-        // sharing an id with the cleric let his rung-4 light row cancel the caster penalty a SECOND
-        // time underneath the race mastery.
-        //
-        // 🔑 IT REPLACES BOTH — `armor_mastery` (so the cleric's rungs cannot sit alive beneath it) and
-        //    `mastery_robe` (which `armor_mastery` itself replaced, and which must not resurface when
-        //    that one is superseded). The two race masteries in Skills.Warchanter3rd.Kit.cs replace
-        //    `armor_mastery` as well, which is the other half of his prescription: a buffer who has not
-        //    yet BOUGHT this rung is protected the moment he takes his race's mastery.
-        //
-        // 🔑 THE NAME IS DELIBERATE. `BL-106`'s cross-chain rule reads the mage side as
-        //    `mage_* -> spellcaster_* -> buffer_*`, so `buffer_armor_mastery` is the id that chain
-        //    already predicted.
-        new(BufferArmorMastery, "Armor Mastery", BaseClass.Mage, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive,
-            Replaces: new[] { ArmorMasterySkill, MasteryRobe },
-            Description: "Passive. Adapts your defences to the armor you wear: robe, light or heavy "
-                       + "all gain physical defence and max MP.",
-            // The 40-74 band, priced off his own SP column — then rungs 15-29, his `buffer 4th.csv`
-            // 76-90 rows (`BL-108`). The 4th tier is where this ladder finally gains a PERCENT magic
-            // defence and an MP-cost reduction; see BufferFourthArmorProfiles.
-            Levels: BandSp14.Select(sp => new SkillLevel(SpCost: sp))
-                            .Concat(BufferFourthArmorRungs()).ToArray(),
-            ArmorMasteryLevels: BufferArmorMasteryLevels
-                                .Concat(BufferFourthArmorProfiles()).ToArray()),
 
         // Restore Mana — replenishes an ally's MP (flat power). Later "ultimate" restores
         // will add a % of max MP via a Percent magnitude on the RestoreMp effect.
@@ -315,61 +210,6 @@ public static partial class SkillCatalog
                     Description: "+20% HP and MP regeneration, +35% Max HP and Max MP."),
             }),
 
-        // Spell Mastery — caster passive (replaces Weapon Mastery). Flat M/P.Atk, a 10%
-        // reuse-delay reduction, +5% cast speed and (from lvl 2) MP/HP-regen multipliers.
-        new(SpellMastery, "Spell Mastery", BaseClass.Mage, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive, Replaces: new[] { WeaponMastery },
-            Description: "Passive. Sharpens your spellcasting — more M.Atk/P.Atk, faster casts, "
-                       + "shorter reuse. Casting with anything but a sword or blunt is half speed.",
-            // The per-level bonus applies ONLY with a sword/blunt; other/empty = cast x0.5 (no bonus).
-            WeaponMasteryLevels: new[]
-            {
-                CasterMastery(new PassiveEffect(MagAtk: 6,  PhysAtk: 4,  CooldownPct: 0.10f)),
-                CasterMastery(new PassiveEffect(MagAtk: 8,  PhysAtk: 6,  CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegen: 1.1f)),
-                CasterMastery(new PassiveEffect(MagAtk: 10, PhysAtk: 8,  CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegen: 1.1f)),
-                CasterMastery(new PassiveEffect(MagAtk: 12, PhysAtk: 10, CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegen: 1.5f, HpRegen: 1.1f)),
-                // Level 5 = the level-40 row — THE BUFFER'S since 2026-08-20 (`buffer 3rd.csv`: *"Continue
-                // the line"*). It was authored off `healer 3rd.csv`, but the healer has replaced this
-                // skill with Spellcaster Weapon Mastery, so the P.Atk half now belongs to the class that
-                // actually swings. Note the jump: +23 M.Atk against level 4's +12 — a 3rd class is where
-                // a caster's damage actually moves. ⚠ Reuse is 15% here, not the 10% of rungs 1-4: both
-                // his 40-level rows say 15%, and the code had carried 10% since the rung was written.
-                // ⚠ AND FROM HERE THE WEAPON PAIR CHANGES. Rungs 1-4 are the cleric's `cleric 2nd.csv`
-                // rows and read "with sword/blunt". Every one of his 40+ rows reads *"With blunt/bow
-                // weapon"* — because the Warchanter's three races are blunt (Human/Ork) and bow (Elf),
-                // and a sword buffer is not a thing he authored. So rungs 5-18 use BufferMastery, not
-                // CasterMastery. ⚠ P.Atk here is 15, not the 18 this rung carried before his file was
-                // finished: his row says "mAtk +23, mAtk +15" and the CSV is the authority.
-                BufferMastery(new PassiveEffect(MagAtk: 23, PhysAtk: 15, CastSpeedPct: 0.07f, CooldownPct: 0.15f, MpRegen: 1.5f, HpRegen: 1.1f)),
-                BufferMastery(new PassiveEffect(MagAtk: 29, PhysAtk: 20, CastSpeedPct: 0.07f, CooldownPct: 0.15f, MpRegen: 1.9f, HpRegen: 1.6f)),
-                BufferMastery(new PassiveEffect(MagAtk: 45, PhysAtk: 25, CastSpeedPct: 0.07f, CooldownPct: 0.20f, MpRegen: 1.9f, HpRegen: 1.6f)),
-                BufferMastery(new PassiveEffect(MagAtk: 45, PhysAtk: 30, CastSpeedPct: 0.07f, CooldownPct: 0.20f, MpRegen: 2.3f, HpRegen: 1.7f)),
-                BufferMastery(new PassiveEffect(MagAtk: 52, PhysAtk: 35, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 2.3f, HpRegen: 1.7f)),
-                BufferMastery(new PassiveEffect(MagAtk: 57, PhysAtk: 40, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 2.3f, HpRegen: 2.1f)),
-                BufferMastery(new PassiveEffect(MagAtk: 62, PhysAtk: 45, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 2.7f, HpRegen: 2.1f)),
-                BufferMastery(new PassiveEffect(MagAtk: 67, PhysAtk: 50, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 2.7f, HpRegen: 2.1f)),
-                BufferMastery(new PassiveEffect(MagAtk: 72, PhysAtk: 55, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 2.7f, HpRegen: 2.6f)),
-                BufferMastery(new PassiveEffect(MagAtk: 77, PhysAtk: 60, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 2.7f, HpRegen: 2.6f)),
-                BufferMastery(new PassiveEffect(MagAtk: 83, PhysAtk: 65, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 3.1f, HpRegen: 2.6f)),
-                BufferMastery(new PassiveEffect(MagAtk: 88, PhysAtk: 70, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 3.1f, HpRegen: 2.6f)),
-                BufferMastery(new PassiveEffect(MagAtk: 94, PhysAtk: 75, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 3.1f, HpRegen: 2.6f)),
-                BufferMastery(new PassiveEffect(MagAtk: 99, PhysAtk: 80, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 3.4f, HpRegen: 2.7f)),
-                // …and rungs 19-33, his `buffer 4th.csv` 76-90 rows (`BL-108`). Only the two attack
-                // numbers move; cast, reuse and both regen multipliers are already at the tier's value.
-            }.Concat(BufferFourthSpellProfiles()).ToArray(),
-            Levels: new[]
-            {
-                new SkillLevel(SpCost: 3200,  Description: "With sword/blunt: +6 M.Atk, +4 P.Atk, -10% skill reuse."),
-                // 6400 again: he re-priced this rung himself on 2026-08-19, so the ladder is the plain
-                // 3200 / 6400 / 12800 / 25000. (It was 12800 for two days — his 2026-08-17 sheet had it
-                // that way and this comment used to explain why. His sheet is still the authority; the
-                // number it carries just changed back.)
-                new SkillLevel(SpCost: 6400, Description: "With sword/blunt: +8 M.Atk, +6 P.Atk, +5% cast, -10% reuse, +10% MP regen."),
-                new SkillLevel(SpCost: 12800, Description: "With sword/blunt: +10 M.Atk, +8 P.Atk, +5% cast, -10% reuse, +10% MP regen."),
-                new SkillLevel(SpCost: 25000, Description: "With sword/blunt: +12 M.Atk, +10 P.Atk, +5% cast, -10% reuse, +50% MP regen, +10% HP regen."),
-            }.Concat(BandSp14.Select(sp => new SkillLevel(SpCost: sp)))
-             .Concat(BufferFourthSpellRungs()).ToArray()),
 
         // Force and Ward — the caster's group. Levels 1-2 are the numbers this buff already cast
         // (+18% interrupt resist, then +25 with +25% M.Atk); from level 3 it adds M.Def, and at 6

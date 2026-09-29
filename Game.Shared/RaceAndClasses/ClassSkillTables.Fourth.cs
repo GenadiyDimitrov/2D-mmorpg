@@ -259,12 +259,9 @@ public static partial class ClassSkillTables
         var shared = new List<ClassSkill>();
 
         // ---- THE TWO EVERY-LEVEL PASSIVES ----
-        shared.AddRange(Ladder(TankArmorMastery,  all, 21));
-        shared.AddRange(Ladder(TankAntiMagic,     all, 21));
         // ✅ WEAPON MASTERY JOINED THEM 2026-09-04 — he had forgotten it and added its fifteen rows to
         //    the file after the first build (*"and I have forgotten the weapon mastery"*). Same rung
         //    arithmetic as the other two: five 2nd-class rungs + fifteen 3rd-class ones ended at 20.
-        shared.AddRange(Ladder(TankWeaponMastery, all, 21));
 
         // ---- THE SHARED ACTIVES, every other level ----
         // `BL-188` — Vital Organ Protection, ONE rung at 80, all three races. Not in `tank 4th.csv`
@@ -381,9 +378,6 @@ public static partial class ClassSkillTables
         // next rung. ⚠ The START LEVELS are where 3rd-class ladders actually ENDED, not guesses —
         // Anti-Magic reached 20 (it began at rung 7 in the cleric's table), the two masteries and the
         // three ordinary heals reached 14, Resurrection reached 16.
-        shared.AddRange(Ladder(MageAntiMagic,             HealerFourthBands, 21));
-        shared.AddRange(Ladder(SpellcasterWeaponMastery,  HealerFourthBands, 15));
-        shared.AddRange(Ladder(HealerArmorMasterySkill,   HealerFourthBands, 15));
         shared.AddRange(Ladder(HolyRay,                   HealerFourthBands, 15));
         shared.AddRange(Ladder(GreatHeal,                 HealerFourthBands, 15));
         shared.AddRange(Ladder(PartyGreatHeal,            HealerFourthBands, 15));
@@ -495,9 +489,6 @@ public static partial class ClassSkillTables
         var shared = new List<ClassSkill>();
 
         // ---- THE CONTINUING LADDERS, every level ----
-        shared.AddRange(Ladder(MageAntiMagic,         all, 21));
-        shared.AddRange(Ladder(BufferArmorMastery,    all, 15));
-        shared.AddRange(Ladder(SpellMastery,          all, 19));
         shared.AddRange(Ladder(HarmonyOfRestoration,  all, 15));
         // ---- …and every other level ----
         shared.AddRange(Ladder(Reinforcement,       even, 14));
@@ -528,17 +519,14 @@ public static partial class ClassSkillTables
         //      can satisfy — the elf holds a bow and the demon a two-handed maul. ----
         var human = new List<ClassSkill>(shared);
         human.Add(new ClassSkill(BufferShieldMastery, 76));
-        human.AddRange(Ladder(DoctorBluntMastery, even, 9));
         human.AddRange(Ladder(SoundSmash,       all,  14));
 
         // ---- ELF: the archer. ----
         var elf = new List<ClassSkill>(shared);
-        elf.AddRange(Ladder(HarmonistBowMastery, even, 9));
         elf.AddRange(Ladder(SoundBurst,       all,  14));
 
         // ---- DEMON: the melee fighter, two damage skills as always. ----
         var demon = new List<ClassSkill>(shared);
-        demon.AddRange(Ladder(WarlockWeaponMastery,  even, 9));
         demon.AddRange(Ladder(SoundSmash,     all,  14));
         demon.AddRange(Ladder(AcousticShock,  all,  14));
 
@@ -570,8 +558,6 @@ public static partial class ClassSkillTables
                              .ToArray();
 
         var shared = new List<ClassSkill>();
-        shared.AddRange(Ladder(ArcherArmorMastery));
-        shared.AddRange(Ladder(BowMastery));
         shared.AddRange(Ladder(ArcherTwinArrows));
         shared.AddRange(Ladder(ExplosiveArrow));
         // The two ultimates his RACE column leaves blank.
@@ -649,8 +635,6 @@ public static partial class ClassSkillTables
         //      families are the same fifteen-rung ladders his are.
         //      ⚠ Armor Mastery is rungs 21-35 of the SAME id (`rogue_armor_mastery`) and Dual Mastery
         //      rungs 16-30 of its own, exactly as the 3rd tier appended rungs 6-20 and 1-15.
-        shared.AddRange(Ladder(RogueArmorMastery, all, 21));
-        shared.AddRange(Ladder(DualWeaponMastery, all, 16));
         // `BL-203` — OVERPOWER's SECOND AND LAST RUNG for this class: 7% at 76, where the warrior's
         // third (10%) would be. See the 3rd-tier table for his ruling and for why the top rung is
         // left unreachable.
@@ -674,7 +658,6 @@ public static partial class ClassSkillTables
         var human = new List<ClassSkill>(shared);
         human.AddRange(Ladder(KillingStab, all, 16));
         human.AddRange(Ladder(HeavyStab,   all, 16));
-        human.AddRange(Identity(DualAntiMagic));
         human.Add(new ClassSkill(MagicalArmor, 83));
 
         var elf = new List<ClassSkill>(shared);
@@ -743,9 +726,6 @@ public static partial class ClassSkillTables
 
         // ---- THE THREE PASSIVES. Two are shared outright with the healer's kit (same def, same
         //      rungs); Mage Armor Mastery is the nuker's own because it alone carries mpWhenRestored.
-        shared.AddRange(Ladder(MageAntiMagic,            21));
-        shared.AddRange(Ladder(SpellcasterWeaponMastery, 15));
-        shared.AddRange(Ladder(MageArmorMastery,        19));
 
         // ---- THE THREE SHARED ATTACK SPELLS, one rung a level.
         shared.AddRange(Ladder(ElementalBlast, 15));
@@ -848,8 +828,6 @@ public static partial class ClassSkillTables
         //   so this is NOT a case of extending one file by analogy with the other; it is two files
         //   disagreeing on purpose.
         var warlord = new List<ClassSkill>();
-        warlord.AddRange(Ladder(WarriorArmorMastery, all, 21));
-        warlord.AddRange(Ladder(WarriorBluntMastery, all, 16));
         warlord.AddRange(Ladder(ShockingShout, all, 16));
         warlord.AddRange(Ladder(ShockingJavelin, all, 1));      // new at 76
         warlord.AddRange(Ladder(WaraoeWhirlwind, all, 16));
@@ -878,8 +856,6 @@ public static partial class ClassSkillTables
 
         // ---- What every Ravager learns: the armour (rungs 21-35) and the sword (16-30). ----
         var shared = new List<ClassSkill>();
-        shared.AddRange(Ladder(WarriorArmorMastery, all, 21));
-        shared.AddRange(Ladder(WarriorSwordMastery, all, 16));
 
         // ---- HUMAN — the Focus kit continues, and gains the two tools that FILL the pool. ----
         var human = new List<ClassSkill>(shared);

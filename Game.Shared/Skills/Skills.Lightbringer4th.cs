@@ -94,39 +94,9 @@ public static partial class SkillCatalog
     //  THE CONTINUING LADDERS. Each returns ONLY the 4th-tier rungs; the definition site concatenates.
     // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-    /// <summary>Anti-Magic rungs 21-35 (his 76-90 rows). M.Def 113 → 149, and magic resistance steps
-    /// 30% → 35% at 86 — the first move it has made since 70.</summary>
-    internal static SkillLevel[] HealerFourthAntiMagicRungs() => F4Rungs(15, 1, (i, sp, gold) =>
-    {
-        int[] mDef   = { 113, 116, 119, 121, 123, 125, 127, 129, 131, 133, 135, 138, 140, 144, 149 };
-        float[] mRes = { .30f, .30f, .30f, .30f, .30f, .30f, .30f, .30f, .30f, .30f,
-                         .35f, .35f, .35f, .35f, .35f };
-        return new SkillLevel(SpCost: sp, GoldCost: gold,
-            Passive: new PassiveEffect(MagicDefence: mDef[i], MagicResist: mRes[i]),
-            Description: $"+{mDef[i]} magic defence and {mRes[i] * 100:0}% magic resistance.");
-    });
 
-    /// <summary>Spellcaster Weapon Mastery rungs 15-29. Only the M.Atk moves — reuse −20%, cast +10%
-    /// and both regen multipliers are flat across the whole 4th tier in his file.</summary>
-    private static readonly WeaponRung[] HealerFourthWeaponRungs =
-        BuildFourthWeaponRungs();
 
-    private static WeaponRung[] BuildFourthWeaponRungs()
-    {
-        int[] mAtk = { 101, 102, 104, 105, 106, 108, 109, 110, 112, 113, 115, 116, 117, 119, 120 };
-        // ⚠ BOTH regen columns are FLAT per-second grants since `BL-92` (2026-08-26), read straight
-        // off his row: `mpReg +3.4` → 3.4f and `hpReg +2.7` → 2.7f. The whole rung, not its excess.
-        // HP followed MP the same day; see the note on WeaponRung.
-        return mAtk.Select(m => new WeaponRung(m, 0.20f, 0.10f, 3.4f, 2.7f)).ToArray();
-    }
 
-    internal static SkillLevel[] HealerFourthWeaponMasteryRungs() => F4Rungs(15, 1, (i, sp, gold) =>
-    {
-        var r = HealerFourthWeaponRungs[i];
-        return new SkillLevel(SpCost: sp, GoldCost: gold,
-            Description: $"With a wand or staff: +{r.MAtk} M.Atk, +{r.Cast * 100:0}% cast, "
-                       + $"−{r.Reuse * 100:0}% reuse, MP regen +{r.MpFlat:0.#}/s, HP regen +{r.HpReg:0.#}/s.");
-    });
 
     /// <summary>Healer Armor Mastery rungs 15-29. Four numbers move now, not two: P.Def and Max MP as
     /// before, plus an M.Def PERCENT (2% → 25%) and, from 78, an MP-cost reduction (5% → 10%).</summary>
@@ -142,19 +112,7 @@ public static partial class SkillCatalog
     /// <summary>One 4th-tier robe rung: the two flats, an M.Def percent and an MP-cost cut.</summary>
     internal readonly record struct RobeRung4(int PDef, int MaxMp, float MDefPct, float MpCostPct);
 
-    internal static SkillLevel[] HealerFourthArmorMasteryRungs() => F4Rungs(15, 1, (i, sp, gold) =>
-    {
-        var r = HealerFourthRobeRungs[i];
-        string mp = r.MpCostPct > 0f ? $", MP costs −{r.MpCostPct * 100:0}%" : "";
-        return new SkillLevel(SpCost: sp, GoldCost: gold,
-            Description: $"In a robe: +{r.PDef} P.Def, +{r.MaxMp} Max MP, +{r.MDefPct * 100:0}% M.Def, "
-                       + $"MP regen x1.2{mp}.");
-    });
 
-    /// <summary>The robe profile for a 4th-tier rung.</summary>
-    internal static ArmorMasteryProfile HealerRobe4(RobeRung4 r) =>
-        new(Robe: new StatMods(PDef: r.PDef, MaxMp: r.MaxMp,
-                               MDefPct: r.MDefPct, MpCostPct: r.MpCostPct));
 
     /// <summary>Holy Ray rungs 15-29 — his 76-90 rows.</summary>
     internal static SkillLevel[] HealerFourthHolyRayRungs() => F4Rungs(15, 1, (i, sp, gold) =>

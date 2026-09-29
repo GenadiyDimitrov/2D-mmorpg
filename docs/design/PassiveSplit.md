@@ -376,3 +376,43 @@ targets (k = the mean of its paths' k):
 two ladders (the 29 false dips on the buffer's `weapon_mastery` are gone, and no real dip is left). Build order: the
 engine learns the ids above, per-rung gates for `strength_mastery`, and ×k per archetype on 20-75 passive rungs (in the
 engine, not the CSV); then `--check`, SmokeTest, a `game.db` delete and a new APK.
+
+## 13. Built (0.215.0, 2026-09-29)
+
+**The ladders are generated from the CSVs.** `dotnet run --project tools/SkillCsvSeed -- --gen-passives` reads every class
+file and writes `Game.Shared/Skills/Skills.PassiveLadders.g.cs` (34 ladders, 756 rungs) and
+`Game.Shared/RaceAndClasses/ClassSkillTables.Passives.g.cs` (1,388 learn rows). A ladder is the union of every value any
+class authors for that id, and each class learns its own rungs of it at its own price and gold. The generator refuses on
+an unknown stat word, two values for one stat, or a class whose rungs would go down. **After editing a passive row of these
+ids, regenerate**; `--check` then compares as before. The hand-written half (builders, the Dual Proficiency proc) is
+`Skills.PassiveLadders.cs`.
+
+**Each piece keeps its bundle's engine channel.** Armour pieces are `ArmorMasteryProfile`s (percentages compose as they did
+inside the bundle), weapon pieces `WeaponMasteryProfile`s, and the rest plain passives gated by armour weight.
+
+**×k is in the engine** (`Game.Shared/SpScarcity.cs`): every PASSIVE rung a class table offers at 20-75 costs ×k, rounded to
+three significant figures, written onto the row once when the tables load. The 2nd-tier rogue and cleric pay the mean of
+their two groups (8.12 and 3.625). The CSVs show the scaled price (`--apply-k`, a one-time migration, did that on this
+date); the generator reads a 20-75 price back through `SpScarcity.Unscale`. `BalanceMatrix --sp-budget`'s "x 20-75" is
+now each path at its k: daggers 0.62-0.66, bows 0.53-0.56, warriors 0.61-0.72, tanks 0.67-0.72, Magus 0.60,
+Lightbringer 0.54-0.56, Warchanter 0.49-0.51.
+
+**Two engine additions:**
+- `SkillDef.PayHighestGatedRung` (only `strength_mastery`): the passive pays the highest rung at or below the one you own
+  whose weapon gate your weapon meets, so a warrior with a bow keeps ×1.085.
+- `ClassSkill.Replaces` (and `GoldCost`): a class ROW can retire a skill. The Lightbringer's first robe rung retires
+  `clerics_light_armor_mastery`; the Warchanter, climbing the same `mage_armor_mastery`, keeps it. Checked at learn, in
+  the learn list (server and client) and in the debug learn-all.
+
+**Deleted:** the 29 old bundles (every armour/weapon mastery, `spell_mastery`, the warrior's strength and two-hand masteries,
+`tank_anti_magic`, `anti_magic_mage`, `dual_anti_magic`, the buffer armour and race weapon masteries), their class rows,
+the central `MasterySkills` injector, ~100 helpers that only they used, and two migration shims for their old ids.
+
+**Things that moved without being asked:**
+- The old `anti_magic` was an AUTO-GRANTED tank fizzle multiplier (×2 / ×2.5 / ×3 from 20 / 40 / 76), in no CSV. The id is
+  now his M.Def ladder, so the grant moved to `tank_spell_ward` ("Spell Ward"), unchanged. It makes the paid ×2
+  `magic_protection` @80 worth nothing (the engine keeps the higher multiplier): `BL-325`.
+- A shared ladder's rung numbers are its union index, so the Skills window shows a rung number above the count of
+  rungs that class has bought (they skip the other classes' rungs).
+- `--check` learned two things: race-split rows at one level pair by race, and `(x1000)` SP cells keep their decimals
+  (`50.1` = 50,100).

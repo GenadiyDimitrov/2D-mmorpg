@@ -123,7 +123,7 @@ internal static class Descr
         // carries as MagicResist; only the WORDS are stale — mRes was built as a fizzle chance until
         // 2026-08-10, when it became a damage reduction and the row was never rewritten. Matching his
         // wording is the point of an alias table (and the row is his to reword, not the tool's).
-        ("mres",          new[] { "mres", "magic resist", "magic resistance",
+        ("mres",          new[] { "mres", "m.res", "magic resist", "magic resistance",
                                   "chance for spells to fizzle", "spells to fizzle" }),
         ("critdmg",       new[] { "critical damage", "crit damage", "crit dmg", "critdmg" }),
         // `BL-188` - the BLOW landing rate and its one defence. Both are two-word aliases, so

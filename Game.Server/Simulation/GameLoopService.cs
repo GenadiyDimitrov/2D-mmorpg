@@ -1578,20 +1578,6 @@ public class GameLoopService : BackgroundService
             player.LearnedSkills.Remove(SkillCatalog.WeaponProficiency);
         }
 
-        // ⚠ Robe Armor Mastery is NOT auto-granted any more — it is a bonus-only skill bought off the
-        // class table at 7/14. It is also the one a nuker/cleric mastery Replaces, and re-granting it
-        // was the bug that erased their +max MP, +P.Def and the whole mpWhenRestored bonus: the pick
-        // in RecomputeDerived went by dictionary order and the re-added level-1 skill won.
-        //
-        // MIGRATION: it dropped from 3 levels to 2 in the same pass. A saved character sitting on
-        // level 3 would ask for a rung that no longer exists — ArmorMasteryAt is bounds-safe and
-        // returns null, so the mage would quietly lose his robe P.Def entirely rather than crash.
-        // Clamp instead. Harmless once no character carries the old level.
-        if (player.SkillLevelOf(SkillCatalog.MasteryRobe) is int robeLv && robeLv > 0
-            && SkillCatalog.Get(SkillCatalog.MasteryRobe)?.ArmorMasteryLevels is { Length: > 0 } robeRungs
-            && robeLv > robeRungs.Length)
-            player.LearnedSkills[SkillCatalog.MasteryRobe] = robeRungs.Length;
-
         // ---- Divine Focus — DELETED 2026-08-20 (owner): *"Remove the Divine Focus of cleric/buffers/
         //      healers -> if a healer wants to use sword so be it, swords have lower mAtk and no cast
         //      speed atri"*. The penalty (heal output ×0.5, ×0.75 for a Warchanter, while holding no
@@ -1760,7 +1746,9 @@ public class GameLoopService : BackgroundService
         foreach (var learnedId in player.LearnedSkills.Keys)
             if (SkillCatalog.Get(learnedId)?.Replaces is { } rep && Array.IndexOf(rep, skillId) >= 0)
                 return true;
-        return false;
+        // `BL-314` — or one of the class's own rows retired it (ClassSkill.Replaces).
+        return ClassSkills.RowReplaced(player.LearnedSkills, player.Race, player.BaseClass, player.Archetype,
+                                       player.Discipline, player.HasFourthClass).Contains(skillId);
     }
 
     private void HandleLearnSkill(LearnSkillCmd cmd)
@@ -1877,7 +1865,7 @@ public class GameLoopService : BackgroundService
             ? SkillCatalog.StatSwapPriceRange(
                   SkillCatalog.StatSwapRungsOwned(player.LearnedSkills),
                   SkillCatalog.StatSwapRungsOwned(player.LearnedSkills) + (target - cur))
-            : def.GoldCostAt(target);
+            : ClassSkills.GoldCostOf(def, target, player.Race, player.BaseClass, player.Archetype, player.Discipline, player.HasFourthClass);
         if (gold > 0 && player.Gold < gold)
         {
             SendSystemToEntity(player,
@@ -1918,6 +1906,11 @@ public class GameLoopService : BackgroundService
         if (cur == 0 && def.Replaces is { Length: > 0 })
             foreach (var replacedId in def.Replaces)
                 player.LearnedSkills.Remove(replacedId);
+        // `BL-314` — and a CLASS ROW may retire something too (the Lightbringer's first robe rung retires the cleric's
+        // light casting fix). Checked on every learn, not just the first: the row that retires is rarely rung 1.
+        foreach (var replacedId in ClassSkills.RowReplaced(player.LearnedSkills, player.Race, player.BaseClass,
+                     player.Archetype, player.Discipline, player.HasFourthClass).ToList())
+            player.LearnedSkills.Remove(replacedId);
 
         // Recompute so passives take effect immediately, not just on the next equip/level.
         player.RecomputeDerived();
@@ -4338,6 +4331,10 @@ public class GameLoopService : BackgroundService
         foreach (var id in byId.Keys.ToList())
             if (SkillCatalog.Get(id)?.Replaces is { } rep)
                 foreach (var r in rep) player.LearnedSkills.Remove(r);
+        // …and what the class's own rows retire (`BL-314`, ClassSkill.Replaces).
+        foreach (var r in ClassSkills.RowReplaced(player.LearnedSkills, player.Race, player.BaseClass,
+                     player.Archetype, player.Discipline, player.HasFourthClass).ToList())
+            player.LearnedSkills.Remove(r);
 
         player.RecomputeDerived();
         SendSystemToEntity(player, $"[DEBUG] Learned all class skills for level {player.Level}.");

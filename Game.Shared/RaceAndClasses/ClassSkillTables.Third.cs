@@ -227,9 +227,6 @@ public static partial class ClassSkillTables
             // ---- The four masteries, continued. Armor / Anti-Magic / Weapon start at rung 6 (five
             //      exist below 40); Shield Mastery starts at rung 3 (two exist below 40) and STOPS at
             //      52 — it is the one mastery that does not run the file's full fifteen rungs.
-            kit.AddRange(Ladder(TankArmorMastery, lv, 6));
-            kit.AddRange(Ladder(TankAntiMagic,    lv, 6));
-            kit.AddRange(Ladder(TankWeaponMastery, lv, 6));
             // 🔑 FIVE ROWS SINCE 2026-09-04, was two (40 and 52). His tank pass filled the gap with
             // 43/46/49, and those three rungs buy bow resistance ALONE — see the ladder in
             // Skills.Fighter.cs. `lv.Take(5)` rather than a hand-written list so it cannot drift off
@@ -373,7 +370,6 @@ public static partial class ClassSkillTables
 
         // ---- PASSIVES. Anti-Magic continues the cleric's ladder exactly as the healer's does:
         //      rung 7 is his @40 row, one rung per band to +108 M.Def / 25% mRes at 74. ----
-        kit.AddRange(Full(MageAntiMagic, startLevel: 7));
 
         // ---- ACTIVE SUPPORT. Ten rungs and it stops — see the class note above. ----
         kit.AddRange(At(Resurrection,
@@ -475,8 +471,6 @@ public static partial class ClassSkillTables
         // difficulty here — a `ClassSkill` names the RUNG, not the row number in his file.
         // 🔴 `buffer_armor_mastery`, NOT rungs 5-18 of `armor_mastery`, since 2026-09-02 (`BL-119`).
         //    Its own id, so its own rung numbering: fourteen rungs starting at ONE.
-        kit2.AddRange(Ladder(BufferArmorMastery, band14));
-        kit2.AddRange(Ladder(SpellMastery, band14, startRung: 5));
         // Great Heal: ELEVEN rungs, 40-68. His file stops there; the healer's own ladder runs to 74,
         // and the extra three rungs are the Lightbringer's alone.
         kit2.AddRange(Ladder(GreatHeal, new[] { 40, 44, 48, 52, 56, 58, 60, 62, 64, 66, 68 }));
@@ -496,17 +490,13 @@ public static partial class ClassSkillTables
 
         // ---- HUMAN: the shield tank. Blunt + shield, ONE damage skill. ---------------------------
         var human = new List<ClassSkill>(kit2);
-        human.AddRange(Ladder(WcBufferHeavy, new[] { 40 }));
         human.AddRange(Ladder(SoundSmash, band13));
         // The Human's own weapon line, authored 2026-09-02 — the same eight-rung band the Elf's bow
         // and the Demon's maul run on, so all three buffers finally have one.
-        human.AddRange(Ladder(DoctorBluntMastery, band8));
 
         // ---- ELF: the archer. Light armour, bow, ranged damage, no shield and no blunt line. ------
         var elf = new List<ClassSkill>(kit2);
-        elf.AddRange(Ladder(HarmonistLightMastery, new[] { 40 }));
         elf.AddRange(Ladder(HarmonistBowProficiency, new[] { 40 }));
-        elf.AddRange(Ladder(HarmonistBowMastery, band8));
         elf.Add(new ClassSkill(BowExpertise, 56, SkillLevel: 2));   // the archer's rung 2 (+12%), not rung 1
         elf.AddRange(Ladder(SoundBurst, band13));
 
@@ -514,8 +504,6 @@ public static partial class ClassSkillTables
         //      2026-08-21: *"ork is mele fighter so need more than 1dmg skill"*. Acoustic Shock is
         //      Sound Smash's twin with a stun, and it exists for exactly that reason. -------------
         var demon = new List<ClassSkill>(kit2);
-        demon.AddRange(Ladder(WcBufferHeavy, new[] { 40 }));
-        demon.AddRange(Ladder(WarlockWeaponMastery, band8));
         demon.AddRange(Ladder(SoundSmash, band13));
         demon.AddRange(Ladder(AcousticShock, band13));
 
@@ -672,9 +660,6 @@ public static partial class ClassSkillTables
         //        predicted exactly that. `Replaces` retires the nuker's Spell Mastery for him.
         //      • Mage Armor Mastery is the nuker's own (rungs 5-18) because it alone carries
         //        mpWhenRestored, and because his @48 P.Def differs from the healer's by 3.
-        shared.AddRange(Ladder(MageAntiMagic, band14, startRung: 7));
-        shared.AddRange(Ladder(SpellcasterWeaponMastery, band14));
-        shared.AddRange(Ladder(MageArmorMastery, band14, startRung: 5));
 
         // ---- The FOURTH passive. Calm Spirit was authored with the rest of this file and deliberately
         //      held on 2026-08-26 (*"w8 on calm spirit"*) because the stance model it needs did not
@@ -753,9 +738,6 @@ public static partial class ClassSkillTables
         //     is his @40 row); the two masteries REPLACE the cleric's pair rather than continuing it,
         //     which is the whole point of the 2026-08-20 split — the healer's kit is a wand and a robe,
         //     and the BUFFER is the caster who keeps the sword half and the light-armor row.
-        shared.AddRange(Full(MageAntiMagic, startLevel: 7));
-        shared.AddRange(Full(SpellcasterWeaponMastery));
-        shared.AddRange(Full(HealerArmorMasterySkill));
 
         // --- The nuke and the two ordinary heals, one rung per band. Each replaces its 2nd-class
         //     original (Holy Bolt / Heal / Party Heal), so the bar does not fill with obsolete rows.
@@ -980,7 +962,6 @@ public static partial class ClassSkillTables
         // ---- What both disciplines learn, identically. ----
         var shared = new List<ClassSkill>();
         // Armour Mastery rungs 6-20 — APPENDED to the 2nd-class ladder, same id (the tank's idiom).
-        shared.AddRange(Ladder(WarriorArmorMastery, band15, startRung: 6));
         // Final Stand — the P.Atk twin of the tank's Final Defense, three rungs on the same levels.
         shared.AddRange(Ladder(FinalStand, new[] { 40, 52, 60 }));
         // Battle Regeneration rungs 2-4 (15/20/25%). The Warlord takes two more, below.
@@ -994,13 +975,8 @@ public static partial class ClassSkillTables
 
         // ---- THE RAVAGER: the sword, the stances, and the cheaper early prices. ----
         var ravager = new List<ClassSkill>(shared);
-        ravager.AddRange(PricedLadder(WarriorSwordMastery, band15, sp15));
-        ravager.AddRange(PricedLadder(HpRegeneration, regen7, regenSpRavager));
         // Warrior's Strength rungs 2-4 at 40/46/52. ⚠ The Warlord takes only 2-3, and takes rung 3
         //   twelve levels later for nearly twice the SP — hence two lists rather than one.
-        ravager.Add(new ClassSkill(WarriorsStrength, 40, SkillLevel: 2, SpCost: 28_000));
-        ravager.Add(new ClassSkill(WarriorsStrength, 46, SkillLevel: 3, SpCost: 40_000));
-        ravager.Add(new ClassSkill(WarriorsStrength, 52, SkillLevel: 4, SpCost: 74_000));
         // The two Battle stances — the Ravager's alone; `war_aoe 3rd.csv` has neither.
         ravager.Add(new ClassSkill(BattlePresence, 46, SkillLevel: 2));
         ravager.Add(new ClassSkill(BattlePresence, 55, SkillLevel: 3));
@@ -1012,10 +988,6 @@ public static partial class ClassSkillTables
 
         // ---- THE WARLORD: the blunt that cleaves, and the longer Battle Regeneration. ----
         var warlord = new List<ClassSkill>(shared);
-        warlord.AddRange(PricedLadder(WarriorBluntMastery, band15, sp15));
-        warlord.AddRange(PricedLadder(HpRegeneration, regen7, regenSpWarlord));
-        warlord.Add(new ClassSkill(WarriorsStrength, 40, SkillLevel: 2, SpCost: 28_000));
-        warlord.Add(new ClassSkill(WarriorsStrength, 52, SkillLevel: 3, SpCost: 74_000));
         // Rungs 5-6 (30/35%) — the two levels the Ravager spends on Battle Presence instead.
         warlord.Add(new ClassSkill(BattleRegeneration, 64, SkillLevel: 5));
         warlord.Add(new ClassSkill(BattleRegeneration, 70, SkillLevel: 6));
@@ -1128,8 +1100,6 @@ public static partial class ClassSkillTables
         // ladder (APPENDED, same id); Dual Mastery is a NEW skill that REPLACES the rogue's weapon
         // mastery outright — his two rows say so, and the difference is explained on the defs.
         var shared = new List<ClassSkill>();
-        shared.AddRange(Ladder(RogueArmorMastery, band15, startRung: 6));
-        shared.AddRange(Ladder(DualWeaponMastery, band15));
         shared.Add(new ClassSkill(Sprint, 46, SkillLevel: 2));
         shared.Add(new ClassSkill(EvasionBoost, 60, SkillLevel: 2));
         // `BL-188` — Vital Points, the shared blow-rate passive. THREE rungs at 52/64/74, and the
@@ -1207,8 +1177,6 @@ public static partial class ClassSkillTables
         // ⚠ Armor Mastery here is a NEW skill starting at rung 1, not appended rungs: his file gives
         //   it its own id and a REPLACES cell. The dual file does the opposite with the same ladder.
         var shared = new List<ClassSkill>();
-        shared.AddRange(Ladder(ArcherArmorMastery, band15));
-        shared.AddRange(Ladder(BowMastery, band15));
         shared.AddRange(Ladder(ArcherTwinArrows, band15));
         shared.AddRange(Ladder(ExplosiveArrow, band15));
         shared.AddRange(Ladder(BowBlessing, buff3));

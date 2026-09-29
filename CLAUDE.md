@@ -336,6 +336,11 @@ mirrored**. Every skill change is a change to BOTH sides, in the same increment:
 Backlog and playtest passes. A skill touched on the way past still owes its CSV row. A commit that
 changes a `SkillDef` or a `ClassSkill` and does not touch a CSV should make you check why.
 
+🔑 **THE SHARED PASSIVE LADDERS ARE GENERATED** (`BL-314`, 0.215.0): armour/weapon masteries, regen, crit, speed, MP
+and cast pieces (`*.g.cs`, 34 ids) come from the CSVs via `dotnet run --project tools/SkillCsvSeed -- --gen-passives`.
+Never hand-edit a `.g.cs`: edit the row and regenerate. Their 20-75 passive SP is ×k per archetype in the engine
+(`SpScarcity`), and the CSVs show the scaled price.
+
 **Verify, don't eyeball:** `dotnet run --project tools/SkillCsvSeed -- --check` reads every authored row
 back against `ClassSkills.Cumulative` + `SkillCatalog`. Run it before committing skill work; it is the
 only thing that makes "at all times" checkable. It compares learn level, range, cast, cooldown,

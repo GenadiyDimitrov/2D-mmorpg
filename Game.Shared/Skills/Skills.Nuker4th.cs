@@ -98,12 +98,6 @@ public static partial class SkillCatalog
     private static readonly int[] NukerWavePower4 =
         { 86, 88, 91, 94, 98, 101, 105, 109, 113, 117, 121, 125, 129, 133, 137 };
 
-    /// <summary>`mpWhenRestored`, 60% ×4 / 65% ×5 / 70% ×6 — the ONE robe column that is the nuker's own.
-    /// ⚠ It RESUMES at 60%, where the 3rd tier plateaued for its last three rungs, and climbs again.</summary>
-    private static readonly float[] NukerFourthRestorePct =
-    {
-        .60f, .60f, .60f, .60f, .65f, .65f, .65f, .65f, .65f, .70f, .70f, .70f, .70f, .70f, .70f,
-    };
 
     /// <summary>The price EVERY 4th-tier nuker ULTIMATE pays: no SP at all and 100kk of gold, on all
     /// three of its rungs. His column, not the shared ladder's — see the class summary.</summary>
@@ -113,28 +107,7 @@ public static partial class SkillCatalog
     //  THE CONTINUING LADDERS. Each returns ONLY the 4th-tier rungs; the definition site concatenates.
     // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-    /// <summary>Mage Armor Mastery, rungs 19-33 — the SkillLevel half (price and text only; the robe
-    /// payload rides alongside it in <see cref="NukerFourthRobeProfiles"/>).</summary>
-    internal static SkillLevel[] NukerFourthArmorMasteryRungs() => F4Rungs(15, 1, (i, sp, gold) =>
-    {
-        var r = HealerFourthRobeRungs[i];
-        float restore = NukerFourthRestorePct[i];
-        string mp = r.MpCostPct > 0f ? $", MP costs −{r.MpCostPct * 100:0}%" : "";
-        return new SkillLevel(SpCost: sp, GoldCost: gold,
-            Description: $"In a robe: +{r.PDef} P.Def, +{r.MaxMp} Max MP, +{r.MDefPct * 100:0}% M.Def, "
-                       + $"+{restore * 100:0}% MP from every restore{mp}.");
-    });
 
-    /// <summary>The fifteen robe profiles that go with the rungs above. Four of the five numbers are
-    /// the healer's rung; `RestoreMpPct` is the nuker's.</summary>
-    internal static ArmorMasteryProfile[] NukerFourthRobeProfiles() =>
-        Enumerable.Range(0, 15).Select(i =>
-        {
-            var r = HealerFourthRobeRungs[i];
-            return new ArmorMasteryProfile(Robe: new StatMods(
-                PDef: r.PDef, MaxMp: r.MaxMp, MDefPct: r.MDefPct, MpCostPct: r.MpCostPct,
-                RestoreMpPct: NukerFourthRestorePct[i]));
-        }).ToArray();
 
     /// <summary>Elemental Blast rungs 15-29.</summary>
     internal static SkillLevel[] NukerFourthBlastRungs() => F4Rungs(15, 1, (i, sp, gold) =>

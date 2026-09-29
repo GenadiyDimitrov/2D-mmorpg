@@ -38,8 +38,6 @@ public static partial class SkillCatalog
 {
     // ---- HIS `SKILL_ID` COLUMN, verbatim (`explosive_arrow` is plural, `bow_stance`
     //      is spelled that way; an id is a wire and save value and is never tidied after the fact).
-    public const string ArcherArmorMastery  = "archer_armor_mastery";
-    public const string BowMastery    = "bow_mastery";
     public const string BowBlessing   = "bow_blessing";
     public const string BowSpirit     = "bow_spirit";
     public const string BowFocus      = "bow_focus";
@@ -99,18 +97,8 @@ public static partial class SkillCatalog
         1650, 1800, 1950, 2050, 2200, 2350, 2500,
     };
 
-    /// <summary>Bow Mastery's flat P.Atk with a bow, 200 → 800.</summary>
-    private static readonly int[] BowMasteryAtk =
-        { 200, 233, 266, 300, 350, 400, 450, 500, 533, 566, 600, 650, 700, 750, 800 };
 
-    /// <summary>…and its flat crit damage, 195 → 665.</summary>
-    private static readonly int[] BowMasteryCritDmg =
-        { 195, 222, 252, 285, 322, 362, 405, 435, 466, 499, 531, 565, 598, 632, 665 };
 
-    /// <summary>The archer's armour evasion — FLAT 12 on all fifteen rungs. This one number is the
-    /// ONLY difference between his archer and dual armour ladders (the melee rogue's climbs to 14),
-    /// and it is why they are two skills rather than one shared one. Do not unify them.</summary>
-    private const int ArcherArmorEva = 12;
 
     /// <summary>The three-rung levels every archer buff but Expertise and Stance uses, and their SP.
     /// 58 / 66 / 74, priced off the file's own ladder at those levels.</summary>
@@ -131,57 +119,7 @@ public static partial class SkillCatalog
     {
         var list = new List<SkillDef>();
 
-        // ═══ ARMOR MASTERY — a SEPARATE skill that REPLACES the rogue's ══════════════════════════
-        //
-        // 🔑 THE ARCHER BRANCHES OFF, THE DAGGER BRANCH CONTINUES. His two files do opposite things
-        //    with the same 2nd-class ladder: `dual 3rd.csv` keeps the id `rogue_armor_mastery` and
-        //    appends rungs 6-20; `archer 3rd.csv` gives a NEW id and `REPLACES [rougue_armor_mastery]`.
-        //    That works because every rung here is an ABSOLUTE profile — rung 1 at level 40 already
-        //    states +28 P.Def, +12 evasion, the lot — so nothing is lost when the old skill goes.
-        // ⚠ LIGHT ONLY, his WEIGHT column. A robe, plate or a bare torso pays nothing.
-        list.Add(new SkillDef(ArcherArmorMastery, "Armor Mastery", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive, SpCost: RogueSp[0],
-            Replaces: new[] { RogueArmorMastery, FighterArmorMastery },
-            Description: "Passive. In LIGHT armor: more defence, evasion, speed and regeneration, and "
-                       + "far less often critted. A robe or a bare torso gets nothing.",
-            Levels: BulwarkRungs(i => new SkillLevel(SpCost: RogueSp[i],
-                Description: $"With light armor: +{RogueArmorPDef(i)} P.Def, +{ArcherArmorEva} evasion, "
-                           + $"+{RogueArmorSpeed(i):0} speed, {RogueArmorCritRes(i) * 100:0}% less often "
-                           + $"critted, +{RogueArmorMpReg[i]:0.0} MP/s, "
-                           + $"+{RogueArmorHpReg[i]:0.0} HP/s.")).Concat(ArcherFourthArmorMasteryRungs()).ToArray(),
-            ArmorMasteryLevels: Enumerable.Range(0, BulwarkLevels.Length).Select(i =>
-                new ArmorMasteryProfile(
-                    Robe: default, None: default, Heavy: default,
-                    Light: new StatMods(
-                        PDef: RogueArmorPDef(i), Evasion: ArcherArmorEva,
-                        CritRateResist: RogueArmorCritRes(i), MoveSpeed: RogueArmorSpeed(i),
-                        MpRegen: RogueArmorMpReg[i], HpRegen: RogueArmorHpReg[i]))).
-                Concat(ArcherFourthArmorMasteryProfiles()).ToArray()));
 
-        // ═══ BOW MASTERY — the ranged branch's weapon passive ════════════════════════════════════
-        //
-        // ⚠ IT RETIRES THREE THINGS. `rogue_weapon_mastery` is his own REPLACES cell (and dropping the
-        //   DUAL half of it is the point of choosing the bow branch); `archer_bow_mastery` and
-        //   `killing_focus` are the derived kit's, cleaned up here rather than left to stack a
-        //   second bow passive and a permanent +20% crit damage on anyone who bought them.
-        list.Add(new SkillDef(BowMastery, "Bow Mastery", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive, SpCost: RogueSp[0],
-            Replaces: new[] { RogueWeaponMastery, ArcherBowMastery, KillingFocus, FighterWeaponMastery },
-            Description: "Passive. Your bow reaches far further and bites far harder. No effect with "
-                       + "anything else in your hands.",
-            Levels: BulwarkRungs(i => new SkillLevel(SpCost: RogueSp[i],
-                Description: $"Bow: +{BowMasteryAtk[i]} P.Atk, +400 range, ×1.085 P.Atk, "
-                           + $"+{BowMasteryCritDmg[i]} crit damage, +3 accuracy, ×1.2 crit rate, "
-                           + $"×1.05 attack speed.")).Concat(ArcherFourthBowMasteryRungs()).ToArray(),
-            WeaponMasteryLevels: Enumerable.Range(0, BulwarkLevels.Length).Select(i =>
-                new WeaponMasteryProfile(
-                    Bow: new PassiveEffect(
-                        PhysAtk: BowMasteryAtk[i], PhysAtkPct: 0.085f, BowRange: 400f,
-                        CritDamageFlat: BowMasteryCritDmg[i], Accuracy: 3,
-                        CritRate: 0.20f, AtkSpeedPct: 0.05f)))
-                .Concat(ArcherFourthBowMasteryProfiles()).ToArray()));
 
         // ═══ BOW BLESSING — cheaper physical reuse, twenty minutes ═══════════════════════════════
         // −10 / −15 / −20% on PHYSICAL reuse only (`PhysCooldownPct`), which is every skill an archer

@@ -39,7 +39,7 @@ multi-part row a number belongs to.
 |---|---|
 | `power` | `power`, `transfers`, `heal for`, `heals for`, `restores`, `damages the mp`, `friendly targets` |
 | `blockrate` | `shield defence rate`, `shield defense rate`, `shield rate`, `block rate`, `block chance` |
-| `shielddef` | `shield.p.def`, `shiled defence`, `shield defence`, `shield def`, `shield pdef`, `shield p.def` |
+| `blockreduction` | `shield dmg reduction`, `shield damage reduction`, `shield.p.def`, `shiled defence`, `shield defence`, `shield def`, `shield pdef`, `shield p.def` |
 | `mdef` | `magic defence`, `magic defense`, `magic def`, `m.def`, `mdef` |
 | `matk` | `magic attack`, `m.atk`, `matk`, `mattack` |
 | `patk` | `physical attack`, `p.atk`, `patk`, `pattack`, `p.attack` |
@@ -53,12 +53,27 @@ multi-part row a number belongs to.
 | `mpreg` | `mp regeneration`, `mp regen`, `mpreg`, `mp reg`, `mp` |
 | `hpreg` | `hp regeneration`, `hp regen`, `hpreg`, `hp reg` |
 | `cast` | `cast speed`, `casting speed`, `cast` |
-| `as` | `attack speed`, `atack speed`, `atk speed`, `as` |
+| `as` | `p.atk.speed`, `atk.speed`, `attack.speed`, `attack speed`, `atack speed`, `atk speed`, `as` |
+| `movatkspeed` | `move/attack.speed`, `move/attack speed` |
+| `atkcastspeed` | `atk/cast.speed`, `atk/cast speed`, `attack/cast speed` |
 | `ms` | `move speed`, `movement speed`, `ms`, `speed`, `move` |
 | `reuse` | `reuse delay`, `reuse`, `cooldown` |
-| `mres` | `mres`, `magic resist`, `magic resistance`, `chance for spells to fizzle`, `spells to fizzle` |
+| `mres` | `mres`, `m.res`, `magic resist`, `magic resistance`, `chance for spells to fizzle`, `spells to fizzle` |
 | `critdmg` | `critical damage`, `crit damage`, `crit dmg`, `critdmg` |
+| `blowrate` | `blow landing rate`, `blow rate`, `blowrate` |
+| `blowres` | `blow resist`, `blow resistance` |
+| `doublerate` | `double damage rate`, `double rate`, `doublerate` |
+| `durationrate` | `double duration rate`, `duration double rate`, `durationrate` |
+| `reusereset` | `reuse reset rate`, `reuse reset`, `cooldown reset` |
+| `critdmg` | `p.crit.dmg`, `p.critical.dmg` |
+| `critrate` | `p.crit.rate`, `p.critical.rate` |
+| `pvpdmg` | `pvp dmg`, `pvp damage` |
+| `skillreflect` | `to reflect physical damage skill`, `reflect physical damage skill`, `physical skill reflect` |
+| `debuffreflect` | `to reflect debuff`, `reflect debuff`, `debuff reflect` |
+| `reflect` | `reflect` |
+| `channelshots` | `times over` |
 | `critrate` | `critical rate`, `crit rate`, `critrate`, `critical` |
+| `magiccritdmg` | `magic critical damage`, `magic critical dmg`, `magic crit damage`, `magic crit dmg`, `m.crit.dmg`, `m crit dmg` |
 | `magiccritrate` | `magic critical`, `magic crit` |
 | `skilleva` | `skill evasion` |
 | `magiceva` | `magic evasion` |
@@ -77,14 +92,25 @@ multi-part row a number belongs to.
 | `successchance` | `success chance` |
 | `procchance` | `chance` |
 | `ccresist` | `resist to spt`, `resist to con` |
-| `cancelresist` | `cancel resist`, `buff cancel resist` |
+| `ccresist` | `resistance to debuffs`, `resist to debuffs`, `debuff resistance` |
+| `cancelresist` | `removal attacks`, `removal`, `cancel resist`, `buff cancel resist` |
+| `healrecv` | `received hp`, `healing received`, `heal received` |
+| `hpgate` | `less or equal to`, `when hp is below`, `hp is below` |
+| `pvedmg` | `pve dmg`, `pve damage` |
 | `aggro` | `aggro`, `threat` |
 | `reagent` | `consumes`, `skill stones`, `skill stone`, `elemental stones`, `elemental stone` |
 | `resexp` | `of lost exp`, `lost exp` |
 | `lifesteal` | `of the damage dealt`, `of damage dealt`, `heals you` |
 | `offencespeed` | `offence and speed`, `offense and speed` |
+| `chargecap` | `focus' up to`, `focus up to` |
+| `chargespend` | `focus spend` |
+| `chargepower` | `focus bonus` |
+| `chargeonhit` | `focus on hit` |
+| `chargeoncrit` | `focus on crit` |
+| `hpprice` | `hp price` |
+| `mpprice` | `mp price` |
 
-46 keys, 151 spellings.
+72 keys, 217 spellings.
 
 ## Words that are read but are not stats
 

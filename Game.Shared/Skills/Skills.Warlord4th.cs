@@ -54,15 +54,6 @@ public static partial class SkillCatalog
     internal static readonly int[] W4WaraoeWhirlwindPower =
         { 1050, 1100, 1150, 1200, 1250, 1300, 1350, 1400, 1450, 1500, 1550, 1600, 1650, 1700, 1750 };
 
-    /// <summary>TWO-HAND (BLUNT) MASTERY rungs 16-30 — his `war_aoe 4th.csv` column. P.Atk 153 → 200
-    /// (+3 a rung, widening to +4 at 86) and crit damage 632 → 860 (+17 a rung, one +12 at 79).
-    /// ⚠ The CLEAVE plateaus at 10 for the whole tier: it already reached 10 at 3rd-tier rung 6, so
-    /// this tier buys power and never width. That is his column, not a ceiling in the code.</summary>
-    internal static readonly int[] W4BluntAtk =
-        { 153, 156, 159, 162, 165, 168, 171, 174, 177, 180, 184, 188, 192, 196, 200 };
-    /// <inheritdoc cref="W4BluntAtk"/>
-    internal static readonly float[] W4BluntCritDmg =
-        { 632, 649, 666, 678, 690, 707, 724, 741, 758, 775, 792, 809, 826, 843, 860 };
 
     /// <summary>The three race Shouts, one last step each across eight even rungs — P.Def 25 → 27%,
     /// P/M.Atk 12 → 15%, speeds 25 → 30%. Flat then one move, exactly like the Ravager's Slashes.</summary>

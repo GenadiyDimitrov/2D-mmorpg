@@ -278,9 +278,9 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-286` | ⏸ | **CASTLE "NOBLE" CHARISMA** — a castle-holding clan leader gets charisma decay/loss protection or a grant; split out of `BL-283`; waits on castles | social |
 | `BL-288` | ⏸ | **CONSUMABLE RARITY → PLAIN LEVELS 1-6** — potions/scrolls may drop the rarity word entirely; deferred by him, split out of `BL-272` | items |
 | `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
-| `BL-314` | 🔵 | **Split passives into single-stat pieces** — 📝 CSVs SPLIT, PRICED, k SOLVED 2026-09-29 (`PassiveSplit.md` §10-§12; engine build next) — regen / P.Def / speed as their own ladders shared across classes, so ten armor masteries become a few mixable passives — design first | skills |
 | `BL-323` | ⏸ | **Server-side collision (geodata)** — the server checks walls/buildings too, not only the 3D models; waits on `BL-281` | world |
 | `BL-324` | 🔵 | **Town sprint** — 📝 PROPOSED 2026-09-29: a visible **Paved Streets** buff inside the wall (+50 run, cap 250, off in combat), no button; 1 Q (whole town or streets only) | world |
+| `BL-325` | ❓ | **Tank fizzle: Spell Ward vs Magic Protection** — the auto-granted ×2/×2.5/×3 (`tank_spell_ward`) makes his paid ×2 `magic_protection` @80 worth nothing; which one goes? | skills |
 
 ---
 
@@ -2246,67 +2246,6 @@ exists (`HandleDebugReset`, back to level 1). Since `BL-296` it keeps quests and
 (platinum?), whether subclasses survive, and what happens to class-chain quests of the old class (today's re-roll
 drops them).
 
-## `BL-314` 🔵 SPLIT PASSIVES INTO SINGLE-STAT PIECES
-
-His note, 2026-09-26 (with the Bow Expertise fold, where `wc_bow_expertise` became rung 2 of the archer's
-`bow_expertise`): *"split all passives as single stat changes and that will decrease the number of different
-skills - for example most armor passives have the mp ang hp +regen .. Just different rungs ... And the base
-mastery is the same across classes/deciplines.. So if we take the regen and make it separate passive we can mix
-and Mach passives and won't have 20 different armor masteries"*.
-
-**Today:** 10 armor-mastery passives (`FighterArmorMastery`, `RogueArmorMastery`, `ArcherArmorMastery`,
-`TankArmorMastery`, `WarriorArmorMastery`, `MageArmorMastery`, `BufferArmorMastery`, `HealerArmorMasterySkill`,
-`ArmorMasterySkill`, `HarmonistLightMastery`) and 45 `*Mastery` skills in all. Each one bundles P.Def + evasion +
-speed + HP/MP regen (+ crit resist) for one armor weight, and a later one `Replaces` the earlier — so the same
-regen ladder is re-authored inside every one of them at different rungs.
-
-**The idea:** one ladder per STAT (e.g. `hp_regen_mastery`, `mp_regen_mastery`, a per-weight `light/heavy/robe`
-defence mastery), each a shared skill id that a class's table grants at ITS rung and level — exactly the shape
-`bow_expertise` has now (one id, the archer at rung 2 at 52, the Elf buffer at rung 2 at 56). A class's identity
-is then WHICH pieces and which rungs, not a bespoke bundle.
-
-❓ **Design first, before any code** — it touches every class CSV:
-1. Which stats split out (regen HP / MP, speed, evasion, crit resist) and which stay in the weight-gated mastery.
-2. The CSV shape: one row per piece per class, or a shared "passives" file with a per-class rung column.
-3. Weight gates: regen today pays only in the right armor — does a split-out regen keep that gate?
-4. Migration is a `game.db` delete (pre-release), but every `Replaces` chain between masteries is rewritten.
-
-**His WHY, 2026-09-28** (the note on 0.214.32-38): *"currenlty the SP for each class is over enough ... (lvls 0~75) at
-first u need a bit ore mobs when u lvl up so u can learn skills .. but after lvl 20 or so u have SP to spare ... so
-spliting the passives and keeping the SP (or alteast the sum of all the passives is 3-4 times more that the current
-single one - until 75 .. after the sum should be x1 .. 76 is hard SP wise) so each lvl up its a desition: "Should i
-learn this one it gives me more survavbiliy or should i learn this one for more dmg .. or that one ..." ... knowing
-your sp is not enough for the current lvl ull start making desition should u lvl up your aoe skill if never going to
-use it .. or lvl up that heal because its slower .. ull catchup after 76 ... lets make ppl to use their brains not
-maindlesly like auto_learn skills and just changing farm spots .. spliting the passives gives the player that
-desitions .. not 1 passive 200 stats in one go ... now 200 passive -> chose wisely"*.
-- So the split is an **SP-scarcity** feature, not only a tidy-up: below 76 the pieces together cost **3-4×** the one
-  bundled passive they replace (so you cannot buy everything at your level); from 76 on the sum is ×1 and you catch up.
-- 🔑 **Measure before designing** (next step, mine): a BalanceMatrix print of SP earned per level vs the SP a class's
-  whole kit costs per level, 1-85, for each discipline — the "after 20 you have SP to spare" gap in numbers, and the
-  size of the 3-4× budget the split has to absorb.
-- 📝 **2026-09-28: MEASURED — `docs/design/SpBudget.md`** (`BalanceMatrix --sp-budget [path]`). At ×1, buying the whole
-  kit, 20-75 is **not** spare: daggers 1.9-2.3×, bows/warriors 1.5-1.9×, tanks/Magus 1.2-1.3×, **healers 0.78-0.93× (short)**.
-  The "spare" is the Favor (+400%), Blessing and runes. A flat passive ×3-4 leaves daggers and bows near 1 and halves the healers;
-  ❓ **four questions in §5 of the doc** (flat vs one target — my pick 0.65 at ×1, the healers, whether to count the Favor).
-- ✅ **2026-09-29, HIS ANSWERS:** *"not flat for everyone -> make it as u said .. target for evey class"* · *"make the target
-  x0.60 and x0.45~0.55 for healer/buffers - rogues can even be about x7.5~8 - warriors/tanks x4.5~5.5 - mages/healers
-  x4~4.5"* · *"harder for healers they have most skills of all so they need to deside -> support/party or dmg/solo"* ·
-  *"dont count the favor -> ... the favor just speedup the things not change it"*.
-- 📝 **2026-09-29: THE SPLIT, DESIGNED — `docs/design/PassiveSplit.md`** (not built, no CSV touched). Measured: his k's land
-  every path at 0.54-0.67, healers 0.45-0.51; everyone is short from level 20. One piece = one stat; shared ladders keep
-  every authored number (a repricing, not a rebalance); a piece needs a rung only where its value changes (rows roughly ×2,
-  not ×6); ×k lives in the engine, the CSV keeps the ×1 price. `BalanceMatrix --passive-inventory [id]` is the inventory.
-  ❓ **six questions in §9 of the doc.**
-- 📝 **2026-09-29: CSVs SPLIT + LADDERS MERGED** (`PassiveSplit.md` §10-§11, 0.214.43), then **his §11 answers applied
-  and the SP pass done** (§12): Ravager no stack, daggers keep 21/23, cleric fix → `clerics_light_armor_mastery`, tank
-  crit resist split out, `dual_anti_magic` → `magic_resistance`, both buffer armor masteries dissolved (new
-  `cleric_heavy_armor_mastery`), one `strength_mastery` (rung 1 ungated, warrior rungs 2H). Every piece priced as an
-  equal share of its old bundle rung. **k solved** (`BalanceMatrix --sp-budget-csv`): daggers 7.15, bows 9.09, warriors
-  4.63, tanks 3.58, Magus 4.60, Lightbringer 3.52, Warchanter 3.73. `SkillCsvSeed --check` reads RACE now.
-  ➡ **NEXT: the engine build** (§12 last paragraph). One open question: `magic_protection` @80 free again or priced?
-
-
 ## `BL-323` ⏸ SERVER-SIDE COLLISION (GEODATA)
 
 His `BL-319` answer 1, 2026-09-28: *"Visuals 1st -> as u said the 3d models will do the collision. - dont know hwat
@@ -2346,3 +2285,17 @@ fantasy/gamey like .. just some day haters not to say "I move faster in the town
 - ❓ **One question: the whole town inside the wall (my pick: simple, and the streets carry you everywhere anyway), or
   only while standing ON the drawn streets?** The second needs the street shapes on the server (the `BL-323` geodata
   kind of work).
+
+## `BL-325` ❓ TANK FIZZLE: SPELL WARD VS MAGIC PROTECTION
+
+Found building `BL-314` (0.215.0). The tank has TWO sources of "hostile spells fizzle more on you", and they do not add:
+- **`tank_spell_ward`** ("Spell Ward"), AUTO-GRANTED by the engine, in no CSV: ×2 from 20, ×2.5 from 40, ×3 from 76. It is
+  the 2026-08-10 *"tanks will have a defender modifier x2 as a passive"*; the ×2.5 and ×3 were my extrapolation. It was
+  called `anti_magic` until his split gave that id to the shared M.Def ladder, and moved to its own id unchanged.
+- **`magic_protection`**, his `tank 4th.csv` row: ×2 at 80, 150kk SP + 10kk gold (his ruling 2026-09-29: *"IG is
+  separate ... if you want your magic protection you will have to pay as a new skill"*).
+
+The engine takes the **highest** fizzle multiplier (`MagicFailMod = Math.Max`), so a tank who pays 150kk for ×2 at 80 is
+already on ×3 from 76 and gains **nothing**. ❓ **Your call:** (a) delete Spell Ward, so fizzle protection is only the paid
+skill at 80 (tanks 20-79 lose their ×2/×2.5); (b) keep Spell Ward to 79 and make `magic_protection` the only source from
+80 (stop the auto ×3); (c) raise `magic_protection` above ×3; (d) something else.

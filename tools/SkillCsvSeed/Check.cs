@@ -389,7 +389,7 @@ internal static class Check
             // index, which is what keeps each such migration a contained change — and the reason a
             // structural pass must never skip a row.
             rows.Add(new Rung(f[1].Trim(), I(f[0]), F(f[6]), F(f[9]), F(f[10]), F(f[11]),
-                              I(f[13]), I(f[14]) * spScale, Descr: f[12].Trim(),
+                              I(f[13]), (int)Math.Round(Num(f[14]) * spScale), Descr: f[12].Trim(),
                               Target: f[8].Trim().ToLowerInvariant(),
                               Weapon: f[4].Trim(),
                               Weight: f[5].Trim(),
@@ -453,6 +453,17 @@ internal static class Check
     {
         var seen = new HashSet<(string, int, int)>();
         var rows = new List<Rung>();
+        // `BL-314` — which races register each (skill, rung, level), so a race-split ladder (the buffer's Human and
+        // Demon accuracy, both at 76) pairs each CSV row with ITS race's rung instead of by position.
+        var racesOf = new Dictionary<(string, int, int), List<string>>();
+        foreach (var r in new[] { Race.Human, Race.Elf, Race.Demon })
+            foreach (var d in spec.Disciplines is { Length: > 0 } ds ? ds.Select(x => (Discipline?)x) : new[] { spec.Discipline })
+                foreach (var c in ClassSkills.Cumulative(r, spec.Base, spec.Archetype, d, spec.Fourth))
+                {
+                    var k = (c.SkillId, c.SkillLevel, c.LearnLevel);
+                    if (!racesOf.TryGetValue(k, out var l)) racesOf[k] = l = new List<string>();
+                    if (!l.Contains(r.ToString())) l.Add(r.ToString());
+                }
         // One entry unless the file is shared by several disciplines (the two rogue branches).
         Discipline?[] disciplines = spec.Disciplines is { Length: > 0 } many
             ? many.Select(d => (Discipline?)d).ToArray()
@@ -528,6 +539,8 @@ internal static class Check
                     duration,
                     def.MpCostAt(cs.SkillLevel),
                     cs.SpCostFor(def), Def: def, SkillLevel: cs.SkillLevel,
+                    Race: racesOf[(cs.SkillId, cs.SkillLevel, cs.LearnLevel)].Count == 3 ? ""
+                        : string.Join(";", racesOf[(cs.SkillId, cs.SkillLevel, cs.LearnLevel)]),
                     Target: Retarget.FromDef(def),
                     SkillId: def.Id,
                     // BL-105 — what the GAME demands, in his own grammar, so the column is checked.
@@ -895,7 +908,12 @@ internal static class Check
     /// rows carrying the same id are the same skill and need no guessing at all.</summary>
     private static Dictionary<string, List<Rung>> Group(List<Rung> rows) =>
         rows.GroupBy(r => r.SkillId.Length > 0 ? r.SkillId : "name:" + Norm(r.Name))
-            .ToDictionary(g => g.Key, g => g.OrderBy(r => r.LearnLevel).ToList());
+            .ToDictionary(g => g.Key, g => g.OrderBy(r => r.LearnLevel).ThenBy(r => RaceKey(r.Race)).ToList());
+
+    /// <summary>A RACE cell in a comparable form: lower-case names, sorted. Blank = all three races.</summary>
+    private static string RaceKey(string race) =>
+        string.Join(";", race.Split(';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                            .Select(x => x.ToLowerInvariant()).OrderBy(x => x));
 
     /// <summary>`Anti magic` and `Anti-Magic` are the same skill; so are `Weapon mastery` and
     /// `Weapon Mastery`. Also drops a trailing ` L2`/` L3` rung suffix so the 40+ format collapses onto
@@ -915,6 +933,17 @@ internal static class Check
     /// ~300 rows parsed as 0 and reported as an SP mismatch against perfectly correct code. A parser
     /// that reads a number it does not understand as ZERO is worse than one that refuses: it produced a
     /// screen of confident, wrong defects the first time `healer 3rd` was checked.</summary>
+    /// <summary>An SP cell before its unit: `(x1000)` files write `50.1` for 50,100 since the `BL-314` scaled prices, so
+    /// the unit must multiply the DECIMAL, not an integer already rounded to 50.</summary>
+    private static double Num(string s)
+    {
+        s = s.Trim();
+        int k = 0;
+        while (s.Length > 0 && (s[^1] == 'k' || s[^1] == 'K')) { k++; s = s[..^1].TrimEnd(); }
+        if (!double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var v)) return 0;
+        return v * Math.Pow(1000, k);
+    }
+
     private static int I(string s)
     {
         s = s.Trim();

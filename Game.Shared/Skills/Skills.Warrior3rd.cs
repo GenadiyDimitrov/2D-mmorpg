@@ -31,13 +31,10 @@ public static partial class SkillCatalog
 {
     // The Ravager's sword line and the Warlord's blunt line. Both are named "Two-Hand Mastery" in his
     // files — the DISPLAY name is the same, the id and the payload are not.
-    public const string WarriorSwordMastery = "warrior_sword_mastery";
-    public const string WarriorBluntMastery = "warrior_blunt_mastery";
     /// <summary>The P.Atk twin of the tank's Final Defense — his row is that skill's sentence with
     /// "P.Def" swapped for "P.Atk" and no magic column. Its numbers live in
     /// <c>Entity.FinalStandBonus</c>, not here, because they are read LIVE off the HP bar.</summary>
     public const string FinalStand = "final_stand";
-    public const string HpRegeneration = "hp_regeneration";
 
     // ---- HIS LADDER. Fifteen rungs at these levels, on the armour and both weapon masteries. ----
     internal static readonly int[] Warrior3rdLevels =
@@ -66,120 +63,20 @@ public static partial class SkillCatalog
     //     LIGHT armour keeps growing instead of being frozen at the level-36 rung.
     // ═══════════════════════════════════════════════════════════════════════════════════════════
 
-    /// <summary>His fifteen rows, read column by column. All weights get the P.Def and the HP regen;
-    /// LIGHT adds +9 evasion at every rung (a plateau he carried up from level 28 — authored, not a
-    /// stall); HEAVY adds its own P.Def and max HP on top.</summary>
-    private static readonly int[]   W3ArmorDef     = { 40, 45, 50, 55, 58, 60, 63, 70, 77, 85, 92, 100, 107, 115, 123 };
-    private static readonly float[] W3ArmorHpReg   = { 1.7f, 1.7f, 2.1f, 2.1f, 2.6f, 2.6f, 2.7f, 2.7f, 2.7f, 2.7f, 2.7f, 3.4f, 3.4f, 3.4f, 4.0f };
-    private static readonly int[]   W3ArmorHeavyDef = { 10, 12, 14, 16, 18, 20, 22, 24, 27, 30, 33, 36, 40, 45, 50 };
-    private static readonly int[]   W3ArmorHeavyHp  = { 50, 50, 50, 50, 60, 60, 60, 70, 70, 80, 80, 90, 90, 100, 100 };
 
-    internal static SkillLevel[] WarriorArmorMasteryThirdRungs() =>
-        Enumerable.Range(0, Warrior3rdLevels.Length).Select(i => new SkillLevel(SpCost: Warrior3rdSp[i],
-            Description: $"+{W3ArmorDef[i]} P.Def and +{W3ArmorHpReg[i]:0.0} HP regen/s in light or heavy; "
-                       + $"light armor +9 evasion; heavy armor a further +{W3ArmorHeavyDef[i]} P.Def "
-                       + $"and +{W3ArmorHeavyHp[i]} max HP.")).ToArray();
 
-    internal static ArmorMasteryProfile[] WarriorArmorMasteryThirdProfiles() =>
-        Enumerable.Range(0, Warrior3rdLevels.Length).Select(i =>
-            WarriorArmor(W3ArmorDef[i], lightEva: 9, hpRegen: W3ArmorHpReg[i],
-                         heavyDef: W3ArmorHeavyDef[i], heavyHp: W3ArmorHeavyHp[i])).ToArray();
 
     // ═══════════════════════════════════════════════════════════════════════════════════════════
     //  THE SKILLS
     // ═══════════════════════════════════════════════════════════════════════════════════════════
 
-    /// <summary>The crit-damage column both weapon masteries share — his files author the SAME fifteen
-    /// numbers for the sword and for the blunt. Only the flat P.Atk differs (the blunt trades twenty
-    /// points of it for the cleave).</summary>
-    private static readonly float[] W3MasteryCritDmg =
-        { 145f, 172f, 202f, 235f, 272f, 312f, 355f, 385f, 416f, 449f, 481f, 515f, 548f, 582f, 615f };
 
-    /// <summary>THE RAVAGER'S SWORD LADDER: a clean +7 flat P.Atk a rung, end to end.
-    /// ✅ RUNG 8 IS 101, not the 91 his file first carried — `BL-200`, ruled 2026-09-11:
-    /// *"Warrior sword mastery should be 94->101->108 ... Typo on both"*. It was the one place in
-    /// either warrior file where a ladder went DOWN (a Ravager buying rung 8 at level 60 lost three
-    /// points of attack he already had, for 120k SP), and `--check`'s LADDER DIP is what found it.
-    /// The CSV cell moved with this line, in the same commit.</summary>
-    private static readonly int[] W3SwordAtk =
-        { 52, 59, 66, 73, 80, 87, 94, 101, 108, 115, 122, 129, 136, 143, 150 };
 
-    /// <summary>THE WARLORD'S BLUNT LADDER: a clean +7 a rung, twenty points under the sword's at
-    /// every step. That gap IS the price of the cleave.</summary>
-    private static readonly int[] W3BluntAtk =
-        { 32, 39, 46, 53, 60, 67, 74, 81, 88, 95, 102, 109, 116, 123, 130 };
 
-    /// <summary>How many bodies one of the Warlord's basic swings may touch, the real target INCLUDED
-    /// (his "max N targets"). Climbs 5 → 10 over the first six rungs and then PLATEAUS, which is
-    /// authored: a plateau at the top of a ladder is a decision, not a gap (his 2026-08-26 rule).</summary>
-    private static readonly int[] W3BluntCleave =
-        { 5, 6, 7, 8, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10 };
 
     private static SkillDef[] Warrior3rdSkills() => new SkillDef[]
     {
-        // ═══ TWO-HAND MASTERY, THE RAVAGER'S — a TWO-HANDED SWORD only ═══════════════════════════
-        // ⚠ It does NOT carry `Replaces: [warrior_weapon_mastery]`, and the Warlord's blunt line
-        //   below DOES. That asymmetry is his files': the Ravager's row has an empty REPLACES cell
-        //   and the Warlord's names the 2nd-class mastery. It also makes mechanical sense — the
-        //   2nd-class mastery is where the Ravager's own CLEAVE-free sword numbers come from at
-        //   20-36, and its blunt half is inert in his hands anyway.
-        new(WarriorSwordMastery, "Two-Hand Mastery", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive,
-            Description: "Passive. A TWO-HANDED SWORD strikes far harder in your hands, and far worse "
-                       + "when it finds a gap. No effect one-handed, and none with any other weapon.",
-            // ⚠ `BL-237` — THE 4th TIER CONTINUES THIS LADDER AND ONLY THIS ONE. `war_aoe 4th.csv` is
-            //   still a placeholder, so the Warlord's blunt mastery below stops at 74.
-            Levels: Enumerable.Range(0, Warrior3rdLevels.Length).Select(i => new SkillLevel(
-                SpCost: Warrior3rdSp[i],
-                Description: $"Two-handed sword: +{W3SwordAtk[i]} P.Atk, +{W3MasteryCritDmg[i]:0} critical damage.")
-                ).Concat(WarriorSwordMasteryFourthRungs()).ToArray(),
-            WeaponMasteryLevels: Enumerable.Range(0, Warrior3rdLevels.Length).Select(i =>
-                new WeaponMasteryProfile(
-                    Sword: new PassiveEffect(PhysAtk: W3SwordAtk[i], CritDamageFlat: W3MasteryCritDmg[i]),
-                    RequiredWeapon: WeaponType.AnySword,
-                    RequiredHands: WeaponHands.Two))
-                .Concat(WarriorSwordMasteryFourthProfiles()).ToArray()),
 
-        // ═══ TWO-HAND MASTERY, THE WARLORD'S — a TWO-HANDED BLUNT, and it CLEAVES ════════════════
-        // 🔑 THIS IS WHAT THE DISCIPLINE IS. Twenty fewer points of P.Atk than the Ravager's sword at
-        // every rung, bought back as a basic attack that hits up to TEN bodies within 150 of the one
-        // he swung at. See PassiveEffect.CleaveTargets and GameLoopService.ResolveCleave — each extra
-        // body takes a WHOLE swing (its own miss roll, crit, block and on-hit riders), not a share.
-        // ⚠ `Replaces: [warrior_weapon_mastery]` is HIS cell, and it matters more here than usual:
-        //   the 2nd-class mastery ALSO grants a blunt cleave (2-4 targets). Without the replace a
-        //   Warlord would hold two cleaves — harmless as written, since Entity takes the LARGER of
-        //   the two rather than summing, but two ladders for one mechanic is how they drift apart.
-        new(WarriorBluntMastery, "Two-Hand Mastery", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive, Replaces: new[] { WarriorWeaponMastery },
-            Description: "Passive. A TWO-HANDED BLUNT hits harder and crits worse — and every basic "
-                       + "swing sweeps everything within 150 of your target. No effect one-handed, "
-                       + "and none with any other weapon.",
-            // ⚠ RUNGS 16-30 ARE THE WARLORD'S 4th TIER (`war_aoe 4th.csv`, 2026-09-17) and they are
-            //   built by CONCATENATING the two halves, exactly as the Ravager's sword mastery does.
-            //   The cleave PLATEAUS at 10 for the whole tier — his column, and the 3rd tier already
-            //   reached 10 at rung 6, so fifteen more rungs buy power and never width.
-            Levels: Enumerable.Range(0, Warrior3rdLevels.Length).Select(i => new SkillLevel(
-                SpCost: Warrior3rdSp[i],
-                Description: $"Two-handed blunt: +{W3BluntAtk[i]} P.Atk, +{W3MasteryCritDmg[i]:0} critical "
-                           + $"damage, basic attacks strike up to {W3BluntCleave[i]} targets within 150."))
-                .Concat(F4Rungs(W4BluntAtk.Length, 1, (i, sp, gold) => new SkillLevel(
-                    SpCost: sp, GoldCost: gold,
-                    Description: $"Two-handed blunt: +{W4BluntAtk[i]} P.Atk, +{W4BluntCritDmg[i]:0} critical "
-                               + "damage, basic attacks strike up to 10 targets within 150."))).ToArray(),
-            WeaponMasteryLevels: Enumerable.Range(0, Warrior3rdLevels.Length).Select(i =>
-                new WeaponMasteryProfile(
-                    Blunt: new PassiveEffect(PhysAtk: W3BluntAtk[i], CritDamageFlat: W3MasteryCritDmg[i],
-                        CleaveTargets: W3BluntCleave[i], CleaveRadius: 150f),
-                    RequiredWeapon: WeaponType.AnyBlunt,
-                    RequiredHands: WeaponHands.Two))
-                .Concat(Enumerable.Range(0, W4BluntAtk.Length).Select(i =>
-                    new WeaponMasteryProfile(
-                        Blunt: new PassiveEffect(PhysAtk: W4BluntAtk[i], CritDamageFlat: W4BluntCritDmg[i],
-                            CleaveTargets: 10, CleaveRadius: 150f),
-                        RequiredWeapon: WeaponType.AnyBlunt,
-                        RequiredHands: WeaponHands.Two))).ToArray()),
 
         // ═══ FINAL STAND — the passive that reads your own HP bar ════════════════════════════════
         // Three rungs at 40 / 52 / 60, both disciplines. Its numbers live in `Entity.FinalStandBonus`
@@ -218,34 +115,6 @@ public static partial class SkillCatalog
                                + "below 25% +40% and +10 accuracy."),
             }),
 
-        // ═══ HP REGENERATION — and the first passive in the game that pays for SITTING ═══════════
-        // *"Increase Hp regen +1.4; When sitting Hp regen +1, Mp regen +2.0"*. Two channels: the
-        // always-on HP regen (the flat `hpReg` column every other passive uses since `BL-92`) and a
-        // sitting-only pair on top of it. See PassiveEffect.HpRegenSitting for why both are FLAT and
-        // why they are added OUTSIDE the stance multiplier — sitting already pays ×1.5 on the formula
-        // half, and folding his authored +2.0 inside would have silently made it +3.0.
-        // ⚠ The MP half is the interesting one: a warrior has no other MP regen source of his own at
-        //   all, so this is what lets him sit for ten seconds between pulls instead of thirty.
-        new(HpRegeneration, "HP Regeneration", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive, SpCost: 42_000,
-            Description: "Passive. Your wounds close faster, and faster still when you sit down to "
-                       + "rest — sitting also restores your MP.",
-            Levels: new[]
-            {
-                // 🔑 THE SP HERE IS THE WARLORD'S (42k/65k on the first two rungs). The Ravager's file
-                // prices the same two at 28k/50k, which rides as a ClassSkill.SpCost override on his
-                // table rather than as a second SkillDef. Rungs 3-7 agree in both files.
-                // ⚠ His level-66 cell reads "Hp regen +1,8" — a comma for a decimal point, which is the
-                //   Bulgarian separator. 1.8 continues the +0.1 ladder exactly; there is no ambiguity.
-                W3RegenRung(1.4f, sitHp: 1f, sitMp: 2.0f, sp: 42_000),
-                W3RegenRung(1.5f, sitHp: 1f, sitMp: 2.0f, sp: 65_000),
-                W3RegenRung(1.6f, sitHp: 1f, sitMp: 2.0f, sp: 80_000),
-                W3RegenRung(1.7f, sitHp: 3f, sitMp: 2.5f, sp: 170_000),
-                W3RegenRung(1.8f, sitHp: 3f, sitMp: 2.5f, sp: 280_000),
-                W3RegenRung(1.9f, sitHp: 5f, sitMp: 3.0f, sp: 390_000),
-                W3RegenRung(2.0f, sitHp: 5f, sitMp: 3.0f, sp: 880_000),
-            }),
     };
 
     // ═══════════════════════════════════════════════════════════════════════════════════════════
@@ -806,11 +675,4 @@ public static partial class SkillCatalog
                 .ToArray());
     }
 
-    /// <summary>One rung of HP Regeneration. A helper because the sitting pair and the always-on flat
-    /// must never be confused for each other — they are three numbers on one row of his file and two
-    /// of them only pay while the character is on the ground.</summary>
-    private static SkillLevel W3RegenRung(float hpReg, float sitHp, float sitMp, int sp) =>
-        new SkillLevel(SpCost: sp,
-            Passive: new PassiveEffect(HpRegen: hpReg, HpRegenSitting: sitHp, MpRegenSitting: sitMp),
-            Description: $"+{hpReg:0.0} HP regen/s. While sitting, a further +{sitHp:0} HP/s and +{sitMp:0.0} MP/s.");
 }

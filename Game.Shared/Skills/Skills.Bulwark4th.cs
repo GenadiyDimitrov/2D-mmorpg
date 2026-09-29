@@ -134,99 +134,13 @@ public partial class SkillCatalog
     //  THE CONTINUING LADDERS. Each returns ONLY the 4th-tier rungs; the definition site concatenates.
     // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-    /// <summary>HEAVY ARMOR MASTERY rungs 21-35. P.Def 175 → 245, ×1.20 → ×1.30 P.Def, crit-damage
-    /// reduction 35% → 50%, evasion −3 → −6.
-    /// <para>🔴 The `mpReg` column reads x3.4 on every row and the 3rd tier ends at x5.1 — see the
-    /// dip note at the top of this file. Held at 5.1.</para></summary>
-    private static readonly int[] TankFourthArmorPDef =
-        { 175, 180, 185, 190, 195, 200, 205, 210, 215, 220, 225, 230, 235, 240, 245 };
-    private static readonly float[] TankFourthArmorPDefPct =
-        { .20f, .20f, .20f, .20f, .25f, .25f, .25f, .25f, .25f, .30f, .30f, .30f, .30f, .30f, .30f };
-    private static readonly float[] TankFourthArmorCritRed =
-        { .35f, .35f, .35f, .40f, .40f, .40f, .45f, .45f, .45f, .50f, .50f, .50f, .50f, .50f, .50f };
-    private static readonly int[] TankFourthArmorEva =
-        { -3, -3, -3, -4, -4, -4, -5, -5, -5, -6, -6, -6, -6, -6, -6 };
-    /// <summary>MP regen, and it is a <b>FLAT PER-SECOND GRANT</b> — <c>PassiveEffect.MpRegen</c>, not
-    /// <c>MpRegenPct</c>. His ruling, 2026-09-04: *"the mp regen of tank is also additive, not
-    /// multiplicative … it should be +5.1 and build that way"*, and the `x` in his 3rd- and 4th-tier
-    /// cells was a notation slip — his own `tank 2nd.csv` writes `mpReg +3.1` at level 36. Read that
-    /// way the whole column is ONE continuous ladder across three tiers, 3.1 → 3.5 → 3.9 → 4.3 → 4.7
-    /// → 5.1, in the same units the mage's armour mastery has always used (`healer 4th.csv`: `+3.4`).
-    /// <para>⚠ 5.1 (not the 3.4 his 4th-tier cells first carried) is the 3rd tier's last authored
-    /// value, held there by the monotonic rule and then ratified by him — see the file header.</para></summary>
-    private const float TankFourthArmorMpReg = 5.1f;
 
-    internal static SkillLevel[] TankFourthArmorMasteryRungs() => T4Rungs(15, 1, (i, sp, gold) =>
-        new SkillLevel(SpCost: sp, GoldCost: gold,
-            Description: $"With heavy armor: +{TankFourthArmorPDef[i]} P.Def, "
-                       + $"×{1f + TankFourthArmorPDefPct[i]:0.00} P.Def, +{TankFourthArmorMpReg:0.0} MP regen/s, "
-                       + $"{TankFourthArmorCritRed[i] * 100:0}% less crit damage taken, "
-                       + $"{TankFourthArmorEva[i]} evasion."));
 
-    /// <summary>The armour PROFILES for those fifteen rungs — a parallel array, because an armour
-    /// mastery's payload rides <c>ArmorMasteryLevels</c> and not the SkillLevel.</summary>
-    internal static ArmorMasteryProfile[] TankFourthArmorMasteryProfiles() =>
-        Enumerable.Range(0, TankFourthAll.Length).Select(i => new ArmorMasteryProfile(
-            Robe: default, Light: default,
-            Heavy: new StatMods(
-                MpRegen: TankFourthArmorMpReg,   // "mpReg +5.1" is a FLAT grant per second
-                PDef: TankFourthArmorPDef[i], PDefPct: TankFourthArmorPDefPct[i],
-                CritDmgResist: TankFourthArmorCritRed[i], Evasion: TankFourthArmorEva[i]))).ToArray();
 
-    /// <summary>TANK ANTI-MAGIC rungs 21-35. M.Def 132 → 160 (+2 a rung), magic resistance flat at
-    /// 20% — the 3rd tier's ceiling, and it does not move again.
-    /// <para>🔑 FROM LEVEL 80 his cell gains *"Twice more chance magic to fail against you"*, which is
-    /// <see cref="PassiveEffect.MagicFailMod"/> = 2. The tank is already auto-granted the archetype's
-    /// own Anti-Magic at ×2 and this field takes the MAX across passives, so today it changes no
-    /// number — it is authored anyway because it is now HIS, on the tank's OWN skill, and would
-    /// survive the archetype grant being retuned or removed.</para></summary>
-    internal static SkillLevel[] TankFourthAntiMagicRungs() => T4Rungs(15, 1, (i, sp, gold) =>
-    {
-        int mDef = 132 + i * 2;
-        bool fizzle = TankFourthAll[i] >= 80;
-        return new SkillLevel(SpCost: sp, GoldCost: gold,
-            Passive: new PassiveEffect(MagicDefence: mDef, MagicResist: 0.20f,
-                                       MagicFailMod: fizzle ? 2f : 0f),
-            Description: $"+{mDef} M.Def and 20% magic resistance."
-                       + (fizzle ? " Hostile spells are twice as likely to fizzle on you." : ""));
-    });
 
-    /// <summary>TANK WEAPON MASTERY rungs 21-35 — <b>the ladder he forgot and added on 2026-09-04</b>:
-    /// *"Make the 15 rungs of it in the csv, going from p.atk +90@76 to +200@90, keeps the x1.085 patk
-    /// as well and adds 1% @76 to 79, 3% @80 to 84 and +5% @85+ atack speed"*.
-    ///
-    /// <para>🔑 ATTACK SPEED IS NEW TO THIS PASSIVE. Its 2nd and 3rd tiers are flat P.Atk plus ×1.085
-    /// and nothing else; the 4th is where a Bulwark's plain sword-and-board finally starts swinging
-    /// faster. Three flat bands, not a per-rung ladder — his own shape, so a rung inside a band buys
-    /// only the flat P.Atk.</para>
-    ///
-    /// <para>⚠ THE FLAT LADDER IS THE STRAIGHT LINE BETWEEN HIS TWO ENDPOINTS, rounded — he named 90
-    /// and 200 and nothing in between, so 110 spread over fourteen steps is 7.857 a rung. It is
-    /// monotonic at every step, which is the only property the rule cares about; if he wants a shape
-    /// rather than a line it is one array.</para></summary>
-    private static readonly int[] TankFourthWeaponFlatAtk =
-        { 90, 98, 106, 114, 121, 129, 137, 145, 153, 161, 169, 176, 184, 192, 200 };
 
-    /// <summary>His three attack-speed bands: +1% at 76-79, +3% at 80-84, +5% from 85.</summary>
-    private static float TankFourthWeaponAtkSpeed(int i) =>
-        TankFourthAll[i] <= 79 ? 0.01f : TankFourthAll[i] <= 84 ? 0.03f : 0.05f;
 
-    internal static SkillLevel[] TankFourthWeaponMasteryRungs() => T4Rungs(15, 1, (i, sp, gold) =>
-        new SkillLevel(SpCost: sp, GoldCost: gold,
-            Description: $"With a one-handed sword or blunt: ×1.085 P.Atk, "
-                       + $"+{TankFourthWeaponFlatAtk[i]} P.Atk and "
-                       + $"+{TankFourthWeaponAtkSpeed(i) * 100:0}% attack speed."));
 
-    /// <summary>The weapon PROFILES for those fifteen rungs — the parallel array, because a weapon
-    /// mastery's payload rides <c>SkillDef.WeaponMasteryLevels</c> and not the SkillLevel. ⚠ It must
-    /// stay the same LENGTH as the rungs above: a rung in one and not the other is a rung you can buy
-    /// that grants nothing.</summary>
-    internal static WeaponMasteryProfile[] TankFourthWeaponMasteryProfiles() =>
-        Enumerable.Range(0, TankFourthAll.Length)
-            .Select(i => OneHand(new PassiveEffect(
-                PhysAtkPct: 0.085f, PhysAtk: TankFourthWeaponFlatAtk[i],
-                AtkSpeedPct: TankFourthWeaponAtkSpeed(i))))
-            .ToArray();
 
     /// <summary>The AGGRO ladder Taunt and Charm share at the 4th tier, rungs 20-27: 12,400 → 18,000,
     /// +800 a rung. His two blocks carry identical numbers, exactly as they did at the 3rd tier —

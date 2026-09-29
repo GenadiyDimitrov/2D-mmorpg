@@ -69,86 +69,16 @@ public static partial class SkillCatalog
     //  THE CONTINUING LADDERS. Each returns ONLY the 4th-tier rungs; the definition site concatenates.
     // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-    /// <summary>Armor Mastery rungs 15-29 (`buffer_armor_mastery`). Two things arrive at this tier that
-    /// the 40-74 ladder never had: a PERCENT magic defence and an MP-cost reduction. Both ride
-    /// <see cref="StatMods"/> fields that already exist — the healer's own 78+ rungs pay the MP-cost
-    /// one — so nothing new was needed to express them.</summary>
-    private static readonly int[] Wc4ArmorPDef =
-        { 89, 91, 92, 93, 95, 96, 97, 99, 100, 101, 103, 104, 105, 107, 108 };
-    private static readonly int[] Wc4ArmorMaxMp =
-        { 220, 220, 250, 250, 250, 290, 290, 300, 300, 300, 330, 330, 350, 350, 400 };
-    private static readonly float[] Wc4ArmorMDefPct =
-        { .02f, .04f, .05f, .07f, .08f, .10f, .11f, .13f, .14f, .16f, .17f, .19f, .20f, .22f, .25f };
-    private static readonly float[] Wc4ArmorMpCost =
-        { 0f, 0f, .05f, .05f, .05f, .08f, .08f, .08f, .08f, .08f, .10f, .10f, .10f, .10f, .10f };
 
-    internal static ArmorMasteryProfile[] BufferFourthArmorProfiles() =>
-        Enumerable.Range(0, 15).Select(i =>
-        {
-            // The three weights stay IDENTICAL, exactly as they are at the 3rd tier: his rows are one
-            // line — "Light/Heavy/Robe: …" — and the penalty-cancelling belongs to the RACE masteries.
-            // Putting a speed clause here would apply it twice; see BufferArmorMasteryLevels.
-            var m = new StatMods(PDef: Wc4ArmorPDef[i], MaxMp: Wc4ArmorMaxMp[i],
-                                 MDefPct: Wc4ArmorMDefPct[i], MpCostPct: Wc4ArmorMpCost[i]);
-            return new ArmorMasteryProfile(Robe: m, Light: m, Heavy: m);
-        }).ToArray();
 
-    internal static SkillLevel[] BufferFourthArmorRungs() => F4Rungs(15, 1, (i, sp, gold) =>
-        new SkillLevel(SpCost: sp, GoldCost: gold,
-            Description: $"+{Wc4ArmorPDef[i]} P.Def, +{Wc4ArmorMaxMp[i]} Max MP, "
-                       + $"+{Wc4ArmorMDefPct[i] * 100:0}% M.Def"
-                       + (Wc4ArmorMpCost[i] > 0f ? $", and skills cost {Wc4ArmorMpCost[i] * 100:0}% less MP." : ".")));
 
-    /// <summary>Spell Mastery rungs 19-33. ONLY the two attack numbers move: reuse (−20%), cast speed
-    /// (+10%) and both regen multipliers are flat across the whole tier in his file, and each already
-    /// stands at that value at rung 18.
-    ///
-    /// <para>✅ PRICED ON THE TIER'S OWN LADDER since he ruled on it (2026-09-02): *"spell mastery
-    /// 76-90 to have its coresponding sp/gold cost"*. Its fifteen rows had been pasted out of
-    /// `buffer 3rd.csv` and still carried that file's 36k … 880k SP and its `[]` in the gold cell,
-    /// which made a level-90 rung of the buffer's core caster passive cost a 3rd-class price.</para></summary>
-    private static readonly int[] Wc4SpellMAtk =
-        { 101, 102, 104, 105, 106, 108, 109, 110, 112, 113, 115, 116, 117, 119, 120 };
-    private static readonly int[] Wc4SpellPAtk =
-        { 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150, 155 };
 
-    internal static WeaponMasteryProfile[] BufferFourthSpellProfiles() =>
-        Enumerable.Range(0, 15).Select(i => BufferMastery(new PassiveEffect(
-            MagAtk: Wc4SpellMAtk[i], PhysAtk: Wc4SpellPAtk[i],
-            CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 3.4f, HpRegen: 2.7f))).ToArray();
 
-    internal static SkillLevel[] BufferFourthSpellRungs() => F4Rungs(15, 1, (i, sp, gold) =>
-        new SkillLevel(SpCost: sp, GoldCost: gold,
-            Description: $"With a blunt weapon or a bow: +{Wc4SpellMAtk[i]} M.Atk, "
-                       + $"+{Wc4SpellPAtk[i]} P.Atk, −20% skill reuse, +10% cast speed."));
 
-    /// <summary>The three per-race WEAPON masteries, rungs 9-16. All eight rungs of all three share his
-    /// P.Atk column; the elf's is a different number entirely because a bow mastery has always been.
-    /// ⚠ Each carries the SAME hands gate as its 3rd-tier rungs — a ladder does not change hands
-    /// halfway up, and his 76-90 rows simply left the WEAPON column blank.</summary>
-    private static readonly int[] Wc4BluntAtk = { 110, 120, 130, 140, 150, 160, 180, 200 };
-    private static readonly int[] Wc4BowAtk   = { 650, 700, 720, 800, 850, 900, 950, 1000 };
-    private static readonly int[] Wc4WarlockAcc = { 4, 4, 4, 4, 4, 5, 5, 5 };
-    private static readonly int[] Wc4DoctorAcc  = { 1, 1, 1, 1, 1, 2, 2, 2 };
 
-    internal static WeaponMasteryProfile[] BufferFourthBowProfiles() =>
-        Wc4BowAtk.Select(a => new WeaponMasteryProfile(
-            Bow: new PassiveEffect(PhysAtk: a, BowRange: 400f))).ToArray();
 
-    internal static WeaponMasteryProfile[] BufferFourthWarlockProfiles() =>
-        Enumerable.Range(0, 8).Select(i => new WeaponMasteryProfile(
-            Blunt: new PassiveEffect(PhysAtk: Wc4BluntAtk[i], Accuracy: Wc4WarlockAcc[i]),
-            RequiredWeapon: WeaponType.AnyBlunt, RequiredHands: WeaponHands.Two)).ToArray();
 
-    internal static WeaponMasteryProfile[] BufferFourthDoctorProfiles() =>
-        Enumerable.Range(0, 8).Select(i => new WeaponMasteryProfile(
-            Blunt: new PassiveEffect(PhysAtk: Wc4BluntAtk[i], Accuracy: Wc4DoctorAcc[i]),
-            RequiredWeapon: WeaponType.AnyBlunt, RequiredHands: WeaponHands.One)).ToArray();
 
-    /// <summary>Eight rungs of price, shared by all three weapon masteries and both toggles and both
-    /// groups — every every-other-level ladder in his 4th file.</summary>
-    internal static SkillLevel[] BufferFourthEvenRungs(Func<int, string> text) =>
-        F4Rungs(8, 2, (i, sp, gold) => new SkillLevel(SpCost: sp, GoldCost: gold, Description: text(i)));
 
     /// <summary>Harmony of Restoration rungs 15-29.
     ///

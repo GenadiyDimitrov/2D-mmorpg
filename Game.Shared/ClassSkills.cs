@@ -15,14 +15,26 @@
 /// 36000/120000/390000 (his `tank 2nd`, `tank 3rd` and `buffer 3rd` CSVs, 2026-08-21). Splitting that
 /// into two SkillDefs would duplicate a ladder he authored identically in both files and invite it to
 /// drift; overriding the price keeps one ability with one set of magnitudes.</param>
+/// <param name="GoldCost">OPTIONAL per-class GOLD price for this rung — the twin of <paramref name="SpCost"/>, for the
+/// same reason (`BL-314`): a shared ladder such as `light_armor_mastery` is one skill that several 4th classes buy at
+/// their own levels and their own gold, so the price cannot live on the rung. Null = the skill's own
+/// <c>GoldCostAt(SkillLevel)</c>.</param>
+/// <param name="Replaces">Skill ids this CLASS ROW retires the moment it is learned (`BL-314`). The row-level twin of
+/// <see cref="SkillDef.Replaces"/>, for a shared ladder whose rung retires something for ONE class only: the
+/// Lightbringer's first 3rd-tier robe rung retires the cleric's light-armour casting fix, while the Warchanter,
+/// who climbs the same `mage_armor_mastery`, keeps his. On a shared skill the def-level field would take it from
+/// everyone — the cleric included, who learns the same ladder at 20.</param>
 public readonly record struct ClassSkill(
     string SkillId, int LearnLevel, string? DisplayName = null, string? Icon = null,
-    int SkillLevel = 1, int? SpCost = null)
+    int SkillLevel = 1, int? SpCost = null, int? GoldCost = null, string[]? Replaces = null)
 {
     /// <summary>What THIS class pays for THIS rung — the per-class override when it has one, the
     /// skill's own authored price otherwise. Every SP reader goes through here or through
     /// <see cref="ClassSkills.SpCostOf"/>; reading <c>def.SpCostAt</c> directly is now the bug.</summary>
     public int SpCostFor(SkillDef def) => SpCost ?? def.SpCostAt(SkillLevel);
+
+    /// <summary>The gold twin of <see cref="SpCostFor"/>.</summary>
+    public long GoldCostFor(SkillDef def) => GoldCost ?? def.GoldCostAt(SkillLevel);
 }
 
 /// <summary>
@@ -100,6 +112,26 @@ public static class ClassSkills
         if (_initialized) return;
         _initialized = true;
         ClassSkillTables.Touch();
+        ApplyScarcity();
+    }
+
+    /// <summary>`BL-314` — every PASSIVE rung a class table offers at 20-75 costs ×k for that class, written onto the
+    /// row's own <see cref="ClassSkill.SpCost"/> once, here, so every reader sees the scaled price. See
+    /// <see cref="SpScarcity"/>. Only the per-class tables: the central injectors (race layers, grade, sigils,
+    /// stat swaps, the shared 4th kit) sit outside the band or are not SP-priced passives.</summary>
+    private static void ApplyScarcity()
+    {
+        foreach (var (key, list) in Map)
+        {
+            double k = SpScarcity.For(key.Archetype, key.Discipline);
+            if (k == 1.0) continue;
+            for (int i = 0; i < list.Count; i++)
+            {
+                var cs = list[i];
+                if (SkillCatalog.Get(cs.SkillId) is not SkillDef def || !SpScarcity.Covers(def, cs.LearnLevel)) continue;
+                list[i] = cs with { SpCost = SpScarcity.Scale(cs.SpCostFor(def), k) };
+            }
+        }
     }
 
     /// <summary>The skills registered for exactly one tier of a class (the 2nd-class
@@ -123,12 +155,8 @@ public static class ClassSkills
         if (discipline is Discipline d)
             foreach (var cs in ForClass(race, baseClass, archetype, d))
                 yield return cs;
-        // Armor-weight mastery passives, injected centrally by archetype (so we don't
-        // edit all 18 per-class files). Same across races; the effect is class-driven.
-        foreach (var cs in MasterySkills(baseClass, archetype))
-            yield return cs;
-        // THE FIGHTER'S RACE LAYER, and the GRADE passive beside it — injected centrally for exactly
-        // the reason the masteries above are. See FighterRaceSkills.
+        // THE FIGHTER'S RACE LAYER, and the GRADE passive beside it — injected centrally, because they follow
+        // the character through every class change. See FighterRaceSkills.
         foreach (var cs in FighterRaceSkills(race, baseClass))
             yield return cs;
         // …AND THE MAGE'S, his `mage 1st.csv` race block (`BL-258`). Same injector shape, same reason.
@@ -257,58 +285,9 @@ public static class ClassSkills
     private static IEnumerable<ClassSkill> Rungs(string id, int[] levels) =>
         levels.Select((lvl, i) => new ClassSkill(id, lvl, SkillLevel: i + 1));
 
-    /// <summary>The armor-mastery passives a class can learn, with learn levels.
-    /// Base classes train their natural weight from level 1; second classes gain
-    /// their archetype's weight(s) at the class-change level. The mastery only does
-    /// something while that weight is worn (see <see cref="ArmorMastery"/>).</summary>
-    private static IEnumerable<ClassSkill> MasterySkills(BaseClass baseClass, Archetype? archetype)
-    {
-        const int second = GameConstants.ClassChangeLevel;   // 20
-        switch (archetype)
-        {
-            case null:   // base class, before the level-20 change
-                // Nothing. Neither base class has a level-1 mastery: the fighter learns its Armor
-                // Mastery from the class table at 5, the mage his Robe Armor Mastery at 7.
-                //
-                // ⚠ `MasteryRobe` used to be yielded here at level 1 — the leftover that caused
-                // playtest-20 `57b`: Robe Armor Mastery L1 appeared in BOTH the level-1 and the
-                // level-7 learn groups, and buying either made the other vanish while the level-14
-                // rung appeared. The 2026-08-07 mastery restructure made it a bonus-only skill
-                // bought off the class table at 7/14 and stopped auto-granting it server-side
-                // (see the note above the robe clamp in GameLoopService.AutoLearnCoreSkills), but
-                // this line kept advertising it at 1. Don't re-add it: it is also the skill a
-                // nuker/cleric mastery `Replaces`, and a stray level-1 copy wins the pick in
-                // RecomputeDerived by dictionary order and erases their bonuses.
-                break;
-            // 2nd classes use DATA-DRIVEN per-archetype Armor Mastery skills (one skill,
-            // its effect depends on the worn weight; replaces the old split masteries) PLUS
-            // a weapon-conditional Weapon Mastery (its effect depends on the held weapon).
-            case Archetype.Tank:
-                yield return new ClassSkill(SkillCatalog.TankArmorMastery, second);
-                yield return new ClassSkill(SkillCatalog.TankWeaponMastery, second);
-                break;
-            case Archetype.Warrior:
-                yield return new ClassSkill(SkillCatalog.WarriorArmorMastery, second);
-                yield return new ClassSkill(SkillCatalog.WarriorWeaponMastery, second);
-                break;
-            case Archetype.Rogue:
-                yield return new ClassSkill(SkillCatalog.RogueArmorMastery, second);
-                yield return new ClassSkill(SkillCatalog.RogueWeaponMastery, second);
-                break;
-            // (Archetype.Archer had its own pair here until 2026-08-07. Both ids were deleted with
-            //  playtest-19 `0a`/G1: no 2nd class has carried Archer since the archer→rogue merge, and
-            //  a bow character takes the ROGUE masteries above — they already hold the bow profiles.)
-            case Archetype.Nuker:
-                // Mages get NO weapon-type mastery — armor mastery + the flat atk passive
-                // carry their identity; weapon type is irrelevant for casters.
-                yield return new ClassSkill(SkillCatalog.MageArmorMastery, second);
-                break;
-            case Archetype.Healer:
-                // Healer's data-driven Armor Mastery is registered in its own class table.
-                // No weapon-type mastery (mage) — same reasoning as the nuker above.
-                break;
-        }
-    }
+    // (`MasterySkills` — the central armour/weapon-mastery injector — was deleted with `BL-314`: every class's armour and
+    //  weapon pieces are rungs of the shared ladders now, registered per class from the CSVs in
+    //  ClassSkillTables.Passives.g.cs. Nothing is injected by archetype any more.)
 
     /// <summary>Skills whose LearnLevel &lt;= the character's level — i.e. the
     /// ones currently offered in the "Skills to Learn" tab (before SP/learned
@@ -342,6 +321,28 @@ public static class ClassSkills
             if (cs.SkillId == def.Id && cs.SkillLevel == skillLevel && cs.SpCost is int sp)
                 return sp;
         return def.SpCostAt(skillLevel);
+    }
+
+    /// <summary>The gold twin of <see cref="SpCostOf"/>: this class's price for the rung, or the skill's own.</summary>
+    public static long GoldCostOf(SkillDef def, int skillLevel, Race race, BaseClass baseClass,
+        Archetype? archetype, Discipline? discipline = null, bool fourth = false)
+    {
+        foreach (var cs in Cumulative(race, baseClass, archetype, discipline, fourth))
+            if (cs.SkillId == def.Id && cs.SkillLevel == skillLevel && cs.GoldCost is int gold)
+                return gold;
+        return def.GoldCostAt(skillLevel);
+    }
+
+    /// <summary>`BL-314` — the ids a class's OWN rows retire, given what the character has learned: every
+    /// <see cref="ClassSkill.Replaces"/> on a row of this class whose rung the character owns (at or above). The
+    /// row-level twin of <see cref="SkillDef.Replaces"/>; see the note on the field for why it exists.</summary>
+    public static IEnumerable<string> RowReplaced(IReadOnlyDictionary<string, int> learned, Race race,
+        BaseClass baseClass, Archetype? archetype, Discipline? discipline = null, bool fourth = false)
+    {
+        foreach (var cs in Cumulative(race, baseClass, archetype, discipline, fourth))
+            if (cs.Replaces is { Length: > 0 } rep
+                && learned.TryGetValue(cs.SkillId, out int owned) && owned >= cs.SkillLevel)
+                foreach (var r in rep) yield return r;
     }
 
     /// <summary>The next rung of <paramref name="skillId"/> this class may BUY, given the rung it

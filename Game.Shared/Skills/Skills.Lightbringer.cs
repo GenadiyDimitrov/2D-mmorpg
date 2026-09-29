@@ -46,8 +46,6 @@ public static partial class SkillCatalog
     public const string Conceal = "conceal";               // self-only mob stealth
     // His 2026-08-20 split of the two shared cleric masteries — the healer's halves (the BUFFER keeps
     // continuing the originals). Both REPLACE their cleric original at 40.
-    public const string SpellcasterWeaponMastery = "spellcaster_weapon_mastery"; // replaces Spell Mastery
-    public const string HealerArmorMasterySkill = "healer_armor_mastery";   // replaces Armor Mastery
     // One control debuff per race, all contested ATK vs SPT.
     public const string Gravity = "gravity";  // slows attack + cast
     public const string Bind = "bind";            // 30s hold
@@ -604,55 +602,7 @@ public static partial class SkillCatalog
         // for holding no wand) was DELETED in the same pass. He forgoes a BONUS, which is the shape
         // every other mastery in the game already has.
 
-        // ---- Spellcaster Weapon Mastery — replaces Spell Mastery. BLUNT ONLY, and no P.Atk at any rung.
-        //      FOURTEEN rungs now (his file runs the ladder to 74; it stopped at 64 on 2026-08-20
-        //      because that was as far as the draft went).
-        //
-        //      ⚠ RENAMED 2026-08-24 in `healer 3rd.csv`, from "Healer Weapon Mastery" — the skill is
-        //      not healer-flavoured, it is what a 3rd-class CASTER's blunt does, and the nuker file
-        //      will want the same row. **The id stays `spellcaster_weapon_mastery`**: skill ids are
-        //      append-only and a rename would strand every learned row in every saved character.
-        //      Display names are free to move, ids are not.
-        //
-        //      🔑 THE GATE IS THE TYPE `Blunt`, NOT a magic-weapon flag — his ruling: *"the healers
-        //      weapon mastery can say blunt .. as both wand/staff are blunts .. that way a sword wont
-        //      work on a healer and cariing a normal blunt is lower matk and no attri .. so its a
-        //      choice"*. A `MagicWeaponOnly` flag was built first and removed the same day: Blunt
-        //      leaves a plain mace WORKING, it just carries less M.Atk and rolls no caster attributes.
-        //      A mastery that can refuse a weapon the type system says is fine is a wall, not a choice.
-        new(SpellcasterWeaponMastery, "Spellcaster Weapon Mastery", BaseClass.Mage, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive, Replaces: new[] { SpellMastery },
-            Description: "Passive. Divine power flows through a BLUNT weapon — wand, staff or mace: "
-                       + "more M.Atk, faster casting, shorter reuse and much stronger HP/MP "
-                       + "regeneration. A sword grants none of it.",
-            WeaponMasteryLevels: HealerWeaponRungs.Concat(HealerFourthWeaponRungs).Select(r =>
-                HealerWeapon(r.MAtk, r.Reuse, r.Cast, r.MpFlat, r.HpReg)).ToArray(),
-            Levels: HealerRungs(0, 14, (i, sp) =>
-            {
-                var r = HealerWeaponRungs[i];
-                return new SkillLevel(SpCost: sp,
-                    Description: $"With a wand or staff: +{r.MAtk} M.Atk, +{r.Cast * 100:0}% cast, "
-                               + $"−{r.Reuse * 100:0}% reuse, MP regen +{r.MpFlat:0.#}/s, HP regen +{r.HpReg:0.#}/s.");
-            }).Concat(HealerFourthWeaponMasteryRungs()).ToArray()),
 
-        // ---- Healer Armor Mastery — replaces Armor Mastery. ROBE ONLY: the Light row is cut, so a
-        //      healer in light armor keeps Spellcaster Mastery's raw cast ×0.5 / atk ×0.5 with nothing
-        //      cancelling it. Same 14 rungs, same SP ladder.
-        new(HealerArmorMasterySkill, "Healer Armor Mastery", BaseClass.Mage, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive, Replaces: new[] { ArmorMasterySkill },
-            Description: "Passive. A ROBE is the healer's vestment: much more defence, max MP and MP "
-                       + "regeneration. Light armor no longer keeps you casting — that is the "
-                       + "buffer's path now.",
-            ArmorMasteryLevels: HealerRobeRungs.Select(r => HealerRobe(r.PDef, r.MaxMp))
-                .Concat(HealerFourthRobeRungs.Select(HealerRobe4)).ToArray(),
-            Levels: HealerRungs(0, 14, (i, sp) =>
-            {
-                var r = HealerRobeRungs[i];
-                return new SkillLevel(SpCost: sp,
-                    Description: $"In a robe: +{r.PDef} P.Def, +{r.MaxMp} Max MP, MP regen x1.2.");
-            }).Concat(HealerFourthArmorMasteryRungs()).ToArray()),
 
         // ═══ ORPHANED BY HIS FILE — DEFINED, NEVER GRANTED ═══════════════════════════════════════
         //
@@ -742,61 +692,11 @@ public static partial class SkillCatalog
             },
             Description: $"+{mpPerSecond} MP/s and −90% P.Def for 30s; ends on any damage taken.");
 
-    /// <summary>One rung of Spellcaster Weapon Mastery, as his row writes it.
-    /// <para>⚠ BOTH REGEN COLUMNS ARE FLAT PER-SECOND GRANTS, read verbatim off his CSV row: <c>mpReg
-    /// +3.4</c> and <c>hpReg +2.7</c> are 3.4f and 2.7f here — the WHOLE rung, never its excess over
-    /// 1.0. MP converted on 2026-08-26 (*"the other increases are flat increases so the 1.9~3.4 is +
-    /// not x"*) and HP followed the same day, once he had seen the measurement (*"I want to make the
-    /// passives + not x as the mp"*).</para>
-    /// <para>Both ladders read as MULTIPLIERS before that. On MP it reached ×4.84 by level 74 and a
-    /// buffed mage regenerated ~290% of his own spam cost; on HP it reached ×2.7 and put a level-74
-    /// nuker at 27.5 HP/s against a tank's 16.4 — the class IG gives the LOWEST base regen holding the
-    /// game's highest. Never re-enter either as a percent.</para></summary>
-    private readonly record struct WeaponRung(int MAtk, float Reuse, float Cast, float MpFlat, float HpReg);
 
-    /// <summary>His fourteen weapon-mastery rows, 40 → 74. ⚠ M.Atk repeats 45 at 48 and 52, and that is
-    /// LEFT ALONE: his "a duplicate description is wrong" rule is about the RUNG, and this rung still
-    /// climbs — MP regen x1.9 → x2.3 and HP regen x1.6 → x1.7. Compare Healer Armor Mastery, whose
-    /// 48/52 pair improved in NOTHING and therefore did need a fix. The
-    /// two regen multipliers step on their own schedule; mirrored exactly.</summary>
-    private static readonly WeaponRung[] HealerWeaponRungs =
-    {
-        new(23, 0.15f, 0.07f, 1.5f, 1.1f),   // 40
-        new(29, 0.15f, 0.07f, 1.9f, 1.6f),   // 44
-        new(45, 0.20f, 0.07f, 1.9f, 1.6f),   // 48
-        new(45, 0.20f, 0.07f, 2.3f, 1.7f),   // 52
-        new(52, 0.20f, 0.10f, 2.3f, 1.7f),   // 56
-        new(57, 0.20f, 0.10f, 2.3f, 2.1f),   // 58
-        new(62, 0.20f, 0.10f, 2.7f, 2.1f),   // 60
-        new(67, 0.20f, 0.10f, 2.7f, 2.1f),   // 62
-        new(72, 0.20f, 0.10f, 2.7f, 2.6f),   // 64
-        new(77, 0.20f, 0.10f, 2.7f, 2.6f),   // 66
-        new(83, 0.20f, 0.10f, 3.1f, 2.6f),   // 68
-        new(88, 0.20f, 0.10f, 3.1f, 2.6f),   // 70
-        new(94, 0.20f, 0.10f, 3.1f, 2.6f),   // 72
-        new(99, 0.20f, 0.10f, 3.4f, 2.7f),   // 74
-    };
 
-    private readonly record struct RobeRung(int PDef, int MaxMp);
 
-    /// <summary>His fourteen armor-mastery rows, 40 → 74. MP regen is x1.2 at every rung.</summary>
-    private static readonly RobeRung[] HealerRobeRungs =
-    {
-        new(39,  70), new(44,  70), new(47, 100), new(50, 100), new(53, 140), new(56, 140), new(58, 150),
-        new(64, 150), new(68, 150), new(72, 180), new(75, 180), new(79, 180), new(83, 200), new(87, 200),
-    };
 
-    /// <summary>One rung of Spellcaster Weapon Mastery — the BLUNT slot only (wand, staff and mace all fold
-    /// to <c>WeaponType.Blunt</c> via <c>Base()</c>, 1H and 2H alike). NO P.Atk at any rung, which is the
-    /// whole point of the split; a sword earns nothing here.</summary>
-    private static WeaponMasteryProfile HealerWeapon(int mAtk, float reuse, float cast, float mpFlat, float hpReg) =>
-        new(Blunt: new PassiveEffect(MagAtk: mAtk, CooldownPct: reuse, CastSpeedPct: cast,
-                                     MpRegen: mpFlat, HpRegen: hpReg));
 
-    /// <summary>One rung of Healer Armor Mastery — ROBE only, every other weight left inert so
-    /// Spellcaster Mastery's penalty stands uncancelled (his *"Removed the Light Armor bonus"*).</summary>
-    private static ArmorMasteryProfile HealerRobe(int pDef, int maxMp) =>
-        new(Robe: new StatMods(PDef: pDef, MaxMp: maxMp));
 
     /// <summary>Resurrection levels 3-16 — his `healer 3rd.csv` rows, 40 → 74. Levels 1-2 (the cleric's
     /// @20 and @30) stay in Skills.Healer.cs, which concatenates these onto them.

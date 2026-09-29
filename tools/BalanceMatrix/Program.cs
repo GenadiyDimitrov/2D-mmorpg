@@ -8298,7 +8298,7 @@ static Entity BuildStarter(BaseClass cls, int level)
     foreach (var cs in ClassSkills.Cumulative(Race.Human, cls, e.Archetype, e.Discipline))
         if (cs.LearnLevel <= level)
             e.LearnedSkills[cs.SkillId] = Math.Max(e.SkillLevelOf(cs.SkillId), cs.SkillLevel);
-    if (cls == BaseClass.Mage) e.LearnedSkills[SkillCatalog.MasteryRobe] = 1;
+    if (cls == BaseClass.Mage) e.LearnedSkills.TryAdd(SkillCatalog.MageArmorMastery, 1);   // rung 1 of the shared robe ladder (`BL-314`)
 
     // Training kit only — no runes, no jewels (jewels are earned; the point is the FLOOR gear).
     Equip(e, cls == BaseClass.Mage ? ItemCatalog.TrainingWand : ItemCatalog.TrainingSword);

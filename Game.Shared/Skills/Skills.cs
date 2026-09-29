@@ -1056,7 +1056,14 @@ public record SkillDef(
     /// `(base × buffs + flat) × (1 − cut)`. That is where `Entity.EffectiveSpeed` already applies
     /// `SlowFraction`, so the cut is a second independent factor beside it and nothing about slows
     /// moves. Written as a FRACTION (0.10 = −10%), summed across buffs and clamped like a slow.</para></summary>
-    float MoveSpeedPenaltyPct = 0f)
+    float MoveSpeedPenaltyPct = 0f,
+    /// <summary>`BL-314` — PAY THE HIGHEST LEARNED RUNG WHOSE GATE HOLDS, not just the rung you own. For a ladder whose
+    /// rungs carry DIFFERENT weapon gates, which only `strength_mastery` does: its first rung (the fighter's ×1.085)
+    /// is ungated and the warrior's rungs above it need a two-handed sword or blunt. Owning rung 4 and holding a bow,
+    /// the passive walks down to rung 1 and pays that. Entity.RecomputeDerived reads it; nothing else needs to.
+    /// ⚠ It walks down through every rung below the one owned, which is only right because every class that climbs
+    /// this ladder climbs it from rung 1. Keep it off a ladder whose lower rungs are other classes' own.</summary>
+    bool PayHighestGatedRung = false)
 {
     /// <summary>Hash on the ID alone — and this override MUST stay.
     ///
@@ -2228,8 +2235,8 @@ public static partial class SkillCatalog
         // three blessings at 7, plus the Elf/Demon/Human ladder each race keeps for the whole game.
         list.AddRange(MageRaceSkills());      // Skills.MageRace.cs
         list.AddRange(HealerSkills());        // Skills.Healer.cs (2nd-class Healer kit)
-        list.AddRange(ArmorMasterySkills());  // Skills.Masteries.cs (data-driven per-archetype)
         list.AddRange(WeaponMasterySkills()); // Skills.WeaponMasteries.cs (weapon-type-conditional)
+        list.AddRange(SharedPassiveSkills()); // Skills.PassiveLadders(.g).cs (`BL-314` the shared single-stat ladders)
         list.AddRange(BufferSkills());        // Skills.Buffer.cs (NPC newbie-buffer buffs)
         list.AddRange(LightbringerSkills());  // Skills.Lightbringer.cs
         list.AddRange(WarchanterSkills());    // Skills.Warchanter.cs

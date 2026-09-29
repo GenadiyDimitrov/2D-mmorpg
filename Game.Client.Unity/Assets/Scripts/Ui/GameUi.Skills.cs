@@ -339,6 +339,10 @@ namespace Game.Client
 
             var all = ClassSkills.LearnableAt(active.Race, active.BaseClass, archetype, int.MaxValue,
                                               discipline, ascended);
+            // `BL-314` — a class ROW may retire a skill too (the Lightbringer's first robe rung retires the cleric's light
+            // casting fix); the server refuses those, so the tab must not offer them. See ClassSkill.Replaces.
+            var rowRetired = new HashSet<string>(ClassSkills.RowReplaced(Boot.Learned, active.Race, active.BaseClass,
+                                                                         archetype, discipline, ascended));
 
             // 🔴 THE ROW YOU MAY BUY IS THE CLASS TABLE'S NEXT RUNG, NOT `owned + 1` (2026-09-02).
             //    His playtest-29 find — *"the harmonist never learns serenity / vigor / vampiric rage /
@@ -351,7 +355,7 @@ namespace Game.Client
                 .Where(cs => cs.SkillLevel == ClassSkills.NextLearnableLevel(
                                  cs.SkillId, Boot.Learned.GetValueOrDefault(cs.SkillId),
                                  active.Race, active.BaseClass, archetype, discipline, ascended)
-                             && !Superseded(cs.SkillId)
+                             && !Superseded(cs.SkillId) && !rowRetired.Contains(cs.SkillId)
                              // The level-40 stat swaps have their OWN tab (Stats), where they are a
                              // basket you can see before you pay. Listing them here as well put twelve
                              // pair-shaped rows in the middle of the skill ladder, each priced on its
@@ -387,7 +391,7 @@ namespace Game.Client
                     // that used to branch here went with the rows themselves — swaps are priced by
                     // RUNGS OWNED, not per level, and that computation now lives only in the Stats
                     // tab, which is the only place they can be bought.
-                    long gold = def.GoldCostAt(cs.SkillLevel);
+                    long gold = cs.GoldCostFor(def);   // per-class, like the SP above (`BL-314`)
                     bool canLearn = levelMet && Boot.SkillPoints >= sp && (gold == 0 || Boot.Gold >= gold);
 
                     string levelTag = def.MaxLevel > 1 && !def.HasLevelNames

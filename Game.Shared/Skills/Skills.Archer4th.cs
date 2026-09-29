@@ -80,43 +80,10 @@ public static partial class SkillCatalog
         3400, 3500, 3600, 3700, 3800, 3900, 4000,
     };
 
-    /// <summary>Bow Mastery's flat P.Atk, 820 → 1300 (the 3rd tier ended at 800).</summary>
-    private static readonly int[] BowMasteryAtk4 =
-    {
-        820, 840, 860, 880, 900, 920, 940, 960,
-        980, 1000, 1060, 1120, 1180, 1240, 1300,
-    };
 
-    /// <summary>…and its flat crit damage, 682 → 900 (the 3rd tier ended at 665).</summary>
-    private static readonly int[] BowMasteryCritDmg4 =
-    {
-        682, 699, 716, 733, 750, 767, 784, 811,
-        828, 845, 862, 879, 886, 893, 900,
-    };
 
-    /// <summary>Armor Mastery's P.Def, 72 → 100 (+2 a rung), continuing the 3rd tier's 70.</summary>
-    private static int ArcherArmorPDef4(int i) => 72 + i * 2;
 
-    /// <summary>…evasion 15 → 19, and move speed 12 → 15. Both continue the 3rd tier (12 and 11).</summary>
-    private static readonly int[] ArcherArmorEva4 =
-        { 15, 15, 16, 16, 17, 17, 18, 18, 18, 19, 19, 19, 19, 19, 19 };
-    private static readonly int[] ArcherArmorSpeed4 =
-        { 12, 12, 12, 13, 13, 13, 14, 14, 14, 15, 15, 15, 15, 15, 15 };
 
-    /// <summary>🔴 HIS TWO REGEN CELLS ARE A REGRESSION AND ARE NOT BUILT AS WRITTEN. Every
-    /// `archer 4th.csv` row reads <c>mpReg x1.8; hpReg +1.2</c> — which is `rogue 2nd.csv`'s LEVEL-36
-    /// rung, pasted — against a 3rd tier that ends at <c>mpReg +2.5</c> and <c>hpReg +6.0</c>.
-    /// Building the cells would make a level-76 archer regenerate a fifth of what he did at 74.
-    /// <para>FROZEN at the 3rd tier's endpoint across all fifteen rungs, which is the smallest change
-    /// that obeys the ladder rule AND keeps his own shape (his column is flat across the tier too —
-    /// only the value is wrong). `dual 4th.csv`, the melee twin, reads <c>mpReg +2.5</c> on every one
-    /// of its rows, so the frozen value is authored on one of the two files. One number for him to
-    /// correct on the archer's.</para>
-    /// <para>🔴 BOTH ARE FLAT MP/s AND HP/s SINCE 2026-09-16 (§100). The MP half was stored as a
-    /// MULTIPLIER (1.5 = ×2.5) on the reading that armour masteries keep percents; his `+2.5` cell and
-    /// the `hpReg +6.0` beside it say otherwise. See <c>RogueArmorMpReg</c> in Skills.Dual3rd.cs.</para></summary>
-    private const float ArcherArmorMpReg4 = 2.5f;   // his 3rd tier's `mpReg +2.5`, FLAT MP/s
-    private const float ArcherArmorHpReg4 = 6.0f;   // his 3rd tier's `hpReg +6.0`, flat HP/s
 
     /// <summary>What a skill first LEARNED at 84 or 85 costs: 100,000,000 gold and SP BOTTLES, with
     /// the SP column empty. His five ultimates are the first thing in the game to be bought that way
@@ -129,32 +96,9 @@ public static partial class SkillCatalog
     //  4th-tier rungs; the 3rd-tier definition site concatenates them.
     // ═══════════════════════════════════════════════════════════════════════════════════════════
 
-    internal static SkillLevel[] ArcherFourthArmorMasteryRungs() => F4Rungs(15, 1, (i, sp, gold) =>
-        new SkillLevel(SpCost: sp, GoldCost: gold,
-            Description: $"With light armor: +{ArcherArmorPDef4(i)} P.Def, +{ArcherArmorEva4[i]} evasion, "
-                       + $"+{ArcherArmorSpeed4[i]} speed, 35% less often critted, "
-                       + $"+{ArcherArmorMpReg4:0.0} MP/s, +{ArcherArmorHpReg4:0.0} HP/s."));
 
-    internal static ArmorMasteryProfile[] ArcherFourthArmorMasteryProfiles() =>
-        Enumerable.Range(0, 15).Select(i => new ArmorMasteryProfile(
-            Robe: default, None: default, Heavy: default,
-            Light: new StatMods(
-                PDef: ArcherArmorPDef4(i), Evasion: ArcherArmorEva4[i],
-                CritRateResist: 0.35f, MoveSpeed: ArcherArmorSpeed4[i],
-                MpRegen: ArcherArmorMpReg4, HpRegen: ArcherArmorHpReg4))).ToArray();
 
-    internal static SkillLevel[] ArcherFourthBowMasteryRungs() => F4Rungs(15, 1, (i, sp, gold) =>
-        new SkillLevel(SpCost: sp, GoldCost: gold,
-            Description: $"Bow: +{BowMasteryAtk4[i]} P.Atk, +400 range, ×1.085 P.Atk, "
-                       + $"+{BowMasteryCritDmg4[i]} crit damage, +3 accuracy, ×1.2 crit rate, "
-                       + $"×1.05 attack speed."));
 
-    internal static WeaponMasteryProfile[] ArcherFourthBowMasteryProfiles() =>
-        Enumerable.Range(0, 15).Select(i => new WeaponMasteryProfile(
-            Bow: new PassiveEffect(
-                PhysAtk: BowMasteryAtk4[i], PhysAtkPct: 0.085f, BowRange: 400f,
-                CritDamageFlat: BowMasteryCritDmg4[i], Accuracy: 3,
-                CritRate: 0.20f, AtkSpeedPct: 0.05f))).ToArray();
 
     /// <summary>Twin Arrows rungs 16-30. ⚠ The per-arrow power is what moves; the wrapper fires the
     /// SAME sub-skill twice at every rung (see <see cref="ArcherTwinArrows"/>).</summary>

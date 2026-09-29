@@ -385,88 +385,13 @@ public partial class SkillCatalog
     private static SkillLevel[] TankShieldShockThirdRungs() => BulwarkRungs(i => new SkillLevel(
         MpCost: BulwarkSmashMp[i], SpCost: BulwarkSp[i]));
 
-    /// <summary>HEAVY ARMOR MASTERY, rungs 6-20 (five exist at the 2nd class).
-    /// ⚠ HIS WEIGHT COLUMN SAYS `robe` ON ALL FIFTEEN ROWS AND IS A PASTE — every DESCR cell says
-    /// *"with heavy"*, the skill is called Heavy Armor Mastery, and the 2nd-class rows it continues
-    /// all say `heavy`. Built HEAVY and flagged on `BL-02`; the `BL-105` "the column wins" rule is
-    /// for a column that disagrees with the prose about a REAL choice, not for a pasted cell that
-    /// contradicts the skill's own name.</summary>
-    private static readonly int[] TankArmorPDef =
-        { 65, 70, 76, 81, 94, 107, 113, 120, 127, 135, 142, 150, 157, 165, 173 };
-    /// <summary>MP regen per rung, and it is a <b>FLAT PER-SECOND GRANT</b> (<c>PassiveEffect.MpRegen</c>),
-    /// not a multiplier. His ruling, 2026-09-04: *"the mp regen of tank is also additive, not
-    /// multiplicative"* — the `x` his 3rd- and 4th-tier cells carried was a notation slip, and his own
-    /// `tank 2nd.csv` writes `mpReg +3.1` at level 36 where he got it right. Read that way the whole
-    /// column is ONE ladder across three tiers — 3.1 → 3.5 → 3.9 → 4.3 → 4.7 → 5.1 — in the same units
-    /// the mage's armour mastery has always used (`healer 4th.csv`: `mpReg +3.4` → <c>MpRegen: 3.4f</c>).
-    /// ⚠ It was built as `MpRegenPct: v - 1f` until then, which paid a level-74 tank <b>+410% MP
-    /// regen</b> instead of +5.1/s. The cells in `tank 3rd.csv` and `tank 4th.csv` now read `+`.</summary>
-    private static readonly float[] TankArmorMpReg =
-        { 3.5f, 3.5f, 3.9f, 3.9f, 3.9f, 4.3f, 4.3f, 4.3f, 4.3f, 4.7f, 4.7f, 4.7f, 4.7f, 5.1f, 5.1f };
-    private static readonly float[] TankArmorPDefPct =
-        { .11f, .11f, .11f, .11f, .11f, .11f, .15f, .15f, .15f, .15f, .15f, .15f, .15f, .15f, .15f };
-    private static readonly float[] TankArmorCritRed =
-        { .25f, .25f, .25f, .25f, .25f, .25f, .25f, .35f, .35f, .35f, .35f, .35f, .35f, .35f, .35f };
 
-    /// <summary>⚠ ONE CELL OF HIS DIFFERS FROM THE SHARED SP LADDER: Heavy Armor Mastery at level 55
-    /// costs 80,000 where every other skill in the file costs 81,000 at that rung. It is his number
-    /// and it is monotonic, so it is not a typo the ladder rule may straighten — it is simply a
-    /// thousand cheaper, and the CSV is the authority.</summary>
-    private static int TankArmorMasterySp(int i) => i == 5 ? 80_000 : BulwarkSp[i];
 
-    private static SkillLevel[] TankArmorMasteryThirdRungs() =>
-        BulwarkRungs(i => new SkillLevel(SpCost: TankArmorMasterySp(i),
-            Description: $"With heavy armor: +{TankArmorPDef[i]} P.Def, "
-                       + $"×{1f + TankArmorPDefPct[i]:0.00} P.Def, +{TankArmorMpReg[i]:0.0} MP regen/s, "
-                       + $"{TankArmorCritRed[i] * 100:0}% less crit damage taken, −2 evasion."));
 
-    /// <summary>The armour PROFILES for those rungs — a parallel array, like the weapon mastery's,
-    /// because an armour mastery's payload rides <c>ArmorMasteryLevels</c> rather than the SkillLevel.
-    /// ⚠ Both `p.def x1.11 → x1.15` and the crit-damage reduction `25% → 35%` step at this tier; the
-    /// 2nd class's helper hard-codes 0.07 and 0.15, which is why this cannot reuse it.</summary>
-    private static ArmorMasteryProfile[] TankArmorMasteryThirdProfiles() =>
-        Enumerable.Range(0, BulwarkLevels.Length).Select(i => new ArmorMasteryProfile(
-            Robe: default, Light: default,
-            Heavy: new StatMods(
-                MpRegen: TankArmorMpReg[i],   // "mpReg +3.5" is a FLAT grant per second — see below
-                PDef: TankArmorPDef[i], PDefPct: TankArmorPDefPct[i],
-                CritDmgResist: TankArmorCritRed[i], Evasion: -2))).ToArray();
 
-    /// <summary>TANK ANTI-MAGIC, rungs 6-20. M.Def 51 → 130, and it gains MAGIC RESISTANCE at this
-    /// tier — 5% → 20%, a real damage reduction rather than a fizzle chance (his 2026-08-10 ruling).
-    /// ⚠ The `robe` in his WEIGHT column is the same paste as Heavy Armor Mastery's, and here it is
-    /// even clearer that it is one: not a single DESCR cell mentions armour at all.</summary>
-    private static SkillLevel[] TankAntiMagicThirdRungs()
-    {
-        int[] mDef = { 51, 55, 59, 67, 75, 84, 89, 94, 98, 103, 109, 114, 119, 124, 130 };
-        float[] mRes = { .05f, .05f, .05f, .05f, .10f, .10f, .10f, .10f, .15f, .15f, .15f, .15f, .20f, .20f, .20f };
-        return BulwarkRungs(i => new SkillLevel(SpCost: BulwarkSp[i],
-            Passive: new PassiveEffect(MagicDefence: mDef[i], MagicResist: mRes[i]),
-            Description: $"+{mDef[i]} M.Def and {mRes[i] * 100:0}% magic resistance."));
-    }
 
-    /// <summary>TANK WEAPON MASTERY, rungs 6-20. ×1.085 P.Atk at every rung plus a flat climb.
-    /// ⚠ HIS ROW AT 52 READS `+26` BETWEEN `+31` AND `+41` — a dip, and by the monotonic rule a typo
-    /// rather than a design (a rung you pay 74,000 SP for cannot make you weaker). Interpolated to
-    /// **36**, which is the midpoint his own neighbours describe, and reported.</summary>
-    private static SkillLevel[] TankWeaponMasteryThirdRungs()
-    {
-        return BulwarkRungs(i => new SkillLevel(SpCost: BulwarkSp[i],
-            Description: $"With a one-handed sword or blunt: ×1.085 P.Atk and "
-                       + $"+{TankWeaponMasteryFlatAtk[i]} P.Atk."));
-    }
 
-    /// <summary>The FLAT half of the rungs above. It lives apart because a weapon mastery's payload
-    /// rides <c>SkillDef.WeaponMasteryLevels</c> — a parallel array indexed by rung — rather than the
-    /// SkillLevel, so the numbers have to be handed to two places and are written once here.</summary>
-    private static readonly int[] TankWeaponMasteryFlatAtk =
-        { 19, 22, 26, 31, 36, 41, 46, 50, 54, 59, 63, 67, 72, 76, 81 };
 
-    /// <summary>Tank Weapon Mastery's 3rd-tier weapon profiles, in the same rung order.</summary>
-    private static WeaponMasteryProfile[] TankWeaponMasteryThirdProfiles() =>
-        TankWeaponMasteryFlatAtk
-            .Select(v => OneHand(new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: v)))
-            .ToArray();
 
     // (SHIELD MASTERY needs nothing here. Its 3rd-tier pair — rungs 3 and 4 — was already in the def
     //  from the single row he authored in 2026-08-21; this pass only corrected rung 3's SP to his

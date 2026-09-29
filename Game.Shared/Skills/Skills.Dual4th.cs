@@ -48,7 +48,6 @@ public static partial class SkillCatalog
     //    So the ultimate is not a different tool from the passive — it is the same defence, briefly
     //    turned up to where it decides a fight.
     /// <summary>Human, 80/85/90 — magic resistance 5/7/10%. Pairs with <see cref="MagicalArmor"/>.</summary>
-    public const string DualAntiMagic = "dual_anti_magic";
     /// <summary>Elf, 80/85/90 — physical-SKILL evasion 5/7/10%. Pairs with <see cref="Dodge"/>.
     /// ⚠ Not `Evasion`: his cell says *"p.skill evasion"*, which is <c>SkillEvadeChance</c> — the
     /// grant that `BL-06` left as the ONLY way a physical skill can be dodged at all.</summary>
@@ -130,58 +129,13 @@ public static partial class SkillCatalog
     /// upward, which is the same call the archer's regen cells got.</summary>
     private const int VenomTier4 = 10, VenomStacks4 = 3;
 
-    /// <summary>Dual Mastery's flat P.Atk, 85 → 150 (the 3rd tier ended at 80).</summary>
-    private static readonly int[] DualMasteryAtk4 =
-    {
-        85, 90, 95, 100, 105, 110, 115, 120,
-        125, 130, 134, 138, 142, 146, 150,
-    };
 
-    /// <summary>…and its flat crit damage, 1,040 → 1,300 (the 3rd tier ended at 1,015). Same shape
-    /// and the same ~+28% span as the bow's 682 → 900.</summary>
-    private static readonly int[] DualMasteryCritDmg4 =
-    {
-        1040, 1060, 1080, 1100, 1120, 1140, 1160, 1180,
-        1200, 1220, 1240, 1260, 1275, 1290, 1300,
-    };
 
-    /// <summary>…attack speed ×1.10 → ×1.15. Crit RATE is FLAT at ×1.50 across the tier: the 3rd
-    /// tier already ends there and a dagger's crit is a third of the way to a 50% cap that the blow
-    /// roll no longer even reads (`BL-188`), so climbing it further buys almost nothing.</summary>
-    private static readonly float[] DualMasteryAtkSpd4 =
-        { .10f, .10f, .11f, .11f, .12f, .12f, .13f, .13f, .13f, .14f, .14f, .15f, .15f, .15f, .15f };
 
-    private const float DualMasteryCritRate4 = 0.50f;
 
-    /// <summary>Rungs 21-35 of the MELEE rogue's Armor Mastery.
-    /// 🔑 <b>They are the ARCHER's, deliberately reused</b> — same light armour, same tier, and the two
-    /// files differ by a single point of evasion at the 3rd tier (14 against 12). Inventing a second
-    /// ladder a point apart would be inventing a difference he has not asked for, and the archer's
-    /// numbers are read off `archer 4th.csv`, so half of this is authored rather than none of it.
-    /// ⚠ `archer_armor_mastery` REPLACES `rogue_armor_mastery` at 40, so appending here reaches the
-    /// three melee disciplines and nobody else.</summary>
-    internal static SkillLevel[] RogueArmorMasteryFourthRungs() => ArcherFourthArmorMasteryRungs();
 
-    /// <inheritdoc cref="RogueArmorMasteryFourthRungs"/>
-    internal static ArmorMasteryProfile[] RogueArmorMasteryFourthProfiles() =>
-        ArcherFourthArmorMasteryProfiles();
 
-    /// <summary>Rungs 16-30 of Dual Mastery.</summary>
-    internal static SkillLevel[] DualMasteryFourthRungs() => F4Rungs(15, 1, (i, sp, gold) =>
-        new SkillLevel(SpCost: sp, GoldCost: gold,
-            Description: $"Duals: +{DualMasteryAtk4[i]} P.Atk, ×1.085 P.Atk, "
-                       + $"+{DualMasteryCritDmg4[i]} crit damage, +3 accuracy, "
-                       + $"×{1f + DualMasteryCritRate4:0.0} crit rate, "
-                       + $"×{1f + DualMasteryAtkSpd4[i]:0.00} attack speed."));
 
-    /// <inheritdoc cref="DualMasteryFourthRungs"/>
-    internal static WeaponMasteryProfile[] DualMasteryFourthProfiles() =>
-        Enumerable.Range(0, 15).Select(i => new WeaponMasteryProfile(
-            Dual: new PassiveEffect(
-                PhysAtk: DualMasteryAtk4[i], PhysAtkPct: 0.085f,
-                CritDamageFlat: DualMasteryCritDmg4[i], Accuracy: 3,
-                CritRate: DualMasteryCritRate4, AtkSpeedPct: DualMasteryAtkSpd4[i]),
-            RequiredWeapon: WeaponType.Dual)).ToArray();
 
     /// <summary>Rungs 16-30 of a straight BLOW family (Killing / Swift / Heavy).</summary>
     internal static SkillLevel[] StabFourthRungs(int[] power) => F4Rungs(15, 1, (i, sp, gold) =>
@@ -290,11 +244,6 @@ public static partial class SkillCatalog
                         Passive: effect(identity[i]),
                         Description: rung(identity[i]))).ToArray());
 
-        var antiMagic = Identity(DualAntiMagic, "Anti-Magic",
-            v => new PassiveEffect(MagicResist: v),
-            "Passive. Spells slide off you a little more each time you learn to expect them.",
-            v => $"Magic resistance +{v * 100:0}%.");
-
         var antiPhysical = Identity(AntiPhysical, "Anti-Physical",
             v => new PassiveEffect(SkillEvadeChance: v),
             "Passive. You read the wind-up. Some blows simply never arrive.",
@@ -367,7 +316,7 @@ public static partial class SkillCatalog
         return new[]
         {
             instinct, perfect, brutal,
-            antiMagic, antiPhysical, duelExpertise,
+            antiPhysical, duelExpertise,
             dodge, magicArmor, demonContract,
         };
     }

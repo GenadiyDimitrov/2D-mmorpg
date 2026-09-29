@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.43**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.215.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,29 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-09-29 (latest) — 0.214.43: one Vampiric Bolt for the Human mage; the passive CSVs re-authored (`BL-314`)
+## 2026-09-29 (latest) — 0.215.0: the passive split, built (`BL-314`)
+
+His CSVs from 7ebbaef are now the game. ⚠ **New APK** (the Learn tab is built from the compiled class tables) and a
+**`game.db` delete** (dozens of skill ids are gone).
+
+- **One ladder per stat, shared across classes.** `heavy_/light_/mage_armor_mastery`, `weapon_mastery`, `bow_mastery`,
+  `spellcaster_weapon_mastery`, `anti_magic` / `magic_resistance`, the regen, crit, speed, accuracy, MP and cast pieces,
+  `strength_mastery`, `blunt_cleave`, `fury_mastery` and the rest: 34 ladders, 756 rungs. Each is the union of every value
+  a class authors, and each class learns only its own rungs at its own price. They are **generated from the CSVs**
+  (`SkillCsvSeed --gen-passives`); edit the row, regenerate.
+- **The 29 old bundles are deleted** (every class armour and weapon mastery, Spell Mastery, Warrior's Strength, the
+  two-hand masteries, the buffer's armour and race weapon masteries, tank/mage/dual anti-magic).
+- **SP scarcity:** every passive a class learns at 20-75 costs ×k: daggers 7.15, bows 9.09, warriors 4.63, tanks 3.58,
+  Magus 4.60, Lightbringer 3.52, Warchanter 3.73 (2nd-tier rogue and cleric: the mean of their two groups). The CSVs show
+  the price you pay. Measured: every path lands on its target (daggers 0.62-0.66 … Warchanter 0.49-0.51).
+- **Strength Mastery** pays its highest learned rung whose weapon gate holds: a warrior with a bow keeps ×1.085.
+- **The Lightbringer's first robe rung retires the Light Caster Mastery**; the Warchanter keeps it (a class-row Replaces).
+- **Magic Protection** is its own skill at 80: 150kk SP + 10kk gold (his ruling).
+- The tank's auto-granted fizzle ×2/×2.5/×3 moved from `anti_magic` to `tank_spell_ward`, unchanged. It makes the paid
+  Magic Protection worth nothing; that is `BL-325`, his call.
+- `SkillCsvSeed --check`: **0 discrepancies**. SmokeTest: all checks passed.
+
+## 2026-09-29 — 0.214.43: one Vampiric Bolt for the Human mage; the passive CSVs re-authored (`BL-314`)
 
 His note: *"fix mage1st vampiric_bolt @14 .. to match the human_vampiric_bolt (now i have two skills at lvl 20 with
 human mage)"*.

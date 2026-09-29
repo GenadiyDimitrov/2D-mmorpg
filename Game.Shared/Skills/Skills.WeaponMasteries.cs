@@ -16,13 +16,9 @@ namespace Game.Shared;
 /// NUMBERS ARE PLACEHOLDERS — tune during testing.</summary>
 public static partial class SkillCatalog
 {
-    public const string TankWeaponMastery    = "tank_weapon_mastery";
-    public const string WarriorWeaponMastery = "warrior_weapon_mastery";
-    public const string RogueWeaponMastery   = "rogue_weapon_mastery";
     // ⚠ `warriors_strength` — HIS SPELLING, and the id is his to spell. The C# const reads
     //   `WarriorsStrength` because that is what every other identifier in this file does; the STRING
     //   is what lands in a save file and in his CSV, and those two must agree letter for letter.
-    public const string WarriorsStrength      = "warriors_strength";
     // (`archer_weapon_mastery` — deleted 2026-08-07, playtest-19 `0a`/G1. Orphaned by the
     //  archer→rogue merge: Rogue Weapon Mastery already carries the BOW rungs, so this was a
     //  second bow passive nobody could be granted. Don't re-add it.)
@@ -59,34 +55,7 @@ public static partial class SkillCatalog
             RequiredWeapon: WeaponType.AnySword | WeaponType.AnyBlunt,
             RequiredHands: WeaponHands.Two);
 
-    /// <summary>A two-handed sword/blunt rung whose BLUNT half also cleaves — the warrior's Two-Hand
-    /// Mastery since 2026-09-11. Sword and blunt share the flat P.Atk and the crit damage; only the
-    /// blunt carries <see cref="PassiveEffect.CleaveTargets"/>.
-    ///
-    /// <para>🔑 THIS IS WHY THE SLOTS ARE PER WEAPON TYPE. A sword/blunt profile that shared ONE
-    /// PassiveEffect could not say "with 2h Blunt" at all, and the temptation would be to gate the
-    /// cleave somewhere else — at which point the two halves of one rung can disagree about which
-    /// weapon is in your hands. Here they cannot.</para>
-    /// <param name="cleave">TOTAL bodies one swing may touch, the real target INCLUDED — his
-    /// "max 2 targets" is the target plus one. Radius is his 150 for every rung that has one.</param></summary>
-    private static WeaponMasteryProfile TwoHandCleave(int physAtk, float critDmg, int cleave)
-    {
-        var shared = new PassiveEffect(PhysAtk: physAtk, CritDamageFlat: critDmg);
-        return new WeaponMasteryProfile(
-            Sword: shared,
-            Blunt: shared with { CleaveTargets = cleave, CleaveRadius = 150f },
-            RequiredWeapon: WeaponType.AnySword | WeaponType.AnyBlunt,
-            RequiredHands: WeaponHands.Two);
-    }
 
-    /// <summary>A ONE-handed sword/blunt profile — the tank's weapon (owner, 2026-08-29: *"a tank
-    /// for now is mace/blade (1h sword/blunt), the shield is not a requirement, the shield has its
-    /// own passive"*). The mirror image of <see cref="TwoHand"/>, and the first gate in the game that
-    /// could not be written before <see cref="WeaponHands"/> existed.</summary>
-    private static WeaponMasteryProfile OneHand(PassiveEffect pe) =>
-        new(Sword: pe, Blunt: pe,
-            RequiredWeapon: WeaponType.AnySword | WeaponType.AnyBlunt,
-            RequiredHands: WeaponHands.One);
 
     /// <summary>A rogue Weapon Mastery level: shared crit/acc/atk-speed on both dual and bow,
     /// plus each weapon's own flat P.Atk, and +200 range for the bow. <paramref name="critRate"/>
@@ -106,143 +75,11 @@ public static partial class SkillCatalog
 
     private static SkillDef[] WeaponMasterySkills() => new SkillDef[]
     {
-        // Warrior — Two-Hand Mastery (CSV warrior 2nd, RE-AUTHORED 2026-09-11): flat P.Atk + crit
-        // damage with a 2H sword/blunt, and — with a 2H BLUNT ONLY — a basic attack that cleaves.
-        //
-        // 🔴 FOUR COLUMNS LEFT THIS SKILL THAT DAY, and only two of them went somewhere else. His
-        //    rows now read "crit dmg +35; p.atk +13; With 2h Blunt: Allow basic attack to hit around
-        //    in 150 range (max 2 targets)" and nothing more:
-        //      • `acc +3` and `p.atk ×1.2` MOVED to the new `warriors_strength` (same learn level, same
-        //        weapon gate, its own SP row) — so the accuracy and the percent attack are still paid,
-        //        just billed separately, and the 3rd class continues THAT ladder rather than this one.
-        //      • `eva −3` and `p.def ×0.9` ARE SIMPLY GONE. The 2H penalty he cut to −10% in
-        //        playtest-19 ("I want a warrior in a heavy not to have lower defence than a mage")
-        //        has now been cut the rest of the way. Do not restore either on a hunch.
-        //    ⚠ The percent attack he re-authored is ×1.2, NOT the ×1.5 four of these rungs carried —
-        //      read `warriors_strength` before concluding the class lost power.
-        new(WarriorWeaponMastery, "Two-Hand Mastery", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive, Replaces: new[] { FighterWeaponMastery },
-            Description: "Passive. Mastery of TWO-HANDED swords and blunts: greater attack power and "
-                       + "critical damage. With a two-handed BLUNT your basic attacks also strike "
-                       + "everything within 150 around your target. No effect one-handed.",
-            Levels: new[]
-            {
-                new SkillLevel(SpCost: 3400),
-                new SkillLevel(SpCost: 6400),
-                new SkillLevel(SpCost: 12000),
-                new SkillLevel(SpCost: 22000),
-                new SkillLevel(SpCost: 40000),
-            },
-            WeaponMasteryLevels: new[]
-            {
-                // crit dmg is the CSV's FLAT +35/+48/+64/+84/+106 (attack added inside the crit),
-                // not a multiplier — it used to be read as ×2.35 … ×3.06. See CritBlowAndDouble.md §3.
-                // ⚠ The last rung's flat P.Atk is +22, not +20 — he raised it in the same pass, so the
-                //   ladder 13/15/17/20/22 no longer plateaus at the top.
-                TwoHandCleave(13, 35f,  cleave: 2),
-                TwoHandCleave(15, 48f,  cleave: 2),
-                TwoHandCleave(17, 64f,  cleave: 3),
-                TwoHandCleave(20, 84f,  cleave: 3),
-                TwoHandCleave(22, 106f, cleave: 4),
-            }),
 
-        // Warrior's Strength (CSV warrior 2nd @20, `warrior 3rd.csv` @40/46/52) — the accuracy and the
-        // PERCENT attack that used to ride on Two-Hand Mastery, as a skill of its own since 2026-09-11.
-        // Same gate (2H sword or blunt), its own SP row, and the 3rd class continues THIS ladder.
-        // 🔑 It carries `Replaces: [fighter_weapon_mastery]` for the same reason Two-Hand Mastery does:
-        //    both are the 2nd-class successors to the base any-weapon mastery, and a warrior who has
-        //    bought either must not keep paying out the level-15 one underneath.
-        new(WarriorsStrength, "Warrior's Strength", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive, Replaces: new[] { FighterWeaponMastery },
-            Description: "Passive. With a TWO-HANDED sword or blunt: greatly increased attack power "
-                       + "and better accuracy. No effect one-handed or with any other weapon.",
-            Levels: new[]
-            {
-                new SkillLevel(SpCost: 3_400,  Description: "Two-handed sword/blunt: ×1.20 P.Atk, +3 accuracy."),
-                new SkillLevel(SpCost: 28_000, Description: "Two-handed sword/blunt: ×1.25 P.Atk, +3 accuracy."),
-                new SkillLevel(SpCost: 40_000, Description: "Two-handed sword/blunt: ×1.25 P.Atk, +6 accuracy."),
-                new SkillLevel(SpCost: 74_000, Description: "Two-handed sword/blunt: ×1.30 P.Atk, +9 accuracy."),
-            },
-            WeaponMasteryLevels: new[]
-            {
-                TwoHand(new PassiveEffect(PhysAtkPct: 0.20f, Accuracy: 3)),
-                TwoHand(new PassiveEffect(PhysAtkPct: 0.25f, Accuracy: 3)),
-                TwoHand(new PassiveEffect(PhysAtkPct: 0.25f, Accuracy: 6)),
-                TwoHand(new PassiveEffect(PhysAtkPct: 0.30f, Accuracy: 9)),
-            }),
 
-        // Rogue — Weapon Mastery (CSV rogue 2nd): DUAL and BOW both gain +8.5% P.Atk plus
-        // shared crit-damage / accuracy / crit-rate / attack-speed; each also gets its own flat
-        // P.Atk, and BOW gains +200 range. 5 levels. Replaces the base fighter weapon mastery.
-        new(RogueWeaponMastery, "Weapon Mastery", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive, Replaces: new[] { FighterWeaponMastery },
-            Description: "Passive. Sharpens dual-wield and bow attacks: more attack power, "
-                       + "critical damage, accuracy and (with a bow) greater range.",
-            Levels: new[]
-            {
-                new SkillLevel(SpCost: 3400),
-                new SkillLevel(SpCost: 6400),
-                new SkillLevel(SpCost: 12000),
-                new SkillLevel(SpCost: 22000),
-                new SkillLevel(SpCost: 40000),
-            },
-            WeaponMasteryLevels: new[]
-            {
-                // crit dmg = the CSV's FLAT +35/+64/+80/+140/+165. The @24 and @28 rungs used to be
-                // SWAPPED (80 before 64) as well as read as a multiplier. See CritBlowAndDouble.md §3.
-                // crit rate is ×1.20 on EVERY rung, i.e. from level 20 (playtest-19 M9): it used to
-                // arrive as +10/+10 points at 32/36, which is exactly the "each blow lands with the
-                // 64+% chance" spike he wanted gone AND the 9.2%-until-32 blow gate of §50h. One
-                // multiplier, early, matching his ladder's single ×1.2 rogue passive — bows included.
-                RogueWM(critDmg: 35f,  acc: 0, critRate: 0.20f, atkSpd: 0f,    dualAtk: 8,  bowAtk: 30),
-                RogueWM(critDmg: 64f,  acc: 3, critRate: 0.20f, atkSpd: 0f,    dualAtk: 11, bowAtk: 42),
-                RogueWM(critDmg: 80f,  acc: 3, critRate: 0.20f, atkSpd: 0f,    dualAtk: 14, bowAtk: 56),
-                RogueWM(critDmg: 140f, acc: 3, critRate: 0.20f, atkSpd: 0f,    dualAtk: 17, bowAtk: 74),
-                RogueWM(critDmg: 165f, acc: 3, critRate: 0.20f, atkSpd: 0.05f, dualAtk: 21, bowAtk: 96),
-            }),
 
         // (Archer "Bow Mastery" DELETED 2026-08-07 with its id — the rogue mastery above carries
         //  the bow profile since the merge.)
 
-        // Tank — Weapon Mastery (CSV tank 2nd): flat + 8.5% attack power with a ONE-HANDED sword or
-        // blunt. 5 levels (@20/24/28/32/36). Replaces the base fighter weapon mastery.
-        //
-        // 🔑 IT WAS "ANY WEAPON" UNTIL 2026-08-29 — his ruling: *"a tank for now is mace/blade
-        //    (1h sword/blunt)"*. "Any weapon" let a knight hold a greatsword and keep the whole
-        //    passive, which is the warrior's identity taken for free; and it is the reason the hands
-        //    gate exists at all, since `Sword|Blunt` alone could never exclude a maul.
-        // ⚠ The SHIELD is deliberately NOT part of this gate — *"the shield is not a requirement,
-        //    the shield has its own passive"* (Shield Mastery). A tank who drops the shield for a
-        //    second one-hander keeps this; a tank who picks up a 2H loses it.
-        // ⚠ Moved from Levels[].Passive to WeaponMasteryLevels — the SAME numbers, applied through
-        //    the same RecomputeDerived path, but Levels[].Passive is unconditional by construction
-        //    and so has nowhere to hang a weapon gate. Wrong weapon = no bonus, never a penalty.
-        new(TankWeaponMastery, "Weapon Mastery", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive, Replaces: new[] { FighterWeaponMastery },
-            Description: "Passive. Increases physical attack power while wielding a ONE-HANDED "
-                       + "sword or blunt. No effect with a two-handed weapon, a bow or daggers.",
-            Levels: new[]
-            {
-                new SkillLevel(SpCost: 3400),
-                new SkillLevel(SpCost: 6400),
-                new SkillLevel(SpCost: 12000),
-                new SkillLevel(SpCost: 22000),
-                new SkillLevel(SpCost: 40000),
-            }.Concat(TankWeaponMasteryThirdRungs()).Concat(TankFourthWeaponMasteryRungs()).ToArray(),
-            // ⚠ TWO PARALLEL ARRAYS, and they must stay the same LENGTH: a weapon mastery's payload
-            // rides here (indexed by rung) while its price rides `Levels`. A rung present in one and
-            // missing from the other is a rung you can buy that grants nothing.
-            WeaponMasteryLevels: new[]
-            {
-                OneHand(new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 6)),
-                OneHand(new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 8)),
-                OneHand(new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 10)),
-                OneHand(new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 12)),
-                OneHand(new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 15)),
-            }.Concat(TankWeaponMasteryThirdProfiles()).Concat(TankFourthWeaponMasteryProfiles()).ToArray()),
     };
 }

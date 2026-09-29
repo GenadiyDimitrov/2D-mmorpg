@@ -623,6 +623,17 @@ public class Entity
     /// <summary>The learned level of a skill, or 0 if not known.</summary>
     public int SkillLevelOf(string id) => LearnedSkills.GetValueOrDefault(id);
 
+    /// <summary>`BL-314` — the highest rung at or below <paramref name="owned"/> whose weapon gate the equipped weapon
+    /// meets, or 0 when none does. See <see cref="SkillDef.PayHighestGatedRung"/>.</summary>
+    private int HighestGatedRung(SkillDef def, int owned)
+    {
+        for (int r = owned; r >= 1; r--)
+            if (def.WeaponMasteryAt(r) is not WeaponMasteryProfile wm
+                || WeaponType.Satisfies(wm.RequiredWeapon, wm.RequiredHands))
+                return r;
+        return 0;
+    }
+
     /// <summary>True if the character knows the skill at any level.</summary>
     public bool HasSkill(string id) => LearnedSkills.ContainsKey(id);
 
@@ -3908,8 +3919,12 @@ public class Entity
                 if (sd is null) continue;
                 // ⚠ PassivesAt, not PassiveAt: a rung may carry EXTRA gated layers (`BL-107`) and
                 // reading only the first silently drops them.
-                foreach (var pe in sd.PassivesAt(skillLevel)) ApplyPassive(pe);
-                if (sd.WeaponMasteryAt(skillLevel) is WeaponMasteryProfile wm)
+                // `BL-314` — a ladder whose rungs carry different weapon gates (strength_mastery) pays the highest
+                // rung you own whose gate your weapon meets; see SkillDef.PayHighestGatedRung.
+                int rung = sd.PayHighestGatedRung ? HighestGatedRung(sd, skillLevel) : skillLevel;
+                if (rung == 0) continue;
+                foreach (var pe in sd.PassivesAt(rung)) ApplyPassive(pe);
+                if (sd.WeaponMasteryAt(rung) is WeaponMasteryProfile wm)
                     ApplyPassive(wm.For(WeaponType));
             }
 

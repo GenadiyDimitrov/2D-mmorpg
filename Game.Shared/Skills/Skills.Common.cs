@@ -9,7 +9,6 @@ public static partial class SkillCatalog
     // ---- Base MAGE armor mastery (learnable PASSIVE, per-level StatMods data; applied
     //      in RecomputeDerived by the worn body weight). Fighters get FighterArmorMastery
     //      instead; 2nd classes REPLACE these with their archetype mastery. ----
-    public const string MasteryRobe  = "mastery_robe";
     // ---- Weapon Proficiency: all mages auto-learn this at level 1. While NOT wielding a mage-trained
     //      weapon (sword or blunt — incl. wand/staff), casting speed is halved. Handled in Entity by
     //      weapon type, not a StatMod. ----
@@ -60,7 +59,9 @@ public static partial class SkillCatalog
     // (`reflexes` — the Archer floor — deleted 2026-08-07: no class carries Archetype.Archer after
     //  the archer→rogue merge, so it was granted to nobody. See the CommonSkills() note.)
     public const string Precision    = "precision";     // Warrior 10/20/30% hit floor
-    public const string AntiMagic    = "anti_magic";    // Tank    x2/2.5/3 on enemy magic fizzle
+    // `BL-314` — the tank's auto-granted fizzle multiplier. It was `anti_magic` until his passive split gave that id to
+    // the shared M.Def ladder (every mage and the tank climb it), so the grant moved to an id of its own, unchanged.
+    public const string TankSpellWard = "tank_spell_ward";   // Tank    x2/2.5/3 on enemy magic fizzle
     // ---- The two SKILL-defence passives (BL-07 / BL-08), auto-granted on the 3rd class change
     //      like the three above. Their ladder is the owner's own 40 / 76 pair. See ReflectPassiveFor. ----
     public const string Deflection   = "deflection";    // Warrior 15/30% chance to reflect a physical skill
@@ -416,7 +417,7 @@ public static partial class SkillCatalog
             // ⚠ AND NOTHING UN-GRANTS IT EITHER, deliberately — his ruling, same day: *"no point of
             //   migration type to remove a skill from some1. They will never have it in the 1st
             //   place."* Pre-release, a `game.db` delete is the migration.
-            Archetype.Tank    => (AntiMagic, tier),
+            Archetype.Tank    => (TankSpellWard, tier),
             // Archetype.Archer gets nothing: `reflexes` is deleted and no 2nd class carries
             // Archer any more. A bow character is a Rogue whose discipline is ranged (above).
             // Mages get NO auto magic-fail floor — it comes from their LEARNED Anti-Magic
@@ -479,19 +480,6 @@ public static partial class SkillCatalog
         _ => null
     };
 
-    // ⚠ RESTRUCTURED 2026-08-07 (owner). The old Robe Mastery did TWO jobs at once — it granted the
-    // robe's P.Def AND carried the wrong-weight casting penalty — which is why every 2nd-class mage
-    // mastery had to re-declare that same penalty, and why replacing it silently deleted the penalty
-    // along with the bonus. Split in two:
-    //   • ROBE ARMOR MASTERY (this table, id `mastery_robe`) = the BONUS only. No penalties at all.
-    //   • SPELLCASTER MASTERY (below) = the PENALTY only, and it is never replaced, so it applies to
-    //     every mage at every level. His words: *"Robe mastery is only to cut wrong armor weights."*
-    // A robed mage now collects BOTH (armor masteries stack — see Entity.RecomputeDerived).
-    private static readonly ArmorMasteryProfile[] MageRobeLevels = new[]
-    {
-        new ArmorMasteryProfile(Robe: new StatMods(PDef: 7)),
-        new ArmorMasteryProfile(Robe: new StatMods(PDef: 9)),
-    };
 
     /// <summary>SPELLCASTER MASTERY, the armor half: a ROBE is the caster's weight (+20% MP regen);
     /// light, heavy and NOTHING all halve casting and attack speed. Auto-granted at level 1 and
@@ -851,21 +839,6 @@ public static partial class SkillCatalog
         // (HP Boost DELETED 2026-08-07 with the God layer, playtest-19 `0b` — its only learn table
         //  was the God one. The Max-HP buff family the players actually use is `Body` / FamMaxHp.)
 
-        // ---- Robe Armor Mastery — the BONUS half of the old Robe Mastery: robe P.Def, nothing else.
-        //      2 levels at char 7 / 14 (owner's table: +7, +9). No penalties of any kind live here any
-        //      more, which is what lets the 2nd-class masteries REPLACE it without deleting the
-        //      wrong-weight rule along with it — that now belongs to Spellcaster Mastery, which is
-        //      never replaced. Id kept (`mastery_robe`): same skill, narrowed job. ----
-        new(MasteryRobe, "Robe Armor Mastery", BaseClass.Mage, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive,
-            Description: "Passive. While wearing a ROBE: extra physical defence (rising with level).",
-            Levels: new[]
-            {
-                new SkillLevel(SpCost: 480,  Description: "Robe Armor Mastery Lv.1 (+7 P.Def in a robe)."),
-                new SkillLevel(SpCost: 2200, Description: "Robe Armor Mastery Lv.2 (+9 P.Def in a robe)."),
-            },
-            ArmorMasteryLevels: MageRobeLevels),
 
         // ---- Spellcaster Mastery — REPLACES Weapon Proficiency (2026-08-07 restructure). One skill
         //      now states the whole "what a caster may wear and hold" rule, and it is auto-granted at
@@ -977,7 +950,7 @@ public static partial class SkillCatalog
         // the fight that matters: vs a caster 10 levels up it turns 14% fail into 28%.
         // ⚠ Lv2 (at 40) and Lv3 (4th class, still unreachable) are MY extrapolation of his ladder,
         // not authored — the 40+ CSVs are owed and these two numbers are the first thing to overwrite.
-        LeveledPassive(AntiMagic, "Anti-Magic", BaseClass.Fighter,
+        LeveledPassive(TankSpellWard, "Spell Ward", BaseClass.Fighter,
             "Passive. Hostile spells are 2/2.5/3× more likely to fizzle on you.",
             new PassiveEffect(MagicFailMod: 2f), new PassiveEffect(MagicFailMod: 2.5f), new PassiveEffect(MagicFailMod: 3f)),
 

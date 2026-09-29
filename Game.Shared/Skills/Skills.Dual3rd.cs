@@ -39,7 +39,6 @@ public static partial class SkillCatalog
     // ---- THE MELEE ROGUE'S 3rd-CLASS IDS. His `SKILL_ID` column, verbatim, misspellings included:
     //      a skill id is a WIRE VALUE and a save value, so "correcting" `rouge`/`pahantom` after the
     //      fact would orphan every character who had learned one. Same rule as `wc_ork_*`.
-    public const string DualWeaponMastery = "dual_weapon_mastery";
     public const string KillingStab       = "killing_stab";
     public const string VenomStab         = "venom_stab";
     public const string SwiftStab         = "swift_stab";
@@ -221,13 +220,6 @@ public static partial class SkillCatalog
                        + $"+{RogueArmorSpeed(i):0} speed, {RogueArmorCritRes(i) * 100:0}% less often "
                        + $"critted, +{RogueArmorMpReg[i]:0.0} MP/s, +{RogueArmorHpReg[i]:0.0} HP/s."));
 
-    internal static ArmorMasteryProfile[] RogueArmorMasteryThirdProfiles() =>
-        Enumerable.Range(0, BulwarkLevels.Length).Select(i => new ArmorMasteryProfile(
-            Robe: default, None: default, Heavy: default,
-            Light: new StatMods(
-                PDef: RogueArmorPDef(i), Evasion: RogueArmorEva[i],
-                CritRateResist: RogueArmorCritRes(i), MoveSpeed: RogueArmorSpeed(i),
-                MpRegen: RogueArmorMpReg[i], HpRegen: RogueArmorHpReg[i]))).ToArray();
 
     // ═══════════════════════════════════════════════════════════════════════════════════════════
     //  THE SKILLS
@@ -256,28 +248,6 @@ public static partial class SkillCatalog
         float[] dualCritRate = { .30f, .30f, .30f, .30f, .40f, .40f, .40f, .40f, .40f, .40f, .40f, .40f, .50f, .50f, .50f };
         float[] dualAtkSpd   = { .05f, .05f, .07f, .07f, .07f, .07f, .10f, .10f, .10f, .10f, .10f, .10f, .10f, .10f, .10f };
 
-        list.Add(new SkillDef(DualWeaponMastery, "Dual Mastery", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive,
-            Replaces: new[] { RogueWeaponMastery },
-            RequiredWeapon: WeaponType.Dual,
-            ProcChance: 0.03f, ProcCooldownTicks: 80,
-            ProcSelfRungs: Enumerable.Repeat(DualMasteryRush, BulwarkLevels.Length).ToArray(),
-            Description: "Passive. Two blades in your hands hit harder, more often and far crueller "
-                       + "when they bite. No effect with anything else.",
-            Levels: BulwarkRungs(i => new SkillLevel(SpCost: RogueSp[i],
-                Description: $"Duals: +{dualAtk[i]} P.Atk, ×1.085 P.Atk, +{dualCritDmg[i]} crit damage, "
-                           + $"+3 accuracy, ×{1f + dualCritRate[i]:0.0} crit rate, "
-                           + $"×{1f + dualAtkSpd[i]:0.00} attack speed."))
-                .Concat(DualMasteryFourthRungs()).ToArray(),
-            WeaponMasteryLevels: Enumerable.Range(0, BulwarkLevels.Length).Select(i =>
-                new WeaponMasteryProfile(
-                    Dual: new PassiveEffect(
-                        PhysAtk: dualAtk[i], PhysAtkPct: 0.085f,
-                        CritDamageFlat: dualCritDmg[i], Accuracy: 3,
-                        CritRate: dualCritRate[i], AtkSpeedPct: dualAtkSpd[i]),
-                    RequiredWeapon: WeaponType.Dual))
-                .Concat(DualMasteryFourthProfiles()).ToArray()));
 
         // The proc's payload. FLAT across all fifteen rungs — his numbers do not ladder (3% / 60% /
         // 10% on every row), so one def is repeated rather than fifteen written.

@@ -20,10 +20,7 @@ public static partial class ClassSkillTables
             // Tank (CSV tank 2nd): Heavy Armor + Shield Mastery, Tank Anti-Magic, any-weapon
             // Weapon Mastery, Defensive Wall, Taunt (Provoke), Shield Stun, Stay!.
             ClassSkills.Register(race, BaseClass.Fighter, Archetype.Tank,
-                new ClassSkill(TankArmorMastery, 20, SkillLevel: 1),
                 new ClassSkill(TankShieldMastery, 20, SkillLevel: 1),
-                new ClassSkill(TankAntiMagic, 20, SkillLevel: 1),
-                new ClassSkill(TankWeaponMastery, 20, SkillLevel: 1),
                 new ClassSkill(DefensiveWall, 20, SkillLevel: 1),
                 // Provoke is a LADDER, not a one-off (BL-71): its taunt POWER is what keeps a mob
                 // on the tank once the 3s lock expires, so it has to grow with the damage the party
@@ -47,22 +44,10 @@ public static partial class ClassSkillTables
                 //     level-36 tank keeps a rung his file no longer gives him.
                 //   • SHIELD MASTERY's rung 3 left too, to `tank 3rd.csv` at 40. Its 2nd-class file
                 //     now lists only 20 and 28.
-                new ClassSkill(TankArmorMastery, 24, SkillLevel: 2),
-                new ClassSkill(TankAntiMagic, 24, SkillLevel: 2),
-                new ClassSkill(TankWeaponMastery, 24, SkillLevel: 2),
                 new ClassSkill(ShieldShock, 24, SkillLevel: 1),
-                new ClassSkill(TankArmorMastery, 28, SkillLevel: 3),
                 new ClassSkill(TankShieldMastery, 28, SkillLevel: 2),
-                new ClassSkill(TankAntiMagic, 28, SkillLevel: 3),
-                new ClassSkill(TankWeaponMastery, 28, SkillLevel: 3),
                 new ClassSkill(ShieldShock, 28, SkillLevel: 2),
-                new ClassSkill(TankArmorMastery, 32, SkillLevel: 4),
-                new ClassSkill(TankAntiMagic, 32, SkillLevel: 4),
-                new ClassSkill(TankWeaponMastery, 32, SkillLevel: 4),
                 new ClassSkill(ShieldShock, 32, SkillLevel: 3),
-                new ClassSkill(TankArmorMastery, 36, SkillLevel: 5),
-                new ClassSkill(TankAntiMagic, 36, SkillLevel: 5),
-                new ClassSkill(TankWeaponMastery, 36, SkillLevel: 5),
                 new ClassSkill(ShieldShock, 36, SkillLevel: 4));
 
             // 🔑 AND THE TAUNT SPLITS BY RACE FROM LEVEL 24, which is the earliest anything in this
@@ -88,12 +73,9 @@ public static partial class ClassSkillTables
             // Warrior (CSV warrior 2nd): Armor + Two-Hand Mastery (5 levels each), HP Boost L1-L3,
             // Strike continues (levels 4-8), and the low-HP Battle stances.
             ClassSkills.Register(race, BaseClass.Fighter, Archetype.Warrior,
-                new ClassSkill(WarriorArmorMastery, 20, SkillLevel: 1),
-                new ClassSkill(WarriorWeaponMastery, 20, SkillLevel: 1),
                 // Warrior's Strength — the accuracy + ×1.2 P.Atk half of the old Two-Hand Mastery,
                 // its own skill since his 2026-09-11 pass. Same level, same gate, its own SP row;
                 // the 3rd class continues THIS ladder (40/46/52) rather than the mastery's.
-                new ClassSkill(WarriorsStrength, 20, SkillLevel: 1),
                 new ClassSkill(Smash, 20, SkillLevel: 1),
                 // HP Boost L1-L3 at 20/28/36 (`warrior 2nd.csv`, 2026-08-27). The ladder continues
                 // L4-L10 on the 3rd-class table; the buffer takes L1-L7 from 40. See SkillCatalog.HpBoost.
@@ -105,22 +87,14 @@ public static partial class ClassSkillTables
                 new ClassSkill(Overpower, 20, SkillLevel: 1),
                 // `BL-275` — Single Mark, the blunt warrior's "no AoE" toggle (his 2026-09-23 row).
                 new ClassSkill(SingleMark, 20, SkillLevel: 1),
-                new ClassSkill(WarriorArmorMastery, 24, SkillLevel: 2),
-                new ClassSkill(WarriorWeaponMastery, 24, SkillLevel: 2),
                 new ClassSkill(Smash, 24, SkillLevel: 2),
-                new ClassSkill(WarriorArmorMastery, 28, SkillLevel: 3),
-                new ClassSkill(WarriorWeaponMastery, 28, SkillLevel: 3),
                 new ClassSkill(Smash, 28, SkillLevel: 3),
                 new ClassSkill(BattleRegeneration, 28, SkillLevel: 1),
                 new ClassSkill(HpBoost, 28, SkillLevel: 2),
-                new ClassSkill(WarriorArmorMastery, 32, SkillLevel: 4),
-                new ClassSkill(WarriorWeaponMastery, 32, SkillLevel: 4),
                 new ClassSkill(Smash, 32, SkillLevel: 4),
                 new ClassSkill(BattlePresence, 32, SkillLevel: 1),
                 // Monster Knowledge (2026-09-11) — the farming buff. 10 minutes, 5s reuse, PvE only.
                 new ClassSkill(MonsterKnowledgeActive, 32, SkillLevel: 1),
-                new ClassSkill(WarriorArmorMastery, 36, SkillLevel: 5),
-                new ClassSkill(WarriorWeaponMastery, 36, SkillLevel: 5),
                 new ClassSkill(Smash, 36, SkillLevel: 5),
                 new ClassSkill(BattleDefence, 36, SkillLevel: 1),
                 // Battle Resilience (2026-09-11) — stun/hold/cancel resistance, learned beside the
@@ -130,8 +104,6 @@ public static partial class ClassSkillTables
             // Rogue (CSV rogue 2nd): Rogue Armor/Weapon Mastery, Stab + Shot continue (levels
             // 4-8), Sprint, Bow Expertise.
             ClassSkills.Register(race, BaseClass.Fighter, Archetype.Rogue,
-                new ClassSkill(RogueArmorMastery, 20, SkillLevel: 1),
-                new ClassSkill(RogueWeaponMastery, 20, SkillLevel: 1),
                 new ClassSkill(PiercingStab, 20, SkillLevel: 1),
                 new ClassSkill(PreciseShot, 20, SkillLevel: 1),
                 new ClassSkill(Sprint, 20, SkillLevel: 1),
@@ -149,12 +121,8 @@ public static partial class ClassSkillTables
                 // dagger's stance to every future archer as well. The earlier note here argued the
                 // opposite ("a farming tool that arrives at 40 is a farming tool for someone else") and
                 // he has overruled it; the farming stance is now part of what the melee split BUYS.
-                new ClassSkill(RogueArmorMastery, 24, SkillLevel: 2),
-                new ClassSkill(RogueWeaponMastery, 24, SkillLevel: 2),
                 new ClassSkill(PiercingStab, 24, SkillLevel: 2),
                 new ClassSkill(PreciseShot, 24, SkillLevel: 2),
-                new ClassSkill(RogueArmorMastery, 28, SkillLevel: 3),
-                new ClassSkill(RogueWeaponMastery, 28, SkillLevel: 3),
                 new ClassSkill(PiercingStab, 28, SkillLevel: 3),
                 new ClassSkill(PreciseShot, 28, SkillLevel: 3),
                 // Evasion Boost — the rogue's ultimate (CSV rogue 2nd, added playtest-20).
@@ -164,12 +132,8 @@ public static partial class ClassSkillTables
                 // ClassSkillTables.Third.RegisterHideKit(). 🔑 The counter now sits ABOVE what it counters
                 // (Vanish @60 on the melee rogue) rather than twelve levels below it, which is the shape
                 // he asked for: you meet the hide before you can answer it.
-                new ClassSkill(RogueArmorMastery, 32, SkillLevel: 4),
-                new ClassSkill(RogueWeaponMastery, 32, SkillLevel: 4),
                 new ClassSkill(PiercingStab, 32, SkillLevel: 4),
                 new ClassSkill(PreciseShot, 32, SkillLevel: 4),
-                new ClassSkill(RogueArmorMastery, 36, SkillLevel: 5),
-                new ClassSkill(RogueWeaponMastery, 36, SkillLevel: 5),
                 new ClassSkill(PiercingStab, 36, SkillLevel: 5),
                 new ClassSkill(PreciseShot, 36, SkillLevel: 5),
                 // Bow Expertise moved 28 -> 36: he corrected the CSV in playtest-20 ("The Bow
@@ -204,27 +168,15 @@ public static partial class ClassSkillTables
             // Restore Spirit, Mage Armor Mastery,
             // Anti-Magic (lvls 3-6) and Spell Mastery. Cadence 20/25/30/35.
             ClassSkills.Register(race, BaseClass.Mage, Archetype.Nuker,
-                new ClassSkill(MageArmorMastery, 20, SkillLevel: 1),
                 new ClassSkill(ElementalBolt, 20, SkillLevel: 1),
                 new ClassSkill(QuickBolt, 20, SkillLevel: 1),
-                new ClassSkill(MageAntiMagic, 20, SkillLevel: 3),
-                new ClassSkill(SpellMastery, 20, SkillLevel: 1),
-                new ClassSkill(MageArmorMastery, 25, SkillLevel: 2),
                 new ClassSkill(ElementalBolt, 25, SkillLevel: 2),
                 new ClassSkill(QuickBolt, 25, SkillLevel: 2),
                 new ClassSkill(RestoreSpirit, 25, SkillLevel: 1),
-                new ClassSkill(MageAntiMagic, 25, SkillLevel: 4),
-                new ClassSkill(SpellMastery, 25, SkillLevel: 2),
-                new ClassSkill(MageArmorMastery, 30, SkillLevel: 3),
                 new ClassSkill(ElementalBolt, 30, SkillLevel: 3),
                 new ClassSkill(QuickBolt, 30, SkillLevel: 3),
-                new ClassSkill(MageAntiMagic, 30, SkillLevel: 5),
-                new ClassSkill(SpellMastery, 30, SkillLevel: 3),
-                new ClassSkill(MageArmorMastery, 35, SkillLevel: 4),
                 new ClassSkill(ElementalBolt, 35, SkillLevel: 4),
-                new ClassSkill(QuickBolt, 35, SkillLevel: 4),
-                new ClassSkill(MageAntiMagic, 35, SkillLevel: 6),
-                new ClassSkill(SpellMastery, 35, SkillLevel: 4));
+                new ClassSkill(QuickBolt, 35, SkillLevel: 4));
 
             // ⚠⚠ THE 40+ HALF OF THE NUKER'S 2nd-CLASS TABLE WAS DELETED ON 2026-08-26, and it is the
             // last of the "seeded from code" bands to go. It registered, for every race:
@@ -343,22 +295,10 @@ public static partial class ClassSkillTables
                 new ClassSkill(HolyFrenzy, 35, SkillLevel: 1),              // Frenzy (already a single)
 
                 // Anti-Magic — continues the base-mage passive (lvls 3-6).
-                new ClassSkill(MageAntiMagic, 20, SkillLevel: 3),
-                new ClassSkill(MageAntiMagic, 25, SkillLevel: 4),
-                new ClassSkill(MageAntiMagic, 30, SkillLevel: 5),
-                new ClassSkill(MageAntiMagic, 35, SkillLevel: 6),
 
                 // Spell Mastery — caster passive (replaces Weapon Mastery).
-                new ClassSkill(SpellMastery, 20, SkillLevel: 1),
-                new ClassSkill(SpellMastery, 25, SkillLevel: 2),
-                new ClassSkill(SpellMastery, 30, SkillLevel: 3),
-                new ClassSkill(SpellMastery, 35, SkillLevel: 4),
 
                 // Armor Mastery — data-driven passive (replaces Robe/Light mastery).
-                new ClassSkill(ArmorMasterySkill, 20, SkillLevel: 1),
-                new ClassSkill(ArmorMasterySkill, 25, SkillLevel: 2),
-                new ClassSkill(ArmorMasterySkill, 30, SkillLevel: 3),
-                new ClassSkill(ArmorMasterySkill, 35, SkillLevel: 4),
 
                 // ⚠ COMBAT STANCE IS NOT LEARNED ANY MORE (owner 2026-08-17: *"the only one created
                 // after the csv was the combat stence which we will remove and add it to the buffer
