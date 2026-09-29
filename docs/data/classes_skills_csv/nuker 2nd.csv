@@ -1,44 +1,44 @@
 LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPLACES,Comment
 ,,,,,,,,,,,,,,,,----------------------------Robe Armor Mastery----------------------------
-20,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,robe: p.def +20,0,3200,[]
-25,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,robe: p.def +25,0,6400,[]
-30,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,robe: p.def +30,0,12800,[]
-35,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,robe: p.def +35,0,25000,[]
+20,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,robe: p.def +20,0,1070,[]
+25,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,robe: p.def +25,0,3200,[]
+30,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,robe: p.def +30,0,4270,[]
+35,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,robe: p.def +35,0,12500,[]
 ,,,,,,,,,,,,,,,,----------------------------Mana Capacity----------------------------
-20,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,maxMP +20,0,3200,[]
-30,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,maxMP +30,0,12800,[]
+20,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,maxMP +20,0,1070,[]
+30,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,maxMP +30,0,4270,[]
 ,,,,,,,,,,,,,,,,----------------------------Mana Recovery----------------------------
-20,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,mpWhenRestored +10%,0,3200,[]
-25,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,mpWhenRestored +15%,0,6400,[]
-30,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,mpWhenRestored +20%,0,12800,[]
-35,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,mpWhenRestored +25%,0,25000,[]
+20,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,mpWhenRestored +10%,0,1070,[]
+25,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,mpWhenRestored +15%,0,3200,[]
+30,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,mpWhenRestored +20%,0,4270,[]
+35,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,mpWhenRestored +25%,0,12500,[]
 ,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
-20,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +20,0,3200,[]
+20,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +20,0,1600,[]
 25,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +25,0,6400,[]
-30,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +30,0,12800,[]
+30,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +30,0,6400,[]
 35,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +36,0,25000,[]
 ,,,,,,,,,,,,,,,,----------------------------Magic Resistance----------------------------
-20,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,mRes +5%,0,3200,[]
-30,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,mRes +10%,0,12800,[]
+20,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,mRes +5%,0,1600,[]
+30,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,mRes +10%,0,6400,[]
 ,,,,,,,,,,,,,,,,----------------------------Spellcaster Weapon Mastery----------------------------
-20,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,m.Atk +6,0,3200,[]
-25,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,m.Atk +8,0,6400,[]
-30,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,m.Atk +10,0,12800,[]
-35,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,m.Atk +12,0,25000,[]
+20,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,m.Atk +6,0,1070,[]
+25,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,m.Atk +8,0,1600,[]
+30,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,m.Atk +10,0,6400,[]
+35,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,m.Atk +12,0,6250,[]
 ,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
-20,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +4,0,3200,[]
-25,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +6,0,6400,[]
-30,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +8,0,12800,[]
-35,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +10,0,25000,[]
+20,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +4,0,1070,[]
+25,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +6,0,1600,[]
+30,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +8,0,6400,[]
+35,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +10,0,6250,[]
 ,,,,,,,,,,,,,,,,----------------------------Cooldown Mastery----------------------------
-20,Cooldown Mastery,cooldown_mastery,Passive,,,0,0,self/single,0,0,0,Decreses the reuse delay with 10%,0,3200,[]
+20,Cooldown Mastery,cooldown_mastery,Passive,,,0,0,self/single,0,0,0,Decreses the reuse delay with 10%,0,1070,[]
 ,,,,,,,,,,,,,,,,----------------------------Cast Speed Mastery----------------------------
-25,Cast Speed Mastery,cast_speed_mastery,Passive,,,0,0,self/single,0,0,0,cast speed x1.05,0,6400,[]
+25,Cast Speed Mastery,cast_speed_mastery,Passive,,,0,0,self/single,0,0,0,cast speed x1.05,0,1600,[]
 ,,,,,,,,,,,,,,,,----------------------------MpRegen----------------------------
-25,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,mpReg +1.1,0,6400,[]
-35,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,mpReg +1.5,0,25000,[]
+25,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,mpReg +1.1,0,1600,[]
+35,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,mpReg +1.5,0,6250,[]
 ,,,,,,,,,,,,,,,,----------------------------HpRegen----------------------------
-35,HP regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,hpReg +1.1,0,25000,[]
+35,HP regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,hpReg +1.1,0,6250,[]
 ,,,,,,,,,,,,,,,,----------------------------Elemental Bolt----------------------------
 20,Elemental Bolt,elemental_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +26,20,3200,[magic_bolt]
 25,Elemental Bolt,elemental_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +32,23,6400,[magic_bolt]

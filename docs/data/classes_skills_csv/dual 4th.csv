@@ -14,36 +14,36 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 80,Perfect Strike,perfect_strike,physical buff,duals,,0,0,self/single,0,300,300,"blow rate x1.4; both are learned - only one of the two can be UP at a time;",200,150kk,10kk,,[brutal_strike]
 80,Brutal Strike,brutal_strike,physical buff,duals,,0,0,self/single,0,300,300,"crit dmg +30%; both are learned - only one of the two can be UP at a time;",200,150kk,10kk,,[perfect_strike]
 ,,,,,,,,,,,,,,,,,,,----------------------------Light Armor Mastery----------------------------
-76,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +72",0,6.5kk,1kk
+76,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +72",0,2.2kk,333k
 77,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +74",0,11kk,1kk
-78,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +76",0,16kk,1kk
-79,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +78",0,80kk,1kk
-80,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +80",0,0,5kk
+78,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +76",0,8kk,500k
+79,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +78",0,40kk,500k
+80,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +80",0,0,2.5kk
 81,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +82",0,0,7.5kk
-82,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +84",0,0,10kk
+82,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +84",0,0,3.3kk
 83,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +86",0,0,15kk
 84,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +88",0,0,30kk
-85,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +90",0,0,50kk
+85,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +90",0,0,16.7kk
 86,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +92",0,0,75kk
 87,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +94",0,0,100kk
 88,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +96",0,0,100kk
 89,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +98",0,0,100kk
 90,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +100",0,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Evasion----------------------------
-76,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +15",0,6.5kk,1kk
-78,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +16",0,16kk,1kk
-80,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +17",0,0,5kk
-82,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +18",0,0,10kk
-85,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +19",0,0,50kk
+76,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +15",0,2.2kk,333k
+78,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +16",0,8kk,500k
+80,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +17",0,0,2.5kk
+82,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +18",0,0,3.3kk
+85,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +19",0,0,16.7kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Swift----------------------------
-76,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +12;",0,6.5kk,1kk
-79,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +13;",0,80kk,1kk
-82,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +14;",0,0,10kk
-85,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +15;",0,0,50kk
+76,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +12;",0,2.2kk,333k
+79,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +13;",0,40kk,500k
+82,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +14;",0,0,3.3kk
+85,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +15;",0,0,16.7kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
-80,Anti-Magic,dual_anti_magic,Passive,,,0,0,self/single,0,0,0,"Increase M.Res +5%;",0,0,5kk,,,Human
-85,Anti-Magic,dual_anti_magic,Passive,,,0,0,self/single,0,0,0,"Increase M.Res +7%;",0,0,50kk,,,Human
-90,Anti-Magic,dual_anti_magic,Passive,,,0,0,self/single,0,0,0,"Increase M.Res +10%;",0,0,100kk,,,Human
+80,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"Increase M.Res +5%;",0,0,5kk,,,Human
+85,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"Increase M.Res +7%;",0,0,50kk,,,Human
+90,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"Increase M.Res +10%;",0,0,100kk,,,Human
 ,,,,,,,,,,,,,,,,,,,----------------------------Anti-Physical----------------------------
 80,Anti-Physical,anti_physical,Passive,,,0,0,self/single,0,0,0,"Increase p.skill evasion +5%;",0,0,5kk,,,Elf
 85,Anti-Physical,anti_physical,Passive,,,0,0,self/single,0,0,0,"Increase p.skill evasion +7%;",0,0,50kk,,,Elf
@@ -57,43 +57,43 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 83,Magical Armor,magical_armor,Physical Buff,,,0,0,self/single,0,90,10,"Increase mResist with 50%",0,500kk,100kk,,,Human
 83,Demon Contract,demon_contract,Physical Buff,,,0,0,self/single,0,90,10,"Increase PvP.Dmg with 25%",0,500kk,100kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
-76,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +85",0,6.5kk,1kk
-77,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +90",0,11kk,1kk
-78,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +95",0,16kk,1kk
-79,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +100",0,80kk,1kk
-80,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +105",0,0,5kk
-81,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +110",0,0,7.5kk
-82,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +115",0,0,10kk
-83,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +120",0,0,15kk
-84,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +125",0,0,30kk
-85,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +130",0,0,50kk
-86,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +134",0,0,75kk
-87,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +138",0,0,100kk
-88,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +142",0,0,100kk
-89,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +146",0,0,100kk
-90,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +150",0,0,100kk
+76,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +85",0,3.3kk,500k
+77,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +90",0,5.5kk,500k
+78,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +95",0,5.3kk,333k
+79,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +100",0,40kk,500k
+80,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +105",0,0,1.7kk
+81,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +110",0,0,3.8kk
+82,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +115",0,0,3.3kk
+83,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +120",0,0,7.5kk
+84,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +125",0,0,15kk
+85,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +130",0,0,16.7kk
+86,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +134",0,0,37.5kk
+87,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +138",0,0,33.3kk
+88,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +142",0,0,50kk
+89,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +146",0,0,50kk
+90,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +150",0,0,50kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Critical Dmg Mastery----------------------------
-76,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1040;",0,6.5kk,1kk
-77,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1060;",0,11kk,1kk
-78,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1080;",0,16kk,1kk
-79,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1100;",0,80kk,1kk
-80,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1120;",0,0,5kk
-81,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1140;",0,0,7.5kk
-82,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1160;",0,0,10kk
-83,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1180;",0,0,15kk
-84,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1200;",0,0,30kk
-85,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1220;",0,0,50kk
-86,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1240;",0,0,75kk
-87,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1260;",0,0,100kk
-88,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1275;",0,0,100kk
-89,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1290;",0,0,100kk
-90,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1300;",0,0,100kk
+76,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1040;",0,3.3kk,500k
+77,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1060;",0,5.5kk,500k
+78,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1080;",0,5.3kk,333k
+79,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1100;",0,40kk,500k
+80,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1120;",0,0,1.7kk
+81,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1140;",0,0,3.8kk
+82,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1160;",0,0,3.3kk
+83,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1180;",0,0,7.5kk
+84,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1200;",0,0,15kk
+85,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1220;",0,0,16.7kk
+86,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1240;",0,0,37.5kk
+87,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1260;",0,0,33.3kk
+88,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1275;",0,0,50kk
+89,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1290;",0,0,50kk
+90,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1300;",0,0,50kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Fury----------------------------
-78,Fury,fury_mastery,passive,,,0,0,self/single,0,0,0,"AS x1.11;",0,16kk,1kk
-80,Fury,fury_mastery,passive,,,0,0,self/single,0,0,0,"AS x1.12;",0,0,5kk
-82,Fury,fury_mastery,passive,,,0,0,self/single,0,0,0,"AS x1.13;",0,0,10kk
-85,Fury,fury_mastery,passive,,,0,0,self/single,0,0,0,"AS x1.14;",0,0,50kk
-87,Fury,fury_mastery,passive,,,0,0,self/single,0,0,0,"AS x1.15;",0,0,100kk
+78,Fury,fury_mastery,passive,,,0,0,self/single,0,0,0,"AS x1.11;",0,5.3kk,333k
+80,Fury,fury_mastery,passive,,,0,0,self/single,0,0,0,"AS x1.12;",0,0,1.7kk
+82,Fury,fury_mastery,passive,,,0,0,self/single,0,0,0,"AS x1.13;",0,0,3.3kk
+85,Fury,fury_mastery,passive,,,0,0,self/single,0,0,0,"AS x1.14;",0,0,16.7kk
+87,Fury,fury_mastery,passive,,,0,0,self/single,0,0,0,"AS x1.15;",0,0,33.3kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Killing Stab (DERIVED)----------------------------
 76,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 3450 - only when skill does critical - otherwise normal attack - require duals;",80,6.5kk,1kk,,[precise_shot],Human;Elf
 77,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 3675 - only when skill does critical - otherwise normal attack - require duals;",82,11kk,1kk,,[precise_shot],Human;Elf

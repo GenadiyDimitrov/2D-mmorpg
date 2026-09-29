@@ -215,21 +215,21 @@ replaces the 1st-class `fighter_armor_mastery`, and so on. After the split:
 **The pieces** (you authored fighter 1st, rogue 2nd, warrior 2-4, tank 2-4 and began dual 3rd; I finished the rest in
 the same shape — a piece gets a row only where its own number changes):
 
-| piece id | stat | gate | files |
-|---|---|---|---|
-| `hp_regeneration` / `mp_regeneration` | HP / MP regen | none | every fighter and mage file with regen in a bundle |
-| `fighter_critical_dmg_mastery` | crit damage | none | rogue, dual, archer, warrior, war_aoe |
-| `fighter_accuracy` | accuracy | none | rogue 2nd, warrior 2-3, war_aoe 3rd |
-| `fighter_str_mastery` | P.Atk ×1.085 | none | fighter 1st (replaced by `warriors_strength`) |
-| `rogue_critical_rate_mastery` / `rogue_fury_mastery` | crit rate / attack speed % | bow\|duals | rogue, dual |
-| `rogue_swift_mastery` | move speed | light | rogue, dual, archer |
-| `rogue_bow_proficiency` | bow range | bow | rogue 2nd, archer 3rd |
-| `dual_weapon_prof` | the 3% MP/crit proc | duals | dual 3rd |
-| `tank_defence_mastery` | P.Def %, crit-dmg resist, evasion − (one piece, your call) | heavy | tank 2-4 |
-| `mp_capacity` | max MP | none | cleric/nuker 2nd, nuker/healer/buffer 3-4 |
-| `mana_recovery` | MP when restored % | none | nuker 2-4 |
-| `cooldown_mastery` / `cast_speed_mastery` | reuse % / cast speed | none | cleric/nuker 2nd, nuker/healer/buffer 3rd |
-| `mdef_mastery` / `mp_cost_mastery` | M.Def % / MP cost % | none | nuker/healer/buffer 4th |
+| piece id                                             | stat                                                       | gate       | files                                              |
+| ---------------------------------------------------- | ---------------------------------------------------------- | ---------- | -------------------------------------------------- |
+| `hp_regeneration` / `mp_regeneration`                | HP / MP regen                                              | none       | every fighter and mage file with regen in a bundle |
+| `fighter_critical_dmg_mastery`                       | crit damage                                                | none       | rogue, dual, archer, warrior, war_aoe              |
+| `fighter_accuracy`                                   | accuracy                                                   | none       | rogue 2nd, warrior 2-3, war_aoe 3rd                |
+| `fighter_str_mastery`                                | P.Atk ×1.085                                               | none       | fighter 1st (replaced by `warriors_strength`)      |
+| `rogue_critical_rate_mastery` / `rogue_fury_mastery` | crit rate / attack speed %                                 | bow\|duals | rogue, dual                                        |
+| `rogue_swift_mastery`                                | move speed                                                 | light      | rogue, dual, archer                                |
+| `rogue_bow_proficiency`                              | bow range                                                  | bow        | rogue 2nd, archer 3rd                              |
+| `dual_weapon_prof`                                   | the 3% MP/crit proc                                        | duals      | dual 3rd                                           |
+| `tank_defence_mastery`                               | P.Def %, crit-dmg resist, evasion − (one piece, your call) | heavy      | tank 2-4                                           |
+| `mp_capacity`                                        | max MP                                                     | none       | cleric/nuker 2nd, nuker/healer/buffer 3-4          |
+| `mana_recovery`                                      | MP when restored %                                         | none       | nuker 2-4                                          |
+| `cooldown_mastery` / `cast_speed_mastery`            | reuse % / cast speed                                       | none       | cleric/nuker 2nd, nuker/healer/buffer 3rd          |
+| `mdef_mastery` / `mp_cost_mastery`                   | M.Def % / MP cost %                                        | none       | nuker/healer/buffer 4th                            |
 
 The parents keep only their identity number: armor = P.Def (+ evasion and crit-rate resist for light, + HP for the
 warrior's heavy), weapon = P.Atk / M.Atk (+ cleave for the blunt).
@@ -261,19 +261,19 @@ replaces needed ... we can do it for other weights and weapons"*. With your answ
 race's weight; fighters no robe), every class-specific armor and weapon mastery is gone. **The §10 table still holds
 for the regen / crit / speed pieces; the parents it names no longer exist.** Every row sits in the class CSVs.
 
-| ladder | gate | who learns it (their own levels) | replaced |
-|---|---|---|---|
-| `heavy_armor_mastery` | heavy | fighter 1st, tank, warrior, war_aoe, buffer **Human/Demon** | `fighter_armor_mastery`, `tank_armor_mastery`, `warrior_armor_mastery` (its "all weights" P.Def + the heavy extra), `buffer_armor_mastery` |
-| `light_armor_mastery` | light | fighter 1st, rogue, dual, archer, warrior, war_aoe, cleric, buffer **Elf** | `rogue_armor_mastery`, `archer_armor_mastery`, the warrior's and cleric's light P.Def |
-| `mage_armor_mastery` | robe | mage 1st, nuker, cleric, healer, buffer (all races) | `mastery_robe`, `healer_armor_mastery`, the cleric's robe P.Def |
-| `rogue_evasion` / `rogue_crit_resist` | light | the same light wearers (warrior evasion too; cleric +2 at 35) | the rogue's / archer's / warrior's evasion and crit-rate resist |
-| `heavy_vitality` | heavy | warrior, war_aoe | the warrior's "Heavy: HP +50 … +300" |
-| `weapon_mastery` (P.Atk) | sword\|blunt\|duals | fighter 1st, mage 1st, every melee class, the mages' old spell-mastery P.Atk, Warlock + Doctor (summed with it) | `fighter_weapon_mastery`, `tank_weapon_mastery`, `warrior_weapon_mastery`, `warrior_sword_mastery`, `warrior_blunt_mastery`, `dual_weapon_mastery`, the rogue's dagger half, mage 1st `weapon_mastery`, `spell_mastery`'s P.Atk, `warlock_weapon_mastery`, `doctor_blunt_mastery` |
-| `bow_mastery` (P.Atk) | bow | rogue 2nd, archer, buffer **Elf** | the rogue's bow half, `harmonist_bow_mastery` |
-| `spellcaster_weapon_mastery` (M.Atk) | sword\|blunt\|bow | mage 1st, nuker, cleric, healer, buffer | `spell_mastery`, mage 1st `weapon_mastery`'s M.Atk |
-| `blunt_cleave` | 2h blunt | warrior 2nd (2-4), war_aoe 3rd (5-10) | the cleave inside the two warrior blunt masteries |
-| `anti_magic` / `magic_resistance` / `magic_protection` | none | tank (to +160 / +20% / one rung at 80), every mage (to +149 / +35%, no protection) | `tank_anti_magic`, `anti_magic_mage` |
-| `fury_mastery` | none | rogue, dual, archer, **tank** (4th-tier +1/3/5%) | `rogue_fury_mastery` (renamed: it is no longer the rogue's alone) |
+| ladder                                                 | gate                | who learns it (their own levels)                                                                                | replaced                                                                                                                                                                                                                                                                          |
+| ------------------------------------------------------ | ------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `heavy_armor_mastery`                                  | heavy               | fighter 1st, tank, warrior, war_aoe, buffer **Human/Demon**                                                     | `fighter_armor_mastery`, `tank_armor_mastery`, `warrior_armor_mastery` (its "all weights" P.Def + the heavy extra), `buffer_armor_mastery`                                                                                                                                        |
+| `light_armor_mastery`                                  | light               | fighter 1st, rogue, dual, archer, warrior, war_aoe, cleric, buffer **Elf**                                      | `rogue_armor_mastery`, `archer_armor_mastery`, the warrior's and cleric's light P.Def                                                                                                                                                                                             |
+| `mage_armor_mastery`                                   | robe                | mage 1st, nuker, cleric, healer, buffer (all races)                                                             | `mastery_robe`, `healer_armor_mastery`, the cleric's robe P.Def                                                                                                                                                                                                                   |
+| `rogue_evasion` / `rogue_crit_resist`                  | light               | the same light wearers (warrior evasion too; cleric +2 at 35)                                                   | the rogue's / archer's / warrior's evasion and crit-rate resist                                                                                                                                                                                                                   |
+| `heavy_vitality`                                       | heavy               | warrior, war_aoe                                                                                                | the warrior's "Heavy: HP +50 … +300"                                                                                                                                                                                                                                              |
+| `weapon_mastery` (P.Atk)                               | sword\|blunt\|duals | fighter 1st, mage 1st, every melee class, the mages' old spell-mastery P.Atk, Warlock + Doctor (summed with it) | `fighter_weapon_mastery`, `tank_weapon_mastery`, `warrior_weapon_mastery`, `warrior_sword_mastery`, `warrior_blunt_mastery`, `dual_weapon_mastery`, the rogue's dagger half, mage 1st `weapon_mastery`, `spell_mastery`'s P.Atk, `warlock_weapon_mastery`, `doctor_blunt_mastery` |
+| `bow_mastery` (P.Atk)                                  | bow                 | rogue 2nd, archer, buffer **Elf**                                                                               | the rogue's bow half, `harmonist_bow_mastery`                                                                                                                                                                                                                                     |
+| `spellcaster_weapon_mastery` (M.Atk)                   | sword\|blunt\|bow   | mage 1st, nuker, cleric, healer, buffer                                                                         | `spell_mastery`, mage 1st `weapon_mastery`'s M.Atk                                                                                                                                                                                                                                |
+| `blunt_cleave`                                         | 2h blunt            | warrior 2nd (2-4), war_aoe 3rd (5-10)                                                                           | the cleave inside the two warrior blunt masteries                                                                                                                                                                                                                                 |
+| `anti_magic` / `magic_resistance` / `magic_protection` | none                | tank (to +160 / +20% / one rung at 80), every mage (to +149 / +35%, no protection)                              | `tank_anti_magic`, `anti_magic_mage`                                                                                                                                                                                                                                              |
+| `fury_mastery`                                         | none                | rogue, dual, archer, **tank** (4th-tier +1/3/5%)                                                                | `rogue_fury_mastery` (renamed: it is no longer the rogue's alone)                                                                                                                                                                                                                 |
 
 **Your two mistakes, fixed:** robe P.Def at 48 is **47** in every file (the nuker and buffer had 50, as at 52), and
 spellcaster M.Atk at 48 is **36** (nuker, healer, buffer had 45).
@@ -304,3 +304,75 @@ vouch for these files.
   `strength_mastery` ladder (×1.085 → ×1.2 → +25% → +30%) would drop another Replaces.
 - `tank_shield_mastery` is already shared (tank + Human buffer). `hp_boost`, `overpower`, `reuse_reset_momentum`,
   `lasting_enchantment` are already one id across classes.
+
+## 12. Third pass (2026-09-29): your answers, the equal-share SP pass, and k solved
+
+**Your answers to §11:**
+1. **Ravager:** *"shouldnt have stacked -> +22/106 -> +52/145 not 74/251 -> now the split fixed it"*. The one ladder
+   stays; the Ravager is at +52 P.Atk / +145 crit damage at 40, as your values say.
+2. **Daggers:** keep **+21 at 36 / +23 at 43**, no rung at 40 (*"no point for +1 atk"*).
+3. **Mages:** the +10 P.Atk past 40 stays (the summoners will need it later); the 5% fizzle at 14 was a mistake, so it
+   stays gone. You retuned the Elf buffer's `bow_mastery` to follow the archers' rungs (40-75 two rungs behind, 76+
+   three) so it nearly makes up the melee P.Atk it lost in the split.
+4. **Other splits, all DONE in the CSVs:**
+   - cleric `armor_mastery` @20 (the light casting fix) → **`clerics_light_armor_mastery`**; the healer's robe rung
+     now replaces that id.
+   - `tank_defence_mastery` → **`tank_defence_mastery`** (P.Def ×, evasion −) + **`tank_crit_resist`** (crit damage
+     reduction), heavy-gated, each with a row only where its own number moves (tank 2nd 20; 3rd 40/58 and 40/60; 4th
+     76/79/80/82/85 and 79/82/85).
+   - dagger 4th `dual_anti_magic` → **`magic_resistance`** (Human, +5/+7/+10% at 80/85/90, unchanged).
+   - `harmonist_light_mastery` → **`rogue_evasion`** (+6) + **`rogue_crit_resist`** (+15%), Elf, light. Its casting
+     restore is gone: the Elf buffer already has the cleric's light fix from 20, and the two together were the ×4
+     you spotted.
+   - `wc_chanter_heavy_mastery` → your **`cleric_heavy_armor_mastery`** @40 (Human/Demon, heavy, "Heavy Caster
+     Mastery", your row verbatim) + **`tank_crit_resist`** (15%, heavy).
+   - `warriors_strength` and `fighter_str_mastery` → one **`strength_mastery`**: rung 1 (fighter 1st @5, ×1.085) has
+     NO weapon gate; the warrior's rungs (×1.2 @20, +25% @40, +30% @52; Warlord +25% @40) are gated to 2H sword/blunt.
+     ⚠ **For the build:** one id with per-rung gates is new to the engine. The rule it needs: a passive pays its
+     **highest learned rung whose gate holds**, so a warrior holding a bow still gets rung 1's ×1.085 and never the
+     +30%. The `[fighter_str_mastery]` Replaces is gone.
+
+**The equal-share SP pass (done):** every piece row is repriced from the OLD bundle rung it came from
+(`git show 1f90cae:<file>`): a bundle rung's price (SP, and gold on the 4th tier) is split equally among the pieces that
+have a row at that level. Two consequences of your "a piece gets a row only where its number moves": a level where
+only one piece moves keeps the full old price on that piece, and the total per level is conserved. Two rules for the
+edge cases:
+- **A piece fed by two bundles that both stacked gets the sum** (the buffer's spell P.Atk + Warlock/Doctor mastery →
+  `weapon_mastery`).
+- **A row shared by several races gets the mean of their prices.** The buffer's Human/Demon `weapon_mastery` @40 is
+  36k: 45k for the Human (the Doctor's mastery had no second piece), 27k for the Demon (the Warlock's split with
+  accuracy).
+- Your `cleric_heavy_armor_mastery` row said 36k; as one of two pieces of the old 36k heavy mastery it is **18k**.
+- The tank's `magic_protection` @80 was auto-granted (SP 0) in the old files; it now takes a third of the 80 Anti-Magic
+  rung (1.7kk gold). Say if it should go back to free.
+
+Every path's 20-75 passive total is within 0.1% of the old one (rounding and the race mean), so the prices are a
+redistribution, not a change.
+
+**k, solved** with the new `BalanceMatrix --sp-budget-csv [dir]`, which prices every path from its CSV files (the
+split is not in the compiled tables yet) and solves each archetype's multiplier on its 20-75 passives from your x
+targets (k = the mean of its paths' k):
+
+| group        | x target | **k**    | x per path at that k |
+| ------------ | -------: | -------: | -------------------- |
+| daggers      |     0.65 | **7.15** | 0.62-0.67            |
+| bows         |     0.55 | **9.09** | 0.53-0.56            |
+| warriors     |     0.65 | **4.63** | 0.61-0.72            |
+| tanks        |     0.70 | **3.58** | 0.67-0.72            |
+| Magus        |     0.60 | **4.60** | 0.60                 |
+| Lightbringer |     0.55 | **3.52** | 0.54-0.56            |
+| Warchanter   |     0.50 | **3.73** | 0.49-0.51            |
+
+- Against your first guesses (rogue/archer 7.5-8, warrior/tank 4.5-5.5, mage/healer 4-4.5): the bows need **more**
+  (their passives are only 22-26% of the kit, so it takes ×9 to reach 0.55), and the tanks **less** (0.70 is a looser
+  target).
+- The warriors spread widest (0.61-0.72): the Elf Ravager's actives are cheap. One k per archetype cannot flatten that;
+  it is the kit, not the passives.
+- Run on the pre-split files (`--sp-budget-csv <old folder>`), the tool reproduces the code-based `--sp-budget` (Magus
+  1.34, healers 0.78, tanks 1.32), and the same k to two decimals.
+- Everyone is short by 10-50k on arriving at 20 (the 2nd-tier rungs open at once): one or two mobs.
+
+**For the build step:** `SkillCsvSeed --check` now reads the RACE column, so a shared id holding two races' ladders is
+two ladders (the 29 false dips on the buffer's `weapon_mastery` are gone, and no real dip is left). Build order: the
+engine learns the ids above, per-rung gates for `strength_mastery`, and ×k per archetype on 20-75 passive rungs (in the
+engine, not the CSV); then `--check`, SmokeTest, a `game.db` delete and a new APK.

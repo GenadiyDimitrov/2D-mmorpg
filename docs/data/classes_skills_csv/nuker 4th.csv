@@ -10,13 +10,13 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 83,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +129",0,0,15kk
 84,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +131",0,0,30kk
 85,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +133",0,0,50kk
-86,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +135",0,0,75kk
+86,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +135",0,0,37.5kk
 87,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +138",0,0,100kk
 88,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +140",0,0,100kk
 89,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +144",0,0,100kk
 90,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +149",0,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Magic Resistance----------------------------
-86,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +35%",0,0,75kk
+86,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +35%",0,0,37.5kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Spellcaster Weapon Mastery----------------------------
 76,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +101",0,6.5kk,1kk
 77,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +102",0,11kk,1kk
@@ -34,52 +34,52 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +119",0,0,100kk
 90,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +120",0,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Robe Armor Mastery----------------------------
-76,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +89",0,6.5kk,1kk
-77,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +91",0,11kk,1kk
-78,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +92",0,16kk,1kk
-79,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +93",0,80kk,1kk
-80,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +95",0,0,5kk
-81,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +96",0,0,7.5kk
-82,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +97",0,0,10kk
-83,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +99",0,0,15kk
-84,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +100",0,0,30kk
-85,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +101",0,0,50kk
-86,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +103",0,0,75kk
-87,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +104",0,0,100kk
-88,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +105",0,0,100kk
-89,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +107",0,0,100kk
-90,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +108",0,0,100kk
+76,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +89",0,2.2kk,333k
+77,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +91",0,5.5kk,500k
+78,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +92",0,4kk,250k
+79,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +93",0,40kk,500k
+80,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +95",0,0,1.7kk
+81,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +96",0,0,1.9kk
+82,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +97",0,0,5kk
+83,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +99",0,0,5kk
+84,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +100",0,0,15kk
+85,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +101",0,0,16.7kk
+86,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +103",0,0,18.8kk
+87,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +104",0,0,50kk
+88,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +105",0,0,33.3kk
+89,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +107",0,0,50kk
+90,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +108",0,0,33.3kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Mana Capacity----------------------------
-76,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +220",0,6.5kk,1kk
-78,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +250",0,16kk,1kk
-81,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +290",0,0,7.5kk
-83,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +300",0,0,15kk
-86,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +330",0,0,75kk
-88,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +350",0,0,100kk
-90,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +400",0,0,100kk
+76,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +220",0,2.2kk,333k
+78,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +250",0,4kk,250k
+81,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +290",0,0,1.9kk
+83,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +300",0,0,5kk
+86,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +330",0,0,18.8kk
+88,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +350",0,0,33.3kk
+90,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +400",0,0,33.3kk
 ,,,,,,,,,,,,,,,,,,,----------------------------M.Def Mastery----------------------------
-76,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +2%",0,6.5kk,1kk
-77,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +4%",0,11kk,1kk
-78,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +5%",0,16kk,1kk
-79,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +7%",0,80kk,1kk
-80,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +8%",0,0,5kk
-81,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +10%",0,0,7.5kk
-82,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +11%",0,0,10kk
-83,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +13%",0,0,15kk
-84,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +14%",0,0,30kk
-85,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +16%",0,0,50kk
-86,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +17%",0,0,75kk
-87,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +19%",0,0,100kk
-88,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +20%",0,0,100kk
-89,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +22%",0,0,100kk
-90,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +25%",0,0,100kk
+76,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +2%",0,2.2kk,333k
+77,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +4%",0,5.5kk,500k
+78,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +5%",0,4kk,250k
+79,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +7%",0,40kk,500k
+80,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +8%",0,0,1.7kk
+81,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +10%",0,0,1.9kk
+82,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +11%",0,0,5kk
+83,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +13%",0,0,5kk
+84,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +14%",0,0,15kk
+85,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +16%",0,0,16.7kk
+86,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +17%",0,0,18.8kk
+87,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +19%",0,0,50kk
+88,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +20%",0,0,33.3kk
+89,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +22%",0,0,50kk
+90,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +25%",0,0,33.3kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Mana Efficiency----------------------------
-78,Mana Efficiency,mp_cost_mastery,Passive,,,0,0,self/single,0,0,0,"Decrease Mp Consumption with 5%",0,16kk,1kk
-81,Mana Efficiency,mp_cost_mastery,Passive,,,0,0,self/single,0,0,0,"Decrease Mp Consumption with 8%",0,0,7.5kk
-86,Mana Efficiency,mp_cost_mastery,Passive,,,0,0,self/single,0,0,0,"Decrease Mp Consumption with 10%",0,0,75kk
+78,Mana Efficiency,mp_cost_mastery,Passive,,,0,0,self/single,0,0,0,"Decrease Mp Consumption with 5%",0,4kk,250k
+81,Mana Efficiency,mp_cost_mastery,Passive,,,0,0,self/single,0,0,0,"Decrease Mp Consumption with 8%",0,0,1.9kk
+86,Mana Efficiency,mp_cost_mastery,Passive,,,0,0,self/single,0,0,0,"Decrease Mp Consumption with 10%",0,0,18.8kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Mana Recovery----------------------------
-80,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +65%",0,0,5kk
-85,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +70%",0,0,50kk
+80,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +65%",0,0,1.7kk
+85,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +70%",0,0,16.7kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Arcane Momentum----------------------------
 76,Arcane Momentum,reuse_reset_momentum,Passive,,,0,0,self/single,0,0,0,reuse reset 5% - a skill you cast has that chance to come off reuse immediately - never on a fixed-cooldown skill - scales with ATK,0,6.5kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Mage Shield Mastery----------------------------

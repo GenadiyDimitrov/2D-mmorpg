@@ -18,9 +18,9 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 ,,,,,,,,,,,,,,,,----------------------------Bulwark----------------------------
 14,Bulwark,cast_def_phys,buff,,,600,0,party/single,1,1,1200,+8% PDef for 20 min,20,960,[]
 ,,,,,,,,,,,,,,,,----------------------------Spellcaster Weapon Mastery----------------------------
-14,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,m.Atk +4,0,2200,[]
+14,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,m.Atk +4,0,1100,[]
 ,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
-14,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +2,0,2200,[]
+14,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +2,0,1100,[]
 ,,,,,,,,,,,,,,,,----------------------------Grade Permission----------------------------
 1,Grade F,grade_penalty,passive,,,0,0,self/single,0,0,0,"Allow the user to equip F grade; Auto-granted",0,0,[]
 20,Grade E,grade_penalty,passive,,,0,0,self/single,0,0,0,"Allow the user to equip E grade; Auto-granted",0,0,[]

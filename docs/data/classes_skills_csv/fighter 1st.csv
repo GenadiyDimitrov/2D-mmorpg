@@ -1,20 +1,20 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,Race,Comment
 ,,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
-5,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +9,0,160,[]
-10,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +12,0,910,[]
-15,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +14,0,910,[]
+5,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +9,0,80,[]
+10,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +12,0,455,[]
+15,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +14,0,303,[]
 ,,,,,,,,,,,,,,,,----------------------------Light Armor Mastery----------------------------
-5,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +9,0,160,[]
-10,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +12,0,910,[]
-15,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +14,0,910,[]
+5,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +9,0,80,[]
+10,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +12,0,455,[]
+15,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +14,0,303,[]
 ,,,,,,,,,,,,,,,,----------------------------Evasion----------------------------
-15,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +3,0,910,[]
+15,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +3,0,303,[]
 ,,,,,,,,,,,,,,,,----------------------------Spirit Mastery----------------------------
 5,Spirit Mastery,fighter_spirit_mastery,passive,,,0,0,self/single,0,0,0,MP rege x1.1,0,160,[]
 ,,,,,,,,,,,,,,,,----------------------------Spirit Mastery----------------------------
-5,Strenght Mastery,fighter_str_mastery,passive,,,0,0,self/single,0,0,0,p.Atk x1.085,0,160,[]
+5,Strength Mastery,strength_mastery,passive,,,0,0,self/single,0,0,0,p.Atk x1.085,0,80,[]
 ,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
-5,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +2,0,160,[]
+5,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +2,0,80,[]
 10,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +3,0,910,[]
 15,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +4,0,910,[]
 ,,,,,,,,,,,,,,,,----------------------------Strike----------------------------

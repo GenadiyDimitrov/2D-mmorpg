@@ -1,62 +1,62 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST (x1000),REPLACES,RACE,COMMENT
 ,,,,,,,,,,,,,,,,,----------------------------Light Armor Mastery----------------------------
-40,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +28",0,28
-43,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +31",0,35
-46,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +34",0,40
-49,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +37",0,50
-52,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +40",0,74
+40,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +28",0,14
+43,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +31",0,8.8
+46,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +34",0,13.3
+49,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +37",0,16.7
+52,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +40",0,24.7
 55,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +43",0,80
 58,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +46",0,88
-60,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +49",0,120
-62,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +52",0,170
+60,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +49",0,60
+62,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +52",0,56.7
 64,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +55",0,190
 66,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +58",0,280
-68,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +61",0,320
+68,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +61",0,107
 70,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +64",0,390
 72,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +67",0,650
-74,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +70",0,880
+74,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +70",0,293
 ,,,,,,,,,,,,,,,,,----------------------------Critical Resist----------------------------
-40,Critical Resist,rogue_crit_resist,Passive,,light,0,0,self/single,0,0,0,"light: crit rate resist +25%",0,28
-60,Critical Resist,rogue_crit_resist,Passive,,light,0,0,self/single,0,0,0,"light: crit rate resist +35%",0,120
+40,Critical Resist,rogue_crit_resist,Passive,,light,0,0,self/single,0,0,0,"light: crit rate resist +25%",0,14
+60,Critical Resist,rogue_crit_resist,Passive,,light,0,0,self/single,0,0,0,"light: crit rate resist +35%",0,60
 ,,,,,,,,,,,,,,,,,----------------------------Swift----------------------------
-43,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +11;",0,35
+43,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +11;",0,8.8
 ,,,,,,,,,,,,,,,,,----------------------------HpRegen----------------------------
-43,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +3.0;",0,17
-46,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +3.5;",0,20
-49,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +4.0;",0,25
-52,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +4.5;",0,37
-62,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +5.0;",0,85
-68,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +5.5;",0,160
-74,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +6.0;",0,440
+43,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +3.0;",0,8.8
+46,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +3.5;",0,13.3
+49,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +4.0;",0,16.7
+52,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +4.5;",0,24.7
+62,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +5.0;",0,56.7
+68,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +5.5;",0,107
+74,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +6.0;",0,293
 ,,,,,,,,,,,,,,,,,----------------------------MpRegen----------------------------
-43,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +1.9;",0,17
-46,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.0;",0,20
-49,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.1;",0,25
-52,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.2;",0,37
-62,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.3;",0,85
-68,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.4;",0,160
-74,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.5;",0,440
+43,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +1.9;",0,8.8
+46,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.0;",0,13.3
+49,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.1;",0,16.7
+52,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.2;",0,24.7
+62,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.3;",0,56.7
+68,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.4;",0,107
+74,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.5;",0,293
 ,,,,,,,,,,,,,,,,,----------------------------Bow Mastery----------------------------
-40,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +200",0,28
-43,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +233",0,35
-46,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +266",0,40
-49,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +300",0,50
-52,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +350",0,74
-55,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +400",0,80
-58,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +450",0,88
-60,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +500",0,120
-62,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +533",0,170
-64,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +566",0,190
-66,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +600",0,280
-68,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +650",0,320
-70,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +700",0,390
-72,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +750",0,650
-74,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +800",0,880
+40,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +200",0,9.3
+43,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +233",0,17.5
+46,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +266",0,20
+49,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +300",0,25
+52,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +350",0,37
+55,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +400",0,40
+58,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +450",0,44
+60,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +500",0,60
+62,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +533",0,85
+64,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +566",0,95
+66,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +600",0,140
+68,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +650",0,160
+70,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +700",0,195
+72,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +750",0,325
+74,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +800",0,440
 ,,,,,,,,,,,,,,,,,----------------------------Bow Proficiency----------------------------
-40,Bow Proficiency,rogue_bow_proficiency,passive,bow,,0,0,self/single,0,0,0,"range +400;",0,28
+40,Bow Proficiency,rogue_bow_proficiency,passive,bow,,0,0,self/single,0,0,0,"range +400;",0,9.3
 ,,,,,,,,,,,,,,,,,----------------------------Critical Dmg Mastery----------------------------
-40,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +195;",0,14
-43,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +222;",0,17
+40,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +195;",0,9.3
+43,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +222;",0,17.5
 46,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +252;",0,20
 49,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +285;",0,25
 52,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +322;",0,37

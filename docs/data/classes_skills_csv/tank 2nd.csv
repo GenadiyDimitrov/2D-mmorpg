@@ -1,14 +1,15 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,Comment
 ,,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
-20,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +20,0,1700,[]
+20,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +20,0,567,[]
 24,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +27,0,3200,[]
 28,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +34,0,6000,[]
 32,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +41,0,11000,[]
-36,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +60,0,20000,[]
+36,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +60,0,10000,[]
 ,,,,,,,,,,,,,,,,----------------------------MpRegen----------------------------
-36,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,increase mpReg +3.1,0,20000,[]
+36,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,increase mpReg +3.1,0,10000,[]
 ,,,,,,,,,,,,,,,,----------------------------Tank Defence----------------------------
-20,Tank Defence,tank_defence_mastery,passive,,heavy,0,0,self/single,0,0,0,with heavy: p.def x1.07; crit dmg reduction 15%; eva -2,0,3400,[]
+20,Tank Defence,tank_defence_mastery,passive,,heavy,0,0,self/single,0,0,0,with heavy: p.def x1.07; eva -2,0,567,[]
+20,Critical Damage Resist,tank_crit_resist,passive,,heavy,0,0,self/single,0,0,0,with heavy: crit dmg reduction 15%,0,567,[]
 ,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
 20,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +25,0,1700,[]
 24,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +30,0,3200,[]

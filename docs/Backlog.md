@@ -278,7 +278,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-286` | ⏸ | **CASTLE "NOBLE" CHARISMA** — a castle-holding clan leader gets charisma decay/loss protection or a grant; split out of `BL-283`; waits on castles | social |
 | `BL-288` | ⏸ | **CONSUMABLE RARITY → PLAIN LEVELS 1-6** — potions/scrolls may drop the rarity word entirely; deferred by him, split out of `BL-272` | items |
 | `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
-| `BL-314` | 🔵 | **Split passives into single-stat pieces** — 📝 CSVs SPLIT + LADDERS MERGED 2026-09-29 (`PassiveSplit.md` §10-§11; SP pass + k + build next) — regen / P.Def / speed as their own ladders shared across classes, so ten armor masteries become a few mixable passives — design first | skills |
+| `BL-314` | 🔵 | **Split passives into single-stat pieces** — 📝 CSVs SPLIT, PRICED, k SOLVED 2026-09-29 (`PassiveSplit.md` §10-§12; engine build next) — regen / P.Def / speed as their own ladders shared across classes, so ten armor masteries become a few mixable passives — design first | skills |
 | `BL-323` | ⏸ | **Server-side collision (geodata)** — the server checks walls/buildings too, not only the 3D models; waits on `BL-281` | world |
 | `BL-324` | 🔵 | **Town sprint** — 📝 PROPOSED 2026-09-29: a visible **Paved Streets** buff inside the wall (+50 run, cap 250, off in combat), no button; 1 Q (whole town or streets only) | world |
 
@@ -2298,6 +2298,13 @@ desitions .. not 1 passive 200 stats in one go ... now 200 passive -> chose wise
   every authored number (a repricing, not a rebalance); a piece needs a rung only where its value changes (rows roughly ×2,
   not ×6); ×k lives in the engine, the CSV keeps the ×1 price. `BalanceMatrix --passive-inventory [id]` is the inventory.
   ❓ **six questions in §9 of the doc.**
+- 📝 **2026-09-29: CSVs SPLIT + LADDERS MERGED** (`PassiveSplit.md` §10-§11, 0.214.43), then **his §11 answers applied
+  and the SP pass done** (§12): Ravager no stack, daggers keep 21/23, cleric fix → `clerics_light_armor_mastery`, tank
+  crit resist split out, `dual_anti_magic` → `magic_resistance`, both buffer armor masteries dissolved (new
+  `cleric_heavy_armor_mastery`), one `strength_mastery` (rung 1 ungated, warrior rungs 2H). Every piece priced as an
+  equal share of its old bundle rung. **k solved** (`BalanceMatrix --sp-budget-csv`): daggers 7.15, bows 9.09, warriors
+  4.63, tanks 3.58, Magus 4.60, Lightbringer 3.52, Warchanter 3.73. `SkillCsvSeed --check` reads RACE now.
+  ➡ **NEXT: the engine build** (§12 last paragraph). One open question: `magic_protection` @80 free again or priced?
 
 
 ## `BL-323` ⏸ SERVER-SIDE COLLISION (GEODATA)

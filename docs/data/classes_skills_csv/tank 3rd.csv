@@ -6,59 +6,61 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 49,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +25%, Shield Rate +85%; +10% P.Def, bow resistance 40%",0,50,[]
 52,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +30%, Shield Rate +100%; +10% P.Def, bow resistance 40%",0,74,[]
 ,,,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
-40,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +65",0,28
+40,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +65",0,7
 43,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +70",0,35
-46,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +76",0,40
+46,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +76",0,20
 49,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +81",0,50
 52,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +94",0,74
-55,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +107",0,80
-58,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +113",0,88
-60,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +120",0,120
+55,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +107",0,40
+58,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +113",0,44
+60,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +120",0,60
 62,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +127",0,170
-64,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +135",0,190
+64,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +135",0,95
 66,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +142",0,280
 68,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +150",0,320
 70,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +157",0,390
-72,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +165",0,650
+72,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +165",0,325
 74,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +173",0,880
 ,,,,,,,,,,,,,,,,,----------------------------Tank Defence----------------------------
-40,Tank Defence,tank_defence_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: p.def x1.11 and crit dmg reduction 25% and eva -2;",0,28
-58,Tank Defence,tank_defence_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: p.def x1.15 and crit dmg reduction 25% and eva -2;",0,88
-60,Tank Defence,tank_defence_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: p.def x1.15 and crit dmg reduction 35% and eva -2;",0,120
+40,Tank Defence,tank_defence_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: p.def x1.11 and eva -2;",0,7
+58,Tank Defence,tank_defence_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: p.def x1.15 and eva -2;",0,44
+,,,,,,,,,,,,,,,,,----------------------------Critical Damage Resist----------------------------
+40,Critical Damage Resist,tank_crit_resist,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: crit dmg reduction 25%;",0,7
+60,Critical Damage Resist,tank_crit_resist,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: crit dmg reduction 35%;",0,60
 ,,,,,,,,,,,,,,,,,----------------------------MpRegen----------------------------
-40,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +3.5;",0,14
+40,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +3.5;",0,7
 46,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +3.9;",0,20
 55,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +4.3;",0,40
 64,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +4.7;",0,95
 72,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +5.1;",0,325
 ,,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
-40,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +51",0,28
+40,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +51",0,14
 43,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +55",0,35
 46,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +59",0,40
 49,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +67",0,50
-52,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +75",0,74
-55,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +84",0,80
+52,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +75",0,37
+55,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +84",0,81
 58,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +89",0,88
 60,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +94",0,120
-62,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +98",0,170
+62,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +98",0,85
 64,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +103",0,190
 66,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +109",0,280
 68,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +114",0,320
-70,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +119",0,390
+70,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +119",0,195
 72,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +124",0,650
 74,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +130",0,880
 ,,,,,,,,,,,,,,,,,----------------------------Magic Resistance----------------------------
-40,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +5%",0,28
-52,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +10%",0,74
-62,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +15%",0,170
-70,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +20%",0,390
+40,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +5%",0,14
+52,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +10%",0,37
+62,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +15%",0,85
+70,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +20%",0,195
 ,,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
 40,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +19",0,28
 43,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +22",0,35
 46,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +26",0,40
 49,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +31",0,50
 52,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +36",0,74
-55,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +41",0,80
+55,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +41",0,81
 58,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +46",0,88
 60,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +50",0,120
 62,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +54",0,170

@@ -273,7 +273,21 @@ internal static class Check
                                // `Magical Debuff`), and that word decides which speed stat paces the
                                // cast. Held raw on the CSV side; the code side leaves it empty and the
                                // comparison asks the SkillDef instead — see PhysicalWord below.
-                               string Type = "");
+                               string Type = "",
+                               // `BL-314` — the RACE column (`Human;Demon`, `Elf`, blank = all three).
+                               // CSV side only: the ladder check reads it so one shared id carrying two
+                               // races' ladders (the buffer's `weapon_mastery`) is two ladders, not one
+                               // that dips every time the races alternate.
+                               string Race = "");
+
+    /// <summary>`BL-314` — do two RACE cells name a race in common? Blank is all three races.</summary>
+    private static bool RacesOverlap(string a, string b)
+    {
+        if (a.Length == 0 || b.Length == 0) return true;
+        var set = a.Split(';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        return b.Split(';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                .Any(r => set.Contains(r, StringComparer.OrdinalIgnoreCase));
+    }
 
     /// <summary>`BL-132` — the physical/magical word in a TYPE cell, or null when the cell does not
     /// state one (`Passive`, `Toggle`, `Whisp`, a blank, a stray number).
@@ -344,10 +358,14 @@ internal static class Check
         // everything by a thousand — the failure would look like the code being wrong on 250 rows.
         // The file that declares the unit is the file that carries it.
         int spScale = 1;
+        // `BL-314` — the RACE column moves between files (`tank 4th` has it before REPLACES), so it is
+        // found by its header name, never by index. -1 = the file has none (every row is all races).
+        int raceCol = -1;
         foreach (var line in File.ReadAllLines(path))
         {
-            if (line.StartsWith("LEARN") && line.IndexOf("(x1000)", StringComparison.OrdinalIgnoreCase) >= 0)
-                spScale = 1000;
+            if (!line.StartsWith("LEARN")) continue;
+            if (line.IndexOf("(x1000)", StringComparison.OrdinalIgnoreCase) >= 0) spScale = 1000;
+            raceCol = SplitCsv(line).FindIndex(h => h.Trim().Equals("RACE", StringComparison.OrdinalIgnoreCase));
         }
         foreach (var line in File.ReadAllLines(path))
         {
@@ -377,7 +395,8 @@ internal static class Check
                               Weight: f[5].Trim(),
                               Aoe: F(f[7]),
                               SkillId: f[2].Trim(),
-                              Type: f[3].Trim()));
+                              Type: f[3].Trim(),
+                              Race: raceCol >= 0 && raceCol < f.Count ? f[raceCol].Trim() : ""));
         }
         return rows;
     }
@@ -774,7 +793,13 @@ internal static class Check
             //      itself looks wrong, and conflating the two would break the rule the file header states. ----
             for (int i = 1; i < a.Count; i++)
             {
-                var lo = Descr.Values(a[i - 1].Descr);
+                // `BL-314` — the previous rung OF A RACE THIS ONE SHARES. A shared ladder can hold two
+                // races' rows interleaved by level (the buffer's Human/Demon and Elf `weapon_mastery`),
+                // and comparing across them reported 29 dips that were two correct ladders.
+                int p = i - 1;
+                while (p >= 0 && !RacesOverlap(a[p].Race, a[i].Race)) p--;
+                if (p < 0) continue;
+                var lo = Descr.Values(a[p].Descr);
                 var hi = Descr.Values(a[i].Descr);
                 foreach (var (key, now) in hi)
                 {
@@ -801,11 +826,11 @@ internal static class Check
                     // front of the phrase on BOTH rungs, so a real discount ladder that falls still
                     // reports.
                     if (parts[0] == "mpcost"
-                        && CostIncrease.IsMatch(a[i - 1].Descr) && CostIncrease.IsMatch(a[i].Descr))
+                        && CostIncrease.IsMatch(a[p].Descr) && CostIncrease.IsMatch(a[i].Descr))
                         continue;
                     string scope = parts[2].Length == 0 ? "" : $" [{parts[2]}]";
                     Console.WriteLine($"  🔵 LADDER DIP      {label}{scope} {parts[0]}: " +
-                                      $"rung {i} (lvl {a[i - 1].LearnLevel}) = {Num(was, parts[1] == "%")}, " +
+                                      $"rung {p + 1} (lvl {a[p].LearnLevel}) = {Num(was, parts[1] == "%")}, " +
                                       $"rung {i + 1} (lvl {a[i].LearnLevel}) = {Num(now, parts[1] == "%")} — " +
                                       "a stat that goes DOWN between rungs is a typo or two swapped levels.");
                     ladderDips++;

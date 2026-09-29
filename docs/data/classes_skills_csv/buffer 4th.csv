@@ -31,154 +31,154 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 83,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +129",0,0,15kk
 84,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +131",0,0,30kk
 85,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +133",0,0,50kk
-86,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +135",0,0,75kk
+86,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +135",0,0,37.5kk
 87,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +138",0,0,100kk
 88,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +140",0,0,100kk
 89,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +144",0,0,100kk
 90,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +149",0,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Magic Resistance----------------------------
-86,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +35%",0,0,75kk
+86,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +35%",0,0,37.5kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Robe Armor Mastery----------------------------
-76,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +89",0,6.5kk,1kk
-77,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +91",0,11kk,1kk
-78,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +92",0,16kk,1kk
-79,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +93",0,80kk,1kk
-80,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +95",0,0,5kk
-81,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +96",0,0,7.5kk
-82,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +97",0,0,10kk
-83,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +99",0,0,15kk
-84,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +100",0,0,30kk
-85,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +101",0,0,50kk
-86,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +103",0,0,75kk
-87,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +104",0,0,100kk
-88,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +105",0,0,100kk
-89,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +107",0,0,100kk
-90,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +108",0,0,100kk
+76,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +89",0,1.6kk,250k
+77,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +91",0,3.7kk,333k
+78,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +92",0,3.2kk,200k
+79,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +93",0,26.7kk,333k
+80,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +95",0,0,1.7kk
+81,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +96",0,0,1.5kk
+82,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +97",0,0,3.3kk
+83,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +99",0,0,3.8kk
+84,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +100",0,0,10kk
+85,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +101",0,0,16.7kk
+86,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +103",0,0,15kk
+87,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +104",0,0,33.3kk
+88,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +105",0,0,25kk
+89,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +107",0,0,33.3kk
+90,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +108",0,0,25kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
-76,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +89",0,6.5kk,1kk,,,Human;Demon
-77,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +91",0,11kk,1kk,,,Human;Demon
-78,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +92",0,16kk,1kk,,,Human;Demon
-79,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +93",0,80kk,1kk,,,Human;Demon
-80,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +95",0,0,5kk,,,Human;Demon
-81,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +96",0,0,7.5kk,,,Human;Demon
-82,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +97",0,0,10kk,,,Human;Demon
-83,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +99",0,0,15kk,,,Human;Demon
-84,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +100",0,0,30kk,,,Human;Demon
-85,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +101",0,0,50kk,,,Human;Demon
-86,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +103",0,0,75kk,,,Human;Demon
-87,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +104",0,0,100kk,,,Human;Demon
-88,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +105",0,0,100kk,,,Human;Demon
-89,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +107",0,0,100kk,,,Human;Demon
-90,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +108",0,0,100kk,,,Human;Demon
+76,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +89",0,1.6kk,250k,,,Human;Demon
+77,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +91",0,3.7kk,333k,,,Human;Demon
+78,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +92",0,3.2kk,200k,,,Human;Demon
+79,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +93",0,26.7kk,333k,,,Human;Demon
+80,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +95",0,0,1.7kk,,,Human;Demon
+81,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +96",0,0,1.5kk,,,Human;Demon
+82,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +97",0,0,3.3kk,,,Human;Demon
+83,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +99",0,0,3.8kk,,,Human;Demon
+84,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +100",0,0,10kk,,,Human;Demon
+85,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +101",0,0,16.7kk,,,Human;Demon
+86,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +103",0,0,15kk,,,Human;Demon
+87,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +104",0,0,33.3kk,,,Human;Demon
+88,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +105",0,0,25kk,,,Human;Demon
+89,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +107",0,0,33.3kk,,,Human;Demon
+90,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +108",0,0,25kk,,,Human;Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Light Armor Mastery----------------------------
-76,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +89",0,6.5kk,1kk,,,Elf
-77,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +91",0,11kk,1kk,,,Elf
-78,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +92",0,16kk,1kk,,,Elf
-79,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +93",0,80kk,1kk,,,Elf
-80,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +95",0,0,5kk,,,Elf
-81,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +96",0,0,7.5kk,,,Elf
-82,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +97",0,0,10kk,,,Elf
-83,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +99",0,0,15kk,,,Elf
-84,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +100",0,0,30kk,,,Elf
-85,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +101",0,0,50kk,,,Elf
-86,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +103",0,0,75kk,,,Elf
-87,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +104",0,0,100kk,,,Elf
-88,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +105",0,0,100kk,,,Elf
-89,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +107",0,0,100kk,,,Elf
-90,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +108",0,0,100kk,,,Elf
+76,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +89",0,1.6kk,250k,,,Elf
+77,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +91",0,3.7kk,333k,,,Elf
+78,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +92",0,3.2kk,200k,,,Elf
+79,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +93",0,26.7kk,333k,,,Elf
+80,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +95",0,0,1.7kk,,,Elf
+81,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +96",0,0,1.5kk,,,Elf
+82,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +97",0,0,3.3kk,,,Elf
+83,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +99",0,0,3.8kk,,,Elf
+84,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +100",0,0,10kk,,,Elf
+85,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +101",0,0,16.7kk,,,Elf
+86,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +103",0,0,15kk,,,Elf
+87,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +104",0,0,33.3kk,,,Elf
+88,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +105",0,0,25kk,,,Elf
+89,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +107",0,0,33.3kk,,,Elf
+90,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +108",0,0,25kk,,,Elf
 ,,,,,,,,,,,,,,,,,,,----------------------------Mana Capacity----------------------------
-76,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +220",0,6.5kk,1kk
-78,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +250",0,16kk,1kk
-81,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +290",0,0,7.5kk
-83,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +300",0,0,15kk
-86,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +330",0,0,75kk
-88,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +350",0,0,100kk
-90,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +400",0,0,100kk
+76,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +220",0,1.6kk,250k
+78,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +250",0,3.2kk,200k
+81,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +290",0,0,1.5kk
+83,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +300",0,0,3.8kk
+86,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +330",0,0,15kk
+88,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +350",0,0,25kk
+90,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +400",0,0,25kk
 ,,,,,,,,,,,,,,,,,,,----------------------------M.Def Mastery----------------------------
-76,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +2%",0,6.5kk,1kk
-77,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +4%",0,11kk,1kk
-78,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +5%",0,16kk,1kk
-79,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +7%",0,80kk,1kk
-80,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +8%",0,0,5kk
-81,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +10%",0,0,7.5kk
-82,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +11%",0,0,10kk
-83,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +13%",0,0,15kk
-84,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +14%",0,0,30kk
-85,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +16%",0,0,50kk
-86,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +17%",0,0,75kk
-87,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +19%",0,0,100kk
-88,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +20%",0,0,100kk
-89,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +22%",0,0,100kk
-90,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +25%",0,0,100kk
+76,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +2%",0,1.6kk,250k
+77,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +4%",0,3.7kk,333k
+78,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +5%",0,3.2kk,200k
+79,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +7%",0,26.7kk,333k
+80,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +8%",0,0,1.7kk
+81,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +10%",0,0,1.5kk
+82,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +11%",0,0,3.3kk
+83,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +13%",0,0,3.8kk
+84,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +14%",0,0,10kk
+85,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +16%",0,0,16.7kk
+86,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +17%",0,0,15kk
+87,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +19%",0,0,33.3kk
+88,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +20%",0,0,25kk
+89,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +22%",0,0,33.3kk
+90,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +25%",0,0,25kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Mana Efficiency----------------------------
-78,Mana Efficiency,mp_cost_mastery,Passive,,,0,0,self/single,0,0,0,"Decrease Mp Consumption with 5%",0,16kk,1kk
-81,Mana Efficiency,mp_cost_mastery,Passive,,,0,0,self/single,0,0,0,"Decrease Mp Consumption with 8%",0,0,7.5kk
-86,Mana Efficiency,mp_cost_mastery,Passive,,,0,0,self/single,0,0,0,"Decrease Mp Consumption with 10%",0,0,75kk
+78,Mana Efficiency,mp_cost_mastery,Passive,,,0,0,self/single,0,0,0,"Decrease Mp Consumption with 5%",0,3.2kk,200k
+81,Mana Efficiency,mp_cost_mastery,Passive,,,0,0,self/single,0,0,0,"Decrease Mp Consumption with 8%",0,0,1.5kk
+86,Mana Efficiency,mp_cost_mastery,Passive,,,0,0,self/single,0,0,0,"Decrease Mp Consumption with 10%",0,0,15kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Spellcaster Weapon Mastery----------------------------
-76,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +101",0,6.5kk,1kk
-77,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +102",0,11kk,1kk
-78,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +104",0,16kk,1kk
-79,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +105",0,80kk,1kk
-80,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +106",0,0,5kk
-81,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +108",0,0,7.5kk
-82,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +109",0,0,10kk
-83,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +110",0,0,15kk
-84,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +112",0,0,30kk
-85,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +113",0,0,50kk
-86,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +115",0,0,75kk
-87,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +116",0,0,100kk
-88,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +117",0,0,100kk
-89,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +119",0,0,100kk
-90,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +120",0,0,100kk
+76,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +101",0,3.3kk,500k
+77,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +102",0,5.5kk,500k
+78,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +104",0,8kk,500k
+79,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +105",0,40kk,500k
+80,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +106",0,0,2.5kk
+81,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +108",0,0,3.8kk
+82,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +109",0,0,5kk
+83,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +110",0,0,7.5kk
+84,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +112",0,0,15kk
+85,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +113",0,0,25kk
+86,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +115",0,0,37.5kk
+87,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +116",0,0,50kk
+88,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +117",0,0,50kk
+89,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +119",0,0,50kk
+90,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +120",0,0,50kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
 76,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +195",0,6.5kk,1kk,,,Human;Demon
-77,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +200",0,11kk,1kk,,,Human;Demon
-78,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +215",0,16kk,1kk,,,Human;Demon
-79,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +220",0,80kk,1kk,,,Human;Demon
-80,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +235",0,0,5kk,,,Human;Demon
-81,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +240",0,0,7.5kk,,,Human;Demon
-82,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +255",0,0,10kk,,,Human;Demon
-83,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +260",0,0,15kk,,,Human;Demon
-84,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +275",0,0,30kk,,,Human;Demon
-85,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +280",0,0,50kk,,,Human;Demon
+77,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +200",0,5.5kk,500k,,,Human;Demon
+78,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +215",0,24kk,1.5kk,,,Human;Demon
+79,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +220",0,40kk,500k,,,Human;Demon
+80,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +235",0,0,7.5kk,,,Human;Demon
+81,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +240",0,0,3.8kk,,,Human;Demon
+82,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +255",0,0,15kk,,,Human;Demon
+83,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +260",0,0,7.5kk,,,Human;Demon
+84,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +275",0,0,45kk,,,Human;Demon
+85,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +280",0,0,25kk,,,Human;Demon
 86,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +295",0,0,75kk,,,Human;Demon
-87,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +300",0,0,100kk,,,Human;Demon
-88,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +325",0,0,100kk,,,Human;Demon
-89,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +330",0,0,100kk,,,Human;Demon
-90,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +355",0,0,100kk,,,Human;Demon
+87,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +300",0,0,50kk,,,Human;Demon
+88,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +325",0,0,150kk,,,Human;Demon
+89,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +330",0,0,50kk,,,Human;Demon
+90,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +355",0,0,150kk,,,Human;Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Weapon Mastery (Elf)----------------------------
-76,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +85",0,6.5kk,1kk,,,Elf
-77,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +90",0,11kk,1kk,,,Elf
-78,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +95",0,16kk,1kk,,,Elf
-79,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +100",0,80kk,1kk,,,Elf
-80,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +105",0,0,5kk,,,Elf
-81,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +110",0,0,7.5kk,,,Elf
-82,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +115",0,0,10kk,,,Elf
-83,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +120",0,0,15kk,,,Elf
-84,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +125",0,0,30kk,,,Elf
-85,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +130",0,0,50kk,,,Elf
-86,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +135",0,0,75kk,,,Elf
-87,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +140",0,0,100kk,,,Elf
-88,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +145",0,0,100kk,,,Elf
-89,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +150",0,0,100kk,,,Elf
-90,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +155",0,0,100kk,,,Elf
+76,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +85",0,3.3kk,500k,,,Elf
+77,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +90",0,5.5kk,500k,,,Elf
+78,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +95",0,8kk,500k,,,Elf
+79,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +100",0,40kk,500k,,,Elf
+80,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +105",0,0,2.5kk,,,Elf
+81,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +110",0,0,3.8kk,,,Elf
+82,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +115",0,0,5kk,,,Elf
+83,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +120",0,0,7.5kk,,,Elf
+84,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +125",0,0,15kk,,,Elf
+85,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +130",0,0,25kk,,,Elf
+86,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +135",0,0,37.5kk,,,Elf
+87,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +140",0,0,50kk,,,Elf
+88,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +145",0,0,50kk,,,Elf
+89,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +150",0,0,50kk,,,Elf
+90,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +155",0,0,50kk,,,Elf
 ,,,,,,,,,,,,,,,,,,,----------------------------Accuracy----------------------------
-76,Accuracy,fighter_accuracy,Passive,,,0,0,self/single,0,0,0,"acc +4",0,6.5kk,1kk,,,Demon
-86,Accuracy,fighter_accuracy,Passive,,,0,0,self/single,0,0,0,"acc +5",0,0,75kk,,,Demon
+76,Accuracy,fighter_accuracy,Passive,,,0,0,self/single,0,0,0,"acc +4",0,3.3kk,500k,,,Demon
+86,Accuracy,fighter_accuracy,Passive,,,0,0,self/single,0,0,0,"acc +5",0,0,37.5kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Accuracy (Human)----------------------------
-76,Accuracy,fighter_accuracy,Passive,,,0,0,self/single,0,0,0,"acc +1",0,6.5kk,1kk,,,Human
-86,Accuracy,fighter_accuracy,Passive,,,0,0,self/single,0,0,0,"acc +2",0,0,75kk,,,Human
+76,Accuracy,fighter_accuracy,Passive,,,0,0,self/single,0,0,0,"acc +1",0,3.3kk,500k,,,Human
+86,Accuracy,fighter_accuracy,Passive,,,0,0,self/single,0,0,0,"acc +2",0,0,37.5kk,,,Human
 ,,,,,,,,,,,,,,,,,,,---------------------------Mark----------------------------
 76,Buffer Shield Mastery,buffer_shield_mastery,Passive,,robe/shield,0,0,self/single,0,0,0,"When Robe+Shield are equipped increase Max HP/MP and natural regeneration with 10%",0,6.5kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Bow Mastery----------------------------
-76,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +650",0,6.5kk,1kk,,,Elf
-78,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +700",0,16kk,1kk,,,Elf
-80,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +720",0,0,5kk,,,Elf
-82,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +800",0,0,10kk,,,Elf
-84,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +850",0,0,30kk,,,Elf
-86,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +900",0,0,75kk,,,Elf
-88,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +950",0,0,100kk,,,Elf
-90,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +1000",0,0,100kk,,,Elf
+76,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +750",0,6.5kk,1kk,,,Elf
+78,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +800",0,16kk,1kk,,,Elf
+80,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +840",0,0,5kk,,,Elf
+82,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +880",0,0,10kk,,,Elf
+84,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +920",0,0,30kk,,,Elf
+86,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +960",0,0,75kk,,,Elf
+88,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +1000",0,0,100kk,,,Elf
+90,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +1120",0,0,100kk,,,Elf
 ,,,,,,,,,,,,,,,,,,,------------------------------Harmony of Protection------------------------------
 76,Harmony of Protection,npc_harmony_protection,Magic/Buff,,,600,800,party/aoe,1,120,300,"+30% M.Def, +20% HP Regen, +25% P.Def, +30% Max HP, +20% Mele Reflect, +10% Bow Resistance",464,6.5kk,1kk
 ,,,,,,,,,,,,,,,,,,,------------------------------Harmony of the Wizard------------------------------
