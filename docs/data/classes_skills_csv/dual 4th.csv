@@ -13,22 +13,33 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 76,Assassination Instinct,assassination_instinct,passive,,,0,0,self/single,0,0,0,"blow rate x1.05;",0,6.5kk,1kk,,[]
 80,Perfect Strike,perfect_strike,physical buff,duals,,0,0,self/single,0,300,300,"blow rate x1.4; both are learned - only one of the two can be UP at a time;",200,150kk,10kk,,[brutal_strike]
 80,Brutal Strike,brutal_strike,physical buff,duals,,0,0,self/single,0,300,300,"crit dmg +30%; both are learned - only one of the two can be UP at a time;",200,150kk,10kk,,[perfect_strike]
-,,,,,,,,,,,,,,,,,,,----------------------------Armor Mastery (DERIVED)----------------------------
-76,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +15; crit rate resist + 35%; speed +12; mpReg +2.5; hpReg +6.0; p.def +72;",0,6.5kk,1kk,,[]
-77,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +15; crit rate resist + 35%; speed +12; mpReg +2.5; hpReg +6.0; p.def +74;",0,11kk,1kk,,[]
-78,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +16; crit rate resist + 35%; speed +12; mpReg +2.5; hpReg +6.0; p.def +76;",0,16kk,1kk,,[]
-79,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +16; crit rate resist + 35%; speed +13; mpReg +2.5; hpReg +6.0; p.def +78;",0,80kk,1kk,,[]
-80,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +17; crit rate resist + 35%; speed +13; mpReg +2.5; hpReg +6.0; p.def +80;",0,0,5kk,,[]
-81,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +17; crit rate resist + 35%; speed +13; mpReg +2.5; hpReg +6.0; p.def +82;",0,0,7.5kk,,[]
-82,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +18; crit rate resist + 35%; speed +14; mpReg +2.5; hpReg +6.0; p.def +84;",0,0,10kk,,[]
-83,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +18; crit rate resist + 35%; speed +14; mpReg +2.5; hpReg +6.0; p.def +86;",0,0,15kk,,[]
-84,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +18; crit rate resist + 35%; speed +14; mpReg +2.5; hpReg +6.0; p.def +88;",0,0,30kk,,[]
-85,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +19; crit rate resist + 35%; speed +15; mpReg +2.5; hpReg +6.0; p.def +90;",0,0,50kk,,[]
-86,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +19; crit rate resist + 35%; speed +15; mpReg +2.5; hpReg +6.0; p.def +92;",0,0,75kk,,[]
-87,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +19; crit rate resist + 35%; speed +15; mpReg +2.5; hpReg +6.0; p.def +94;",0,0,100kk,,[]
-88,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +19; crit rate resist + 35%; speed +15; mpReg +2.5; hpReg +6.0; p.def +96;",0,0,100kk,,[]
-89,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +19; crit rate resist + 35%; speed +15; mpReg +2.5; hpReg +6.0; p.def +98;",0,0,100kk,,[]
-90,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +19; crit rate resist + 35%; speed +15; mpReg +2.5; hpReg +6.0; p.def +100;",0,0,100kk,,[]
+,,,,,,,,,,,,,,,,,,,----------------------------Light Armor Mastery----------------------------
+76,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +72",0,6.5kk,1kk
+77,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +74",0,11kk,1kk
+78,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +76",0,16kk,1kk
+79,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +78",0,80kk,1kk
+80,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +80",0,0,5kk
+81,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +82",0,0,7.5kk
+82,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +84",0,0,10kk
+83,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +86",0,0,15kk
+84,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +88",0,0,30kk
+85,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +90",0,0,50kk
+86,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +92",0,0,75kk
+87,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +94",0,0,100kk
+88,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +96",0,0,100kk
+89,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +98",0,0,100kk
+90,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +100",0,0,100kk
+,,,,,,,,,,,,,,,,,,,----------------------------Evasion----------------------------
+76,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +15",0,6.5kk,1kk
+78,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +16",0,16kk,1kk
+80,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +17",0,0,5kk
+82,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +18",0,0,10kk
+85,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +19",0,0,50kk
+,,,,,,,,,,,,,,,,,,,----------------------------Swift----------------------------
+76,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +12;",0,6.5kk,1kk
+79,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +13;",0,80kk,1kk
+82,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +14;",0,0,10kk
+85,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +15;",0,0,50kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
 80,Anti-Magic,dual_anti_magic,Passive,,,0,0,self/single,0,0,0,"Increase M.Res +5%;",0,0,5kk,,,Human
 85,Anti-Magic,dual_anti_magic,Passive,,,0,0,self/single,0,0,0,"Increase M.Res +7%;",0,0,50kk,,,Human
@@ -45,22 +56,44 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 83,Dodge,dodge,Physical Buff,,,0,0,self/single,0,90,10,"30% chance to Evade Physical Skills",0,500kk,100kk,,,Elf
 83,Magical Armor,magical_armor,Physical Buff,,,0,0,self/single,0,90,10,"Increase mResist with 50%",0,500kk,100kk,,,Human
 83,Demon Contract,demon_contract,Physical Buff,,,0,0,self/single,0,90,10,"Increase PvP.Dmg with 25%",0,500kk,100kk,,,Demon
-,,,,,,,,,,,,,,,,,,,----------------------------Dual Mastery (DERIVED)----------------------------
-76,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +85; p.atk x1.085 and crit dmg +1040 and acc +3 and crit rate x1.5 and AS x1.10; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% for 5 sec",0,6.5kk,1kk,,[rogue_weapon_mastery]
-77,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +90; p.atk x1.085 and crit dmg +1060 and acc +3 and crit rate x1.5 and AS x1.10; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% for 5 sec",0,11kk,1kk,,[rogue_weapon_mastery]
-78,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +95; p.atk x1.085 and crit dmg +1080 and acc +3 and crit rate x1.5 and AS x1.11; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% for 5 sec",0,16kk,1kk,,[rogue_weapon_mastery]
-79,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +100; p.atk x1.085 and crit dmg +1100 and acc +3 and crit rate x1.5 and AS x1.11; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% for 5 sec",0,80kk,1kk,,[rogue_weapon_mastery]
-80,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +105; p.atk x1.085 and crit dmg +1120 and acc +3 and crit rate x1.5 and AS x1.12; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% for 5 sec",0,0,5kk,,[rogue_weapon_mastery]
-81,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +110; p.atk x1.085 and crit dmg +1140 and acc +3 and crit rate x1.5 and AS x1.12; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% for 5 sec",0,0,7.5kk,,[rogue_weapon_mastery]
-82,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +115; p.atk x1.085 and crit dmg +1160 and acc +3 and crit rate x1.5 and AS x1.13; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% for 5 sec",0,0,10kk,,[rogue_weapon_mastery]
-83,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +120; p.atk x1.085 and crit dmg +1180 and acc +3 and crit rate x1.5 and AS x1.13; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% for 5 sec",0,0,15kk,,[rogue_weapon_mastery]
-84,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +125; p.atk x1.085 and crit dmg +1200 and acc +3 and crit rate x1.5 and AS x1.13; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% for 5 sec",0,0,30kk,,[rogue_weapon_mastery]
-85,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +130; p.atk x1.085 and crit dmg +1220 and acc +3 and crit rate x1.5 and AS x1.14; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% for 5 sec",0,0,50kk,,[rogue_weapon_mastery]
-86,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +134; p.atk x1.085 and crit dmg +1240 and acc +3 and crit rate x1.5 and AS x1.14; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% for 5 sec",0,0,75kk,,[rogue_weapon_mastery]
-87,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +138; p.atk x1.085 and crit dmg +1260 and acc +3 and crit rate x1.5 and AS x1.15; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% for 5 sec",0,0,100kk,,[rogue_weapon_mastery]
-88,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +142; p.atk x1.085 and crit dmg +1275 and acc +3 and crit rate x1.5 and AS x1.15; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% for 5 sec",0,0,100kk,,[rogue_weapon_mastery]
-89,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +146; p.atk x1.085 and crit dmg +1290 and acc +3 and crit rate x1.5 and AS x1.15; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% for 5 sec",0,0,100kk,,[rogue_weapon_mastery]
-90,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +150; p.atk x1.085 and crit dmg +1300 and acc +3 and crit rate x1.5 and AS x1.15; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% for 5 sec",0,0,100kk,,[rogue_weapon_mastery]
+,,,,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
+76,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +85",0,6.5kk,1kk
+77,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +90",0,11kk,1kk
+78,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +95",0,16kk,1kk
+79,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +100",0,80kk,1kk
+80,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +105",0,0,5kk
+81,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +110",0,0,7.5kk
+82,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +115",0,0,10kk
+83,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +120",0,0,15kk
+84,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +125",0,0,30kk
+85,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +130",0,0,50kk
+86,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +134",0,0,75kk
+87,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +138",0,0,100kk
+88,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +142",0,0,100kk
+89,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +146",0,0,100kk
+90,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +150",0,0,100kk
+,,,,,,,,,,,,,,,,,,,----------------------------Critical Dmg Mastery----------------------------
+76,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1040;",0,6.5kk,1kk
+77,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1060;",0,11kk,1kk
+78,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1080;",0,16kk,1kk
+79,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1100;",0,80kk,1kk
+80,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1120;",0,0,5kk
+81,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1140;",0,0,7.5kk
+82,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1160;",0,0,10kk
+83,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1180;",0,0,15kk
+84,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1200;",0,0,30kk
+85,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1220;",0,0,50kk
+86,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1240;",0,0,75kk
+87,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1260;",0,0,100kk
+88,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1275;",0,0,100kk
+89,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1290;",0,0,100kk
+90,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1300;",0,0,100kk
+,,,,,,,,,,,,,,,,,,,----------------------------Fury----------------------------
+78,Fury,fury_mastery,passive,,,0,0,self/single,0,0,0,"AS x1.11;",0,16kk,1kk
+80,Fury,fury_mastery,passive,,,0,0,self/single,0,0,0,"AS x1.12;",0,0,5kk
+82,Fury,fury_mastery,passive,,,0,0,self/single,0,0,0,"AS x1.13;",0,0,10kk
+85,Fury,fury_mastery,passive,,,0,0,self/single,0,0,0,"AS x1.14;",0,0,50kk
+87,Fury,fury_mastery,passive,,,0,0,self/single,0,0,0,"AS x1.15;",0,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Killing Stab (DERIVED)----------------------------
 76,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 3450 - only when skill does critical - otherwise normal attack - require duals;",80,6.5kk,1kk,,[precise_shot],Human;Elf
 77,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 3675 - only when skill does critical - otherwise normal attack - require duals;",82,11kk,1kk,,[precise_shot],Human;Elf

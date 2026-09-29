@@ -81,16 +81,8 @@ public static partial class ClassSkillTables
                 new ClassSkill(MasteryRobe, 14, SkillLevel: 2),      // Robe Armor Mastery +9 P.Def
                 new ClassSkill(WeaponMastery, 14));                  // +4 M.Atk / +2 P.Atk
 
-        // …and the ONE row that is a single race's: the HUMAN's Vampiric Bolt taster at 14 (his
-        // `mage 1st.csv` row carries `Human` in the Race column, 2026-09-17).
-        //
-        // 🔑 IT IS A TASTER, AND IT KEEPS THE OLD ID ON PURPOSE. The Human's real ladder is
-        //    `human_vampiric_bolt`, injected centrally from 20 and never taken away; this single rung
-        //    is base-class content that the cleric's Holy Bolt `Replaces` at 20, exactly as it
-        //    replaces Magic Bolt. Two ids is what lets one of those two things happen without the
-        //    other — which is why he changed the id rather than extending this row.
-        ClassSkills.Register(Race.Human, BaseClass.Mage, null,
-            new ClassSkill(VampiricBolt, 14));
+        // (The Human's level-14 Vampiric Bolt is rung 1 of `human_vampiric_bolt`, injected centrally —
+        //  the one-rung `vampiric_bolt` taster was folded into it 2026-09-29, his ask.)
         // (The God base-mage line was deleted 2026-08-07 with the rest of the God layer.)
 
         // Second-class kits live in the per-line partial files (RegisterXxx()).

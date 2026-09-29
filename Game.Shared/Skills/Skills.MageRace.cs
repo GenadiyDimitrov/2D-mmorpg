@@ -93,16 +93,17 @@ public static partial class SkillCatalog
     public static readonly int[] ElfSelfHealLevels = { 7, 20, 30, 40, 48, 58, 64, 70, 74 };
     /// <summary>Learn levels of the Demon's Over the Limit — his five rows, 7 through 70.</summary>
     public static readonly int[] DemonOverLimitLevels = { 7, 20, 40, 60, 70 };
-    /// <summary>Learn levels of the Human's Vampiric Bolt ladder — his thirty-three rows, 20 through
-    /// 90. Rungs 1-4 are the old `nuker 2nd.csv` cadence, 5-18 the old `nuker 3rd.csv` bands, and
-    /// 19-33 one a level across the 4th tier, exactly where they were before the skill changed hands.
+    /// <summary>Learn levels of the Human's Vampiric Bolt ladder — his thirty-four rows, 14 through
+    /// 90. Rung 1 is the level-14 taster (its own `vampiric_bolt` id until 2026-09-29), 2-5 the old
+    /// `nuker 2nd.csv` cadence, 6-19 the old `nuker 3rd.csv` bands, and
+    /// 20-34 one a level across the 4th tier, exactly where they were before the skill changed hands.
     ///
     /// ⚠ NOT TIER-GATED. The 76-90 rungs sit in `mage 1st.csv` like the rest of the block, so they
     /// are gated by LEVEL alone — unlike the `nuker 4th.csv` rows they replaced, which needed the
     /// Rite of Ascension. That is what "the race layer follows you" costs, and it is his placement.</summary>
     public static readonly int[] HumanVampiricLevels =
     {
-        20, 25, 30, 35, 40, 44, 48, 52, 56, 58, 60, 62, 64, 66, 68, 70, 72, 74,
+        14, 20, 25, 30, 35, 40, 44, 48, 52, 56, 58, 60, 62, 64, 66, 68, 70, 72, 74,
         76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90,
     };
 
@@ -233,24 +234,24 @@ public static partial class SkillCatalog
         //    `Replaces` it at 20 — his `cleric 2nd.csv` says so. This ladder starts at 20 and is NOT
         //    replaced by anything: that is the difference between a base-class taster and a race
         //    layer, and it is why he gave the two different ids.
-        // ⚠ RANGE IS A LADDER: 750 through the twenties and thirties, 900 from 40 up. His column.
-        int[] vampPower = { 26, 32, 38, 44, 52, 58, 65, 72, 78, 82, 85, 89, 92, 96, 99, 102, 105, 108 };
-        int[] vampMp    = { 40, 46, 52, 62, 66, 76, 88, 96, 104, 108, 110, 116, 120, 124, 128, 130, 134, 138 };
+        // ⚠ RANGE IS A LADDER: 600 at 14, 750 through the twenties and thirties, 900 from 40 up. His column.
+        int[] vampPower = { 21, 26, 32, 38, 44, 52, 58, 65, 72, 78, 82, 85, 89, 92, 96, 99, 102, 105, 108 };
+        int[] vampMp    = { 28, 40, 46, 52, 62, 66, 76, 88, 96, 104, 108, 110, 116, 120, 124, 128, 130, 134, 138 };
         int[] vampSp    =
         {
-            3_000, 6_000, 12_000, 25_000, 36_000, 43_000, 64_000, 74_000, 81_000,
+            2_000, 3_000, 6_000, 12_000, 25_000, 36_000, 43_000, 64_000, 74_000, 81_000,
             88_000, 120_000, 170_000, 190_000, 280_000, 320_000, 390_000, 650_000, 880_000,
         };
         list.Add(new SkillDef(HumanVampiricBolt, "Vampiric Bolt", BaseClass.Mage,
             SkillEffect.MagicDamage,
-            MpCost: vampMp[0], CastTicks: 40, CooldownTicks: 10, Range: 750, Power: vampPower[0],
+            MpCost: vampMp[0], CastTicks: 40, CooldownTicks: 10, Range: 600, Power: vampPower[0],
             Category: SkillCategory.Magic, SpCost: vampSp[0], Lifesteal: 0.40f,
             Description: "A draining bolt that heals you for 40% of the damage dealt.",
             Levels: Enumerable.Range(0, vampPower.Length).Select(i => new SkillLevel(
                 Power: vampPower[i], MpCost: vampMp[i], SpCost: vampSp[i],
-                Range: HumanVampiricLevels[i] >= 40 ? 900f : 750f,
+                Range: HumanVampiricLevels[i] >= 40 ? 900f : HumanVampiricLevels[i] >= 20 ? 750f : 600f,
                 Description: $"Drain power {vampPower[i]}; heals 40% of damage."))
-                // Rungs 19-33 are the 4th-tier ladder the nuker already had — same fifteen rows,
+                // Rungs 20-34 are the 4th-tier ladder the nuker already had — same fifteen rows,
                 // same prices, same gold. Shared rather than re-typed: `NukerFourthVampiricRungs`
                 // reads the same `NukerBlastPower4` / `NukerHeavyMp4` arrays its neighbours do.
                 .Concat(NukerFourthVampiricRungs()).ToArray()));

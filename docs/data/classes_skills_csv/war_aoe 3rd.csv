@@ -1,39 +1,93 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST (x1000),REPLACES,RACE,COMMENT
 ,,,,,,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
-40,Warriors Strenght,warriors_strength,passive,sword|blunt/2,,0,0,self/single,0,0,0,"With 2h sword/blunt: acc +3; p.atk +25%;",0,28
-52,Warriors Strenght,warriors_strength,passive,sword|blunt/2,,0,0,self/single,0,0,0,"With 2h sword/blunt: acc +6; p.atk +25%;",0,74
-,,,,,,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
-40,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +40 and hpReg +1.7; Light: eva +9; Heavy: P.Def +10, HP +50;",0,28
-43,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +45 and hpReg +1.7; Light: eva +9; Heavy: P.Def +12, HP +50;",0,35
-46,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +50 and hpReg +2.1; Light: eva +9; Heavy: P.Def +14, HP +50;",0,40
-49,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +55 and hpReg +2.1; Light: eva +9; Heavy: P.Def +16, HP +50;",0,50
-52,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +58 and hpReg +2.6; Light: eva +9; Heavy: P.Def +18, HP +60;",0,74
-55,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +60 and hpReg +2.6; Light: eva +9; Heavy: P.Def +20, HP +60;",0,80
-58,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +63 and hpReg +2.7; Light: eva +9; Heavy: P.Def +22, HP +60;",0,88
-60,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +70 and hpReg +2.7; Light: eva +9; Heavy: P.Def +24, HP +70;",0,120
-62,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +77 and hpReg +2.7; Light: eva +9; Heavy: P.Def +27, HP +70;",0,170
-64,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +85 and hpReg +2.7; Light: eva +9; Heavy: P.Def +30, HP +80;",0,190
-66,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +92 and hpReg +2.7; Light: eva +9; Heavy: P.Def +33, HP +80;",0,280
-68,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +100 and hpReg +3.4; Light: eva +9; Heavy: P.Def +36, HP +90;",0,320
-70,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +107 and hpReg +3.4; Light: eva +9; Heavy: P.Def +40, HP +90;",0,390
-72,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +115 and hpReg +3.4; Light: eva +9; Heavy: P.Def +45, HP +100;",0,650
-74,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +123 and hpReg +4.0; Light: eva +9; Heavy: P.Def +50, HP +100;",0,880
+40,Warriors Strenght,warriors_strength,passive,sword|blunt/2,,0,0,self/single,0,0,0,"With 2h sword/blunt: p.atk +25%;",0,28
+,,,,,,,,,,,,,,,,,----------------------------Accuracy----------------------------
+52,Accuracy,fighter_accuracy,passive,,,0,0,self/single,0,0,0,"acc +6;",0,37
+,,,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
+40,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +50",0,28
+43,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +57",0,35
+46,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +64",0,40
+49,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +71",0,50
+52,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +76",0,74
+55,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +80",0,80
+58,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +85",0,88
+60,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +94",0,120
+62,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +104",0,170
+64,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +115",0,190
+66,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +125",0,280
+68,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +136",0,320
+70,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +147",0,390
+72,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +160",0,650
+74,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +173",0,880
+,,,,,,,,,,,,,,,,,----------------------------Light Armor Mastery----------------------------
+40,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +40",0,28
+43,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +45",0,35
+46,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +50",0,40
+49,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +55",0,50
+52,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +58",0,74
+55,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +60",0,80
+58,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +63",0,88
+60,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +70",0,120
+62,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +77",0,170
+64,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +85",0,190
+66,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +92",0,280
+68,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +100",0,320
+70,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +107",0,390
+72,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +115",0,650
+74,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +123",0,880
+,,,,,,,,,,,,,,,,,----------------------------Heavy Vitality----------------------------
+40,Heavy Vitality,heavy_vitality,Passive,,heavy,0,0,self/single,0,0,0,"heavy: max HP +50",0,28
+52,Heavy Vitality,heavy_vitality,Passive,,heavy,0,0,self/single,0,0,0,"heavy: max HP +60",0,74
+60,Heavy Vitality,heavy_vitality,Passive,,heavy,0,0,self/single,0,0,0,"heavy: max HP +70",0,120
+64,Heavy Vitality,heavy_vitality,Passive,,heavy,0,0,self/single,0,0,0,"heavy: max HP +80",0,190
+68,Heavy Vitality,heavy_vitality,Passive,,heavy,0,0,self/single,0,0,0,"heavy: max HP +90",0,320
+72,Heavy Vitality,heavy_vitality,Passive,,heavy,0,0,self/single,0,0,0,"heavy: max HP +100",0,650
 ,,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
-40,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +145; p.atk +32; Allow basic attack to hit around in 150 range (max 5 targets);",0,28,[warrior_weapon_mastery]
-43,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +172; p.atk +39; Allow basic attack to hit around in 150 range (max 6 targets);",0,35,[warrior_weapon_mastery]
-46,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +202; p.atk +46; Allow basic attack to hit around in 150 range (max 7 targets);",0,40,[warrior_weapon_mastery]
-49,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +235; p.atk +53; Allow basic attack to hit around in 150 range (max 8 targets);",0,50,[warrior_weapon_mastery]
-52,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +272; p.atk +60; Allow basic attack to hit around in 150 range (max 9 targets);",0,74,[warrior_weapon_mastery]
-55,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +312; p.atk +67; Allow basic attack to hit around in 150 range (max 10 targets);",0,80,[warrior_weapon_mastery]
-58,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +355; p.atk +74; Allow basic attack to hit around in 150 range (max 10 targets);",0,88,[warrior_weapon_mastery]
-60,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +385; p.atk +81; Allow basic attack to hit around in 150 range (max 10 targets);",0,120,[warrior_weapon_mastery]
-62,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +416; p.atk +88; Allow basic attack to hit around in 150 range (max 10 targets);",0,170,[warrior_weapon_mastery]
-64,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +449; p.atk +95; Allow basic attack to hit around in 150 range (max 10 targets);",0,190,[warrior_weapon_mastery]
-66,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +481; p.atk +102; Allow basic attack to hit around in 150 range (max 10 targets);",0,280,[warrior_weapon_mastery]
-68,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +515; p.atk +109; Allow basic attack to hit around in 150 range (max 10 targets);",0,320,[warrior_weapon_mastery]
-70,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +548; p.atk +116; Allow basic attack to hit around in 150 range (max 10 targets);",0,390,[warrior_weapon_mastery]
-72,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +582; p.atk +123; Allow basic attack to hit around in 150 range (max 10 targets);",0,650,[warrior_weapon_mastery]
-74,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +615; p.atk +130; Allow basic attack to hit around in 150 range (max 10 targets);",0,880,[warrior_weapon_mastery]
+40,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +32",0,28
+43,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +39",0,35
+46,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +46",0,40
+49,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +53",0,50
+52,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +60",0,74
+55,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +67",0,80
+58,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +74",0,88
+60,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +81",0,120
+62,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +88",0,170
+64,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +95",0,190
+66,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +102",0,280
+68,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +109",0,320
+70,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +116",0,390
+72,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +123",0,650
+74,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +130",0,880
+,,,,,,,,,,,,,,,,,----------------------------Cleave----------------------------
+40,Cleave,blunt_cleave,Passive,blunt/2,,0,0,self/single,0,0,0,"2h blunt: basic attack hits around in 150 range (max 5 targets)",0,28
+43,Cleave,blunt_cleave,Passive,blunt/2,,0,0,self/single,0,0,0,"2h blunt: basic attack hits around in 150 range (max 6 targets)",0,35
+46,Cleave,blunt_cleave,Passive,blunt/2,,0,0,self/single,0,0,0,"2h blunt: basic attack hits around in 150 range (max 7 targets)",0,40
+49,Cleave,blunt_cleave,Passive,blunt/2,,0,0,self/single,0,0,0,"2h blunt: basic attack hits around in 150 range (max 8 targets)",0,50
+52,Cleave,blunt_cleave,Passive,blunt/2,,0,0,self/single,0,0,0,"2h blunt: basic attack hits around in 150 range (max 9 targets)",0,74
+55,Cleave,blunt_cleave,Passive,blunt/2,,0,0,self/single,0,0,0,"2h blunt: basic attack hits around in 150 range (max 10 targets)",0,80
+,,,,,,,,,,,,,,,,,----------------------------HpRegen----------------------------
+40,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +1.7;",0,14
+46,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +2.1;",0,20
+52,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +2.6;",0,37
+58,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +2.7;",0,44
+68,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +3.4;",0,160
+74,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +4.0;",0,440
+,,,,,,,,,,,,,,,,,----------------------------Critical Dmg Mastery----------------------------
+40,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +145;",0,14
+43,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +172;",0,17
+46,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +202;",0,20
+49,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +235;",0,25
+52,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +272;",0,37
+55,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +312;",0,40
+58,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +355;",0,44
+60,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +385;",0,60
+62,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +416;",0,85
+64,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +449;",0,95
+66,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +481;",0,140
+68,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +515;",0,160
+70,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +548;",0,195
+72,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +582;",0,325
+74,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +615;",0,440
 ,,,,,,,,,,,,,,,,,----------------------------Final Stand----------------------------
 40,Final Stand,final_stand,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Atk with 5%, when HP is below 50% increase P.Atk with 10%, when HP is below 25% increase P.Atk with 20% and acc +2",0,28
 52,Final Stand,final_stand,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Atk with 7%, when HP is below 50% increase P.Atk with 15% and acc +2, when HP is below 25% increase P.Atk with 25% and acc +4",0,74
@@ -47,13 +101,13 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 70,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +900",0,390,[],,
 74,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +1000",0,880,[],,
 ,,,,,,,,,,,,,,,,,----------------------HP Regeneration----------------------
-43,HP Regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.4; When sitting Hp regen +1, Mp regen +2.0;",0,42,[],,
-49,HP Regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.5; When sitting Hp regen +1, Mp regen +2.0;",0,65,[],,
-55,HP Regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.6; When sitting Hp regen +1, Mp regen +2.0;",0,80,[],,
-62,HP Regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.7; When sitting Hp regen +3, Mp regen +2.5;",0,170,[],,
-66,HP Regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.8; When sitting Hp regen +3, Mp regen +2.5;",0,280,[],,
-70,HP Regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.9; When sitting Hp regen +5, Mp regen +3.0;",0,390,[],,
-74,HP Regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +2.0; When sitting Hp regen +5, Mp regen +3.0;",0,880,[],,
+43,Warrior Regeneration,warrior_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.4; When sitting Hp regen +1, Mp regen +2.0;",0,42,[],,
+49,Warrior Regeneration,warrior_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.5; When sitting Hp regen +1, Mp regen +2.0;",0,65,[],,
+55,Warrior Regeneration,warrior_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.6; When sitting Hp regen +1, Mp regen +2.0;",0,80,[],,
+62,Warrior Regeneration,warrior_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.7; When sitting Hp regen +3, Mp regen +2.5;",0,170,[],,
+66,Warrior Regeneration,warrior_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.8; When sitting Hp regen +3, Mp regen +2.5;",0,280,[],,
+70,Warrior Regeneration,warrior_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.9; When sitting Hp regen +5, Mp regen +3.0;",0,390,[],,
+74,Warrior Regeneration,warrior_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +2.0; When sitting Hp regen +5, Mp regen +3.0;",0,880,[],,
 ,,,,,,,,,,,,,,,,,----------------------------Overpower----------------------------
 40,Overpower,overpower,passive,,,0,0,self/single,0,0,0,double rate 7% - skills marked [Double] strike for DOUBLE damage that often - scales with ATK - without this passive NO skill can double,0,28,[],
 ,,,,,,,,,,,,,,,,,----------------------------Battle Regeneration----------------------------

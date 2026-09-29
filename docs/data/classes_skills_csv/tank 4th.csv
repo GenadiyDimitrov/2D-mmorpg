@@ -1,52 +1,64 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,GOLD,RACE,REPLACES,COMMENT
 ,,,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
-76,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +175 and p.def x1.20 and crit dmg reduction 35% and eva -3;",0,6.5kk,1kk
-77,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +180 and p.def x1.20 and crit dmg reduction 35% and eva -3;",0,11kk,1kk
-78,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +185 and p.def x1.20 and crit dmg reduction 35% and eva -3;",0,16kk,1kk
-79,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +190 and p.def x1.20 and crit dmg reduction 40% and eva -4;",0,80kk,1kk
-80,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +195 and p.def x1.25 and crit dmg reduction 40% and eva -4;",0,0,5kk
-81,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +200 and p.def x1.25 and crit dmg reduction 40% and eva -4;",0,0,7.5kk
-82,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +205 and p.def x1.25 and crit dmg reduction 45% and eva -5;",0,0,10kk
-83,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +210 and p.def x1.25 and crit dmg reduction 45% and eva -5;",0,0,15kk
-84,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +215 and p.def x1.25 and crit dmg reduction 45% and eva -5;",0,0,30kk
-85,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +220 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,50kk
-86,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +225 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,75kk
-87,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +230 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,100kk
-88,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +235 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,100kk
-89,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +240 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,100kk
-90,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +245 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,100kk
-,,,,,,,,,,,,,,,,,----------------------------Tank Anti-Magic----------------------------
-76,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +132 and M.Res +20%;",0,6.5kk,1kk
-77,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +134 and M.Res +20%;",0,11kk,1kk
-78,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +136 and M.Res +20%;",0,16kk,1kk
-79,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +138 and M.Res +20%;",0,80kk,1kk
-80,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +140 and M.Res +20%; Twice more chance magic to fail against you",0,0,5kk
-81,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +142 and M.Res +20%; Twice more chance magic to fail against you",0,0,7.5kk
-82,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +144 and M.Res +20%; Twice more chance magic to fail against you",0,0,10kk
-83,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +146 and M.Res +20%; Twice more chance magic to fail against you",0,0,15kk
-84,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +148 and M.Res +20%; Twice more chance magic to fail against you",0,0,30kk
-85,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +150 and M.Res +20%; Twice more chance magic to fail against you",0,0,50kk
-86,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +152 and M.Res +20%; Twice more chance magic to fail against you",0,0,75kk
-87,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +154 and M.Res +20%; Twice more chance magic to fail against you",0,0,100kk
-88,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +156 and M.Res +20%; Twice more chance magic to fail against you",0,0,100kk
-89,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +158 and M.Res +20%; Twice more chance magic to fail against you",0,0,100kk
-90,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +160 and M.Res +20%; Twice more chance magic to fail against you",0,0,100kk
+76,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +175",0,6.5kk,1kk
+77,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +180",0,11kk,1kk
+78,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +185",0,16kk,1kk
+79,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +190",0,80kk,1kk
+80,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +195",0,0,5kk
+81,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +200",0,0,7.5kk
+82,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +205",0,0,10kk
+83,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +210",0,0,15kk
+84,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +215",0,0,30kk
+85,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +220",0,0,50kk
+86,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +225",0,0,75kk
+87,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +230",0,0,100kk
+88,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +235",0,0,100kk
+89,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +240",0,0,100kk
+90,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +245",0,0,100kk
+,,,,,,,,,,,,,,,,,----------------------------Tank Defence----------------------------
+76,Tank Defence,tank_defence_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: p.def x1.20 and crit dmg reduction 35% and eva -3;",0,6.5kk,1kk
+79,Tank Defence,tank_defence_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: p.def x1.20 and crit dmg reduction 40% and eva -4;",0,80kk,1kk
+80,Tank Defence,tank_defence_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: p.def x1.25 and crit dmg reduction 40% and eva -4;",0,0,5kk
+82,Tank Defence,tank_defence_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: p.def x1.25 and crit dmg reduction 45% and eva -5;",0,0,10kk
+85,Tank Defence,tank_defence_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,50kk
+,,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
+76,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +132",0,6.5kk,1kk
+77,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +134",0,11kk,1kk
+78,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +136",0,16kk,1kk
+79,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +138",0,80kk,1kk
+80,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +140",0,0,5kk
+81,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +142",0,0,7.5kk
+82,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +144",0,0,10kk
+83,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +146",0,0,15kk
+84,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +148",0,0,30kk
+85,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +150",0,0,50kk
+86,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +152",0,0,75kk
+87,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +154",0,0,100kk
+88,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +156",0,0,100kk
+89,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +158",0,0,100kk
+90,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +160",0,0,100kk
+,,,,,,,,,,,,,,,,,----------------------------Magic Protection----------------------------
+80,Magic Protection,magic_protection,Passive,,,0,0,self/single,0,0,0,"Twice more chance magic to fail against you",0,0,5kk
 ,,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
-76,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +90 and attack speed +1%;",0,6.5kk,1kk
-77,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +98 and attack speed +1%;",0,11kk,1kk
-78,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +106 and attack speed +1%;",0,16kk,1kk
-79,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +114 and attack speed +1%;",0,80kk,1kk
-80,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +121 and attack speed +3%;",0,0,5kk
-81,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +129 and attack speed +3%;",0,0,7.5kk
-82,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +137 and attack speed +3%;",0,0,10kk
-83,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +145 and attack speed +3%;",0,0,15kk
-84,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +153 and attack speed +3%;",0,0,30kk
-85,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +161 and attack speed +5%;",0,0,50kk
-86,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +169 and attack speed +5%;",0,0,75kk
-87,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +176 and attack speed +5%;",0,0,100kk
-88,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +184 and attack speed +5%;",0,0,100kk
-89,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +192 and attack speed +5%;",0,0,100kk
-90,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +200 and attack speed +5%;",0,0,100kk
+76,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +90",0,6.5kk,1kk
+77,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +98",0,11kk,1kk
+78,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +106",0,16kk,1kk
+79,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +114",0,80kk,1kk
+80,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +121",0,0,5kk
+81,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +129",0,0,7.5kk
+82,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +137",0,0,10kk
+83,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +145",0,0,15kk
+84,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +153",0,0,30kk
+85,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +161",0,0,50kk
+86,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +169",0,0,75kk
+87,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +176",0,0,100kk
+88,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +184",0,0,100kk
+89,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +192",0,0,100kk
+90,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +200",0,0,100kk
+,,,,,,,,,,,,,,,,,----------------------------Fury----------------------------
+76,Fury,fury_mastery,Passive,,,0,0,self/single,0,0,0,"AS x1.01",0,6.5kk,1kk
+80,Fury,fury_mastery,Passive,,,0,0,self/single,0,0,0,"AS x1.03",0,0,5kk
+85,Fury,fury_mastery,Passive,,,0,0,self/single,0,0,0,"AS x1.05",0,0,50kk
 ,,,,,,,,,,,,,,,,,----------------------------Whisp Mastery----------------------------
 83,Whisp Mastery,whisp_mastery,Passive,,,0,0,self/single,0,0,0,"Increase the limit of active whisps to 3",0,0,15kk
 ,,,,,,,,,,,,,,,,,----------------------------Backlash----------------------------

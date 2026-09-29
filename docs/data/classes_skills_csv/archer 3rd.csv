@@ -1,36 +1,75 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST (x1000),REPLACES,RACE,COMMENT
-,,,,,,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
-40,Armor Mastery,archer_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +12; crit rate resist + 25%; speed  +7; mpReg +1.8; hpReg +2.5; p.def +28;",0,28,[rougue_armor_mastery]
-43,Armor Mastery,archer_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +12; crit rate resist + 25%; speed +11; mpReg +1.9; hpReg +3.0; p.def +31",0,35,[rougue_armor_mastery]
-46,Armor Mastery,archer_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +12; crit rate resist + 25%; speed +11; mpReg +2.0; hpReg +3.5; p.def +34",0,40,[rougue_armor_mastery]
-49,Armor Mastery,archer_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +12; crit rate resist + 25%; speed +11; mpReg +2.1; hpReg +4.0; p.def +37",0,50,[rougue_armor_mastery]
-52,Armor Mastery,archer_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +12; crit rate resist + 25%; speed +11; mpReg +2.2; hpReg +4.5; p.def +40",0,74,[rougue_armor_mastery]
-55,Armor Mastery,archer_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +12; crit rate resist + 25%; speed +11; mpReg +2.2; hpReg +4.5; p.def +43;",0,80,[rougue_armor_mastery]
-58,Armor Mastery,archer_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +12; crit rate resist + 25%; speed +11; mpReg +2.2; hpReg +4.5; p.def +46;",0,88,[rougue_armor_mastery]
-60,Armor Mastery,archer_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +12; crit rate resist + 35%; speed +11; mpReg +2.2; hpReg +4.5; p.def +49;",0,120,[rougue_armor_mastery]
-62,Armor Mastery,archer_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +12; crit rate resist + 35%; speed +11; mpReg +2.3; hpReg +5.0; p.def +52;",0,170,[rougue_armor_mastery]
-64,Armor Mastery,archer_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +12; crit rate resist + 35%; speed +11; mpReg +2.3; hpReg +5.0; p.def +55;",0,190,[rougue_armor_mastery]
-66,Armor Mastery,archer_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +12; crit rate resist + 35%; speed +11; mpReg +2.3; hpReg +5.0; p.def +58;",0,280,[rougue_armor_mastery]
-68,Armor Mastery,archer_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +12; crit rate resist + 35%; speed +11; mpReg +2.4; hpReg +5.5; p.def +61;",0,320,[rougue_armor_mastery]
-70,Armor Mastery,archer_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +12; crit rate resist + 35%; speed +11; mpReg +2.4; hpReg +5.5; p.def +64;",0,390,[rougue_armor_mastery]
-72,Armor Mastery,archer_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +12; crit rate resist + 35%; speed +11; mpReg +2.4; hpReg +5.5; p.def +67;",0,650,[rougue_armor_mastery]
-74,Armor Mastery,archer_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +12; crit rate resist + 35%; speed +11; mpReg +2.5; hpReg +6.0; p.def +70;",0,880,[rougue_armor_mastery]
-,,,,,,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
-40,Bow Mastery,bow_mastery,passive,bow,,0,0,self/single,0,0,0,"Bow: p.Atk +200 and range +400; p.atk x1.085 and crit dmg +195 and acc +3 and crit rate x1.2 and AS x1.05;",0,28,[rogue_weapon_mastery]
-43,Bow Mastery,bow_mastery,passive,bow,,0,0,self/single,0,0,0,"Bow: p.Atk +233 and range +400; p.atk x1.085 and crit dmg +222 and acc +3 and crit rate x1.2 and AS x1.05;",0,35,[rogue_weapon_mastery]
-46,Bow Mastery,bow_mastery,passive,bow,,0,0,self/single,0,0,0,"Bow: p.Atk +266 and range +400; p.atk x1.085 and crit dmg +252 and acc +3 and crit rate x1.2 and AS x1.05;",0,40,[rogue_weapon_mastery]
-49,Bow Mastery,bow_mastery,passive,bow,,0,0,self/single,0,0,0,"Bow: p.Atk +300 and range +400; p.atk x1.085 and crit dmg +285 and acc +3 and crit rate x1.2 and AS x1.05;",0,50,[rogue_weapon_mastery]
-52,Bow Mastery,bow_mastery,passive,bow,,0,0,self/single,0,0,0,"Bow: p.Atk +350 and range +400; p.atk x1.085 and crit dmg +322 and acc +3 and crit rate x1.2 and AS x1.05;",0,74,[rogue_weapon_mastery]
-55,Bow Mastery,bow_mastery,passive,bow,,0,0,self/single,0,0,0,"Bow: p.Atk +400 and range +400; p.atk x1.085 and crit dmg +362 and acc +3 and crit rate x1.2 and AS x1.05;",0,80,[rogue_weapon_mastery]
-58,Bow Mastery,bow_mastery,passive,bow,,0,0,self/single,0,0,0,"Bow: p.Atk +450 and range +400; p.atk x1.085 and crit dmg +405 and acc +3 and crit rate x1.2 and AS x1.05;",0,88,[rogue_weapon_mastery]
-60,Bow Mastery,bow_mastery,passive,bow,,0,0,self/single,0,0,0,"Bow: p.Atk +500 and range +400; p.atk x1.085 and crit dmg +435 and acc +3 and crit rate x1.2 and AS x1.05;",0,120,[rogue_weapon_mastery]
-62,Bow Mastery,bow_mastery,passive,bow,,0,0,self/single,0,0,0,"Bow: p.Atk +533 and range +400; p.atk x1.085 and crit dmg +466 and acc +3 and crit rate x1.2 and AS x1.05;",0,170,[rogue_weapon_mastery]
-64,Bow Mastery,bow_mastery,passive,bow,,0,0,self/single,0,0,0,"Bow: p.Atk +566 and range +400; p.atk x1.085 and crit dmg +499 and acc +3 and crit rate x1.2 and AS x1.05;",0,190,[rogue_weapon_mastery]
-66,Bow Mastery,bow_mastery,passive,bow,,0,0,self/single,0,0,0,"Bow: p.Atk +600 and range +400; p.atk x1.085 and crit dmg +531 and acc +3 and crit rate x1.2 and AS x1.05;",0,280,[rogue_weapon_mastery]
-68,Bow Mastery,bow_mastery,passive,bow,,0,0,self/single,0,0,0,"Bow: p.Atk +650 and range +400; p.atk x1.085 and crit dmg +565 and acc +3 and crit rate x1.2 and AS x1.05;",0,320,[rogue_weapon_mastery]
-70,Bow Mastery,bow_mastery,passive,bow,,0,0,self/single,0,0,0,"Bow: p.Atk +700 and range +400; p.atk x1.085 and crit dmg +598 and acc +3 and crit rate x1.2 and AS x1.05;",0,390,[rogue_weapon_mastery]
-72,Bow Mastery,bow_mastery,passive,bow,,0,0,self/single,0,0,0,"Bow: p.Atk +750 and range +400; p.atk x1.085 and crit dmg +632 and acc +3 and crit rate x1.2 and AS x1.05;",0,650,[rogue_weapon_mastery]
-74,Bow Mastery,bow_mastery,passive,bow,,0,0,self/single,0,0,0,"Bow: p.Atk +800 and range +400; p.atk x1.085 and crit dmg +665 and acc +3 and crit rate x1.2 and AS x1.05;",0,880,[rogue_weapon_mastery]
+,,,,,,,,,,,,,,,,,----------------------------Light Armor Mastery----------------------------
+40,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +28",0,28
+43,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +31",0,35
+46,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +34",0,40
+49,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +37",0,50
+52,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +40",0,74
+55,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +43",0,80
+58,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +46",0,88
+60,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +49",0,120
+62,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +52",0,170
+64,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +55",0,190
+66,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +58",0,280
+68,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +61",0,320
+70,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +64",0,390
+72,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +67",0,650
+74,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +70",0,880
+,,,,,,,,,,,,,,,,,----------------------------Critical Resist----------------------------
+40,Critical Resist,rogue_crit_resist,Passive,,light,0,0,self/single,0,0,0,"light: crit rate resist +25%",0,28
+60,Critical Resist,rogue_crit_resist,Passive,,light,0,0,self/single,0,0,0,"light: crit rate resist +35%",0,120
+,,,,,,,,,,,,,,,,,----------------------------Swift----------------------------
+43,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +11;",0,35
+,,,,,,,,,,,,,,,,,----------------------------HpRegen----------------------------
+43,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +3.0;",0,17
+46,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +3.5;",0,20
+49,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +4.0;",0,25
+52,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +4.5;",0,37
+62,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +5.0;",0,85
+68,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +5.5;",0,160
+74,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +6.0;",0,440
+,,,,,,,,,,,,,,,,,----------------------------MpRegen----------------------------
+43,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +1.9;",0,17
+46,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.0;",0,20
+49,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.1;",0,25
+52,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.2;",0,37
+62,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.3;",0,85
+68,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.4;",0,160
+74,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.5;",0,440
+,,,,,,,,,,,,,,,,,----------------------------Bow Mastery----------------------------
+40,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +200",0,28
+43,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +233",0,35
+46,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +266",0,40
+49,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +300",0,50
+52,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +350",0,74
+55,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +400",0,80
+58,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +450",0,88
+60,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +500",0,120
+62,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +533",0,170
+64,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +566",0,190
+66,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +600",0,280
+68,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +650",0,320
+70,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +700",0,390
+72,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +750",0,650
+74,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +800",0,880
+,,,,,,,,,,,,,,,,,----------------------------Bow Proficiency----------------------------
+40,Bow Proficiency,rogue_bow_proficiency,passive,bow,,0,0,self/single,0,0,0,"range +400;",0,28
+,,,,,,,,,,,,,,,,,----------------------------Critical Dmg Mastery----------------------------
+40,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +195;",0,14
+43,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +222;",0,17
+46,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +252;",0,20
+49,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +285;",0,25
+52,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +322;",0,37
+55,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +362;",0,40
+58,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +405;",0,44
+60,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +435;",0,60
+62,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +466;",0,85
+64,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +499;",0,95
+66,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +531;",0,140
+68,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +565;",0,160
+70,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +598;",0,195
+72,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +632;",0,325
+74,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +665;",0,440
 ,,,,,,,,,,,,,,,,,----------------------------Signal Flare----------------------------
 60,Signal Flare,signal_flare,physical active,bow,,0,300,target/aoe,1,20,0,Fires a flare: everyone hidden within 300 is revealed and cannot hide again for 30s. Deals no damage.,28,120,[],
 ,,,,,,,,,,,,,,,,,---------------------------Bow Expertise----------------------------

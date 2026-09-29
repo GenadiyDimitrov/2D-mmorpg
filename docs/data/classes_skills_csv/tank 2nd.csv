@@ -1,29 +1,31 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,Comment
 ,,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
-20,Heavy Armor Mastery,tank_armor_mastery,passive,,heavy,0,0,self/single,0,0,0,with heavy: p.def +20 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,1700,[fighter_armor_mastery]
-24,Heavy Armor Mastery,tank_armor_mastery,passive,,heavy,0,0,self/single,0,0,0,with heavy: p.def +27 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,3200,[fighter_armor_mastery]
-28,Heavy Armor Mastery,tank_armor_mastery,passive,,heavy,0,0,self/single,0,0,0,with heavy: p.def +34 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,6000,[fighter_armor_mastery]
-32,Heavy Armor Mastery,tank_armor_mastery,passive,,heavy,0,0,self/single,0,0,0,with heavy: p.def +41 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,11000,[fighter_armor_mastery]
-36,Heavy Armor Mastery,tank_armor_mastery,passive,,heavy,0,0,self/single,0,0,0,with heavy: mpReg +3.1 and p.def +60 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,20000,[fighter_armor_mastery]
-,,,,,,,,,,,,,,,,----------------------------Tank Anti-Magic----------------------------
-20,Tank Anti-Magic,tank_anti_magic,passive,,,0,0,self/single,0,0,0,increase m.def +25,0,1700,[]
-24,Tank Anti-Magic,tank_anti_magic,passive,,,0,0,self/single,0,0,0,increase m.def +30,0,3200,[]
-28,Tank Anti-Magic,tank_anti_magic,passive,,,0,0,self/single,0,0,0,increase m.def +35,0,6000,[]
-32,Tank Anti-Magic,tank_anti_magic,passive,,,0,0,self/single,0,0,0,increase m.def +40,0,11000,[]
-36,Tank Anti-Magic,tank_anti_magic,passive,,,0,0,self/single,0,0,0,increase m.def +45,0,20000,[]
+20,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +20,0,1700,[]
+24,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +27,0,3200,[]
+28,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +34,0,6000,[]
+32,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +41,0,11000,[]
+36,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +60,0,20000,[]
+,,,,,,,,,,,,,,,,----------------------------MpRegen----------------------------
+36,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,increase mpReg +3.1,0,20000,[]
+,,,,,,,,,,,,,,,,----------------------------Tank Defence----------------------------
+20,Tank Defence,tank_defence_mastery,passive,,heavy,0,0,self/single,0,0,0,with heavy: p.def x1.07; crit dmg reduction 15%; eva -2,0,3400,[]
+,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
+20,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +25,0,1700,[]
+24,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +30,0,3200,[]
+28,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +35,0,6000,[]
+32,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +40,0,11000,[]
+36,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +45,0,20000,[]
 ,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
-20,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,with 1h sword/blunt: p.Atk x1.085 and p.Atk +6,0,3400,[fighter_weapon_mastery]
-24,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,with 1h sword/blunt: p.Atk x1.085 and p.Atk +8,0,6400,[fighter_weapon_mastery]
-28,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,with 1h sword/blunt: p.Atk x1.085 and p.Atk +10,0,12000,[fighter_weapon_mastery]
-32,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,with 1h sword/blunt: p.Atk x1.085 and p.Atk +12,0,22000,[fighter_weapon_mastery]
-36,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,with 1h sword/blunt: p.Atk x1.085 and p.Atk +15,0,40000,[fighter_weapon_mastery]
+20,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +6,0,3400,[]
+24,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +8,0,6400,[]
+28,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +10,0,12000,[]
+32,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +12,0,22000,[]
+36,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +15,0,40000,[]
 ,,,,,,,,,,,,,,,,----------------------------Defensive Wall----------------------------
 20,Defensive Wall,defensive_wall,pfysical buff,,,0,0,self/single,0.5,900,30,increase p.def +1800; m.def +1600; buff cancel resist x1.8; ms x0.5,20,3400,[]
 ,,,,,,,,,,,,,,,,----------------------------Shield Mastery----------------------------
 20,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +15%, Shield Rate +50%;",0,3200,[]
 28,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +20%, Shield Rate +70%; bow resistance 16%",0,3200,[]
-,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
-20,Anti-Magic,anti_magic,passive,,,0,0,self/single,0,0,0,magic-fail FLOOR 10% - spells fizzle on you at least 1 cast in 10 no matter the caster - NOT the same skill as Tank Anti-Magic above (that one grants m.def; this one is the floor) - auto-granted at the class change so SP is 0 - lvl2 (15%) at 40 - lvl3 (20%) is written but unreachable until the 4th class exists,0,0,[]
 ,,,,,,,,,,,,,,,,----------------------------Taunt----------------------------
 24,Taunt,provoke,physical active,,,400,0,enemy/single,0,6,1.5,Agro enemy (power 4500) - locks it onto you for 1.5s then leaves you 4500 aggro ahead,0,6400,[],Human;Demon
 28,Taunt,provoke,physical active,,,400,0,enemy/single,0,6,1.5,Agro enemy (power 5000) - locks it onto you for 1.5s then leaves you 5000 aggro ahead,0,12000,[],Human;Demon

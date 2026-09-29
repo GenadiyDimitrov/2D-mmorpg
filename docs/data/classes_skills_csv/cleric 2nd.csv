@@ -1,21 +1,50 @@
 LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPLACES,Comment
-,,,,,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
-20,Armor Mastery,armor_mastery,Passive,,light|robe,0,0,self/single,0,0,0,"Robe: pDef +20, maxMP +20; Light: mpReg x1.2, pDef +20, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)",0,3200,[mastery_robe]
-25,Armor Mastery,armor_mastery,Passive,,light|robe,0,0,self/single,0,0,0,"Robe: pDef +25, maxMP +20; Light: mpReg x1.2, pDef +25, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)",0,6400,[mastery_robe]
-30,Armor Mastery,armor_mastery,Passive,,light|robe,0,0,self/single,0,0,0,"Robe: pDef +30, maxMP +30; Light: mpReg x1.2, pDef +30, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)",0,12800,[mastery_robe]
-35,Armor Mastery,armor_mastery,Passive,,light|robe,0,0,self/single,0,0,0,"Robe: pDef +35, maxMP +30; Light: mpReg x1.2, pDef +35, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery), evasion +2",0,25000,[mastery_robe]
-,,,,,,,,,,,,,,,,----------------------------Anti magic----------------------------
-20,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,"magic def +20, mRes +5%",0,3200,[]
-25,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,"magic def +25, mRes +5%",0,6400,[]
-30,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,"magic def +30, mRes +10%",0,12800,[]
-35,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,"magic def +36, mRes +10%",0,25000,[]
-,,,,,,,,,,,,,,,,----------------------------Spell Mastery----------------------------
-20,Spell Mastery,spell_mastery,Passive,sword|blunt,,0,0,self/single,0,0,0,"with sword/blunt Decreses the reuse delay with 10%, mAtk +6, pAtk +4",0,3200,[weapon_mastery]
-25,Spell Mastery,spell_mastery,Passive,sword|blunt,,0,0,self/single,0,0,0,"with sword/blunt Decreses the reuse delay with 10%, mAtk +8, pAtk +6, mpReg +1.1, cast speed x1.05",0,6400,[weapon_mastery]
-30,Spell Mastery,spell_mastery,Passive,sword|blunt,,0,0,self/single,0,0,0,"with sword/blunt Decreses the reuse delay with 10%, mAtk +10, pAtk +8, mpReg +1.1, cast speed x1.05",0,12800,[weapon_mastery]
-35,Spell Mastery,spell_mastery,Passive,sword|blunt,,0,0,self/single,0,0,0,"with sword/blunt Decreses the reuse delay with 10%, mAtk +12, pAtk +10, mpReg +1.5,hpReg +1.1, cast speed x1.05",0,25000,[weapon_mastery]
+,,,,,,,,,,,,,,,,----------------------------Robe Armor Mastery----------------------------
+20,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +20",0,3200,[]
+25,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +25",0,6400,[]
+30,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +30",0,12800,[]
+35,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +35",0,25000,[]
+,,,,,,,,,,,,,,,,----------------------------Light Armor Mastery----------------------------
+20,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +20",0,3200,[]
+25,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +25",0,6400,[]
+30,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +30",0,12800,[]
+35,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +35",0,25000,[]
+,,,,,,,,,,,,,,,,----------------------------Light Caster Mastery----------------------------
+20,Light Caster Mastery,armor_mastery,Passive,,light,0,0,self/single,0,0,0,"Light: mpReg x1.2, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)",0,3200,[]
+,,,,,,,,,,,,,,,,----------------------------Evasion----------------------------
+35,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +2",0,25000,[]
+,,,,,,,,,,,,,,,,----------------------------Mana Capacity----------------------------
+20,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,maxMP +20,0,3200,[]
+30,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,maxMP +30,0,12800,[]
+,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
+20,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +20",0,3200,[]
+25,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +25",0,6400,[]
+30,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +30",0,12800,[]
+35,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +36",0,25000,[]
+,,,,,,,,,,,,,,,,----------------------------Magic Resistance----------------------------
+20,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +5%",0,3200,[]
+30,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +10%",0,12800,[]
+,,,,,,,,,,,,,,,,----------------------------Spellcaster Weapon Mastery----------------------------
+20,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +6",0,3200,[]
+25,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +8",0,6400,[]
+30,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +10",0,12800,[]
+35,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +12",0,25000,[]
+,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
+20,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +4",0,3200,[]
+25,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +6",0,6400,[]
+30,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +8",0,12800,[]
+35,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +10",0,25000,[]
+,,,,,,,,,,,,,,,,----------------------------Cooldown Mastery----------------------------
+20,Cooldown Mastery,cooldown_mastery,Passive,,,0,0,self/single,0,0,0,Decreses the reuse delay with 10%,0,3200,[]
+,,,,,,,,,,,,,,,,----------------------------Cast Speed Mastery----------------------------
+25,Cast Speed Mastery,cast_speed_mastery,Passive,,,0,0,self/single,0,0,0,cast speed x1.05,0,6400,[]
+,,,,,,,,,,,,,,,,----------------------------MpRegen----------------------------
+25,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,mpReg +1.1,0,6400,[]
+35,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,mpReg +1.5,0,25000,[]
+,,,,,,,,,,,,,,,,----------------------------HpRegen----------------------------
+35,HP regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,hpReg +1.1,0,25000,[]
 ,,,,,,,,,,,,,,,,----------------------------Holy Bolt----------------------------
-20,Holy Bolt,holy_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +21,20,3200,[magic_bolt vampiric_bolt]
+20,Holy Bolt,holy_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +21,20,3200,[magic_bolt]
 25,Holy Bolt,holy_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +25,23,6400,[]
 30,Holy Bolt,holy_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +30,26,12800,[]
 35,Holy Bolt,holy_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +36,31,25000,[]

@@ -1,16 +1,48 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,Comment
-,,,,,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
-20,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,eva +7; crit rate resist + 15%; p.def +16,0,1700,[fighter_armor_mastery]
-24,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,eva +9; crit rate resist + 15%; p.def +18,0,3200,[fighter_armor_mastery]
-28,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,eva +12; crit rate resist + 15%; speed +7; p.def +20,0,6000,[fighter_armor_mastery]
-32,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,eva +12; crit rate resist + 15%; speed +7; p.def +22,0,11000,[fighter_armor_mastery]
-36,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,eva +12; crit rate resist + 15%; speed +7; mpReg +1.8; hpReg +2.5; p.def +25,0,20000,[fighter_armor_mastery]
+,,,,,,,,,,,,,,,,----------------------------Light Armor Mastery----------------------------
+20,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +16,0,1700,[]
+24,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +18,0,3200,[]
+28,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +20,0,6000,[]
+32,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +22,0,11000,[]
+36,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +25,0,20000,[]
+,,,,,,,,,,,,,,,,----------------------------Evasion----------------------------
+20,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +7,0,1700,[]
+24,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +9,0,3200,[]
+28,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +12,0,6000,[]
+,,,,,,,,,,,,,,,,----------------------------Critical Resist----------------------------
+20,Critical Resist,rogue_crit_resist,Passive,,light,0,0,self/single,0,0,0,light: crit rate resist +15%,0,1700,[]
+,,,,,,,,,,,,,,,,----------------------------HpRegen----------------------------
+36,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,increase hpReg +2.5,0,20000,[]
+,,,,,,,,,,,,,,,,----------------------------MpRegen----------------------------
+36,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,increase mpReg +1.8,0,20000,[]
+,,,,,,,,,,,,,,,,----------------------------Accuracy----------------------------
+24,Accuracy,fighter_accuracy,passive,,,0,0,self/single,0,0,0,increase acc +3;,0,3200,[]
+,,,,,,,,,,,,,,,,----------------------------Critical Dmg Mastery----------------------------
+20,Critical Damage,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,increase crit dmg +35;,0,1700,[]
+24,Critical Damage,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,increase crit dmg +64;,0,3200,[]
+28,Critical Damage,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,increase crit dmg +80;,0,6000,[]
+32,Critical Damage,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,increase crit dmg +140;,0,11000,[]
+36,Critical Damage,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,increase crit dmg +165;,0,20000,[]
+,,,,,,,,,,,,,,,,----------------------------Critical Rate Mastery----------------------------
+20,Critical Rate,rogue_critical_rate_mastery,passive,bow|duals,,0,0,self/single,0,0,0,crit rate x1.2;,0,1700,[]
+,,,,,,,,,,,,,,,,----------------------------Fury----------------------------
+36,Fury,fury_mastery,passive,,,0,0,self/single,0,0,0,AS x1.05;,0,20000,[]
+,,,,,,,,,,,,,,,,----------------------------Swift----------------------------
+28,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,speed +7;,0,6000,[]
+,,,,,,,,,,,,,,,,----------------------------Bow Proficiency----------------------------
+20,Bow Proficiency,rogue_bow_proficiency,passive,bow,,0,0,self/single,0,0,0,range +200;,0,1700,[]
 ,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
-20,Weapon Mastery,rogue_weapon_mastery,passive,bow|duals,,0,0,self/single,0,0,0,with bow: p.Atk +30 and range +200; with dual: p.atk +8; With all: p.atk x1.085 and crit dmg +35 and crit rate x1.2;,0,3400,[fighter_weapon_mastery]
-24,Weapon Mastery,rogue_weapon_mastery,passive,bow|duals,,0,0,self/single,0,0,0,with bow: p.Atk +42 and range +200; with dual: p.atk +11; With all: p.atk x1.085 and crit dmg +64 and acc +3 and crit rate x1.2;,0,6400,[fighter_weapon_mastery]
-28,Weapon Mastery,rogue_weapon_mastery,passive,bow|duals,,0,0,self/single,0,0,0,with bow: p.Atk +56 and range +200; with dual: p.atk +14; With all: p.atk x1.085 and crit dmg +80 and acc +3 and crit rate x1.2;,0,12000,[fighter_weapon_mastery]
-32,Weapon Mastery,rogue_weapon_mastery,passive,bow|duals,,0,0,self/single,0,0,0,with bow: p.Atk +74 and range +200; with dual: p.atk +17; With all: p.atk x1.085 and crit dmg +140 and acc +3 and crit rate x1.2;,0,22000,[fighter_weapon_mastery]
-36,Weapon Mastery,rogue_weapon_mastery,passive,bow|duals,,0,0,self/single,0,0,0,with bow: p.Atk +96 and range +200; with dual: p.atk +21; With all: p.atk x1.085 and crit dmg +165 and acc +3 and crit rate x1.2 and AS x1.05;,0,40000,[fighter_weapon_mastery]
+20,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +8,0,3400,[]
+24,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +11,0,6400,[]
+28,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +14,0,12000,[]
+32,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +17,0,22000,[]
+36,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +21,0,40000,[]
+,,,,,,,,,,,,,,,,----------------------------Bow Mastery----------------------------
+20,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,bow: p.Atk +30,0,3400,[]
+24,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,bow: p.Atk +42,0,6400,[]
+28,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,bow: p.Atk +56,0,12000,[]
+32,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,bow: p.Atk +74,0,22000,[]
+36,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,bow: p.Atk +96,0,40000,[]
 ,,,,,,,,,,,,,,,,----------------------------Piercing Stab----------------------------
 20,Piercing Stab,piercing_stab,physical active,duals,,40,0,enemy/single,1,3,0,power 314 - only when skill does critical - otherwise normal attack - require duals,18,1700,[stab strike]
 24,Piercing Stab,piercing_stab,physical active,duals,,40,0,enemy/single,1,3,0,power 427 - only when skill does critical - otherwise normal attack - require duals,21,3200,[stab strike]

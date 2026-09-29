@@ -1,52 +1,85 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment
-,,,,,,,,,,,,,,,,,,,----------------------------Anti magic----------------------------
-76,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,"magic def +113, mRes +30%",0,6.5kk,1kk
-77,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,"magic def +116, mRes +30%",0,11kk,1kk
-78,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,"magic def +119, mRes +30%",0,16kk,1kk
-79,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,"magic def +121, mRes +30%",0,80kk,1kk
-80,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,"magic def +123, mRes +30%",0,0,5kk
-81,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,"magic def +125, mRes +30%",0,0,7.5kk
-82,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,"magic def +127, mRes +30%",0,0,10kk
-83,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,"magic def +129, mRes +30%",0,0,15kk
-84,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,"magic def +131, mRes +30%",0,0,30kk
-85,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,"magic def +133, mRes +30%",0,0,50kk
-86,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,"magic def +135, mRes +35%",0,0,75kk
-87,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,"magic def +138, mRes +35%",0,0,100kk
-88,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,"magic def +140, mRes +35%",0,0,100kk
-89,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,"magic def +144, mRes +35%",0,0,100kk
-90,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,"magic def +149, mRes +35%",0,0,100kk
+,,,,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
+76,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +113",0,6.5kk,1kk
+77,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +116",0,11kk,1kk
+78,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +119",0,16kk,1kk
+79,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +121",0,80kk,1kk
+80,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +123",0,0,5kk
+81,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +125",0,0,7.5kk
+82,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +127",0,0,10kk
+83,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +129",0,0,15kk
+84,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +131",0,0,30kk
+85,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +133",0,0,50kk
+86,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +135",0,0,75kk
+87,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +138",0,0,100kk
+88,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +140",0,0,100kk
+89,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +144",0,0,100kk
+90,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +149",0,0,100kk
+,,,,,,,,,,,,,,,,,,,----------------------------Magic Resistance----------------------------
+86,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +35%",0,0,75kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Spellcaster Weapon Mastery----------------------------
-76,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +101, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,6.5kk,1kk
-77,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +102, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,11kk,1kk
-78,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +104, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,16kk,1kk
-79,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +105, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,80kk,1kk
-80,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +106, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,5kk
-81,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +108, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,7.5kk
-82,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +109, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,10kk
-83,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +110, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,15kk
-84,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +112, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,30kk
-85,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +113, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,50kk
-86,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +115, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,75kk
-87,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +116, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,100kk
-88,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +117, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,100kk
-89,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +119, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,100kk
-90,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,blunt,,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +120, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,100kk
-,,,,,,,,,,,,,,,,,,,----------------------------Healer Armor Mastery----------------------------
-76,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +89, maxMP +220; mpWhenRestored +60%; mDef  +2%",0,6.5kk,1kk
-77,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +91, maxMP +220; mpWhenRestored +60%; mDef  +4%",0,11kk,1kk
-78,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +92, maxMP +250; mpWhenRestored +60%; mDef  +5%; Decrease Mp Consumption with 5%",0,16kk,1kk
-79,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +93, maxMP +250; mpWhenRestored +60%; mDef  +7%; Decrease Mp Consumption with 5%",0,80kk,1kk
-80,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +95, maxMP +250; mpWhenRestored +65%; mDef  +8%; Decrease Mp Consumption with 5%",0,0,5kk
-81,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +96, maxMP +290; mpWhenRestored +65%; mDef +10%; Decrease Mp Consumption with 8%",0,0,7.5kk
-82,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +97, maxMP +290; mpWhenRestored +65%; mDef +11%; Decrease Mp Consumption with 8%",0,0,10kk
-83,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe:  pDef +99, maxMP +300; mpWhenRestored +65%; mDef +13%; Decrease Mp Consumption with 8%",0,0,15kk
-84,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe: pDef +100, maxMP +300; mpWhenRestored +65%; mDef +14%; Decrease Mp Consumption with 8%",0,0,30kk
-85,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe: pDef +101, maxMP +300; mpWhenRestored +70%; mDef +16%; Decrease Mp Consumption with 8%",0,0,50kk
-86,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe: pDef +103, maxMP +330; mpWhenRestored +70%; mDef +17%; Decrease Mp Consumption with 10%",0,0,75kk
-87,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe: pDef +104, maxMP +330; mpWhenRestored +70%; mDef +19%; Decrease Mp Consumption with 10%",0,0,100kk
-88,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe: pDef +105, maxMP +350; mpWhenRestored +70%; mDef +20%; Decrease Mp Consumption with 10%",0,0,100kk
-89,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe: pDef +107, maxMP +350; mpWhenRestored +70%; mDef +22%; Decrease Mp Consumption with 10%",0,0,100kk
-90,Mage Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe: pDef +108, maxMP +400; mpWhenRestored +70%; mDef +25%; Decrease Mp Consumption with 10%",0,0,100kk
+76,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +101",0,6.5kk,1kk
+77,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +102",0,11kk,1kk
+78,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +104",0,16kk,1kk
+79,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +105",0,80kk,1kk
+80,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +106",0,0,5kk
+81,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +108",0,0,7.5kk
+82,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +109",0,0,10kk
+83,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +110",0,0,15kk
+84,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +112",0,0,30kk
+85,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +113",0,0,50kk
+86,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +115",0,0,75kk
+87,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +116",0,0,100kk
+88,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +117",0,0,100kk
+89,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +119",0,0,100kk
+90,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +120",0,0,100kk
+,,,,,,,,,,,,,,,,,,,----------------------------Robe Armor Mastery----------------------------
+76,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +89",0,6.5kk,1kk
+77,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +91",0,11kk,1kk
+78,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +92",0,16kk,1kk
+79,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +93",0,80kk,1kk
+80,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +95",0,0,5kk
+81,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +96",0,0,7.5kk
+82,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +97",0,0,10kk
+83,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +99",0,0,15kk
+84,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +100",0,0,30kk
+85,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +101",0,0,50kk
+86,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +103",0,0,75kk
+87,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +104",0,0,100kk
+88,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +105",0,0,100kk
+89,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +107",0,0,100kk
+90,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +108",0,0,100kk
+,,,,,,,,,,,,,,,,,,,----------------------------Mana Capacity----------------------------
+76,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +220",0,6.5kk,1kk
+78,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +250",0,16kk,1kk
+81,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +290",0,0,7.5kk
+83,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +300",0,0,15kk
+86,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +330",0,0,75kk
+88,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +350",0,0,100kk
+90,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +400",0,0,100kk
+,,,,,,,,,,,,,,,,,,,----------------------------M.Def Mastery----------------------------
+76,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +2%",0,6.5kk,1kk
+77,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +4%",0,11kk,1kk
+78,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +5%",0,16kk,1kk
+79,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +7%",0,80kk,1kk
+80,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +8%",0,0,5kk
+81,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +10%",0,0,7.5kk
+82,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +11%",0,0,10kk
+83,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +13%",0,0,15kk
+84,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +14%",0,0,30kk
+85,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +16%",0,0,50kk
+86,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +17%",0,0,75kk
+87,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +19%",0,0,100kk
+88,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +20%",0,0,100kk
+89,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +22%",0,0,100kk
+90,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +25%",0,0,100kk
+,,,,,,,,,,,,,,,,,,,----------------------------Mana Efficiency----------------------------
+78,Mana Efficiency,mp_cost_mastery,Passive,,,0,0,self/single,0,0,0,"Decrease Mp Consumption with 5%",0,16kk,1kk
+81,Mana Efficiency,mp_cost_mastery,Passive,,,0,0,self/single,0,0,0,"Decrease Mp Consumption with 8%",0,0,7.5kk
+86,Mana Efficiency,mp_cost_mastery,Passive,,,0,0,self/single,0,0,0,"Decrease Mp Consumption with 10%",0,0,75kk
+,,,,,,,,,,,,,,,,,,,----------------------------Mana Recovery----------------------------
+80,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +65%",0,0,5kk
+85,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +70%",0,0,50kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Arcane Momentum----------------------------
 76,Arcane Momentum,reuse_reset_momentum,Passive,,,0,0,self/single,0,0,0,reuse reset 5% - a skill you cast has that chance to come off reuse immediately - never on a fixed-cooldown skill - scales with ATK,0,6.5kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Mage Shield Mastery----------------------------

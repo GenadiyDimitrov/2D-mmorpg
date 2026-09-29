@@ -1,36 +1,76 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment
-,,,,,,,,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
-76,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +124 and hpReg +4.0; Light: eva +10; Heavy: P.Def +60, HP +200;",0,6.5kk,1kk
-77,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +126 and hpReg +4.0; Light: eva +10; Heavy: P.Def +60, HP +200;",0,11kk,1kk
-78,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +128 and hpReg +4.0; Light: eva +10; Heavy: P.Def +60, HP +200;",0,16kk,1kk
-79,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +130 and hpReg +4.0; Light: eva +10; Heavy: P.Def +60, HP +200;",0,80kk,1kk
-80,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +132 and hpReg +4.0; Light: eva +11; Heavy: P.Def +70, HP +250;",0,0,5kk
-81,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +134 and hpReg +4.0; Light: eva +11; Heavy: P.Def +70, HP +250;",0,0,7.5kk
-82,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +136 and hpReg +4.0; Light: eva +11; Heavy: P.Def +70, HP +250;",0,0,10kk
-83,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +138 and hpReg +4.0; Light: eva +11; Heavy: P.Def +70, HP +250;",0,0,15kk
-84,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +140 and hpReg +4.0; Light: eva +11; Heavy: P.Def +70, HP +250;",0,0,30kk
-85,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +142 and hpReg +4.0; Light: eva +11; Heavy: P.Def +80, HP +300;",0,0,50kk
-86,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +145 and hpReg +4.0; Light: eva +12; Heavy: P.Def +80, HP +300;",0,0,75kk
-87,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +146 and hpReg +4.0; Light: eva +12; Heavy: P.Def +80, HP +300;",0,0,100kk
-88,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +149 and hpReg +4.0; Light: eva +12; Heavy: P.Def +80, HP +300;",0,0,100kk
-89,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +152 and hpReg +4.0; Light: eva +12; Heavy: P.Def +80, HP +300;",0,0,100kk
-90,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +155 and hpReg +4.0; Light: eva +12; Heavy: P.Def +80, HP +300;",0,0,100kk
-,,,,,,,,,,,,,,,,,,,----------------------------Two-Hand Mastery----------------------------
-76,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +632; p.atk +153;",0,6.5kk,1kk
-77,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +649; p.atk +156;",0,11kk,1kk
-78,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +666; p.atk +159;",0,16kk,1kk
-79,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +678; p.atk +162;",0,80kk,1kk
-80,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +690; p.atk +165;",0,0,5kk
-81,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +707; p.atk +168;",0,0,7.5kk
-82,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +724; p.atk +171;",0,0,10kk
-83,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +741; p.atk +174;",0,0,15kk
-84,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +758; p.atk +177;",0,0,30kk
-85,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +775; p.atk +180;",0,0,50kk
-86,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +792; p.atk +184;",0,0,75kk
-87,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +809; p.atk +188;",0,0,100kk
-88,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +826; p.atk +192;",0,0,100kk
-89,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +843; p.atk +196;",0,0,100kk
-90,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +860; p.atk +200;",0,0,100kk
+,,,,,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
+76,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +184",0,6.5kk,1kk
+77,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +186",0,11kk,1kk
+78,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +188",0,16kk,1kk
+79,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +190",0,80kk,1kk
+80,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +202",0,0,5kk
+81,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +204",0,0,7.5kk
+82,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +206",0,0,10kk
+83,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +208",0,0,15kk
+84,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +210",0,0,30kk
+85,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +222",0,0,50kk
+86,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +225",0,0,75kk
+87,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +226",0,0,100kk
+88,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +229",0,0,100kk
+89,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +232",0,0,100kk
+90,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +235",0,0,100kk
+,,,,,,,,,,,,,,,,,,,----------------------------Light Armor Mastery----------------------------
+76,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +124",0,6.5kk,1kk
+77,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +126",0,11kk,1kk
+78,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +128",0,16kk,1kk
+79,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +130",0,80kk,1kk
+80,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +132",0,0,5kk
+81,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +134",0,0,7.5kk
+82,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +136",0,0,10kk
+83,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +138",0,0,15kk
+84,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +140",0,0,30kk
+85,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +142",0,0,50kk
+86,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +145",0,0,75kk
+87,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +146",0,0,100kk
+88,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +149",0,0,100kk
+89,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +152",0,0,100kk
+90,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +155",0,0,100kk
+,,,,,,,,,,,,,,,,,,,----------------------------Evasion----------------------------
+76,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +10",0,6.5kk,1kk
+80,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +11",0,0,5kk
+86,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +12",0,0,75kk
+,,,,,,,,,,,,,,,,,,,----------------------------Heavy Vitality----------------------------
+76,Heavy Vitality,heavy_vitality,Passive,,heavy,0,0,self/single,0,0,0,"heavy: max HP +200",0,6.5kk,1kk
+80,Heavy Vitality,heavy_vitality,Passive,,heavy,0,0,self/single,0,0,0,"heavy: max HP +250",0,0,5kk
+85,Heavy Vitality,heavy_vitality,Passive,,heavy,0,0,self/single,0,0,0,"heavy: max HP +300",0,0,50kk
+,,,,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
+76,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +153",0,6.5kk,1kk
+77,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +156",0,11kk,1kk
+78,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +159",0,16kk,1kk
+79,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +162",0,80kk,1kk
+80,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +165",0,0,5kk
+81,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +168",0,0,7.5kk
+82,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +171",0,0,10kk
+83,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +174",0,0,15kk
+84,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +177",0,0,30kk
+85,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +180",0,0,50kk
+86,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +184",0,0,75kk
+87,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +188",0,0,100kk
+88,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +192",0,0,100kk
+89,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +196",0,0,100kk
+90,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +200",0,0,100kk
+,,,,,,,,,,,,,,,,,,,----------------------------Critical Damage Mastery----------------------------
+76,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +632;",0,6.5kk,1kk
+77,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +649;",0,11kk,1kk
+78,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +666;",0,16kk,1kk
+79,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +678;",0,80kk,1kk
+80,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +690;",0,0,5kk
+81,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +707;",0,0,7.5kk
+82,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +724;",0,0,10kk
+83,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +741;",0,0,15kk
+84,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +758;",0,0,30kk
+85,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +775;",0,0,50kk
+86,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +792;",0,0,75kk
+87,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +809;",0,0,100kk
+88,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +826;",0,0,100kk
+89,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +843;",0,0,100kk
+90,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +860;",0,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Overpower----------------------------
 76,Overpower,overpower,passive,,,0,0,self/single,0,0,0,double rate 10% - skills marked [Double] strike for DOUBLE damage that often - scales with ATK - without this passive NO skill can double,0,6.5kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Overpower Mastery----------------------------

@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.42**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.43**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,25 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-09-29 (latest) — 0.214.42: the Blessing bar you can read
+## 2026-09-29 (latest) — 0.214.43: one Vampiric Bolt for the Human mage; the passive CSVs re-authored (`BL-314`)
+
+His note: *"fix mage1st vampiric_bolt @14 .. to match the human_vampiric_bolt (now i have two skills at lvl 20 with
+human mage)"*.
+
+- **The Human's level-14 Vampiric Bolt is rung 1 of `human_vampiric_bolt`** (power 21, 28 MP, range 600, 2k SP), so a
+  Human mage holds one drain bolt from 14 to 90 instead of a 14 "taster" next to the ladder from 20. The one-rung
+  `vampiric_bolt` skill is deleted. Holy Bolt now replaces only Magic Bolt; it used to also replace the taster, and
+  the ladder handed the bolt straight back at 20 anyway. The two `[vampiric_bolt]` Replaces cells in `nuker 3rd.csv`
+  (Elf Frost Spikes, Demon Witches Curse) named a Human-only skill and are emptied. ⚠ **New APK** (the Learn tab is
+  built from the compiled class tables) and a **`game.db` delete** (the old id is gone).
+- **`BL-314`, data only, NOT built:** every 2nd-4th class CSV is re-authored into single-stat passives, and the armor
+  and weapon masteries are merged into shared ladders from level 1 (`heavy_/light_/mage_armor_mastery`,
+  `weapon_mastery`, `bow_mastery`, `spellcaster_weapon_mastery`, `anti_magic` / `magic_resistance` /
+  `magic_protection`, …). The engine still runs the old bundles, so `SkillCsvSeed --check` reports ~400 differences
+  until the build step. See `docs/design/PassiveSplit.md` §10-§11, which also records his two data fixes (robe P.Def
+  47 and spellcaster M.Atk 36 at level 48).
+
+## 2026-09-29 — 0.214.42: the Blessing bar you can read
 
 His note on 0.214.41: *"the active blessing bar -> cannot read the timer - the golden is very close to the white - need
 color change or the forgrownd to change ... or the active one is the current fillup one and the fillup rangeish color can

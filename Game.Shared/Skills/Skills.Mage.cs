@@ -14,7 +14,6 @@ public static partial class SkillCatalog
     //  old string, and two defs with one payload is how a number drifts. Don't reinstate it.)
     public const string Might = "might";
     public const string MageAntiMagic = "anti_magic_mage";
-    public const string VampiricBolt = "vampiric_bolt";
     public const string WeaponMastery = "weapon_mastery";
     public const string Weakness = "weakness";
     public const string GreaterWeakness = "greater_weakness";
@@ -74,8 +73,8 @@ public static partial class SkillCatalog
         // ⚠ THIS IS THE ONE PLACE A RACE LAYER IS TAKEN AWAY, and it is deliberate: an Elf who
         //   becomes a cleric TRADES a self-only heal for a targeted one, which is strictly the better
         //   tool and the reason the class exists. Do not generalise it — nothing else in either race
-        //   block is replaced by anything, and the Human's drain LADDER is explicitly not (only the
-        //   level-14 `vampiric_bolt` taster beside it is; see the Holy Bolt note below).
+        //   block is replaced by anything, and the Human's drain LADDER is explicitly not (its level-14
+        //   rung included, since 2026-09-29 — see the Holy Bolt note below).
         new(Heal, "Heal", BaseClass.Mage, SkillEffect.Heal,
             // Reuse 2s -> 3s (owner, 2026-08-28: *"heal/great heal are 5 cast 3 reuse"*).
             MpCost: 30, CastTicks: 50, CooldownTicks: 30, Range: 600, Power: 151,
@@ -162,27 +161,6 @@ public static partial class SkillCatalog
                 new SkillLevel(SpCost: 36000, Passive: new PassiveEffect(MagicDefence: 43, MagicResist: 0.15f),
                     Description: "+43 magic defence and 15% magic resistance."),
             }.Concat(HealerAntiMagicRungs()).Concat(HealerFourthAntiMagicRungs()).ToArray()),
-
-        // Vampiric Bolt — the base mage's DRAIN TASTER, and since 2026-09-17 (`BL-258`) exactly ONE
-        // RUNG, learned at 14 by a HUMAN alone.
-        //
-        // 🔴 THE OTHER THIRTY-THREE RUNGS LEFT UNDER A NEW ID. His race pass moved the ladder out of
-        //    `nuker 2nd/3rd/4th.csv` and into the `mage 1st.csv` race block as `human_vampiric_bolt`,
-        //    where it belongs to every HUMAN MYSTIC rather than the Human nuker — see
-        //    Skills.MageRace.cs. This rung stays behind because it has a job the ladder must not
-        //    have: the cleric's Holy Bolt `Replaces` it at 20. A base-class taster is replaceable; a
-        //    race layer is not, and one id could not be both.
-        // ⚠ RANGE 600, not the 750 it carried for a year — his row. The ladder's own first rung
-        //   (level 20) is where 750 starts.
-        new(VampiricBolt, "Vampiric Bolt", BaseClass.Mage, SkillEffect.MagicDamage,
-            MpCost: 28, CastTicks: 40, CooldownTicks: 10, Range: 600, Power: 21,
-            Category: SkillCategory.Magic,  SpCost: 2_000, Lifesteal: 0.40f,
-            Description: "A draining bolt that heals you for 40% of the damage dealt.",
-            Levels: new[]
-            {
-                // MP and POWER are his (`mage 1st.csv` @14): 28 total, power 21.
-                new SkillLevel(Power: 21,  MpCost: 28,   SpCost: 2_000,   Description: "Drain power 21; heals 40% of damage."),   // 14
-            }),
 
         // Elemental Bolt — the Nuker's MAIN nuke (replaces Magic Bolt). 13 levels, learned
         // every 5 levels from 20 to 80.
@@ -456,10 +434,10 @@ public static partial class SkillCatalog
         // 4 levels learned at 20/25/30/35.
         new(HolyBolt, "Holy Bolt", BaseClass.Mage, SkillEffect.MagicDamage,
             MpCost: 20, CastTicks: 40, CooldownTicks: 10, Range: 750, Power: 21,
-            // The healer's nuke replaces the basic — and, since 2026-09-17, the HUMAN's level-14
-            // drain taster with it (his `cleric 2nd.csv`: `[magic_bolt vampiric_bolt]`). It does NOT
-            // touch `human_vampiric_bolt`: that is the race ladder, which no class change takes away.
-            Replaces: new[] { MagicBolt, VampiricBolt },
+            // The healer's nuke replaces the basic. It does NOT touch `human_vampiric_bolt`: that is
+            // the race ladder, which no class change takes away (its level-14 rung included — the old
+            // one-rung `vampiric_bolt` taster it used to replace was folded into it 2026-09-29).
+            Replaces: new[] { MagicBolt },
             Category: SkillCategory.Magic,  
             Description: "A bolt of holy power — the Healer's offensive spell (replaces Magic Bolt). Spells fail rather than miss.",
             Levels: new[]

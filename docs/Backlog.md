@@ -278,7 +278,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-286` | ⏸ | **CASTLE "NOBLE" CHARISMA** — a castle-holding clan leader gets charisma decay/loss protection or a grant; split out of `BL-283`; waits on castles | social |
 | `BL-288` | ⏸ | **CONSUMABLE RARITY → PLAIN LEVELS 1-6** — potions/scrolls may drop the rarity word entirely; deferred by him, split out of `BL-272` | items |
 | `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
-| `BL-314` | 🔵 | **Split passives into single-stat pieces** — 📝 DESIGNED (`PassiveSplit.md`, 6 Qs; his 4 answers in) — regen / P.Def / speed as their own ladders shared across classes, so ten armor masteries become a few mixable passives — design first | skills |
+| `BL-314` | 🔵 | **Split passives into single-stat pieces** — 📝 CSVs SPLIT + LADDERS MERGED 2026-09-29 (`PassiveSplit.md` §10-§11; SP pass + k + build next) — regen / P.Def / speed as their own ladders shared across classes, so ten armor masteries become a few mixable passives — design first | skills |
 | `BL-323` | ⏸ | **Server-side collision (geodata)** — the server checks walls/buildings too, not only the 3D models; waits on `BL-281` | world |
 | `BL-324` | 🔵 | **Town sprint** — 📝 PROPOSED 2026-09-29: a visible **Paved Streets** buff inside the wall (+50 run, cap 250, off in combat), no button; 1 Q (whole town or streets only) | world |
 
