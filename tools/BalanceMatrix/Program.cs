@@ -2660,6 +2660,8 @@ if (args.Length > 0 && args[0] == "--drops") { DropFinder.Run(args); return; }
 if (args.Length > 0 && args[0] == "--town-svg") { TownSvg.Run(args); return; }
 // `BL-314` — SP earned per level vs the SP each path's whole kit costs, 1-85. See SpBudget.cs.
 if (args.Length > 0 && args[0] == "--sp-budget") { SpBudget.Run(args); return; }
+// `BL-314` — what every passive carries and gates, the inventory the split is designed from. See PassiveInventory.cs.
+if (args.Length > 0 && args[0] == "--passive-inventory") { PassiveInventory.Run(args); return; }
 
 // `--dump-drop-csv` (`BL-274` part 1) — WRITES `docs/data/mobs/mob_drops.csv`, the READABLE per-mob drop table:
 // every roster creature's dealt specialty, the gear kinds it drops, its base mats and its refinable metal. It is

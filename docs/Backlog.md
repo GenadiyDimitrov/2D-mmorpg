@@ -278,7 +278,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-286` | ⏸ | **CASTLE "NOBLE" CHARISMA** — a castle-holding clan leader gets charisma decay/loss protection or a grant; split out of `BL-283`; waits on castles | social |
 | `BL-288` | ⏸ | **CONSUMABLE RARITY → PLAIN LEVELS 1-6** — potions/scrolls may drop the rarity word entirely; deferred by him, split out of `BL-272` | items |
 | `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
-| `BL-314` | 🔵 | **Split passives into single-stat pieces** — 📝 MEASURED (`SpBudget.md`, 4 Qs) — regen / P.Def / speed as their own ladders shared across classes, so ten armor masteries become a few mixable passives — design first | skills |
+| `BL-314` | 🔵 | **Split passives into single-stat pieces** — 📝 DESIGNED (`PassiveSplit.md`, 6 Qs; his 4 answers in) — regen / P.Def / speed as their own ladders shared across classes, so ten armor masteries become a few mixable passives — design first | skills |
 | `BL-323` | ⏸ | **Server-side collision (geodata)** — the server checks walls/buildings too, not only the 3D models; waits on `BL-281` | world |
 | `BL-324` | 🔵 | **Town sprint** — in a town, a move click shows a "Sprint" button after 1-2 s (or a Setup auto-sprint) for +50 move speed, cap 250 | world |
 
@@ -2289,6 +2289,15 @@ desitions .. not 1 passive 200 stats in one go ... now 200 passive -> chose wise
   kit, 20-75 is **not** spare: daggers 1.9-2.3×, bows/warriors 1.5-1.9×, tanks/Magus 1.2-1.3×, **healers 0.78-0.93× (short)**.
   The "spare" is the Favor (+400%), Blessing and runes. A flat passive ×3-4 leaves daggers and bows near 1 and halves the healers;
   ❓ **four questions in §5 of the doc** (flat vs one target — my pick 0.65 at ×1, the healers, whether to count the Favor).
+- ✅ **2026-09-29, HIS ANSWERS:** *"not flat for everyone -> make it as u said .. target for evey class"* · *"make the target
+  x0.60 and x0.45~0.55 for healer/buffers - rogues can even be about x7.5~8 - warriors/tanks x4.5~5.5 - mages/healers
+  x4~4.5"* · *"harder for healers they have most skills of all so they need to deside -> support/party or dmg/solo"* ·
+  *"dont count the favor -> ... the favor just speedup the things not change it"*.
+- 📝 **2026-09-29: THE SPLIT, DESIGNED — `docs/design/PassiveSplit.md`** (not built, no CSV touched). Measured: his k's land
+  every path at 0.54-0.67, healers 0.45-0.51; everyone is short from level 20. One piece = one stat; shared ladders keep
+  every authored number (a repricing, not a rebalance); a piece needs a rung only where its value changes (rows roughly ×2,
+  not ×6); ×k lives in the engine, the CSV keeps the ×1 price. `BalanceMatrix --passive-inventory [id]` is the inventory.
+  ❓ **six questions in §9 of the doc.**
 
 
 ## `BL-323` ⏸ SERVER-SIDE COLLISION (GEODATA)

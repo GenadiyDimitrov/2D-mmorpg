@@ -15,27 +15,27 @@ Before designing the split, I measured the gap with `dotnet run --project tools/
 - **SP the kit costs** = every rung of the path (1st + 2nd + 3rd + ascended 4th), each priced with the class's own SP cost
   (so the CSV prices). From each pick-one group (the stat swaps, for example) only the dearest member counts.
 
-| band | SP earned (×1) |
-|---|---:|
-| 1-19 | 42k |
-| 20-39 | 729k |
-| 40-59 | 5.6M |
-| 60-75 | 40.2M |
-| 76-85 | 1,244M |
+| band  | SP earned (×1) |
+| ----- | -------------: |
+| 1-19  |            42k |
+| 20-39 |           729k |
+| 40-59 |           5.6M |
+| 60-75 |          40.2M |
+| 76-85 |         1,244M |
 
 ## 2. What it shows
 
 **At ×1, buying everything, there is no SP to spare between 20 and 75.** `x 20-75` below is SP earned divided by the kit's
 cost over 20-75 (above 1 means you can afford all of it):
 
-| path group | x 20-75 | passives' share of the kit | SP left at 75 after buying all |
-|---|---:|---:|---:|
-| daggers (Phantom, Stalker, Assassin) | 1.9-2.3 | 59% | +15 to +20M |
-| bows (Sentinel, Soultracker, Sharpshooter) | 1.5-1.7 | 72% | +9 to +13M |
-| warriors (Ravager, Warlord ×3 races) | 1.5-1.9 | 75% | +8 to +16M |
-| tanks (Bulwark ×3) | 1.2-1.3 | 71% | +0.3 to +5M |
-| Magus ×3 | 1.3 | 61% | +5M |
-| **healers (Lightbringer, Warchanter ×3)** | **0.78-0.93** | 39-53% | **−10 to −19M (short)** |
+| path group                                 |       x 20-75 | passives' share of the kit | SP left at 75 after buying all |
+| ------------------------------------------ | ------------: | -------------------------: | -----------------------------: |
+| daggers (Phantom, Stalker, Assassin)       |       1.9-2.3 |                        59% |                    +15 to +20M |
+| bows (Sentinel, Soultracker, Sharpshooter) |       1.5-1.7 |                        72% |                     +9 to +13M |
+| warriors (Ravager, Warlord ×3 races)       |       1.5-1.9 |                        75% |                     +8 to +16M |
+| tanks (Bulwark ×3)                         |       1.2-1.3 |                        71% |                    +0.3 to +5M |
+| Magus ×3                                   |           1.3 |                        61% |                            +5M |
+| **healers (Lightbringer, Warchanter ×3)**  | **0.78-0.93** |                     39-53% |        **−10 to −19M (short)** |
 
 Levelling from 74 to 75 alone pays 6.4M, so "+5M at 75" means about one level's worth of SP in hand. The Magus's bank
 dips to **42k at level 74**.
@@ -57,14 +57,14 @@ rungs is cheap; catching up on everything is not reached until ~89-90.
 
 The same ratio, with only the **20-75 passives** priced ×3 or ×4 (actives unchanged):
 
-| path group | today | passives ×3 | passives ×4 | passive × that lands at 0.65 |
-|---|---:|---:|---:|---:|
-| daggers | 1.9-2.3 | 1.13-1.28 | 0.95-1.05 | **6.8-7.4** |
-| bows | 1.5-1.7 | 1.03-1.14 | 0.89-0.98 | **6.8-7.4** |
-| warriors | 1.5-1.9 | 0.82-0.99 | 0.68-0.80 | 4.2-5.2 |
-| tanks | 1.2-1.3 | 0.74-0.80 | 0.63-0.67 | 3.8-4.2 |
-| Magus | 1.3 | 0.79-0.80 | 0.65-0.67 | 4.0-4.1 |
-| **healers** | **0.78-0.93** | **0.56-0.60** | **0.47-0.53** | **2.2-2.4** |
+| path group  |         today |   passives ×3 |   passives ×4 | passive × that lands at 0.65 |
+| ----------- | ------------: | ------------: | ------------: | ---------------------------: |
+| daggers     |       1.9-2.3 |     1.13-1.28 |     0.95-1.05 |                  **6.8-7.4** |
+| bows        |       1.5-1.7 |     1.03-1.14 |     0.89-0.98 |                  **6.8-7.4** |
+| warriors    |       1.5-1.9 |     0.82-0.99 |     0.68-0.80 |                      4.2-5.2 |
+| tanks       |       1.2-1.3 |     0.74-0.80 |     0.63-0.67 |                      3.8-4.2 |
+| Magus       |           1.3 |     0.79-0.80 |     0.65-0.67 |                      4.0-4.1 |
+| **healers** | **0.78-0.93** | **0.56-0.60** | **0.47-0.53** |                  **2.2-2.4** |
 
 **A flat ×3-4 does not make everyone equally short.** It lands the tanks, Magus and warriors where you want them (about
 two thirds of the kit at ×1). It leaves daggers and bows able to buy nearly everything, because their actives are cheap.
@@ -91,3 +91,6 @@ And it halves the healers, who are already short today.
 3. **Healers**: are they meant to be short at ×1 today (0.78-0.93), or is their SP column priced too high?
 4. **Should the print count the Favor?** If you know roughly what share of your farming runs with the gauge up, I can add
    an "average bonus" column so the table shows what you actually feel in play.
+
+> ✅ **Answered 2026-09-29** (one target per archetype, 0.60 / healers 0.45-0.55, no Favor). The split is designed in
+> `PassiveSplit.md`.

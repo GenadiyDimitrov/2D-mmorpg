@@ -70,6 +70,25 @@ static class SpBudget
         Console.WriteLine("  x 20-75 = SP earned in 20-75 / SP the kit costs in 20-75 (>1 = you can buy it all). P x3 / P x4 = the same with");
         Console.WriteLine("  the 20-75 passives priced x3 / x4. k>.65 = the passive multiplier that would land THIS path at 0.65.");
 
+        // His ruling (2026-09-29): one multiplier PER ARCHETYPE, aiming at 0.60 (healers/buffers 0.45-0.55).
+        Console.WriteLine();
+        Console.WriteLine("=== HIS PER-ARCHETYPE k (2026-09-29): rogue/archer 7.5-8, warrior/tank 4.5-5.5, nuker/healer 4-4.5 ===");
+        Console.WriteLine($"  {"path",-38} | {"k lo",5} {"x",5} | {"k mid",5} {"x",5} {"1st short",9} {"by",13} | {"k hi",5} {"x",5}");
+        foreach (var p in paths)
+        {
+            var rows = Owed(p);
+            var (lo, hi) = HisK(p.Arch);
+            double mid = (lo + hi) / 2;
+            long owed = rows.Where(r => r.Level >= 20 && r.Level <= 75).Sum(r => r.Cost);
+            long pas = rows.Where(r => r.Level >= 20 && r.Level <= 75).Sum(r => r.PassiveCost);
+            double X(double k) => Sum(earned, 20, 75) / (owed + (k - 1) * pas);
+            int at = Enumerable.Range(20, 56).FirstOrDefault(L => Bank(earned, rows, L, mid) < 0);
+            long low = at == 0 ? 0 : Bank(earned, rows, at, mid);
+            Console.WriteLine($"  {p.Name,-38} | {lo,5:F2} {X(lo),5:F2} | {mid,5:F2} {X(mid),5:F2} {(at == 0 ? "-" : at.ToString()),9} {low,13:N0} | {hi,5:F2} {X(hi),5:F2}");
+        }
+        Console.WriteLine("  x = SP earned in 20-75 / the kit's 20-75 cost with its 20-75 passives priced xk. 1st short = the first level");
+        Console.WriteLine("  where buying everything the moment it opens runs you out of SP at the mid k (by = how far short).");
+
         if (detail is null) return;
         var pick = paths.Where(p => p.Name.Contains(detail, StringComparison.OrdinalIgnoreCase)).ToList();
         foreach (var p in pick)
@@ -103,6 +122,19 @@ static class SpBudget
     /// <summary>SP held on arriving at <paramref name="at"/> after buying every rung that opened at or below it.</summary>
     private static long Bank(long[] earned, List<Row> rows, int at) =>
         Sum(earned, 1, at - 1) - rows.Where(r => r.Level <= at).Sum(r => r.Cost);
+
+    /// <summary>The same with every 20-75 passive rung priced ×<paramref name="k"/>.</summary>
+    private static long Bank(long[] earned, List<Row> rows, int at, double k) =>
+        Sum(earned, 1, at - 1) - rows.Where(r => r.Level <= at)
+            .Sum(r => r.Cost + (r.Level >= 20 && r.Level <= 75 ? (long)((k - 1) * r.PassiveCost) : 0));
+
+    /// <summary>His per-archetype passive multiplier range, 2026-09-29. Bows take the rogue's (they measured the same).</summary>
+    private static (double Lo, double Hi) HisK(Archetype a) => a switch
+    {
+        Archetype.Rogue or Archetype.Archer => (7.5, 8.0),
+        Archetype.Warrior or Archetype.Tank => (4.5, 5.5),
+        _ => (4.0, 4.5),
+    };
 
     private static List<Row> Owed(Path p)
     {
