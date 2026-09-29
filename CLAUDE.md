@@ -241,6 +241,11 @@ id** with an index table at the top, permanent `BL-nn` ids, newest ruling wins. 
 entries only** (2026-09-03, his instruction: *"leave only active"*): the moment something is built,
 declined, or answered with nothing owed, its entry is **cut to `docs/BacklogArchive.md`** — verbatim,
 dated, under the same id — and so is the old text of any rewrite. Never let a done-pile grow here again.
+🔑 **NO DOC PAST 10,000 LINES** (owner, 2026-09-29). `docs/CHANGELOG.md` is the LIVE file (0.146.0 on); older eras
+are verbatim volumes in `docs/changelogs/`, indexed in its intro. When a file passes 10k, its oldest era moves to a new
+volume cut at an `x.0` version (the same for `BacklogArchive.md`: 8.1k at the split, so not yet). New entries always go
+in the live file. `docs/testing/Open-Checklist.md` was reset the same day: the old one is a snapshot at the top of
+`Playtest-Archive.md`, and the live one holds only My Finds, the current build's rows and §0.
 **Bugs never go in it** — those live in `docs/testing/`. `docs/RoadmapNext.md` is the older
 version-shaped digest (goes stale between passes); `docs/Roadmap.md` is the full detail and the
 archive of past playtest queues. Built since this file's list was first written: the

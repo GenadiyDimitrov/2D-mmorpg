@@ -280,7 +280,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
 | `BL-314` | 🔵 | **Split passives into single-stat pieces** — 📝 DESIGNED (`PassiveSplit.md`, 6 Qs; his 4 answers in) — regen / P.Def / speed as their own ladders shared across classes, so ten armor masteries become a few mixable passives — design first | skills |
 | `BL-323` | ⏸ | **Server-side collision (geodata)** — the server checks walls/buildings too, not only the 3D models; waits on `BL-281` | world |
-| `BL-324` | 🔵 | **Town sprint** — in a town, a move click shows a "Sprint" button after 1-2 s (or a Setup auto-sprint) for +50 move speed, cap 250 | world |
+| `BL-324` | 🔵 | **Town sprint** — 📝 PROPOSED 2026-09-29: a visible **Paved Streets** buff inside the wall (+50 run, cap 250, off in combat), no button; 1 Q (whole town or streets only) | world |
 
 ---
 
@@ -2319,3 +2319,23 @@ something like that for only cities/towns"*.
 The major cities are now r 3000, so a walk across one takes a while. Only inside a safe zone: a click-to-move shows a
 **Sprint** button after 1-2 s, or a Setup toggle **"auto-sprint in towns"** does it for you. Sprinting adds **+50 run
 speed**, still capped at 250, and ends at the town wall. Marked "later" by him; not started.
+
+**His note, 2026-09-29:** *"Town sprint look like a cheap one .. it can even be automatic without any popup button without
+any option etc - u start to run/move if u moved about 200~300 distance without stopping it activates sprint - or even
+better and easier ... towns are laid with blessed/magical bricks that you move faster on them ... whatever is more
+fantasy/gamey like .. just some day haters not to say "I move faster in the town and dont know why, its a bug!" - so the
+1st type with the visible buff can be better in that way .. but tell me your idea"*.
+
+📝 **My proposal: BOTH of your ideas at once, the paving as the REASON and a buff icon as the PROOF.**
+- Inside a town's wall, out of combat, you get a buff called **Paved Streets**: *"The blessed paving of the town
+  quickens your step. +50 run speed (max 250) while inside the walls."* It shows in the buff bar like any other buff,
+  so the speed is never unexplained. It appears on stepping inside, and it goes at the gate or the moment you enter
+  combat (a PvP brawl in town is not a race).
+- No button, no Setup option, no distance counter. The "200-300 distance without stopping" trigger reads as random to a
+  player: you stop at an NPC, and the speed disappears for a reason nobody can see. The streets `BL-319` already draws are
+  what the buff's text points at.
+- Built server-side as an ordinary buff (so the client needs nothing but its icon and name), applied and removed where
+  the server already knows you are inside a town (the safe-zone check). Walking speed is not raised (walking is a choice).
+- ❓ **One question: the whole town inside the wall (my pick: simple, and the streets carry you everywhere anyway), or
+  only while standing ON the drawn streets?** The second needs the street shapes on the server (the `BL-323` geodata
+  kind of work).
