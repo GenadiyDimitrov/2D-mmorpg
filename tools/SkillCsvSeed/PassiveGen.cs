@@ -18,16 +18,14 @@ using Game.Shared;
 //    Game.Shared/RaceAndClasses/ClassSkillTables.Passives.g.cs — every class's learn rows for them
 //  The hand-written half (the rung builders, the proc piece) is Game.Shared/Skills/Skills.PassiveLadders.cs.
 //
-//  🔑 PRICES. The CSV shows what the player PAYS, ×k included (`SpScarcity`), and the class tables store the
-//  ×1 base, which `ClassSkills` scales once at load. So a 20-75 row is UNSCALED here (`SpScarcity.Unscale`)
-//  and the round trip is exact. `--base` reads the SP column as ×1 instead — the one-time first run, before
-//  `--write-sp` had put the scaled prices into the files.
+//  🔑 PRICES. The CSV cell IS the price (`BL-326`): the SP column is split per level by weight
+//  (`--reweigh-sp`, SpWeights.cs) and this writes it through unchanged, plus the price table for every other row.
 //
 //  ⚠ It refuses rather than guesses: an unknown stat word, two values for one stat on a row, or a class whose
 //  rungs would go DOWN as its levels go up stops the run with the file and row.
 // =====================================================================================================
 
-internal static class PassiveGen
+internal static partial class PassiveGen
 {
     private enum Kind { Armor, Plain, Weapon, Hand }
 
@@ -223,21 +221,13 @@ internal static class PassiveGen
                 }
         if (errors.Count > 0) return Fail(errors);
 
-        // ---- 4. prices: the CSV shows the scaled price; the tables store the base ------------------------------
+        // ---- 4. prices: the CSV cell IS the price (`BL-326`; the ×k of 0.215.0 is gone) ----------------------
         var basePrice = new Dictionary<Row, int>();
-        foreach (var fk in Files)
-            foreach (var r in rows.Where(r => r.File == fk.File))
-            {
-                // A row shared by several races sits in several class keys, and k never differs by race inside
-                // one file (the rogue files map every race to the same group), so the first race decides.
-                var race = r.RaceSet.Length > 0 ? Enum.Parse<Race>(r.RaceSet[0], true) : Race.Human;
-                var (a, d) = fk.Key(race);
-                double k = r.Level >= SpScarcity.FromLevel && r.Level <= SpScarcity.ToLevel ? SpScarcity.For(a, d) : 1.0;
-                if (r.Sp > int.MaxValue) { errors.Add($"{fk.File}.csv:{r.Line}: SP {r.Sp} does not fit an int"); continue; }
-                int? b = baseSp ? (int)r.Sp : SpScarcity.Unscale((int)r.Sp, k);
-                if (b is null) { errors.Add($"{fk.File}.csv:{r.Line} ({r.Id} @{r.Level}): SP {r.Sp:N0} is not a price ×{k} can land on — use three significant figures."); continue; }
-                basePrice[r] = b.Value;
-            }
+        foreach (var r in rows)
+        {
+            if (r.Sp > int.MaxValue) { errors.Add($"{r.File}.csv:{r.Line}: SP {r.Sp} does not fit an int"); continue; }
+            basePrice[r] = (int)r.Sp;
+        }
         if (errors.Count > 0) return Fail(errors);
 
         // ---- 5. write -----------------------------------------------------------------------------------------
@@ -245,66 +235,13 @@ internal static class PassiveGen
         string tables = Path.Combine(repoRoot, "Game.Shared", "RaceAndClasses", "ClassSkillTables.Passives.g.cs");
         File.WriteAllText(defs, WriteDefs(specs, ladders, rows, basePrice));
         File.WriteAllText(tables, WriteTables(rows, ladders, basePrice));
+        string prices = Path.Combine(repoRoot, "Game.Shared", "RaceAndClasses", "ClassSkillTables.SpPrices.g.cs");
+        File.WriteAllText(prices, WriteSpPrices(csvDir));
         Console.WriteLine($"{rows.Count} rows → {ladders.Count} ladders, {ladders.Values.Sum(l => l.Count)} rungs.");
         foreach (var (id, l) in ladders.OrderBy(kv => kv.Key))
             Console.WriteLine($"  {id,-30} {l.Count,3} rung(s)  {string.Join("  ", l.Select(r => Show(specs[id], r)))}");
         Console.WriteLine($"wrote {Path.GetRelativePath(repoRoot, defs)}");
         Console.WriteLine($"wrote {Path.GetRelativePath(repoRoot, tables)}");
-        return 0;
-    }
-
-    /// <summary>`--apply-k` — ⚠ A ONE-TIME MIGRATION, run once on 2026-09-29 (like `--retarget`): every PASSIVE row a
-    /// class file authors at 20-75 gets its SP cell multiplied by that class's ×k (<see cref="SpScarcity"/>), in the
-    /// cell's own units, so the files show what the player pays (his rule: the CSVs represent what is in the game).
-    /// Running it twice multiplies twice. After it, the CSV is the scaled price, `--gen-passives` reads it back
-    /// through <see cref="SpScarcity.Unscale"/>, and `--check` compares it with the scaled class tables.
-    /// "Passive" is the CODE's category (what the engine scales), not the TYPE cell.</summary>
-    public static int ApplyK(string csvDir)
-    {
-        int changed = 0;
-        foreach (var fk in Files)
-        {
-            string path = Path.Combine(csvDir, fk.File + ".csv");
-            bool bom = File.ReadAllBytes(path) is [0xEF, 0xBB, 0xBF, ..];
-            string text = File.ReadAllText(path);
-            string nl = text.Contains("\r\n") ? "\r\n" : "\n";
-            var lines = text.Split(nl);
-            int spCol = -1, raceCol = -1; bool x1000 = false;
-            for (int i = 0; i < lines.Length; i++)
-            {
-                string line = lines[i];
-                if (line.IndexOf("NOT DONE", StringComparison.OrdinalIgnoreCase) >= 0) break;
-                var c = SplitCsv(line);
-                if (line.StartsWith("LEARN"))
-                {
-                    var h = c.Select(x => x.Trim().ToUpperInvariant()).ToList();
-                    spCol = h.FindIndex(x => x.StartsWith("SP COST"));
-                    raceCol = h.FindIndex(x => x == "RACE");
-                    x1000 = h[spCol].Contains("X1000");
-                    continue;
-                }
-                if (c.Count < 15 || !int.TryParse(c[0].Trim(), out int lvl)) continue;
-                if (lvl < SpScarcity.FromLevel || lvl > SpScarcity.ToLevel) continue;
-                if (SkillCatalog.Get(c[2].Trim()) is not SkillDef def || def.Category != SkillCategory.Passive) continue;
-                string raceCell = raceCol >= 0 && raceCol < c.Count ? c[raceCol].Trim() : "";
-                var race = raceCell.Length > 0 ? Enum.Parse<Race>(raceCell.Split(';')[0].Trim(), true) : Race.Human;
-                var (a, d) = fk.Key(race);
-                double k = SpScarcity.For(a, d);
-                var spans = WeaponColumn.FieldSpans(line);
-                string cell = line[spans[spCol].Start..spans[spCol].End].Trim();
-                long old = (long)Math.Round(Price(cell) * (x1000 ? 1000 : 1));
-                if (old <= 0) continue;
-                int now = SpScarcity.Scale((int)old, k);
-                string outCell = x1000 ? (now / 1000.0).ToString("0.###", CultureInfo.InvariantCulture)
-                               : cell.EndsWith("kk", StringComparison.OrdinalIgnoreCase) ? (now / 1e6).ToString("0.###", CultureInfo.InvariantCulture) + "kk"
-                               : cell.EndsWith("k", StringComparison.OrdinalIgnoreCase) ? (now / 1e3).ToString("0.###", CultureInfo.InvariantCulture) + "k"
-                               : now.ToString(CultureInfo.InvariantCulture);
-                lines[i] = line[..spans[spCol].Start] + outCell + line[spans[spCol].End..];
-                changed++;
-            }
-            File.WriteAllText(path, string.Join(nl, lines), new UTF8Encoding(bom));
-        }
-        Console.WriteLine($"{changed} SP cell(s) scaled.");
         return 0;
     }
 
@@ -439,7 +376,7 @@ internal static class PassiveGen
         sb.Append("namespace Game.Shared;\n\nusing static Game.Shared.SkillCatalog;\n\n");
         sb.Append("public static partial class ClassSkillTables\n{\n");
         sb.Append("    /// <summary>Every class's learn rows for the generated passive ladders, file by file. SP is the ×1 base;\n");
-        sb.Append("    /// ClassSkills applies the per-archetype ×k (SpScarcity) once at load.</summary>\n");
+        sb.Append("    /// the CSV cell, as authored (`BL-326`).</summary>\n");
         // One method per file: a single body of ~1,400 struct rows is the same frame-size risk the defs had.
         var used = Files.Where(fk => rows.Any(r => r.File == fk.File)).ToList();
         sb.Append("    private static void RegisterPassiveLadders()\n    {\n");

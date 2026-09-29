@@ -8201,3 +8201,11 @@ The engine takes the **highest** fizzle multiplier (`MagicFailMod = Math.Max`), 
 already on ×3 from 76 and gains **nothing**. ❓ **Your call:** (a) delete Spell Ward, so fizzle protection is only the paid
 skill at 80 (tanks 20-79 lose their ×2/×2.5); (b) keep Spell Ward to 79 and make `magic_protection` the only source from
 80 (stop the auto ×3); (c) raise `magic_protection` above ×3; (d) something else.
+
+## `BL-326` ✅ BUILT in 0.216.0 — SP is one pot per level, split by weight (2026-09-29)
+
+His ask: *"sum all the sp/lvl and split it for skills as weighted ... active skills are x1 passives should be less ..
+and a +0.1mp regen should not cost milions"* (example: archer at 60, low 0.33 / normal 1 / high 1.5; fallback he
+offered: *"just the sum divided to the count"* = every weight 1). Built as `docs/data/sp_weights.csv` +
+`SkillCsvSeed --reweigh-sp`; replaces the passive ×k of `BL-314`. Details: `docs/CHANGELOG.md` 0.216.0; his review of the
+weights is `Open-Checklist.md` §111.

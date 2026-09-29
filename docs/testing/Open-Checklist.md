@@ -17,6 +17,23 @@
 
 ---
 
+## §111 — 0.216.0: SP is one pot per level, split by weight (`BL-326`, 2026-09-29)
+
+⚠ **New APK** (the Learn tab reads prices compiled into the client). No `game.db` delete needed.
+
+Your rule: each level's SP (the sum of every skill that opens there) is split by weight — passive pieces 0.33, utility
+and buffs 1, strikes/debuffs/heals/traps 1.5. The weights are **yours** in `docs/data/sp_weights.csv` (one row per
+skill; your archer example is marked `owner`, the rest `default`). Edit a WEIGHT, then run
+`dotnet run --project tools/SkillCsvSeed -- --reweigh-sp` — it rewrites the SP cells and regenerates. Every weight at 1 =
+"the sum divided by the count". The passive ×k is gone; each level costs what it cost before (affordability unchanged,
+except Elf Ravager 0.72→0.78 and Magus 0.60→0.57-0.63, whose three races' kits differ).
+
+- `111a` [ ] - **Archer at 60**: Light Armor / Bow / Crit Damage Mastery 94.7k each, Critical Resist, Signal Flare and
+  Bow Stance 287k, Twin Arrows / Explosive Arrow / your trap / your Magic Arrow 431k. Is that the shape you wanted? ->
+- `111b` [ ] - **Skim `sp_weights.csv`** (318 skills): anything at the wrong weight? A passive you rate higher (like
+  Critical Resist at 1), or an active that is only utility? ->
+- `111c` [ ] - **In game, the Learn tab** shows the new prices at 20-75 (passives far cheaper, actives dearer). ->
+
 ## §110 — 0.215.0-0.215.2: the passive split, and one damage spell per mage race (2026-09-29)
 
 ⚠ **New APK** and a **`game.db` delete** (0.215.0 retired dozens of skill ids; 0.215.1 retires `elf_self_heal` and

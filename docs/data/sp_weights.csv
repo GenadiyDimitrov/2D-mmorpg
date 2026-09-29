@@ -1,0 +1,319 @@
+SKILL_ID,NAME,KIND,WEIGHT,SOURCE
+acoustic_shock,Acoustic Shock,physical,1.5,default
+anti_magic,Anti-Magic,passive,0.33,default
+anti_physical,Anti-Physical,passive,0.33,default
+antidote,Antidote,heal,1.5,default
+arcane_burst,Arcane Burst,magic,1.5,default
+arcane_resistance,Arcane Resistance,buff,1,default
+arcane_void,Arcane Void,debuff,1.5,default
+arcane_wave,Arcane Wave,magic,1.5,default
+archer_arrow_barrage,Arrow barrage,physical,1.5,default
+archer_bow_swiftness,Bow Swiftness,buff,1,default
+archer_demon_magic_arrow,Magic Arrow,physical,1.5,owner
+archer_elf_magic_arrow,Magic Arrow,physical,1.5,owner
+archer_human_magic_arrow,Magic Arrow,physical,1.5,owner
+archer_twin_arrows,Twin Arrows,physical,1.5,owner
+armor_break,Armor Break,debuff,1.5,default
+armor_breaking_whisp,Armor Breaking Whisp,buff,1,default
+assassination_instinct,Assassination Instinct,passive,0.33,default
+backlash,Physical Backlash,passive,0.33,default
+battle_defence,Battle Defence,buff,1,default
+battle_frenzy,Battle Frenzy,buff,1,default
+battle_presence,Battle Presence,buff,1,default
+battle_regeneration,Battle Regeneration,heal,1.5,default
+battle_resilience,Battle Resilience,buff,1,default
+battle_revival,Battle Revival,heal,1.5,default
+berserker_presence,Berserker Presence,buff,1,default
+bind,Bind,debuff,1.5,default
+binding_trap,Binding Trap,debuff,1.5,owner
+binding_whisp,Binding Whisp,buff,1,default
+bleeding_arrow,Bleeding Arrow,physical,1.5,default
+bleeding_trap,Bleeding Trap,debuff,1.5,owner
+blood_mark,Blood Mark,buff,1,default
+blunt_cleave,Cleave,passive,0.33,default
+bow_blessing,Bow Blessing,buff,1,default
+bow_damage_mastery,Damage Mastery,passive,0.33,default
+bow_expertise,Bow Expertise,buff,1,default
+bow_ferocity,Bow Ferocity,buff,1,default
+bow_focus,Bow Focus,buff,1,default
+bow_management_mastery,Spirit Mastery,passive,0.33,default
+bow_mastery,Bow Mastery,passive,0.33,owner
+bow_spirit,Bow Spirit,buff,1,default
+bow_stance,Bow Stence,buff,1,owner
+bow_swift_mastery,Swift Mastery,passive,0.33,default
+breaking_shout,Breaking Shout,debuff,1.5,default
+brutal_strike,Brutal Strike,buff,1,default
+buffer_shield_mastery,Buffer Shield Mastery,passive,0.33,default
+calm_spirit,Calm Spirit,passive,0.33,default
+cast_accuracy,Aim,buff,1,default
+cast_atk_mag,Force,buff,1,default
+cast_atk_phys,Might,buff,1,default
+cast_cc_res_mag,Clarity,buff,1,default
+cast_cc_res_phys,Fortitude,buff,1,default
+cast_crit_dmg,Ferocity,buff,1,default
+cast_crit_rate,Focus,buff,1,default
+cast_def_mag,Ward,buff,1,default
+cast_def_phys,Bulwark,buff,1,default
+cast_hp_max,Body,buff,1,default
+cast_hp_regen,Vigor,buff,1,default
+cast_interrupt,Resolve,buff,1,default
+cast_mcrit_rate,Insight,buff,1,default
+cast_mp_max,Soul,buff,1,default
+cast_mp_regen,Serenity,buff,1,default
+cast_shield_block,Shield Blessing,buff,1,default
+cast_shield_def,Shield Hardening,buff,1,default
+cast_spd_as,Fury,buff,1,default
+cast_spd_cast,Alacrity,buff,1,default
+cast_spd_eva,Agility,buff,1,default
+cast_spd_move,Swift,buff,1,default
+cast_speed_mastery,Cast Speed Mastery,passive,0.33,default
+cast_vamp,Vampirism,buff,1,default
+champion_presence,Champion Presence,buff,1,default
+charge_n_shock,Charge n Shock,debuff,1.5,default
+charm,Charm,debuff,1.5,default
+charming_whisp,Charming Whisp,buff,1,default
+cleric_heavy_armor_mastery,Heavy Caster Mastery,passive,0.33,default
+clerics_light_armor_mastery,Light Caster Mastery,passive,0.33,default
+combo_mastery,Combo Mastery,passive,0.33,default
+conceal,Conceal,buff,1,default
+cooldown_mastery,Cooldown Mastery,passive,0.33,default
+crippling_shout,Crippling Shout,debuff,1.5,default
+dazzling_arrow,Dazzling Arrow,physical,1.5,default
+defensive_wall,Defensive Wall,buff,1,default
+demon_blessing,Domonic Blessing,passive,0.33,default
+demon_cast_atk_phys,Demonic Strength,buff,1,default
+demon_contract,Demon Contract,buff,1,default
+demon_drain,Demonic Drain,physical,1.5,default
+demon_over_limit,Over the limit,buff,1,default
+demon_pain,Demonic Pain,physical,1,default
+demonic_smash,Demonic Smash,physical,1.5,default
+dodge,Dodge,buff,1,default
+double_mastery,Overpower Mastery,buff,1,default
+dual_weapon_prof,Dual Proficiency,passive,0.33,default
+duel_expertise,Duel-Expertise,passive,0.33,default
+elemental_blast,Elemental Blast,magic,1.5,default
+elemental_bolt,Elemental Bolt,magic,1.5,default
+elemental_burst,Elemental Burst,magic,1.5,default
+elemental_wave,Elemental Wave,magic,1.5,default
+elf_antidote,Antidote,heal,1.5,default
+elf_blessing,Forest Blessing,passive,0.33,default
+elf_cast_atk_phys,Forest Might,buff,1,default
+elf_heal,Healing Leaf,heal,1.5,default
+elven_restoration,Elven Restoration,heal,1.5,default
+evasion_boost,Evasion Boost,buff,1,default
+explosive_arrow,Explosive Arrow,physical,1.5,owner
+fighter_accuracy,Accuracy,passive,0.33,default
+fighter_critical_dmg_mastery,Critical Damage Mastery,passive,0.33,owner
+fighter_spirit_mastery,Spirit Mastery,passive,0.33,default
+final_defense,Final Defense,passive,0.33,default
+final_stand,Final Stand,passive,0.33,default
+flash_step,Flash Step,physical,1,default
+focus_force,Focus Force,physical,1.5,default
+focus_limit,Focus Limit,buff,1,default
+focus_mastery,Focus Mastery,passive,0.33,default
+focused_blast,Focused Blast,physical,1.5,default
+focused_double_slash,Focused Double Slash,physical,1.5,default
+focused_tripple_slash,Focused Tripple Slash,physical,1.5,default
+force_empowerment,Force Empowerment,buff,1,default
+freeze,Freeze,debuff,1.5,default
+frost_burst,Frost Burst,magic,1.5,default
+frost_pierce,Frost Pierce,magic,1.5,default
+frost_spikes,Frost Spikes,magic,1.5,default
+fury_mastery,Fury,passive,0.33,default
+grade_penalty,Grade F,passive,0.33,default
+grapple,Grapple,debuff,1.5,default
+gravity,Gravity,debuff,1.5,default
+great_bulwark,Great Bulwark,buff,1,default
+great_heal,Great Heal,heal,1.5,default
+great_might,Great Might,buff,1,default
+harmonist_bow_proficiency,Harmonist Bow Proficiency,passive,0.33,default
+harmony_mark,Harmony Mark,buff,1,default
+harmony_of_madness,Harmony of Madness,buff,1,default
+harmony_of_restoration,Harmony of Restoration,heal,1.5,default
+harmony_of_speed,Harmony of Speed,buff,1,default
+harmony_of_the_soul,Harmony of the Soul,buff,1,default
+heal,Heal,heal,1.5,default
+healer_blessing,Healer Blessing,heal,1.5,default
+healer_party_blessing,Healer Party Blessing,heal,1.5,default
+healers_power,Healers Power,buff,1,default
+healers_shield_mastery,Healers Shield Mastery,passive,0.33,default
+healing_arrow,Healing Arrow,physical,1.5,default
+healing_totem,Healing Totem,heal,1.5,default
+healing_whisp,Healing Whisp,buff,1,default
+heavy_armor_mastery,Heavy Armor Mastery,passive,0.33,default
+heavy_arrow,Heavy Arrow,physical,1.5,default
+heavy_stab,Heavy Stab,physical,1.5,default
+heavy_vitality,Heavy Vitality,passive,0.33,default
+holy_arcane_feral_protection_single,Arcane and Feral Protection,buff,1,default
+holy_arcane_insight_single,Arcane Insight,buff,1,default
+holy_arcane_serenity_single,Arcane Serenity,buff,1,default
+holy_blessing,Holy Blessing,heal,1.5,default
+holy_body_reinforcement_single,Body Reinforcement,buff,1,default
+holy_bolt,Holy Bolt,magic,1.5,default
+holy_feral_bloodlust_single,Feral Bloodlust,buff,1,default
+holy_feral_precision_single,Feral Precision,buff,1,default
+holy_frenzy,Frenzy,buff,1,default
+holy_mark,Holy Mark,buff,1,default
+holy_ray,Holy Ray,magic,1.5,default
+holy_shield_reinforcement_single,Shield Reinforcement,buff,1,default
+holy_soul,Holy Soul,buff,1,default
+holy_soul_reinforcement_single,Soul Reinforcement,buff,1,default
+holy_wind_grace_single,Wind Grace,buff,1,default
+hp_boost,HP Boost,passive,0.33,default
+hp_regeneration,HP regeneration,passive,0.33,default
+human_blessing,Kings Blessing,passive,0.33,default
+human_cast_atk_phys,Blessing of Might,buff,1,default
+human_parry,Weapon Parry,physical,1,default
+human_relaxation,Relax,physical,1,default
+human_vampiric_bolt,Vampiric Bolt,magic,1.5,default
+intimidate,Intimidate,debuff,1.5,default
+killing_stab,Killing Stab,physical,1.5,default
+lasting_enchantment,Lasting Enchantment,passive,0.33,default
+lethal_focus,Lethal Focus,buff,1,default
+lethal_frenzy,Lethal Frenzy,buff,1,default
+lethal_precision,Lethal Precision,buff,1,default
+life_mark,Life Mark,buff,1,default
+life_restoration,Life Restoration,heal,1.5,default
+light_armor_mastery,Light Armor Mastery,passive,0.33,owner
+lure,Lure,debuff,1.5,default
+madness,War Frenzy,buff,1,default
+mage_armor_mastery,Robe Armor Mastery,passive,0.33,default
+mage_shield_mastery,Mage Shield Mastery,passive,0.33,default
+magic_bolt,Magic Bolt,magic,1.5,default
+magic_protection,Magic Protection,passive,0.33,default
+magic_resistance,Magic Resistance,passive,0.33,default
+magic_wall,Magic Wall,buff,1,default
+magical_armor,Magical Armor,buff,1,default
+mana_barrier,Mana Barrier,buff,1,default
+mana_blessing,Mana Blessing,buff,1,default
+mana_ray,Mana Ray,magic,1.5,default
+mana_recovery,Mana Recovery,passive,0.33,default
+mana_strain,Mana Strain,debuff,1.5,default
+mana_totem,Mana Totem,heal,1.5,default
+mana_vampirism,Mana Vampirism,passive,0.33,default
+mass_provoke,Mass Taunt,debuff,1.5,default
+master_of_combat,Master of Combat,buff,1,default
+mdef_mastery,M.Def Mastery,passive,0.33,default
+meditation,Meditation,buff,1,default
+monster_knowledge_active,Monster Knowlege,buff,1,default
+mp_capacity,Mana Capacity,passive,0.33,default
+mp_cost_mastery,Mana Efficiency,passive,0.33,default
+mp_regeneration,Mp regeneration,passive,0.33,default
+npc_harmony_protection,Harmony of Protection,buff,1,default
+npc_harmony_warrior,Harmony of the Warrior,buff,1,default
+npc_harmony_wizard,Harmony of the Wizard,buff,1,default
+nuker_demon_spell_empowerment,Spell Empowerment,buff,1,default
+nuker_elf_spell_empowerment,Spell Empowerment,buff,1,default
+nuker_human_spell_empowerment,Spell Empowerment,buff,1,default
+numbing_shock,Numbing Shock,debuff,1.5,default
+overpower,Overpower,passive,0.33,default
+parry,Parry,buff,1,default
+party_great_heal,Party Great Heal,heal,1.5,default
+party_heal,Party Heal,heal,1.5,default
+perfect_strike,Perfect Strike,buff,1,default
+perfect_whisp,Perfect Whisp,buff,1,default
+phase_shift,Phase Shift,buff,1,default
+piercing_stab,Piercing Stab,physical,1.5,default
+poison_trap,Poison Trap,debuff,1.5,owner
+precise_shot,Precise Shot,physical,1.5,default
+provoke,Taunt,debuff,1.5,default
+prowl,Prowl,physical,1,default
+pyro_burst,Pyro Burst,magic,1.5,default
+quick_blast,Quick Blast,magic,1.5,default
+quick_bolt,Quick Bolt,magic,1.5,default
+quick_great_heal,Quick Great Heal,heal,1.5,default
+quick_heal,Quick Heal,heal,1.5,default
+reinforcement,Reinforcement,buff,1,default
+restore_mana,Restore Mana,heal,1.5,default
+restore_spirit,Restore Spirit,heal,1.5,default
+resurrection,Resurrection,heal,1.5,default
+resurrection_field,Resurrection Field,heal,1.5,default
+return_town,Return,magic,1,default
+reuse_reset_momentum,Battle Momentum,passive,0.33,default
+rite_of_preservation,Rite of Preservation,buff,1,default
+rogue_bow_proficiency,Bow Proficiency,passive,0.33,default
+rogue_crit_resist,Critical Resist,passive,1,owner
+rogue_critical_rate_mastery,Critical Rate,passive,0.33,default
+rogue_evasion,Evasion,passive,0.33,default
+rogue_swift_mastery,Swift,passive,0.33,default
+rouge_demon_pahantom_jump,Phantom Jump,debuff,1.5,default
+rouge_elf_pahantom_jump,Phantom Jump,debuff,1.5,default
+rouge_huamn_pahantom_jump,Phantom Jump,debuff,1.5,default
+saints_blessing,Saints Blessing,buff,1,default
+saints_presence,Saints Presence,buff,1,default
+sharpening,Sharpening,buff,1,default
+shattering_shout,Shattaring Shout,debuff,1.5,default
+shield_shock,Shield Shock,debuff,1.5,default
+shield_smash_power,Shield Smash - Power,physical,1.5,default
+shield_smash_rate,Shield Smash - Rate,physical,1.5,default
+shocking_javelin,Shocking Javelin,physical,1.5,default
+shocking_shout,Shocking Shout,physical,1.5,default
+shot,Shot,physical,1.5,default
+shrouding_hymn,Shrouding Hymn,buff,1,default
+signal_flare,Signal Flare,physical,1,owner
+silencing_shock,Silencing Shock,debuff,1.5,default
+single_mark,Single Mark,buff,1,default
+smash,Smash,physical,1.5,default
+sound_burst,Sound Burst,physical,1.5,default
+sound_smash,Sound Smash,physical,1.5,default
+spellcaster_mastery,Spellcaster Mastery,passive,0.33,default
+spellcaster_weapon_mastery,Spellcaster Weapon Mastery,passive,0.33,default
+spirit_restoration,Spirit Restoration,heal,1.5,default
+sprint,Sprint,buff,1,default
+stab,Stab,physical,1.5,default
+stay,Stay,debuff,1.5,default
+strength_mastery,Strength Mastery,passive,0.33,default
+strike,Strike,physical,1.5,default
+swift_stab,Swift Stab,physical,1.5,default
+sword_blast,Sword Blast,physical,1.5,default
+sword_shock,Sword Shock,physical,1.5,default
+tank_aggravated_state,Aggravated State,passive,0.33,default
+tank_crit_resist,Critical Damage Resist,passive,0.33,default
+tank_defence_mastery,Tank Defence,passive,0.33,default
+tank_shield_mastery,Shield Mastery,passive,0.33,default
+tank_shield_reinforcement,Shield Reinforcement,buff,1,default
+taunting_shout,Taunting Shout,debuff,1.5,default
+taunting_whisp,Taunting Whisp,buff,1,default
+tauting_wall,Tauting Wall,debuff,1.5,default
+thunderstorm,Thunderstorm,magic,1.5,default
+ultimate_heal,Ultimate Heal,heal,1.5,default
+ultimate_party_heal,Ultimate party Heal,heal,1.5,default
+undying_will,Undying Will,buff,1,default
+urgent_great_heal,Urgent Great Heal,heal,1.5,default
+urgent_heal,Urgent Heal,heal,1.5,default
+urgent_lesser_heal,Urgent Lesser Heal,heal,1.5,default
+vanish,Vanish,physical,1,default
+venom_burst,Venom Burst,physical,1.5,default
+venom_stab,Venom Stab,physical,1.5,default
+vital_organ_protection,Vital Organ Protection,passive,0.33,default
+vital_points,Vital Points,passive,0.33,default
+war_bulwark,War Bulwark,buff,1,default
+war_might,War Might,buff,1,default
+waraoe_blood_support,Blood support,passive,0.33,default
+waraoe_life_support,Life support,passive,0.33,default
+waraoe_support,Vanguard support,passive,0.33,default
+waraoe_wirlwind,Wirlwind,physical,1.5,default
+warrior_charge,Charge,physical,1,default
+warrior_charge_aoe,Charge n Stomp,physical,1,default
+warrior_charge_normal,Charge,physical,1,default
+warrior_demon_slash,Slash,physical,1.5,default
+warrior_elf_slash,Slash,physical,1.5,default
+warrior_focus,Focus,buff,1,default
+warrior_human_slash,Slash,physical,1.5,default
+warrior_regeneration,Warrior Regeneration,passive,0.33,default
+warrior_sword_dance,Saints Sword Dance,physical,1.5,default
+wc_arcane_feral_protection,Arcane and Feral Protection,buff,1,default
+wc_arcane_insight,Arcane Insight,buff,1,default
+wc_arcane_serenity,Arcane Serenity,buff,1,default
+wc_body_reinforcement,Body Reinforcement,buff,1,default
+wc_feral_bloodlust,Feral Bloodlust,buff,1,default
+wc_feral_precision,Feral Precision,buff,1,default
+wc_shield_reinforcement,Shield Reinforcement,buff,1,default
+wc_soul_reinforcement,Soul Reinforcement,buff,1,default
+wc_wind_grace,Wind Grace,buff,1,default
+weapon_break,Weapon Break,debuff,1.5,default
+weapon_breaking_whisp,Weapon Breaking Whisp,buff,1,default
+weapon_mastery,Weapon Mastery,passive,0.33,default
+whisp_mastery,Whisp Mastery,passive,0.33,default
+witches_curse,Witches Curse,magic,1.5,default
+witches_scarecrow,Witches Scarecrow,debuff,1.5,default

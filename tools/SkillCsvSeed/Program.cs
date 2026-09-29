@@ -39,8 +39,13 @@ Directory.CreateDirectory(outDir);
 // `--gen-passives` — `BL-314`: generate the shared passive ladders and every class's learn rows for them from the
 // CSVs (PassiveGen.cs). `--base` reads the SP column as the x1 base instead of the scaled price the player pays.
 if (args.Contains("--gen-passives")) return PassiveGen.Run(outDir, dir.FullName, args.Contains("--base"));
-// `--apply-k` — `BL-314`, ONE-TIME: scale the 20-75 passive SP cells by each class's ×k (PassiveGen.ApplyK).
-if (args.Contains("--apply-k")) return PassiveGen.ApplyK(outDir);
+// `--reweigh-sp` — `BL-326`: split each level's SP pot by the weights in docs/data/sp_weights.csv, then regenerate.
+// `--reweigh-sp --show archer` prints the per-level split for the files whose name contains "archer".
+if (args.Contains("--reweigh-sp"))
+{
+    int si = Array.IndexOf(args, "--show");
+    return PassiveGen.Reweigh(outDir, dir.FullName, si >= 0 && si + 1 < args.Length ? args[si + 1] : null);
+}
 
 if (args.Contains("--check")) { Check.Verbose = args.Contains("-v") || args.Contains("--verbose"); return Check.Run(outDir); }
 

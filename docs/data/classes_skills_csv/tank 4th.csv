@@ -1,9 +1,9 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,GOLD,RACE,REPLACES,COMMENT
 ,,,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
-76,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +175",0,3.3kk,500k
-77,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +180",0,11kk,1kk
-78,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +185",0,16kk,1kk
-79,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +190",0,26.7kk,333k
+76,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +175",0,1.84kk,500k
+77,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +180",0,6.54kk,1kk
+78,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +185",0,4.74kk,1kk
+79,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +190",0,31.9kk,333k
 80,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +195",0,0,2.5kk
 81,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +200",0,0,7.5kk
 82,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +205",0,0,3.3kk
@@ -16,20 +16,20 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +240",0,0,100kk
 90,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +245",0,0,100kk
 ,,,,,,,,,,,,,,,,,----------------------------Tank Defence----------------------------
-76,Tank Defence,tank_defence_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: p.def x1.20 and eva -3;",0,3.3kk,500k
-79,Tank Defence,tank_defence_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: p.def x1.20 and eva -4;",0,26.7kk,333k
+76,Tank Defence,tank_defence_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: p.def x1.20 and eva -3;",0,1.84kk,500k
+79,Tank Defence,tank_defence_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: p.def x1.20 and eva -4;",0,31.9kk,333k
 80,Tank Defence,tank_defence_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: p.def x1.25 and eva -4;",0,0,2.5kk
 82,Tank Defence,tank_defence_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: p.def x1.25 and eva -5;",0,0,3.3kk
 85,Tank Defence,tank_defence_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: p.def x1.30 and eva -6;",0,0,16.7kk
 ,,,,,,,,,,,,,,,,,----------------------------Critical Damage Resist----------------------------
-79,Critical Damage Resist,tank_crit_resist,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: crit dmg reduction 40%;",0,26.7kk,333k
+79,Critical Damage Resist,tank_crit_resist,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: crit dmg reduction 40%;",0,31.9kk,333k
 82,Critical Damage Resist,tank_crit_resist,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: crit dmg reduction 45%;",0,0,3.3kk
 85,Critical Damage Resist,tank_crit_resist,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: crit dmg reduction 50%;",0,0,16.7kk
 ,,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
-76,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +132",0,6.5kk,1kk
-77,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +134",0,11kk,1kk
-78,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +136",0,16kk,1kk
-79,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +138",0,80kk,1kk
+76,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +132",0,1.84kk,1kk
+77,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +134",0,6.54kk,1kk
+78,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +136",0,4.74kk,1kk
+79,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +138",0,31.9kk,1kk
 80,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +140",0,0,2.5kk
 81,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +142",0,0,7.5kk
 82,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +144",0,0,10kk
@@ -42,12 +42,12 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +158",0,0,100kk
 90,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +160",0,0,100kk
 ,,,,,,,,,,,,,,,,,----------------------------Magic Protection----------------------------
-80,Magic Protection,magic_protection,Passive,,,0,0,self/single,0,0,0,"Twice more chance magic to fail against you",0,150kk,10kk,,,"BL-314: its own skill bought at 80 - his ruling 2026-09-29: 150kk SP + 10kk gold"
+80,Magic Protection,magic_protection,Passive,,,0,0,self/single,0,0,0,"Twice more chance magic to fail against you",0,70.9kk,10kk,,,"BL-314: its own skill bought at 80 - his ruling 2026-09-29: 150kk SP + 10kk gold"
 ,,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
-76,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +90",0,3.3kk,500k
-77,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +98",0,11kk,1kk
-78,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +106",0,16kk,1kk
-79,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +114",0,80kk,1kk
+76,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +90",0,1.84kk,500k
+77,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +98",0,6.54kk,1kk
+78,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +106",0,4.74kk,1kk
+79,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +114",0,31.9kk,1kk
 80,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +121",0,0,2.5kk
 81,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +129",0,0,7.5kk
 82,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +137",0,0,10kk
@@ -60,24 +60,24 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +192",0,0,100kk
 90,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +200",0,0,100kk
 ,,,,,,,,,,,,,,,,,----------------------------Fury----------------------------
-76,Fury,fury_mastery,Passive,,,0,0,self/single,0,0,0,"AS x1.01",0,3.3kk,500k
+76,Fury,fury_mastery,Passive,,,0,0,self/single,0,0,0,"AS x1.01",0,1.84kk,500k
 80,Fury,fury_mastery,Passive,,,0,0,self/single,0,0,0,"AS x1.03",0,0,2.5kk
 85,Fury,fury_mastery,Passive,,,0,0,self/single,0,0,0,"AS x1.05",0,0,25kk
 ,,,,,,,,,,,,,,,,,----------------------------Whisp Mastery----------------------------
 83,Whisp Mastery,whisp_mastery,Passive,,,0,0,self/single,0,0,0,"Increase the limit of active whisps to 3",0,0,15kk
 ,,,,,,,,,,,,,,,,,----------------------------Backlash----------------------------
-77,Physical Backlash,backlash,Passive,,,0,0,self/single,0,0,0,"10% chance that a CON debuff and 5% chance for SPT debuff cast at you lands on its caster instead",0,6.5kk,1k,Human;Demon
-80,Physical Backlash,backlash,Passive,,,0,0,self/single,0,0,0,"20% chance that a CON debuff and 10% chance for SPT debuff cast at you lands on its caster instead",0,150kk,10kk,Human;Demon
-83,Physical Backlash,backlash,Passive,,,0,0,self/single,0,0,0,"30% chance that a CON debuff and 15% chance for SPT debuff cast at you lands on its caster instead",0,500kk,100kk,Human;Demon
+77,Physical Backlash,backlash,Passive,,,0,0,self/single,0,0,0,"10% chance that a CON debuff and 5% chance for SPT debuff cast at you lands on its caster instead",0,6.54kk,1k,Human;Demon
+80,Physical Backlash,backlash,Passive,,,0,0,self/single,0,0,0,"20% chance that a CON debuff and 10% chance for SPT debuff cast at you lands on its caster instead",0,70.9kk,10kk,Human;Demon
+83,Physical Backlash,backlash,Passive,,,0,0,self/single,0,0,0,"30% chance that a CON debuff and 15% chance for SPT debuff cast at you lands on its caster instead",0,248kk,100kk,Human;Demon
 ,,,,,,,,,,,,,,,,,----------------------------Backlash----------------------------
-77,Magical Backlash,backlash,Passive,,,0,0,self/single,0,0,0,"10% chance that a SPT debuff and 5% chance for CON debuff cast at you lands on its caster instead",0,6.5kk,1k,Elf
-80,Magical Backlash,backlash,Passive,,,0,0,self/single,0,0,0,"20% chance that a SPT debuff and 10% chance for CON debuff cast at you lands on its caster instead",0,150kk,10kk,Elf
-83,Magical Backlash,backlash,Passive,,,0,0,self/single,0,0,0,"30% chance that a SPT debuff and 15% chance for CON debuff cast at you lands on its caster instead",0,500kk,100kk,Elf
+77,Magical Backlash,backlash,Passive,,,0,0,self/single,0,0,0,"10% chance that a SPT debuff and 5% chance for CON debuff cast at you lands on its caster instead",0,6.54kk,1k,Elf
+80,Magical Backlash,backlash,Passive,,,0,0,self/single,0,0,0,"20% chance that a SPT debuff and 10% chance for CON debuff cast at you lands on its caster instead",0,70.9kk,10kk,Elf
+83,Magical Backlash,backlash,Passive,,,0,0,self/single,0,0,0,"30% chance that a SPT debuff and 15% chance for CON debuff cast at you lands on its caster instead",0,248kk,100kk,Elf
 ,,,,,,,,,,,,,,,,,----------------------------Tauting Wall----------------------------
-80,Tauting Wall,tauting_wall,physical buff,,,800,800,enemy/aoe,0.5,600,30,"Agro enemies around - locks them onto you for 3s then leaves you 11400 aggro ahead; and then increasing your: p.def +5000; m.def +4500; buff cancel resist x1.8; ms x0.20",200,150kk,10kk
+80,Tauting Wall,tauting_wall,physical buff,,,800,800,enemy/aoe,0.5,600,30,"Agro enemies around - locks them onto you for 3s then leaves you 11400 aggro ahead; and then increasing your: p.def +5000; m.def +4500; buff cancel resist x1.8; ms x0.20",200,322kk,10kk
 ,,,,,,,,,,,,,,,,,----------------------------Defensive Wall----------------------------
-76,Defensive Wall,defensive_wall,physical buff,,,0,0,self/single,0.5,810,33,increase p.def +3900; m.def +3400; buff cancel resist x1.8; ms x0.45,50,6.5kk,1k
-78,Defensive Wall,defensive_wall,physical buff,,,0,0,self/single,0.5,720,36,increase p.def +4100; m.def +3600; buff cancel resist x1.8; ms x0.40,50,16kk,1kk
+76,Defensive Wall,defensive_wall,physical buff,,,0,0,self/single,0.5,810,33,increase p.def +3900; m.def +3400; buff cancel resist x1.8; ms x0.45,50,5.59kk,1k
+78,Defensive Wall,defensive_wall,physical buff,,,0,0,self/single,0.5,720,36,increase p.def +4100; m.def +3600; buff cancel resist x1.8; ms x0.40,50,14.3kk,1kk
 80,Defensive Wall,defensive_wall,physical buff,,,0,0,self/single,0.5,630,39,increase p.def +4300; m.def +3800; buff cancel resist x1.8; ms x0.35,50,0,5kk
 82,Defensive Wall,defensive_wall,physical buff,,,0,0,self/single,0.5,540,42,increase p.def +4500; m.def +4000; buff cancel resist x1.8; ms x0.30,50,0,10kk
 84,Defensive Wall,defensive_wall,physical buff,,,0,0,self/single,0.5,450,45,increase p.def +4700; m.def +4200; buff cancel resist x1.8; ms x0.25,50,0,30kk
@@ -85,8 +85,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Defensive Wall,defensive_wall,physical buff,,,0,0,self/single,0.5,330,55,increase p.def +4900; m.def +4400; buff cancel resist x1.8; ms x0.22,50,0,100kk
 90,Defensive Wall,defensive_wall,physical buff,,,0,0,self/single,0.5,300,60,increase p.def +5000; m.def +4500; buff cancel resist x1.8; ms x0.20,50,0,100kk
 ,,,,,,,,,,,,,,,,,----------------------------Magic Wall----------------------------
-76,Magic Wall,magic_wall,physical buff,,,0,0,self/single,0.5,600,30,increase m.def +4000;,50,6.5kk,1k
-78,Magic Wall,magic_wall,physical buff,,,0,0,self/single,0.5,600,30,increase m.def +4200;,50,16kk,1kk
+76,Magic Wall,magic_wall,physical buff,,,0,0,self/single,0.5,600,30,increase m.def +4000;,50,5.59kk,1k
+78,Magic Wall,magic_wall,physical buff,,,0,0,self/single,0.5,600,30,increase m.def +4200;,50,14.3kk,1kk
 80,Magic Wall,magic_wall,physical buff,,,0,0,self/single,0.5,600,30,increase m.def +4400;,50,0,5kk
 82,Magic Wall,magic_wall,physical buff,,,0,0,self/single,0.5,600,30,increase m.def +4600;,50,0,10kk
 84,Magic Wall,magic_wall,physical buff,,,0,0,self/single,0.5,600,30,increase m.def +4800;,50,0,30kk
@@ -94,8 +94,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Magic Wall,magic_wall,physical buff,,,0,0,self/single,0.5,600,30,increase m.def +5500;,50,0,100kk
 90,Magic Wall,magic_wall,physical buff,,,0,0,self/single,0.5,600,30,increase m.def +6000;,50,0,100kk
 ,,,,,,,,,,,,,,,,,----------------------------Taunt----------------------------
-76,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 12400 aggro ahead;",0,6.5kk,1kk,Human;Demon
-78,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 13200 aggro ahead;",0,16kk,1kk,Human;Demon
+76,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 12400 aggro ahead;",0,8.39kk,1kk,Human;Demon
+78,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 13200 aggro ahead;",0,21.5kk,1kk,Human;Demon
 80,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 14000 aggro ahead;",0,0,5kk,Human;Demon
 82,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 14800 aggro ahead;",0,0,10kk,Human;Demon
 84,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 15600 aggro ahead;",0,0,30kk,Human;Demon
@@ -103,8 +103,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 17200 aggro ahead;",0,0,100kk,Human;Demon
 90,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 18000 aggro ahead;",0,0,100kk,Human;Demon
 ,,,,,,,,,,,,,,,,,----------------------------Taunt----------------------------  
-76,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 12400 aggro ahead (sucsess: x0.7);",0,6.5kk,1kk,Elf
-78,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 13200 aggro ahead (sucsess: x0.7);",0,16kk,1kk,Elf
+76,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 12400 aggro ahead (sucsess: x0.7);",0,8.39kk,1kk,Elf
+78,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 13200 aggro ahead (sucsess: x0.7);",0,21.5kk,1kk,Elf
 80,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 14000 aggro ahead (sucsess: x0.7);",0,0,5kk,Elf
 82,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 14800 aggro ahead (sucsess: x0.7);",0,0,10kk,Elf
 84,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 15600 aggro ahead (sucsess: x0.7);",0,0,30kk,Elf
@@ -112,8 +112,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 17200 aggro ahead (sucsess: x0.7);",0,0,100kk,Elf
 90,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 18000 aggro ahead (sucsess: x0.7);",0,0,100kk,Elf
 ,,,,,,,,,,,,,,,,,----------------------------Mass Taunt---------------------------
-76,Mass Taunt,mass_provoke,physical active,,,0,400,enemy/aoe,0.5,30,3,"Agro enemies around - locks them onto you for 3s then leaves you  7480 aggro ahead;",115,6.5kk,1kk,Human
-78,Mass Taunt,mass_provoke,physical active,,,0,400,enemy/aoe,0.5,30,3,"Agro enemies around - locks them onto you for 3s then leaves you  8040 aggro ahead;",125,16kk,1kk,Human
+76,Mass Taunt,mass_provoke,physical active,,,0,400,enemy/aoe,0.5,30,3,"Agro enemies around - locks them onto you for 3s then leaves you  7480 aggro ahead;",115,8.39kk,1kk,Human
+78,Mass Taunt,mass_provoke,physical active,,,0,400,enemy/aoe,0.5,30,3,"Agro enemies around - locks them onto you for 3s then leaves you  8040 aggro ahead;",125,21.5kk,1kk,Human
 80,Mass Taunt,mass_provoke,physical active,,,0,400,enemy/aoe,0.5,30,3,"Agro enemies around - locks them onto you for 3s then leaves you  8600 aggro ahead;",135,0,5kk,Human
 82,Mass Taunt,mass_provoke,physical active,,,0,400,enemy/aoe,0.5,30,3,"Agro enemies around - locks them onto you for 3s then leaves you  9160 aggro ahead;",145,0,10kk,Human
 84,Mass Taunt,mass_provoke,physical active,,,0,400,enemy/aoe,0.5,30,3,"Agro enemies around - locks them onto you for 3s then leaves you  9720 aggro ahead;",155,0,30kk,Human
@@ -121,8 +121,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Mass Taunt,mass_provoke,physical active,,,0,400,enemy/aoe,0.5,30,3,"Agro enemies around - locks them onto you for 3s then leaves you 10840 aggro ahead;",175,0,100kk,Human
 90,Mass Taunt,mass_provoke,physical active,,,0,400,enemy/aoe,0.5,30,3,"Agro enemies around - locks them onto you for 3s then leaves you 11400 aggro ahead;",185,0,100kk,Human
 ,,,,,,,,,,,,,,,,,----------------------------Intimidate----------------------------
-76,Intimidate,intimidate,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",115,6.5kk,1kk,Demon
-78,Intimidate,intimidate,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",125,16kk,1kk,Demon
+76,Intimidate,intimidate,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",115,8.39kk,1kk,Demon
+78,Intimidate,intimidate,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",125,21.5kk,1kk,Demon
 80,Intimidate,intimidate,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",135,0,5kk,Demon
 82,Intimidate,intimidate,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",145,0,10kk,Demon
 84,Intimidate,intimidate,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",155,0,30kk,Demon
@@ -130,8 +130,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Intimidate,intimidate,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",175,0,100kk,Demon
 90,Intimidate,intimidate,physical debuff,,,800,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",185,0,100kk,Demon
 ,,,,,,,,,,,,,,,,,----------------------------Freeze----------------------------
-76,Freeze,freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 55% ;",115,6.5kk,1kk,Elf
-78,Freeze,freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 55% ;",125,16kk,1kk,Elf
+76,Freeze,freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 55% ;",115,8.39kk,1kk,Elf
+78,Freeze,freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 55% ;",125,21.5kk,1kk,Elf
 80,Freeze,freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 60% ;",135,0,5kk,Elf
 82,Freeze,freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 60% ;",145,0,10kk,Elf
 84,Freeze,freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 60% ;",155,0,30kk,Elf
@@ -139,8 +139,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Freeze,freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 65% ;",175,0,100kk,Elf
 90,Freeze,freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 65% ;",185,0,100kk,Elf
 ,,,,,,,,,,,,,,,,,----------------------------Stay----------------------------
-76,Stay,stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",115,6.5kk,1kk
-78,Stay,stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",125,16kk,1kk
+76,Stay,stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",115,8.39kk,1kk
+78,Stay,stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",125,21.5kk,1kk
 80,Stay,stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",135,0,5kk
 82,Stay,stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",145,0,10kk
 84,Stay,stay,physical debuff,,,600,0,enemy/single,2,4,10,"Hold enemy for 10s;",155,0,30kk
@@ -148,8 +148,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Stay,stay,physical debuff,,,600,0,enemy/single,2,4,10,"Hold enemy for 10s;",175,0,100kk
 90,Stay,stay,physical debuff,,,600,0,enemy/single,2,4,10,"Hold enemy for 10s;",185,0,100kk
 ,,,,,,,,,,,,,,,,,----------------------------Shield Smash - Rate----------------------------
-76,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +4200, Decrease P.Crit.Rate with 50% and M.Crit.Rate with 25%; Requre: Shield;",123,6.5kk,1kk,Human;Elf
-78,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +4600, Decrease P.Crit.Rate with 50% and M.Crit.Rate with 25%; Requre: Shield;",129,16kk,1kk,Human;Elf
+76,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +4200, Decrease P.Crit.Rate with 50% and M.Crit.Rate with 25%; Requre: Shield;",123,8.39kk,1kk,Human;Elf
+78,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +4600, Decrease P.Crit.Rate with 50% and M.Crit.Rate with 25%; Requre: Shield;",129,21.5kk,1kk,Human;Elf
 80,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +5000, Decrease P.Crit.Rate with 50% and M.Crit.Rate with 25%; Requre: Shield;",135,0,5kk,Human;Elf
 82,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +5400, Decrease P.Crit.Rate with 50% and M.Crit.Rate with 25%; Requre: Shield;",141,0,10kk,Human;Elf
 84,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +5800, Decrease P.Crit.Rate with 50% and M.Crit.Rate with 25%; Requre: Shield;",147,0,30kk,Human;Elf
@@ -157,8 +157,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +6800, Decrease P.Crit.Rate with 50% and M.Crit.Rate with 25%; Requre: Shield;",159,0,100kk,Human;Elf
 90,Shield Smash - Rate,shield_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +7200, Decrease P.Crit.Rate with 50% and M.Crit.Rate with 25%; Requre: Shield;",165,0,100kk,Human;Elf
 ,,,,,,,,,,,,,,,,,----------------------------Shield Smash - Dmg----------------------------
-76,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +4200, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",123,6.5kk,1kk,Demon
-78,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +4600, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",129,16kk,1kk,Demon
+76,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +4200, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",123,8.39kk,1kk,Demon
+78,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +4600, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",129,21.5kk,1kk,Demon
 80,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +5000, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",135,0,5kk,Demon
 82,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +5400, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",141,0,10kk,Demon
 84,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +5800, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",147,0,30kk,Demon
@@ -166,8 +166,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +6800, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",159,0,100kk,Demon
 90,Shield Smash - Power,shield_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +7200, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",165,0,100kk,Demon
 ,,,,,,,,,,,,,,,,,----------------------------Shield Shock----------------------------
-76,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",123,6.5kk,1kk
-78,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",129,16kk,1kk
+76,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",123,8.39kk,1kk
+78,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",129,21.5kk,1kk
 80,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",135,0,5kk
 82,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",141,0,10kk
 84,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",147,0,30kk
@@ -175,8 +175,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",159,0,100kk
 90,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",165,0,100kk
 ,,,,,,,,,,,,,,,,,----------------------------Numbing Shock----------------------------
-76,Numbing Shock,numbing_shock,Physical/Debuff,,/shield,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5); Requre: Shield;",123,6.5kk,1kk,Human;Demon,,Its BASIC ATTACK still works. Contested ATK vs CON.
-78,Numbing Shock,numbing_shock,Physical/Debuff,,/shield,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5); Requre: Shield;",129,16kk,1kk,Human;Demon
+76,Numbing Shock,numbing_shock,Physical/Debuff,,/shield,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5); Requre: Shield;",123,8.39kk,1kk,Human;Demon,,Its BASIC ATTACK still works. Contested ATK vs CON.
+78,Numbing Shock,numbing_shock,Physical/Debuff,,/shield,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5); Requre: Shield;",129,21.5kk,1kk,Human;Demon
 80,Numbing Shock,numbing_shock,Physical/Debuff,,/shield,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5); Requre: Shield;",135,0,5kk,Human;Demon
 82,Numbing Shock,numbing_shock,Physical/Debuff,,/shield,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5); Requre: Shield;",141,0,10kk,Human;Demon
 84,Numbing Shock,numbing_shock,Physical/Debuff,,/shield,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5); Requre: Shield;",147,0,30kk,Human;Demon
@@ -184,8 +184,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Numbing Shock,numbing_shock,Physical/Debuff,,/shield,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5); Requre: Shield;",159,0,100kk,Human;Demon
 90,Numbing Shock,numbing_shock,Physical/Debuff,,/shield,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5); Requre: Shield;",165,0,100kk,Human;Demon
 ,,,,,,,,,,,,,,,,,----------------------------Silencing Shock----------------------------
-76,Silencing Shock,silencing_shock,Magical/Debuff,,/shield,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7); Requre: Shield;",123,6.5kk,1kk,Elf,, Land this AND a physical silence and the target is FULLY silenced. Contested ATK vs SPT.
-78,Silencing Shock,silencing_shock,Magical/Debuff,,/shield,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7); Requre: Shield;",129,16kk,1kk,Elf
+76,Silencing Shock,silencing_shock,Magical/Debuff,,/shield,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7); Requre: Shield;",123,8.39kk,1kk,Elf,, Land this AND a physical silence and the target is FULLY silenced. Contested ATK vs SPT.
+78,Silencing Shock,silencing_shock,Magical/Debuff,,/shield,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7); Requre: Shield;",129,21.5kk,1kk,Elf
 80,Silencing Shock,silencing_shock,Magical/Debuff,,/shield,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7); Requre: Shield;",135,0,5kk,Elf
 82,Silencing Shock,silencing_shock,Magical/Debuff,,/shield,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7); Requre: Shield;",141,0,10kk,Elf
 84,Silencing Shock,silencing_shock,Magical/Debuff,,/shield,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7); Requre: Shield;",147,0,30kk,Elf
@@ -193,8 +193,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Silencing Shock,silencing_shock,Magical/Debuff,,/shield,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7); Requre: Shield;",159,0,100kk,Elf
 90,Silencing Shock,silencing_shock,Magical/Debuff,,/shield,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7); Requre: Shield;",165,0,100kk,Elf
 ,,,,,,,,,,,,,,,,,----------------------------Grapple----------------------------
-76,Grapple,grapple,Physical/Debuff,sword|blunt,,600,0,enemy/single,0.5,15,1,"Power 2100. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival. Requre: Sword/Blunt;",123,6.5kk,1kk,,,"it cannot act or steer on the way, ONE CON contest covers the drag and the stun. A NORMAL damage skill — it builds threat only through the damage it deals, so it is auto-castable. Boss immune; works on players."
-78,Grapple,grapple,Physical/Debuff,sword|blunt,,600,0,enemy/single,0.5,15,1,"Power 2300. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival. Requre: Sword/Blunt;",129,16kk,1kk
+76,Grapple,grapple,Physical/Debuff,sword|blunt,,600,0,enemy/single,0.5,15,1,"Power 2100. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival. Requre: Sword/Blunt;",123,8.39kk,1kk,,,"it cannot act or steer on the way, ONE CON contest covers the drag and the stun. A NORMAL damage skill — it builds threat only through the damage it deals, so it is auto-castable. Boss immune; works on players."
+78,Grapple,grapple,Physical/Debuff,sword|blunt,,600,0,enemy/single,0.5,15,1,"Power 2300. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival. Requre: Sword/Blunt;",129,21.5kk,1kk
 80,Grapple,grapple,Physical/Debuff,sword|blunt,,600,0,enemy/single,0.5,15,1,"Power 2500. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival. Requre: Sword/Blunt;",135,0,5kk
 82,Grapple,grapple,Physical/Debuff,sword|blunt,,600,0,enemy/single,0.5,15,1,"Power 2700. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival. Requre: Sword/Blunt;",141,0,10kk
 84,Grapple,grapple,Physical/Debuff,sword|blunt,,600,0,enemy/single,0.5,15,1,"Power 2900. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival. Requre: Sword/Blunt;",147,0,30kk
@@ -202,10 +202,10 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Grapple,grapple,Physical/Debuff,sword|blunt,,600,0,enemy/single,0.5,15,1,"Power 3300. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival. Requre: Sword/Blunt;",159,0,100kk
 90,Grapple,grapple,Physical/Debuff,sword|blunt,,600,0,enemy/single,0.5,15,1,"Power 3500. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival. Requre: Sword/Blunt;",165,0,100kk
 ,,,,,,,,,,,,,,,,,----------------------------Undying Will----------------------------
-83,Undying Will,undying_will,Magic/Buff,,,0,0,self/single,1,3600,3600,"You DIE normally and keep your buffs, then choose when to rise where you fell at 30% HP and MP, losing NO experience — the offer waits as long as you like. Lasts 60 minutes or until it saves you. 60 minute reuse., Consume 2 physical stones",300,500kk,100kk,
+83,Undying Will,undying_will,Magic/Buff,,,0,0,self/single,1,3600,3600,"You DIE normally and keep your buffs, then choose when to rise where you fell at 30% HP and MP, losing NO experience — the offer waits as long as you like. Lasts 60 minutes or until it saves you. 60 minute reuse., Consume 2 physical stones",300,752kk,100kk,
 ,,,,,,,,,,,,,,,,,----------------------------Taunting Whisp----------------------------
-76,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 12400), Consumes 4 skill stones;",110,6.5kk,1kk,Human
-78,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 13200), Consumes 4 skill stones;",120,16kk,1kk,Human
+76,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 12400), Consumes 4 skill stones;",110,5.59kk,1kk,Human
+78,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 13200), Consumes 4 skill stones;",120,14.3kk,1kk,Human
 80,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 14000), Consumes 4 skill stones;",130,0,5kk,Human
 82,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 14800), Consumes 4 skill stones;",140,0,10kk,Human
 84,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 15600), Consumes 4 skill stones;",150,0,30kk,Human
@@ -213,8 +213,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 17200), Consumes 4 skill stones;",180,0,100kk,Human
 90,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 18000), Consumes 4 skill stones;",200,0,100kk,Human
 ,,,,,,,,,,,,,,,,,----------------------------Binding Whisp----------------------------
-77,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones;",110,6.5kk,1kk,Human
-79,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones;",120,16kk,1kk,Human
+77,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones;",110,19.8kk,1kk,Human
+79,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones;",120,96.6kk,1kk,Human
 81,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones;",130,0,5kk,Human
 83,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones;",140,0,10kk,Human
 85,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones;",150,0,30kk,Human
@@ -222,8 +222,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones;",180,0,100kk,Human
 90,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones;",200,0,100kk,Human
 ,,,,,,,,,,,,,,,,,----------------------------Charming Whisp----------------------------
-76,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 12400), Consumes 4 skill stones;",110,6.5kk,1kk,Elf
-78,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 13200), Consumes 4 skill stones;",120,16kk,1kk,Elf
+76,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 12400), Consumes 4 skill stones;",110,5.59kk,1kk,Elf
+78,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 13200), Consumes 4 skill stones;",120,14.3kk,1kk,Elf
 80,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 14000), Consumes 4 skill stones;",130,0,5kk,Elf
 82,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 14800), Consumes 4 skill stones;",140,0,10kk,Elf
 84,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 15600), Consumes 4 skill stones;",150,0,30kk,Elf
@@ -231,8 +231,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 17200), Consumes 4 skill stones;",180,0,100kk,Elf
 90,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 18000), Consumes 4 skill stones;",200,0,100kk,Elf
 ,,,,,,,,,,,,,,,,,----------------------------Healing Whisp----------------------------
-77,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 850); Consumes 4 skill stones;",110,6.5kk,1kk,Elf
-79,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 900); Consumes 4 skill stones;",120,16kk,1kk,Elf
+77,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 850); Consumes 4 skill stones;",110,19.8kk,1kk,Elf
+79,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 900); Consumes 4 skill stones;",120,96.6kk,1kk,Elf
 81,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 950); Consumes 4 skill stones;",130,0,5kk,Elf
 83,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 1000); Consumes 4 skill stones;",140,0,10kk,Elf
 85,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 1050); Consumes 4 skill stones;",150,0,30kk,Elf
@@ -240,8 +240,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 1150); Consumes 4 skill stones;",180,0,100kk,Elf
 90,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 1200); Consumes 4 skill stones;",200,0,100kk,Elf
 ,,,,,,,,,,,,,,,,,----------------------------Armor Breaking Whisp----------------------------
-76,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 31% and MDef by 15%); Consumes 4 skill stones;",110,6.5kk,1kk,Demon
-78,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 32% and MDef by 16%); Consumes 4 skill stones;",120,16kk,1kk,Demon
+76,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 31% and MDef by 15%); Consumes 4 skill stones;",110,5.59kk,1kk,Demon
+78,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 32% and MDef by 16%); Consumes 4 skill stones;",120,14.3kk,1kk,Demon
 80,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 33% and MDef by 16%); Consumes 4 skill stones;",130,0,5kk,Demon
 82,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 34% and MDef by 17%); Consumes 4 skill stones;",140,0,10kk,Demon
 84,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 35% and MDef by 17%); Consumes 4 skill stones;",150,0,30kk,Demon
@@ -249,8 +249,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 38% and MDef by 19%); Consumes 4 skill stones;",180,0,100kk,Demon
 90,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 40% and MDef by 20%); Consumes 4 skill stones;",200,0,100kk,Demon
 ,,,,,,,,,,,,,,,,,----------------------------Weapon Breaking Whisp----------------------------
-77,Weapon Breaking Whisp,weapon_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 16%); Consumes 4 skill stones",110,6.5kk,1kk,Demon
-79,Weapon Breaking Whisp,weapon_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 17%); Consumes 4 skill stones",120,16kk,1kk,Demon
+77,Weapon Breaking Whisp,weapon_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 16%); Consumes 4 skill stones",110,19.8kk,1kk,Demon
+79,Weapon Breaking Whisp,weapon_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 17%); Consumes 4 skill stones",120,96.6kk,1kk,Demon
 81,Weapon Breaking Whisp,weapon_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 18%); Consumes 4 skill stones",130,0,5kk,Demon
 83,Weapon Breaking Whisp,weapon_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 19%); Consumes 4 skill stones;",140,0,10kk,Demon
 85,Weapon Breaking Whisp,weapon_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 20%); Consumes 4 skill stones;",150,0,30kk,Demon
@@ -258,11 +258,11 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Weapon Breaking Whisp,weapon_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 23%); Consumes 4 skill stones;",180,0,100kk,Demon
 90,Weapon Breaking Whisp,weapon_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 25%); Consumes 4 skill stones;",200,0,100kk,Demon
 ,,,,,,,,,,,,,,,,,----------------------------Perfect Whisp----------------------------
-80,Perfect Whisp,perfect_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to help remove bad effects, heal its master (Power 900), restore mp of its master (Power 100), break armor of enemy (Deacreases P.Def by 30% and MDef by 15%), break weapon of enemy (Decreases P/M.Atk 15%), Decrease enemy Atack speed and cast speed by 23%; Consumes 4 skill stones;",130,150kk,10kk,,,uses whisp_clear; whisp_heal; whisp_quick_heal; whisp_armor_break; whisp_weapon_break; whisp_gravity;
+80,Perfect Whisp,perfect_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to help remove bad effects, heal its master (Power 900), restore mp of its master (Power 100), break armor of enemy (Deacreases P.Def by 30% and MDef by 15%), break weapon of enemy (Decreases P/M.Atk 15%), Decrease enemy Atack speed and cast speed by 23%; Consumes 4 skill stones;",130,215kk,10kk,,,uses whisp_clear; whisp_heal; whisp_quick_heal; whisp_armor_break; whisp_weapon_break; whisp_gravity;
 82,Perfect Whisp,perfect_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to help remove bad effects, heal its master (Power 920), restore mp of its master (Power 120), break armor of enemy (Deacreases P.Def by 30% and MDef by 15%), break weapon of enemy (Decreases P/M.Atk 15%), Decrease enemy Atack speed and cast speed by 23%; Consumes 4 skill stones;",140,0,10kk
 84,Perfect Whisp,perfect_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to help remove bad effects, heal its master (Power 940), restore mp of its master (Power 140), break armor of enemy (Deacreases P.Def by 30% and MDef by 15%), break weapon of enemy (Decreases P/M.Atk 15%), Decrease enemy Atack speed and cast speed by 23%; Consumes 4 skill stones;",150,0,30kk
 86,Perfect Whisp,perfect_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to help remove bad effects, heal its master (Power 960), restore mp of its master (Power 160), break armor of enemy (Deacreases P.Def by 30% and MDef by 15%), break weapon of enemy (Decreases P/M.Atk 15%), Decrease enemy Atack speed and cast speed by 23%; Consumes 4 skill stones;",160,0,75kk
 88,Perfect Whisp,perfect_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to help remove bad effects, heal its master (Power 980), restore mp of its master (Power 180), break armor of enemy (Deacreases P.Def by 30% and MDef by 15%), break weapon of enemy (Decreases P/M.Atk 15%), Decrease enemy Atack speed and cast speed by 23%; Consumes 4 skill stones;",180,0,100kk
 90,Perfect Whisp,perfect_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to help remove bad effects, heal its master (Power 1000), restore mp of its master (Power 200), break armor of enemy (Deacreases P.Def by 30% and MDef by 15%), break weapon of enemy (Decreases P/M.Atk 15%), Decrease enemy Atack speed and cast speed by 23%; Consumes 4 skill stones;",200,0,100kk
 ,,,,,,,,,,,,,,,,,----------------------------Vital Organ Protection (BL-188)----------------------------
-80,Vital Organ Protection,vital_organ_protection,Passive,,,0,0,self/single,0,0,0,"blow resist 30%; blows land on you less often",0,150kk,10kk
+80,Vital Organ Protection,vital_organ_protection,Passive,,,0,0,self/single,0,0,0,"blow resist 30%; blows land on you less often",0,70.9kk,10kk

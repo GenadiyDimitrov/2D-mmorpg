@@ -1,26 +1,26 @@
 LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPLACES,Race,Gold Cost,Comment
 ,,,,,,,,,,,,,,,,----------------------------Magic Bolt----------------------------
 1,Magic Bolt,magic_bolt,magic active,,,600,0,enemy/single,4,1,0,magic dmg power 12 - spells fail rather than miss,9,0,[]
-7,Magic Bolt,magic_bolt,magic active,,,600,0,enemy/single,4,1,0,magic dmg power 15,10,480,[]
-14,Magic Bolt,magic_bolt,magic active,,,600,0,enemy/single,4,1,0,magic dmg power 21,15,2200,[]
+7,Magic Bolt,magic_bolt,magic active,,,600,0,enemy/single,4,1,0,magic dmg power 15,10,1140,[]
+14,Magic Bolt,magic_bolt,magic active,,,600,0,enemy/single,4,1,0,magic dmg power 21,15,3830,[]
 ,,,,,,,,,,,,,,,,----------------------------Spellcaster Mastery----------------------------
 1,Spellcaster Mastery,spellcaster_mastery,passive,,,0,0,self/single,0,0,0,"ARMOR - Robe: cast x1, mpReg x1.2; Light/Heavy/None: cast x0.5, as x0.5. WEAPON - Sword/Blunt: cast x1, mAtk x1; Bow/Dagger/None: cast x0.5, mAtk x0.5, mAcc x0.5. Auto-granted and NEVER replaced - every mage weapon/weight penalty lives here and nowhere else.",0,0,[weapon_proficiency]
 ,,,,,,,,,,,,,,,,----------------------------Might----------------------------
-7,Forest Might,elf_cast_atk_phys,buff,,,600,0,party/single,1,1,1200,By the help of the forest: +8% PAttack,20,960,[],Elf
-7,Demonic Strength,demon_cast_atk_phys,buff,,,600,0,party/single,1,1,1200,Signing a demonic contract: +8% PAttack,20,960,[],Demon
-7,Blessing of Might,human_cast_atk_phys,buff,,,600,0,party/single,1,1,1200,A magical blessing that increases +8% PAttack,20,960,[],Human
+7,Forest Might,elf_cast_atk_phys,buff,,,600,0,party/single,1,1,1200,By the help of the forest: +8% PAttack,20,759,[],Elf
+7,Demonic Strength,demon_cast_atk_phys,buff,,,600,0,party/single,1,1,1200,Signing a demonic contract: +8% PAttack,20,759,[],Demon
+7,Blessing of Might,human_cast_atk_phys,buff,,,600,0,party/single,1,1,1200,A magical blessing that increases +8% PAttack,20,759,[],Human
 ,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
-7,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +12,0,480,[]
-14,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +16,0,2200,[]
+7,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +12,0,251,[]
+14,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +16,0,843,[]
 ,,,,,,,,,,,,,,,,----------------------------Robe Armor Mastery----------------------------
-7,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,robe: p.def +7,0,480,[]
-14,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,robe: p.def +9,0,2200,[]
+7,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,robe: p.def +7,0,251,[]
+14,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,robe: p.def +9,0,843,[]
 ,,,,,,,,,,,,,,,,----------------------------Bulwark----------------------------
-14,Bulwark,cast_def_phys,buff,,,600,0,party/single,1,1,1200,+8% PDef for 20 min,20,960,[]
+14,Bulwark,cast_def_phys,buff,,,600,0,party/single,1,1,1200,+8% PDef for 20 min,20,2550,[]
 ,,,,,,,,,,,,,,,,----------------------------Spellcaster Weapon Mastery----------------------------
-14,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,m.Atk +4,0,1100,[]
+14,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,m.Atk +4,0,843,[]
 ,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
-14,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +2,0,1100,[]
+14,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +2,0,843,[]
 ,,,,,,,,,,,,,,,,----------------------------Grade Permission----------------------------
 1,Grade F,grade_penalty,passive,,,0,0,self/single,0,0,0,"Allow the user to equip F grade; Auto-granted",0,0,[]
 20,Grade E,grade_penalty,passive,,,0,0,self/single,0,0,0,"Allow the user to equip E grade; Auto-granted",0,0,[]

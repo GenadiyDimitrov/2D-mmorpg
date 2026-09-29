@@ -1,9 +1,9 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment
 ,,,,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
-76,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +113",0,6.5kk,1kk
-77,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +116",0,11kk,1kk
-78,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +119",0,16kk,1kk
-79,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +121",0,80kk,1kk
+76,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +113",0,2.38kk,1kk
+77,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +116",0,3.4kk,1kk
+78,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +119",0,4.64kk,1kk
+79,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +121",0,24.8kk,1kk
 80,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +123",0,0,5kk
 81,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +125",0,0,7.5kk
 82,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +127",0,0,10kk
@@ -18,10 +18,10 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,,,----------------------------Magic Resistance----------------------------
 86,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +35%",0,0,37.5kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Spellcaster Weapon Mastery----------------------------
-76,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +101",0,6.5kk,1kk
-77,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +102",0,11kk,1kk
-78,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +104",0,16kk,1kk
-79,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +105",0,80kk,1kk
+76,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +101",0,2.38kk,1kk
+77,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +102",0,3.4kk,1kk
+78,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +104",0,4.64kk,1kk
+79,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +105",0,24.8kk,1kk
 80,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +106",0,0,5kk
 81,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +108",0,0,7.5kk
 82,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +109",0,0,10kk
@@ -34,10 +34,10 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +119",0,0,100kk
 90,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +120",0,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Robe Armor Mastery----------------------------
-76,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +89",0,2.2kk,333k
-77,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +91",0,5.5kk,500k
-78,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +92",0,4kk,250k
-79,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +93",0,40kk,500k
+76,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +89",0,2.38kk,333k
+77,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +91",0,3.4kk,500k
+78,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +92",0,4.64kk,250k
+79,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +93",0,24.8kk,500k
 80,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +95",0,0,1.7kk
 81,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +96",0,0,1.9kk
 82,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +97",0,0,5kk
@@ -50,18 +50,18 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +107",0,0,50kk
 90,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +108",0,0,33.3kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Mana Capacity----------------------------
-76,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +220",0,2.2kk,333k
-78,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +250",0,4kk,250k
+76,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +220",0,2.38kk,333k
+78,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +250",0,4.64kk,250k
 81,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +290",0,0,1.9kk
 83,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +300",0,0,5kk
 86,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +330",0,0,18.8kk
 88,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +350",0,0,33.3kk
 90,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +400",0,0,33.3kk
 ,,,,,,,,,,,,,,,,,,,----------------------------M.Def Mastery----------------------------
-76,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +2%",0,2.2kk,333k
-77,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +4%",0,5.5kk,500k
-78,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +5%",0,4kk,250k
-79,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +7%",0,40kk,500k
+76,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +2%",0,2.38kk,333k
+77,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +4%",0,3.4kk,500k
+78,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +5%",0,4.64kk,250k
+79,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +7%",0,24.8kk,500k
 80,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +8%",0,0,1.7kk
 81,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +10%",0,0,1.9kk
 82,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +11%",0,0,5kk
@@ -74,20 +74,20 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +22%",0,0,50kk
 90,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +25%",0,0,33.3kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Mana Efficiency----------------------------
-78,Mana Efficiency,mp_cost_mastery,Passive,,,0,0,self/single,0,0,0,"Decrease Mp Consumption with 5%",0,4kk,250k
+78,Mana Efficiency,mp_cost_mastery,Passive,,,0,0,self/single,0,0,0,"Decrease Mp Consumption with 5%",0,4.64kk,250k
 81,Mana Efficiency,mp_cost_mastery,Passive,,,0,0,self/single,0,0,0,"Decrease Mp Consumption with 8%",0,0,1.9kk
 86,Mana Efficiency,mp_cost_mastery,Passive,,,0,0,self/single,0,0,0,"Decrease Mp Consumption with 10%",0,0,18.8kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Mana Recovery----------------------------
 80,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +65%",0,0,1.7kk
 85,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +70%",0,0,16.7kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Arcane Momentum----------------------------
-76,Arcane Momentum,reuse_reset_momentum,Passive,,,0,0,self/single,0,0,0,reuse reset 5% - a skill you cast has that chance to come off reuse immediately - never on a fixed-cooldown skill - scales with ATK,0,6.5kk,1kk
+76,Arcane Momentum,reuse_reset_momentum,Passive,,,0,0,self/single,0,0,0,reuse reset 5% - a skill you cast has that chance to come off reuse immediately - never on a fixed-cooldown skill - scales with ATK,0,2.38kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Mage Shield Mastery----------------------------
-76,Mage Shield Mastery,mage_shield_mastery,Passive,,/shield,0,0,self/single,0,0,0,"When Shield is equiped mp consumption -10% and mpReg +10%, Pdef +100, but shield can never block (block rate x0)",0,6.5kk,1kk
+76,Mage Shield Mastery,mage_shield_mastery,Passive,,/shield,0,0,self/single,0,0,0,"When Shield is equiped mp consumption -10% and mpReg +10%, Pdef +100, but shield can never block (block rate x0)",0,2.38kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Mana Barrier----------------------------
 85,Mana Barrier,mana_barrier,Magic/Buff,,,0,,self/single,0,300,30,"Diverts 70% of incoming damage to MP (0.5 MP per damage) for 30s or while MP lasts.",30,0,100kk,5
 ,,,,,,,,,,,,,,,,,,,----------------------------Force Empowerment----------------------------
-78,Force Empowerment,force_empowerment,Toggle,,,0,,self/single,0,0,0,"Increases mAtk +14%, mana consumption with 20% and drains 50/s HP",0,16kk,1kk,,,
+78,Force Empowerment,force_empowerment,Toggle,,,0,,self/single,0,0,0,"Increases mAtk +14%, mana consumption with 20% and drains 50/s HP",0,14.1kk,1kk,,,
 80,Force Empowerment,force_empowerment,Toggle,,,0,,self/single,0,0,0,"Increases mAtk +15%, mana consumption with 15% and drains 40/s HP",0,150kk,10kk,,,
 82,Force Empowerment,force_empowerment,Toggle,,,0,,self/single,0,0,0,"Increases mAtk +16%, mana consumption with 10% and drains 30/s HP",0,300kk,50kk,,,
 ,,,,,,,,,,,,,,,,,,,----------------------------Race Empowerment----------------------------
@@ -101,10 +101,10 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 85,Spell Empowerment,nuker_human_spell_empowerment,Magic/Buff,,,0,,self/single,1,5,600,"Increases magic MP consumption by 20% and M. Atk. by 12%; being attacked with 5% chance inflicts damage on attackers with power 51",100,0,100kk,,,Human
 90,Spell Empowerment,nuker_human_spell_empowerment,Magic/Buff,,,0,,self/single,1,5,600,"Increases magic MP consumption by 15% and M. Atk. by 12%; being attacked with 5% chance inflicts damage on attackers with power 55",100,0,100kk,,,Human
 ,,,,,,,,,,,,,,,,,,,----------------------------Elemental Blast----------------------------
-76,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +143,69,6.5kk,1kk
-77,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +146,71,11kk,1kk
-78,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +148,73,16kk,1kk
-79,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +151,77,80kk,1kk
+76,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +143,69,10.8kk,1kk
+77,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +146,71,15.5kk,1kk
+78,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +148,73,21.1kk,1kk
+79,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +151,77,113kk,1kk
 80,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +153,79,0,5kk
 81,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +156,91,0,7.5kk
 82,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +159,95,0,10kk
@@ -135,10 +135,10 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 85,Pyro Burst,pyro_burst,Magic/Dmg,,,900,0,enemy/single,1,300,15,"Fire Magic spell, power 200. Burns the enemy for -125hp/s and decrease hp/mp received by 72%, Never Fizzle",200,0,100kk,,,Demon
 90,Pyro Burst,pyro_burst,Magic/Dmg,,,900,0,enemy/single,1,300,15,"Fire Magic spell, power 250. Burns the enemy for -150hp/s and decrease hp/mp received by 75%, Never Fizzle",250,0,100kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,-----------------------------Quick Blast-----------------------------
-76,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk  +114; Power in PVP x0.5,69,6.5kk,1kk
-77,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk  +117; Power in PVP x0.5,71,11kk,1kk
-78,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk  +118; Power in PVP x0.5,73,16kk,1kk
-79,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk  +121; Power in PVP x0.5,77,80kk,1kk
+76,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk  +114; Power in PVP x0.5,69,10.8kk,1kk
+77,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk  +117; Power in PVP x0.5,71,15.5kk,1kk
+78,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk  +118; Power in PVP x0.5,73,21.1kk,1kk
+79,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk  +121; Power in PVP x0.5,77,113kk,1kk
 80,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk  +122; Power in PVP x0.5,79,0,5kk
 81,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk  +125; Power in PVP x0.5,91,0,7.5kk
 82,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk  +129; Power in PVP x0.5,95,0,10kk
@@ -151,10 +151,10 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +140; Power in PVP x0.5,113,0,100kk
 90,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +142; Power in PVP x0.5,115,0,100kk
 ,,,,,,,,,,,,,,,,,,,-----------------------------Elemental Wave-----------------------------
-76,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +86;,105,6.5kk,1kk
-77,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +88;,107,11kk,1kk
-78,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +91;,109,16kk,1kk
-79,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +94;,111,80kk,1kk
+76,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +86;,105,10.8kk,1kk
+77,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +88;,107,15.5kk,1kk
+78,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +91;,109,21.1kk,1kk
+79,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +94;,111,113kk,1kk
 80,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +98;,114,0,5kk
 81,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +101;,117,0,7.5kk
 82,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +105;,120,0,10kk
@@ -167,10 +167,10 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +133;,141,0,100kk
 90,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +137;,144,0,100kk
 ,,,,,,,,,,,,,,,,,,,-----------------------------Frost Pierce-----------------------------
-76,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +86; Applies bleed effect rank 10; Higher chance to interrupt enemy casts (interrupt chance x2);,69,6.5kk,1kk,,,Elf
-77,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +88; Applies bleed effect rank 10; Higher chance to interrupt enemy casts (interrupt chance x2);,71,11kk,1kk,,,Elf
-78,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +91; Applies bleed effect rank 10; Higher chance to interrupt enemy casts (interrupt chance x2);,73,16kk,1kk,,,Elf
-79,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +94; Applies bleed effect rank 10; Higher chance to interrupt enemy casts (interrupt chance x2);,77,80kk,1kk,,,Elf
+76,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +86; Applies bleed effect rank 10; Higher chance to interrupt enemy casts (interrupt chance x2);,69,10.8kk,1kk,,,Elf
+77,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +88; Applies bleed effect rank 10; Higher chance to interrupt enemy casts (interrupt chance x2);,71,15.5kk,1kk,,,Elf
+78,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +91; Applies bleed effect rank 10; Higher chance to interrupt enemy casts (interrupt chance x2);,73,21.1kk,1kk,,,Elf
+79,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +94; Applies bleed effect rank 10; Higher chance to interrupt enemy casts (interrupt chance x2);,77,113kk,1kk,,,Elf
 80,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +98; Applies bleed effect rank 10; Higher chance to interrupt enemy casts (interrupt chance x2);,79,0,5kk,,,Elf
 81,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +101; Applies bleed effect rank 10; Higher chance to interrupt enemy casts (interrupt chance x2);,91,0,7.5kk,,,Elf
 82,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +105; Applies bleed effect rank 10; Higher chance to interrupt enemy casts (interrupt chance x2);,95,0,10kk,,,Elf
@@ -183,10 +183,10 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +133; Applies bleed effect rank 10; Higher chance to interrupt enemy casts (interrupt chance x2);,113,0,100kk,,,Elf
 90,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +137; Applies bleed effect rank 10; Higher chance to interrupt enemy casts (interrupt chance x2);,115,0,100kk,,,Elf
 ,,,,,,,,,,,,,,,,,,,-----------------------------Arcane Wave-----------------------------
-76,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +86 in 400 radius around the target;,105,6.5kk,1kk,,,Human
-77,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +88 in 400 radius around the target;,107,11kk,1kk,,,Human
-78,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +91 in 400 radius around the target;,109,16kk,1kk,,,Human
-79,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +94 in 400 radius around the target;,111,80kk,1kk,,,Human
+76,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +86 in 400 radius around the target;,105,10.8kk,1kk,,,Human
+77,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +88 in 400 radius around the target;,107,15.5kk,1kk,,,Human
+78,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +91 in 400 radius around the target;,109,21.1kk,1kk,,,Human
+79,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +94 in 400 radius around the target;,111,113kk,1kk,,,Human
 80,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +98 in 400 radius around the target;,114,0,5kk,,,Human
 81,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +101 in 400 radius around the target;,117,0,7.5kk,,,Human
 82,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +105 in 400 radius around the target;,120,0,10kk,,,Human
@@ -199,15 +199,15 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +133 in 400 radius around the target;,141,0,100kk,,,Human
 90,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +137 in 400 radius around the target;,144,0,100kk,,,Human
 ,,,,,,,,,,,,,,,,,,,------------------------------Arcane Void------------------------------
-76,Arcane Void,arcane_void,Magic/Buff,,,900,0,enemy/single,4,30,0,Chance to remove 2~4 positive effect of the target,147,6.5kk,1kk,,,Human
+76,Arcane Void,arcane_void,Magic/Buff,,,900,0,enemy/single,4,30,0,Chance to remove 2~4 positive effect of the target,147,10.8kk,1kk,,,Human
 80,Arcane Void,arcane_void,Magic/Buff,,,900,0,enemy/single,4,30,0,Chance to remove 2~4 positive effect of the target,156,0,5kk,,,Human
 85,Arcane Void,arcane_void,Magic/Buff,,,900,0,enemy/single,4,30,0,Chance to remove 2~4 positive effect of the target,165,0,5kk,,,Human
 90,Arcane Void,arcane_void,Magic/Buff,,,900,0,enemy/single,4,30,0,Chance to remove 2~4 positive effect of the target,174,0,5kk,,,Human
 ,,,,,,,,,,,,,,,,,,,-----------------------------Witches Curse-----------------------------
-76,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk  +114; A chance to curse enemies for -30% M.Def;,138,6.5kk,1kk,,,Demon
-77,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk  +117; A chance to curse enemies for -30% M.Def;,142,11kk,1kk,,,Demon
-78,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk  +118; A chance to curse enemies for -30% M.Def;,146,16kk,1kk,,,Demon
-79,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk  +121; A chance to curse enemies for -30% M.Def;,154,80kk,1kk,,,Demon
+76,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk  +114; A chance to curse enemies for -30% M.Def;,138,10.8kk,1kk,,,Demon
+77,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk  +117; A chance to curse enemies for -30% M.Def;,142,15.5kk,1kk,,,Demon
+78,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk  +118; A chance to curse enemies for -30% M.Def;,146,21.1kk,1kk,,,Demon
+79,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk  +121; A chance to curse enemies for -30% M.Def;,154,113kk,1kk,,,Demon
 80,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk  +122; A chance to curse enemies for -32% M.Def;,158,0,5kk,,,Demon
 81,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk  +125; A chance to curse enemies for -32% M.Def;,182,0,7.5kk,,,Demon
 82,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk  +129; A chance to curse enemies for -32% M.Def;,190,0,10kk,,,Demon
@@ -220,10 +220,10 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +140; A chance to curse enemies for -35% M.Def;,226,0,100kk,,,Demon
 90,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +142; A chance to curse enemies for -35% M.Def;,230,0,100kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,-----------------------------Witches Scarecrow-----------------------------
-76,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,138,6.5kk,1kk,,,Demon
-77,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,142,11kk,1kk,,,Demon
-78,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,146,16kk,1kk,,,Demon
-79,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,154,80kk,1kk,,,Demon
+76,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,138,10.8kk,1kk,,,Demon
+77,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,142,15.5kk,1kk,,,Demon
+78,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,146,21.1kk,1kk,,,Demon
+79,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,154,113kk,1kk,,,Demon
 80,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,158,0,5kk,,,Demon
 81,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,182,0,7.5kk,,,Demon
 82,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,190,0,10kk,,,Demon
@@ -236,4 +236,4 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,226,0,100kk,,,Demon
 90,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,230,0,100kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Lasting Enchantment----------------------------
-76,Lasting Enchantment,lasting_enchantment,Passive,,,0,0,self/single,0,0,0,double duration rate 10% - buffs and debuffs you cast have that chance to last TWICE as long - one roll per cast so an area blessing doubles for everyone or no one - scales with ATK,0,6.5kk,1kk,,,,Same id and number the healer and buffer carry - on a nuker it is mostly his debuffs that double
+76,Lasting Enchantment,lasting_enchantment,Passive,,,0,0,self/single,0,0,0,double duration rate 10% - buffs and debuffs you cast have that chance to last TWICE as long - one roll per cast so an area blessing doubles for everyone or no one - scales with ATK,0,2.38kk,1kk,,,,Same id and number the healer and buffer carry - on a nuker it is mostly his debuffs that double

@@ -1,9 +1,9 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment
 ,,,,,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
-76,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +184",0,1.6kk,250k
-77,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +186",0,5.5kk,500k
-78,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +188",0,8kk,500k
-79,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +190",0,40kk,500k
+76,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +184",0,2.15kk,250k
+77,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +186",0,3.12kk,500k
+78,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +188",0,4.83kk,500k
+79,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +190",0,22.7kk,500k
 80,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +202",0,0,1.3kk
 81,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +204",0,0,3.8kk
 82,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +206",0,0,5kk
@@ -16,10 +16,10 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +232",0,0,50kk
 90,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +235",0,0,50kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Light Armor Mastery----------------------------
-76,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +124",0,1.6kk,250k
-77,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +126",0,5.5kk,500k
-78,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +128",0,8kk,500k
-79,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +130",0,40kk,500k
+76,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +124",0,2.15kk,250k
+77,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +126",0,3.12kk,500k
+78,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +128",0,4.83kk,500k
+79,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +130",0,22.7kk,500k
 80,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +132",0,0,1.3kk
 81,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +134",0,0,3.8kk
 82,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +136",0,0,5kk
@@ -32,18 +32,18 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +152",0,0,50kk
 90,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +155",0,0,50kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Evasion----------------------------
-76,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +10",0,1.6kk,250k
+76,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +10",0,2.15kk,250k
 80,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +11",0,0,1.3kk
 86,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +12",0,0,25kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Heavy Vitality----------------------------
-76,Heavy Vitality,heavy_vitality,Passive,,heavy,0,0,self/single,0,0,0,"heavy: max HP +200",0,1.6kk,250k
+76,Heavy Vitality,heavy_vitality,Passive,,heavy,0,0,self/single,0,0,0,"heavy: max HP +200",0,2.15kk,250k
 80,Heavy Vitality,heavy_vitality,Passive,,heavy,0,0,self/single,0,0,0,"heavy: max HP +250",0,0,1.3kk
 85,Heavy Vitality,heavy_vitality,Passive,,heavy,0,0,self/single,0,0,0,"heavy: max HP +300",0,0,16.7kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
-76,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +153",0,3.3kk,500k
-77,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +156",0,5.5kk,500k
-78,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +159",0,8kk,500k
-79,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +162",0,40kk,500k
+76,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +153",0,2.15kk,500k
+77,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +156",0,3.12kk,500k
+78,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +159",0,4.83kk,500k
+79,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +162",0,22.7kk,500k
 80,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +165",0,0,2.5kk
 81,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +168",0,0,3.8kk
 82,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +171",0,0,5kk
@@ -56,10 +56,10 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +196",0,0,50kk
 90,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +200",0,0,50kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Critical Damage Mastery----------------------------
-76,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +632;",0,3.3kk,500k
-77,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +649;",0,5.5kk,500k
-78,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +666;",0,8kk,500k
-79,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +678;",0,40kk,500k
+76,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +632;",0,2.15kk,500k
+77,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +649;",0,3.12kk,500k
+78,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +666;",0,4.83kk,500k
+79,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +678;",0,22.7kk,500k
 80,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +690;",0,0,2.5kk
 81,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +707;",0,0,3.8kk
 82,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +724;",0,0,5kk
@@ -75,8 +75,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 80,Final Stand,final_stand,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Atk with 15% and acc +3, when HP is below 50% increase P.Atk with 25% and acc +6, when HP is below 25% increase P.Atk with 35% and acc +9;",0,0,5kk,,,
 90,Final Stand,final_stand,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Atk with 20% and acc +4, when HP is below 50% increase P.Atk with 30% and acc +7, when HP is below 25% increase P.Atk with 40% and acc +10;",0,0,100kk,,,
 ,,,,,,,,,,,,,,,,,,,---------------------------Shout----------------------------
-76,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +1100",0,6.5kk,1kk
-78,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +1300",0,16kk,1kk
+76,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +1100",0,2.15kk,1kk
+78,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +1300",0,4.83kk,1kk
 80,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +1500",0,0,5kk
 82,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +1700",0,0,10kk
 84,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +1900",0,0,30kk
@@ -90,11 +90,11 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,,,----------------------------Vanguard Support----------------------------
 80,Vanguard support,waraoe_support,Passive,,,0,0,self/single,0,15,10,"20% chance to heal for 15% max HP, and leave lingering 5% vampiric and 100/s healing effect",0,0,5kk,,,Human
 ,,,,,,,,,,,,,,,,,,,----------------------------Overpower----------------------------
-76,Overpower,overpower,passive,,,0,0,self/single,0,0,0,double rate 10% - skills marked [Double] strike for DOUBLE damage that often - scales with ATK - without this passive NO skill can double,0,6.5kk,1kk
+76,Overpower,overpower,passive,,,0,0,self/single,0,0,0,double rate 10% - skills marked [Double] strike for DOUBLE damage that often - scales with ATK - without this passive NO skill can double,0,2.15kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Overpower Mastery----------------------------
 81,Overpower Mastery,double_mastery,Toggle,,,0,0,self/single,0,0,0,Doubles the base of EVERY skill mastery you have; increases P.MP consumation by 25%; Consume 50 HP/s,0,200kk,25kk,,,,Worth nothing without a mastery passive - it doubles whichever bases you have rather than a fixed one
 ,,,,,,,,,,,,,,,,,,,----------------------------Battle Momentum----------------------------
-76,Battle Momentum,reuse_reset_momentum,passive,,,0,0,self/single,0,0,0,reuse reset 5% - a skill you cast has that chance to come off reuse immediately - never on a fixed-cooldown skill - scales with ATK,0,6.5kk,1kk,,,,Same id as the Magus Arcane Momentum - one skill - one number - a name per class
+76,Battle Momentum,reuse_reset_momentum,passive,,,0,0,self/single,0,0,0,reuse reset 5% - a skill you cast has that chance to come off reuse immediately - never on a fixed-cooldown skill - scales with ATK,0,2.15kk,1kk,,,,Same id as the Magus Arcane Momentum - one skill - one number - a name per class
 ,,,,,,,,,,,,,,,,,,,----------------------------Master of Combat----------------------------
 76,Master of Combat,master_of_combat,Toggle,blunt/2,,0,0,self/single,0,0,0,"Increase accuracy +10, P.Def with 25%, M.Def with 15%, Atk.Speed +10%, Decrease move speed with 30% and evasion with 10; Consume 30 MP/s",30,6.5kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Charge----------------------------
@@ -107,8 +107,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 80,Taunting Shout,taunting_shout,Physical/Debuf,blunt/2,,0,600,enemy/aoe,1,20,30,"Shouts to do provoke enemies in a large area and make them vunarable to bludgering attacks (25% more dmg from blunts);",70,0,5kk,,,
 90,Taunting Shout,taunting_shout,Physical/Debuf,blunt/2,,0,600,enemy/aoe,1,20,30,"Shouts to do provoke enemies in a large area and make them vunarable to bludgering attacks (30% more dmg from blunts);",80,0,100kk,,,
 ,,,,,,,,,,,,,,,,,,,---------------------------Shout----------------------------
-76,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 25%;",80,6.5kk,1kk,,,Human
-78,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 25%;",84,16kk,1kk,,,Human
+76,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 25%;",80,9.78kk,1kk,,,Human
+78,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 25%;",84,22kk,1kk,,,Human
 80,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 25%;",88,0,5kk,,,Human
 82,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 25%;",92,0,10kk,,,Human
 84,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 27%;",98,0,30kk,,,Human
@@ -116,8 +116,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 27%;",106,0,100kk,,,Human
 90,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 27%;",110,0,100kk,,,Human
 ,,,,,,,,,,,,,,,,,,,---------------------------Shout----------------------------
-76,Breaking Shout,breaking_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 12%;",80,6.5kk,1kk,,,Demon
-78,Breaking Shout,breaking_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 12%;",84,16kk,1kk,,,Demon
+76,Breaking Shout,breaking_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 12%;",80,9.78kk,1kk,,,Demon
+78,Breaking Shout,breaking_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 12%;",84,22kk,1kk,,,Demon
 80,Breaking Shout,breaking_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 12%;",88,0,5kk,,,Demon
 82,Breaking Shout,breaking_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 12%;",92,0,10kk,,,Demon
 84,Breaking Shout,breaking_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 12%;",98,0,30kk,,,Demon
@@ -125,8 +125,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Breaking Shout,breaking_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 15%;",106,0,100kk,,,Demon
 90,Breaking Shout,breaking_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 15%;",110,0,100kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,---------------------------Shout----------------------------
-76,Crippling Shout,crippling_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 25%;",80,6.5kk,1kk,,,Elf
-78,Crippling Shout,crippling_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 25%;",84,16kk,1kk,,,Elf
+76,Crippling Shout,crippling_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 25%;",80,9.78kk,1kk,,,Elf
+78,Crippling Shout,crippling_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 25%;",84,22kk,1kk,,,Elf
 80,Crippling Shout,crippling_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 25%;",88,0,5kk,,,Elf
 82,Crippling Shout,crippling_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 25%;",92,0,10kk,,,Elf
 84,Crippling Shout,crippling_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 25%;",98,0,30kk,,,Elf
@@ -134,10 +134,10 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Crippling Shout,crippling_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 30%;",106,0,100kk,,,Elf
 90,Crippling Shout,crippling_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 30%;",110,0,100kk,,,Elf
 ,,,,,,,,,,,,,,,,,,,---------------------------Wirlwind----------------------------
-76,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1050 power 10 times over 2s, Cannot be blocked, Can double;",100,6.5kk,1kk
-77,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1100 power 10 times over 2s, Cannot be blocked, Can double;",102,11kk,1kk
-78,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1150 power 10 times over 2s, Cannot be blocked, Can double;",104,16kk,1kk
-79,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1200 power 10 times over 2s, Cannot be blocked, Can double;",106,80kk,1kk
+76,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1050 power 10 times over 2s, Cannot be blocked, Can double;",100,9.78kk,1kk
+77,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1100 power 10 times over 2s, Cannot be blocked, Can double;",102,14.2kk,1kk
+78,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1150 power 10 times over 2s, Cannot be blocked, Can double;",104,22kk,1kk
+79,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1200 power 10 times over 2s, Cannot be blocked, Can double;",106,103kk,1kk
 80,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1250 power 10 times over 2s, Cannot be blocked, Can double;",108,0,5kk
 81,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1300 power 10 times over 2s, Cannot be blocked, Can double;",110,0,7.5kk
 82,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1350 power 10 times over 2s, Cannot be blocked, Can double;",112,0,10kk
@@ -150,10 +150,10 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1700 power 10 times over 2s, Cannot be blocked, Can double;",128,0,100kk
 90,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1750 power 10 times over 2s, Cannot be blocked, Can double;",130,0,100kk
 ,,,,,,,,,,,,,,,,,,,---------------------------Shocking Shout----------------------------
-76,Shocking Shout,shocking_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +4500 power and Stuns around for 5s, Cannot be blocked, Can double;",100,6.5kk,1kk
-77,Shocking Shout,shocking_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +4600 power and Stuns around for 5s, Cannot be blocked, Can double;",102,11kk,1kk
-78,Shocking Shout,shocking_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +4700 power and Stuns around for 5s, Cannot be blocked, Can double;",104,16kk,1kk
-79,Shocking Shout,shocking_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +4800 power and Stuns around for 5s, Cannot be blocked, Can double;",106,80kk,1kk
+76,Shocking Shout,shocking_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +4500 power and Stuns around for 5s, Cannot be blocked, Can double;",100,9.78kk,1kk
+77,Shocking Shout,shocking_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +4600 power and Stuns around for 5s, Cannot be blocked, Can double;",102,14.2kk,1kk
+78,Shocking Shout,shocking_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +4700 power and Stuns around for 5s, Cannot be blocked, Can double;",104,22kk,1kk
+79,Shocking Shout,shocking_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +4800 power and Stuns around for 5s, Cannot be blocked, Can double;",106,103kk,1kk
 80,Shocking Shout,shocking_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +4900 power and Stuns around for 5s, Cannot be blocked, Can double;",108,0,5kk
 81,Shocking Shout,shocking_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +5050 power and Stuns around for 5s, Cannot be blocked, Can double;",110,0,7.5kk
 82,Shocking Shout,shocking_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +5200 power and Stuns around for 5s, Cannot be blocked, Can double;",112,0,10kk
@@ -166,10 +166,10 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Shocking Shout,shocking_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +6300 power and Stuns around for 5s, Cannot be blocked, Can double;",128,0,100kk
 90,Shocking Shout,shocking_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +6500 power and Stuns around for 5s, Cannot be blocked, Can double;",130,0,100kk
 ,,,,,,,,,,,,,,,,,,,---------------------------Shocking Javelin----------------------------
-76,Shocking Javelin,shocking_javelin,Physical/Active,blunt/2,,900,150,enemy/aoe,1,5,5,"Trows thunder javelin to do Physical damage with +4500 power and Stuns around for 5s, Cannot be blocked, Can double;",100,6.5kk,1kk
-77,Shocking Javelin,shocking_javelin,Physical/Active,blunt/2,,900,150,enemy/aoe,1,5,5,"Trows thunder javelin to do Physical damage with +4600 power and Stuns around for 5s, Cannot be blocked, Can double;",102,11kk,1kk
-78,Shocking Javelin,shocking_javelin,Physical/Active,blunt/2,,900,150,enemy/aoe,1,5,5,"Trows thunder javelin to do Physical damage with +4700 power and Stuns around for 5s, Cannot be blocked, Can double;",104,16kk,1kk
-79,Shocking Javelin,shocking_javelin,Physical/Active,blunt/2,,900,150,enemy/aoe,1,5,5,"Trows thunder javelin to do Physical damage with +4800 power and Stuns around for 5s, Cannot be blocked, Can double;",106,80kk,1kk
+76,Shocking Javelin,shocking_javelin,Physical/Active,blunt/2,,900,150,enemy/aoe,1,5,5,"Trows thunder javelin to do Physical damage with +4500 power and Stuns around for 5s, Cannot be blocked, Can double;",100,9.78kk,1kk
+77,Shocking Javelin,shocking_javelin,Physical/Active,blunt/2,,900,150,enemy/aoe,1,5,5,"Trows thunder javelin to do Physical damage with +4600 power and Stuns around for 5s, Cannot be blocked, Can double;",102,14.2kk,1kk
+78,Shocking Javelin,shocking_javelin,Physical/Active,blunt/2,,900,150,enemy/aoe,1,5,5,"Trows thunder javelin to do Physical damage with +4700 power and Stuns around for 5s, Cannot be blocked, Can double;",104,22kk,1kk
+79,Shocking Javelin,shocking_javelin,Physical/Active,blunt/2,,900,150,enemy/aoe,1,5,5,"Trows thunder javelin to do Physical damage with +4800 power and Stuns around for 5s, Cannot be blocked, Can double;",106,103kk,1kk
 80,Shocking Javelin,shocking_javelin,Physical/Active,blunt/2,,900,150,enemy/aoe,1,5,5,"Trows thunder javelin to do Physical damage with +4900 power and Stuns around for 5s, Cannot be blocked, Can double;",108,0,5kk
 81,Shocking Javelin,shocking_javelin,Physical/Active,blunt/2,,900,150,enemy/aoe,1,5,5,"Trows thunder javelin to do Physical damage with +5050 power and Stuns around for 5s, Cannot be blocked, Can double;",110,0,7.5kk
 82,Shocking Javelin,shocking_javelin,Physical/Active,blunt/2,,900,150,enemy/aoe,1,5,5,"Trows thunder javelin to do Physical damage with +5200 power and Stuns around for 5s, Cannot be blocked, Can double;",112,0,10kk

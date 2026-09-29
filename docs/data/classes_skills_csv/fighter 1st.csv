@@ -1,34 +1,34 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,Race,Comment
 ,,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
-5,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +9,0,80,[]
-10,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +12,0,455,[]
-15,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +14,0,303,[]
+5,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +9,0,52,[]
+10,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +12,0,273,[]
+15,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +14,0,258,[]
 ,,,,,,,,,,,,,,,,----------------------------Light Armor Mastery----------------------------
-5,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +9,0,80,[]
-10,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +12,0,455,[]
-15,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +14,0,303,[]
+5,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +9,0,52,[]
+10,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +12,0,273,[]
+15,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +14,0,258,[]
 ,,,,,,,,,,,,,,,,----------------------------Evasion----------------------------
-15,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +3,0,303,[]
+15,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +3,0,258,[]
 ,,,,,,,,,,,,,,,,----------------------------Spirit Mastery----------------------------
-5,Spirit Mastery,fighter_spirit_mastery,passive,,,0,0,self/single,0,0,0,MP rege x1.1,0,160,[]
+5,Spirit Mastery,fighter_spirit_mastery,passive,,,0,0,self/single,0,0,0,MP rege x1.1,0,52,[]
 ,,,,,,,,,,,,,,,,----------------------------Spirit Mastery----------------------------
-5,Strength Mastery,strength_mastery,passive,,,0,0,self/single,0,0,0,p.Atk x1.085,0,80,[]
+5,Strength Mastery,strength_mastery,passive,,,0,0,self/single,0,0,0,p.Atk x1.085,0,52,[]
 ,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
-5,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +2,0,80,[]
-10,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +3,0,910,[]
-15,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +4,0,910,[]
+5,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +2,0,52,[]
+10,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +3,0,273,[]
+15,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +4,0,258,[]
 ,,,,,,,,,,,,,,,,----------------------------Strike----------------------------
-5,Strike,strike,physical active,sword|blunt,,40,0,enemy/single,1,3,0,dmg with 35 power (in l2 is strikes the target with 35 power added to p.atk) - can double - require blunt/sword,10,160,[]
-10,Strike,strike,physical active,sword|blunt,,40,0,enemy/single,1,3,0,dmg with 65 power - can double - require blunt/sword,13,910,[]
-15,Strike,strike,physical active,sword|blunt,,40,0,enemy/single,1,3,0,dmg with 84 power - can double - require blunt/sword,17,910,[]
+5,Strike,strike,physical active,sword|blunt,,40,0,enemy/single,1,3,0,dmg with 35 power (in l2 is strikes the target with 35 power added to p.atk) - can double - require blunt/sword,10,234,[]
+10,Strike,strike,physical active,sword|blunt,,40,0,enemy/single,1,3,0,dmg with 65 power - can double - require blunt/sword,13,1240,[]
+15,Strike,strike,physical active,sword|blunt,,40,0,enemy/single,1,3,0,dmg with 84 power - can double - require blunt/sword,17,1170,[]
 ,,,,,,,,,,,,,,,,----------------------------Stab----------------------------
-5,Stab,stab,physical active,duals,,40,0,enemy/single,1,3,0,power 88 - only when skill does critical - otherwise normal attack.8 - require duals,10,160,[]
-10,Stab,stab,physical active,duals,,40,0,enemy/single,1,3,0,power 137 - only when skill does critical - otherwise normal attack.7 - require duals,11,910,[]
-15,Stab,stab,physical active,duals,,40,0,enemy/single,1,3,0,power 210 - only when skill does critical - otherwise normal attack - require duals,15,910,[]
+5,Stab,stab,physical active,duals,,40,0,enemy/single,1,3,0,power 88 - only when skill does critical - otherwise normal attack.8 - require duals,10,234,[]
+10,Stab,stab,physical active,duals,,40,0,enemy/single,1,3,0,power 137 - only when skill does critical - otherwise normal attack.7 - require duals,11,1240,[]
+15,Stab,stab,physical active,duals,,40,0,enemy/single,1,3,0,power 210 - only when skill does critical - otherwise normal attack - require duals,15,1170,[]
 ,,,,,,,,,,,,,,,,----------------------------Shot----------------------------
-5,Shot,shot,physical active,bow,,350,0,enemy/single,3,6,0,power 78 - ranged shot - require a bow,20,160,[]
-10,Shot,shot,physical active,bow,,350,0,enemy/single,3,6,0,power 122 - ranged shot - require a bow,25,910,[]
-15,Shot,shot,physical active,bow,,350,0,enemy/single,3,6,0,power 187 - ranged shot - require a bow,34,910,[]
+5,Shot,shot,physical active,bow,,350,0,enemy/single,3,6,0,power 78 - ranged shot - require a bow,20,234,[]
+10,Shot,shot,physical active,bow,,350,0,enemy/single,3,6,0,power 122 - ranged shot - require a bow,25,1240,[]
+15,Shot,shot,physical active,bow,,350,0,enemy/single,3,6,0,power 187 - ranged shot - require a bow,34,1170,[]
 ,,,,,,,,,,,,,,,,----------------------------Return----------------------------
 1,Return,return_town,Active,,,0,0,self/single,60,10,0,"Teleport the user to nearest Town; Auto-granted",0,0,,,60/10s fixed times  -> dont know how to express them in the cast/cd columns
 ,,,,,,,,,,,,,,,,----------------------------Elf Antidote----------------------------

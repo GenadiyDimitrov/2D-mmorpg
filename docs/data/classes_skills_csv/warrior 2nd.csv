@@ -1,64 +1,64 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,Comment
 ,,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
-20,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +19,0,2630,[]
-24,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +21,0,3700,[]
-28,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +23,0,9260,[]
-32,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +28,0,17000,[]
-36,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +32,0,46300,[]
+20,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +19,0,4410,[]
+24,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +21,0,4820,[]
+28,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +23,0,9750,[]
+32,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +28,0,12600,[]
+36,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +32,0,32700,[]
 ,,,,,,,,,,,,,,,,----------------------------Light Armor Mastery----------------------------
-20,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +19,0,2630,[]
-24,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +21,0,3700,[]
-28,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +23,0,9260,[]
-32,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +28,0,17000,[]
-36,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +32,0,46300,[]
+20,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +19,0,4410,[]
+24,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +21,0,4820,[]
+28,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +23,0,9750,[]
+32,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +28,0,12600,[]
+36,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +32,0,32700,[]
 ,,,,,,,,,,,,,,,,----------------------------Evasion----------------------------
-20,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +6,0,2630,[]
-24,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +8,0,3700,[]
-28,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +9,0,9260,[]
+20,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +6,0,4410,[]
+24,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +8,0,4820,[]
+28,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +9,0,9750,[]
 ,,,,,,,,,,,,,,,,----------------------------HpRegen----------------------------
-24,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,increase hpReg +1.1,0,3700,[]
-32,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,increase hpReg +1.6,0,17000,[]
+24,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,increase hpReg +1.1,0,4820,[]
+32,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,increase hpReg +1.6,0,12600,[]
 ,,,,,,,,,,,,,,,,----------------------------Accuracy----------------------------
-20,Accuracy,fighter_accuracy,passive,,,0,0,self/single,0,0,0,increase acc +3;,0,7870,[]
+20,Accuracy,fighter_accuracy,passive,,,0,0,self/single,0,0,0,increase acc +3;,0,4410,[]
 ,,,,,,,,,,,,,,,,----------------------------Critical Dmg Mastery----------------------------
-20,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,increase crit dmg  +35;,0,5230,[]
-24,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,increase crit dmg  +48;,0,14800,[]
-28,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,increase crit dmg  +64;,0,18500,[]
-32,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,increase crit dmg  +84;,0,50900,[]
-36,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,increase crit dmg +106;,0,61600,[]
+20,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,increase crit dmg  +35;,0,4410,[]
+24,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,increase crit dmg  +48;,0,4820,[]
+28,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,increase crit dmg  +64;,0,9750,[]
+32,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,increase crit dmg  +84;,0,12600,[]
+36,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,increase crit dmg +106;,0,32700,[]
 ,,,,,,,,,,,,,,,,----------------------------Two-Hand Mastery----------------------------
-20,Strength Mastery,strength_mastery,passive,sword|blunt/2,,0,0,self/single,0,0,0,With 2h sword/blunt: p.atk x1.2;,0,7870,[]
+20,Strength Mastery,strength_mastery,passive,sword|blunt/2,,0,0,self/single,0,0,0,With 2h sword/blunt: p.atk x1.2;,0,4410,[]
 ,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
-20,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +13,0,5230,[]
-24,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +15,0,14800,[]
-28,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +17,0,18500,[]
-32,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +20,0,50900,[]
-36,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +22,0,61600,[]
+20,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +13,0,4410,[]
+24,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +15,0,4820,[]
+28,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +17,0,9750,[]
+32,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +20,0,12600,[]
+36,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +22,0,32700,[]
 ,,,,,,,,,,,,,,,,----------------------------Cleave----------------------------
-20,Cleave,blunt_cleave,Passive,blunt/2,,0,0,self/single,0,0,0,2h blunt: basic attack hits around in 150 range (max 2 targets),0,5230,[]
-28,Cleave,blunt_cleave,Passive,blunt/2,,0,0,self/single,0,0,0,2h blunt: basic attack hits around in 150 range (max 3 targets),0,18500,[]
-36,Cleave,blunt_cleave,Passive,blunt/2,,0,0,self/single,0,0,0,2h blunt: basic attack hits around in 150 range (max 4 targets),0,61600,[]
+20,Cleave,blunt_cleave,Passive,blunt/2,,0,0,self/single,0,0,0,2h blunt: basic attack hits around in 150 range (max 2 targets),0,4410,[]
+28,Cleave,blunt_cleave,Passive,blunt/2,,0,0,self/single,0,0,0,2h blunt: basic attack hits around in 150 range (max 3 targets),0,9750,[]
+36,Cleave,blunt_cleave,Passive,blunt/2,,0,0,self/single,0,0,0,2h blunt: basic attack hits around in 150 range (max 4 targets),0,32700,[]
 ,,,,,,,,,,,,,,,,----------------------------Smash----------------------------
-20,Smash,smash,physical active,sword|blunt/2,,40,0,enemy/single,1,3,0,dmg with 105 power - can double - require 2h blunt/sword,20,3400,[strike stab shot]
-24,Smash,smash,physical active,sword|blunt/2,,40,0,enemy/single,1,3,0,dmg with 143 power - can double - require 2h blunt/sword,23,6400,[strike stab shot]
-28,Smash,smash,physical active,sword|blunt/2,,40,0,enemy/single,1,3,0,dmg with 191 power - can double - require 2h blunt/sword,25,12000,[strike stab shot]
-32,Smash,smash,physical active,sword|blunt/2,,40,0,enemy/single,1,3,0,dmg with 251 power - can double - require 2h blunt/sword,30,22000,[strike stab shot]
-36,Smash,smash,physical active,sword|blunt/2,,40,0,enemy/single,1,3,0,dmg with 326 power - can double - require 2h blunt/sword,35,40000,[strike stab shot]
+20,Smash,smash,physical active,sword|blunt/2,,40,0,enemy/single,1,3,0,dmg with 105 power - can double - require 2h blunt/sword,20,20000,[strike stab shot]
+24,Smash,smash,physical active,sword|blunt/2,,40,0,enemy/single,1,3,0,dmg with 143 power - can double - require 2h blunt/sword,23,21900,[strike stab shot]
+28,Smash,smash,physical active,sword|blunt/2,,40,0,enemy/single,1,3,0,dmg with 191 power - can double - require 2h blunt/sword,25,44300,[strike stab shot]
+32,Smash,smash,physical active,sword|blunt/2,,40,0,enemy/single,1,3,0,dmg with 251 power - can double - require 2h blunt/sword,30,57300,[strike stab shot]
+36,Smash,smash,physical active,sword|blunt/2,,40,0,enemy/single,1,3,0,dmg with 326 power - can double - require 2h blunt/sword,35,148000,[strike stab shot]
 ,,,,,,,,,,,,,,,,----------------------------Battle Regeneration----------------------------
-28,Battle Regeneration,battle_regeneration,heal,,,0,0,self/single,0.5,90,0,restores 10% of max hp,25,6000,[]
+28,Battle Regeneration,battle_regeneration,heal,,,0,0,self/single,0.5,90,0,restores 10% of max hp,25,44300,[]
 ,,,,,,,,,,,,,,,,----------------------------Battle Presence----------------------------
-32,Battle Presence,battle_presence,physical buff,sword|blunt/2,,0,0,self/single,0.5,300,90,increase p.Atk x1.35; acc +2; can be used only when Hp is below 60% (once used even if hp is at 100% it still works only for activation need hp  <= 0.6) and cannot be used with Battle Defence; requres 2h sword/blunt;,20,11000,[]
+32,Battle Presence,battle_presence,physical buff,sword|blunt/2,,0,0,self/single,0.5,300,90,increase p.Atk x1.35; acc +2; can be used only when Hp is below 60% (once used even if hp is at 100% it still works only for activation need hp  <= 0.6) and cannot be used with Battle Defence; requres 2h sword/blunt;,20,38200,[]
 ,,,,,,,,,,,,,,,,----------------------------Battle Defence----------------------------
-36,Battle Defence,battle_defence,physical buff,,,0,0,self/single,0.5,300,90,increase p.Def x2; can be used only when Hp is below 60% (once used even if hp is at 100% it still works only for activation need hp  <= 0.6) and cannot be used with Battle Presence; ,20,20000,[]
+36,Battle Defence,battle_defence,physical buff,,,0,0,self/single,0.5,300,90,increase p.Def x2; can be used only when Hp is below 60% (once used even if hp is at 100% it still works only for activation need hp  <= 0.6) and cannot be used with Battle Presence; ,20,99000,[]
 ,,,,,,,,,,,,,,,,----------------------------Battle Resilience----------------------------
-36,Battle Resilience,battle_resilience,physical buff,,,0,0,self/single,0.5,150,60,"Increase resistance to Stun/Shock, Hold/Bind and Buff-Removal Attacks with 40%;",20,20000,[]
+36,Battle Resilience,battle_resilience,physical buff,,,0,0,self/single,0.5,150,60,"Increase resistance to Stun/Shock, Hold/Bind and Buff-Removal Attacks with 40%;",20,99000,[]
 ,,,,,,,,,,,,,,,,----------------------------Monster Knowlegee----------------------------
-32,Monster Knowlege,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 5%,20,11000,[], _actvie because for balance later we can add a passive to other classes as well
+32,Monster Knowlege,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 5%,20,38200,[], _actvie because for balance later we can add a passive to other classes as well
 ,,,,,,,,,,,,,,,,----------------------HP Boost----------------------
-20,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +120",0,15700,[],,
-28,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +200",0,55600,[],,
-36,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +300",0,185000,[],,
+20,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +120",0,4410,[],,
+28,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +200",0,9750,[],,
+36,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +300",0,32700,[],,
 ,,,,,,,,,,,,,,,,----------------------------Overpower----------------------------
-20,Overpower,overpower,passive,,,0,0,self/single,0,0,0,double rate 3% - skills marked [Double] strike for DOUBLE damage that often - scales with ATK - without this passive NO skill can double,0,15700,[]
+20,Overpower,overpower,passive,,,0,0,self/single,0,0,0,double rate 3% - skills marked [Double] strike for DOUBLE damage that often - scales with ATK - without this passive NO skill can double,0,4410,[]
 ,,,,,,,,,,,,,,,,----------------------------Single Mark----------------------------
-20,Single Mark,single_mark,toggle,blunt/2,,0,0,self/single,0,0,0,"Skill power -20%; P.Crit rate +100%; All skills and passive aoe is disabled (attaks and skills hit only the main target);",0,3400,[],crit rate should match a grateswords. Skills should go from 'enemy/aoe' to 'target/single' if thats possible - or atleast use attack only the main target
+20,Single Mark,single_mark,toggle,blunt/2,,0,0,self/single,0,0,0,"Skill power -20%; P.Crit rate +100%; All skills and passive aoe is disabled (attaks and skills hit only the main target);",0,13400,[],crit rate should match a grateswords. Skills should go from 'enemy/aoe' to 'target/single' if thats possible - or atleast use attack only the main target

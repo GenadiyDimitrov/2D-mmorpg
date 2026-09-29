@@ -193,7 +193,7 @@ static class SpBudget
             Console.WriteLine($"  {"→ " + group + " k",-38} | {kGroup:F2}");
         }
         Console.WriteLine("  k grp = the mean of the group's path k; x = each path's affordability at it. 1st short = the first level where");
-        Console.WriteLine("  buying everything the moment it opens (20-75 passives at ×k grp) runs you out of SP; by = how far short.");
+        Console.WriteLine("  buying everything the moment it opens (at the CSV prices) runs you out of SP; by = how far short.");
     }
 
     /// <summary>One path's owed SP per level, read off its CSV files: 1st + 2nd + 3rd + 4th (+ shared 4th), rows whose

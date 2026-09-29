@@ -112,27 +112,32 @@ public static class ClassSkills
         if (_initialized) return;
         _initialized = true;
         ClassSkillTables.Touch();
-        ApplyScarcity();
+        ApplyCsvPrices();
     }
 
-    /// <summary>`BL-314` — every PASSIVE rung a class table offers at 20-75 costs ×k for that class, written onto the
-    /// row's own <see cref="ClassSkill.SpCost"/> once, here, so every reader sees the scaled price. See
-    /// <see cref="SpScarcity"/>. Only the per-class tables: the central injectors (race layers, grade, sigils,
-    /// stat swaps, the shared 4th kit) sit outside the band or are not SP-priced passives.</summary>
-    private static void ApplyScarcity()
+    /// <summary>`BL-326` — THE CSV CELL IS THE PRICE. Every class-table row's SP is written from
+    /// <see cref="ClassSkillTables.SpPrices"/> (generated from the class CSVs by `SkillCsvSeed --gen-passives`) once,
+    /// here, so every reader — the learn handler, the client's Learn tab, `--check`, the SP budget — sees the price he
+    /// authored, actives included. The CSVs' per-level split by weight is `SkillCsvSeed --reweigh-sp`
+    /// (`docs/data/sp_weights.csv`); it replaced the passive ×k of 0.215.0. Rows the table does not name (the central
+    /// injectors: race layers, grade, sigils, stat swaps, the shared 4th kit) keep their own price.</summary>
+    private static void ApplyCsvPrices()
     {
-        foreach (var (key, list) in Map)
+        static T? Opt<T>(string s) where T : struct, Enum => s == "-" ? null : Enum.Parse<T>(s);
+        foreach (var line in ClassSkillTables.SpPrices.Split('\n'))
         {
-            double k = SpScarcity.For(key.Archetype, key.Discipline);
-            if (k == 1.0) continue;
+            var p = line.Trim().Split(',');
+            if (p.Length != 8) continue;
+            var key = new ClassKey(Enum.Parse<Race>(p[0]), Enum.Parse<BaseClass>(p[1]), Opt<Archetype>(p[2]),
+                                   Opt<Discipline>(p[3]), p[4] == "1");
+            if (!Map.TryGetValue(key, out var list)) continue;
+            int level = int.Parse(p[6]), sp = int.Parse(p[7]);
             for (int i = 0; i < list.Count; i++)
-            {
-                var cs = list[i];
-                if (SkillCatalog.Get(cs.SkillId) is not SkillDef def || !SpScarcity.Covers(def, cs.LearnLevel)) continue;
-                list[i] = cs with { SpCost = SpScarcity.Scale(cs.SpCostFor(def), k) };
-            }
+                if (list[i].SkillId == p[5] && list[i].LearnLevel == level)
+                    list[i] = list[i] with { SpCost = sp };
         }
     }
+
 
     /// <summary>The skills registered for exactly one tier of a class (the 2nd-class
     /// list when discipline is null, the 3rd-class list when it is set).</summary>

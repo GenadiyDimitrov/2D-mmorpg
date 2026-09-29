@@ -416,3 +416,9 @@ the central `MasterySkills` injector, ~100 helpers that only they used, and two 
   rungs that class has bought (they skip the other classes' rungs).
 - `--check` learned two things: race-split rows at one level pair by race, and `(x1000)` SP cells keep their decimals
   (`50.1` = 50,100).
+
+## 14. Superseded pricing (0.216.0, `BL-326`)
+
+The ×k above is gone. His later rule: each level's SP is one pot, split by weight (passive pieces 0.33, utility 1,
+strikes 1.5; his weights in `docs/data/sp_weights.csv`, applied by `SkillCsvSeed --reweigh-sp`). The pots are the
+prices this section left behind, so the x targets of §12 still hold. See `docs/CHANGELOG.md` 0.216.0.

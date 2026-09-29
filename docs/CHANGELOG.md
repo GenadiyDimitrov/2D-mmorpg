@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.215.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.216.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,27 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-09-29 (latest) — 0.215.2: Holy Ray at 750
+## 2026-09-29 (latest) — 0.216.0: SP is one pot per level, split by weight (`BL-326`)
+
+His rule: *"i want Sp to be some how equal not one active skill to cost 880k SP and one passive that give me +0.1mp
+regen to cost 2600k ... sum all the sp/lvl and split it for skills as weighted ... active skills are x1 passives should
+be less"*, with a worked example (archer at 60: 0.33 / 1 / 1.5).
+
+- **The rule:** for one class file and one level, the pot is the sum of the SP cells there; each row takes pot × its
+  weight / Σ weights. A race-only row counts by its share of the three races (so a symmetric kit splits exactly per
+  race, and a rerun changes nothing). Rows the class tables do not carry (central race blocks, SP-0 auto-grants) keep
+  their price. Rounded to three significant figures.
+- **`docs/data/sp_weights.csv` is his** (318 skills): passive 0.33, buff/utility 1, damage/debuff/heal/trap 1.5 by
+  default; his example rows marked `owner`. `SkillCsvSeed --reweigh-sp [--show <file>]` rewrites the SP cells (2,736
+  cells moved) and regenerates. A new skill is added to the file at its default.
+- **The CSV cell IS the price, actives included:** `--gen-passives` now also writes
+  `ClassSkillTables.SpPrices.g.cs` (8,874 lines), which `ClassSkills` writes onto every class row at load. The passive
+  ×k of 0.215.0 (`SpScarcity`, `--apply-k`) is deleted.
+- **Measured:** the pots summed 20.82bn SP before and after; `--sp-budget` x 20-75 unchanged per group (daggers
+  0.62-0.66, bows 0.53-0.56, tanks 0.67-0.72, Lightbringer 0.54-0.55, Warchanter 0.48-0.51) except where race kits
+  differ: Elf Ravager 0.72→0.78, Magus 0.60→0.57-0.63. `--check` clean. New APK (Learn tab prices are client-side).
+
+## 2026-09-29 — 0.215.2: Holy Ray at 750
 
 His ruling, right after 0.215.1: *"healer holy_ray as well 750 range 40+"*. **Holy Ray is 750 on every rung, 40-90**
 (was 600), Holy Bolt's reach, the same as the race spells in 0.215.1. `healer 3rd/4th.csv` range column moved with it.
