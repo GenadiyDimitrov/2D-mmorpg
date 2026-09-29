@@ -93,10 +93,10 @@ public static partial class SkillCatalog
     private static SkillDef[] LightbringerSkills() => new SkillDef[]
     {
         // ═══ THE SHARED ATTACK SPELL ═════════════════════════════════════════════════════════════
-        // Holy Ray replaces Holy Bolt: faster (2.5s vs 4s) and stronger, at shorter range (600 vs 750)
-        // — the healer's nuke is something he casts while standing with the party, not from the back.
+        // Holy Ray replaces Holy Bolt: faster (2.5s vs 4s) and stronger, at Holy Bolt's 750 range — it was 600
+        // until 2026-09-29, when his ruling put every support-caster damage spell at 750 (the nuker keeps 900).
         new(HolyRay, "Holy Ray", BaseClass.Mage, SkillEffect.MagicDamage,
-            MpCost: 30, CastTicks: 25, CooldownTicks: 10, Range: 600, Power: 42,
+            MpCost: 30, CastTicks: 25, CooldownTicks: 10, Range: 750, Power: 42,
             Category: SkillCategory.Magic,  SpCost: 36000,
             Replaces: new[] { HolyBolt },
             Description: "The healer's attack spell: faster and stronger than Holy Bolt, at shorter range.",

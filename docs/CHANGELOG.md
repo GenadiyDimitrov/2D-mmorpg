@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.215.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.215.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,13 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-09-29 (latest) — 0.215.1: one damage answer per mage race; Spell Ward gone (`BL-325`)
+## 2026-09-29 (latest) — 0.215.2: Holy Ray at 750
+
+His ruling, right after 0.215.1: *"healer holy_ray as well 750 range 40+"*. **Holy Ray is 750 on every rung, 40-90**
+(was 600), Holy Bolt's reach, the same as the race spells in 0.215.1. `healer 3rd/4th.csv` range column moved with it.
+Ships in the same APK as 0.215.1.
+
+## 2026-09-29 — 0.215.1: one damage answer per mage race; Spell Ward gone (`BL-325`)
 
 His `mage 1st.csv` edits of the same day. ⚠ **New APK** (class tables changed) and a **`game.db` delete**
 (`elf_self_heal` and `tank_spell_ward` are gone).

@@ -17,7 +17,7 @@
 
 ---
 
-## §110 — 0.215.0 + 0.215.1: the passive split, and one damage spell per mage race (2026-09-29)
+## §110 — 0.215.0-0.215.2: the passive split, and one damage spell per mage race (2026-09-29)
 
 ⚠ **New APK** and a **`game.db` delete** (0.215.0 retired dozens of skill ids; 0.215.1 retires `elf_self_heal` and
 `tank_spell_ward`).
@@ -28,7 +28,7 @@
 - `110b` [ ] - **Elf mystics (cleric, buffer, nuker) learn Frost Spikes at 14**: power 15, 15% slow, 600 range at 14,
   750 from 20. Is the Elf nuker's ladder unchanged from 40 on (except the range)? ->
 - `110c` [ ] - **Vampiric Bolt and Frost Spikes stop at 750 range** from 20 up, 40+ included (was 900), Holy Bolt's
-  reach. A nuker's own spells still reach 900. ->
+  reach. A nuker's own spells still reach 900. **Holy Ray too** (0.215.2): 750 on every rung, was 600. ->
 - `110d` [ ] - **Demon Over the Limit at 14**: 10s window, +10% P/M.Atk and +5% P/M crit rate, attack and cast speed;
   CD 60. Is the buff bar showing it, and does it end after 10s? ->
 - `110e` [ ] - **No Elf Self Heal** on any Elf mage; an Elf cleric's Heal at 20 no longer replaces anything. ->
