@@ -436,6 +436,7 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_selfBlessing.transform.parent.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(167f, -62f), new Vector2(151f, 18f));
             _selfBlessingText = UiKit.BarLabel(_selfBlessing, 11f);
+            _selfBlessingText.outlineWidth = 0.3f;   // a firmer edge than the other bars: the timer must read on amber
 
             BuildExpStrip();
         }
@@ -445,8 +446,11 @@ namespace Game.Client
         private const float SelfPanelHeight = 92f;
 
         private static readonly Color FavorColour = new Color(0.27f, 0.60f, 0.27f, 1f);
-        private static readonly Color BlessingColour = new Color(0.62f, 0.52f, 0.22f, 1f);
-        private static readonly Color BlessingActiveColour = new Color(0.96f, 0.82f, 0.36f, 1f);
+        // His 0.214.41 note: the bright gold active bar (0.96, 0.82, 0.36) sat too close to the white timer text.
+        // Active is now a deep burning amber, which white text reads on, and the fill-up gold is a step darker than
+        // before so the two states still differ at a glance.
+        private static readonly Color BlessingColour = new Color(0.52f, 0.44f, 0.18f, 1f);
+        private static readonly Color BlessingActiveColour = new Color(0.78f, 0.45f, 0.05f, 1f);
         private Image _selfFavor, _selfBlessing;
         private TextMeshProUGUI _selfFavorText, _selfBlessingText;
 

@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.214.41**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.214.42**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,20 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-09-28 (latest) — 0.214.41: towns that look like towns (`BL-319`)
+## 2026-09-29 (latest) — 0.214.42: the Blessing bar you can read
+
+His note on 0.214.41: *"the active blessing bar -> cannot read the timer - the golden is very close to the white - need
+color change or the forgrownd to change ... or the active one is the current fillup one and the fillup rangeish color can
+be a bit darker .. u decide"*.
+
+- **A running Blessing is deep amber** (0.78, 0.45, 0.05) instead of bright gold (0.96, 0.82, 0.36). White text on the
+  old gold had a contrast of about 1.3:1; on the amber it is about 3.6:1, and the label's outline is a little thicker
+  (0.3 instead of 0.2) on this bar only. The text stays white, so it still reads over the empty dark part of the bar.
+- **The filling gauge is a step darker gold** (0.52, 0.44, 0.18, was 0.62, 0.52, 0.22), so filling and running still
+  differ at a glance.
+- Client only (`GameUi.World.cs`). ⚠ **New APK**; the server is unchanged and the protocol did not move.
+
+## 2026-09-28 — 0.214.41: towns that look like towns (`BL-319`)
 
 > *"Visuals 1st -> as u said the 3d models will do the collision"* · *"expand as much as u need to fit everithing .. a
 > major city requires u to walk for a bit"* · *"until maybe bl-281 lands we can leave them at the door"* · *"the Hunt
