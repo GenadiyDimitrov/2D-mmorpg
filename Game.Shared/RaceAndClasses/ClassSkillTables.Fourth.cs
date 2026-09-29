@@ -754,7 +754,6 @@ public static partial class ClassSkillTables
         human.AddRange(Ult(NukerSpellEmpowermentHuman, 1));
 
         var elf = new List<ClassSkill>(shared);
-        elf.AddRange(Ladder(FrostSpikes, 15));
         elf.AddRange(Ladder(FrostPierce, 15));
         elf.AddRange(Ult(FrostBurst, 2));
         elf.AddRange(Ult(NukerSpellEmpowermentElf, 1));

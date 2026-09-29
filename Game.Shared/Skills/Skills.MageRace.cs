@@ -16,33 +16,24 @@ namespace Game.Shared;
 /// listing them there would have quietly deleted them at 20.</para>
 ///
 /// <para>⚠ <b>THE SPLIT IS NOT THE FIGHTER'S, and deliberately so.</b> Two of the fighter's six are a
-/// mage's day job already (a cure, a self-heal), so his mage block answers a different question: the
-/// Elf gets SUSTAIN (the self-heal, on a ladder that reaches 800 power), the Demon a 5-second OFFENCE
-/// burst he can hold for the pull that matters, the Human the DRAIN — Vampiric Bolt, which used to be
-/// the Human nuker's alone and is now every Human mystic's.</para>
+/// mage's day job already (a cure, a self-heal), so his mage block answers a different question. Since
+/// 2026-09-29 it is ONE DAMAGE ANSWER PER RACE from level 14: the Human the DRAIN (Vampiric Bolt), the
+/// Elf the SLOW (Frost Spikes — the Elf nuker's spell, now every Elf mystic's), the Demon a 10-second
+/// OFFENCE burst (Over the Limit) he spends on the pull that matters.</para>
 ///
 /// <para>🔑 <b>AND EVERY RACE GETS A BLESSING AT 7</b>, auto-granted and free: three always-on
 /// passives, one per race, which is where the "what does my race do for me" question gets its answer
 /// for a class whose kit is otherwise identical across the three.</para>
 ///
-/// <para>🔴 <b>`self_heal` IS GONE — ITS ID MOVED.</b> The base mage's three-rung Self Heal (1/7/14,
-/// power 42/67/107, every race) was deleted from his file and re-authored as the ELF's nine-rung
-/// ladder under <see cref="ElfSelfHeal"/>. Ids are append-only as a rule and this one is exempt for
-/// the same reason `mana_barrier` was: pre-release, nobody outside this machine can be holding the
-/// old string, and two defs with one payload is how a number drifts.
-///
-/// <para>⚠ <b>AND THE REPLACES CELL FOLLOWED THE RENAME.</b> The healer's `Heal` still replaces it,
-/// under the new id — owner, 2026-09-17: *"it was self_heal and should have become elf_self_heal .. it
-/// removes the healers self heal to give him a targeted one"*. This is the ONE place a race layer is
-/// taken away, and it is a trade, not an oversight: an Elf cleric gives up a self-only heal for a
-/// targeted one. Nothing else in this block is replaced by anything.</para></summary>
+/// <para>🔴 <b>THE ELF SELF HEAL IS GONE</b> (2026-09-29, his row deletion — it made way for Frost
+/// Spikes). `elf_self_heal` was the old base-mage `self_heal` re-authored; neither id exists now, and
+/// the healer's `Heal` no longer replaces anything.</para></summary>
 public static partial class SkillCatalog
 {
     // ═══ THE MAGE RACE BLOCK ════════════════════════════════════════════════════════════════════
     public const string ElfBlessing        = "elf_blessing";
     public const string DemonBlessing      = "demon_blessing";
     public const string HumanBlessing      = "human_blessing";
-    public const string ElfSelfHeal        = "elf_self_heal";
     public const string DemonOverLimit     = "demon_over_limit";
     public const string HumanVampiricBolt  = "human_vampiric_bolt";
 
@@ -89,10 +80,8 @@ public static partial class SkillCatalog
     /// <summary>The one level every blessing is granted at — his three rows all read 7.</summary>
     public const int MageBlessingLevel = 7;
 
-    /// <summary>Learn levels of the Elf's Self Heal — his nine rows, 7 through 74.</summary>
-    public static readonly int[] ElfSelfHealLevels = { 7, 20, 30, 40, 48, 58, 64, 70, 74 };
-    /// <summary>Learn levels of the Demon's Over the Limit — his five rows, 7 through 70.</summary>
-    public static readonly int[] DemonOverLimitLevels = { 7, 20, 40, 60, 70 };
+    /// <summary>Learn levels of the Demon's Over the Limit — his four rows, 14 through 70 (reworked 2026-09-29).</summary>
+    public static readonly int[] DemonOverLimitLevels = { 14, 40, 60, 70 };
     /// <summary>Learn levels of the Human's Vampiric Bolt ladder — his thirty-four rows, 14 through
     /// 90. Rung 1 is the level-14 taster (its own `vampiric_bolt` id until 2026-09-29), 2-5 the old
     /// `nuker 2nd.csv` cadence, 6-19 the old `nuker 3rd.csv` bands, and
@@ -106,6 +95,10 @@ public static partial class SkillCatalog
         14, 20, 25, 30, 35, 40, 44, 48, 52, 56, 58, 60, 62, 64, 66, 68, 70, 72, 74,
         76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90,
     };
+    /// <summary>Learn levels of the Elf's Frost Spikes — the SAME thirty-four the Human's drain runs on
+    /// (2026-09-29: the nuker's Elf spell moved into the race block and grew 14/20/25/30/35 rungs
+    /// under it). Its own name so the two can part the day one of his rows does.</summary>
+    public static int[] ElfFrostSpikesLevels => HumanVampiricLevels;
 
     private static IEnumerable<SkillDef> MageRaceSkills()
     {
@@ -163,66 +156,45 @@ public static partial class SkillCatalog
         list.Add(RaceMight(HumanMight, "Blessing of Might",
             "A magical blessing that increases +8% P.Atk for 20 minutes."));
 
-        // ═══ ELF — SELF HEAL, the sustain ladder ════════════════════════════════════════════════
+        // ═══ DEMON — OVER THE LIMIT, ten seconds of pure havoc ══════════════════════════════════
         //
-        // 🔑 THE ID `self_heal` BECAME THIS ONE. Same skill, nine rungs instead of three, and the
-        //    OTHER TWO RACES NO LONGER HAVE IT AT ALL — that is the change, not the power curve.
-        // 🔑 MAGICAL, unlike the fighter's `elf_heal`, which he wrote `Physical/Heal`. His TYPE cell
-        //    here reads `Magic/Heal`: it fizzles and it is paced by CAST speed, because a mage has
-        //    the WIT to pay for both.
-        // ⚠ 5s CAST AND 5s REUSE on every rung — his columns. The old base-mage skill was 5s/2s, so
-        //   this is slower to re-use as well as stronger; it is a between-pulls heal, not a combat one.
-        int[] healPower = { 60, 100, 200, 300, 400, 500, 600, 700, 800 };
-        int[] healMp    = { 14, 30, 44, 62, 76, 95, 105, 114, 120 };
-        // ⚠ `3k` / `12k` ARE 3,000 AND 12,000, not the 3,200 / 12,800 the 20-35 tier spells out
-        //   elsewhere. The parser reads a `k` as exactly a thousand and the file is the authority,
-        //   so the shorthand IS the price. Don't "restore" the old rung values.
-        int[] healSp    = { 480, 3_000, 12_000, 36_000, 64_000, 88_000, 190_000, 390_000, 880_000 };
-        list.Add(new SkillDef(ElfSelfHeal, "Self Heal", BaseClass.Mage, SkillEffect.Heal,
-            MpCost: healMp[0], CastTicks: 50, CooldownTicks: 50, Range: 0, Power: healPower[0],
-            Category: SkillCategory.Heal, TargetMode: TargetMode.SelfOnly, SpCost: healSp[0],
-            Description: "Restores your own HP.",
-            Levels: Enumerable.Range(0, ElfSelfHealLevels.Length).Select(i => new SkillLevel(
-                Power: healPower[i], MpCost: healMp[i], SpCost: healSp[i],
-                Description: $"Restores your own HP with {healPower[i]} power."))
-                .ToArray()));
-
-        // ═══ DEMON — OVER THE LIMIT, the five-second burst ══════════════════════════════════════
-        //
-        // 🔑 A FIVE-SECOND WINDOW ON A SIXTY-SECOND REUSE, and that shape is the whole skill: his
-        //    columns are CAST 0, CD 60, DURR 5. You spend it on the pull that matters, not on
-        //    upkeep — which is why the MP is a real nuke's worth at every rung.
+        // 🔑 REWORKED 2026-09-29 to answer the other two races' DAMAGE SPELLS (the Elf's Frost
+        //    Spikes, the Human's Vampiric Bolt, both from 14): his four rows open at 14, not 7, the
+        //    window is 10s instead of 5, and the burst now carries P/M crit rate and attack/cast
+        //    speed beside the P/M.Atk. Still CAST 0, CD 60 — a window you spend, not upkeep.
         // 🔑 BOTH CHANNELS. `BuffPhysAtk` and `BuffMagAtk` are separate effects since 2026-07-16 (the
         //    shared `BuffAtk` is PHYSICAL only), so "P/M.Atk" needs both magnitudes or half of it is
-        //    silently dead on the class that actually casts it.
+        //    silently dead on the class that actually casts it. Same for the two crit rates.
         // ⚠ ITS OWN BuffKey AND NO COVERED FAMILIES, on purpose. Put it in `atk_phys`/`atk_mag` and
         //   it would fight the Might/Force ladder: a 20-minute party blessing would refuse the burst
-        //   (weaker rank) or the burst would evict the blessing for five seconds and leave the mage
+        //   (weaker rank) or the burst would evict the blessing for ten seconds and leave the mage
         //   naked. A burst is a THIRD source, and the family rule is what says so.
-        float[] overPct = { 0.05f, 0.07f, 0.10f, 0.15f, 0.20f };
-        int[] overMp    = { 14, 30, 62, 76, 114 };
-        int[] overSp    = { 480, 3_000, 36_000, 120_000, 390_000 };
+        float[] overAtk  = { 0.10f, 0.12f, 0.15f, 0.20f };
+        float[] overRest = { 0.05f, 0.06f, 0.08f, 0.10f };
+        int[] overMp     = { 14, 62, 76, 114 };
+        int[] overSp     = { 480, 36_000, 120_000, 390_000 };
+        EffectMagnitude[] OverMags(int i) => new EffectMagnitude[]
+        {
+            new(SkillEffect.BuffPhysAtk,       overAtk[i]),
+            new(SkillEffect.BuffMagAtk,        overAtk[i]),
+            new(SkillEffect.BuffCritRate,      overRest[i]),
+            new(SkillEffect.BuffMagicCritRate, overRest[i]),
+            new(SkillEffect.BuffAtkSpeed,      overRest[i]),
+            new(SkillEffect.BuffCastSpeed,     overRest[i]),
+        };
         list.Add(new SkillDef(DemonOverLimit, "Over the Limit", BaseClass.Mage,
-            SkillEffect.BuffPhysAtk | SkillEffect.BuffMagAtk,
+            SkillEffect.BuffPhysAtk | SkillEffect.BuffMagAtk | SkillEffect.BuffCritRate
+                | SkillEffect.BuffMagicCritRate | SkillEffect.BuffAtkSpeed | SkillEffect.BuffCastSpeed,
             MpCost: overMp[0], CastTicks: 0, CooldownTicks: 600, Range: 0, Power: 0,
-            DurationTicks: 50, BuffKey: "demon_over_limit",
+            DurationTicks: 100, BuffKey: "demon_over_limit",
             Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: overSp[0],
-            Magnitudes: new[]
-            {
-                new EffectMagnitude(SkillEffect.BuffPhysAtk, overPct[0]),
-                new EffectMagnitude(SkillEffect.BuffMagAtk,  overPct[0]),
-            },
-            Description: "Push past what the body will take: more P.Atk and M.Atk, briefly.",
+            Magnitudes: OverMags(0),
+            Description: "Push past what the body will take: ten seconds of pure havoc.",
             Levels: Enumerable.Range(0, DemonOverLimitLevels.Length).Select(i => new SkillLevel(
-                MpCost: overMp[i], SpCost: overSp[i],
-                Magnitudes: new[]
-                {
-                    new EffectMagnitude(SkillEffect.BuffPhysAtk, overPct[i]),
-                    new EffectMagnitude(SkillEffect.BuffMagAtk,  overPct[i]),
-                },
-                Description: $"+{overPct[i] * 100:0}% P.Atk and M.Atk for 5s."))
+                MpCost: overMp[i], SpCost: overSp[i], Magnitudes: OverMags(i),
+                Description: $"+{overAtk[i] * 100:0}% P.Atk and M.Atk; +{overRest[i] * 100:0}% P/M crit rate, "
+                           + $"attack and cast speed for 10s."))
                 .ToArray()));
-
         // ═══ HUMAN — VAMPIRIC BOLT, the drain ladder ════════════════════════════════════════════
         //
         // 🔴 THE POWER, MP AND RANGE ARE THE OLD `vampiric_bolt` LADDER, RUNG FOR RUNG — rungs 2-34
@@ -234,7 +206,8 @@ public static partial class SkillCatalog
         //    `Replaces` it at 20 — his `cleric 2nd.csv` says so. This ladder starts at 20 and is NOT
         //    replaced by anything: that is the difference between a base-class taster and a race
         //    layer, and it is why he gave the two different ids.
-        // ⚠ RANGE IS A LADDER: 600 at 14, 750 through the twenties and thirties, 900 from 40 up. His column.
+        // ⚠ RANGE: 600 at 14, 750 from 20 up. The 40+ rungs were 900 until 2026-09-29 — now Holy Bolt's 750:
+        //   *"healers/buffer wont have nukers range .. and nukers wont overuse the additional spell"*.
         int[] vampPower = { 21, 26, 32, 38, 44, 52, 58, 65, 72, 78, 82, 85, 89, 92, 96, 99, 102, 105, 108 };
         int[] vampMp    = { 28, 40, 46, 52, 62, 66, 76, 88, 96, 104, 108, 110, 116, 120, 124, 128, 130, 134, 138 };
         int[] vampSp    =
@@ -249,7 +222,7 @@ public static partial class SkillCatalog
             Description: "A draining bolt that heals you for 40% of the damage dealt.",
             Levels: Enumerable.Range(0, vampPower.Length).Select(i => new SkillLevel(
                 Power: vampPower[i], MpCost: vampMp[i], SpCost: vampSp[i],
-                Range: HumanVampiricLevels[i] >= 40 ? 900f : HumanVampiricLevels[i] >= 20 ? 750f : 600f,
+                Range: HumanVampiricLevels[i] >= 20 ? 750f : 600f,
                 Description: $"Drain power {vampPower[i]}; heals 40% of damage."))
                 // Rungs 20-34 are the 4th-tier ladder the nuker already had — same fifteen rows,
                 // same prices, same gold. Shared rather than re-typed: `NukerFourthVampiricRungs`

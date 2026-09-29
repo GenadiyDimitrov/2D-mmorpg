@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.215.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.215.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,25 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-09-29 (latest) — 0.215.0: the passive split, built (`BL-314`)
+## 2026-09-29 (latest) — 0.215.1: one damage answer per mage race; Spell Ward gone (`BL-325`)
+
+His `mage 1st.csv` edits of the same day. ⚠ **New APK** (class tables changed) and a **`game.db` delete**
+(`elf_self_heal` and `tank_spell_ward` are gone).
+
+- **Elf mystics get Frost Spikes from 14.** The Elf nuker's spell moved into the mage race block (every Elf cleric,
+  buffer and nuker learns it), with five new rungs in front: 14/20/25/30/35, power 15-27, slow 15%. Its 34 rungs are
+  deleted from `nuker 3rd/4th.csv` and the nuker tables. Nothing changes for an Elf nuker except that it opens earlier.
+- **The Elf's Self Heal is deleted** (his row deletion). The healer's Heal no longer replaces anything; the
+  `cleric 2nd.csv` REPLACES cell is `[]`.
+- **Demon: Over the Limit reworked, "10s of pure havoc".** Four rungs at 14/40/60/70 (was 7/20/40/60/70), 10s window
+  (was 5s), CD 60: +10/12/15/20% P/M.Atk and +5/6/8/10% P/M crit rate, attack speed and cast speed.
+- **Range 750 from 20 up for Vampiric Bolt and Frost Spikes, including 40+ (was 900):** Holy Bolt's reach, so a healer
+  or buffer does not get the nuker's range from a race spell (his ruling, same day). 600 at 14.
+- **`BL-325`: `tank_spell_ward` deleted** — *"no where in the csvs so remove it"*. A tank's fizzle protection is the
+  paid `magic_protection` @80 alone.
+- `debuff_landmods.csv` regenerated: Frost Spikes is now listed for every Elf mystic class. `SkillCsvSeed --check`: 0.
+
+## 2026-09-29 — 0.215.0: the passive split, built (`BL-314`)
 
 His CSVs from 7ebbaef are now the game. ⚠ **New APK** (the Learn tab is built from the compiled class tables) and a
 **`game.db` delete** (dozens of skill ids are gone).

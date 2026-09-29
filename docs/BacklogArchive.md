@@ -8180,3 +8180,24 @@ desitions .. not 1 passive 200 stats in one go ... now 200 passive -> chose wise
   equal share of its old bundle rung. **k solved** (`BalanceMatrix --sp-budget-csv`): daggers 7.15, bows 9.09, warriors
   4.63, tanks 3.58, Magus 4.60, Lightbringer 3.52, Warchanter 3.73. `SkillCsvSeed --check` reads RACE now.
   ➡ **NEXT: the engine build** (§12 last paragraph). One open question: `magic_protection` @80 free again or priced?
+
+## `BL-325` ✅ CLOSED — built in 0.215.1
+
+✅ **2026-09-29, HIS ANSWER:** *"tank_spell_ward no where in the csvs so remove it"* — option (a). `tank_spell_ward` is
+deleted (def, const and the `FloorPassiveFor` grant); a tank's fizzle protection is the paid `magic_protection` @80 alone.
+
+**The entry as it stood:**
+
+### TANK FIZZLE: SPELL WARD VS MAGIC PROTECTION
+
+Found building `BL-314` (0.215.0). The tank has TWO sources of "hostile spells fizzle more on you", and they do not add:
+- **`tank_spell_ward`** ("Spell Ward"), AUTO-GRANTED by the engine, in no CSV: ×2 from 20, ×2.5 from 40, ×3 from 76. It is
+  the 2026-08-10 *"tanks will have a defender modifier x2 as a passive"*; the ×2.5 and ×3 were my extrapolation. It was
+  called `anti_magic` until his split gave that id to the shared M.Def ladder, and moved to its own id unchanged.
+- **`magic_protection`**, his `tank 4th.csv` row: ×2 at 80, 150kk SP + 10kk gold (his ruling 2026-09-29: *"IG is
+  separate ... if you want your magic protection you will have to pay as a new skill"*).
+
+The engine takes the **highest** fizzle multiplier (`MagicFailMod = Math.Max`), so a tank who pays 150kk for ×2 at 80 is
+already on ×3 from 76 and gains **nothing**. ❓ **Your call:** (a) delete Spell Ward, so fizzle protection is only the paid
+skill at 80 (tanks 20-79 lose their ×2/×2.5); (b) keep Spell Ward to 79 and make `magic_protection` the only source from
+80 (stop the auto ×3); (c) raise `magic_protection` above ×3; (d) something else.

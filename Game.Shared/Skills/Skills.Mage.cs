@@ -57,27 +57,15 @@ public static partial class SkillCatalog
                 new SkillLevel(Power: 21, MpCost: 15,  SpCost: 2200, Description: "Magic damage, power 21."),   // 14
             }),
 
-        // (Self Heal's def stood HERE until 2026-09-17 — three rungs at 1/7/14, every race. See the
-        //  note beside the deleted const above: it is `elf_self_heal` now, nine rungs, Elf only.)
+        // (Self Heal's def stood HERE until 2026-09-17, then lived on as the Elf's `elf_self_heal` until
+        //  2026-09-29, when his row deletion gave the Elf Frost Spikes instead. Neither id exists now.)
 
         // Heal — the HEALER's targeted heal (ally or self). 4 levels @20/25/30/35 (base-mage no
-        // longer learns this).
-        //
-        // 🔑 IT REPLACES THE ELF'S RACE SELF-HEAL — the id `self_heal` used to name, and the owner's
-        //    own correction (2026-09-17): *"it was self_heal and should have become elf_self_heal ..
-        //    it removes the healers self heal to give him a targeted one"*. So the REPLACES cell
-        //    FOLLOWED the rename rather than being retired with the old id.
-        //
-        // ⚠ THIS IS THE ONE PLACE A RACE LAYER IS TAKEN AWAY, and it is deliberate: an Elf who
-        //   becomes a cleric TRADES a self-only heal for a targeted one, which is strictly the better
-        //   tool and the reason the class exists. Do not generalise it — nothing else in either race
-        //   block is replaced by anything, and the Human's drain LADDER is explicitly not (its level-14
-        //   rung included, since 2026-09-29 — see the Holy Bolt note below).
+        // longer learns this). It replaced the Elf's race self-heal until that skill was deleted.
         new(Heal, "Heal", BaseClass.Mage, SkillEffect.Heal,
             // Reuse 2s -> 3s (owner, 2026-08-28: *"heal/great heal are 5 cast 3 reuse"*).
             MpCost: 30, CastTicks: 50, CooldownTicks: 30, Range: 600, Power: 151,
             Category: SkillCategory.Heal,
-            Replaces: new[] { ElfSelfHeal },
             Description: "Restores a friendly target's HP (or your own). Scales with WIT.",
             Levels: new[]
             {

@@ -696,7 +696,8 @@ public static partial class ClassSkillTables
         human.Add(new ClassSkill(ArcaneBurst, 74));
 
         var elf = new List<ClassSkill>(shared);
-        elf.AddRange(Ladder(FrostSpikes, band14));
+        // (Frost Spikes left this table on 2026-09-29 — every Elf MYSTIC learns it from 14 now, via
+        //  ClassSkills.MageRaceSkills, the same move Vampiric Bolt made for the Human.)
         elf.AddRange(Ladder(FrostPierce, band14));
         elf.Add(new ClassSkill(FrostBurst, 74));
 

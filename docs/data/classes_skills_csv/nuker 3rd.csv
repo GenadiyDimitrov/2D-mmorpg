@@ -160,21 +160,6 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 70,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +60;,98,390k,[]
 72,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +62;,100,650k,[]
 74,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +64;,103,880k,[]
-,,,,,,,,,,,,,,,,,-----------------------------Frost Spikes-----------------------------
-40,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +30; Apply 15% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,33,36k,[],Elf,does dmg but have a lower success rate for the slow - interrupt unaffected
-44,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +35; Apply 20% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,38,43k,[],Elf
-48,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +39; Apply 20% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,44,64k,[],Elf
-52,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +43; Apply 25% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,48,74k,[],Elf
-56,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +46; Apply 25% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,52,81k,[],Elf
-58,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +48; Apply 28% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,54,88k,[],Elf
-60,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +50; Apply 28% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,55,120k,[],Elf
-62,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +52; Apply 31% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,58,170k,[],Elf
-64,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +54; Apply 31% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,60,190k,[],Elf
-66,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +56; Apply 34% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,62,280k,[],Elf
-68,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +58; Apply 34% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,64,320k,[],Elf
-70,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +60; Apply 37% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,65,390k,[],Elf
-72,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +62; Apply 37% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,67,650k,[],Elf
-74,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +64; Apply 40% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,69,880k,[],Elf
 ,,,,,,,,,,,,,,,,,-----------------------------Frost Pierce-----------------------------
 40,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +30; Applies bleed effect rank 3; Higher chance to interrupt enemy casts (interrupt chance x2);,33,36k,[],Elf,does dmg but have a lower success rate for the bleed - interrupt unaffected
 44,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +35; Applies bleed effect rank 4; Higher chance to interrupt enemy casts (interrupt chance x2);,38,43k,[],Elf

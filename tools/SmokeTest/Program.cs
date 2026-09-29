@@ -2963,8 +2963,8 @@ await gm.DisposeAsync();
     // One character per 2nd class, so the block costs two of the account's 36 slots, not three.
     foreach (var (arch, trades) in new[]
     {
-        (Archetype.Healer, new[] { (SkillCatalog.Heal, SkillCatalog.ElfSelfHeal),
-                                   (SkillCatalog.HolyBolt, SkillCatalog.MagicBolt) }),
+        // (Heal's trade for `elf_self_heal` left with that skill on 2026-09-29.)
+        (Archetype.Healer, new[] { (SkillCatalog.HolyBolt, SkillCatalog.MagicBolt) }),
         (Archetype.Nuker,  new[] { (SkillCatalog.ElementalBolt, SkillCatalog.MagicBolt) }),
     })
     {
@@ -2988,7 +2988,6 @@ await gm.DisposeAsync();
 
         foreach (var (_, replaced) in trades)
         {
-            if (replaced == SkillCatalog.ElfSelfHeal) await rp.Hub.SendAsync("LearnSkill", replaced);
             await rp.WaitFor(() => Knows(replaced), 5000);
             Check($"...the base mage knows {replaced} before the class change", Knows(replaced));
         }

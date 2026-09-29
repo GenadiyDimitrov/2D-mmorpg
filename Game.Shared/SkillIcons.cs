@@ -56,7 +56,6 @@ public static class SkillIcons
         //   the race ladder — and his rule is that no two skills ONE class can hold may share an icon.
         // ---- THE MAGE RACE BLOCK (`BL-258`, his `mage 1st.csv` race block) ----
         ["human_vampiric_bolt"] = "🩸",   // the Human's drain LADDER, 14-90
-        ["elf_self_heal"]   = "💗",   // was `self_heal` — the Elf's now
         ["demon_over_limit"] = "🔺",
         ["elf_blessing"]    = "🍃",
         ["demon_blessing"]  = "😈",

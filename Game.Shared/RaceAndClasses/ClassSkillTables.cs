@@ -46,10 +46,8 @@ public static partial class ClassSkillTables
         // `BL-314` — the base mage's passives (Robe Armor Mastery, Anti-Magic, both weapon masteries) are rungs of
         // the shared ladders now, registered from the CSV in ClassSkillTables.Passives.g.cs. The wrong-weight /
         // wrong-weapon penalty is still Spellcaster Mastery's alone (auto-granted, never replaced).
-        // 🔴 SELF HEAL IS NOT HERE ANY MORE (2026-09-17, `BL-258`). His race pass deleted the three
-        // base-mage rows (1/7/14, power 42/67/107) and re-authored the skill as the ELF's nine-rung
-        // ladder under `elf_self_heal` — see ClassSkills.MageRaceSkills. A Human or Demon mage has no
-        // self-heal at all now; that is the point of the race split, not an omission.
+        // 🔴 SELF HEAL IS NOT HERE ANY MORE (2026-09-17, `BL-258`), and since 2026-09-29 no race has one:
+        //    the Elf's `elf_self_heal` ladder was deleted for Frost Spikes (ClassSkills.MageRaceSkills).
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
             ClassSkills.Register(race, BaseClass.Mage, null,
                 new ClassSkill(MagicBolt, 7, SkillLevel: 2),

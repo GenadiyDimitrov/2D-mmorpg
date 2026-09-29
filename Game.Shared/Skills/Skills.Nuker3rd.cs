@@ -242,10 +242,10 @@ public static partial class SkillCatalog
         //   reaches 1.00. 📐 `--slowstack` prints the resulting speed.
 
         new(FrostSpikes, "Frost Spikes", BaseClass.Mage, SkillEffect.MagicDamage | SkillEffect.Slow,
-            MpCost: NukerBoltMp[0], CastTicks: 25, CooldownTicks: 10, Range: 900,
-            Power: NukerWavePower[0],
+            MpCost: 28, CastTicks: 25, CooldownTicks: 10, Range: 600,
+            Power: 15,
             DurationTicks: 300, BuffKey: "slow", Rank: 1,
-            DebuffSchool: DebuffSchool.Magical, Category: SkillCategory.Magic, SpCost: 36000,
+            DebuffSchool: DebuffSchool.Magical, Category: SkillCategory.Magic, SpCost: 2000,
             // 🔑 0.70 → 0.85 (owner, 2026-09-13). See the RAISED-SUCCESS note above the elf pair.
             DebuffLandMod: 0.85f,  // his CSV: "(success chance x0.85)"
             InterruptMult: 2f,     // his CSV: "(interrupt chance x2)"
@@ -254,13 +254,17 @@ public static partial class SkillCatalog
                        + "to break the target's cast.",
             // 🔑 THE SLOW PLATEAUS AT 40% FROM 74 only because that is where his ladder ends; every rung
             // below it climbs. Read the ladder, not this comment, if it is ever extended.
-            Levels: HealerRungs(0, 14, (i, sp) =>
+            // 🔑 2026-09-29: FIVE RUNGS IN FRONT (14/20/25/30/35) now that every Elf mystic learns it —
+            //    his `mage 1st.csv` rows. Range 600 at 14, 750 from 20 on — the 40+ rungs were 900 until the same day (his ruling:
+            //    a race spell stays at Holy Bolt's 750, short of the nuker's own 900).
+            Levels: FrostSpikesEarly().Concat(HealerRungs(0, 14, (i, sp) =>
             {
                 float[] slow = { .15f, .20f, .20f, .25f, .25f, .28f, .28f, .31f, .31f, .34f, .34f, .37f, .37f, .40f };
                 return new SkillLevel(Power: NukerWavePower[i], MpCost: NukerBoltMp[i], SpCost: sp,
                     Magnitudes: new EffectMagnitude[] { new(SkillEffect.Slow, slow[i]) },
                     Description: $"Power {NukerWavePower[i]}, and a chance to slow by {slow[i] * 100:0}% for 30s.");
-            }).Concat(NukerFourthFrostSpikesRungs()).ToArray()),
+            })).Concat(NukerFourthFrostSpikesRungs())
+                .Select(l => l.Range > 0 ? l : l with { Range = 750f }).ToArray()),
 
         // ⚠ BLEED IS A `Rank`, NOT A MAGNITUDE. His rows read "bleed effect rank 3 … rank 10", and rank
         // is what a cure has to out-reach (Antidote's DispelMaxLevel). The DoT's damage per second is

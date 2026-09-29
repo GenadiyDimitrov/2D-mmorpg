@@ -81,7 +81,7 @@ internal static class Check
     private static readonly string[] CentralMageSkills =
     {
         SkillCatalog.ElfBlessing, SkillCatalog.DemonBlessing, SkillCatalog.HumanBlessing,
-        SkillCatalog.ElfSelfHeal, SkillCatalog.DemonOverLimit, SkillCatalog.HumanVampiricBolt,
+        SkillCatalog.FrostSpikes, SkillCatalog.DemonOverLimit, SkillCatalog.HumanVampiricBolt,
     };
 
     /// <summary>Is this a centrally-injected row that some OTHER file owns? The grade passive is the

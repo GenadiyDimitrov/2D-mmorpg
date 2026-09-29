@@ -260,7 +260,7 @@ public static class ClassSkills
         switch (race)
         {
             case Race.Elf:
-                foreach (var cs in Rungs(SkillCatalog.ElfSelfHeal, SkillCatalog.ElfSelfHealLevels))
+                foreach (var cs in Rungs(SkillCatalog.FrostSpikes, SkillCatalog.ElfFrostSpikesLevels))
                     yield return cs;
                 break;
             case Race.Demon:

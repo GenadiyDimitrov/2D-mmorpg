@@ -59,9 +59,9 @@ public static partial class SkillCatalog
     // (`reflexes` — the Archer floor — deleted 2026-08-07: no class carries Archetype.Archer after
     //  the archer→rogue merge, so it was granted to nobody. See the CommonSkills() note.)
     public const string Precision    = "precision";     // Warrior 10/20/30% hit floor
-    // `BL-314` — the tank's auto-granted fizzle multiplier. It was `anti_magic` until his passive split gave that id to
-    // the shared M.Def ladder (every mage and the tank climb it), so the grant moved to an id of its own, unchanged.
-    public const string TankSpellWard = "tank_spell_ward";   // Tank    x2/2.5/3 on enemy magic fizzle
+    // (`tank_spell_ward` — the tank's auto-granted ×2/×2.5/×3 fizzle multiplier — deleted 2026-09-29, `BL-325`:
+    //  *"tank_spell_ward no where in the csvs so remove it"*. The tank's fizzle protection is his paid
+    //  `magic_protection`  alone now.)
     // ---- The two SKILL-defence passives (BL-07 / BL-08), auto-granted on the 3rd class change
     //      like the three above. Their ladder is the owner's own 40 / 76 pair. See ReflectPassiveFor. ----
     public const string Deflection   = "deflection";    // Warrior 15/30% chance to reflect a physical skill
@@ -417,7 +417,7 @@ public static partial class SkillCatalog
             // ⚠ AND NOTHING UN-GRANTS IT EITHER, deliberately — his ruling, same day: *"no point of
             //   migration type to remove a skill from some1. They will never have it in the 1st
             //   place."* Pre-release, a `game.db` delete is the migration.
-            Archetype.Tank    => (TankSpellWard, tier),
+            // The TANK got `tank_spell_ward` here until 2026-09-29 (`BL-325`, deleted — see the const block).
             // Archetype.Archer gets nothing: `reflexes` is deleted and no 2nd class carries
             // Archer any more. A bow character is a Rogue whose discipline is ranged (above).
             // Mages get NO auto magic-fail floor — it comes from their LEARNED Anti-Magic
@@ -943,16 +943,6 @@ public static partial class SkillCatalog
         LeveledPassive(Precision, "Precision", BaseClass.Fighter,
             "Passive. Your physical attacks always land at least 10/20/30% of the time.",
             new PassiveEffect(HitFloor: 0.10f), new PassiveEffect(HitFloor: 0.20f), new PassiveEffect(HitFloor: 0.30f)),
-        // The TANK's Anti-Magic. It was a flat magic-fail FLOOR (10/15/20%); the owner's 2026-08-10
-        // magic-landing rework replaced floors with a MULTIPLIER on the fail formula — "tanks will
-        // have a defender modifier x2 as a passive". ×2 is his number for Lv1. It reads smaller at
-        // parity (2% vs the old 10%) but it multiplies the level term, so it is worth far more in
-        // the fight that matters: vs a caster 10 levels up it turns 14% fail into 28%.
-        // ⚠ Lv2 (at 40) and Lv3 (4th class, still unreachable) are MY extrapolation of his ladder,
-        // not authored — the 40+ CSVs are owed and these two numbers are the first thing to overwrite.
-        LeveledPassive(TankSpellWard, "Spell Ward", BaseClass.Fighter,
-            "Passive. Hostile spells are 2/2.5/3× more likely to fizzle on you.",
-            new PassiveEffect(MagicFailMod: 2f), new PassiveEffect(MagicFailMod: 2.5f), new PassiveEffect(MagicFailMod: 3f)),
 
         // ===== The two SKILL-defence passives (BL-07 / BL-08) — the other half of `69e`'s block =====
         // DEFLECTION (warrior, BL-07). His numbers exactly: *"default warrior @40 -> 0.15 chance x1

@@ -29,7 +29,7 @@ Freeze,freeze,Bulwark(Elf),Slow -65%,SPT,1,DEBUFF ONLY (1),1
 Frost Bind,frost_bind,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Slow -50%,SPT,1,DEBUFF ONLY (1),1
 Frost Burst,frost_burst,Magus(Elf),M.Def -35%; Root,SPT,1.5,dmg+2 debuffs,1.5
 Frost Pierce,frost_pierce,Magus(Elf),Bleed DoT (+ its family rider),CON,0.85,dmg+1 debuff,0.85
-Frost Spikes,frost_spikes,Magus(Elf),Slow -45%,SPT,0.85,dmg+1 debuff,0.85
+Frost Spikes,frost_spikes,Healer(Elf) | Lightbringer(Elf) | Magus(Elf) | Nuker(Elf) | Tempest(Elf) | Warchanter(Elf),Slow -45%,SPT,0.85,dmg+1 debuff,0.85
 Grapple,grapple,Bulwark,pull; Stun,CON,1,dmg+2 debuffs,1
 Gravity,gravity,Lightbringer(Human),Atk.Spd -30%; Cast.Spd -30%,SPT,1,DEBUFF ONLY (2),1
 Greater Weakness,greater_weakness,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",P.Def -45%,none (fizzle roll),1,DEBUFF ONLY (1),1

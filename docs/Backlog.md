@@ -280,7 +280,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
 | `BL-323` | ⏸ | **Server-side collision (geodata)** — the server checks walls/buildings too, not only the 3D models; waits on `BL-281` | world |
 | `BL-324` | 🔵 | **Town sprint** — 📝 PROPOSED 2026-09-29: a visible **Paved Streets** buff inside the wall (+50 run, cap 250, off in combat), no button; 1 Q (whole town or streets only) | world |
-| `BL-325` | ❓ | **Tank fizzle: Spell Ward vs Magic Protection** — the auto-granted ×2/×2.5/×3 (`tank_spell_ward`) makes his paid ×2 `magic_protection` @80 worth nothing; which one goes? | skills |
 
 ---
 
@@ -2285,17 +2284,3 @@ fantasy/gamey like .. just some day haters not to say "I move faster in the town
 - ❓ **One question: the whole town inside the wall (my pick: simple, and the streets carry you everywhere anyway), or
   only while standing ON the drawn streets?** The second needs the street shapes on the server (the `BL-323` geodata
   kind of work).
-
-## `BL-325` ❓ TANK FIZZLE: SPELL WARD VS MAGIC PROTECTION
-
-Found building `BL-314` (0.215.0). The tank has TWO sources of "hostile spells fizzle more on you", and they do not add:
-- **`tank_spell_ward`** ("Spell Ward"), AUTO-GRANTED by the engine, in no CSV: ×2 from 20, ×2.5 from 40, ×3 from 76. It is
-  the 2026-08-10 *"tanks will have a defender modifier x2 as a passive"*; the ×2.5 and ×3 were my extrapolation. It was
-  called `anti_magic` until his split gave that id to the shared M.Def ladder, and moved to its own id unchanged.
-- **`magic_protection`**, his `tank 4th.csv` row: ×2 at 80, 150kk SP + 10kk gold (his ruling 2026-09-29: *"IG is
-  separate ... if you want your magic protection you will have to pay as a new skill"*).
-
-The engine takes the **highest** fizzle multiplier (`MagicFailMod = Math.Max`), so a tank who pays 150kk for ×2 at 80 is
-already on ×3 from 76 and gains **nothing**. ❓ **Your call:** (a) delete Spell Ward, so fizzle protection is only the paid
-skill at 80 (tanks 20-79 lose their ×2/×2.5); (b) keep Spell Ward to 79 and make `magic_protection` the only source from
-80 (stop the auto ×3); (c) raise `magic_protection` above ×3; (d) something else.

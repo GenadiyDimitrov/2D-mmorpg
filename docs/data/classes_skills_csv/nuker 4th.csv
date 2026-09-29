@@ -166,22 +166,6 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +129;,138,0,100kk
 89,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +133;,141,0,100kk
 90,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +137;,144,0,100kk
-,,,,,,,,,,,,,,,,,,,-----------------------------Frost Spikes-----------------------------
-76,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +86; Apply 40% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,69,6.5kk,1kk,,,Elf
-77,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +88; Apply 40% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,71,11kk,1kk,,,Elf
-78,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +91; Apply 40% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,73,16kk,1kk,,,Elf
-79,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +94; Apply 40% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,77,80kk,1kk,,,Elf
-80,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +98; Apply 42% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,79,0,5kk,,,Elf
-81,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +101; Apply 42% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,91,0,7.5kk,,,Elf
-82,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +105; Apply 42% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,95,0,10kk,,,Elf
-83,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +109; Apply 42% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,97,0,15kk,,,Elf
-84,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +113; Apply 42% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,99,0,30kk,,,Elf
-85,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +117; Apply 45% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,103,0,50kk,,,Elf
-86,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +121; Apply 45% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,105,0,75kk,,,Elf
-87,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +125; Apply 45% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,107,0,100kk,,,Elf
-88,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +129; Apply 45% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,111,0,100kk,,,Elf
-89,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +133; Apply 45% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,113,0,100kk,,,Elf
-90,Frost Spikes,frost_spikes,Magic/Dmg,,,900,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +137; Apply 45% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,115,0,100kk,,,Elf
 ,,,,,,,,,,,,,,,,,,,-----------------------------Frost Pierce-----------------------------
 76,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +86; Applies bleed effect rank 10; Higher chance to interrupt enemy casts (interrupt chance x2);,69,6.5kk,1kk,,,Elf
 77,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +88; Applies bleed effect rank 10; Higher chance to interrupt enemy casts (interrupt chance x2);,71,11kk,1kk,,,Elf
