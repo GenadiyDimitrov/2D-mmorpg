@@ -1173,7 +1173,8 @@ public class PersistenceService
     /// child). "" = same as SkillId, which is also what an older save deserializes to.</param>
     public sealed record BuffSnapshot(
         string SkillId, int Level, DateTime? ExpiresAtUtc, int Stacks, int ShieldPool,
-        string DisplayName, string SourceSkillId = "", string FaceId = "", int FaceLevel = 0)
+        string DisplayName, string SourceSkillId = "", string FaceId = "", int FaceLevel = 0,
+        int ShownLevel = 0)
     {
         /// <summary>The buffs on an entity that are worth saving.
         ///
@@ -1199,7 +1200,7 @@ public class PersistenceService
                     ? null
                     : now.AddSeconds(b.TicksRemaining * GameConstants.TickSeconds);
                 list.Add(new BuffSnapshot(skillId, b.Level, expires, b.Stacks, b.ShieldPool,
-                                          b.Name, b.SourceSkillId, b.FaceId, b.FaceLevel));
+                                          b.Name, b.SourceSkillId, b.FaceId, b.FaceLevel, b.ShownLevel));
             }
             return list;
         }

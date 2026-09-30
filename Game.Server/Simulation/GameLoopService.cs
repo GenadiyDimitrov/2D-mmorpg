@@ -1792,10 +1792,11 @@ public class GameLoopService : BackgroundService
             return;
         }
         int gate = ClassSkills.LearnLevelOf(def.Id, target, player.Race, player.BaseClass, player.Archetype, player.Discipline, player.HasFourthClass);
+        int shownTarget = ShownLevelOf(player, def.Id, target);   // the player's step, not the ladder rung
         if (player.Level < gate)
         {
             SendSystemToEntity(player, def.MaxLevel > 1
-                ? $"{def.Name} (Lv.{target}) requires level {gate}."
+                ? $"{def.Name} (Lv.{shownTarget}) requires level {gate}."
                 : $"{def.Name} requires level {gate}.");
             return;
         }
@@ -1869,7 +1870,7 @@ public class GameLoopService : BackgroundService
         if (gold > 0 && player.Gold < gold)
         {
             SendSystemToEntity(player,
-                $"{def.Name} (Lv.{target}) costs {gold:N0} {GameConstants.CurrencyName}.");
+                $"{def.Name} (Lv.{shownTarget}) costs {gold:N0} {GameConstants.CurrencyName}.");
             return;
         }
 
@@ -1885,7 +1886,7 @@ public class GameLoopService : BackgroundService
         {
             string itemName = ItemCatalog.Get(learnItem)?.Name ?? learnItem;
             SendSystemToEntity(player,
-                $"{def.Name} (Lv.{target}) also costs {learnItemQty} x {itemName}.");
+                $"{def.Name} (Lv.{shownTarget}) also costs {learnItemQty} x {itemName}.");
             return;
         }
 
@@ -1894,7 +1895,7 @@ public class GameLoopService : BackgroundService
         // SP and gold for a learn that then refuses is the one outcome with no way back.
         if (learnItemQty > 0 && !ConsumeItem(player, learnItem, learnItemQty))
         {
-            SendSystemToEntity(player, $"{def.Name} (Lv.{target}) needs {learnItemQty} more.");
+            SendSystemToEntity(player, $"{def.Name} (Lv.{shownTarget}) needs {learnItemQty} more.");
             return;
         }
 
@@ -1915,7 +1916,7 @@ public class GameLoopService : BackgroundService
         // Recompute so passives take effect immediately, not just on the next equip/level.
         player.RecomputeDerived();
 
-        SendSystemToEntity(player, def.MaxLevel > 1 ? $"Learned {def.Name} (Lv.{target})!" : $"Learned {def.Name}!");
+        SendSystemToEntity(player, def.MaxLevel > 1 ? $"Learned {def.Name} (Lv.{shownTarget})!" : $"Learned {def.Name}!");
         SendStats(player);
         SendLearned(player);
         if (gold > 0) SendGold(player);
@@ -2471,7 +2472,7 @@ public class GameLoopService : BackgroundService
         // and the stats that go out with it are the ones the player will actually regenerate on.
         if (def.SeatsCaster)
             SitDown(caster);
-        ApplyBuff(caster, def, level, toggle: true);   // refreshes stats + buff bar
+        ApplyBuff(caster, def, level, toggle: true, shownLevel: ShownLevelOf(caster, def.Id, level));   // refreshes stats + buff bar
         SendSystemToEntity(caster, $"{def.Name} activated.");
     }
 
@@ -11156,7 +11157,7 @@ public class GameLoopService : BackgroundService
         };
         if (caster == target || chance <= 0f) return false;
         if (_rng.NextDouble() >= chance) return false;
-        ApplyBuff(caster, def, lvl, durationOverride: durationOverride);
+        ApplyBuff(caster, def, lvl, durationOverride: durationOverride, shownLevel: ShownLevelOf(caster, def.Id, lvl));
         BroadcastCombat(target, caster, 0, CombatOutcome.Buff, castName + " [Reflect]");
         return true;
     }
@@ -11809,6 +11810,7 @@ public class GameLoopService : BackgroundService
                       sourceSkillId: string.IsNullOrEmpty(snap.SourceSkillId) ? null : snap.SourceSkillId,
                       // `BL-327` — the caster's face, by id (a row since removed from the file falls back to the def).
                       face: SkillFaces.Get(snap.FaceId), faceLevel: snap.FaceLevel,
+                      shownLevel: snap.ShownLevel,   // the CASTER's label, who may not be online to ask again
                       // The bar ROW belongs to whatever granted it (a potion's child stays in the
                       // consumable row); the child's own def only knows the plain buff row.
                       rowOverride: SkillCatalog.Get(snap.SourceSkillId)?.BuffRow);
@@ -13261,7 +13263,7 @@ public class GameLoopService : BackgroundService
             //      raise around yourself does not care whether anything was standing in it.
             if (def.SelfBuff is string selfBuffId
                 && SkillCatalog.Get(selfBuffId) is SkillDef selfBuff)
-                ApplyBuff(caster, selfBuff, lvl, castName);
+                ApplyBuff(caster, selfBuff, lvl, castName, shownLevel: ShownLevelOf(caster, selfBuff.Id, lvl));
             return;
         }
 
@@ -13730,7 +13732,7 @@ public class GameLoopService : BackgroundService
                         if (!spentStacks) ApplyDotStack(caster, target, def, lvl);   // the DoT damage effect
                     }
                     else
-                        ApplyBuff(target, def, lvl, durationOverride: doubledTicks, source: caster);   // single CC buff
+                        ApplyBuff(target, def, lvl, durationOverride: doubledTicks, source: caster, shownLevel: ShownLevelOf(caster, def.Id, lvl));   // single CC buff
                     BroadcastCombat(caster, target, 0, CombatOutcome.Buff,
                         durationDoubled ? castName + " [Double]" : castName);
                 }
@@ -13776,7 +13778,7 @@ public class GameLoopService : BackgroundService
                 }
                 else
                 {
-                    ApplyBuff(target, def, lvl, durationOverride: doubledTicks, source: caster);
+                    ApplyBuff(target, def, lvl, durationOverride: doubledTicks, source: caster, shownLevel: ShownLevelOf(caster, def.Id, lvl));
                     BroadcastCombat(caster, target, 0, CombatOutcome.Buff,
                         durationDoubled ? castName + " [Double]" : castName);
                 }
@@ -13909,7 +13911,8 @@ public class GameLoopService : BackgroundService
                 // Buff the caster + every nearby player character in range.
                 foreach (var ally in PlayersInRadius(caster, def.AreaRadiusAt(lvl), FriendlyScope(def)))
                 {
-                    ApplyBuff(ally, def, lvl, buffName, durationOverride: doubledTicks, face: buffFace);
+                    ApplyBuff(ally, def, lvl, buffName, durationOverride: doubledTicks, face: buffFace,
+                             shownLevel: ShownLevelOf(caster, def.Id, lvl));
                     BroadcastCombat(caster, ally, 0, CombatOutcome.Buff, shownName);
                     OnSupport(caster, ally);   // `BL-59`/`BL-98` — blessing an outlaw flags you; blessing a raid you tower over petrifies you
                     blessed.Add(ally.Id);
@@ -13918,7 +13921,8 @@ public class GameLoopService : BackgroundService
             else
             {
                 var buffTarget = def.TargetMode == TargetMode.SelfOnly ? caster : target;
-                ApplyBuff(buffTarget, def, lvl, buffName, durationOverride: doubledTicks, face: buffFace);
+                ApplyBuff(buffTarget, def, lvl, buffName, durationOverride: doubledTicks, face: buffFace,
+                             shownLevel: ShownLevelOf(caster, def.Id, lvl));
                 BroadcastCombat(caster, buffTarget, 0, CombatOutcome.Buff, shownName);
                 OnSupport(caster, buffTarget);   // `BL-59`/`BL-98`
                 blessed.Add(buffTarget.Id);
@@ -13950,7 +13954,7 @@ public class GameLoopService : BackgroundService
         //      ⚠ No floating text: the AoE arm does not broadcast one either, and a 5-second rush that
         //      re-lands every cast would put a second float on top of its own damage number.
         if (def.SelfBuff is string ownBuffId && SkillCatalog.Get(ownBuffId) is SkillDef ownBuff)
-            ApplyBuff(caster, ownBuff, lvl, ownBuff.Name);
+            ApplyBuff(caster, ownBuff, lvl, ownBuff.Name, shownLevel: ShownLevelOf(caster, ownBuff.Id, lvl));
 
         if (offensive)
             AfterOffensiveSkill(caster, target);
@@ -14080,8 +14084,11 @@ public class GameLoopService : BackgroundService
     private bool ApplyBuff(Entity target, SkillDef def, int level = 1, string? displayName = null,
         bool refresh = true, bool toggle = false, int maxStacks = -1,
         int durationOverride = -1, string? sourceSkillId = null, BuffRow? rowOverride = null,
-        Entity? source = null, bool force = false, SkillFace? face = null, int faceLevel = 0)
+        Entity? source = null, bool force = false, SkillFace? face = null, int faceLevel = 0,
+        int shownLevel = -1)
     {
+        // `shownLevel` — the "Lv.N" the buff bar prints: the CASTER's step on his own class path (ShownLevelOf), 0 for no
+        // level at all (the NPC shelf, a consumable), −1 = the rung itself when the def has a ladder (a mob's cast).
         // ---- ONE-CHILD WRAPPER (a potion, a scroll, a buffer class's single blessing): it owns the
         //      duration and the bar row, but the buff that lands is the CHILD — the family's rung,
         //      under the family's key, at the family's rank. That is what lets a Greater potion and a
@@ -14098,7 +14105,10 @@ public class GameLoopService : BackgroundService
                              // `displayName`, which is why a cast bar and the buff it left behind could disagree. (Only WITH a face:
                              // a potion's wrapper still pours a buff under the child's own name, as it always has.)
                              displayName: face is null ? null : displayName, face: face,
-                             faceLevel: faceLevel > 0 ? faceLevel : level);
+                             faceLevel: faceLevel > 0 ? faceLevel : level,
+                             // The wrapper's LADDER is what the player learned, the child is a one-rung single: without
+                             // this a cleric's Agility would land as "Agility" with no level at all.
+                             shownLevel: shownLevel >= 0 ? shownLevel : def.MaxLevel > 1 ? level : 0);
 
         // ---- IMPROVED (group) buff — MORE than one child. It is ONE buff carrying every child's
         //      numbers, on the group's own key, at GROUP rank, declaring the families it COVERS.
@@ -14368,6 +14378,7 @@ public class GameLoopService : BackgroundService
             Key = key,
             Rank = rank,
             Level = level,
+            ShownLevel = shownLevel >= 0 ? shownLevel : def.MaxLevel > 1 ? level : 0,
             Replaces = def.Replaces ?? Array.Empty<string>(),
             // At the LEVEL that landed, for the same reason as `Rewards` below: Mana Blessing climbs
             // 10 → 20% and Mana Strain 100 → 200%, and reading the def's own field would hand out
@@ -18780,6 +18791,19 @@ public class GameLoopService : BackgroundService
             ? SkillFaces.For(skillId, e.Race, e.BaseClass, e.Archetype, e.Discipline, e.HasFourthClass)
             : SkillFaces.For(skillId, null, null);
 
+    /// <summary>The "Lv.N" this entity is shown for holding <paramref name="rung"/> of a skill — its step on its OWN class
+    /// path (<see cref="ClassSkills.ShownLevel"/>), never the rung on a shared ladder. 0 for a one-rung skill (no label);
+    /// a creature has no class path and keeps the rung.</summary>
+    private static int ShownLevelOf(Entity e, string skillId, int rung) =>
+        SkillCatalog.Get(skillId) is not { MaxLevel: > 1 } ? 0
+        : e.Kind == EntityKind.Player
+            ? ClassSkills.ShownLevel(skillId, rung, e.Race, e.BaseClass, e.Archetype, e.Discipline, e.HasFourthClass)
+            : rung;
+
+    /// <summary>What a blessing BOUGHT from the NPC buffer is called on the bar: "NPC Might" (owner, 2026-09-30 — the
+    /// cleric's is "Might Lv.2", the NPC's has no level and says where it came from).</summary>
+    private static string NpcBuffLabel(string shelfId) => "NPC " + SkillCatalog.NpcBuffName(shelfId);
+
     /// <summary>The skill's name as this entity shows it — its face, at the rung it holds.</summary>
     private static string SkillName(Entity e, string skillId) =>
         SkillFaces.NameOf(FaceOf(e, skillId), skillId, Math.Max(1, e.SkillLevelOf(skillId)));
@@ -18837,9 +18861,9 @@ public class GameLoopService : BackgroundService
             b.Row, BuffIcon(player, b.SourceSkillId),
             IsMultiChildGroup(b.SourceSkillId) ? b.SourceSkillId : "",
             IsMultiChildGroup(b.SourceSkillId) ? GroupDisplayName(player, b.SourceSkillId) : "",
-            // 0 when the buff has no ladder at all — "Frenzy Lv.1" on a one-level buff is noise, and
-            // deciding it HERE keeps the client from needing the parent def to answer the question.
-            SkillCatalog.Get(b.SkillId) is { MaxLevel: > 1 } ? b.Level : 0,
+            // 0 when the buff has no ladder at all — "Frenzy Lv.1" on a one-level buff is noise — and the CASTER's step,
+            // never the ladder rung (ClassSkills.ShownLevel): stamped at ApplyBuff, so nothing here needs the caster.
+            b.ShownLevel,
             b.Suppressed,
             // `BL-111` — off the SAME predicate the eviction uses, so the counter on his bar and the
             // rule that throws a buff away can never disagree.
@@ -21717,7 +21741,8 @@ public class GameLoopService : BackgroundService
                 //    would still be buying +23% at 70 — and every preset already in the database holds
                 //    the `npc_*` ids. See the note on `NpcBuffShelf`.
                 ApplyBuff(player, def, rung, refresh: false,
-                          durationOverride: SkillCatalog.NpcBuffTicks, sourceSkillId: cmd.SkillId);
+                          durationOverride: SkillCatalog.NpcBuffTicks, sourceSkillId: cmd.SkillId,
+                          displayName: NpcBuffLabel(cmd.SkillId), shownLevel: 0);
                 player.RecomputeDerived();
                 PushBuffs(player);
                 SendStats(player);
@@ -21849,7 +21874,8 @@ public class GameLoopService : BackgroundService
             //    blessing and not the rung it happened to buy today (see the `single` case above). On
             //    the admin route it is the def's own id, which is what it always was.
             if (!ApplyBuff(player, def, lvl, refresh: false, durationOverride: durationTicks,
-                           sourceSkillId: source, force: force && !oursAlready))
+                           sourceSkillId: source, force: force && !oursAlready,
+                           displayName: npcTiers ? NpcBuffLabel(id) : null, shownLevel: npcTiers ? 0 : -1))
                 continue;
             claimed.Add(key);
             foreach (var c in covered) claimed.Add(c);

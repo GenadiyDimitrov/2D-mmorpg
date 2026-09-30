@@ -377,6 +377,33 @@ public static class ClassSkills
         return next;
     }
 
+    /// <summary>The level a PLAYER is shown for owning <paramref name="rung"/> of a skill: their step on their OWN class
+    /// path, not the rung's position on the shared ladder (owner, 2026-09-30).
+    ///
+    /// <para>🔑 <b>A RUNG IS NOT A LEVEL.</b> `BL-314` made the passive ladders one union of every class's values,
+    /// sorted by value, so classes interleave on it: the archer's crit-damage rungs are 3/5/8/12…, the dagger's
+    /// 6/9/11/14…, and each saw "Lv.3" or "Lv.6" on his first learn. The buff ladders start above rung 1 (rung 1 is
+    /// the potion), so the cleric's first Agility read "Lv.2". The rung stays the engine's truth — it is the
+    /// buff RANK, it is what is persisted and what the numbers are read at — and only the label changes: the count
+    /// of this lineage's distinct rungs at or below the one owned. Every buffer climbs the cleric's rungs, so
+    /// "Agility Lv.3" is +4 Evasion whoever cast it.</para>
+    ///
+    /// <para>⚠ The LINEAGE, not <see cref="Cumulative"/>: that drops the base-class list at the class change, and a
+    /// ladder begun at the 1st class would restart at Lv.1 on the 2nd. Returns the raw rung when the lineage never
+    /// teaches this skill (an admin grant), so nothing ever reads Lv.0.</para></summary>
+    public static int ShownLevel(string skillId, int rung, Race race, BaseClass baseClass,
+        Archetype? archetype, Discipline? discipline = null, bool fourth = false)
+    {
+        if (rung <= 0) return rung;
+        var steps = new HashSet<int>();
+        IEnumerable<ClassSkill> lineage = Cumulative(race, baseClass, archetype, discipline, fourth);
+        if (archetype is not null) lineage = lineage.Concat(ForClass(race, baseClass, null));
+        foreach (var cs in lineage)
+            if (cs.SkillId == skillId && cs.SkillLevel <= rung)
+                steps.Add(cs.SkillLevel);
+        return steps.Count == 0 ? rung : steps.Count;
+    }
+
     /// <summary>The highest skill-level of a skill this class can ever learn (0 = none).</summary>
     public static int MaxClassLevelOf(string skillId, Race race, BaseClass baseClass,
         Archetype? archetype, Discipline? discipline = null, bool fourth = false)

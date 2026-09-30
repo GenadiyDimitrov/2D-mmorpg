@@ -17,6 +17,24 @@
 
 ---
 
+## §113 — 0.217.1: "Lv.N" is your own step, not the shared ladder's rung (2026-09-30)
+
+⚠ **New APK.** No `game.db` delete. Your find: Agility learned straight at "Lv.2", and crit-damage levels jumping 3-5-8.
+The engine still climbs the shared ladder (that is what lets one skill serve every class); the LABEL now counts your own
+class path's steps, from your 1st class on.
+
+- `113a` [ ] - **Cleric @30 learns Agility → "Agility Lv.1"** (+2 Evasion); Lightbringer/Warchanter @44 → Lv.2 (+3), @52
+  → Lv.3 (+4). The buff bar shows the same Lv on whoever you buff. ->
+- `113b` [ ] - **Rogue/archer Critical Damage Mastery** reads Lv.1, 2, 3 … with no gaps; a 3rd-class rung continues from
+  your 2nd-class count. The learn confirm's "Now → After" shows YOUR current numbers. ->
+- `113c` [ ] - **NPC buffer:** the bar reads **"NPC Might"**, "NPC Agility" … with no level. Potions/scrolls: no level. ->
+- `113d` [ ] - **Your question — rename shared passives per class?** Archer and dagger both show "Critical Damage Mastery
+  Lv.8" at 46, one +252, the other +282. My take: not a bug players will report (each sees only his own), but the face
+  file makes a per-class name free — a CLASS row in `skill_faces.csv`, no code. Worth it where the numbers split hard
+  (crit damage: +665 vs +1015 at 74), not for every ladder. Your names, if you want them. ->
+
+---
+
 ## §112 — 0.217.0: skill FACES — one skill, a look per race or class (`BL-327`, 2026-09-30)
 
 ⚠ **New APK** and a **`game.db` delete** (the three racial Might ids are gone — they are one skill now).

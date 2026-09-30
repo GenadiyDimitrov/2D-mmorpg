@@ -69,6 +69,11 @@ public class BuffInstance
     public string FaceId { get; init; } = "";
     public int FaceLevel { get; init; }
 
+    /// <summary>The level the bar PRINTS ("Agility Lv.2") — the caster's step on his own class path
+    /// (<see cref="ClassSkills.ShownLevel"/>), never the rung on the shared ladder. 0 = no level (the NPC shelf, a
+    /// consumable). Persisted with the buff so a relog keeps the caster's label.</summary>
+    public int ShownLevel { get; init; }
+
     /// <summary>The skill that actually CREATED this buff — the same as <see cref="SourceSkillId"/>
     /// except for a group buff's child, where the source is the parent. This is the one that can
     /// rebuild the buff, so it is what persistence saves: saving the parent instead would re-apply

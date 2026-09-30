@@ -155,13 +155,14 @@ namespace Game.Client
         private void ConfirmLearn(SkillDef def, int newLevel, int sp, long gold, string blockedReason = null)
         {
             _learnTitle.text = SkillNameAt(def, newLevel)
-                             + (def.MaxLevel > 1 && !def.HasLevelNames ? "   Lv." + newLevel : "");
+                             + (def.MaxLevel > 1 && !def.HasLevelNames ? "   Lv." + ShownLevel(def.Id, newLevel) : "");
 
             var t = new System.Text.StringBuilder();
             string desc = def.DescriptionAt(newLevel);
             if (!string.IsNullOrWhiteSpace(desc)) t.AppendLine(desc).AppendLine();
 
-            int cur = newLevel - 1;
+            // What you OWN, not `newLevel - 1`: a shared ladder skips rungs, and the one below is often another class's.
+            int cur = Boot.Learned.GetValueOrDefault(def.Id);
             if (cur >= 1)   // an upgrade — show the deltas
             {
                 LearnChange(t, "Power", def.PowerAt(cur), def.PowerAt(newLevel));
@@ -288,7 +289,7 @@ namespace Game.Client
                 // A rung that carries its OWN NAME says which step it is already ("Grade C"), so the
                 // "Lv.N" suffix would contradict it — see SkillDef.HasLevelNames.
                 int rung = Boot.Learned[def.Id];
-                string level = def.MaxLevel > 1 && !def.HasLevelNames ? "  Lv." + rung : "";
+                string level = def.MaxLevel > 1 && !def.HasLevelNames ? "  Lv." + ShownLevel(def.Id, rung) : "";
                 string token = def.Id;
 
                 // Two ways to be passive, and BOTH have to be checked: a PassiveEffect (Passive is a
@@ -325,6 +326,19 @@ namespace Game.Client
         /// locked out by an exclusive group, and the level-40 STAT SWAPS, which are bought on the
         /// Stats tab and read back on Known once owned.
         /// </summary>
+        /// <summary>The "Lv.N" printed for owning <paramref name="rung"/> of a skill: your step on your OWN class path, never
+        /// the rung on the shared ladder — an archer's first crit-damage rung is rung 3 of a ladder the dagger shares, and
+        /// read "Lv.3" (owner, 2026-09-30). See ClassSkills.ShownLevel; the server's ShownLevelOf is the same call.</summary>
+        private int ShownLevel(string skillId, int rung)
+        {
+            var active = Boot.ActiveClass;
+            if (active == null) return rung;
+            var archetype = active.SecondClass > 0 ? ClassCatalog.Get(active.SecondClass)?.Archetype : null;
+            var discipline = active.ThirdClass > 0 ? ThirdClassCatalog.Get(active.ThirdClass)?.Discipline : null;
+            return ClassSkills.ShownLevel(skillId, rung, active.Race, active.BaseClass, archetype, discipline,
+                                          active.FourthClass > 0);
+        }
+
         private void BuildLearnTab()
         {
             var active = Boot.ActiveClass;
@@ -395,7 +409,7 @@ namespace Game.Client
                     bool canLearn = levelMet && Boot.SkillPoints >= sp && (gold == 0 || Boot.Gold >= gold);
 
                     string levelTag = def.MaxLevel > 1 && !def.HasLevelNames
-                                    ? "  Lv." + cs.SkillLevel : "";
+                                    ? "  Lv." + ShownLevel(cs.SkillId, cs.SkillLevel) : "";
                     string learnName = SkillNameAt(def, cs.SkillLevel);
                     // 🔴🔑 BOTH PRICES, WHEN THERE ARE BOTH (§100, 2026-09-16: *"the SP requirement is
                     //    sometimes missing in the skills to learn list"*). This read

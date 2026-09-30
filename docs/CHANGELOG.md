@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.217.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.217.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,27 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-09-30 (latest) — 0.217.0: skill FACES — how a skill looks, apart from what it does (`BL-327`)
+## 2026-09-30 (latest) — 0.217.1: "Lv.N" is YOUR step, not the ladder's rung
+
+His find: *"when i learn a skill i learn it lvl 2 directly .. i learned agility and it automatically gave me lvl 2"*, and
+the fear behind it: *"will one learn lvls 3-5-10 the other 6-8-12?"* — yes, it would. `BL-314` made every shared passive
+one ladder holding every class's values sorted by value, so classes INTERLEAVE on it (Human archer's crit-damage rungs
+3/5/8/12…, the dagger's 6/9/11/14…), and the buff ladders start at rung 2 because rung 1 is the potion. The label printed
+the rung. ⚠ **New APK.** No `game.db` delete, no number changed.
+
+- **`ClassSkills.ShownLevel`** — the count of the character's LINEAGE's distinct rungs at or below the one held (base
+  class + 2nd + 3rd + 4th; `Cumulative` alone drops the base list at the class change, which would restart a ladder at
+  Lv.1). Measured: every crit-damage path reads Lv.1…35 straight; Agility is Lv.1/2/3 = +2/+3/+4 for the cleric, the
+  Lightbringer and the Warchanter alike; a fighter's weapon mastery at 20 continues at Lv.4 from his three 1st-class rungs.
+- The rung stays the engine's truth (buff rank, persistence, the numbers). Only the label moved: the Known/Learn tabs,
+  the learn confirm, the skill card, the learn messages, and the **buff bar**, where the label is stamped at landing from
+  the CASTER's path (`BuffInstance.ShownLevel`, persisted) — so "Agility Lv.3" is +4 on whoever wears it.
+- **NPC buffer blessings read "NPC Might"** with no level (his ruling). Potions and scrolls show no level (they are
+  one-rung singles and never did). A mob's buff or debuff keeps its rung — a creature has no class path.
+- Fixed on the way: the learn confirm's before→after compared against `newLevel − 1`, which on an interleaved ladder is
+  ANOTHER class's rung. It reads the rung you own now.
+
+## 2026-09-30 — 0.217.0: skill FACES — how a skill looks, apart from what it does (`BL-327`)
 
 His question: *"is it possible to tell a skill to use "this" shell for the visuals (name/description/icon/animation) but
 underneath to be "that" skill?"* — and his split once it was: *"the class csv is the numbers per lvl while the face is
