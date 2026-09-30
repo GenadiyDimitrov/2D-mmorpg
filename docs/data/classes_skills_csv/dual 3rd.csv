@@ -16,8 +16,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 72,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +67",0,876
 74,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +70",0,925
 ,,,,,,,,,,,,,,,,,----------------------------Evasion----------------------------
-46,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +13",0,36.2
-58,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +14",0,102
+46,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +13",0,36.2
+58,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +14",0,102
 ,,,,,,,,,,,,,,,,,----------------------------Critical Resist----------------------------
 40,Critical Resist,rogue_crit_resist,Passive,,light,0,0,self/single,0,0,0,"light: crit rate resist +25%",0,93
 60,Critical Resist,rogue_crit_resist,Passive,,light,0,0,self/single,0,0,0,"light: crit rate resist +35%",0,257

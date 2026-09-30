@@ -1,22 +1,22 @@
 LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPLACES,Race,Gold Cost,Comment,DESCRIPTION
 ,,,,,,,,,,,,,,,,----------------------------Magic Bolt----------------------------
-1,Magic Bolt,magic_bolt,magic active,,,600,0,enemy/single,4,1,0,magic dmg power 12 - spells fail rather than miss,9,0,[],,,,"Magic damage, power @."
+1,Magic Bolt,magic_bolt,magic active,,,600,0,enemy/single,4,1,0,magic dmg power 12 - spells fail rather than miss,9,0,[],,,,"Gather energy to damage the enemy with @ power."
 7,Magic Bolt,magic_bolt,magic active,,,600,0,enemy/single,4,1,0,magic dmg power 15,10,1140,[]
 14,Magic Bolt,magic_bolt,magic active,,,600,0,enemy/single,4,1,0,magic dmg power 21,15,3830,[]
 ,,,,,,,,,,,,,,,,----------------------------Spellcaster Mastery----------------------------
-1,Spellcaster Mastery,spellcaster_mastery,passive,,,0,0,self/single,0,0,0,"ARMOR - Robe: cast x1, mpReg x1.2; Light/Heavy/None: cast x0.5, as x0.5. WEAPON - Sword/Blunt: cast x1, mAtk x1; Bow/Dagger/None: cast x0.5, mAtk x0.5, mAcc x0.5. Auto-granted and NEVER replaced - every mage weapon/weight penalty lives here and nowhere else.",0,0,[weapon_proficiency],,,,"Passive. A ROBE is a caster's armor: +@{mpreg} MP regeneration. Light or heavy armor — or none — halves your casting and attack speed. Any sword or blunt weapon — wand, staff or mace alike — is a weapon you are trained with and costs you nothing; a bow, dual blades or bare hands halve your casting speed and magic attack, and make your spells 25x more likely to fizzle."
+1,Spellcaster Mastery,spellcaster_mastery,passive,,,0,0,self/single,0,0,0,"ARMOR - Robe: cast x1, mpReg x1.2; Light/Heavy/None: cast x0.5, as x0.5. WEAPON - Sword/Blunt: cast x1, mAtk x1; Bow/Dagger/None: cast x0.5, mAtk x0.5, mAcc x0.5. Auto-granted and NEVER replaced - every mage weapon/weight penalty lives here and nowhere else.",0,0,[weapon_proficiency],,,,"Increase MP Regeneration with @{mpreg} when wearing Robe armor; Decrease casting and attack speed when wearing Other type of armor; Additionally decrease casting speed and spells tend to fail when Other than Sword/Blunt weapon is equipped."
 ,,,,,,,,,,,,,,,,----------------------------Might----------------------------
 7,Might,cast_atk_phys,buff,,,600,0,party/single,1,1,1200,+8% PAttack,20,759,[],,,,+@{patk} P.Atk.
 ,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
-7,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +12,0,251,[],,,,m.def +@{mdef}
+7,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +12,0,251,[],,,,Magic Defense +@{mdef}
 14,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +16,0,843,[]
 ,,,,,,,,,,,,,,,,----------------------------Robe Armor Mastery----------------------------
-7,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,robe: p.def +7,0,251,[],,,,robe: p.def +@{pdef}
+7,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,robe: p.def +7,0,251,[],,,,Increase defense when wearing Robe armor with @{pdef}
 14,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,robe: p.def +9,0,843,[]
 ,,,,,,,,,,,,,,,,----------------------------Bulwark----------------------------
 14,Bulwark,cast_def_phys,buff,,,600,0,party/single,1,1,1200,+8% PDef for 20 min,20,2550,[],,,,+@{pdef} P.Def.
 ,,,,,,,,,,,,,,,,----------------------------Spellcaster Weapon Mastery----------------------------
-14,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,m.Atk +4,0,843,[],,,,m.Atk +@{matk}
+14,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,m.Atk +4,0,843,[],,,,"Increase Magical Attack with @{matk} when Sword/Blunt/Bow weapon is equipped"
 ,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
 14,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,sword/blunt/dual: p.Atk +2,0,843,[]
 ,,,,,,,,,,,,,,,,----------------------------Grade Permission----------------------------
@@ -34,7 +34,7 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 7,Demonic Blessing,demon_blessing,passive,,,0,0,self/single,0,0,0,"M.Crit.Rate and Cast Speed +5%; Hp regen +10%; Auto-granted",0,0,,Demon,,,"Demon blood runs hot: +@{magiccritrate} magic critical rate, +@{cast} cast speed and +@{hpreg} HP regeneration."
 7,Kings Blessing,human_blessing,passive,,,0,0,self/single,0,0,0,"M.Crit.Dmg, Natural Regeneration, Max MP +5%; Auto-granted",0,0,,Human,,,"A king's favour: +5% magic critical damage, +5% natural regeneration of both pools and +@{maxmp} Max MP."
 ,,,,,,,,,,,,,,,,----------------------------Over The Limit----------------------------
-14,Over the Limit,demon_over_limit,Magic/Buff,,,0,0,self/single,0,60,10,Increase P/M.Atk with 10%; P/M.Crit.Rate and Atk/Cast Speed +5%,14,480,,Demon,,,"+@{patk} P.Atk and M.Atk; +@{critrate} P/M crit rate, attack and cast speed for @{duration}."
+14,Over the Limit,demon_over_limit,Magic/Buff,,,0,0,self/single,0,60,10,Increase P/M.Atk with 10%; P/M.Crit.Rate and Atk/Cast Speed +5%,14,480,,Demon,,,"Adrenaline rush pushing you over your limits: +@{patk} P.Atk and M.Atk; +@{critrate} P/M crit rate, attack and cast speed for @{duration}."
 40,Over the Limit,demon_over_limit,Magic/Buff,,,0,0,self/single,0,60,10,Increase P/M.Atk with 12%; P/M.Crit.Rate and Atk/Cast Speed +6%;,62,36k,,Demon
 60,Over the Limit,demon_over_limit,Magic/Buff,,,0,0,self/single,0,60,10,Increase P/M.Atk with 15%; P/M.Crit.Rate and Atk/Cast Speed +8%;,76,120k,,Demon
 70,Over the Limit,demon_over_limit,Magic/Buff,,,0,0,self/single,0,60,10,Increase P/M.Atk with 20%; P/M.Crit.Rate and Atk/Cast Speed +10%;,114,390k,,Demon

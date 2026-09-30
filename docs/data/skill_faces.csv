@@ -1,23 +1,74 @@
 SKILL_ID,NAME,RACE,CLASS,DESCRIPTION,COMMENT
-holy_bolt,Holy Bolt,human,,"Magic damage, power @.",
-holy_bolt,Moonlight Bolt,elf,,"Magic damage, power @.",
-holy_bolt,Spirit Bolt,demon,,"Magic damage, power @.",
-cast_atk_phys,Blessing of Might,human,,A magical blessing that increases P.Atk by @{patk}.,
-cast_atk_phys,Forest Strength,elf,,By the help of the forest: +@{patk} P.Atk.,
-cast_atk_phys,Fire Strength,demon,,Signing a demonic contract: +@{patk} P.Atk.,
-cast_def_phys,Blessing of Bulwark,human,,A magical blessing that increases +@{pdef} P.Def.,"mage 1st, cleric 2nd, healer 3rd, buffer 3rd, buffs"
-cast_def_phys,Forest Bulwark,elf,,By the help of the forest: +@{pdef} P.Def.,"mage 1st, cleric 2nd, healer 3rd, buffer 3rd, buffs"
-cast_def_phys,Fire Defence,demon,,Signing a demonic contract: +@{pdef} P.Def.,"mage 1st, cleric 2nd, healer 3rd, buffer 3rd, buffs"
-bow_expertise,Bow Expertise,elf,harmonist,"Enchance your bow for @{as} faster atacks.","rogue 2nd, archer 3rd, buffer 3rd"
-cast_spd_move,Blessing of Swiftness,human,,A magical blessing that increases Move Speed by @{ms}.,"cleric 2nd, buffs"
-cast_spd_move,Wind Flow,elf,,Wind helps you move faster: +@{ms} Move Speed.,"cleric 2nd, buffs"
-cast_spd_move,Hell,demon,,+@{ms} Move Speed.,"cleric 2nd, buffs"
+,,,,,- Nukers -
+elemental_bolt,Arcane Missile,human,,"Shoots an Arcane missile to damage the enemy with @ power.",
+elemental_bolt,Water Bullet,elf,,"Shoots a Water bullet to damage the enemy with @ power.",
+elemental_bolt,Forbidden magic: Bolt,demon,,"Forbidden magic: BOLT! Damage the enemy with @ magic power.",
+elemental_blast,Arcane Blast,human,,"Shoots an Arcane blast to damage the enemy with @ power.",
+elemental_blast,Water Blast,elf,,"Shoots a Water blast to damage the enemy with @ power.",
+elemental_blast,Forbidden magic: Blast,demon,,"Forbidden magic: BLAST! Damage the enemy with @ magic power.",
+,,,,,- Healers -
+holy_bolt,Holy Bolt,human,,"Gather Holy energy to punish the enemy with @ power.",
+holy_bolt,Moonlight Bolt,elf,,"Gather Moonlight energy to damage the enemy with @ power.",
+holy_bolt,Spirit Bolt,demon,,"Gather Spirit energy to damage the enemy with @ power.",
+,,,,,- Buffers -
+bow_expertise,Bow Enhancement,elf,harmonist,"Enhance your bow for @{as} faster attacks.",
+,,,,,- Buffers/Healers -
+cast_atk_phys,Blessing: Strength,human,,A magical blessing that increases P.Atk by @{patk}.,
+cast_atk_phys,Forest Strength,elf,,With the help of the forest: +@{patk} P.Atk.,
+cast_atk_phys,Demonic Contract: Strength,demon,,Sign a demonic contract to increase P.Atk by @{patk}.,
+cast_def_phys,Blessing: Bulwark,human,,A magical blessing that increases P.Def by @{pdef}.,
+cast_def_phys,Forest Bulwark,elf,,With the help of the forest: +@{pdef} P.Def.,
+cast_def_phys,Demonic Contract: Bulwark,demon,,Sign a demonic contract to increase P.Def by @{pdef}.,
+cast_spd_move,Blessing: Swiftness,human,,A magical blessing that increases Move Speed by @{ms}.,
+cast_spd_move,Forest Swiftness,elf,,With the help of the forest: +@{ms} Move Speed.,
+cast_spd_move,Demonic Contract: Swiftness,demon,,Sign a demonic contract to increase Move Speed by @{ms}.,
+cast_spd_cast,Blessing: Alacrity,human,,A magical blessing that increases Cast Speed by @{cast}.,
+cast_spd_cast,Forest Alacrity,elf,,With the help of the forest: +@{cast} Cast Speed.,
+cast_spd_cast,Demonic Contract: Alacrity,demon,,Sign a demonic contract to increase Cast Speed by @{cast}.,
+cast_interrupt,Blessing: Resolve,human,,A magical blessing that increases interrupt resistance by @{interrupt}.,
+cast_interrupt,Forest Resolve,elf,,With the help of the forest: +@{interrupt} interrupt resistance.,
+cast_interrupt,Demonic Contract: Resolve,demon,,Sign a demonic contract to increase interrupt resistance by @{interrupt}.,
+cast_cc_res_mag,Blessing: Clarity,human,,A magical blessing that increases resistance to SPT attacks by @{ccresist}.,
+cast_cc_res_mag,Forest Clarity,elf,,With the help of the forest: +@{ccresist} resistance to SPT attacks.,
+cast_cc_res_mag,Demonic Contract: Clarity,demon,,Sign a demonic contract to increase resistance to SPT attacks by @{ccresist}.,
+cast_atk_mag,Blessing: Force,human,,A magical blessing that increases magical attack by @{matk}.,
+cast_atk_mag,Forest Force,elf,,With the help of the forest: +@{matk} magical attack.,
+cast_atk_mag,Demonic Contract: Force,demon,,Sign a demonic contract to increase magical attack by @{matk}.,
+cast_crit_rate,Blessing: Focus,human,,A magical blessing that increases physical critical rate by @{critrate}.,
+cast_crit_rate,Forest Focus,elf,,With the help of the forest: +@{critrate} physical critical rate.,
+cast_crit_rate,Demonic Contract: Focus,demon,,Sign a demonic contract to increase physical critical rate by @{critrate}.,
+cast_vamp,Blessing: Vampirism,human,,A magical blessing that lets the user restore @{vamp} of the normal basic attacks damage as HP.,
+cast_vamp,Forest Vampirism,elf,,With the help of the forest: @{vamp} of normal basic attacks damage is restored as HP.,
+cast_vamp,Demonic Contract: Vampirism,demon,,Sign a demonic contract to restore @{vamp} of the normal basic attacks damage as HP.,
+cast_spd_eva,Blessing: Agility,human,,A magical blessing that increases physical evasion rate by @{eva}.,
+cast_spd_eva,Forest Agility,elf,,With the help of the forest: +@{eva} physical evasion rate.,
+cast_spd_eva,Demonic Contract: Agility,demon,,Sign a demonic contract to increase physical evasion rate by @{eva}.,
+cast_accuracy,Blessing: Aim,human,,A magical blessing that increases physical hit rate by @{acc}.,
+cast_accuracy,Forest Aim,elf,,With the help of the forest: +@{acc} physical hit rate.,
+cast_accuracy,Demonic Contract: Aim,demon,,Sign a demonic contract to increase physical hit rate by @{acc}.,
+cast_hp_regen,Blessing: Vigor,human,,A magical blessing that increases natural HP Regeneration by @{hpreg}.,
+cast_hp_regen,Forest Vigor,elf,,With the help of the forest: +@{hpreg} natural HP Regeneration.,
+cast_hp_regen,Demonic Contract: Vigor,demon,,Sign a demonic contract to increase natural HP Regeneration by @{hpreg}.,
+cast_def_mag,Blessing: Ward,human,,A magical blessing that increases Magic Defense by @{mdef}.,
+cast_def_mag,Forest Ward,elf,,With the help of the forest: +@{mdef} Magic Defense.,
+cast_def_mag,Demonic Contract: Ward,demon,,Sign a demonic contract to increase Magic Defense by @{mdef}.,
+holy_frenzy,Blessing: Frenzy,human,,"A magical blessing that increases offence and speed by @{offencespeed}, Move Speed by @{ms}; But Decreases Max HP/MP by @{maxhp} and evasion by @{eva}.",
+holy_frenzy,Forest Frenzy,elf,,"With the help of the forest: +@{offencespeed} offence and speed, +@{ms} move; -@{maxhp} Max HP/MP, -@{eva} evasion.",
+holy_frenzy,Demonic Contract: Frenzy,demon,,"Sign a demonic contract to increase offence and speed by @{offencespeed}, Move Speed by @{ms}; But Decreases Max HP/MP by @{maxhp} and evasion by @{eva}.",
+,,,,,- Tank -
+,,,,,- Archer -
+,,,,,- Duals -
+,,,,,- Archer/Duals -
+,,,,,- Warrior -
+,,,,,- War_Aoe -
+,,,,,- Warrior/War_Aoe -
+,,,,,- Other -
 reuse_reset_momentum,Battle Momentum,,Sword Master,A skill you cast has a chance to come off reuse immediately. Scales with your ATK.,
 reuse_reset_momentum,Battle Momentum,,War Master,A skill you cast has a chance to come off reuse immediately. Scales with your ATK.,
 reuse_reset_momentum,Battle Momentum,,Sword Saint,A skill you cast has a chance to come off reuse immediately. Scales with your ATK.,
-reuse_reset_momentum,Battle Momentum,,War Storm,A skill you cast has a chance to come off reuse immediately. Scales with your ATK.,
-reuse_reset_momentum,Battle Momentum,,Berserker,A skill you cast has a chance to come off reuse immediately. Scales with your ATK.,
-reuse_reset_momentum,Battle Momentum,,Warbringer,A skill you cast has a chance to come off reuse immediately. Scales with your ATK.,
+reuse_reset_momentum,War Momentum,,War Storm,A skill you cast has a chance to come off reuse immediately. Scales with your ATK.,
+reuse_reset_momentum,War Momentum,,Berserker,A skill you cast has a chance to come off reuse immediately. Scales with your ATK.,
+reuse_reset_momentum,War Momentum,,Warbringer,A skill you cast has a chance to come off reuse immediately. Scales with your ATK.,
 reuse_reset_momentum,Bow Momentum,,Deadeye,A skill you cast has a chance to come off reuse immediately. Scales with your ATK.,
 reuse_reset_momentum,Bow Momentum,,Trapper,A skill you cast has a chance to come off reuse immediately. Scales with your ATK.,
 reuse_reset_momentum,Bow Momentum,,Soulhunter,A skill you cast has a chance to come off reuse immediately. Scales with your ATK.,
@@ -30,3 +81,6 @@ backlash,Physical Backlash,demon,,,
 holy_mark,NPC Holy Mark,,NPC,,spirit helper's label (the shelf sells the healer's own Mark)
 life_mark,NPC Life Mark,,NPC,,spirit helper's label (the shelf sells the healer's own Mark)
 blood_mark,NPC Blood Mark,,NPC,,spirit helper's label (the shelf sells the healer's own Mark)
+
+
+,,,,,- NOT DONE -

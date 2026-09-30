@@ -37,11 +37,11 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +98",0,0,100kk
 90,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +100",0,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Evasion----------------------------
-76,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +15",0,2.24kk,333k
-78,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +16",0,4.33kk,500k
-80,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +17",0,0,2.5kk
-82,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +18",0,0,3.3kk
-85,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +19",0,0,16.7kk
+76,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +13",0,2.24kk,333k
+78,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +14",0,4.33kk,500k
+80,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +15",0,0,2.5kk
+82,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +16",0,0,3.3kk
+85,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +17",0,0,16.7kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Swift----------------------------
 76,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +12;",0,2.24kk,333k
 79,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +13;",0,21.6kk,500k

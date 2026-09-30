@@ -32,9 +32,9 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +152",0,0,50kk
 90,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +155",0,0,50kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Evasion----------------------------
-76,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +10",0,2.15kk,250k
-80,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +11",0,0,1.3kk
-86,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +12",0,0,25kk
+76,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +10",0,2.15kk,250k
+80,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +11",0,0,1.3kk
+86,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +12",0,0,25kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Heavy Vitality----------------------------
 76,Heavy Vitality,heavy_vitality,Passive,,heavy,0,0,self/single,0,0,0,"heavy: max HP +200",0,2.15kk,250k
 80,Heavy Vitality,heavy_vitality,Passive,,heavy,0,0,self/single,0,0,0,"heavy: max HP +250",0,0,1.3kk

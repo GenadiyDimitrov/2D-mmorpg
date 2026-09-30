@@ -6,9 +6,9 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 32,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +22,0,22100,[]
 36,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +25,0,28700,[]
 ,,,,,,,,,,,,,,,,----------------------------Evasion----------------------------
-20,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +7,0,2180,[]
-24,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +9,0,5590,[]
-28,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +12,0,8910,[]
+20,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +7,0,2180,[]
+24,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +9,0,5590,[]
+28,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +12,0,8910,[]
 ,,,,,,,,,,,,,,,,----------------------------Critical Resist----------------------------
 20,Critical Resist,rogue_crit_resist,Passive,,light,0,0,self/single,0,0,0,light: crit rate resist +15%,0,6590,[],,light: crit rate resist +@{critrateres}
 ,,,,,,,,,,,,,,,,----------------------------HpRegen----------------------------

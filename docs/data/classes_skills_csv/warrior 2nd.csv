@@ -12,9 +12,9 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 32,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +28,0,12600,[]
 36,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,light: p.def +32,0,32700,[]
 ,,,,,,,,,,,,,,,,----------------------------Evasion----------------------------
-20,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +6,0,4410,[]
-24,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +8,0,4820,[]
-28,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +9,0,9750,[]
+20,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +6,0,4410,[]
+24,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +8,0,4820,[]
+28,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +9,0,9750,[]
 ,,,,,,,,,,,,,,,,----------------------------HpRegen----------------------------
 24,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,increase hpReg +1.1,0,4820,[],,hpReg +@{hpreg}
 32,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,increase hpReg +1.6,0,12600,[]

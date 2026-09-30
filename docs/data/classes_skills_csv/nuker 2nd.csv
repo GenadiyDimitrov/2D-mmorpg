@@ -8,7 +8,7 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 20,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,maxMP +20,0,2960,[]
 30,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,maxMP +30,0,12600,[]
 ,,,,,,,,,,,,,,,,----------------------------Mana Recovery----------------------------
-20,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,mpWhenRestored +10%,0,2960,[],,mpWhenRestored +@{restoremp}
+20,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,mpWhenRestored +10%,0,2960,[],,Increase MP Restore spells effect on you with @{restoremp}
 25,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,mpWhenRestored +15%,0,5210,[]
 30,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,mpWhenRestored +20%,0,12600,[]
 35,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,mpWhenRestored +25%,0,24500,[]
@@ -45,7 +45,7 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 30,Elemental Bolt,elemental_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +38,26,57100,[magic_bolt]
 35,Elemental Bolt,elemental_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +44,31,112000,[magic_bolt]
 ,,,,,,,,,,,,,,,,----------------------------Quick Bolt----------------------------
-20,Quick Bolt,quick_bolt,Magic/Dmg,,,150,0,enemy/single,1.5,1,0,m.Atk +21,20,13500,[],,"Magic damage, power @."
+20,Quick Bolt,quick_bolt,Magic/Dmg,,,150,0,enemy/single,1.5,1,0,m.Atk +21,20,13500,[],,"Quick magic damage spell with @ power."
 25,Quick Bolt,quick_bolt,Magic/Dmg,,,150,0,enemy/single,1.5,1,0,m.Atk +26,23,23700,[]
 30,Quick Bolt,quick_bolt,Magic/Dmg,,,150,0,enemy/single,1.5,1,0,m.Atk +30,26,57100,[]
 35,Quick Bolt,quick_bolt,Magic/Dmg,,,150,0,enemy/single,1.5,1,0,m.Atk +36,31,112000,[]

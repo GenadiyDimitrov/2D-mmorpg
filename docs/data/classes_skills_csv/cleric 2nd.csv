@@ -10,11 +10,11 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 30,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +30",0,5210,[]
 35,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +35",0,9980,[]
 ,,,,,,,,,,,,,,,,----------------------------Light Caster Mastery----------------------------
-20,Light Caster Mastery,clerics_light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"Light: mpReg x1.2, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)",0,1230,[],,"Light: mpReg +@{mpreg}, cast +@{cast}, as +@{as} (composes to cast x0.95 / as x1 after Spellcaster Mastery)"
+20,Light Caster Mastery,clerics_light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"Light: mpReg x1.2, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)",0,1230,[],,"Removes the penalty for wearing Light armor. (Cast speed restored to 95%)"
 ,,,,,,,,,,,,,,,,----------------------------Evasion----------------------------
-35,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +2",0,9980,[]
+35,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +2",0,9980,[]
 ,,,,,,,,,,,,,,,,----------------------------Mana Capacity----------------------------
-20,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,maxMP +20,0,1230,[],,maxMP +@{maxmp}
+20,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,maxMP +20,0,1230,[],,Increase maximum MP with @{maxmp}
 30,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,maxMP +30,0,5210,[]
 ,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
 20,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +20",0,1230,[]
@@ -22,7 +22,7 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 30,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +30",0,5210,[]
 35,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +36",0,9980,[]
 ,,,,,,,,,,,,,,,,----------------------------Magic Resistance----------------------------
-20,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +5%",0,1230,[],,mRes +@{mres}
+20,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +5%",0,1230,[],,Increase resistance to magic attacks with @{mres}
 30,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +10%",0,5210,[]
 ,,,,,,,,,,,,,,,,----------------------------Spellcaster Weapon Mastery----------------------------
 20,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +6",0,1230,[]
@@ -37,7 +37,7 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 ,,,,,,,,,,,,,,,,----------------------------Cooldown Mastery----------------------------
 20,Cooldown Mastery,cooldown_mastery,Passive,,,0,0,self/single,0,0,0,Decreses the reuse delay with 10%,0,1230,[],,Decreses the reuse delay with @{reuse}
 ,,,,,,,,,,,,,,,,----------------------------Cast Speed Mastery----------------------------
-25,Cast Speed Mastery,cast_speed_mastery,Passive,,,0,0,self/single,0,0,0,cast speed x1.05,0,2760,[],,cast speed +@{cast}
+25,Cast Speed Mastery,cast_speed_mastery,Passive,,,0,0,self/single,0,0,0,cast speed x1.05,0,2760,[],,Mastering spells increases your cast speed by @{cast}
 ,,,,,,,,,,,,,,,,----------------------------MpRegen----------------------------
 25,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,mpReg +1.1,0,2760,[]
 35,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,mpReg +1.5,0,9980,[]
@@ -49,17 +49,17 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 30,Holy Bolt,holy_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +30,26,23700,[]
 35,Holy Bolt,holy_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +36,31,45400,[]
 ,,,,,,,,,,,,,,,,----------------------------Heal----------------------------
-20,Heal,heal,Magic/Heal,,,600,0,target/single,5,3,0,heal with power 151,30,5570,[],,Heal power @.
+20,Heal,heal,Magic/Heal,,,600,0,target/single,5,3,0,heal with power 151,30,5570,[],,Heal friendly target with @ power.
 25,Heal,heal,Magic/Heal,,,600,0,target/single,5,3,0,heal with power 195,38,12500,[]
 30,Heal,heal,Magic/Heal,,,600,0,target/single,5,3,0,heal with power 245,44,23700,[]
 35,Heal,heal,Magic/Heal,,,600,0,target/single,5,3,0,heal with power 301,52,45400,[]
 ,,,,,,,,,,,,,,,,----------------------------Quick Heal----------------------------
-20,Quick Heal,quick_heal,Magic/Heal,,,600,0,target/single,2,1,0,heal with power 151,45,5570,[],,Quick heal power @.
+20,Quick Heal,quick_heal,Magic/Heal,,,600,0,target/single,2,1,0,heal with power 151,45,5570,[],,Quick Heal friendly target with @ power.
 25,Quick Heal,quick_heal,Magic/Heal,,,600,0,target/single,2,1,0,heal with power 195,57,12500,[]
 30,Quick Heal,quick_heal,Magic/Heal,,,600,0,target/single,2,1,0,heal with power 245,65,23700,[]
 35,Quick Heal,quick_heal,Magic/Heal,,,600,0,target/single,2,1,0,heal with power 301,67,45400,[]
 ,,,,,,,,,,,,,,,,----------------------------Party Heal----------------------------
-20,Party Heal,party_heal,Magic/Heal,,,0,1000,party/aoe,7,6,0,heal party with power 121,60,5570,[],,Party heal power @.
+20,Party Heal,party_heal,Magic/Heal,,,0,1000,party/aoe,7,6,0,heal party with power 121,60,5570,[],,Heal the Party with @ power.
 25,Party Heal,party_heal,Magic/Heal,,,0,1000,party/aoe,7,6,0,heal party with power 156,76,12500,[]
 30,Party Heal,party_heal,Magic/Heal,,,0,1000,party/aoe,7,6,0,heal party with power 196,94,23700,[]
 35,Party Heal,party_heal,Magic/Heal,,,0,1000,party/aoe,7,6,0,heal party with power 241,96,45400,[]
@@ -102,4 +102,4 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 ,,,,,,,,,,,,,,,,----------------------------Ward----------------------------
 35,Ward,cast_def_mag,Magic/Buff,,,600,0,party/single,1,1,1200,+10% M.Def.,40,30300,[],,+@{mdef} M.Def.
 ,,,,,,,,,,,,,,,,----------------------------Frenzy----------------------------
-35,Frenzy,holy_frenzy,Magic/Buff,,,600,0,party/single,1,1,1200,"−7% Max HP/MP, +5% offence and speed, +5 move, −5 evasion.",40,30300,[],,"-@{maxhp} Max HP/MP, +@{offencespeed} offence and speed, +@{ms} move, -@{eva} evasion."
+35,Frenzy,holy_frenzy,Magic/Buff,,,600,0,party/single,1,1,1200,"-7% Max HP/MP, +5% offence and speed, +5 move, -5 evasion.",40,30300,[],,"-@{maxhp} Max HP/MP, +@{offencespeed} offence and speed, +@{ms} move, -@{eva} evasion."

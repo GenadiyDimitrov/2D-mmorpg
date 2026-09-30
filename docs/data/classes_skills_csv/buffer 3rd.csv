@@ -160,7 +160,7 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 ,,,,,,,,,,,,,,,,,-----------------------Critical Damage Resist-----------------------
 40,Critical Damage Resist,tank_crit_resist,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: crit dmg reduction 15%;",0,21.6k,[],Human;Demon,
 ,,,,,,,,,,,,,,,,,-----------------------Evasion-----------------------
-40,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +6",0,21.6k,[],Elf,
+40,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +6",0,21.6k,[],Elf,
 ,,,,,,,,,,,,,,,,,-----------------------Critical Resist-----------------------
 40,Critical Resist,rogue_crit_resist,Passive,,light,0,0,self/single,0,0,0,"light: crit rate resist +15%",0,65.3k,[],Elf,
 ,,,,,,,,,,,,,,,,,-----------------------Harmonist Bow Proficiency-----------------------
