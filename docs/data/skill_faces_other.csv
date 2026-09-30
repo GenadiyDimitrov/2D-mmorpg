@@ -1,0 +1,413 @@
+SKILL_ID,NAME,DESCRIPTION,COMMENT
+swap_atk_con,Power (Vigour),,| EMPTY = the game's per-level text; top rung reads: Passive. +5 ATK; -5 CON. (5 of your 9 stat rungs.)
+swap_atk_dex,Power (Agility),,| EMPTY = the game's per-level text; top rung reads: Passive. +5 ATK; -5 AGI. (5 of your 9 stat rungs.)
+swap_atk_men,Power (Spirit),,| EMPTY = the game's per-level text; top rung reads: Passive. +5 ATK; -5 SPT (Max MP; M.Def; MP regen). (5 of your 9 stat rungs.)
+swap_atk_wit,Power (Insight),,| EMPTY = the game's per-level text; top rung reads: Passive. +5 ATK; -5 WIT. (5 of your 9 stat rungs.)
+swap_con_atk,Fortitude (Power),,| EMPTY = the game's per-level text; top rung reads: Passive. +5 CON; -5 ATK. (5 of your 9 stat rungs.)
+swap_con_dex,Fortitude (Agility),,| EMPTY = the game's per-level text; top rung reads: Passive. +5 CON; -5 AGI. (5 of your 9 stat rungs.)
+swap_dex_atk,Agility (Power),,| EMPTY = the game's per-level text; top rung reads: Passive. +5 AGI; -5 ATK. (5 of your 9 stat rungs.)
+swap_dex_con,Agility (Vigour),,| EMPTY = the game's per-level text; top rung reads: Passive. +5 AGI; -5 CON. (5 of your 9 stat rungs.)
+swap_men_atk,Spirit (Power),,| EMPTY = the game's per-level text; top rung reads: Passive. +5 SPT (Max MP; M.Def; MP regen); -5 ATK. (5 of your 9 stat rungs.)
+swap_men_wit,Spirit (Insight),,| EMPTY = the game's per-level text; top rung reads: Passive. +5 SPT (Max MP; M.Def; MP regen); -5 WIT. (5 of your 9 stat rungs.)
+swap_wit_atk,Insight (Power),,| EMPTY = the game's per-level text; top rung reads: Passive. +5 WIT; -5 ATK. (5 of your 9 stat rungs.)
+swap_wit_men,Insight (Spirit),,| EMPTY = the game's per-level text; top rung reads: Passive. +5 WIT; -5 SPT (Max MP; M.Def; MP regen). (5 of your 9 stat rungs.)
+aegis,Aegis,Raises a shield that absorbs 8% of your max HP for @{duration} before HP is hit.,| typed numbers kept: 8%
+angels_protection,Angel's Protection,Blesses an ally (or yourself) so their other buffs SURVIVE their next death (only this blessing is consumed). Costs @{reagent} Skill Stones. Lasts @{duration} or until they die.,
+arcane_lance,Arcane Lance,A heavy single-target nuke (replaces Magic Bolt / Holy Strike).,
+arcane_protection_ward,Arcane Protection,M.Def +@{mdef}.,
+archer_arrow_barrage_arrow,Arrow Barrage,"One arrow of a barrage: power 2,000 where it lands, and 150 around it.",| typed numbers kept: 2 000 150
+archer_bow_expertise,Bow Expertise,"Steadies your aim: +@{as} attack speed while wielding a bow, for @{duration}.",
+archer_bow_mastery,Archer Bow Mastery,"Bow: +@{patk} P.Atk, +@{bowrange} range.",
+archer_ferocity_poison_1,Poisoned,"Poison (tier 5) for @{duration}, and 15% slower to act.",| typed numbers kept: 5 15%
+archer_ferocity_poison_2,Poisoned,"Poison (tier 7) for @{duration}, and 15% slower to act.",| typed numbers kept: 7 15%
+archer_ferocity_poison_3,Poisoned,"Poison (tier 9) for @{duration}, and 15% slower to act.",| typed numbers kept: 9 15%
+archer_focus_bleed_1,Bleeding,"A bleeding wound (tier 5) for @{duration}, and 15% slower.",| typed numbers kept: 5 15%
+archer_focus_bleed_2,Bleeding,"A bleeding wound (tier 7) for @{duration}, and 15% slower.",| typed numbers kept: 7 15%
+archer_focus_bleed_3,Bleeding,"A bleeding wound (tier 9) for @{duration}, and 15% slower.",| typed numbers kept: 9 15%
+archer_swiftness_mend_1,Bow Swiftness,Mends 400 of your own wounds.,| typed numbers kept: 400
+archer_swiftness_mend_2,Bow Swiftness,Mends 450 of your own wounds.,| typed numbers kept: 450
+archer_swiftness_mend_3,Bow Swiftness,Mends 500 of your own wounds.,| typed numbers kept: 500
+archer_twin_arrows_arrow,Twin Arrows,One arrow of a twin volley.,
+battle_fury,Battle Fury,+20% Attack and +15% Move Speed for @{duration}.,| typed numbers kept: 20% 15%
+blessing_of_light,Blessing of Light,Party: +@{maxhp} max HP and +15% defence.,| typed numbers kept: 15%
+boss_judgment,Boss's Judgment,"Petrified by a raid boss you had no business touching. You cannot act, and nothing can damage or heal you. Nothing removes this.",
+boss_judgment_mark,Boss's Judgment,A raid boss remembers you. Interfere again before this fades and the next petrifaction is far longer. Nothing removes this.,
+bow_damage_mastery_buff,Damage Mastery,+10% final physical and magical damage for @{duration}.,| typed numbers kept: 10%
+bow_management_mastery_buff,Spirit Mastery,"-20% MP on every skill, -20% cast time on every skill (physical ones included) and +@{critdmg} critical damage for @{duration}.",| typed numbers kept: 20%
+bow_swift_mastery_buff,Swift Mastery,+@{cast} attack and cast speed for @{duration}.,
+buff_accuracy_1,Aim,+@{acc} Accuracy.,
+buff_accuracy_2,Aim,+@{acc} Accuracy.,
+buff_accuracy_3,Aim,+@{acc} Accuracy.,
+buff_accuracy_4,Aim,+@{acc} Accuracy.,
+buff_agility_3,Agility,+@{eva} Evasion.,
+buff_agility_c,Agility,+@{eva} Evasion.,
+buff_agility_r,Agility,+@{eva} Evasion.,
+buff_agility_u,Agility,+@{eva} Evasion.,
+buff_alacrity_c,Alacrity,+@{cast} Cast Speed.,
+buff_alacrity_r,Alacrity,+@{cast} Cast Speed.,
+buff_alacrity_u,Alacrity,+@{cast} Cast Speed.,
+buff_atk_mag_1,Force,+@{matk} M.Atk.,
+buff_atk_mag_2,Force,+@{matk} M.Atk.,
+buff_atk_mag_3,Force,+@{matk} M.Atk.,
+buff_atk_mag_4,Force,+@{matk} M.Atk.,
+buff_atk_phys_1,Might,+@{patk} P.Atk.,
+buff_atk_phys_2,Might,+@{patk} P.Atk.,
+buff_atk_phys_3,Might,+@{patk} P.Atk.,
+buff_cc_res_mag_1,Clarity,+11% resistance to magical (SPT) debuffs.,| typed numbers kept: 11%
+buff_cc_res_mag_2,Clarity,+14% resistance to magical (SPT) debuffs.,| typed numbers kept: 14%
+buff_cc_res_mag_3,Clarity,+17% resistance to magical (SPT) debuffs.,| typed numbers kept: 17%
+buff_cc_res_mag_4,Clarity,+20% resistance to magical (SPT) debuffs.,| typed numbers kept: 20%
+buff_cc_res_phys_1,Fortitude,+15% resistance to physical (CON) debuffs.,| typed numbers kept: 15%
+buff_cc_res_phys_10,Fortitude,+33% resistance to physical (CON) debuffs.,| typed numbers kept: 33%
+buff_cc_res_phys_11,Fortitude,+34% resistance to physical (CON) debuffs.,| typed numbers kept: 34%
+buff_cc_res_phys_12,Fortitude,+35% resistance to physical (CON) debuffs.,| typed numbers kept: 35%
+buff_cc_res_phys_2,Fortitude,+17% resistance to physical (CON) debuffs.,| typed numbers kept: 17%
+buff_cc_res_phys_3,Fortitude,+19% resistance to physical (CON) debuffs.,| typed numbers kept: 19%
+buff_cc_res_phys_4,Fortitude,+21% resistance to physical (CON) debuffs.,| typed numbers kept: 21%
+buff_cc_res_phys_5,Fortitude,+23% resistance to physical (CON) debuffs.,| typed numbers kept: 23%
+buff_cc_res_phys_6,Fortitude,+25% resistance to physical (CON) debuffs.,| typed numbers kept: 25%
+buff_cc_res_phys_7,Fortitude,+27% resistance to physical (CON) debuffs.,| typed numbers kept: 27%
+buff_cc_res_phys_8,Fortitude,+29% resistance to physical (CON) debuffs.,| typed numbers kept: 29%
+buff_cc_res_phys_9,Fortitude,+31% resistance to physical (CON) debuffs.,| typed numbers kept: 31%
+buff_crit_dmg_1,Ferocity,+@{critdmg} critical damage.,
+buff_crit_dmg_2,Ferocity,+@{critdmg} critical damage.,
+buff_crit_dmg_3,Ferocity,+@{critdmg} critical damage.,
+buff_crit_dmg_4,Ferocity,+@{critdmg} critical damage.,
+buff_crit_dmg_5,Ferocity,+@{critdmg} critical damage.,
+buff_crit_dmg_6,Ferocity,+@{critdmg} critical damage.,
+buff_crit_rate_1,Focus,+@{critrate} critical rate.,
+buff_crit_rate_2,Focus,+@{critrate} critical rate.,
+buff_crit_rate_3,Focus,+@{critrate} critical rate.,
+buff_crit_rate_4,Focus,+@{critrate} critical rate.,
+buff_crit_rate_5,Focus,+@{critrate} critical rate.,
+buff_crit_rate_6,Focus,+@{critrate} critical rate.,
+buff_dash_c,Dash,+@{ms} Move Speed.,
+buff_dash_e,Dash,+@{ms} Move Speed.,
+buff_dash_l,Dash,+@{ms} Move Speed.,
+buff_dash_m,Dash,+@{ms} Move Speed.,
+buff_dash_r,Dash,+@{ms} Move Speed.,
+buff_dash_u,Dash,+@{ms} Move Speed.,
+buff_def_mag_1,Ward,+@{mdef} M.Def.,
+buff_def_mag_2,Ward,+@{mdef} M.Def.,
+buff_def_mag_3,Ward,+@{mdef} M.Def.,
+buff_def_mag_4,Ward,+@{mdef} M.Def.,
+buff_def_phys_1,Bulwark,+@{pdef} P.Def.,
+buff_def_phys_2,Bulwark,+@{pdef} P.Def.,
+buff_def_phys_3,Bulwark,+@{pdef} P.Def.,
+buff_frenzy_1,Frenzy,"-@{maxhp} Max HP/MP, +@{patk} P.Atk / M.Atk / attack & cast speed, +@{ms} Move Speed, -@{eva} Evasion.",
+buff_frenzy_2,Frenzy,"-@{maxhp} Max HP/MP, +@{patk} P.Atk / M.Atk / attack & cast speed, +@{ms} Move Speed, -@{eva} Evasion.",
+buff_haste_c,Fury,+@{as} Attack Speed.,
+buff_haste_r,Fury,+@{as} Attack Speed.,
+buff_haste_u,Fury,+@{as} Attack Speed.,
+buff_hp_max_1,Body,+@{maxhp} Max HP.,
+buff_hp_max_2,Body,+@{maxhp} Max HP.,
+buff_hp_max_3,Body,+@{maxhp} Max HP.,
+buff_hp_max_4,Body,+@{maxhp} Max HP.,
+buff_hp_max_5,Body,+@{maxhp} Max HP.,
+buff_hp_max_6,Body,+@{maxhp} Max HP.,
+buff_hp_regen_1,Vigor,+@{hpreg} HP regeneration.,
+buff_hp_regen_2,Vigor,+@{hpreg} HP regeneration.,
+buff_hp_regen_3,Vigor,+@{hpreg} HP regeneration.,
+buff_hp_regen_4,Vigor,+@{hpreg} HP regeneration.,
+buff_hp_regen_5,Vigor,+@{hpreg} HP regeneration.,
+buff_hp_regen_6,Vigor,+@{hpreg} HP regeneration.,
+buff_interrupt_1,Resolve,+@{interrupt} interrupt resistance.,
+buff_interrupt_2,Resolve,+@{interrupt} interrupt resistance.,
+buff_interrupt_3,Resolve,+@{interrupt} interrupt resistance.,
+buff_interrupt_4,Resolve,+@{interrupt} interrupt resistance.,
+buff_interrupt_5,Resolve,+@{interrupt} interrupt resistance.,
+buff_interrupt_6,Resolve,+@{interrupt} interrupt resistance.,
+buff_interrupt_7,Resolve,+@{interrupt} interrupt resistance.,
+buff_mana_blessing_3,Mana Blessing,-20% physical and -@{mpcost} magic skill MP cost.,| typed numbers kept: 20%
+buff_mcrit_rate_1,Insight,+@{magiccritrate} magic critical rate.,
+buff_mcrit_rate_2,Insight,+@{magiccritrate} magic critical rate.,
+buff_mcrit_rate_3,Insight,+@{magiccritrate} magic critical rate.,
+buff_mcrit_rate_4,Insight,+@{magiccritrate} magic critical rate.,
+buff_mcrit_rate_5,Insight,+@{magiccritrate} magic critical rate.,
+buff_mcrit_rate_6,Insight,+@{magiccritrate} magic critical rate.,
+buff_mp_max_1,Soul,+@{maxmp} Max MP.,
+buff_mp_max_2,Soul,+@{maxmp} Max MP.,
+buff_mp_max_3,Soul,+@{maxmp} Max MP.,
+buff_mp_max_4,Soul,+@{maxmp} Max MP.,
+buff_mp_max_5,Soul,+@{maxmp} Max MP.,
+buff_mp_max_6,Soul,+@{maxmp} Max MP.,
+buff_mp_regen_1,Serenity,+@{mpreg} MP regeneration.,
+buff_mp_regen_2,Serenity,+@{mpreg} MP regeneration.,
+buff_mp_regen_3,Serenity,+@{mpreg} MP regeneration.,
+buff_mp_regen_4,Serenity,+@{mpreg} MP regeneration.,
+buff_mp_regen_5,Serenity,+@{mpreg} MP regeneration.,
+buff_mp_regen_6,Serenity,+@{mpreg} MP regeneration.,
+buff_shield_block_1,Shield Blessing,+@{blockrate} block chance.,
+buff_shield_block_2,Shield Blessing,+@{blockrate} block chance.,
+buff_shield_block_3,Shield Blessing,+@{blockrate} block chance.,
+buff_shield_block_4,Shield Blessing,+@{blockrate} block chance.,
+buff_shield_block_5,Shield Blessing,+@{blockrate} block chance.,
+buff_shield_block_6,Shield Blessing,+@{blockrate} block chance.,
+buff_shield_def_1,Shield Hardening,+15% shield block reduction.,| typed numbers kept: 15%
+buff_shield_def_2,Shield Hardening,+20% shield block reduction.,| typed numbers kept: 20%
+buff_shield_def_3,Shield Hardening,+25% shield block reduction.,| typed numbers kept: 25%
+buff_sprint_1,Sprint,+@{ms} Move Speed.,
+buff_sprint_2,Sprint,+@{ms} Move Speed.,
+buff_swift_c,Swift,+@{ms} Move Speed.,
+buff_swift_r,Swift,+@{ms} Move Speed.,
+buff_swift_u,Swift,+@{ms} Move Speed.,
+buff_vamp_1,Vampirism,+@{vamp} melee vampirism.,
+buff_vamp_2,Vampirism,+@{vamp} melee vampirism.,
+buff_vamp_3,Vampirism,+@{vamp} melee vampirism.,
+buff_vamp_4,Vampirism,+@{vamp} melee vampirism.,
+buff_vamp_5,Vampirism,+@{vamp} melee vampirism.,
+cleaving_strike,Cleaving Strike,A heavy slash (power @) that can strike for DOUBLE damage [Double].,
+combat_stance,Combat Stance,Toggle. Channel your magic into melee: +@{patk} P.Atk but -@{matk} M.Atk (weaker heals and spells). Click again to end.,
+creeping_frost,Creeping Frost,"A deepening chill — slows 10%/20%/30% on stacks 1-3, then FREEZES (stuns) on the 4th. Each landing cast adds a stack; ATK-vs-WIT contest.",| typed numbers kept: 10% 20% 30% 1 3 4
+dawn_verse,Dawn Verse,Party: an instant heal plus 2% max HP per second for @{duration}.,| typed numbers kept: 2%
+deflection,Deflection,Passive. 15/30% chance to reflect a physical skill's full damage back at its caster.,| typed numbers kept: 15 30%
+detonate_wounds,Detonate Wounds,"Detonates the target's bleed stacks for damage x(stacks) [Double], consuming the stacks (the bleed itself remains).",
+devastating_slam,Devastating Slam,A boss's ground slam — heavy damage and a brief stun to all nearby foes.,
+devotion,Devotion,"Passive. +@{maxmp} max MP, +MP regen, +@{mdef} magic defence.",
+disrupt,Disrupt,Instant strike that never misses and always interrupts an enemy's cast.,
+dual_mastery_rush,Dual Mastery,Your blades find the rhythm: for @{duration} your physical skills cost 60% less MP and your critical hits land 10% harder.,| typed numbers kept: 60% 10%
+entangling_roots,Entangling Roots,"Snares the target in place for @{duration} (cannot move, can still act). ATK-vs-WIT contest; bosses immune.",
+envenom,Envenom,Envenoms the target — a physical DoT that also lowers its attack & defence 15%. Lands on AGI-vs-CON; builds stacks for Venom Burst.,| typed numbers kept: 15%
+evade_mastery,Evasion Mastery,Passive. Dodge floor 10/20/30%.,| typed numbers kept: 10 20 30%
+flame_bolt,Flamebolt,A searing bolt — the nuker's stronger basic attack (replaces Magic Bolt).,
+fortify,Fortify,Tank stance: +50% Defence for @{duration}.,| typed numbers kept: 50%
+frost_bind,Frost Bind,Magic slow — cuts the target's move speed by 50% for @{duration}. Lands on an ATK-vs-WIT contest (bosses are immune).,| typed numbers kept: 50%
+glacial_spike,Glacial Spike,A shard of ice (power @) that strikes for +50% damage if the target is slowed or rooted.,| typed numbers kept: 50%
+grand_anthem,Grand Anthem,"Party: +@{maxhp} max HP/MP, +@{mdef} magic def & cast/attack speed, +15% atk/def, +move & regen.",| typed numbers kept: 15%
+greater_war_cry,Greater War Cry,Battle shout: +30% Attack Power for @{duration}.,| typed numbers kept: 30%
+greater_weakness,Greater Weakness,A deeper curse: -45% Defence for @{duration} (never fizzles).,| typed numbers kept: 45%
+hamstring,Hamstring,A crippling cut — -60% move speed for @{duration}. Lands on an ATK-vs-CON contest.,| typed numbers kept: 60%
+harmony,Harmony,"Passive. +@{maxmp} max MP, +MP regen, +@{cast} cast speed.",
+holy_body,Body and Soul,"+@{mpreg} HP and MP regeneration, +@{maxhp} Max HP and Max MP.",
+holy_focus,Focus and Ferocity,"+@{critrate} critical rate, +@{critdmg} critical damage, double magic critical rate.",
+holy_force,Force and Ward,"+@{interrupt} interrupt resistance, +@{matk} M.Atk, +@{mdef} M.Def.",
+holy_speed,Swift and Sure,"Move +@{ms}, Cast +@{cast}, Evasion +@{eva}, Attack Speed +@{as}.",
+indomitable,Indomitable,For @{duration} your buffs have an 80% chance to resist being cancelled/dispelled.,| typed numbers kept: 80%
+killing_focus,Killing Focus,"+@{critdmg} critical damage, and +700 attack inside a critical hit.",| typed numbers kept: 700
+last_stand,Last Stand,"For @{duration}, the next blow that would kill you instead leaves you at 50% HP.",| typed numbers kept: 50%
+magic_proficiency_surge,Magic Proficiency,"M.Atk +@{matk}, casting speed +@{cast}, magic critical rate +5%, magic critical damage +10% and MP cost -@{mpcost}.",| typed numbers kept: 5% 10%
+might,Might and Bulwark,"+@{patk} P.Atk, +@{pdef} P.Def, @{vamp} melee vampirism, +@{acc} Accuracy.",
+mighty_blow,Mighty Blow,A devastating two-hand strike for heavy damage — never misses (ignores evasion). The warrior's answer to dodgy targets.,
+mob_bolt,Arcane Jab,A caster mob's short-range magic jab.,
+mob_nuke,Arcane Blast,A caster mob's long-range nuke.,
+novice_grace,Novice's Grace,Passive. Below level 40 you lose NO experience when you die. This grace fades once you reach that level.,| typed numbers kept: 40
+npc_accuracy,NPC Aim,"+@{acc} Accuracy (buffer's blessing, @{duration}).",
+npc_agility,NPC Agility,"+@{eva} Evasion (buffer's blessing, @{duration}).",
+npc_alacrity,NPC Alacrity,"+@{cast} Cast Speed (buffer's blessing, @{duration}).",
+npc_body,NPC Body,"+@{maxhp} Max HP (buffer's blessing, @{duration}).",
+npc_body_group,Body and Soul,"+@{maxhp} Max HP & MP, +@{mpreg} HP & MP regeneration (buffer's blessing, @{duration}).",
+npc_bulwark,NPC Bulwark,"+@{pdef} P.Def (buffer's blessing, @{duration}).",
+npc_ferocity,NPC Ferocity,"+@{critdmg} critical damage (buffer's blessing, @{duration}).",
+npc_focus,NPC Focus,"+@{critrate} critical rate (buffer's blessing, @{duration}).",
+npc_focus_group,Focus and Ferocity,"+@{critrate} critical rate, +@{critdmg} critical damage, double magic critical rate (buffer's blessing, @{duration}).",
+npc_force,NPC Force,"+@{matk} M.Atk (buffer's blessing, @{duration}).",
+npc_force_group,Force and Ward,"+@{matk} M.Atk, +@{mdef} M.Def, +@{interrupt} interrupt resistance (buffer's blessing, @{duration}).",
+npc_frenzy,NPC Frenzy,"-@{maxhp} Max HP/MP but +8% offence and speed, +@{ms} move, -@{eva} evasion (buffer's blessing, @{duration}).",| typed numbers kept: 8%
+npc_haste,NPC Fury,"+@{as} Attack Speed (buffer's blessing, @{duration}).",
+npc_insight,NPC Insight,"double magic critical rate (buffer's blessing, @{duration}).",
+npc_might,NPC Might,"+@{patk} P.Atk (buffer's blessing, @{duration}).",
+npc_might_group,Might and Bulwark,"+@{patk} P.Atk & P.Def, @{vamp} melee vampirism, +@{acc} accuracy (buffer's blessing, @{duration}).",
+npc_resolve,NPC Resolve,"+@{interrupt} interrupt resistance (buffer's blessing, @{duration}).",
+npc_serenity,NPC Serenity,"+@{mpreg} MP regeneration (buffer's blessing, @{duration}).",
+npc_soul,NPC Soul,"+@{maxmp} Max MP (buffer's blessing, @{duration}).",
+npc_speed,Swift and Sure,"+@{as} attack speed, +@{cast} cast speed, +@{ms} move, +@{eva} evasion (buffer's blessing, @{duration}).",
+npc_swift,NPC Swift,"+@{ms} Move Speed (buffer's blessing, @{duration}).",
+npc_vampirism,NPC Vampirism,"@{vamp} melee vampirism (buffer's blessing, @{duration}).",
+npc_vigor,NPC Vigor,"+@{hpreg} HP regeneration (buffer's blessing, @{duration}).",
+npc_ward,NPC Ward,"+@{mdef} M.Def (buffer's blessing, @{duration}).",
+nuker_empower_demon_curse_1,Sapped,-@{as} attack speed and cast speed for @{duration}.,
+nuker_empower_demon_curse_2,Sapped,-@{as} attack speed and cast speed for @{duration}.,
+nuker_empower_demon_curse_3,Sapped,-@{as} attack speed and cast speed for @{duration}.,
+nuker_empower_elf_curse_1,Chilled,-30% move speed and -@{mdef} M.Def for @{duration}.,| typed numbers kept: 30%
+nuker_empower_elf_curse_2,Chilled,-30% move speed and -@{mdef} M.Def for @{duration}.,| typed numbers kept: 30%
+nuker_empower_elf_curse_3,Chilled,-30% move speed and -@{mdef} M.Def for @{duration}.,| typed numbers kept: 30%
+nuker_empower_human_hit_1,Arcane Recoil,"Arcane backlash, power @.",
+nuker_empower_human_hit_2,Arcane Recoil,"Arcane backlash, power @.",
+nuker_empower_human_hit_3,Arcane Recoil,"Arcane backlash, power @.",
+physical_proficiency_surge,Physical Proficiency,Critical rate +@{critrate} and physical skill damage +20%.,| typed numbers kept: 20%
+pot_acc_c,Aim Potion (Lesser),+@{acc} Accuracy for @{duration}.,
+pot_acc_r,Aim Potion (Greater),+@{acc} Accuracy for @{duration}.,
+pot_acc_u,Aim Potion,+@{acc} Accuracy for @{duration}.,
+pot_agility_c,Agility Potion (Lesser),+@{eva} Evasion for @{duration}.,
+pot_agility_r,Agility Potion (Greater),+@{eva} Evasion for @{duration}.,
+pot_agility_u,Agility Potion,+@{eva} Evasion for @{duration}.,
+pot_alacrity_c,Alacrity Potion (Lesser),+@{cast} Cast Speed for @{duration}.,
+pot_alacrity_r,Alacrity Potion (Greater),+@{cast} Cast Speed for @{duration}.,
+pot_alacrity_u,Alacrity Potion (Greater),+@{cast} Cast Speed for @{duration}.,
+pot_dash_c,Dash Potion (Lesser),+@{ms} Move Speed for @{duration}.,
+pot_dash_e,Dash Potion (Superior),+@{ms} Move Speed for @{duration}.,
+pot_dash_l,Dash Potion (Grand),+@{ms} Move Speed for @{duration}.,
+pot_dash_m,Dash Potion (Supreme),+@{ms} Move Speed for @{duration}.,
+pot_dash_r,Dash Potion (Greater),+@{ms} Move Speed for @{duration}.,
+pot_dash_u,Dash Potion,+@{ms} Move Speed for @{duration}.,
+pot_haste_c,Fury Potion (Lesser),+@{as} Attack Speed for @{duration}.,
+pot_haste_r,Fury Potion (Greater),+@{as} Attack Speed for @{duration}.,
+pot_haste_u,Fury Potion (Greater),+@{as} Attack Speed for @{duration}.,
+pot_heal,Uncommon Healing,Restores @ HP per second for @{duration}.,
+pot_heal_greater,Rare Healing,Restores @ HP per second for @{duration}.,
+pot_heal_instant,Instant Healing,Instantly restores @{power} of max HP.,
+pot_heal_minor,Common Healing,Restores @ HP per second for @{duration}.,
+pot_mana,Uncommon Mana,Restores @ MP per second for @{duration}.,
+pot_mana_greater,Rare Mana,Restores @ MP per second for @{duration}.,
+pot_mana_minor,Common Mana,Restores @ MP per second for @{duration}.,
+pot_matk_c,Force Potion (Lesser),+@{matk} M.Atk for @{duration}.,
+pot_matk_r,Force Potion (Greater),+@{matk} M.Atk for @{duration}.,
+pot_matk_u,Force Potion,+@{matk} M.Atk for @{duration}.,
+pot_mdef_c,Ward Potion (Lesser),+@{mdef} M.Def for @{duration}.,
+pot_mdef_r,Ward Potion (Greater),+@{mdef} M.Def for @{duration}.,
+pot_mdef_u,Ward Potion,+@{mdef} M.Def for @{duration}.,
+pot_patk_c,Might Potion (Lesser),+@{patk} P.Atk for @{duration}.,
+pot_patk_r,Might Potion (Greater),+@{patk} P.Atk for @{duration}.,
+pot_patk_u,Might Potion,+@{patk} P.Atk for @{duration}.,
+pot_pdef_c,Bulwark Potion (Lesser),+@{pdef} P.Def for @{duration}.,
+pot_pdef_r,Bulwark Potion (Greater),+@{pdef} P.Def for @{duration}.,
+pot_pdef_u,Bulwark Potion,+@{pdef} P.Def for @{duration}.,
+pot_swift_c,Swift Potion (Lesser),+@{ms} Move Speed for @{duration}.,
+pot_swift_r,Swift Potion (Greater),+@{ms} Move Speed for @{duration}.,
+pot_swift_u,Swift Potion (Greater),+@{ms} Move Speed for @{duration}.,
+power_shot,Heavy Draw,A long-range aimed shot dealing heavy damage.,
+power_strike,Brutal Strike,"A forceful melee blow. Bonus accuracy, but can still miss.",
+precision,Precision,Passive. Your physical attacks always land at least 10/20/30% of the time.,| typed numbers kept: 10 20 30%
+purify,Purify,"Removes harmful effects (curses, anti-heal, roots) from an ally.",
+renewing_verse,Renewing Verse,Party: an instant heal plus 2% max HP per second for @{duration}.,| typed numbers kept: 2%
+repelling_shot,Repelling Shot,A forceful shot that damages and knocks the target back.,
+resonance,Resonance,"Passive. +@{maxmp} max MP, +MP regen, x1.2 magic crit rate.",| typed numbers kept: 1.2
+rune_blessing_boost,Blessing Booster Rune,Held rune: the Wayfarer's Blessing gauge fills twice as fast from every source while it is in your bag.,
+rune_drop,Rune of Drop,,| EMPTY = the game's per-level text; top rung reads: Held rune: +100% DROP CHANCE on every monster drop while it is in your bag.
+rune_exp,Rune of Experience,,| EMPTY = the game's per-level text; top rung reads: Held rune: +100% EXPERIENCE from monsters while it is in your bag.
+rune_expsp,Rune of Exp/SP,,| EMPTY = the game's per-level text; top rung reads: Held rune: +100% experience AND +100% SP from monsters while it is in your bag.
+rune_favor_keep,Favor Keep-Rune,Held rune: your kills do not drain the Wayfarer's Favor while it is in your bag.,
+rune_gold,Rune of Gold,,| EMPTY = the game's per-level text; top rung reads: Held rune: +100% GOLD from monsters while it is in your bag.
+rune_grand,Grand Rune,"Grand Rune: increases the final PHYSICAL and MAGICAL damage x2, casts 30% shorter, and cast speed, while the rune is held.",| typed numbers kept: 2 30%
+rune_sinister,Rune of Sinister,Held rune: you gain NO experience and NO SP from monsters while it is in your bag. Gold and drops are untouched — grind for items without levelling.,
+rune_sinners,Rune of Sinners,"A timed rune given by the Gods to punish those who sinned: experience, SP, gold and drops are ALL zero while it is in your bag. Bound to your soul for the time it has left — no keeper will accept it, and it cannot be sold, traded or destroyed. It leaves when it expires.",
+rune_sp,Rune of Skillpoints,,| EMPTY = the game's per-level text; top rung reads: Held rune: +100% SP from monsters while it is in your bag.
+rune_spell,Spell Rune,"Spell Rune: the final MAGICAL damage x2, casts 30% shorter, and cast speed, while the rune is held.",| typed numbers kept: 2 30%
+rune_war,War Rune,War Rune: increases the final PHYSICAL damage x2 while the rune is held.,| typed numbers kept: 2
+rupture,Rupture,Opens a bleeding wound — a flat physical DoT (+15% slow) plus a stack that builds toward a burst. Lands on a AGI-vs-CON contest.,| typed numbers kept: 15%
+scr_acc_c,Scroll of Aim (Lesser),+@{acc} Accuracy for @{duration}.,
+scr_acc_r,Scroll of Aim (Greater),+@{acc} Accuracy for @{duration}.,
+scr_acc_u,Scroll of Aim,+@{acc} Accuracy for @{duration}.,
+scr_agility_c,Scroll of Agility (Lesser),+@{eva} Evasion for @{duration}.,
+scr_agility_r,Scroll of Agility (Greater),+@{eva} Evasion for @{duration}.,
+scr_agility_u,Scroll of Agility,+@{eva} Evasion for @{duration}.,
+scr_alacrity_c,Scroll of Alacrity (Lesser),+@{cast} Cast Speed for @{duration}.,
+scr_alacrity_r,Scroll of Alacrity (Greater),+@{cast} Cast Speed for @{duration}.,
+scr_alacrity_u,Scroll of Alacrity,+@{cast} Cast Speed for @{duration}.,
+scr_crit_e,Scroll of Focus (Superior),+@{critrate} critical rate for @{duration}.,
+scr_crit_l,Scroll of Focus (Grand),+@{critrate} critical rate for @{duration}.,
+scr_crit_m,Scroll of Focus (Supreme),+@{critrate} critical rate for @{duration}.,
+scr_critdmg_e,Scroll of Ferocity (Superior),+@{critdmg} critical damage for @{duration}.,
+scr_critdmg_l,Scroll of Ferocity (Grand),+@{critdmg} critical damage for @{duration}.,
+scr_critdmg_m,Scroll of Ferocity (Supreme),+@{critdmg} critical damage for @{duration}.,
+scr_frenzy_e,Scroll of Frenzy (Lesser),-@{maxhp} Max HP/MP but +5% offence and speed for @{duration}.,| typed numbers kept: 5%
+scr_frenzy_m,Scroll of Frenzy,-@{maxhp} Max HP/MP but +8% offence and speed for @{duration}.,| typed numbers kept: 8%
+scr_haste_c,Scroll of Fury (Lesser),+@{as} Attack Speed for @{duration}.,
+scr_haste_r,Scroll of Fury (Greater),+@{as} Attack Speed for @{duration}.,
+scr_haste_u,Scroll of Fury,+@{as} Attack Speed for @{duration}.,
+scr_hp_e,Scroll of Body (Superior),+@{maxhp} Max HP for @{duration}.,
+scr_hp_l,Scroll of Body (Grand),+@{maxhp} Max HP for @{duration}.,
+scr_hp_m,Scroll of Body (Supreme),+@{maxhp} Max HP for @{duration}.,
+scr_hpreg_e,Scroll of Vigor (Superior),+@{hpreg} HP regeneration for @{duration}.,
+scr_hpreg_l,Scroll of Vigor (Grand),+@{hpreg} HP regeneration for @{duration}.,
+scr_hpreg_m,Scroll of Vigor (Supreme),+@{hpreg} HP regeneration for @{duration}.,
+scr_interrupt_m,Scroll of Resolve (Supreme),+@{interrupt} interrupt resistance for @{duration}.,
+scr_matk_c,Scroll of Force (Lesser),+@{matk} M.Atk for @{duration}.,
+scr_matk_r,Scroll of Force (Greater),+@{matk} M.Atk for @{duration}.,
+scr_matk_u,Scroll of Force,+@{matk} M.Atk for @{duration}.,
+scr_mcrit_e,Scroll of Insight (Superior),+@{magiccritrate} magic critical rate for @{duration}.,
+scr_mcrit_l,Scroll of Insight (Grand),+@{magiccritrate} magic critical rate for @{duration}.,
+scr_mcrit_m,Scroll of Insight (Supreme),+@{magiccritrate} magic critical rate for @{duration}.,
+scr_mdef_c,Scroll of Ward (Lesser),+@{mdef} M.Def for @{duration}.,
+scr_mdef_r,Scroll of Ward (Greater),+@{mdef} M.Def for @{duration}.,
+scr_mdef_u,Scroll of Ward,+@{mdef} M.Def for @{duration}.,
+scr_mp_e,Scroll of Soul (Superior),+@{maxmp} Max MP for @{duration}.,
+scr_mp_l,Scroll of Soul (Grand),+@{maxmp} Max MP for @{duration}.,
+scr_mp_m,Scroll of Soul (Supreme),+@{maxmp} Max MP for @{duration}.,
+scr_mpreg_e,Scroll of Serenity (Superior),+@{mpreg} MP regeneration for @{duration}.,
+scr_mpreg_l,Scroll of Serenity (Grand),+@{mpreg} MP regeneration for @{duration}.,
+scr_mpreg_m,Scroll of Serenity (Supreme),+@{mpreg} MP regeneration for @{duration}.,
+scr_patk_c,Scroll of Might (Lesser),+@{patk} P.Atk for @{duration}.,
+scr_patk_r,Scroll of Might (Greater),+@{patk} P.Atk for @{duration}.,
+scr_patk_u,Scroll of Might,+@{patk} P.Atk for @{duration}.,
+scr_pdef_c,Scroll of Bulwark (Lesser),+@{pdef} P.Def for @{duration}.,
+scr_pdef_r,Scroll of Bulwark (Greater),+@{pdef} P.Def for @{duration}.,
+scr_pdef_u,Scroll of Bulwark,+@{pdef} P.Def for @{duration}.,
+scr_swift_c,Scroll of Swift (Lesser),+@{ms} Move Speed for @{duration}.,
+scr_swift_r,Scroll of Swift (Greater),+@{ms} Move Speed for @{duration}.,
+scr_swift_u,Scroll of Swift,+@{ms} Move Speed for @{duration}.,
+scr_vamp_m,Scroll of Vampirism (Supreme),+@{vamp} melee vampirism for @{duration}.,
+shadowstep,Shadowstep,Teleport behind the target and strike for heavy damage [Double].,
+shield_bash,Shield Bash,"Bash the target, stunning it for @{duration} (cannot move or act). ATK-vs-CON; bosses immune.",
+shield_bless_and_harden,Shield Bless and Harden,Blesses you and nearby allies with a sturdier shield: +50% shield P.Def and +@{blockrate} block chance for @{duration}. Does nothing for anyone not carrying one.,| typed numbers kept: 50%
+shield_mastery,Shield Mastery,Tank passive: greatly improves your shield's block chance and defence (only while a shield is equipped).,
+sigil_aegis_guard,Aegis,P.Def and M.Def +@{mdef}.,
+sigil_arcane_well,Arcane Wellspring,Restores @{power} of your maximum MP.,
+sigil_focus_edge,Focus,Critical rate +5 points.,| typed numbers kept: 5
+sigil_frenzy_surge,Frenzy,"P.Atk, M.Atk, attack speed and cast speed all +@{cast}.",
+sigil_fury_haste,Fury,Attack speed +@{as}.,
+sigil_holy_mend,Holy Mend,Restores @{power} of your maximum HP.,
+sigil_immortality,Immortality,"Your HP cannot change — nothing damages it, and nothing heals it.",
+snare_trap,Snare Trap,Set a trap; the first monster to trip it is damaged and rooted in place.,
+soul_sap,Soul Sap,Curses an enemy so it recovers only half the HP from any healing for @{duration}.,
+sp_bottle_use,SP Bottle,Drink to gain 1000000000 SP. No gold is returned.,| typed numbers kept: 1 000
+spirit_lance,Spirit Lance,A heavy single-target nuke (replaces Magic Bolt / Holy Strike).,
+spirit_verse,Spirit Verse,Party: an instant heal plus 2% max HP per second for @{duration}.,| typed numbers kept: 2%
+split_volley,Split Volley,,| EMPTY = the game's per-level text; top rung reads: Strikes 2 times for power 5000 each.
+starlight_lance,Starlight Lance,A heavy single-target nuke (replaces Magic Bolt / Holy Strike).,
+swift_stab_rush,Swift Stab,+@{ms} speed and +@{as} attack speed for @{duration}.,
+sylvan_anthem,Sylvan Anthem,"Party: +@{maxhp} max HP/MP, +@{mdef} magic def & cast/attack speed, +15% atk/def, +move & regen.",| typed numbers kept: 15%
+tank_aggravated_party,Aggravated State,"+@{patk} P.Atk and attack speed, +10% physical skill power, for @{duration}.",| typed numbers kept: 10%
+tank_aggravated_party_2,Aggravated State,"+@{patk} P.Atk and attack speed, +15% physical skill power, for @{duration}.",| typed numbers kept: 15%
+tank_aggravated_party_3,Aggravated State,"+@{patk} P.Atk and attack speed, +20% physical skill power, for @{duration}.",| typed numbers kept: 20%
+tank_aggravated_self,Aggravated State,"+@{patk} P.Atk and attack speed, +10% physical skill power, for @{duration}.",| typed numbers kept: 10%
+tank_aggravated_self_2,Aggravated State,"+@{patk} P.Atk and attack speed, +15% physical skill power, for @{duration}.",| typed numbers kept: 15%
+tank_aggravated_self_3,Aggravated State,"+@{patk} P.Atk and attack speed, +20% physical skill power, for @{duration}.",| typed numbers kept: 20%
+tauting_wall_guard,Tauting Wall,"+5,000 P.Def, +4,500 M.Def and high cancel resistance for @{duration}; your movement drops to x0.20.",| typed numbers kept: 5 000 4 500 0.20
+terrifying_roar,Terrifying Roar,"A fearsome roar — the target panics for @{duration}: it cannot act, and bolts at a run wherever its feet take it. ATK-vs-CON; bosses immune.",
+test_magic,TestMagic,TEST ONLY. Magic hit using the Debug TestSkillPower (Flat) + TestSkillMod (Mod): 91·(Flat + Mod·√M.Atk)/mDef. Cast 1s. Remove before release.,| typed numbers kept: 91 1
+test_phys,TestPhys,TEST ONLY. Physical hit using the Debug TestSkillPower (Flat) + TestSkillMod (Mod): 77·(Flat + Mod·P.Atk)/def. Cast 0.5s. Remove before release.,| typed numbers kept: 77 0.5
+thorn_nova,Thorn Nova,A boss's storm of thorns — magic damage and a slow to all nearby foes.,
+totemic_bond,Totemic Bond,"Passive. +@{maxmp} max MP, +MP regen, +8% attack (feeds spells).",| typed numbers kept: 8%
+toxic_burst,Toxic Burst,Detonates the target's poison stacks for damage x(stacks) [Double].,
+toxic_sting,Toxic Sting,Poisons the target — a magic DoT that also slows its attack & cast speed 15%. Lands on ATK-vs-WIT; builds stacks for Toxic Burst.,| typed numbers kept: 15%
+twin_slash,Twin Slash,Two rapid dagger slashes. Short cast and cooldown.,
+unstuck,Unstuck,"Channel 180s in town to rescue another character on your account: it is stripped of its equipment, loses its blessings and wakes in the starter town. ANY damage cancels it.",| typed numbers kept: 180
+use_scroll_resurrect,Scroll of Resurrection,Channel 10s to revive a fallen ally at 30% HP and MP. Restores none of the experience they lost on death. 10s reuse.,| typed numbers kept: 10 30%
+use_scroll_resurrect_ult,Ultimate Scroll of Resurrection,Revive a fallen ally at 30% HP and MP almost instantly and restore ALL the experience they lost on death. 10s reuse.,| typed numbers kept: 30% 10
+use_scroll_return,Scroll of Return,"Use a Scroll of Return: 10s cast, teleport to the nearest town.",| typed numbers kept: 10
+use_scroll_return_ult,Ultimate Scroll of Return,Use an Ultimate Scroll of Return: INSTANTLY return to the nearest town.,
+war_anthem,War Anthem,"Party: +@{maxhp} max HP/MP, +@{mdef} magic def & cast/attack speed, +15% atk/def, +move & regen.",| typed numbers kept: 15%
+war_cry,War Cry,Battle shout: +20% Attack Power for @{duration}.,| typed numbers kept: 20%
+war_focus,War Focus,A 20-min focus: +@{as} attack speed and +25% PvP physical-skill & basic damage.,| typed numbers kept: 20 25%
+war_sundering_blow,Sundering Blow,Strikes for power @.,
+waraoe_blood_support_payload_1,Blood Support,Heals 5% of max HP and @{vamp} melee vampirism for @{duration}.,| typed numbers kept: 5%
+waraoe_blood_support_payload_2,Blood Support,Heals 7% of max HP and @{vamp} melee vampirism for @{duration}.,| typed numbers kept: 7%
+waraoe_blood_support_payload_3,Blood Support,Heals 10% of max HP and @{vamp} melee vampirism for @{duration}.,| typed numbers kept: 10%
+waraoe_blood_support_payload_4,Blood Support,Heals 15% of max HP and @{vamp} melee vampirism for @{duration}.,| typed numbers kept: 15%
+waraoe_life_support_payload_1,Life Support,Heals 5% of max HP and 50 HP a second for @{duration}.,| typed numbers kept: 5% 50
+waraoe_life_support_payload_2,Life Support,Heals 7% of max HP and 100 HP a second for @{duration}.,| typed numbers kept: 7% 100
+waraoe_life_support_payload_3,Life Support,Heals 10% of max HP and 150 HP a second for @{duration}.,| typed numbers kept: 10% 150
+waraoe_life_support_payload_4,Life Support,Heals 15% of max HP and 300 HP a second for @{duration}.,| typed numbers kept: 15% 300
+waraoe_support_payload_1,Vanguard Support,Heals 5% of max HP and @{vamp} melee vampirism plus 17 HP a second for @{duration}.,| typed numbers kept: 5% 17
+waraoe_support_payload_2,Vanguard Support,Heals 7% of max HP and @{vamp} melee vampirism plus 33 HP a second for @{duration}.,| typed numbers kept: 7% 33
+waraoe_support_payload_3,Vanguard Support,Heals 10% of max HP and @{vamp} melee vampirism plus 50 HP a second for @{duration}.,| typed numbers kept: 10% 50
+waraoe_support_payload_4,Vanguard Support,Heals 15% of max HP and @{vamp} melee vampirism plus 100 HP a second for @{duration}.,| typed numbers kept: 15% 100
+waraoe_wirlwind_stroke,Whirlwind,One stroke of a Warlord's whirlwind.,
+warding_step,Warding Step,Holds an enemy in place for @{duration} and sheds the caster's aggro from nearby foes (they look elsewhere).,
+warrior_charge_stomp,Charge n Stomp,The landing of a Warlord's charge.,
+warrior_sword_dance_stroke,Saints Sword Dance,One stroke of a sword dance.,
+wc_combo_rush_1,Combo Rush,A surge of momentum: +@{as} attack speed and +@{cast} cast speed for @{duration}.,
+wc_combo_rush_2,Combo Rush,A surge of momentum: +@{as} attack speed and +@{cast} cast speed for @{duration}.,
+wc_combo_rush_3,Combo Rush,A surge of momentum: +@{as} attack speed and +@{cast} cast speed for @{duration}.,
+wc_combo_rush_4,Combo Rush,A surge of momentum: +@{as} attack speed and +@{cast} cast speed for @{duration}.,
+wc_combo_rush_5,Combo Rush,A surge of momentum: +@{as} attack speed and +@{cast} cast speed for @{duration}.,
+wc_combo_rush_6,Combo Rush,A surge of momentum: +@{as} attack speed and +@{cast} cast speed for @{duration}.,
+weakness,Weakness,"Curses the target: -30% Defence for @{duration} (instant cast, never fizzles).",| typed numbers kept: 30%
+weapon_proficiency,Weapon Proficiency,Passive. Superseded by Spellcaster Mastery.,
+whisp_great_armor_break,Whisp Armor Break,"The whisp frays an enemy's guard for @{duration}: -@{pdef} P.Def, -@{mdef} M.Def.",
+whisp_great_gravity,Whisp Gravity,The whisp weighs an enemy down for @{duration}: -@{cast} attack and cast speed.,
+whisp_great_heal,Whisp Great Heal,The whisp mends its master.,
+whisp_great_weapon_break,Whisp Weapon Break,The whisp blunts an enemy's weapon and their magic alike for @{duration}: -15%.,| typed numbers kept: 15%
+whisp_mana,Whisp Mana,The whisp pours a little of itself back into its master.,
+word_of_unmaking,Word of Unmaking,A boss's word of unmaking — every skill fails for all nearby foes.,

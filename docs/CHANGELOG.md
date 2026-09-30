@@ -24,7 +24,31 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-09-30 (latest) — tools only: the face file splits in two (no build, no version)
+## 2026-09-30 (latest) — 0.217.2: the class CSV names the skill again; the spirit helper reads the faces
+
+His ask, after the two-file split: *"i wonder if we remove those files and just author them inside the classes csvs as
+it was before .. now it looks so confusing"* — then *"build it that way"*. It REPLACES the split below the same day.
+⚠ **New APK** (his new racial faces + the NPC names ride in `SkillFaces.g.cs`). No `game.db` delete. Checklist §114.
+
+- **Class CSV `NAME` is the real name again**, and a new LAST column **`DESCRIPTION`** holds the text the player reads,
+  written on ONE row of the skill (`DESCR` stays the numbers). Last, not beside DESCR: `Check.cs` reads the first 15
+  columns by position, and long prose at the far right keeps MP/SP readable.
+- **`skill_faces.csv` = exceptions only** (31 rows): a RACE or CLASS row — Forest/Fire Strength, the harmonist's Bow
+  Expertise, the Momentums, Holy/Moonlight/Spirit Bolt. Blank DESCRIPTION there = the plain one. **`skill_faces_other.csv`**
+  (412 rows) names what no class CSV lists: mobs, `npc_*` blessings, items. `skill_faces_single.csv` is gone.
+- **One name per skill, checked:** a skill's rows may disagree only where an exception row (or the code's per-level
+  Grade names) explains it; two unexplained names is a `--check` error. The move corrected the class-CSV typos the game
+  had never shown (Wirlwind, Shattaring, Bow Stence, Domonic, Knowlege, Healers …, 119 cells) so nothing on screen moved.
+  Two of his comments held an unquoted comma that spilled into the new column (`dual 4th` double_mastery, `shared 4th`
+  sigil note) — quoted.
+- **The spirit helper's names are faces now.** `NpcBuffShelf.DisplayName` read the top rung's CODE name; it reads the
+  shelf id's face (`npc_accuracy` → "NPC Aim"), and the bar stopped prefixing "NPC " itself — one name, window and bar.
+  A shelf item that is also a class skill (the three Marks) takes a `CLASS = NPC` row: "NPC Blood Mark" at the NPC,
+  "Blood Mark" for the healer. `SkillFaces.ForNpcShelf`.
+- Verified: `SkillFaces.g.cs` before/after the move differs only in his own new rows (and `backlash`'s unused plain
+  name, now "Physical Backlash" — every race wears its own). `--check` 0, server + Unity build, `--gen-passives` unchanged.
+
+## 2026-09-30 — tools only: the face file splits in two (no build, no version) — REPLACED by 0.217.2 the same day
 
 His ask: *"the skill_faces only contains skills that are duplicates like bow_expertise and might and twin_arrow"* — and
 of the two ways offered, *"2 files … you wont lose any information"*. Nothing in the game moves; `SkillFaces.g.cs` is

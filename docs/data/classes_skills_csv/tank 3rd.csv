@@ -1,4 +1,4 @@
-LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST (x1000),REPLACES,RACE,COMMENT
+LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST (x1000),REPLACES,RACE,COMMENT,DESCRIPTION
 ,,,,,,,,,,,,,,,,,----------------------------Shield Mastery----------------------------
 40,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +25%, Shield Rate +85%; +10% P.Def, bow resistance 16%",0,19.2,[]
 43,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +25%, Shield Rate +85%; +10% P.Def, bow resistance 24%",0,23.9,[]
@@ -75,13 +75,13 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 52,Final Defense,final_defense,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Def with 7%, when HP is below 50% increase P.Def with 14% and M.Def with 3.5%, when HP is below 25% increase P.Def with 21% and M.Def with 7%",0,62.1
 60,Final Defense,final_defense,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Def with 10%, when HP is below 50% increase P.Def with 20% and M.Def with 5%, when HP is below 25% increase P.Def with 30% and M.Def with 10%",0,95.6
 ,,,,,,,,,,,,,,,,,----------------------------Aggravated State----------------------------
-52,Aggravated State,tank_aggravated_state,Passive,,,0,900,party/aoe,0,25,30,"When dmg is received with 15% chance increase P.Atk and Attack speed of party memebrs with 2% and owner with 3% and P.Skill.Power with 10%",0,62.1
+52,Aggravated State,tank_aggravated_state,Passive,,,0,900,party/aoe,0,25,30,"When dmg is received with 15% chance increase P.Atk and Attack speed of party memebrs with 2% and owner with 3% and P.Skill.Power with 10%",0,62.1,,,,"Passive. Taking a hit has a @{procchance} chance to rouse you and your party: more attack power, attack speed and physical skill power for 30s."
 60,Aggravated State,tank_aggravated_state,Passive,,,0,900,party/aoe,0,25,30,"When dmg is received with 15% chance increase P.Atk and Attack speed of party memebrs with 3% and owner with 5% and P.Skill.Power with 15%",0,95.6
 68,Aggravated State,tank_aggravated_state,Passive,,,0,900,party/aoe,0,25,30,"When dmg is received with 15% chance increase P.Atk and Attack speed of party memebrs with 5% and owner with 7% and P.Skill.Power with 20%",0,219
 ,,,,,,,,,,,,,,,,,----------------------------Whisp Mastery----------------------------
-60,Whisp Mastery,whisp_mastery,Passive,,,0,0,self/single,0,0,0,"Increase the limit of active whisps to 2",0,95.6
+60,Whisp Mastery,whisp_mastery,Passive,,,0,0,self/single,0,0,0,"Increase the limit of active whisps to 2",0,95.6,,,,You may keep three whisps at once.
 ,,,,,,,,,,,,,,,,,----------------------------Taunting Whisps----------------------------
-40,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 6500), Consumes 4 skill stones",50,58.3,,Human,uses whisp_taunt
+40,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 6500), Consumes 4 skill stones",50,58.3,,Human,uses whisp_taunt,Calls a whisp that shrieks your enemies onto you.
 46,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 7500); Consumes 4 skill stones",54,76.4,,Human,uses whisp_taunt
 52,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 8500); Consumes 4 skill stones",58,188,,Human,uses whisp_taunt
 58,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 9500); Consumes 4 skill stones",66,150,,Human,uses whisp_taunt
@@ -90,7 +90,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 70,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 11600); Consumes 4 skill stones",92,666,,Human,uses whisp_taunt
 74,Taunting Whisp,taunting_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 12000); Consumes 4 skill stones",100,1490,,Human,uses whisp_taunt
 ,,,,,,,,,,,,,,,,,----------------------------Binding Whisps----------------------------
-43,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",50,72.3,,Human,uses whisp_bind
+43,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",50,72.3,,Human,uses whisp_bind,Calls a whisp that pins your enemies where they stand.
 49,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",54,103,,Human,uses whisp_bind
 55,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",58,153,,Human,uses whisp_bind
 60,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",66,290,,Human,uses whisp_bind
@@ -99,7 +99,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 72,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",92,1110,,Human,uses whisp_bind
 74,Binding Whisp,binding_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",100,1490,,Human,uses whisp_bind
 ,,,,,,,,,,,,,,,,,----------------------------Charming Whisps----------------------------
-40,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 6500), Consumes 4 skill stones",50,58.3,,Elf,uses whisp_charm
+40,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 6500), Consumes 4 skill stones",50,58.3,,Elf,uses whisp_charm,Calls a whisp that lures your enemies to you.
 46,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 7500); Consumes 4 skill stones",54,76.4,,Elf,uses whisp_charm
 52,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 8500); Consumes 4 skill stones",58,188,,Elf,uses whisp_charm
 58,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 9500); Consumes 4 skill stones",66,150,,Elf,uses whisp_charm
@@ -108,7 +108,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 70,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 11600); Consumes 4 skill stones",92,666,,Elf,uses whisp_taunt
 74,Charming Whisp,charming_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 12000); Consumes 4 skill stones",100,1490,,Elf,uses whisp_taunt
 ,,,,,,,,,,,,,,,,,----------------------------Healing Whisps----------------------------
-43,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 250); Consumes 4 skill stones",50,72.3,,Elf,uses whisp_heal and whisp_quick_heal
+43,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 250); Consumes 4 skill stones",50,72.3,,Elf,uses whisp_heal and whisp_quick_heal,Calls a whisp that tends its master's wounds.
 49,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 320); Consumes 4 skill stones",54,103,,Elf,uses whisp_heal and whisp_quick_heal
 55,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 390); Consumes 4 skill stones",58,153,,Elf,uses whisp_heal and whisp_quick_heal
 60,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 460); Consumes 4 skill stones",66,290,,Elf,uses whisp_heal and whisp_quick_heal
@@ -117,7 +117,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 72,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 670); Consumes 4 skill stones",92,1110,,Elf,uses whisp_heal and whisp_quick_heal
 74,Healing Whisp,healing_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 740); Consumes 4 skill stones",100,1490,,Elf,uses whisp_heal and whisp_quick_heal
 ,,,,,,,,,,,,,,,,,----------------------------Armor Breaking Whisps----------------------------
-40,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 10% and MDef by 5%); Consumes 4 skill stones", 50,58.3,,Demon,uses whisp_armor_break
+40,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 10% and MDef by 5%); Consumes 4 skill stones", 50,58.3,,Demon,uses whisp_armor_break,Calls a whisp that frays your enemies' guard.
 46,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 12% and MDef by 6%); Consumes 4 skill stones", 54,76.4,,Demon,uses whisp_armor_break
 52,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 14% and MDef by 7%); Consumes 4 skill stones", 58,188,,Demon,uses whisp_armor_break
 58,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 16% and MDef by 8%); Consumes 4 skill stones", 66,150,,Demon,uses whisp_armor_break
@@ -126,7 +126,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 70,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 26% and MDef by 13%); Consumes 4 skill stones", 92,666,,Demon,uses whisp_armor_break
 74,Armor Breaking Whisp,armor_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 30% and MDef by 15%); Consumes 4 skill stones",100,1490,,Demon,uses whisp_armor_break
 ,,,,,,,,,,,,,,,,,----------------------------Weapon Breaking Whisps----------------------------
-43,Weapon Breaking Whisp,weapon_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 5%); Consumes 4 skill stones",50,72.3,,Demon,uses whisp_weapon_break
+43,Weapon Breaking Whisp,weapon_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 5%); Consumes 4 skill stones",50,72.3,,Demon,uses whisp_weapon_break,Calls a whisp that blunts your enemies' weapons.
 49,Weapon Breaking Whisp,weapon_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 6%); Consumes 4 skill stones",54,103,,Demon,uses whisp_weapon_break
 55,Weapon Breaking Whisp,weapon_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 7%); Consumes 4 skill stones",58,153,,Demon,uses whisp_weapon_break
 60,Weapon Breaking Whisp,weapon_breaking_whisp,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 8%); Consumes 4 skill stones",66,290,,Demon,uses whisp_weapon_break
@@ -137,7 +137,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,----------------------------Defensive Wall----------------------------
 46,Defensive Wall,defensive_wall,pfysical buff,,,0,0,self/single,0.5,900,30,increase p.def +3700; m.def +3300; buff cancel resist x1.8; ms x0.5,20,76.4,[]
 ,,,,,,,,,,,,,,,,,---------------------------Reinforcement----------------------------
-60,Shield Reinforcement,tank_shield_reinforcement,Toggle,,heavy/shield,0,0,self/single,0,0,0,Increase P.Def +300 and Shield.Rate with 50% (Consumes: 15/s),15,290
+60,Shield Reinforcement,tank_shield_reinforcement,Toggle,,heavy/shield,0,0,self/single,0,0,0,Increase P.Def +300 and Shield.Rate with 50% (Consumes: 15/s),15,290,,,,"Stance. Brace behind your shield: +@{pdef} P.Def and half again your block chance, for 15 MP a second."
 ,,,,,,,,,,,,,,,,,----------------------------Taunt----------------------------
 40,Taunt,provoke,physical active,,,600,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 6500 aggro ahead;",0,87.4,,Human;Demon
 43,Taunt,provoke,physical active,,,600,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 7000 aggro ahead;",0,108,,Human;Demon
@@ -187,7 +187,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 72,Mass Taunt,mass_provoke,physical active,,,0,400,enemy/aoe,0.5,30,3,"Agro enemies around - locks them onto you for 3s then leaves you 6900 aggro ahead;",105,1660,,Human
 74,Mass Taunt,mass_provoke,physical active,,,0,400,enemy/aoe,0.5,30,3,"Agro enemies around - locks them onto you for 3s then leaves you 7200 aggro ahead;",110,2230,,Human
 ,,,,,,,,,,,,,,,,,----------------------------Intimidate----------------------------
-40,Intimidate,intimidate,physical debuff,,,600,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",40,87.4,,Demon
+40,Intimidate,intimidate,physical debuff,,,600,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",40,87.4,,Demon,,"Terrifies an enemy for @{duration}: it cannot act, and runs where its feet take it. ATK-vs-CON; bosses immune."
 43,Intimidate,intimidate,physical debuff,,,600,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",45,108,,Demon
 46,Intimidate,intimidate,physical debuff,,,600,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",50,115,,Demon
 49,Intimidate,intimidate,physical debuff,,,600,0,enemy/single,0,5,10,"Intimidate the enemy to run in place;",55,155,,Demon
@@ -219,7 +219,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 72,Freeze,freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 50% ;",105,1660,,Elf
 74,Freeze,freeze,Magical debuff,,,800,0,enemy/single,0,3,30,"Slow enemy move speed with 50% ;",110,2230,,Elf
 ,,,,,,,,,,,,,,,,,----------------------------Stay----------------------------
-40,Stay,stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",40,87.4
+40,Stay,stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",40,87.4,,,,Roots the target in place for @{duration} (it can still act). ATK-vs-CON; bosses immune.
 43,Stay,stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",45,108
 46,Stay,stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",50,115
 49,Stay,stay,physical debuff,,,400,0,enemy/single,2,4,10,"Hold enemy for 10s;",55,155

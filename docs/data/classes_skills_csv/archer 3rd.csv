@@ -1,4 +1,4 @@
-LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST (x1000),REPLACES,RACE,COMMENT
+LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST (x1000),REPLACES,RACE,COMMENT,DESCRIPTION
 ,,,,,,,,,,,,,,,,,----------------------------Light Armor Mastery----------------------------
 40,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +28",0,33.4
 43,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +31",0,32.2
@@ -71,11 +71,11 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 72,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +632;",0,680
 74,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +665;",0,686
 ,,,,,,,,,,,,,,,,,----------------------------Signal Flare----------------------------
-60,Signal Flare,signal_flare,physical active,bow,,0,300,target/aoe,1,20,0,Fires a flare: everyone hidden within 300 is revealed and cannot hide again for 30s. Deals no damage.,28,287,[],
+60,Signal Flare,signal_flare,physical active,bow,,0,300,target/aoe,1,20,0,Fires a flare: everyone hidden within 300 is revealed and cannot hide again for 30s. Deals no damage.,28,287,[],,,Fires a flare: everyone hidden within 300 is revealed and cannot hide again for 30s. Deals no damage.
 ,,,,,,,,,,,,,,,,,---------------------------Bow Expertise----------------------------
 52,Bow Expertise,bow_expertise,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Increase Bow attack speed +12%, Requre: Bow",85,194,[],
 ,,,,,,,,,,,,,,,,,---------------------------Bow Blessing----------------------------
-58,Bow Blessing,bow_blessing,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Decrease p.skill cooldown with 10%, Requre: Bow",50,222,[],
+58,Bow Blessing,bow_blessing,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Decrease p.skill cooldown with 10%, Requre: Bow",50,222,[],,,-@{reuse} physical reuse for @{duration}. Requires a bow.
 66,Bow Blessing,bow_blessing,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Decrease p.skill cooldown with 15%, Requre: Bow",75,706,[],
 74,Bow Blessing,bow_blessing,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Decrease p.skill cooldown with 20%, Requre: Bow",100,2080,[],
 ,,,,,,,,,,,,,,,,,---------------------------Bow Spirit----------------------------
@@ -95,7 +95,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 66,Bow Swiftness,archer_bow_swiftness,Physical/Buff,bow,,0,0,self/single,3,2,300,"Increase p.skill damage with 10%, accuracy +10, p.crit.rate +10%, p.crit.dmg +10%, p.Atk +150, atk.speed +20%, speed +7, 5% to heal self with 450 power (10s reuse); Requre: Bow",75,706,[],Elf
 74,Bow Swiftness,archer_bow_swiftness,Physical/Buff,bow,,0,0,self/single,3,2,300,"Increase p.skill damage with 10%, accuracy +10, p.crit.rate +10%, p.crit.dmg +10%, p.Atk +200, atk.speed +25%, speed +10, 5% to heal self with 500 power (10s reuse); Requre: Bow",100,2080,[],Elf
 ,,,,,,,,,,,,,,,,,---------------------------Bow Stence----------------------------
-60,Bow Stence,bow_stance,Physical/Buff,bow,,0,0,self/single,1,600,60,"Increse P.Atk, P.Crit.Rate, P.Crit.Dmg, P.Skill.Power with 15%; Range +200; Decrease speed by 50%; Requre: Bow",50,287,[]
+60,Bow Stance,bow_stance,Physical/Buff,bow,,0,0,self/single,1,600,60,"Increse P.Atk, P.Crit.Rate, P.Crit.Dmg, P.Skill.Power with 15%; Range +200; Decrease speed by 50%; Requre: Bow",50,287,[],,,"Plant your feet for @{duration}: +15% attack power, critical rate, critical damage and physical skill power, and +200 bow range — at half your movement."
 ,,,,,,,,,,,,,,,,,----------------------------Twin Arrows----------------------------
 40,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +1000  power;",72,152,[precise_shot]
 43,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +1300  power;",79,146,[precise_shot]
@@ -129,7 +129,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 72,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +2350 power;",146,3090
 74,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +2500 power;",152,3120
 ,,,,,,,,,,,,,,,,,----------------------------Binding Trap----------------------------
-40,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",72,152,,Elf
+40,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",72,152,,Elf,,Holds everything within 400 of the trap for @{duration} when it springs.
 43,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",79,146,,Elf
 46,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",85,174,,Elf
 49,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",90,218,,Elf

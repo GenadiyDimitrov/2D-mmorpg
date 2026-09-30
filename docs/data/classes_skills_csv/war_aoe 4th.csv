@@ -1,4 +1,4 @@
-LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment
+LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment,DESCRIPTION
 ,,,,,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
 76,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +184",0,2.15kk,250k
 77,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +186",0,3.12kk,500k
@@ -84,11 +84,11 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +2300",0,0,100kk
 90,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +2500",0,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Life Support----------------------------
-80,Life support,waraoe_life_support,Passive,,,0,0,self/single,0,15,10,"20% chance to heal for 15% max HP, and leave lingering 300/s healing effect",0,0,5kk,,,Elf
+80,Life Support,waraoe_life_support,Passive,,,0,0,self/single,0,15,10,"20% chance to heal for 15% max HP, and leave lingering 300/s healing effect",0,0,5kk,,,Elf
 ,,,,,,,,,,,,,,,,,,,----------------------------Blood Support----------------------------
-80,Blood support,waraoe_blood_support,Passive,,,0,0,self/single,0,15,10,"20% chance to heal for 15% max HP, and leave lingering 15% vampiric effect",0,0,5kk,,,Demon
+80,Blood Support,waraoe_blood_support,Passive,,,0,0,self/single,0,15,10,"20% chance to heal for 15% max HP, and leave lingering 15% vampiric effect",0,0,5kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Vanguard Support----------------------------
-80,Vanguard support,waraoe_support,Passive,,,0,0,self/single,0,15,10,"20% chance to heal for 15% max HP, and leave lingering 5% vampiric and 100/s healing effect",0,0,5kk,,,Human
+80,Vanguard Support,waraoe_support,Passive,,,0,0,self/single,0,15,10,"20% chance to heal for 15% max HP, and leave lingering 5% vampiric and 100/s healing effect",0,0,5kk,,,Human
 ,,,,,,,,,,,,,,,,,,,----------------------------Overpower----------------------------
 76,Overpower,overpower,passive,,,0,0,self/single,0,0,0,double rate 10% - skills marked [Double] strike for DOUBLE damage that often - scales with ATK - without this passive NO skill can double,0,2.15kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Overpower Mastery----------------------------
@@ -96,25 +96,25 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,,,----------------------------Battle Momentum----------------------------
 76,Battle Momentum,reuse_reset_momentum,passive,,,0,0,self/single,0,0,0,reuse reset 5% - a skill you cast has that chance to come off reuse immediately - never on a fixed-cooldown skill - scales with ATK,0,2.15kk,1kk,,,,Same id as the Magus Arcane Momentum - one skill - one number - a name per class
 ,,,,,,,,,,,,,,,,,,,----------------------------Master of Combat----------------------------
-76,Master of Combat,master_of_combat,Toggle,blunt/2,,0,0,self/single,0,0,0,"Increase accuracy +10, P.Def with 25%, M.Def with 15%, Atk.Speed +10%, Decrease move speed with 30% and evasion with 10; Consume 30 MP/s",30,6.5kk,1kk
+76,Master of Combat,master_of_combat,Toggle,blunt/2,,0,0,self/single,0,0,0,"Increase accuracy +10, P.Def with 25%, M.Def with 15%, Atk.Speed +10%, Decrease move speed with 30% and evasion with 10; Consume 30 MP/s",30,6.5kk,1kk,,,,,"+@{acc} accuracy, +@{pdef} P.Def, +@{mdef} M.Def and +@{as} attack speed, at -@{ms} move speed, -@{eva} evasion and 30 MP a second."
 ,,,,,,,,,,,,,,,,,,,----------------------------Charge----------------------------
 76,Charge,warrior_charge,physical/active,sword|blunt/2,,600,0,enemy/single,0.5,5,1,Charges to enemy; Min charge distance 150,50,6.5kk,1kk
-80,Charge,warrior_charge_normal,physical/active,sword|blunt/2,,800,0,enemy/single,0.5,5,1,Charges to enemy; Min charge distance 150,70,0,5kk,,[warrior_charge flash_step charge_n_shock warrior_charge_aoe]
-80,Flash Step,flash_step,physical/active,sword|blunt/2,,800,0,enemy/single,0,10,0,Charges to enemy; Min charge distance 150,70,0,5kk,,[warrior_charge warrior_charge_normal charge_n_shock warrior_charge_aoe]
-80,Charge n Shock,charge_n_shock,physical/active,sword|blunt/2,,800,0,enemy/single,0.5,10,2,Charges to enemy; Min charge distance 150; Chance to stun target for 2s,70,0,5kk,,[warrior_charge warrior_charge_normal flash_step warrior_charge_aoe]
-80,Charge n Stomp,warrior_charge_aoe,physical/active,sword|blunt/2,,800,200,enemy/aoe,0.5,10,1,Charges to enemy; Min charge distance 150; Dmg enemies with power +5000,70,0,5kk,,[warrior_charge warrior_charge_normal flash_step charge_n_shock]
+80,Charge,warrior_charge_normal,physical/active,sword|blunt/2,,800,0,enemy/single,0.5,5,1,Charges to enemy; Min charge distance 150,70,0,5kk,,[warrior_charge flash_step charge_n_shock warrior_charge_aoe],,,"Close the ground to an enemy up to 800 away, over one second."
+80,Flash Step,flash_step,physical/active,sword|blunt/2,,800,0,enemy/single,0,10,0,Charges to enemy; Min charge distance 150,70,0,5kk,,[warrior_charge warrior_charge_normal charge_n_shock warrior_charge_aoe],,,Step instantly to an enemy up to 800 away. No cast — and twice the reuse.
+80,Charge n Shock,charge_n_shock,physical/active,sword|blunt/2,,800,0,enemy/single,0.5,10,2,Charges to enemy; Min charge distance 150; Chance to stun target for 2s,70,0,5kk,,[warrior_charge warrior_charge_normal flash_step warrior_charge_aoe],,,"A heavy, deliberate charge — slower to arrive, and it puts the target down for @{duration}."
+80,Charge n Stomp,warrior_charge_aoe,physical/active,sword|blunt/2,,800,200,enemy/aoe,0.5,10,1,Charges to enemy; Min charge distance 150; Dmg enemies with power +5000,70,0,5kk,,[warrior_charge warrior_charge_normal flash_step charge_n_shock],,,Close the ground and land hard: everything within 200 of your target is caught.
 ,,,,,,,,,,,,,,,,,,,---------------------------Taunting Shout----------------------------
 80,Taunting Shout,taunting_shout,Physical/Debuf,blunt/2,,0,600,enemy/aoe,1,20,30,"Shouts to do provoke enemies in a large area and make them vunarable to bludgering attacks (25% more dmg from blunts);",70,0,5kk,,,
 90,Taunting Shout,taunting_shout,Physical/Debuf,blunt/2,,0,600,enemy/aoe,1,20,30,"Shouts to do provoke enemies in a large area and make them vunarable to bludgering attacks (30% more dmg from blunts);",80,0,100kk,,,
 ,,,,,,,,,,,,,,,,,,,---------------------------Shout----------------------------
-76,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 25%;",80,9.78kk,1kk,,,Human
-78,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 25%;",84,22kk,1kk,,,Human
-80,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 25%;",88,0,5kk,,,Human
-82,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 25%;",92,0,10kk,,,Human
-84,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 27%;",98,0,30kk,,,Human
-86,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 27%;",102,0,75kk,,,Human
-88,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 27%;",106,0,100kk,,,Human
-90,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 27%;",110,0,100kk,,,Human
+76,Shattering Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 25%;",80,9.78kk,1kk,,,Human
+78,Shattering Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 25%;",84,22kk,1kk,,,Human
+80,Shattering Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 25%;",88,0,5kk,,,Human
+82,Shattering Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 25%;",92,0,10kk,,,Human
+84,Shattering Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 27%;",98,0,30kk,,,Human
+86,Shattering Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 27%;",102,0,75kk,,,Human
+88,Shattering Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 27%;",106,0,100kk,,,Human
+90,Shattering Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 27%;",110,0,100kk,,,Human
 ,,,,,,,,,,,,,,,,,,,---------------------------Shout----------------------------
 76,Breaking Shout,breaking_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 12%;",80,9.78kk,1kk,,,Demon
 78,Breaking Shout,breaking_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 12%;",84,22kk,1kk,,,Demon
@@ -134,21 +134,21 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Crippling Shout,crippling_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 30%;",106,0,100kk,,,Elf
 90,Crippling Shout,crippling_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 30%;",110,0,100kk,,,Elf
 ,,,,,,,,,,,,,,,,,,,---------------------------Wirlwind----------------------------
-76,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1050 power 10 times over 2s, Cannot be blocked, Can double;",100,9.78kk,1kk
-77,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1100 power 10 times over 2s, Cannot be blocked, Can double;",102,14.2kk,1kk
-78,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1150 power 10 times over 2s, Cannot be blocked, Can double;",104,22kk,1kk
-79,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1200 power 10 times over 2s, Cannot be blocked, Can double;",106,103kk,1kk
-80,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1250 power 10 times over 2s, Cannot be blocked, Can double;",108,0,5kk
-81,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1300 power 10 times over 2s, Cannot be blocked, Can double;",110,0,7.5kk
-82,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1350 power 10 times over 2s, Cannot be blocked, Can double;",112,0,10kk
-83,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1400 power 10 times over 2s, Cannot be blocked, Can double;",115,0,15kk
-84,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1450 power 10 times over 2s, Cannot be blocked, Can double;",118,0,30kk
-85,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1500 power 10 times over 2s, Cannot be blocked, Can double;",120,0,50kk
-86,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1550 power 10 times over 2s, Cannot be blocked, Can double;",122,0,75kk
-87,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1600 power 10 times over 2s, Cannot be blocked, Can double;",124,0,100kk
-88,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1650 power 10 times over 2s, Cannot be blocked, Can double;",126,0,100kk
-89,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1700 power 10 times over 2s, Cannot be blocked, Can double;",128,0,100kk
-90,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1750 power 10 times over 2s, Cannot be blocked, Can double;",130,0,100kk
+76,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1050 power 10 times over 2s, Cannot be blocked, Can double;",100,9.78kk,1kk
+77,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1100 power 10 times over 2s, Cannot be blocked, Can double;",102,14.2kk,1kk
+78,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1150 power 10 times over 2s, Cannot be blocked, Can double;",104,22kk,1kk
+79,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1200 power 10 times over 2s, Cannot be blocked, Can double;",106,103kk,1kk
+80,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1250 power 10 times over 2s, Cannot be blocked, Can double;",108,0,5kk
+81,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1300 power 10 times over 2s, Cannot be blocked, Can double;",110,0,7.5kk
+82,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1350 power 10 times over 2s, Cannot be blocked, Can double;",112,0,10kk
+83,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1400 power 10 times over 2s, Cannot be blocked, Can double;",115,0,15kk
+84,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1450 power 10 times over 2s, Cannot be blocked, Can double;",118,0,30kk
+85,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1500 power 10 times over 2s, Cannot be blocked, Can double;",120,0,50kk
+86,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1550 power 10 times over 2s, Cannot be blocked, Can double;",122,0,75kk
+87,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1600 power 10 times over 2s, Cannot be blocked, Can double;",124,0,100kk
+88,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1650 power 10 times over 2s, Cannot be blocked, Can double;",126,0,100kk
+89,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1700 power 10 times over 2s, Cannot be blocked, Can double;",128,0,100kk
+90,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1750 power 10 times over 2s, Cannot be blocked, Can double;",130,0,100kk
 ,,,,,,,,,,,,,,,,,,,---------------------------Shocking Shout----------------------------
 76,Shocking Shout,shocking_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +4500 power and Stuns around for 5s, Cannot be blocked, Can double;",100,9.78kk,1kk
 77,Shocking Shout,shocking_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +4600 power and Stuns around for 5s, Cannot be blocked, Can double;",102,14.2kk,1kk

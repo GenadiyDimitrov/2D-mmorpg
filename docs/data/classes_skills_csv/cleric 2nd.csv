@@ -1,4 +1,4 @@
-LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPLACES,Comment
+LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPLACES,Comment,DESCRIPTION
 ,,,,,,,,,,,,,,,,----------------------------Robe Armor Mastery----------------------------
 20,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +20",0,1230,[]
 25,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +25",0,2760,[]
@@ -10,11 +10,11 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 30,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +30",0,5210,[]
 35,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +35",0,9980,[]
 ,,,,,,,,,,,,,,,,----------------------------Light Caster Mastery----------------------------
-20,Light Caster Mastery,clerics_light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"Light: mpReg x1.2, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)",0,1230,[]
+20,Light Caster Mastery,clerics_light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"Light: mpReg x1.2, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)",0,1230,[],,"Light: mpReg +@{mpreg}, cast +@{cast}, as +@{as} (composes to cast x0.95 / as x1 after Spellcaster Mastery)"
 ,,,,,,,,,,,,,,,,----------------------------Evasion----------------------------
 35,Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +2",0,9980,[]
 ,,,,,,,,,,,,,,,,----------------------------Mana Capacity----------------------------
-20,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,maxMP +20,0,1230,[]
+20,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,maxMP +20,0,1230,[],,maxMP +@{maxmp}
 30,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,maxMP +30,0,5210,[]
 ,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
 20,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +20",0,1230,[]
@@ -22,7 +22,7 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 30,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +30",0,5210,[]
 35,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +36",0,9980,[]
 ,,,,,,,,,,,,,,,,----------------------------Magic Resistance----------------------------
-20,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +5%",0,1230,[]
+20,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +5%",0,1230,[],,mRes +@{mres}
 30,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +10%",0,5210,[]
 ,,,,,,,,,,,,,,,,----------------------------Spellcaster Weapon Mastery----------------------------
 20,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +6",0,1230,[]
@@ -35,36 +35,36 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 30,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +8",0,5210,[]
 35,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +10",0,9980,[]
 ,,,,,,,,,,,,,,,,----------------------------Cooldown Mastery----------------------------
-20,Cooldown Mastery,cooldown_mastery,Passive,,,0,0,self/single,0,0,0,Decreses the reuse delay with 10%,0,1230,[]
+20,Cooldown Mastery,cooldown_mastery,Passive,,,0,0,self/single,0,0,0,Decreses the reuse delay with 10%,0,1230,[],,Decreses the reuse delay with @{reuse}
 ,,,,,,,,,,,,,,,,----------------------------Cast Speed Mastery----------------------------
-25,Cast Speed Mastery,cast_speed_mastery,Passive,,,0,0,self/single,0,0,0,cast speed x1.05,0,2760,[]
+25,Cast Speed Mastery,cast_speed_mastery,Passive,,,0,0,self/single,0,0,0,cast speed x1.05,0,2760,[],,cast speed +@{cast}
 ,,,,,,,,,,,,,,,,----------------------------MpRegen----------------------------
 25,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,mpReg +1.1,0,2760,[]
 35,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,mpReg +1.5,0,9980,[]
 ,,,,,,,,,,,,,,,,----------------------------HpRegen----------------------------
 35,HP regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,hpReg +1.1,0,9980,[]
 ,,,,,,,,,,,,,,,,----------------------------Holy Bolt----------------------------
-20,Holy Bolt,holy_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +21,20,5570,[magic_bolt]
+20,Holy Bolt,holy_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +21,20,5570,[magic_bolt],,"Magic damage, power @."
 25,Holy Bolt,holy_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +25,23,12500,[]
 30,Holy Bolt,holy_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +30,26,23700,[]
 35,Holy Bolt,holy_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +36,31,45400,[]
 ,,,,,,,,,,,,,,,,----------------------------Heal----------------------------
-20,Heal,heal,Magic/Heal,,,600,0,target/single,5,3,0,heal with power 151,30,5570,[]
+20,Heal,heal,Magic/Heal,,,600,0,target/single,5,3,0,heal with power 151,30,5570,[],,Heal power @.
 25,Heal,heal,Magic/Heal,,,600,0,target/single,5,3,0,heal with power 195,38,12500,[]
 30,Heal,heal,Magic/Heal,,,600,0,target/single,5,3,0,heal with power 245,44,23700,[]
 35,Heal,heal,Magic/Heal,,,600,0,target/single,5,3,0,heal with power 301,52,45400,[]
 ,,,,,,,,,,,,,,,,----------------------------Quick Heal----------------------------
-20,Quick Heal,quick_heal,Magic/Heal,,,600,0,target/single,2,1,0,heal with power 151,45,5570,[]
+20,Quick Heal,quick_heal,Magic/Heal,,,600,0,target/single,2,1,0,heal with power 151,45,5570,[],,Quick heal power @.
 25,Quick Heal,quick_heal,Magic/Heal,,,600,0,target/single,2,1,0,heal with power 195,57,12500,[]
 30,Quick Heal,quick_heal,Magic/Heal,,,600,0,target/single,2,1,0,heal with power 245,65,23700,[]
 35,Quick Heal,quick_heal,Magic/Heal,,,600,0,target/single,2,1,0,heal with power 301,67,45400,[]
 ,,,,,,,,,,,,,,,,----------------------------Party Heal----------------------------
-20,Party Heal,party_heal,Magic/Heal,,,0,1000,party/aoe,7,6,0,heal party with power 121,60,5570,[]
+20,Party Heal,party_heal,Magic/Heal,,,0,1000,party/aoe,7,6,0,heal party with power 121,60,5570,[],,Party heal power @.
 25,Party Heal,party_heal,Magic/Heal,,,0,1000,party/aoe,7,6,0,heal party with power 156,76,12500,[]
 30,Party Heal,party_heal,Magic/Heal,,,0,1000,party/aoe,7,6,0,heal party with power 196,94,23700,[]
 35,Party Heal,party_heal,Magic/Heal,,,0,1000,party/aoe,7,6,0,heal party with power 241,96,45400,[]
 ,,,,,,,,,,,,,,,,----------------------------Antidote----------------------------
-20,Antidote,antidote,Magic/Heal,,,600,0,party/single,0.8,3,0,"Cures poison, venom and bleed of rank 1 or lower from an ally (or self).",16,5570,[]
+20,Antidote,antidote,Magic/Heal,,,600,0,party/single,0.8,3,0,"Cures poison, venom and bleed of rank 1 or lower from an ally (or self).",16,5570,[],,"Cures poison, venom and bleed of any rank from an ally (or self)."
 35,Antidote,antidote,Magic/Heal,,,600,0,party/single,0.8,3,0,"Cures poison, venom and bleed of rank 2 or lower from an ally (or self).",20,45400,[]
 ,,,,,,,,,,,,,,,,----------------------------Resurrection----------------------------
 20,Resurrection,resurrection,Magic/Heal,,,600,0,target/single,10,10,0,Revive at 30% HP/MP. Does not give back any lost exp.,60,5570,[]
@@ -72,34 +72,34 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 ,,,,,,,,,,,,,,,,----------------------------Might----------------------------
 20,Might,cast_atk_phys,Magic/Buff,,,600,0,party/single,1,1,1200,+12% P.Atk.,20,3720,[]
 ,,,,,,,,,,,,,,,,----------------------------Swift----------------------------
-20,Swift,cast_spd_move,Magic/Buff,,,600,0,party/single,1,1,1200,+20 Move Speed.,20,3720,[]
+20,Swift,cast_spd_move,Magic/Buff,,,600,0,party/single,1,1,1200,+20 Move Speed.,20,3720,[],,+@{ms} Move Speed.
 30,Swift,cast_spd_move,Magic/Buff,,,600,0,party/single,1,1,1200,+33 Move Speed.,33,15800,[]
 ,,,,,,,,,,,,,,,,----------------------------Alacrity----------------------------
-20,Alacrity,cast_spd_cast,Magic/Buff,,,600,0,party/single,1,1,1200,+15% Cast Speed.,20,3720,[]
+20,Alacrity,cast_spd_cast,Magic/Buff,,,600,0,party/single,1,1,1200,+15% Cast Speed.,20,3720,[],,+@{cast} Cast Speed.
 35,Alacrity,cast_spd_cast,Magic/Buff,,,600,0,party/single,1,1,1200,+23% Cast Speed.,40,30300,[]
 ,,,,,,,,,,,,,,,,----------------------------Resolve----------------------------
-20,Resolve,cast_interrupt,Magic/Buff,,,600,0,party/single,1,1,1200,+18% interrupt resistance.,20,3720,[]
+20,Resolve,cast_interrupt,Magic/Buff,,,600,0,party/single,1,1,1200,+18% interrupt resistance.,20,3720,[],,+@{interrupt} interrupt resistance.
 25,Resolve,cast_interrupt,Magic/Buff,,,600,0,party/single,1,1,1200,+25% interrupt resistance.,26,8350,[]
 ,,,,,,,,,,,,,,,,----------------------------Bulwark----------------------------
 25,Bulwark,cast_def_phys,Magic/Buff,,,600,0,party/single,1,1,1200,+12% P.Def.,26,8350,[]
 ,,,,,,,,,,,,,,,,----------------------------Clarity----------------------------
 25,Clarity,cast_cc_res_mag,Magic/Buff,,,600,0,party/single,1,1,1200,11% resist to SPT debuffs,26,8350,[]
 ,,,,,,,,,,,,,,,,----------------------------Force----------------------------
-25,Force,cast_atk_mag,Magic/Buff,,,600,0,party/single,1,1,1200,+25% M.Atk.,26,8350,[]
+25,Force,cast_atk_mag,Magic/Buff,,,600,0,party/single,1,1,1200,+25% M.Atk.,26,8350,[],,+@{matk} M.Atk.
 ,,,,,,,,,,,,,,,,----------------------------Focus----------------------------
-25,Focus,cast_crit_rate,Magic/Buff,,,600,0,party/single,1,1,1200,+20% critical rate.,26,8350,[]
+25,Focus,cast_crit_rate,Magic/Buff,,,600,0,party/single,1,1,1200,+20% critical rate.,26,8350,[],,+@{critrate} critical rate.
 ,,,,,,,,,,,,,,,,----------------------------Restore Mana----------------------------
 30,Restore Mana,restore_mana,Magic/Heal,,,600,0,party/single,2,2,0,Transfers 52 MP to an ally (costs 52). Not on yourself or another mana-restorer.,52,23700,[]
 35,Restore Mana,restore_mana,Magic/Heal,,,600,0,party/single,2,2,0,Transfers 60 MP to an ally (costs 60). Not on yourself or another mana-restorer.,60,45400,[]
 ,,,,,,,,,,,,,,,,----------------------------Vampirism----------------------------
-30,Vampirism,cast_vamp,Magic/Buff,,,600,0,party/single,1,1,1200,+6% melee vampirism.,33,15800,[]
+30,Vampirism,cast_vamp,Magic/Buff,,,600,0,party/single,1,1,1200,+6% melee vampirism.,33,15800,[],,+@{vamp} melee vampirism.
 ,,,,,,,,,,,,,,,,----------------------------Agility----------------------------
-30,Agility,cast_spd_eva,Magic/Buff,,,600,0,party/single,1,1,1200,+2 Evasion.,33,15800,[]
+30,Agility,cast_spd_eva,Magic/Buff,,,600,0,party/single,1,1,1200,+2 Evasion.,33,15800,[],,+@{eva} Evasion.
 ,,,,,,,,,,,,,,,,----------------------------Aim----------------------------
-30,Aim,cast_accuracy,Magic/Buff,,,600,0,party/single,1,1,1200,+1 Accuracy.,30,15800,[]
+30,Aim,cast_accuracy,Magic/Buff,,,600,0,party/single,1,1,1200,+1 Accuracy.,30,15800,[],,+@{acc} Accuracy.
 ,,,,,,,,,,,,,,,,----------------------------Vigor----------------------------
-35,Vigor,cast_hp_regen,Magic/Buff,,,600,0,party/single,1,1,1200,+10% HP regeneration.,40,30300,[]
+35,Vigor,cast_hp_regen,Magic/Buff,,,600,0,party/single,1,1,1200,+10% HP regeneration.,40,30300,[],,+@{hpreg} HP regeneration.
 ,,,,,,,,,,,,,,,,----------------------------Ward----------------------------
-35,Ward,cast_def_mag,Magic/Buff,,,600,0,party/single,1,1,1200,+10% M.Def.,40,30300,[]
+35,Ward,cast_def_mag,Magic/Buff,,,600,0,party/single,1,1,1200,+10% M.Def.,40,30300,[],,+@{mdef} M.Def.
 ,,,,,,,,,,,,,,,,----------------------------Frenzy----------------------------
-35,Frenzy,holy_frenzy,Magic/Buff,,,600,0,party/single,1,1,1200,"−7% Max HP/MP, +5% offence and speed, +5 move, −5 evasion.",40,30300,[]
+35,Frenzy,holy_frenzy,Magic/Buff,,,600,0,party/single,1,1,1200,"−7% Max HP/MP, +5% offence and speed, +5 move, −5 evasion.",40,30300,[],,"-@{maxhp} Max HP/MP, +@{offencespeed} offence and speed, +@{ms} move, -@{eva} evasion."

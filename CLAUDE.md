@@ -186,7 +186,7 @@ from IG references.
   ⚠ `SkillCatalog.HarmonyRank` (= `NpcBuffRank + 1`) is the ONLY thing holding a covering harmony
   above the NPC singles it covers now that equal rank means "whoever cast last" — never collapse it.
   🔑 **A RACIAL/CLASS VARIANT IS A FACE, NOT A SKILL** (`BL-327`, 0.217.0 — it replaced `BL-263`'s wrapper
-  skills): same id, same numbers, a row per race/class in `docs/data/skill_faces.csv`. The racial Mights are ONE
+  skills): same id, same numbers, a race/class row in `docs/data/skill_faces.csv`. The racial Mights are ONE
   `cast_atk_phys`; a buff wears its CASTER's face (`BuffInstance.FaceId`, persisted). Never mint a copy of a skill to
   change its name, description or look — add a face row. See the faces section below.
 - **Spell range is PER-SPELL** (the skill's own `Range`), NOT class-tier-based:
@@ -351,22 +351,29 @@ coverage, and a number it could not read prints as `UNREAD` rather than being si
 ⚠ **It only walks the files listed in `Check.Specs`** — the seven 1st/2nd files plus `healer 3rd`.
 A 3rd-tier file earns its line the day he finishes it, never while it is a placeholder.
 
-### 🔑 `docs/data/skill_faces.csv` IS HOW A SKILL LOOKS (owner, 2026-09-30, `BL-327`)
-*"the class csv is the numbers per lvl while the face is the display"*. One row per (skill, race, class):
-`SKILL_ID,NAME,RACE,CLASS,DESCRIPTION,COMMENT`. Every skill has a BLANK row (race and class empty); a race row or a
-CLASS row (a real class name, any tier) overrides it — class lineage (4th → 3rd → 2nd → Fighter/Mage) → race → blank.
-Mobs/NPCs read the blank row. The class CSVs' `NAME` column is a LABEL now; the face owns the name.
-- DESCRIPTION placeholders: `@` = power, `@{key}` = any `DESCR-KEYS.md` word, `@{duration}`, `[ … ]` = all-or-nothing;
-  a number a level lacks drops its clause, so he writes the TOP rung's text. EMPTY = the code's own per-level text.
-- 🔑 **TWO FILES, ONE FORMAT** (owner, 2026-09-30): `skill_faces.csv` = SHARED skills (2+ races, or 2 classes not on
-  one line, or already has a race/class row); `skill_faces_single.csv` = one race on one class line + every skill no
-  class learns. Ownership is read off the compiled `ClassSkills` lineages, not the CSVs. Placement is cosmetic; `--check`
-  flags a stray and `SkillCsvSeed -- --sort-faces` moves it. A NEW skill's blank row goes in whichever file it belongs.
+### 🔑 HOW A SKILL LOOKS: the class CSV's NAME + DESCRIPTION, and `skill_faces.csv` for EXCEPTIONS (owner, 2026-09-30, `BL-327`)
+*"the class csv is the numbers per lvl while the face is the display"* — and, after a two-file split confused him the
+same day, *"build it that way"*: the plain look lives on the skill's own class-CSV rows.
+- **Class CSV `NAME`** = the skill's real name (a label no more). **`DESCRIPTION`** = the LAST column, what the player
+  reads, written on ONE row of the skill (the rest blank; two that differ = a check error). `DESCR` stays the numbers
+  per level. Placeholders: `@` = power, `@{key}` = any `DESCR-KEYS.md` word, `@{duration}`, `[ … ]` = all-or-nothing; a
+  number a level lacks drops its clause, so he writes the TOP rung's text. EMPTY = the code's own per-level text.
+- **`docs/data/skill_faces.csv`** = EXCEPTIONS ONLY, `SKILL_ID,NAME,RACE,CLASS,DESCRIPTION,COMMENT`: a RACE row
+  (Forest Strength) or a CLASS row (a real class name, any tier; `NPC` = the spirit helper's shelf label, for a shelf item
+  that is also a class skill — the Marks). Lineage 4th → 3rd → 2nd → Fighter/Mage → race → plain. Blank DESCRIPTION =
+  the plain one. A row with neither RACE nor CLASS is an error there.
+- **`docs/data/skill_faces_other.csv`** = `SKILL_ID,NAME,DESCRIPTION,COMMENT` for a skill NO class CSV lists (mobs,
+  `npc_*` blessings, items, internal pieces). A skill a class CSV lists may not appear here.
+- 🔑 **ONE NAME PER SKILL.** When rows disagree (Momentum reads Battle/Bow/Stab/Arcane by file), names an exception
+  row explains, or the code's per-level names (Grade F…S), are set aside and exactly ONE may remain — that is the plain
+  name. Two left = a check error, which is what catches a typo in one file.
 - `dotnet run --project tools/SkillCsvSeed -- --gen-faces` renders every level into `Game.Shared/SkillFaces.g.cs`
   (never hand-edit). The numbers come from the code, so **any skill retune owes a `--gen-faces`**; `--check` flags a
-  STALE file, a bad word/race/class, and a skill with no blank row. 🔑 **A NEW SKILL SHIPS WITH ITS BLANK FACE ROW.**
-- Server: `GameLoopService.FaceOf(entity, skillId)` / `SkillName`; client: `GameUi.MyFace` / `SkillNameAt`. Reading
-  `def.Name` for anything the player sees is the bug.
+  STALE file, a bad word/race/class, disagreeing names, and a skill with no name. 🔑 **A NEW SKILL SHIPS WITH ITS NAME**
+  (its class-CSV row, or a `skill_faces_other.csv` row if no class learns it).
+- Server: `GameLoopService.FaceOf(entity, skillId)` / `SkillName`; client: `GameUi.MyFace` / `SkillNameAt`; the spirit
+  helper: `NpcBuffShelf.DisplayName` → `SkillFaces.ForNpcShelf` (the "NPC" is IN the name, nothing prefixes it).
+  Reading `def.Name` for anything the player sees is the bug.
 
 ### 🔑 `docs/data/debuff_landmods.csv` IS THE AUTHORITY FOR `DebuffLandMod` (owner, 2026-09-13)
 *"take all the debuffs each single skill make them in a table and put the modifiers there … Then each

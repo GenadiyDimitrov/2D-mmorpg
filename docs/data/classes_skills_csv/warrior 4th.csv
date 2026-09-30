@@ -1,4 +1,4 @@
-LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment
+LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment,DESCRIPTION
 ,,,,,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
 76,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +184",0,2.08kk,250k
 77,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +186",0,3.18kk,500k
@@ -74,7 +74,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,,,----------------------------Overpower----------------------------
 76,Overpower,overpower,passive,,,0,0,self/single,0,0,0,double rate 10% - skills marked [Double] strike for DOUBLE damage that often - scales with ATK - without this passive NO skill can double,0,2.08kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Overpower Mastery----------------------------
-81,Overpower Mastery,double_mastery,Toggle,,,0,0,self/single,0,0,0,Doubles the base of EVERY skill mastery you have; increases P.MP consumation by 25%; Consume 50 HP/s,0,200kk,25kk,,,,Worth nothing without a mastery passive - it doubles whichever bases you have rather than a fixed one
+81,Overpower Mastery,double_mastery,Toggle,,,0,0,self/single,0,0,0,Doubles the base of EVERY skill mastery you have; increases P.MP consumation by 25%; Consume 50 HP/s,0,200kk,25kk,,,,Worth nothing without a mastery passive - it doubles whichever bases you have rather than a fixed one,"Stance. Your skill-mastery chances are DOUBLED, but every physical skill costs 25% more MP and you burn 50 HP a second."
 ,,,,,,,,,,,,,,,,,,,----------------------------Battle Momentum----------------------------
 76,Battle Momentum,reuse_reset_momentum,passive,,,0,0,self/single,0,0,0,reuse reset 5% - a skill you cast has that chance to come off reuse immediately - never on a fixed-cooldown skill - scales with ATK,0,2.08kk,1kk,,,,Same id as the Magus Arcane Momentum - one skill - one number - a name per class
 ,,,,,,,,,,,,,,,,,,,----------------------------Charge----------------------------
@@ -138,8 +138,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 90,Slash,warrior_elf_slash,Physical/Debuf,sword/2,,40,0,target/single,1,3,15,"Deals Physical damage with +6500 power, Decrease Attack/Cast/Move Speed of Enemy with 23%, Cannot be blocked, Can double;",110,0,100kk,,,Elf
 ,,,,,,,,,,,,,,,,,,,============================================= HUMAN =================================
 ,,,,,,,,,,,,,,,,,,,---------------------------Focus----------------------------
-78,Focus Force,focus_force,Physical/Active,sword/2,,600,0,target/single,1,0.5,0,"Deals Physical damage with +1200 power and gather 'Focus' up to 10, Cost 50 HP and 5 MP",5,20.5kk,1kk,,,Human
-78,Focus Limit,focus_limit,Physical/Active,sword/2,,0,0,self/single,1,90,0,"Immediately set 'Focus' to Max, Cost 80 HP and 20 MP",20,13.7kk,1kk,,,Human
+78,Focus Force,focus_force,Physical/Active,sword/2,,600,0,target/single,1,0.5,0,"Deals Physical damage with +1200 power and gather 'Focus' up to 10, Cost 50 HP and 5 MP",5,20.5kk,1kk,,,Human,,"Strikes for power 1,200 and gathers 1 Focus, up to 10. Costs 50 HP and 5 MP."
+78,Focus Limit,focus_limit,Physical/Active,sword/2,,0,0,self/single,1,90,0,"Immediately set 'Focus' to Max, Cost 80 HP and 20 MP",20,13.7kk,1kk,,,Human,,Sets Focus to its maximum of 10. Costs 80 HP and 20 MP.
 ,,,,,,,,,,,,,,,,,,,---------------------------Focused Blast----------------------------
 76,Focused Blast,focused_blast,Physical/Active,sword/2,,600,0,target/single,2,3,0,"Deals Physical damage with +10400 power, Cannot be blocked, Can double, Consume 'Focus' to increase power with 10% (Max 2);",80,9.44kk,1kk,,,Human
 78,Focused Blast,focused_blast,Physical/Active,sword/2,,600,0,target/single,2,3,0,"Deals Physical damage with +11200 power, Cannot be blocked, Can double, Consume 'Focus' to increase power with 10% (Max 2);",84,20.5kk,1kk,,,Human
@@ -183,7 +183,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 90,Focused Tripple Slash,focused_tripple_slash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +8000 power three times, Cannot be blocked, Can double, Consume 'Focus' to increase power with 15% (Max 4);",130,0,100kk,,,Human
 ,,,,,,,,,,,,,,,,,,,============================================= DEMON =================================
 ,,,,,,,,,,,,,,,,,,,---------------------------Parry----------------------------
-78,Parry,parry,toggle,sword/2,,0,0,self/single,0,0,0,"Increase P/M.Def with 25%; Decrease move/attack.speed with 10%;",10,13.7kk,1kk,,,Demon
+78,Parry,parry,toggle,sword/2,,0,0,self/single,0,0,0,"Increase P/M.Def with 25%; Decrease move/attack.speed with 10%;",10,13.7kk,1kk,,,Demon,,"+@{pdef} P.Def and M.Def, -@{ms} move and attack speed, 10 MP/s."
 ,,,,,,,,,,,,,,,,,,,---------------------------Sword Shock----------------------------
 76,Sword Shock,sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +5200 power and Stuns for 5s, Cannot be blocked, Can double;",80,9.44kk,1kk,,,Demon
 77,Sword Shock,sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +5400 power and Stuns for 5s, Cannot be blocked, Can double;",82,14.5kk,1kk,,,Demon
@@ -218,7 +218,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 90,Demonic Smash,demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +24000 power, Cannot be blocked, Can double;",130,0,100kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,============================================= ELF =================================
 ,,,,,,,,,,,,,,,,,,,---------------------------Saints Blessing----------------------------
-78,Saints Blessing,saints_blessing,toggle,sword/2,,0,0,self/single,0,0,0,"Reflect 30% of normal basic attacks, 15% to reflect debuff and 10% to reflect Physical Damage skill; Decrease move/attack.speed with 10%;",10,13.7kk,1kk,,,Elf
+78,Saints Blessing,saints_blessing,toggle,sword/2,,0,0,self/single,0,0,0,"Reflect 30% of normal basic attacks, 15% to reflect debuff and 10% to reflect Physical Damage skill; Decrease move/attack.speed with 10%;",10,13.7kk,1kk,,,Elf,,"Returns 30% of basic-attack damage; 15% chance to reflect a debuff and 10% chance to reflect a physical skill in full. -10% move and attack speed, 10 MP/s."
 ,,,,,,,,,,,,,,,,,,,---------------------------Sword Blast----------------------------
 76,Sword Blast,sword_blast,Physical/Active,sword/2,,600,0,target/single,2,3,0,"Deals Physical damage with +10400 power, Cannot be blocked, Can double;",80,9.44kk,1kk,,,Elf
 78,Sword Blast,sword_blast,Physical/Active,sword/2,,600,0,target/single,2,3,0,"Deals Physical damage with +11200 power, Cannot be blocked, Can double;",84,20.5kk,1kk,,,Elf

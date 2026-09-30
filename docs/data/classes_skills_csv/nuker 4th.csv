@@ -1,4 +1,4 @@
-LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment
+LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment,DESCRIPTION
 ,,,,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
 76,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +113",0,2.38kk,1kk
 77,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +116",0,3.4kk,1kk
@@ -81,11 +81,11 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 80,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +65%",0,0,1.7kk
 85,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +70%",0,0,16.7kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Arcane Momentum----------------------------
-76,Arcane Momentum,reuse_reset_momentum,Passive,,,0,0,self/single,0,0,0,reuse reset 5% - a skill you cast has that chance to come off reuse immediately - never on a fixed-cooldown skill - scales with ATK,0,2.38kk,1kk
+76,Arcane Momentum,reuse_reset_momentum,Passive,,,0,0,self/single,0,0,0,reuse reset 5% - a skill you cast has that chance to come off reuse immediately - never on a fixed-cooldown skill - scales with ATK,0,2.38kk,1kk,,,,,A skill you cast has a chance to come off reuse immediately. Scales with your ATK.
 ,,,,,,,,,,,,,,,,,,,----------------------------Mage Shield Mastery----------------------------
-76,Mage Shield Mastery,mage_shield_mastery,Passive,,/shield,0,0,self/single,0,0,0,"When Shield is equiped mp consumption -10% and mpReg +10%, Pdef +100, but shield can never block (block rate x0)",0,2.38kk,1kk
+76,Mage Shield Mastery,mage_shield_mastery,Passive,,/shield,0,0,self/single,0,0,0,"When Shield is equiped mp consumption -10% and mpReg +10%, Pdef +100, but shield can never block (block rate x0)",0,2.38kk,1kk,,,,,"With a shield equipped: -10% MP cost, +@{mpreg} MP regeneration and +@{pdef} P.Def — but the shield can never block."
 ,,,,,,,,,,,,,,,,,,,----------------------------Mana Barrier----------------------------
-85,Mana Barrier,mana_barrier,Magic/Buff,,,0,,self/single,0,300,30,"Diverts 70% of incoming damage to MP (0.5 MP per damage) for 30s or while MP lasts.",30,0,100kk,5
+85,Mana Barrier,mana_barrier,Magic/Buff,,,0,,self/single,0,300,30,"Diverts 70% of incoming damage to MP (0.5 MP per damage) for 30s or while MP lasts.",30,0,100kk,5,,,,"Diverts 70% of incoming damage to MP (0.5 MP per damage) for @{duration}, while MP lasts."
 ,,,,,,,,,,,,,,,,,,,----------------------------Force Empowerment----------------------------
 78,Force Empowerment,force_empowerment,Toggle,,,0,,self/single,0,0,0,"Increases mAtk +14%, mana consumption with 20% and drains 50/s HP",0,14.1kk,1kk,,,
 80,Force Empowerment,force_empowerment,Toggle,,,0,,self/single,0,0,0,"Increases mAtk +15%, mana consumption with 15% and drains 40/s HP",0,150kk,10kk,,,

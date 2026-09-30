@@ -1,4 +1,4 @@
-LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST (x1000),REPLACES,RACE,COMMENT
+LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST (x1000),REPLACES,RACE,COMMENT,DESCRIPTION
 ,,,,,,,,,,,,,,,,,----------------------------Light Armor Mastery----------------------------
 40,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +28",0,30.7
 43,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +31",0,37.9
@@ -22,7 +22,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 40,Critical Resist,rogue_crit_resist,Passive,,light,0,0,self/single,0,0,0,"light: crit rate resist +25%",0,93
 60,Critical Resist,rogue_crit_resist,Passive,,light,0,0,self/single,0,0,0,"light: crit rate resist +35%",0,257
 ,,,,,,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
-40,Dual Proficiency,dual_weapon_prof,passive,duals,,0,0,self/single,0,8,5,"With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% fot 5 sec",0,30.7,[]
+40,Dual Proficiency,dual_weapon_prof,passive,duals,,0,0,self/single,0,8,5,"With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% fot 5 sec",0,30.7,[],,,"With duals: @{procchance} chance, 60% less MP and +@{critdmg} crit damage for 5s (8s cooldown)."
 ,,,,,,,,,,,,,,,,,----------------------------Critical Rate Mastery----------------------------
 40,Critical Rate,rogue_critical_rate_mastery,passive,bow|duals,,0,0,self/single,0,0,0,"crit rate x1.3;",0,30.7
 52,Critical Rate,rogue_critical_rate_mastery,passive,bow|duals,,0,0,self/single,0,0,0,"crit rate x1.4;",0,74.9
@@ -80,9 +80,9 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 72,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +960;",0,876
 74,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1015;",0,925
 ,,,,,,,,,,,,,,,,,----------------------------Prowl----------------------------
-40,Prowl,prowl,physical active,,,0,0,self/single,0,2,0,Stance: monsters that haven't already noticed you leave you alone. Anything already chasing you keeps chasing. Costs 1 MP per second.,20,93,[],
+40,Prowl,prowl,physical active,,,0,0,self/single,0,2,0,Stance: monsters that haven't already noticed you leave you alone. Anything already chasing you keeps chasing. Costs 1 MP per second.,20,93,[],,,Stance: monsters that haven't already noticed you leave you alone. Anything already chasing you keeps chasing. Costs 1 MP per second.
 ,,,,,,,,,,,,,,,,,----------------------------Vanish----------------------------
-60,Vanish,vanish,physical active,,,0,0,self/single,0,120,30,"Vanish completely for 30s — nobody can see or target you, and every monster loses you. Anything but walking ends it.",30,257,[],
+60,Vanish,vanish,physical active,,,0,0,self/single,0,120,30,"Vanish completely for 30s — nobody can see or target you, and every monster loses you. Anything but walking ends it.",30,257,[],,,"Vanish completely for @{duration} — nobody can see or target you, and every monster loses you. Anything but walking ends it."
 ,,,,,,,,,,,,,,,,,----------------------------Lure----------------------------
 52,Lure,lure,physical debuff,,,200,0,enemy/single,0,10,3,"Pulls ONE monster onto you from 200 range - aggro 400 - monsters only - does no damage so its clan never answers;",65,341,[],
 62,Lure,lure,physical debuff,,,400,0,enemy/single,0,10,3,"Pulls ONE monster onto you from 400 range - aggro 400 - monsters only - does no damage so its clan never answers;",80,717,[],

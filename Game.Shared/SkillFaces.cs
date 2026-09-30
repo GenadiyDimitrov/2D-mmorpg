@@ -121,6 +121,20 @@ public static partial class SkillFaces
         return null;
     }
 
+    /// <summary>The CLASS value of a face row that names what the SPIRIT HELPER sells: `blood_mark` is the healer's own
+    /// skill, so its shelf label ("NPC Blood Mark") cannot be its blank row. No player's lineage is called this.</summary>
+    public const string NpcClass = "NPC";
+
+    /// <summary>The face the spirit helper's shelf shows for a skill: its <see cref="NpcClass"/> row, else the blank row.</summary>
+    public static SkillFace? ForNpcShelf(string skillId)
+    {
+        if (!BySkill.TryGetValue(skillId, out var rows)) return null;
+        foreach (var row in rows)
+            if (row.Race.Length == 0 && string.Equals(row.ClassName, NpcClass, StringComparison.OrdinalIgnoreCase))
+                return row;
+        return For(skillId, null, null);
+    }
+
     /// <summary>Convenience over <see cref="For(string, Race?, IReadOnlyList{string})"/> for callers that
     /// hold the class as its parts.</summary>
     public static SkillFace? For(string skillId, Race race, BaseClass baseClass, Archetype? archetype,

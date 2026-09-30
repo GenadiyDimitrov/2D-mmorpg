@@ -1,4 +1,4 @@
-LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST (x1000),REPLACES,RACE,COMMENT
+LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST (x1000),REPLACES,RACE,COMMENT,DESCRIPTION
 ,,,,,,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
 40,Strength Mastery,strength_mastery,passive,sword|blunt/2,,0,0,self/single,0,0,0,"With 2h sword/blunt: p.atk +25%;",0,23.9
 ,,,,,,,,,,,,,,,,,----------------------------Accuracy----------------------------
@@ -120,27 +120,27 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 49,Battle Resilience,battle_resilience,physical buff,,,0,0,self/single,0.5,150,60,"Increase resistance to Stun/Shock, Hold/Bind and Buff-Removal Attacks with 60%;",40,145
 62,Battle Resilience,battle_resilience,physical buff,,,0,0,self/single,0.5,150,60,"Increase resistance to Stun/Shock, Hold/Bind and Buff-Removal Attacks with 80%;",60,512
 ,,,,,,,,,,,,,,,,,----------------------------Monster Knowlegee----------------------------
-40,Monster Knowlege,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 10%,40,72.3
-46,Monster Knowlege,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 15%,40,70.8
-52,Monster Knowlege,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 20%,40,171
-58,Monster Knowlege,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 25%,40,145
-64,Monster Knowlege,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 30%,40,313
+40,Monster Knowledge,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 10%,40,72.3
+46,Monster Knowledge,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 15%,40,70.8
+52,Monster Knowledge,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 20%,40,171
+58,Monster Knowledge,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 25%,40,145
+64,Monster Knowledge,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 30%,40,313
 ,,,,,,,,,,,,,,,,,----------------------------Charge----------------------------
 40,Charge,warrior_charge,physical/active,sword|blunt/2,,400,0,target/single,0.5,5,1,Charges to enemy; Min charge distance 150,40,72.3
 ,,,,,,,,,,,,,,,,,----------------------------Battle Regeneration----------------------------
-70,Battle Revival,battle_revival,heal,,,0,0,self/single,0,300,0,Instantly heals to full HP,0,1450
+70,Battle Revival,battle_revival,heal,,,0,0,self/single,0,300,0,Instantly heals to full HP,0,1450,,,,Back from the brink: your HP is restored in full. Five minutes of reuse.
 ,,,,,,,,,,,,,,,,,----------------------------Life Support----------------------------
-60,Life support,waraoe_life_support,Passive,,,0,0,self/single,0,15,10,"10% chance to heal for 5% max HP, and leave lingering 50/s healing effect",0,125,[],Elf
-66,Life support,waraoe_life_support,Passive,,,0,0,self/single,0,15,10,"15% chance to heal for 7% max HP, and leave lingering 100/s healing effect",0,355,[],Elf
-74,Life support,waraoe_life_support,Passive,,,0,0,self/single,0,15,10,"20% chance to heal for 10% max HP, and leave lingering 150/s healing effect",0,882,[],Elf
+60,Life Support,waraoe_life_support,Passive,,,0,0,self/single,0,15,10,"10% chance to heal for 5% max HP, and leave lingering 50/s healing effect",0,125,[],Elf
+66,Life Support,waraoe_life_support,Passive,,,0,0,self/single,0,15,10,"15% chance to heal for 7% max HP, and leave lingering 100/s healing effect",0,355,[],Elf
+74,Life Support,waraoe_life_support,Passive,,,0,0,self/single,0,15,10,"20% chance to heal for 10% max HP, and leave lingering 150/s healing effect",0,882,[],Elf
 ,,,,,,,,,,,,,,,,,----------------------------Blood Support----------------------------
-60,Blood support,waraoe_blood_support,Passive,,,0,0,self/single,0,15,10,"10% chance to heal for 5% max HP, and leave lingering 3% vampiric effect",0,125,[],Demon
-66,Blood support,waraoe_blood_support,Passive,,,0,0,self/single,0,15,10,"15% chance to heal for 7% max HP, and leave lingering 6% vampiric effect",0,355,[],Demon
-74,Blood support,waraoe_blood_support,Passive,,,0,0,self/single,0,15,10,"20% chance to heal for 10% max HP, and leave lingering 9% vampiric effect",0,882,[],Demon
+60,Blood Support,waraoe_blood_support,Passive,,,0,0,self/single,0,15,10,"10% chance to heal for 5% max HP, and leave lingering 3% vampiric effect",0,125,[],Demon
+66,Blood Support,waraoe_blood_support,Passive,,,0,0,self/single,0,15,10,"15% chance to heal for 7% max HP, and leave lingering 6% vampiric effect",0,355,[],Demon
+74,Blood Support,waraoe_blood_support,Passive,,,0,0,self/single,0,15,10,"20% chance to heal for 10% max HP, and leave lingering 9% vampiric effect",0,882,[],Demon
 ,,,,,,,,,,,,,,,,,----------------------------Vanguard Support----------------------------
-60,Vanguard support,waraoe_support,Passive,,,0,0,self/single,0,15,10,"10% chance to heal for 5% max HP, and leave lingering 1% vampiric and 17/s healing effect",0,125,[],Human
-66,Vanguard support,waraoe_support,Passive,,,0,0,self/single,0,15,10,"15% chance to heal for 7% max HP, and leave lingering 2% vampiric and 33/s healing effect",0,355,[],Human
-74,Vanguard support,waraoe_support,Passive,,,0,0,self/single,0,15,10,"20% chance to heal for 10% max HP, and leave lingering 3% vampiric and 50/s healing effect",0,882,[],Human
+60,Vanguard Support,waraoe_support,Passive,,,0,0,self/single,0,15,10,"10% chance to heal for 5% max HP, and leave lingering 1% vampiric and 17/s healing effect",0,125,[],Human
+66,Vanguard Support,waraoe_support,Passive,,,0,0,self/single,0,15,10,"15% chance to heal for 7% max HP, and leave lingering 2% vampiric and 33/s healing effect",0,355,[],Human
+74,Vanguard Support,waraoe_support,Passive,,,0,0,self/single,0,15,10,"20% chance to heal for 10% max HP, and leave lingering 3% vampiric and 50/s healing effect",0,882,[],Human
 ,,,,,,,,,,,,,,,,,---------------------------Shocking Shout----------------------------
 40,Shocking Shout,shocking_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +1000 power and Stuns around for 5s, Cannot be blocked, Can double;",36,108,,
 43,Shocking Shout,shocking_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +1200 power and Stuns around for 5s, Cannot be blocked, Can double;",40,180,,
@@ -158,40 +158,40 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 72,Shocking Shout,shocking_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +3800 power and Stuns around for 5s, Cannot be blocked, Can double;",75,1940,,
 74,Shocking Shout,shocking_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +4000 power and Stuns around for 5s, Cannot be blocked, Can double;",78,4010,,
 ,,,,,,,,,,,,,,,,,---------------------------Wirlwind----------------------------
-40,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +300 power 10 times over 2s, Cannot be blocked, Can double;",36,108,[]
-43,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +350 power 10 times over 2s, Cannot be blocked, Can double;",40,180,[]
-46,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +400 power 10 times over 2s, Cannot be blocked, Can double;",43,106,[]
-49,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +450 power 10 times over 2s, Cannot be blocked, Can double;",45,217,[]
-52,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +500 power 10 times over 2s, Cannot be blocked, Can double;",47,257,[]
-55,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +550 power 10 times over 2s, Cannot be blocked, Can double;",50,379,[]
-58,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +600 power 10 times over 2s, Cannot be blocked, Can double;",55,218,[]
-60,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +650 power 10 times over 2s, Cannot be blocked, Can double;",56,569,[]
-62,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +700 power 10 times over 2s, Cannot be blocked, Can double;",58,768,[]
-64,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +750 power 10 times over 2s, Cannot be blocked, Can double;",62,470,[]
-66,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +800 power 10 times over 2s, Cannot be blocked, Can double;",65,1610,[]
-68,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +850 power 10 times over 2s, Cannot be blocked, Can double;",68,908,[]
-70,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +900 power 10 times over 2s, Cannot be blocked, Can double;",70,1450,[]
-72,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +950 power 10 times over 2s, Cannot be blocked, Can double;",75,1940,[]
-74,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1000 power 10 times over 2s, Cannot be blocked, Can double;",78,4010,[]
+40,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +300 power 10 times over 2s, Cannot be blocked, Can double;",36,108,[]
+43,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +350 power 10 times over 2s, Cannot be blocked, Can double;",40,180,[]
+46,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +400 power 10 times over 2s, Cannot be blocked, Can double;",43,106,[]
+49,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +450 power 10 times over 2s, Cannot be blocked, Can double;",45,217,[]
+52,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +500 power 10 times over 2s, Cannot be blocked, Can double;",47,257,[]
+55,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +550 power 10 times over 2s, Cannot be blocked, Can double;",50,379,[]
+58,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +600 power 10 times over 2s, Cannot be blocked, Can double;",55,218,[]
+60,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +650 power 10 times over 2s, Cannot be blocked, Can double;",56,569,[]
+62,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +700 power 10 times over 2s, Cannot be blocked, Can double;",58,768,[]
+64,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +750 power 10 times over 2s, Cannot be blocked, Can double;",62,470,[]
+66,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +800 power 10 times over 2s, Cannot be blocked, Can double;",65,1610,[]
+68,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +850 power 10 times over 2s, Cannot be blocked, Can double;",68,908,[]
+70,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +900 power 10 times over 2s, Cannot be blocked, Can double;",70,1450,[]
+72,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +950 power 10 times over 2s, Cannot be blocked, Can double;",75,1940,[]
+74,Whirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,2,"Deals Physical damage with +1000 power 10 times over 2s, Cannot be blocked, Can double;",78,4010,[]
 ,,,,,,,,,,,,,,,,,---------------------------Taunting Shout----------------------------
 52,Taunting Shout,taunting_shout,Physical/Debuf,blunt/2,,0,600,enemy/aoe,1,20,30,"Shouts to do provoke enemies in a large area and make them vunarable to bludgering attacks (10% more dmg from blunts);",50,257,,
 74,Taunting Shout,taunting_shout,Physical/Debuf,blunt/2,,0,800,enemy/aoe,1,20,30,"Shouts to do provoke enemies in a large area and make them vunarable to bludgering attacks (20% more dmg from blunts);",60,4010,,
 ,,,,,,,,,,,,,,,,,---------------------------Shout----------------------------
-40,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 10%;",36,108,[smash],Human,Single debuff x1.5
-43,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 13%;",40,180,[smash],Human
-46,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 16%;",43,106,[smash],Human
-49,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 19%;",45,217,[smash],Human
-52,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 21%;",47,257,[smash],Human
-55,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",50,379,[smash],Human
-58,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",55,218,[smash],Human
-60,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",56,569,[smash],Human
-62,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",58,768,[smash],Human
-64,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",62,470,[smash],Human
-66,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",65,1610,[smash],Human
-68,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",68,908,[smash],Human
-70,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",70,1450,[smash],Human
-72,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",75,1940,[smash],Human
-74,Shattaring Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",78,4010,[smash],Human
+40,Shattering Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 10%;",36,108,[smash],Human,Single debuff x1.5
+43,Shattering Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 13%;",40,180,[smash],Human
+46,Shattering Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 16%;",43,106,[smash],Human
+49,Shattering Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 19%;",45,217,[smash],Human
+52,Shattering Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 21%;",47,257,[smash],Human
+55,Shattering Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",50,379,[smash],Human
+58,Shattering Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",55,218,[smash],Human
+60,Shattering Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",56,569,[smash],Human
+62,Shattering Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",58,768,[smash],Human
+64,Shattering Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",62,470,[smash],Human
+66,Shattering Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",65,1610,[smash],Human
+68,Shattering Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",68,908,[smash],Human
+70,Shattering Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",70,1450,[smash],Human
+72,Shattering Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",75,1940,[smash],Human
+74,Shattering Shout,shattering_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",78,4010,[smash],Human
 ,,,,,,,,,,,,,,,,,---------------------------Shout----------------------------
 40,Breaking Shout,breaking_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 5%;",36,108,[smash],Demon,Single debuff x1.5
 43,Breaking Shout,breaking_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 5%;",40,180,[smash],Demon

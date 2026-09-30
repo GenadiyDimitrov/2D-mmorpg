@@ -18801,8 +18801,9 @@ public class GameLoopService : BackgroundService
             : rung;
 
     /// <summary>What a blessing BOUGHT from the NPC buffer is called on the bar: "NPC Might" (owner, 2026-09-30 — the
-    /// cleric's is "Might Lv.2", the NPC's has no level and says where it came from).</summary>
-    private static string NpcBuffLabel(string shelfId) => "NPC " + SkillCatalog.NpcBuffName(shelfId);
+    /// cleric's is "Might Lv.2", the NPC's has no level and says where it came from). The "NPC" is IN the face now
+    /// (`npc_might` reads "NPC Might"; a mark's `CLASS = NPC` row), so the window and the bar read one name.</summary>
+    private static string NpcBuffLabel(string shelfId) => SkillCatalog.NpcBuffName(shelfId);
 
     /// <summary>The skill's name as this entity shows it — its face, at the rung it holds.</summary>
     private static string SkillName(Entity e, string skillId) =>

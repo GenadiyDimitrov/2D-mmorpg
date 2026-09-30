@@ -1,199 +1,17 @@
 SKILL_ID,NAME,RACE,CLASS,DESCRIPTION,COMMENT
-,,,,,---------------------------- ACTIVE ----------------------------
-strike,Strike,,,Strike — power @.,fighter 1st
-stab,Stab,,,Stab — blow power @.,fighter 1st
-shot,Shot,,,Shot — power @.,fighter 1st
-magic_bolt,Magic Bolt,,,"Magic damage, power @.",mage 1st
-smash,Smash,,,Smash — power @.,warrior 2nd
-battle_regeneration,Battle Regeneration,,,,"warrior 2nd, warrior 3rd, war_aoe 3rd | EMPTY = the game's per-level text; top rung reads: Restores @{power} of your maximum HP instantly (90s reuse)."
-provoke,Taunt,,,,"tank 2nd, tank 3rd, tank 4th | EMPTY = the game's per-level text; top rung reads: Locks a monster onto you for 1.5s and adds 18 000 to your aggro on it. It does not put you at the top for free — hold it by keeping the taunt up."
-shield_shock,Shield Shock,,,"Slams the target with your shield, stunning it for @{duration}. ATK-vs-CON; bosses immune. Requires a shield.","tank 2nd, tank 3rd, tank 4th"
-piercing_stab,Piercing Stab,,,Piercing Stab — blow power @.,rogue 2nd
-precise_shot,Precise Shot,,,Precise Shot — power @.,rogue 2nd
-holy_bolt,Holy Bolt,,,"Magic damage, power @.",cleric 2nd
 holy_bolt,Holy Bolt,human,,"Magic damage, power @.",
 holy_bolt,Moonlight Bolt,elf,,"Magic damage, power @.",
 holy_bolt,Spirit Bolt,demon,,"Magic damage, power @.",
-heal,Heal,,,Heal power @.,cleric 2nd
-quick_heal,Quick Heal,,,Quick heal power @.,cleric 2nd
-party_heal,Party Heal,,,Party heal power @.,cleric 2nd
-antidote,Antidote,,,"Cures poison, venom and bleed of any rank from an ally (or self).","cleric 2nd, healer 3rd, healer 4th"
-resurrection,Resurrection,,,,"cleric 2nd, healer 3rd, buffer 3rd, healer 4th | EMPTY = the game's per-level text; top rung reads: Revive at 40% HP/MP; restore @{resexp} of lost exp (5s cast)."
-restore_mana,Restore Mana,,,,"cleric 2nd, healer 3rd | EMPTY = the game's per-level text; top rung reads: Transfers @ MP to an ally (costs 140). Can't be used on yourself or another mana-restorer."
-elemental_bolt,Elemental Bolt,,,"Magic damage, power @.",nuker 2nd
-quick_bolt,Quick Bolt,,,"Magic damage, power @.",nuker 2nd
-restore_spirit,Restore Spirit,,,,"nuker 2nd, nuker 3rd | EMPTY = the game's per-level text; top rung reads: Burns 272 HP to restore 94 MP."
-warrior_charge,Charge,,,,"warrior 3rd, war_aoe 3rd, warrior 4th, war_aoe 4th | EMPTY = the game's per-level text; top rung reads: Charges to an enemy up to 600 away."
-battle_revival,Battle Revival,,,Back from the brink: your HP is restored in full. Five minutes of reuse.,war_aoe 3rd
-shocking_shout,Shocking Shout,,,,"war_aoe 3rd, war_aoe 4th | EMPTY = the game's per-level text; top rung reads: Strikes everything within 200 for power 6 500 and stuns it for @{duration}. Cannot be blocked; can double."
-waraoe_wirlwind,Whirlwind,,,,"war_aoe 3rd, war_aoe 4th | EMPTY = the game's per-level text; top rung reads: Ten strokes of power 1 750 over @{duration}; each catching everything within 200. Cannot be blocked; can double."
-taunting_shout,Taunting Shout,,,,"war_aoe 3rd, war_aoe 4th | EMPTY = the game's per-level text; top rung reads: Provokes everything within 600 for @{duration} and leaves it taking 30% more damage from blunt weapons."
-stay,Stay,,,Roots the target in place for @{duration} (it can still act). ATK-vs-CON; bosses immune.,"tank 3rd, tank 4th"
-shield_smash_rate,Shield Smash - Rate,,,,"tank 3rd, tank 4th | EMPTY = the game's per-level text; top rung reads: Power 7 200; −50% P.Crit rate and −25% M.Crit rate for @{duration}."
-prowl,Prowl,,,Stance: monsters that haven't already noticed you leave you alone. Anything already chasing you keeps chasing. Costs 1 MP per second.,dual 3rd | typed numbers kept: 1
-vanish,Vanish,,,"Vanish completely for @{duration} — nobody can see or target you, and every monster loses you. Anything but walking ends it.",dual 3rd
-lure,Lure,,,,dual 3rd | EMPTY = the game's per-level text; top rung reads: Pulls ONE monster onto you from 600 range — beyond a monster's own aggro range. No damage; so its clan never answers.
-killing_stab,Killing Stab,,,,"dual 3rd, dual 4th | EMPTY = the game's per-level text; top rung reads: Blow power 7 500 on a critical; a normal attack otherwise."
-signal_flare,Signal Flare,,,Fires a flare: everyone hidden within 300 is revealed and cannot hide again for 30s. Deals no damage.,archer 3rd | typed numbers kept: 300 30
-archer_twin_arrows,Twin Arrows,,,,"archer 3rd, archer 4th | EMPTY = the game's per-level text; top rung reads: Looses 2 arrows; each for power 8 000."
-explosive_arrow,Explosive Arrow,,,,"archer 3rd, archer 4th | EMPTY = the game's per-level text; top rung reads: Bursts for power 4 000 on everything within 200."
-holy_ray,Holy Ray,,,,"healer 3rd, healer 4th | EMPTY = the game's per-level text; top rung reads: Magic damage; m.Atk +109."
-great_heal,Great Heal,,,,"healer 3rd, buffer 3rd, healer 4th | EMPTY = the game's per-level text; top rung reads: Heals a single ally for 1400."
-party_great_heal,Party Great Heal,,,,"healer 3rd, healer 4th | EMPTY = the game's per-level text; top rung reads: Heals you and nearby party members for 1000."
-urgent_heal,Urgent Heal,,,,healer 3rd | EMPTY = the game's per-level text; top rung reads: Heals an ally for 30% of their maximum HP.
-resurrection_field,Resurrection Field,,,,"healer 3rd, healer 4th | EMPTY = the game's per-level text; top rung reads: Revives fallen allies within 900 at 40% HP/MP; restores 70% of lost exp."
-mana_strain,Mana Strain,,,Raises the target's physical and magic MP costs by @{mpcost} for @{duration}.,"healer 3rd, healer 4th"
-mana_ray,Mana Ray,,,,"healer 3rd, healer 4th | EMPTY = the game's per-level text; top rung reads: Drains 18% of the target's maximum MP (half that on a monster)."
-ultimate_heal,Ultimate Heal,,,,"healer 3rd, healer 4th | EMPTY = the game's per-level text; top rung reads: Heals a single ally for 2000. Consumes @{reagent} Skill Stones."
-ultimate_party_heal,Ultimate Party Heal,,,,"healer 3rd, healer 4th | EMPTY = the game's per-level text; top rung reads: Heals you and nearby party members for 2000. Consumes @{reagent} Skill Stones."
-weapon_break,Weapon Break,,,-@{patk} P.Atk and M.Atk for @{duration}.,"healer 3rd, healer 4th"
-harmony_of_restoration,Harmony of Restoration,,,Restores @ HP and @{mpreg} MP per second to the party for @{duration}.,"buffer 3rd, buffer 4th"
-sound_smash,Sound Smash,,,Strikes for power @.,"buffer 3rd, buffer 4th"
-elemental_blast,Elemental Blast,,,"Magic damage, power @.","nuker 3rd, nuker 4th"
-elemental_burst,Elemental Burst,,,"Magic damage, power @. Consumes @{reagent} Elemental Stones.","nuker 3rd, nuker 4th"
-thunderstorm,Thunderstorm,,,"Storm damage, power @. Consumes @{reagent} Elemental Stones.","nuker 3rd, nuker 4th"
-quick_blast,Quick Blast,,,"Magic damage, power @. Half power in PvP.","nuker 3rd, nuker 4th"
-elemental_wave,Elemental Wave,,,,"nuker 3rd, nuker 4th | EMPTY = the game's per-level text; top rung reads: Hits every enemy within 200 for power 137."
-warrior_charge_normal,Charge,,,"Close the ground to an enemy up to 800 away, over one second.",war_aoe 4th | typed numbers kept: 800
-flash_step,Flash Step,,,Step instantly to an enemy up to 800 away. No cast — and twice the reuse.,war_aoe 4th | typed numbers kept: 800
-charge_n_shock,Charge n Shock,,,"A heavy, deliberate charge — slower to arrive, and it puts the target down for @{duration}.",war_aoe 4th
-warrior_charge_aoe,Charge n Stomp,,,Close the ground and land hard: everything within 200 of your target is caught.,war_aoe 4th | typed numbers kept: 200
-shocking_javelin,Shocking Javelin,,,,war_aoe 4th | EMPTY = the game's per-level text; top rung reads: Strikes everything within 150 for power 6 500 and stuns it for @{duration}. Cannot be blocked; can double.
-tauting_wall,Tauting Wall,,,"Roars at everything within 800 — each of them turns on you for @{duration} and adds 11,400 to your aggro — and then you plant yourself: +5,000 P.Def, +4,500 M.Def and high cancel resistance for 30s, at a fifth of your movement.",tank 4th | typed numbers kept: 800 11 400 5 000 4 500 30
-numbing_shock,Numbing Shock,,,"A blow to the nerve: the target's body will not perform a skill for @{duration}, though it can still swing. Requires a shield.",tank 4th
-grapple,Grapple,,,,tank 4th | EMPTY = the game's per-level text; top rung reads: Power 3 500. Drags the target to you over 1.2s; hits it and stuns it for @{duration} on arrival.
-heavy_arrow,Heavy Arrow,,,"Strikes for power 17,000.",archer 4th | typed numbers kept: 17 000
-archer_arrow_barrage,Arrow Barrage,,,"Looses 10 arrows over @{duration}, each for power 2,000 with a 150 splash.",archer 4th | typed numbers kept: 10 2 000 150
-urgent_great_heal,Urgent Great Heal,,,"Finds the ten most badly hurt allies within 900, plus yourself, and heals them worst-first — 30% of their own maximum HP for the worst, 2% less for each one after, down to 10%. Consumes @{reagent} Skill Stones.",healer 4th | typed numbers kept: 900 30% 2% 10%
-holy_blessing,Holy Blessing,,,"Strips every harmful effect from an ally, and is the only cure that reaches a tier-11 burn or venom. Tier 12 is beyond it. Consumes one Holy Stone.",healer 4th | typed numbers kept: 11 12
-urgent_lesser_heal,Urgent Lesser Heal,,,"Finds the four most badly hurt allies within 1000, plus yourself, and heals them worst-first — 20% of their own maximum HP for the worst, 2% less for each one after, down to 12%. Consumes @{reagent} Skill Stones.",buffer 4th | typed numbers kept: 1000 20% 2% 12%
-,,,,,---------------------------- BUFF ----------------------------
-cast_atk_phys,Might,,,+@{patk} P.Atk.,"mage 1st, cleric 2nd, healer 3rd, buffer 3rd, buffs"
-cast_atk_phys,Blessing of Might,human,,A magical blessing that increases P.Atk by @{patk} for @{duration}.,
-cast_atk_phys,Forest Might,elf,,By the help of the forest: +@{patk} P.Atk for @{duration}.,
-cast_atk_phys,Demonic Strength,demon,,Signing a demonic contract: +@{patk} P.Atk for @{duration}.,
-cast_def_phys,Bulwark,,,+@{pdef} P.Def.,"mage 1st, cleric 2nd, healer 3rd, buffer 3rd, buffs"
-battle_presence,Battle Presence,,,,"warrior 2nd, warrior 3rd | EMPTY = the game's per-level text; top rung reads: ×1.65 P.Atk and +@{acc} accuracy for @{duration}; at ≤60% HP."
-battle_defence,Battle Defence,,,,"warrior 2nd, warrior 3rd | EMPTY = the game's per-level text; top rung reads: ×3.0 P.Def for @{duration}; at ≤60% HP."
-battle_resilience,Battle Resilience,,,,"warrior 2nd, warrior 3rd, war_aoe 3rd | EMPTY = the game's per-level text; top rung reads: +80% resistance to stun/hold and to buff removal; @{duration}."
-monster_knowledge_active,Monster Knowledge,,,,"warrior 2nd, warrior 3rd, war_aoe 3rd | EMPTY = the game's per-level text; top rung reads: +30% damage to monsters for @{duration}."
-single_mark,Single Mark,,,"Stance. Every attack and every skill strikes only your target — no sweep, no cleave. Double critical rate, 20% less skill power. Requires a two-handed blunt.",warrior 2nd | typed numbers kept: 20%
-defensive_wall,Defensive Wall,,,,"tank 2nd, tank 3rd, tank 4th | EMPTY = the game's per-level text; top rung reads: Raise an impregnable guard for @{duration}: +5 000 P.Def; +4 500 M.Def and high cancel resistance; but your movement drops to ×0.20."
-sprint,Sprint,,,A burst of speed: +@{ms} move speed for @{duration}. Overrides every Dash potion.,"rogue 2nd, dual 3rd"
-evasion_boost,Evasion Boost,,,,"rogue 2nd, dual 3rd | EMPTY = the game's per-level text; top rung reads: +@{eva} Evasion; 30% to dodge physical skills outright; for @{duration}."
-bow_expertise,Bow Expertise,,,"Steadies your aim: +@{as} attack speed while wielding a bow, for @{duration}.","rogue 2nd, archer 3rd, buffer 3rd"
-cast_spd_move,Swift,,,+@{ms} Move Speed.,"cleric 2nd, buffs"
-cast_spd_cast,Alacrity,,,+@{cast} Cast Speed.,"cleric 2nd, healer 3rd, buffer 3rd, buffs"
-cast_interrupt,Resolve,,,+@{interrupt} interrupt resistance.,"cleric 2nd, healer 3rd, buffer 3rd, buffs"
-cast_cc_res_mag,Clarity,,,,"cleric 2nd, healer 3rd, buffer 3rd, buffs | EMPTY = the game's per-level text; top rung reads: +20% resistance to magical (SPT) debuffs."
-cast_atk_mag,Force,,,+@{matk} M.Atk.,"cleric 2nd, healer 3rd, buffer 3rd, buffs"
-cast_crit_rate,Focus,,,+@{critrate} critical rate.,"cleric 2nd, healer 3rd, buffer 3rd, buffs"
-cast_vamp,Vampirism,,,+@{vamp} melee vampirism.,"cleric 2nd, healer 3rd, buffer 3rd, buffs"
-cast_spd_eva,Agility,,,+@{eva} Evasion.,"cleric 2nd, healer 3rd, buffer 3rd, buffs"
-cast_accuracy,Aim,,,+@{acc} Accuracy.,"cleric 2nd, healer 3rd, buffer 3rd, buffs"
-cast_hp_regen,Vigor,,,+@{hpreg} HP regeneration.,"cleric 2nd, healer 3rd, buffer 3rd, buffs"
-cast_def_mag,Ward,,,+@{mdef} M.Def.,"cleric 2nd, healer 3rd, buffer 3rd, buffs"
-holy_frenzy,Frenzy,,,"-@{maxhp} Max HP/MP, +@{offencespeed} offence and speed, +@{ms} move, -@{eva} evasion.","cleric 2nd, healer 3rd, buffer 3rd, buffs"
-tank_shield_reinforcement,Shield Reinforcement,,,"Stance. Brace behind your shield: +@{pdef} P.Def and half again your block chance, for 15 MP a second.",tank 3rd | typed numbers kept: 15
-bow_blessing,Bow Blessing,,,-@{reuse} physical reuse for @{duration}. Requires a bow.,archer 3rd
-bow_spirit,Bow Spirit,,,,archer 3rd | EMPTY = the game's per-level text; top rung reads: −30% MP on physical skills for @{duration}. Requires a bow.
-bow_stance,Bow Stance,,,"Plant your feet for @{duration}: +15% attack power, critical rate, critical damage and physical skill power, and +200 bow range — at half your movement.",archer 3rd | typed numbers kept: 15% 200
-cast_crit_dmg,Ferocity,,,+@{critdmg} critical damage.,"healer 3rd, buffer 3rd, buffs"
-cast_cc_res_phys,Fortitude,,,,"healer 3rd, buffer 3rd, healer 4th, buffs | EMPTY = the game's per-level text; top rung reads: +35% resistance to physical (CON) debuffs."
-cast_shield_block,Shield Blessing,,,+@{blockrate} block chance.,"healer 3rd, buffer 3rd, buffs"
-cast_mp_regen,Serenity,,,+@{mpreg} MP regeneration.,"healer 3rd, buffer 3rd, buffs"
-conceal,Conceal,,,"For @{duration}, monsters that haven't already noticed you leave you alone. Anything already chasing you keeps chasing.",healer 3rd
-cast_spd_as,Fury,,,+@{as} Attack Speed.,"healer 3rd, buffer 3rd, buffs"
-cast_hp_max,Body,,,+@{maxhp} Max HP.,"healer 3rd, buffer 3rd, buffs"
-cast_mp_max,Soul,,,+@{maxmp} Max MP.,"healer 3rd, buffer 3rd, buffs"
-meditation,Meditation,,,+@{mpreg} MP/s and -@{pdef} P.Def for @{duration}; ends on any damage taken.,healer 3rd
-cast_shield_def,Shield Hardening,,,,"healer 3rd, buffer 3rd, buffs | EMPTY = the game's per-level text; top rung reads: +25% shield block reduction."
-mana_blessing,Mana Blessing,,,,"healer 3rd, buffer 3rd, healer 4th, buffs | EMPTY = the game's per-level text; top rung reads: Physical skills cost 30% less MP and spells 20% less; for @{duration}."
-great_might,Great Might,,,"+@{patk} P.Atk, on top of the ordinary blessing.","healer 3rd, buffer 3rd, buffs"
-great_bulwark,Great Bulwark,,,"+@{pdef} P.Def, on top of the ordinary blessing.","healer 3rd, buffer 3rd, buffs"
-cast_mcrit_rate,Insight,,,+@{magiccritrate} magic critical rate.,"healer 3rd, buffer 3rd, buffs"
-reinforcement,Reinforcement,,,,"buffer 3rd, buffer 4th | EMPTY = the game's per-level text; top rung reads: +800 while active; 30 MP per second."
-sharpening,Sharpening,,,,"buffer 3rd, buffer 4th | EMPTY = the game's per-level text; top rung reads: +400 while active; 15 MP per second."
-madness,War Frenzy,,,"Drives you and nearby allies to fight recklessly: -@{maxhp} Max HP/MP, but +@{patk} P.Atk / M.Atk / attack & cast speed, +@{ms} Move Speed and -@{eva} Evasion for @{duration}.","buffer 3rd, buffs"
-war_bulwark,War Bulwark,,,"+@{pdef} P.Def for the whole party, on top of Bulwark, for @{duration}. Does not stack with War Might or Great Might — an ally carries one, never both.","buffer 3rd, buffs"
-war_might,War Might,,,"+@{patk} P.Atk for the whole party, on top of Might, for @{duration}. Does not stack with War Bulwark or Great Bulwark — an ally carries one, never both.","buffer 3rd, buffs"
-wc_shield_reinforcement,Shield Reinforcement,,,+50% shield P.Def and +@{blockrate} block chance. Does nothing for anyone not carrying a shield. Blesses you and nearby allies for @{duration}.,"buffer 3rd, buffs | typed numbers kept: 50%"
-wc_feral_precision,Feral Precision,,,"+@{critrate} critical rate, +@{critdmg} critical damage, +@{acc} accuracy. Blesses you and nearby allies for @{duration}.","buffer 3rd, buffs"
-wc_feral_bloodlust,Feral Bloodlust,,,"+@{patk} P.Atk, +@{as} attack speed, @{vamp} melee vampirism. Blesses you and nearby allies for @{duration}.","buffer 3rd, buffs"
-wc_arcane_insight,Arcane Insight,,,+@{matk} M.Atk and double magic critical rate. Blesses you and nearby allies for @{duration}.,"buffer 3rd, buffs"
-wc_arcane_serenity,Arcane Serenity,,,"+@{cast} cast speed, +@{interrupt} interrupt resistance, +@{mpreg} MP regeneration. Blesses you and nearby allies for @{duration}.","buffer 3rd, buffs"
-wc_soul_reinforcement,Soul Reinforcement,,,,"buffer 3rd, buffer 4th, buffs | EMPTY = the game's per-level text; top rung reads: +@{maxmp} Max MP; +@{mdef} M.Def; and −30% physical / -@{mpcost} magic skill MP cost."
-wc_body_reinforcement,Body Reinforcement,,,"+@{maxhp} Max HP, +@{pdef} P.Def, +@{hpreg} HP regeneration. Blesses you and nearby allies for @{duration}.","buffer 3rd, buffs"
-wc_arcane_feral_protection,Arcane and Feral Protection,,,,"buffer 3rd, buffer 4th, buffs | EMPTY = the game's per-level text; top rung reads: 35% resistance to Constitution-defended debuffs and 20% to Spirit-defended ones."
-wc_wind_grace,Wind Grace,,,+@{ms} Move Speed and +@{eva} Evasion. Blesses you and nearby allies for @{duration}.,"buffer 3rd, buffs"
-shrouding_hymn,Shrouding Hymn,,,"For @{duration}, monsters that haven't already noticed you and your nearby allies leave you alone. Anything already chasing keeps chasing.",buffer 3rd
-npc_harmony_protection,Harmony of Protection,,,"+@{mdef} M.Def, +@{hpreg} HP regeneration, +@{pdef} P.Def, +@{maxhp} Max HP, reflects @{reflect} of melee damage, @{bowresist} bow resistance (@{duration}).","buffer 3rd, buffer 4th, buffs"
-harmony_of_speed,Harmony of Speed,,,+@{ms} Move Speed and +@{eva} Evasion for you and nearby allies (@{duration}).,"buffer 3rd, buffs"
-npc_harmony_warrior,Harmony of the Warrior,,,"double critical rate, +@{critdmg} critical damage, +@{acc} accuracy, +@{patk} P.Atk, +@{as} attack speed, @{vamp} melee vampirism (@{duration}).","buffer 3rd, buffs"
-npc_harmony_wizard,Harmony of the Wizard,,,,"buffer 3rd, buffer 4th, buffs | EMPTY = the game's per-level text; top rung reads: +@{matk} M.Atk; +@{cast} cast speed; +@{mpreg} MP regeneration; -@{reuse} magic reuse; +@{magiccritrate} magic critical rate and +30% magic critical damage (@{duration})."
-phase_shift,Phase Shift,,,,nuker 3rd | EMPTY = the game's per-level text; top rung reads: Blink 600 away from the nearest enemy.
-double_mastery,Overpower Mastery,,,"Stance. Your skill-mastery chances are DOUBLED, but every physical skill costs 25% more MP and you burn 50 HP a second.","warrior 4th, war_aoe 4th, dual 4th, archer 4th | typed numbers kept: 25% 50"
-master_of_combat,Master of Combat,,,"+@{acc} accuracy, +@{pdef} P.Def, +@{mdef} M.Def and +@{as} attack speed, at -@{ms} move speed, -@{eva} evasion and 30 MP a second.",war_aoe 4th | typed numbers kept: 30
-magic_wall,Magic Wall,,,,tank 4th | EMPTY = the game's per-level text; top rung reads: +6 000 M.Def for @{duration}.
-undying_will,Undying Will,,,"You DIE normally and keep your buffs, then choose when to rise where you fell at 30% HP and MP, losing NO experience — the offer waits as long as you like. Lasts @{duration} or until it saves you. @{duration} reuse. Consumes @{reagent} Physical Stones.",tank 4th | typed numbers kept: 30%
-perfect_whisp,Perfect Whisp,,,"Calls a spirit that does a little of everything — mends, refuels, and wears your enemy down.",tank 4th
-perfect_strike,Perfect Strike,,,@{duration}: blow landing rate ×1.40. Takes the place of Brutal Strike while it is up.,dual 4th | typed numbers kept: 1.40
-brutal_strike,Brutal Strike,,,@{duration}: +30 crit damage. Takes the place of Perfect Strike while it is up.,dual 4th | typed numbers kept: 30
-rite_of_preservation,Rite of Preservation,,,"Blesses an ally (or yourself): they DIE normally, keep their buffs, and are offered a resurrection where they fell at 30% HP and MP, losing NO experience. The offer waits as long as they like. Lasts @{duration} or until it saves them. @{duration} reuse. Consumes @{reagent} Holy Stones.",healer 4th | typed numbers kept: 30%
-healers_power,Healer's Power,,,,healer 4th | EMPTY = the game's per-level text; top rung reads: For @{duration} your heals land for +2000.
-arcane_resistance,Arcane Resistance,,,For @{duration} each of the target's buffs has a 30% chance to survive an enemy's dispel.,"healer 4th, buffs | typed numbers kept: 30%"
-holy_soul,Holy Soul,,,"Stance. Every skill costs 30% less MP, but you cast @{cast} slower and burn 50 HP a second.",healer 4th | typed numbers kept: 30% 50
-harmony_of_the_soul,Harmony of the Soul,,,,"buffer 4th, buffs | EMPTY = the game's per-level text; top rung reads: −20% magical and -@{reuse} physical reuse; −15% magic and -@{mpcost} physical skill MP cost; +@{healrecv} healing received; +@{ccresist} Spirit debuff resistance (@{duration})."
-harmony_of_madness,Harmony of Madness,,,"−10% maximum HP and MP, +8% attack, attack speed and cast speed, +@{ms} move speed, -@{eva} evasion (@{duration}).","buffer 4th, buffs | typed numbers kept: 10% 8%"
-harmony_mark,Harmony Mark,,,,"buffer 4th, buffs | EMPTY = the game's per-level text; top rung reads: The whole party: +10% attack; +@{acc} accuracy; and +20% to both defences; attack and cast speed; physical AND magic critical rate and damage; maximum HP and MP and regeneration; and -@{ms} move speed; blows and spells aimed at them are 10% less likely to crit and physical criticals deal 30% less extra damage. Five minutes; @{reagent} Skill Stones. Only one Mark at a time."
-mana_barrier,Mana Barrier,,,"Diverts 70% of incoming damage to MP (0.5 MP per damage) for @{duration}, while MP lasts.",nuker 4th | typed numbers kept: 70% 0.5
-force_empowerment,Force Empowerment,,,,nuker 4th | EMPTY = the game's per-level text; top rung reads: Stance. +@{matk} M.Atk; every skill costs 10% more MP; and you burn 30 HP a second.
-,,,,,---------------------------- PASSIVE ----------------------------
-heavy_armor_mastery,Heavy Armor Mastery,,,heavy: p.def +@{pdef},"fighter 1st, warrior 2nd, tank 2nd, warrior 3rd, war_aoe 3rd, tank 3rd, buffer 3rd, warrior 4th, war_aoe 4th, tank 4th, buffer 4th"
-light_armor_mastery,Light Armor Mastery,,,light: p.def +@{pdef},"fighter 1st, warrior 2nd, rogue 2nd, cleric 2nd, warrior 3rd, war_aoe 3rd, dual 3rd, archer 3rd, buffer 3rd, warrior 4th, war_aoe 4th, dual 4th, archer 4th, buffer 4th"
-rogue_evasion,Evasion,,,light: eva +@{eva},"fighter 1st, warrior 2nd, rogue 2nd, cleric 2nd, dual 3rd, buffer 3rd, warrior 4th, war_aoe 4th, dual 4th, archer 4th"
-fighter_spirit_mastery,Spirit Mastery,,,"Passive. Your MP regenerates @{mpreg} faster, whatever you are wearing.",fighter 1st
-strength_mastery,Strength Mastery,,,,"fighter 1st, warrior 2nd, warrior 3rd, war_aoe 3rd | EMPTY = the game's per-level text; top rung reads: With 2h sword/blunt: p.atk +@{patk}"
-weapon_mastery,Weapon Mastery,,,sword/blunt/dual: p.Atk +@{patk},"fighter 1st, mage 1st, warrior 2nd, tank 2nd, rogue 2nd, cleric 2nd, nuker 2nd, warrior 3rd, war_aoe 3rd, tank 3rd, dual 3rd, buffer 3rd, warrior 4th, war_aoe 4th, tank 4th, dual 4th, buffer 4th"
-grade_penalty,Grade F,,,You may equip S grade — the highest there is. Nothing is above you.,"fighter 1st, mage 1st"
-anti_magic,Anti-Magic,,,m.def +@{mdef},"mage 1st, tank 2nd, cleric 2nd, nuker 2nd, tank 3rd, healer 3rd, buffer 3rd, nuker 3rd, tank 4th, healer 4th, buffer 4th, nuker 4th"
-mage_armor_mastery,Robe Armor Mastery,,,robe: p.def +@{pdef},"mage 1st, cleric 2nd, nuker 2nd, healer 3rd, buffer 3rd, nuker 3rd, healer 4th, buffer 4th, nuker 4th"
-spellcaster_weapon_mastery,Spellcaster Weapon Mastery,,,m.Atk +@{matk},"mage 1st, cleric 2nd, nuker 2nd, healer 3rd, buffer 3rd, nuker 3rd, healer 4th, buffer 4th, nuker 4th"
-hp_regeneration,HP regeneration,,,hpReg +@{hpreg},"warrior 2nd, rogue 2nd, cleric 2nd, nuker 2nd, warrior 3rd, war_aoe 3rd, dual 3rd, archer 3rd, healer 3rd, buffer 3rd, nuker 3rd"
-fighter_accuracy,Accuracy,,,acc +@{acc},"warrior 2nd, rogue 2nd, warrior 3rd, war_aoe 3rd, buffer 3rd, buffer 4th"
-fighter_critical_dmg_mastery,Critical Damage Mastery,,,crit dmg +@{critdmg},"warrior 2nd, rogue 2nd, warrior 3rd, war_aoe 3rd, dual 3rd, archer 3rd, warrior 4th, war_aoe 4th, dual 4th, archer 4th"
-blunt_cleave,Cleave,,,,"warrior 2nd, war_aoe 3rd | EMPTY = the game's per-level text; top rung reads: 2h blunt: basic attack hits around in 150 range (max 10 targets)"
-hp_boost,HP Boost,,,Passive. Raises your maximum HP.,"warrior 2nd, warrior 3rd, war_aoe 3rd, buffer 3rd, war_aoe 4th"
-overpower,Overpower,,,,"warrior 2nd, warrior 3rd, war_aoe 3rd, dual 3rd, archer 3rd, warrior 4th, war_aoe 4th, dual 4th, archer 4th | EMPTY = the game's per-level text; top rung reads: Overpower — 10%."
-mp_regeneration,Mp regeneration,,,mpReg +@{mpreg},"tank 2nd, rogue 2nd, cleric 2nd, nuker 2nd, tank 3rd, dual 3rd, archer 3rd, healer 3rd, buffer 3rd, nuker 3rd"
-tank_defence_mastery,Tank Defence,,,with heavy: p.def +@{pdef} and eva -@{eva},"tank 2nd, tank 3rd, tank 4th"
-tank_crit_resist,Critical Damage Resist,,,with heavy: crit dmg reduction @{critdmgres},"tank 2nd, tank 3rd, buffer 3rd, tank 4th"
-tank_shield_mastery,Shield Mastery,,,"Passive. In HEAVY armor with a shield: greatly improves your shield's block chance and defence, your resistance to bows from level 2, and your whole P.Def from level 3. In any other armor it does nothing.","tank 2nd, tank 3rd, buffer 3rd | typed numbers kept: 2 3"
-rogue_crit_resist,Critical Resist,,,light: crit rate resist +@{critrateres},"rogue 2nd, dual 3rd, archer 3rd, buffer 3rd"
-rogue_critical_rate_mastery,Critical Rate,,,crit rate +@{critrate},"rogue 2nd, dual 3rd"
-fury_mastery,Fury,,,AS +@{as},"rogue 2nd, dual 3rd, tank 4th, dual 4th"
-rogue_swift_mastery,Swift,,,speed +@{ms},"rogue 2nd, dual 3rd, archer 3rd, dual 4th, archer 4th"
-rogue_bow_proficiency,Bow Proficiency,,,range +@{bowrange},"rogue 2nd, archer 3rd, buffer 3rd"
-bow_mastery,Bow Mastery,,,bow: p.Atk +@{patk},"rogue 2nd, archer 3rd, buffer 3rd, archer 4th, buffer 4th"
-clerics_light_armor_mastery,Light Caster Mastery,,,"Light: mpReg +@{mpreg}, cast +@{cast}, as +@{as} (composes to cast x0.95 / as x1 after Spellcaster Mastery)",cleric 2nd | typed numbers kept: 0.95 1
-mp_capacity,Mana Capacity,,,maxMP +@{maxmp},"cleric 2nd, nuker 2nd, healer 3rd, buffer 3rd, nuker 3rd, healer 4th, buffer 4th, nuker 4th"
-magic_resistance,Magic Resistance,,,mRes +@{mres},"cleric 2nd, nuker 2nd, tank 3rd, healer 3rd, buffer 3rd, nuker 3rd, dual 4th, healer 4th, buffer 4th, nuker 4th"
-cooldown_mastery,Cooldown Mastery,,,Decreses the reuse delay with @{reuse},"cleric 2nd, nuker 2nd, healer 3rd, buffer 3rd, nuker 3rd"
-cast_speed_mastery,Cast Speed Mastery,,,cast speed +@{cast},"cleric 2nd, nuker 2nd, healer 3rd, buffer 3rd, nuker 3rd"
-mana_recovery,Mana Recovery,,,mpWhenRestored +@{restoremp},"nuker 2nd, nuker 3rd, nuker 4th"
-heavy_vitality,Heavy Vitality,,,heavy: max HP +@{maxhp},"warrior 3rd, war_aoe 3rd, warrior 4th, war_aoe 4th"
-final_stand,Final Stand,,,,"warrior 3rd, war_aoe 3rd, war_aoe 4th | EMPTY = the game's per-level text; top rung reads: Below 75% HP +20% P.Atk and +4 accuracy; below 50% +30% and +7 accuracy; below 25% +40% and +10 accuracy."
-warrior_regeneration,Warrior Regeneration,,,"Increase Hp regen +@{hpreg}; When sitting Hp regen +@{hpreg}, Mp regen +@{mpreg}","warrior 3rd, war_aoe 3rd"
-final_defense,Final Defense,,,,tank 3rd | EMPTY = the game's per-level text; top rung reads: Below 75% HP +10% P.Def; below 50% +20% P.Def and +5% M.Def; below 25% +30% P.Def and +10% M.Def.
-tank_aggravated_state,Aggravated State,,,"Passive. Taking a hit has a @{procchance} chance to rouse you and your party: more attack power, attack speed and physical skill power for 30s.",tank 3rd | typed numbers kept: 30
-whisp_mastery,Whisp Mastery,,,You may keep three whisps at once.,"tank 3rd, tank 4th"
-dual_weapon_prof,Dual Proficiency,,,"With duals: @{procchance} chance, 60% less MP and +@{critdmg} crit damage for 5s (8s cooldown).",dual 3rd | typed numbers kept: 60% 5 8
-vital_points,Vital Points,,,,dual 3rd | EMPTY = the game's per-level text; top rung reads: Blow landing rate ×1.20.
-combo_mastery,Combo Mastery,,,,buffer 3rd | EMPTY = the game's per-level text; top rung reads: @{procchance} chance on hit (3.45% with a bow or a two-handed blunt): +20% attack and +15% cast speed for you; +10%/+7.5% for the party; @{duration}.
-mana_vampirism,Mana Vampirism,,,Passive. Your basic attacks with a blunt weapon or a bow drain mana back to you.,buffer 3rd
-cleric_heavy_armor_mastery,Heavy Caster Mastery,,,"Heavy: mpReg +@{mpreg}, cast +@{cast}, as +@{as} (composes to cast x0.95 / as x1 after Spellcaster Mastery)",buffer 3rd | typed numbers kept: 0.95 1
-calm_spirit,Calm Spirit,,,,nuker 3rd | EMPTY = the game's per-level text; top rung reads: MP regeneration ×1.16 while walking; ×1.01 while standing still.
-reuse_reset_momentum,Arcane Momentum,,,A skill you cast has a chance to come off reuse immediately. Scales with your ATK.,"warrior 4th, war_aoe 4th, dual 4th, archer 4th, nuker 4th"
+cast_atk_phys,Blessing of Might,human,,A magical blessing that increases P.Atk by @{patk}.,
+cast_atk_phys,Forest Strength,elf,,By the help of the forest: +@{patk} P.Atk.,
+cast_atk_phys,Fire Strength,demon,,Signing a demonic contract: +@{patk} P.Atk.,
+cast_def_phys,Blessing of Bulwark,human,,A magical blessing that increases +@{pdef} P.Def.,"mage 1st, cleric 2nd, healer 3rd, buffer 3rd, buffs"
+cast_def_phys,Forest Bulwark,elf,,By the help of the forest: +@{pdef} P.Def.,"mage 1st, cleric 2nd, healer 3rd, buffer 3rd, buffs"
+cast_def_phys,Fire Defence,demon,,Signing a demonic contract: +@{pdef} P.Def.,"mage 1st, cleric 2nd, healer 3rd, buffer 3rd, buffs"
+bow_expertise,Bow Expertise,elf,harmonist,"Enchance your bow for @{as} faster atacks.","rogue 2nd, archer 3rd, buffer 3rd"
+cast_spd_move,Blessing of Swiftness,human,,A magical blessing that increases Move Speed by @{ms}.,"cleric 2nd, buffs"
+cast_spd_move,Wind Flow,elf,,Wind helps you move faster: +@{ms} Move Speed.,"cleric 2nd, buffs"
+cast_spd_move,Hell,demon,,+@{ms} Move Speed.,"cleric 2nd, buffs"
 reuse_reset_momentum,Battle Momentum,,Sword Master,A skill you cast has a chance to come off reuse immediately. Scales with your ATK.,
 reuse_reset_momentum,Battle Momentum,,War Master,A skill you cast has a chance to come off reuse immediately. Scales with your ATK.,
 reuse_reset_momentum,Battle Momentum,,Sword Saint,A skill you cast has a chance to come off reuse immediately. Scales with your ATK.,
@@ -206,51 +24,9 @@ reuse_reset_momentum,Bow Momentum,,Soulhunter,A skill you cast has a chance to c
 reuse_reset_momentum,Stab Momentum,,Nullblade,A skill you cast has a chance to come off reuse immediately. Scales with your ATK.,
 reuse_reset_momentum,Stab Momentum,,Shadowblade,A skill you cast has a chance to come off reuse immediately. Scales with your ATK.,
 reuse_reset_momentum,Stab Momentum,,Venomblade,A skill you cast has a chance to come off reuse immediately. Scales with your ATK.,
-magic_protection,Magic Protection,,,Twice more chance magic to fail against you,tank 4th
-backlash,Backlash,,,,tank 4th | EMPTY = the game's per-level text; top rung reads: 30% chance an SPT debuff and 15% chance a CON debuff cast at you lands on its caster instead.
 backlash,Physical Backlash,human,,,
 backlash,Magical Backlash,elf,,,
 backlash,Physical Backlash,demon,,,
-vital_organ_protection,Vital Organ Protection,,,Blows land on you 30% less often.,tank 4th | typed numbers kept: 30%
-assassination_instinct,Assassination Instinct,,,Blow landing rate ×1.05.,dual 4th | typed numbers kept: 1.05
-mdef_mastery,M.Def Mastery,,,mDef +@{mdef},"healer 4th, buffer 4th, nuker 4th"
-mp_cost_mastery,Mana Efficiency,,,,"healer 4th, buffer 4th, nuker 4th | EMPTY = the game's per-level text; top rung reads: Decrease Mp Consumption with 10%"
-healers_shield_mastery,Healer's Shield Mastery,,,With a shield equipped: healing power +10% and MP regeneration +@{mpreg}.,healer 4th | typed numbers kept: 10%
-lasting_enchantment,Lasting Enchantment,,,Buffs and debuffs you cast have a chance to last TWICE as long. Scales with your ATK.,"healer 4th, buffer 4th, nuker 4th"
-mage_shield_mastery,Mage Shield Mastery,,,"With a shield equipped: −10% MP cost, +@{mpreg} MP regeneration and +@{pdef} P.Def — but the shield can never block.",nuker 4th | typed numbers kept: 10%
-strong_mind,Strong Mind,,,Debuffs that contest your Spirit are 20% less likely to land on you.,shared 4th | typed numbers kept: 20%
-strong_body,Strong Body,,,Debuffs that contest your Constitution are 10% less likely to land on you.,shared 4th | typed numbers kept: 10%
-arcane_protection,Arcane Protection,,,"M.Def +@{mdef}. When magic damage reaches you, a @{procchance} chance to gain a further +@{mdef#} M.Def for 10 seconds.",shared 4th | typed numbers kept: 10
-magic_proficiency,Magic Proficiency,,,"M.Atk +@{matk}, casting speed +@{cast}, and every skill costs 5% less MP. A @{procchance} chance, whenever you cast, to gain a further +@{matk} M.Atk, +@{cast} casting speed, +@{magiccritrate} magic critical rate, +10% magic critical damage and −15% MP cost for 10 seconds.",shared 4th | typed numbers kept: 5% 10% 15% 10
-physical_proficiency,Physical Proficiency,,,"Blunt / sword / dual: P.Atk +@{patk} and attack speed +@{as}. Bow: accuracy +@{acc} and range +@{bowrange}. With any of them, a @{procchance} chance — on a basic attack only — to raise your critical rate and physical skill damage by 20% for 10 seconds.",shared 4th | typed numbers kept: 20% 10
-holy_protection_sigil,Holy Protection Sigil,,,Debuffs that contest your Spirit are 10% less likely to land on you.,shared 4th | typed numbers kept: 10%
-duel_sigil,Duel Sigil,,,You take 5% less damage from other players.,shared 4th | typed numbers kept: 5%
-spirit_sigil,Spirit Sigil,,,MP regeneration +@{mpreg}.,shared 4th
-aegis_sigil,Aegis Sigil,,,"When you are hit, a @{procchance} chance to raise both defences by 25% for 15 seconds.",shared 4th | typed numbers kept: 25% 15
-mage_defence_sigil,Mage Defence Sigil,,,Magic defence +@{mdef}.,shared 4th
-agility_sigil,Agility Sigil,,,"Evasion +@{eva}, and spells aimed at you fail 3 points more often.",shared 4th | typed numbers kept: 3
-holy_power_sigil,Holy Power Sigil,,,Your healing is 5% stronger.,shared 4th | typed numbers kept: 5%
-fury_sigil,Fury Sigil,,,"When you land a basic attack, a @{procchance} chance to swing 30% faster for 15 seconds.",shared 4th | typed numbers kept: 30% 15
-soul_sigil,Soul Sigil,,,Maximum MP +10%.,shared 4th | typed numbers kept: 10%
-body_sigil,Body Sigil,,,Maximum HP +10%.,shared 4th | typed numbers kept: 10%
-frenzy_sigil,Frenzy Sigil,,,"When you attack, a @{procchance} chance to raise both attacks and both speeds by 8% for 15 seconds.",shared 4th | typed numbers kept: 8% 15
-focus_sigil,Focus Sigil,,,"When you attack, a @{procchance} chance to raise your critical rate by 5 points for 15 seconds.",shared 4th | typed numbers kept: 5 15
-holy_support_sigil,Holy Support Sigil,,,"When you are hit, a @{procchance} chance to mend 2% of your maximum HP.",shared 4th | typed numbers kept: 2%
-fortitude_sigil,Fortitude Sigil,,,Debuffs that contest your Constitution are 5% less likely to land on you.,shared 4th | typed numbers kept: 5%
-immortality_sigil,Immortality Sigil,,,"When you are hit, a @{procchance} chance to become immortal for 5 seconds — your HP cannot fall, and cannot be healed either.",shared 4th | typed numbers kept: 5
-critical_protection_sigil,Critical Protection Sigil,,,"Attackers are 10% less likely to crit you, and their crits hit 10% softer.",shared 4th | typed numbers kept: 10%
-arcane_support_sigil,Arcane Support Sigil,,,"When you attack, a @{procchance} chance to recover @{mpreg} of your maximum MP.",shared 4th
-aim_sigil,Aim Sigil,,,"With a bow, attack range +@{bowrange}. With any other weapon, accuracy +@{acc}.",shared 4th
-,,,,,---------------------------- NOT IN A CLASS CSV (mobs, NPCs, items, internal) ----------------------------
-swap_atk_con,Power (Vigour),,,, | EMPTY = the game's per-level text; top rung reads: Passive. +5 ATK; −5 CON. (5 of your 9 stat rungs.)
-swap_atk_dex,Power (Agility),,,, | EMPTY = the game's per-level text; top rung reads: Passive. +5 ATK; −5 AGI. (5 of your 9 stat rungs.)
-swap_atk_men,Power (Spirit),,,, | EMPTY = the game's per-level text; top rung reads: Passive. +5 ATK; −5 SPT (Max MP; M.Def; MP regen). (5 of your 9 stat rungs.)
-swap_atk_wit,Power (Insight),,,, | EMPTY = the game's per-level text; top rung reads: Passive. +5 ATK; −5 WIT. (5 of your 9 stat rungs.)
-swap_con_atk,Fortitude (Power),,,, | EMPTY = the game's per-level text; top rung reads: Passive. +5 CON; −5 ATK. (5 of your 9 stat rungs.)
-swap_con_dex,Fortitude (Agility),,,, | EMPTY = the game's per-level text; top rung reads: Passive. +5 CON; −5 AGI. (5 of your 9 stat rungs.)
-swap_dex_atk,Agility (Power),,,, | EMPTY = the game's per-level text; top rung reads: Passive. +5 AGI; −5 ATK. (5 of your 9 stat rungs.)
-swap_dex_con,Agility (Vigour),,,, | EMPTY = the game's per-level text; top rung reads: Passive. +5 AGI; −5 CON. (5 of your 9 stat rungs.)
-swap_men_atk,Spirit (Power),,,, | EMPTY = the game's per-level text; top rung reads: Passive. +5 SPT (Max MP; M.Def; MP regen); −5 ATK. (5 of your 9 stat rungs.)
-swap_men_wit,Spirit (Insight),,,, | EMPTY = the game's per-level text; top rung reads: Passive. +5 SPT (Max MP; M.Def; MP regen); −5 WIT. (5 of your 9 stat rungs.)
-swap_wit_atk,Insight (Power),,,, | EMPTY = the game's per-level text; top rung reads: Passive. +5 WIT; −5 ATK. (5 of your 9 stat rungs.)
-swap_wit_men,Insight (Spirit),,,, | EMPTY = the game's per-level text; top rung reads: Passive. +5 WIT; −5 SPT (Max MP; M.Def; MP regen). (5 of your 9 stat rungs.)
+holy_mark,NPC Holy Mark,,NPC,,spirit helper's label (the shelf sells the healer's own Mark)
+life_mark,NPC Life Mark,,NPC,,spirit helper's label (the shelf sells the healer's own Mark)
+blood_mark,NPC Blood Mark,,NPC,,spirit helper's label (the shelf sells the healer's own Mark)

@@ -170,10 +170,15 @@ public static class NpcBuffShelf
     /// already carries the blessing's name ("Ward", "Aim", "Fury"), so nothing is authored twice —
     /// and a NEW row in the file needs no label anywhere in code.
     /// <para>The TOP rung is asked, not the player's: the shelf's own label must not change as you
-    /// level, and the names are per-family rather than per-rung anyway.</para></summary>
+    /// level, and the names are per-family rather than per-rung anyway.</para>
+    /// <para>`BL-327` — THE NAME IS A FACE (owner, 2026-09-30: rename `npc_accuracy` to "NPC Aim" and the window
+    /// must follow). The shelf id's own face first — its `CLASS = NPC` row, else its blank row — so every blessing
+    /// is named in skill_faces*.csv and nowhere else; the top rung's face only when the shelf id has none.</para></summary>
     public static string DisplayName(string shelfId)
     {
         if (!Shelf.TryGetValue(shelfId, out var rungs) || rungs.Length == 0) return shelfId;
+        foreach (var id in new[] { shelfId, rungs[^1].RungId })
+            if (SkillFaces.ForNpcShelf(id) is { } face) return SkillFaces.NameOf(face, id, 1);
         return SkillCatalog.Get(rungs[^1].RungId)?.Name ?? shelfId;
     }
 

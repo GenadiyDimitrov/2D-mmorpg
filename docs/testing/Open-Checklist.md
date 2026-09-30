@@ -17,6 +17,26 @@
 
 ---
 
+## §114 — 0.217.2: names live in the class CSVs again; the spirit helper reads its names from them (2026-09-30)
+
+⚠ **New APK.** No `game.db` delete. Your call: the class CSV's `NAME` is the name again and a new last column
+`DESCRIPTION` is the text; `skill_faces.csv` holds only race/class exceptions; `skill_faces_other.csv` the skills no
+class learns. The game should read EXACTLY as before, except for the rows below.
+
+- `114a` [ ] - **Spirit helper window:** every blessing reads "NPC Might", "NPC Aim", "NPC Harmony of the Might" … and
+  the Marks read "NPC Blood Mark" / "NPC Holy Mark" / "NPC Life Mark". The buff bar shows the SAME name (no "NPC NPC").
+  A healer's own Blood Mark still reads "Blood Mark". ->
+- `114b` [ ] - **Your new racial faces:** Elf "Forest Strength" / Demon "Fire Strength" (Might), Elf "Forest Bulwark" /
+  Demon "Fire Defence", Human "Blessing of Swiftness" / Elf "Wind Flow" / Demon "Hell" (Swift — ⚠ is "Hell" the name you
+  meant?), and the Elf harmonist's Bow Expertise text. ->
+- `114c` [ ] - **Typo fixes carried into the CSVs** (the game already showed the right spelling): Wirlwind → Whirlwind,
+  Shattaring → Shattering Shout, Bow Stence → Bow Stance, Domonic → Demonic Blessing, Monster Knowlege → Knowledge,
+  Healers Power → Healer's Power, rogue 2nd "Critical Damage" → Critical Damage Mastery, and capitals (Arrow Barrage,
+  Ultimate Party Heal, Life/Blood/Vanguard Support, Over the Limit); buffs.csv harmonies → "NPC Harmony of …". Nothing
+  to test — say if any was deliberate. ->
+
+---
+
 ## §113 — 0.217.1: "Lv.N" is your own step, not the shared ladder's rung (2026-09-30)
 
 ⚠ **New APK.** No `game.db` delete. Your find: Agility learned straight at "Lv.2", and crit-damage levels jumping 3-5-8.

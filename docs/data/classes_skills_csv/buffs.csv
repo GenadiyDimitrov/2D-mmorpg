@@ -1,4 +1,4 @@
-NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,DESCR,NPC LVL,NPC Price,COMMENT
+NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,DESCR,NPC LVL,NPC Price,COMMENT,DESCRIPTION
 ,,,,,,,,,,,,========================== Single/Group buffs default duration 20 min ===========================
 ,,,,,,,,,,,,========================== Harmonies from players default duration 5 min ===========================
 ,,,,,,,,,,,,========================== Marks from players default duration 5 min ===========================
@@ -94,21 +94,21 @@ Body,cast_hp_max,Magic/Buff,,,600,0,party/single,1,+25% Max HP.,56,10k
 Body,cast_hp_max,Magic/Buff,,,600,0,party/single,1,+30% Max HP.
 Body,cast_hp_max,Magic/Buff,,,600,0,party/single,1,+35% Max HP.,70,15k
 ,,,,,,,,,,,,---------------------------Harmony of Ward------------------------------
-Harmony of Ward,npc_harmony_ward,Magic/Buff,,,600,800,party/aoe,1,+30% M.Def,44,50k
+NPC Harmony of Ward,npc_harmony_ward,Magic/Buff,,,600,800,party/aoe,1,+30% M.Def,44,50k,,"+@{mdef} M.Def (buffer's harmony, @{duration}). Replaced by the buffer class's own harmony that contains it — the two never stack."
 ,,,,,,,,,,,,---------------------------Harmony of Bulwark------------------------------
-Harmony of Bulwark,npc_harmony_bulwark,Magic/Buff,,,600,800,party/aoe,1,"+25% P.Def",56,50k
+NPC Harmony of Bulwark,npc_harmony_bulwark,Magic/Buff,,,600,800,party/aoe,1,"+25% P.Def",56,50k,,"+@{pdef} P.Def (buffer's harmony, @{duration}). Replaced by the buffer class's own harmony that contains it — the two never stack."
 ,,,,,,,,,,,,---------------------------Harmony of Body------------------------------
-Harmony of Body,npc_harmony_body,Magic/Buff,,,600,800,party/aoe,1,"+30% Max HP",66,50k
+NPC Harmony of Body,npc_harmony_body,Magic/Buff,,,600,800,party/aoe,1,"+30% Max HP",66,50k,,"+@{maxhp} Max HP (buffer's harmony, @{duration}). Replaced by the buffer class's own harmony that contains it — the two never stack."
 ,,,,,,,,,,,,---------------------------Harmony of Force------------------------------
-Harmony of Force,npc_harmony_force,Magic/Buff,,,600,800,party/aoe,1,"+10% M.Atk",48,50k
+NPC Harmony of Force,npc_harmony_force,Magic/Buff,,,600,800,party/aoe,1,"+10% M.Atk",48,50k,,"+@{matk} M.Atk (buffer's harmony, @{duration}). Replaced by the buffer class's own harmony that contains it — the two never stack."
 ,,,,,,,,,,,,---------------------------Harmony of Alacrity------------------------------
-Harmony of Alacrity,npc_harmony_alacrity,Magic/Buff,,,600,800,party/aoe,1,"+30% Cast.Speed",52,50k
+NPC Harmony of Alacrity,npc_harmony_alacrity,Magic/Buff,,,600,800,party/aoe,1,"+30% Cast.Speed",52,50k,,"+@{cast} Cast Speed (buffer's harmony, @{duration}). Replaced by the buffer class's own harmony that contains it — the two never stack."
 ,,,,,,,,,,,,---------------------------Harmony of Swift------------------------------
-Harmony of Swift,npc_harmony_swift,Magic/Buff,,,600,800,party/aoe,1,+20 move speed,48,50k
+NPC Harmony of Swift,npc_harmony_swift,Magic/Buff,,,600,800,party/aoe,1,+20 move speed,48,50k,,"+@{ms} Move Speed (buffer's harmony, @{duration}). Replaced by the buffer class's own harmony that contains it — the two never stack."
 ,,,,,,,,,,,,---------------------------Harmony of the Might------------------------------
-Harmony of the Might,npc_harmony_might,Magic/Buff,,,600,800,party/aoe,1,"+12% P.Atk",56,50k
+NPC Harmony of the Might,npc_harmony_might,Magic/Buff,,,600,800,party/aoe,1,"+12% P.Atk",56,50k,,"+@{patk} P.Atk (buffer's harmony, @{duration}). Replaced by the buffer class's own harmony that contains it — the two never stack."
 ,,,,,,,,,,,,---------------------------Harmony of the Fury------------------------------
-Harmony of the Fury,npc_harmony_fury,Magic/Buff,,,600,800,party/aoe,1,"+15% attack speed",58,50k
+NPC Harmony of the Fury,npc_harmony_fury,Magic/Buff,,,600,800,party/aoe,1,"+15% attack speed",58,50k,,"+@{as} Attack Speed (buffer's harmony, @{duration}). Replaced by the buffer class's own harmony that contains it — the two never stack."
 ,,,,,,,,,,,,---------------------------Holy Mark----------------------------
 Holy Mark,holy_mark,Magic/Heal,,,900,0,party/single,5,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, SPT Debuff Resists +15%, M.Acc +4, M.Crit.Rate +20%, Max MP +20%, Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",78,300k
 Holy Mark,holy_mark,Magic/Heal,,,900,0,party/single,5,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, SPT Debuff Resists +15%, M.Acc +4, M.Crit.Rate +20%, Max MP +20%, M.Crit.Rate.Received -10% Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills"

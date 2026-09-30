@@ -1,4 +1,4 @@
-LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment
+LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment,DESCRIPTION
 ,,,,,,,,,,,,,,,,,,,# MOST OF THIS FILE IS DERIVED AND IS YOURS TO OVERWRITE.
 ,,,,,,,,,,,,,,,,,,,# AUTHORED BY YOU: Assassination Instinct plus the Perfect/Brutal Strike choice (BL-188 - 2026-09-09)
 ,,,,,,,,,,,,,,,,,,,# and the two skill masteries in the last block (BL-191 - 2026-09-10).
@@ -10,9 +10,9 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,,,# ladder verbatim - because both wear light and yours is already authored in archer 4th.csv.
 ,,,,,,,,,,,,,,,,,,,# This file still has NO Check.Specs line - nothing here is verified until you finish it.
 ,,,,,,,,,,,,,,,,,,,----------------------------BL-188: the top of the blow ladder (AUTHORED)----------------------------
-76,Assassination Instinct,assassination_instinct,passive,,,0,0,self/single,0,0,0,"blow rate x1.05;",0,2.67kk,1kk,,[]
-80,Perfect Strike,perfect_strike,physical buff,duals,,0,0,self/single,0,300,300,"blow rate x1.4; both are learned - only one of the two can be UP at a time;",200,150kk,10kk,,[brutal_strike]
-80,Brutal Strike,brutal_strike,physical buff,duals,,0,0,self/single,0,300,300,"crit dmg +30%; both are learned - only one of the two can be UP at a time;",200,150kk,10kk,,[perfect_strike]
+76,Assassination Instinct,assassination_instinct,passive,,,0,0,self/single,0,0,0,"blow rate x1.05;",0,2.67kk,1kk,,[],,,Blow landing rate x1.05.
+80,Perfect Strike,perfect_strike,physical buff,duals,,0,0,self/single,0,300,300,"blow rate x1.4; both are learned - only one of the two can be UP at a time;",200,150kk,10kk,,[brutal_strike],,,@{duration}: blow landing rate x1.40. Takes the place of Brutal Strike while it is up.
+80,Brutal Strike,brutal_strike,physical buff,duals,,0,0,self/single,0,300,300,"crit dmg +30%; both are learned - only one of the two can be UP at a time;",200,150kk,10kk,,[perfect_strike],,,@{duration}: +30 crit damage. Takes the place of Perfect Strike while it is up.
 ,,,,,,,,,,,,,,,,,,,----------------------------Light Armor Mastery----------------------------
 76,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +72",0,2.67kk,333k
 77,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +74",0,3.64kk,1kk
@@ -53,9 +53,9 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 85,Duel-Expertise,duel_expertise,Passive,,,0,0,self/single,0,0,0,"Increase PvP.Dmg +7%;",0,0,50kk,,,Demon
 90,Duel-Expertise,duel_expertise,Passive,,,0,0,self/single,0,0,0,"Increase PvP.Dmg +10%;",0,0,100kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Race ultimates----------------------------
-83,Dodge,dodge,Physical Buff,,,0,0,self/single,0,90,10,"30% chance to Evade Physical Skills",0,500kk,100kk,,,Elf
-83,Magical Armor,magical_armor,Physical Buff,,,0,0,self/single,0,90,10,"Increase mResist with 50%",0,500kk,100kk,,,Human
-83,Demon Contract,demon_contract,Physical Buff,,,0,0,self/single,0,90,10,"Increase PvP.Dmg with 25%",0,500kk,100kk,,,Demon
+83,Dodge,dodge,Physical Buff,,,0,0,self/single,0,90,10,"30% chance to Evade Physical Skills",0,500kk,100kk,,,Elf,,@{duration}: a 30% chance to evade any physical SKILL outright.
+83,Magical Armor,magical_armor,Physical Buff,,,0,0,self/single,0,90,10,"Increase mResist with 50%",0,500kk,100kk,,,Human,,@{duration}: +@{mres} magic resistance.
+83,Demon Contract,demon_contract,Physical Buff,,,0,0,self/single,0,90,10,"Increase PvP.Dmg with 25%",0,500kk,100kk,,,Demon,,@{duration}: +25% damage against PLAYERS.
 ,,,,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
 76,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +85",0,2.67kk,500k
 77,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +90",0,3.64kk,500k
@@ -176,6 +176,6 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 90,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10,30,"power 1500 per consumed venom stack (up to x10) - only when skill does critical - otherwise normal attack; with no stacks lays 3 tier-10 instead; a failed strike takes all stacks and leaves 3; venom tier-10 ticks 20 hp/s PER STACK and cuts the target p.atk and m.atk -10%;",110,0,100kk,,[precise_shot],Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------BL-191: the two skill masteries (AUTHORED)----------------------------
 76,Stab Momentum,reuse_reset_momentum,passive,,,0,0,self/single,0,0,0,reuse reset 5% - that chance for a skill you cast to come straight off cooldown - scales with ATK,0,2.67kk,1kk,,,,Same id as the Magus Arcane Momentum - one skill - one number - two names
-81,Overpower Mastery,double_mastery,Toggle,,,0,0,self/single,0,0,0,Doubles the base of EVERY skill mastery you have; increases P.MP consumation by 25%; Consume 50 HP/s,0,200kk,25kk,,,,Same skill and same name as the warrior toggle - here it doubles Overpower and Stab Momentum, the bases this class carries
+81,Overpower Mastery,double_mastery,Toggle,,,0,0,self/single,0,0,0,Doubles the base of EVERY skill mastery you have; increases P.MP consumation by 25%; Consume 50 HP/s,0,200kk,25kk,,,,"Same skill and same name as the warrior toggle - here it doubles Overpower and Stab Momentum, the bases this class carries"
 ,,,,,,,,,,,,,,,,,,,----------------------------Overpower (BL-203)----------------------------
 76,Overpower,overpower,passive,,,0,0,self/single,0,0,0,double rate 7% - skills marked [Double] strike for DOUBLE damage that often - scales with ATK - without this passive NO skill can double,0,2.67kk,0,

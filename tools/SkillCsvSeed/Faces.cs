@@ -4,11 +4,25 @@ using System.Text.RegularExpressions;
 using Game.Shared;
 
 // =====================================================================================================
-//  `BL-327` — SKILL FACES: docs/data/skill_faces.csv → Game.Shared/SkillFaces.g.cs
+//  `BL-327` — SKILL FACES: how a skill LOOKS → Game.Shared/SkillFaces.g.cs
 //
-//  The owner, 2026-09-30: *"the class csv is the numbers per lvl while the face is the display"*.
-//  Columns: SKILL_ID,NAME,RACE,CLASS,DESCRIPTION,COMMENT. RACE/CLASS blank = everyone; a row with an
-//  empty SKILL_ID is a section header and is skipped.
+//  The owner, 2026-09-30: *"the class csv is the numbers per lvl while the face is the display"* — and the
+//  same day, after two files proved confusing, *"build it that way"*: THE CLASS CSV OWNS THE PLAIN LOOK.
+//
+//  THREE SOURCES, ONE LIST OF FACES:
+//    classes_skills_csv/*.csv   NAME = the skill's name; DESCRIPTION (the LAST column) = what the player
+//                               reads, written on ONE row of the skill (blank elsewhere; two that differ is
+//                               a check error). DESCR stays the numbers per level, read by --check.
+//    skill_faces.csv            EXCEPTIONS ONLY — a row with a RACE or a CLASS: Forest Strength (elf), the
+//                               harmonist's Bow Expertise, "NPC Blood Mark" (CLASS = NPC, the spirit
+//                               helper's label). Blank DESCRIPTION = the plain one from the class CSV.
+//    skill_faces_other.csv      SKILL_ID,NAME,DESCRIPTION,COMMENT for a skill NO class CSV lists — mobs,
+//                               NPC blessings, items, internal pieces.
+//
+//  ONE NAME PER SKILL: when a skill's rows disagree on NAME (Momentum reads "Battle"/"Bow"/"Stab"/"Arcane"
+//  by file), the names an exception row explains — or the code's own per-level names (Grade F…S) — are
+//  set aside, and exactly ONE must be left. That one is the plain name; two left over is a check error,
+//  which is how a typo in one file ("Wirlwind") gets caught.
 //
 //  THE PLACEHOLDERS (his `@`, widened so a multi-number description can say WHICH number):
 //    @            the skill's POWER (Holy Bolt's "+@ power")
@@ -18,35 +32,38 @@ using Game.Shared;
 //    [ … ]        shown only when every placeholder inside has a value at that level
 //  An unbracketed placeholder with no value at a level drops the CLAUSE around it (the text between
 //  commas/semicolons) — his *"use the maximum … the lower lvls will take from there"*.
+//  An EMPTY description = the game's own per-level text.
 //
 //  Numbers render WITHOUT a sign (he writes the `+`) and percents carry their `%`.
 //
-//  TWO FILES, ONE FORMAT (owner, 2026-09-30: *"2 files … so you wont lose any information"*):
-//    skill_faces.csv         SHARED skills — more than one race learns it, or two classes that are not one
-//                            line (a class and its own later classes count as one), or it already has a
-//                            race/class row. The skills a face can split: Might, Bow Expertise, Twin Arrows.
-//    skill_faces_single.csv  everything else — one race on one class line (`elf_heal`, `human_vampiric_bolt`)
-//                            and every skill no class learns (mobs, NPCs, whisps, items).
-//  Both are read the same way; which file a row sits in changes nothing in the game. `--check` flags a row
-//  in the wrong file (a skill that gained a second race moves up), and `--sort-faces` moves it.
-//
-//  --seed-faces   ONE-OFF: writes the first file from the code's names/descriptions (refuses to overwrite)
-//  --gen-faces    renders every row for every level and writes SkillFaces.g.cs
-//  --sort-faces   moves every row to the file it belongs in, keeping its section
-//  --check        calls Faces.Check: bad ids/races/classes/keys, a skill with no blank row, a row in the
-//                 wrong file, a stale .g.cs
+//  --gen-faces     renders every face for every level and writes SkillFaces.g.cs
+//  --check         calls Faces.Check: bad ids/races/classes/keys, disagreeing names, a skill with no name,
+//                  a row in the wrong file, a stale .g.cs
+//  --faces-to-csv  ONE-OFF (done 2026-09-30): moved the plain names/descriptions out of the old face files
 // =====================================================================================================
 
 internal static class Faces
 {
-    private const string Header = "SKILL_ID,NAME,RACE,CLASS,DESCRIPTION,COMMENT";
-
     internal sealed record Row(string Id, string Name, string Race, string Class, string Descr, string Comment, int Line,
                                string File);
 
-    private const string SharedName = "skill_faces.csv", SingleName = "skill_faces_single.csv";
-    private static string CsvPath(string repoRoot, string name = SharedName) => Path.Combine(repoRoot, "docs", "data", name);
+    private const string FacesName = "skill_faces.csv", OtherName = "skill_faces_other.csv";
+    private const string FacesHeader = "SKILL_ID,NAME,RACE,CLASS,DESCRIPTION,COMMENT";
+    private const string OtherHeader = "SKILL_ID,NAME,DESCRIPTION,COMMENT";
+    private const string DescrHeader = "DESCRIPTION";
+
+    private static string DataPath(string repoRoot, string name) => Path.Combine(repoRoot, "docs", "data", name);
+    private static string ClassDir(string repoRoot) => Path.Combine(repoRoot, "docs", "data", "classes_skills_csv");
     private static string GenPath(string repoRoot) => Path.Combine(repoRoot, "Game.Shared", "SkillFaces.g.cs");
+
+    /// <summary>The class CSVs in the order he authors them — the order a skill's home row is looked for in.</summary>
+    private static readonly string[] ClassFiles =
+    {
+        "fighter 1st", "mage 1st", "warrior 2nd", "tank 2nd", "rogue 2nd", "cleric 2nd", "nuker 2nd",
+        "warrior 3rd", "war_aoe 3rd", "tank 3rd", "dual 3rd", "archer 3rd", "healer 3rd", "buffer 3rd", "nuker 3rd",
+        "warrior 4th", "war_aoe 4th", "tank 4th", "dual 4th", "archer 4th", "healer 4th", "buffer 4th", "nuker 4th",
+        "shared 4th", "buffs", "whisps_skills",
+    };
 
     // ---------------------------------------------------------------------------------------------
     //  RENDER
@@ -169,102 +186,127 @@ internal static class Faces
     }
 
     // ---------------------------------------------------------------------------------------------
-    //  READ
+    //  READ — the class CSVs' display half, plus the two face files, as one list of faces
     // ---------------------------------------------------------------------------------------------
 
-    /// <summary>Both files' rows, shared first. null = the shared file is missing (the single one is optional).</summary>
-    internal static List<Row>? Read(string repoRoot)
+    /// <summary>One class-CSV row's display half.</summary>
+    private sealed record CsvName(string Id, string Name, string Descr, string File, int Line);
+
+    private static List<CsvName> ReadClassNames(string repoRoot)
     {
-        if (!File.Exists(CsvPath(repoRoot))) return null;
-        var rows = new List<Row>();
-        foreach (var name in new[] { SharedName, SingleName })
+        var outp = new List<CsvName>();
+        foreach (var file in ClassFiles)
         {
-            string path = CsvPath(repoRoot, name);
+            string path = Path.Combine(ClassDir(repoRoot), file + ".csv");
             if (!File.Exists(path)) continue;
             var lines = File.ReadAllLines(path);
+            if (lines.Length == 0) continue;
+            var head = SplitCsv(lines[0]).Select(h => h.Trim().ToUpperInvariant()).ToList();
+            int idCol = head.FindIndex(h => h is "SKILL_ID" or "ID"), nameCol = head.IndexOf("NAME"),
+                dCol = head.IndexOf(DescrHeader);
+            if (idCol < 0 || nameCol < 0) continue;
             for (int i = 1; i < lines.Length; i++)
             {
                 var f = SplitCsv(lines[i]);
-                while (f.Count < 6) f.Add("");
-                if (f[0].Trim().Length == 0) continue;
-                rows.Add(new Row(f[0].Trim(), f[1].Trim(), f[2].Trim().ToLowerInvariant(), f[3].Trim(), f[4].Trim(),
-                                 f[5].Trim(), i + 1, name));
+                string id = f.Count > idCol ? f[idCol].Trim() : "";
+                if (id.Length == 0 || SkillCatalog.Get(id) is null) continue;
+                outp.Add(new CsvName(id, f.Count > nameCol ? f[nameCol].Trim() : "",
+                                     dCol >= 0 && f.Count > dCol ? f[dCol].Trim() : "", file + ".csv", i + 1));
             }
+        }
+        return outp;
+    }
+
+    /// <summary>A face file's rows. <paramref name="faces"/> = the 6-column exceptions layout; otherwise the
+    /// 4-column `skill_faces_other.csv` one. A row with an empty SKILL_ID is a section header.</summary>
+    private static List<Row> ReadFile(string repoRoot, string name, bool faces)
+    {
+        var rows = new List<Row>();
+        string path = DataPath(repoRoot, name);
+        if (!File.Exists(path)) return rows;
+        var lines = File.ReadAllLines(path);
+        for (int i = 1; i < lines.Length; i++)
+        {
+            var f = SplitCsv(lines[i]);
+            while (f.Count < 6) f.Add("");
+            if (f[0].Trim().Length == 0) continue;
+            rows.Add(faces
+                ? new Row(f[0].Trim(), f[1].Trim(), f[2].Trim().ToLowerInvariant(), f[3].Trim(), f[4].Trim(), f[5].Trim(),
+                          i + 1, name)
+                : new Row(f[0].Trim(), f[1].Trim(), "", "", f[2].Trim(), f[3].Trim(), i + 1, name));
         }
         return rows;
     }
 
-    // ---------------------------------------------------------------------------------------------
-    //  WHICH FILE — shared or single
-    // ---------------------------------------------------------------------------------------------
-
-    /// <summary>Every skill id → the (race, class node) pairs that learn it, off the compiled class tables — not
-    /// the CSVs, whose Race column only exists in the 1st-class files (a rogue 3rd discipline is one race, and
-    /// only the tables say so). A node is the class path: "Fighter", "Fighter/Warrior", "Fighter/Warrior/Ravager",
-    /// "Fighter/Warrior/Ravager/4". Each class's LINEAGE is walked (the ShownLevel rule), so a skill learned at
-    /// the 1st class is held by every class below it too.</summary>
-    private static Dictionary<string, HashSet<(Race Race, string Node)>> Holders()
+    /// <summary>The names a skill may carry on a class-CSV row WITHOUT being its plain name: every exception
+    /// row's name, and the code's own per-level names (Grade F…S).</summary>
+    private static HashSet<string> Explained(string id, SkillDef def, IEnumerable<Row> exceptions)
     {
-        var h = new Dictionary<string, HashSet<(Race, string)>>();
-        void Add(Race race, string node, IEnumerable<ClassSkill> skills)
+        var s = exceptions.Where(r => r.Id == id && (r.Race.Length > 0 || r.Class.Length > 0))
+                          .Select(r => r.Name).ToHashSet();
+        for (int l = 1; l <= Math.Max(1, def.MaxLevel); l++)
+            if (def.NameAt(l) is var n && n != def.Name) s.Add(n);
+        return s;
+    }
+
+    /// <summary>Every face: each skill's PLAIN one built from its class-CSV rows (or `skill_faces_other.csv`),
+    /// then the exceptions. <paramref name="errs"/> gets what only this assembly can see.</summary>
+    internal static List<Row> Load(string repoRoot, List<string> errs)
+    {
+        var exceptions = ReadFile(repoRoot, FacesName, true);
+        var other = ReadFile(repoRoot, OtherName, false);
+        var csv = ReadClassNames(repoRoot);
+        var rows = new List<Row>();
+
+        foreach (var g in csv.GroupBy(c => c.Id))
         {
-            foreach (var cs in skills)
-            {
-                if (!h.TryGetValue(cs.SkillId, out var set)) h[cs.SkillId] = set = new();
-                set.Add((race, node));
-            }
+            var def = SkillCatalog.Get(g.Key)!;
+            var explained = Explained(g.Key, def, exceptions);
+            var own = g.Select(c => c.Name).Where(n => n.Length > 0 && !explained.Contains(n)).Distinct().ToList();
+            var descrs = g.Where(c => c.Descr.Length > 0).ToList();
+            if (own.Count > 1)
+                errs.Add($"{g.Key}: NAME disagrees across its class-CSV rows — " +
+                         string.Join(" / ", own.Select(n => $"\"{n}\" ({string.Join(", ",
+                             g.Where(c => c.Name == n).Take(2).Select(c => $"{c.File} line {c.Line}"))})")) +
+                         $". Pick one spelling, or add a RACE/CLASS row in {FacesName} for the other.");
+            if (descrs.Select(c => c.Descr).Distinct().Count() > 1)
+                errs.Add($"{g.Key}: DESCRIPTION differs between " +
+                         string.Join(", ", descrs.Select(c => $"{c.File} line {c.Line}")) + " — write it on one row");
+            var home = descrs.FirstOrDefault() ?? g.FirstOrDefault(c => own.Contains(c.Name)) ?? g.First();
+            string name = own.Count == 0 || own.Contains(home.Name) ? home.Name : own[0];
+            rows.Add(new Row(g.Key, name, "", "", home.Descr, "", home.Line, home.File));
         }
-        foreach (var race in Enum.GetValues<Race>())
-            foreach (var bc in Enum.GetValues<BaseClass>())
-            {
-                var baseList = ClassSkills.ForClass(race, bc, null, null);
-                Add(race, $"{bc}", ClassSkills.Cumulative(race, bc, null, null));
-                foreach (var a in Enum.GetValues<Archetype>())
-                {
-                    if ((a is Archetype.Healer or Archetype.Nuker ? BaseClass.Mage : BaseClass.Fighter) != bc) continue;
-                    Add(race, $"{bc}/{a}", ClassSkills.Cumulative(race, bc, a, null).Concat(baseList));
-                    foreach (var d in Enum.GetValues<Discipline>())
-                    {
-                        if (Disciplines.Parent(d) != a) continue;
-                        Add(race, $"{bc}/{a}/{d}", ClassSkills.Cumulative(race, bc, a, d).Concat(baseList));
-                        Add(race, $"{bc}/{a}/{d}/4", ClassSkills.Cumulative(race, bc, a, d, true).Concat(baseList));
-                    }
-                }
-            }
-        return h;
+
+        var inCsv = csv.Select(c => c.Id).ToHashSet();
+        foreach (var r in other)
+        {
+            if (inCsv.Contains(r.Id))
+                errs.Add($"{OtherName} line {r.Line} ({r.Id}): a class CSV lists this skill — its name and description " +
+                         "live there; delete this row");
+            else rows.Add(r);
+        }
+        // An exception with no DESCRIPTION wears the plain one — Blessing of Might only renames Might.
+        var plainDescr = rows.ToDictionary(r => r.Id, r => r.Descr);
+        foreach (var r in exceptions)
+        {
+            if (r.Race.Length == 0 && r.Class.Length == 0)
+                errs.Add($"{FacesName} line {r.Line} ({r.Id}): no RACE or CLASS — the plain name lives in its class CSV " +
+                         $"({OtherName} for a skill no class learns)");
+            else rows.Add(r.Descr.Length > 0 ? r : r with { Descr = plainDescr.GetValueOrDefault(r.Id, "") });
+        }
+        return rows;
     }
 
-    /// <summary>Does this skill belong in the SHARED file? Yes when it already wears a race/class face, when two
-    /// races learn it, or when two classes of one race learn it that are not one line (neither descends from
-    /// the other). A skill no class learns (mobs, NPCs) is single.</summary>
-    private static bool BelongsShared(string id, Dictionary<string, HashSet<(Race Race, string Node)>> holders,
-                                      HashSet<string> hasVariant)
-    {
-        if (hasVariant.Contains(id)) return true;
-        if (!holders.TryGetValue(id, out var set) || set.Count == 0) return false;
-        if (set.Select(x => x.Race).Distinct().Count() > 1) return true;
-        string root = set.Select(x => x.Node).OrderBy(n => n.Length).First();
-        return !set.All(x => x.Node == root || x.Node.StartsWith(root + "/"));
-    }
-
-    private static HashSet<string> WithVariants(List<Row> rows) =>
-        rows.Where(r => r.Race.Length > 0 || r.Class.Length > 0).Select(r => r.Id).ToHashSet();
-
-    /// <summary>Every problem in the files. Empty = clean.</summary>
+    /// <summary>Every problem in the faces. Empty = clean.</summary>
     private static List<string> Problems(List<Row> rows)
     {
         var errs = new List<string>();
         var races = new HashSet<string> { "", "human", "elf", "demon" };
         var classNames = AllClassNames();
         var seen = new HashSet<string>();
-        var holders = Holders();
-        var variants = WithVariants(rows);
         foreach (var r in rows)
         {
             string at = $"{r.File} line {r.Line} ({r.Id})";
-            string want = BelongsShared(r.Id, holders, variants) ? SharedName : SingleName;
-            if (SkillCatalog.Get(r.Id) is not null && r.File != want)
-                errs.Add($"{at}: belongs in {want} — run `SkillCsvSeed -- --sort-faces`");
             if (SkillCatalog.Get(r.Id) is not SkillDef def) { errs.Add($"{at}: no skill has this id"); continue; }
             if (r.Id.Any(c => c > 127)) errs.Add($"{at}: non-ASCII character in the id");
             if (!races.Contains(r.Race)) errs.Add($"{at}: race '{r.Race}' — use human / elf / demon or leave it blank");
@@ -275,20 +317,23 @@ internal static class Faces
             RenderAll(r, def, miss);
             foreach (var m in miss) errs.Add($"{at}: {m}");
         }
-        var blank = rows.Where(r => r.Race.Length == 0 && r.Class.Length == 0).Select(r => r.Id).ToHashSet();
+        var plain = rows.Where(r => r.Race.Length == 0 && r.Class.Length == 0).Select(r => r.Id).ToHashSet();
         foreach (var def in SkillCatalog.AllSkills)
-            if (!blank.Contains(def.Id)) errs.Add($"{def.Id}: NO FACE — needs a row with blank RACE and CLASS");
+            if (!plain.Contains(def.Id))
+                errs.Add($"{def.Id}: NO NAME — give it a row in its class CSV, or in {OtherName} if no class learns it");
         return errs;
     }
 
     private static HashSet<string> AllClassNames()
     {
-        var s = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Fighter", "Mage" };
+        // "NPC" = the spirit helper's shelf label (SkillFaces.NpcClass), for a shelf item that is also a class skill.
+        var s = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Fighter", "Mage", SkillFaces.NpcClass };
         foreach (var c in ClassCatalog.Playable) s.Add(c.Name);
         foreach (var c in ThirdClassCatalog.Playable) s.Add(c.Name);
         foreach (var c in FourthClassCatalog.Playable) s.Add(c.Name);
         return s;
     }
+
 
     // ---------------------------------------------------------------------------------------------
     //  GENERATE / CHECK
@@ -298,7 +343,8 @@ internal static class Faces
     {
         var sb = new StringBuilder();
         sb.Append("// <auto-generated>\n");
-        sb.Append("//   `BL-327` — GENERATED from docs/data/skill_faces.csv + skill_faces_single.csv by\n");
+        sb.Append("//   `BL-327` — GENERATED from the class CSVs' NAME/DESCRIPTION + docs/data/skill_faces.csv +\n");
+        sb.Append("//   docs/data/skill_faces_other.csv by\n");
         sb.Append("//     dotnet run --project tools/SkillCsvSeed -- --gen-faces\n");
         sb.Append("//   DO NOT EDIT BY HAND: edit the CSV row and regenerate. See tools/SkillCsvSeed/Faces.cs.\n");
         sb.Append("//   One line per face: id, race, class, name, then the description per level (one = every level).\n");
@@ -321,243 +367,151 @@ internal static class Faces
 
     internal static int Gen(string repoRoot)
     {
-        var rows = Read(repoRoot);
-        if (rows is null) { Console.Error.WriteLine("docs/data/skill_faces.csv is missing — run --seed-faces once."); return 1; }
-        var errs = Problems(rows);
+        var errs = new List<string>();
+        var rows = Load(repoRoot, errs);
+        errs.AddRange(Problems(rows));
         foreach (var e in errs) Console.WriteLine("  🟡 FACE " + e);
         File.WriteAllText(GenPath(repoRoot), Generate(rows));
         Console.WriteLine($"SkillFaces.g.cs: {rows.Count} faces written, {errs.Count} problem(s).");
         return errs.Count == 0 ? 0 : 1;
     }
 
-    /// <summary>For `--check`: the file's problems plus a stale generated file. Returns the defect count.</summary>
+    /// <summary>For `--check`: every problem plus a stale generated file. Returns the defect count.</summary>
     internal static int Check(string repoRoot)
     {
-        var rows = Read(repoRoot);
-        if (rows is null) { Console.WriteLine("  🟡 FACE docs/data/skill_faces.csv is missing"); return 1; }
-        var errs = Problems(rows);
+        var errs = new List<string>();
+        var rows = Load(repoRoot, errs);
+        errs.AddRange(Problems(rows));
         string gen = GenPath(repoRoot);
         if (!File.Exists(gen) || File.ReadAllText(gen).Replace("\r\n", "\n") != Generate(rows))
             errs.Add("SkillFaces.g.cs is STALE — run `SkillCsvSeed -- --gen-faces`");
         foreach (var e in errs) Console.WriteLine("  🟡 FACE " + e);
-        Console.WriteLine($"skill_faces.csv + skill_faces_single.csv: {rows.Count} faces, {errs.Count} problem(s).");
+        Console.WriteLine($"faces (class CSVs + {FacesName} + {OtherName}): {rows.Count} faces, {errs.Count} problem(s).");
         return errs.Count;
     }
 
-    /// <summary>`--sort-faces`: move every row to the file it belongs in. A skill's rows travel together, each
-    /// keeps its section (the `,,,,,---- X ----` lines), a moved row lands at the end of its section, and a
-    /// section with no rows left is dropped from that file.</summary>
-    internal static int Sort(string repoRoot)
+    // ---------------------------------------------------------------------------------------------
+    //  ONE-OFF: the old face files → class CSVs (2026-09-30)
+    // ---------------------------------------------------------------------------------------------
+
+    /// <summary>`--faces-to-csv`. Reads the OLD `skill_faces.csv` + `skill_faces_single.csv` (a blank row per
+    /// skill), then: a class CSV gets a last `DESCRIPTION` column, each skill's blank-row text lands on ONE of its
+    /// rows (the first one bearing its plain name), a class-CSV NAME that is neither the plain name nor an
+    /// explained variant is corrected to what the game shows; skills no class CSV lists go to
+    /// `skill_faces_other.csv`; `skill_faces.csv` keeps its race/class rows verbatim. Refuses to run twice.</summary>
+    internal static int Migrate(string repoRoot)
     {
-        var rows = Read(repoRoot);
-        if (rows is null) { Console.Error.WriteLine("docs/data/skill_faces.csv is missing."); return 1; }
-        var holders = Holders();
-        var variants = WithVariants(rows);
-        // section header → its lines, per target file, sections in first-seen order
-        var outp = new Dictionary<string, List<(string Head, List<string> Lines)>>
-            { [SharedName] = new(), [SingleName] = new() };
-        List<string> Section(string file, string head)
+        if (File.Exists(DataPath(repoRoot, OtherName))) { Console.Error.WriteLine($"{OtherName} exists — already done."); return 1; }
+        const string OldSingle = "skill_faces_single.csv";
+        var old = ReadFile(repoRoot, FacesName, true).Concat(ReadFile(repoRoot, OldSingle, true)).ToList();
+        var plain = new Dictionary<string, Row>();
+        foreach (var r in old.Where(r => r.Race.Length == 0 && r.Class.Length == 0)) plain.TryAdd(r.Id, r);
+        var variants = old.Where(r => r.Race.Length > 0 || r.Class.Length > 0).ToList();
+
+        // Pass 1: every class-CSV row of a known skill, with its name corrected where it has to be.
+        var files = new List<(string Path, List<string> Lines, string Eol, bool Bom, int Width, int IdCol, int NameCol)>();
+        var hits = new List<(int File, int Line, string Id, string Name, int Fields)>();
+        var renames = new List<string>();
+        foreach (var file in ClassFiles)
         {
-            var list = outp[file];
-            var s = list.Find(x => x.Head == head);
-            if (s.Lines is null) list.Add(s = (head, new List<string>()));
-            return s.Lines;
-        }
-        int moved = 0;
-        foreach (var name in new[] { SharedName, SingleName })
-        {
-            string path = CsvPath(repoRoot, name);
+            string path = Path.Combine(ClassDir(repoRoot), file + ".csv");
             if (!File.Exists(path)) continue;
-            string head = "";
-            foreach (var line in File.ReadAllLines(path).Skip(1))
+            var (lines, eol, bom) = ReadRaw(path);
+            var head = SplitCsv(lines[0]).Select(h => h.Trim().ToUpperInvariant()).ToList();
+            int idCol = head.FindIndex(h => h is "SKILL_ID" or "ID"), nameCol = head.IndexOf("NAME");
+            if (idCol < 0 || nameCol < 0 || head.Contains(DescrHeader)) continue;
+            files.Add((path, lines, eol, bom, head.Count, idCol, nameCol));
+            int fi = files.Count - 1;
+            for (int i = 1; i < lines.Count; i++)
             {
-                if (line.Trim().Length == 0) continue;
-                string id = SplitCsv(line)[0].Trim();
-                if (id.Length == 0) { head = line; continue; }
-                string want = BelongsShared(id, holders, variants) ? SharedName : SingleName;
-                if (want != name) moved++;
-                Section(want, head).Add(line);
-            }
-        }
-        foreach (var (name, sections) in outp)
-        {
-            var sb = new StringBuilder(Header + "\n");
-            foreach (var (head, lines) in sections)
-            {
-                if (lines.Count == 0) continue;
-                if (head.Length > 0) sb.Append(head).Append('\n');
-                foreach (var l in lines) sb.Append(l).Append('\n');
-            }
-            File.WriteAllText(CsvPath(repoRoot, name), sb.ToString().Replace("\n", "\r\n"), new UTF8Encoding(false));
-            Console.WriteLine($"{name}: {sections.Sum(s => s.Lines.Count)} rows");
-        }
-        Console.WriteLine($"{moved} row(s) moved.");
-        return 0;
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    //  SEED (one-off)
-    // ---------------------------------------------------------------------------------------------
-
-    private static readonly Regex DurationWords =
-        new(@"(?<n>\d+)\s*(?<u>hours?|h|minutes?|mins?|seconds?|secs?|s)\b", RegexOptions.IgnoreCase);
-
-    /// <summary>The code's description with its numbers turned into placeholders wherever the number is
-    /// provably the skill's own at its top rung. What is left typed is reported in the COMMENT column.</summary>
-    internal static (string Template, List<string> Typed) Templatize(SkillDef def)
-    {
-        int top = Math.Max(1, def.MaxLevel);
-        string text = def.DescriptionAt(top);
-        if (string.IsNullOrWhiteSpace(text)) text = def.Description ?? "";
-        text = text.Replace("\r", " ").Replace("\n", " ").Trim();
-        var pool = Descr.Pool(def, top, null);
-        var edits = new List<(int At, int Len, string With)>();
-
-        int durTicks = def.DurationTicksAt(top);
-        foreach (Match m in DurationWords.Matches(text))
-        {
-            double n = double.Parse(m.Groups["n"].Value, CultureInfo.InvariantCulture);
-            string u = m.Groups["u"].Value.ToLowerInvariant();
-            double secs = u.StartsWith("h") ? n * 3600 : u.StartsWith("m") ? n * 60 : n;
-            if (durTicks > 0 && Math.Abs(secs - durTicks * GameConstants.TickSeconds) < 0.5)
-                edits.Add((m.Index, m.Length, "@{duration}"));
-        }
-
-        foreach (var t in Descr.Tokens(text, new List<string>()))
-        {
-            if (t.At < 0 || edits.Any(e => t.At < e.At + e.Len && e.At < t.At + t.Len)) continue;
-            string raw = text.Substring(t.At, t.Len);
-            string sign = raw.TrimStart().StartsWith("-") || raw.TrimStart().StartsWith("−") ? "-"
-                        : raw.TrimStart().StartsWith("+") ? "+" : "";
-            if (t.Mult) sign = t.Value < 0 ? "-" : "+";
-            bool match = pool.TryGetValue((t.Metric, t.Pct), out var vals)
-                         && vals.Any(v => Math.Abs(Math.Abs(v) - Math.Abs(t.Value)) < 0.0005f);
-            if (!match) continue;
-            string key = t.Metric == "power" && !t.Pct ? "@" : "@{" + t.Metric + (NeedsSuffix(pool, t.Metric, t.Pct) ? (t.Pct ? "%" : "#") : "") + "}";
-            // keep a leading space the regex may have swallowed
-            string lead = raw.Length > 0 && raw[0] == ' ' ? " " : "";
-            edits.Add((t.At, t.Len, lead + sign + key));
-        }
-
-        var sb = new StringBuilder(text);
-        foreach (var e in edits.OrderByDescending(e => e.At)) sb.Remove(e.At, e.Len).Insert(e.At, e.With);
-        string templ = sb.ToString();
-        var typed = Regex.Matches(Placeholder.Replace(templ, ""), @"\d+(\.\d+)?%?").Select(m => m.Value).ToList();
-        return (templ, typed);
-    }
-
-    private static bool NeedsSuffix(Dictionary<(string, bool), List<float>> pool, string metric, bool pct)
-    {
-        bool hasPct = pool.TryGetValue((metric, true), out var p) && p.Any(v => v != 0f);
-        // the default reading is "percent if there is one", so only a FLAT reading beside a percent needs '#'
-        return !pct && hasPct;
-    }
-
-    internal static int Seed(string csvDir, string repoRoot, bool force)
-    {
-        string path = CsvPath(repoRoot);
-        if (File.Exists(path) && !force)
-        {
-            Console.Error.WriteLine("docs/data/skill_faces.csv exists — it is his now. (--force overwrites.)");
-            return 1;
-        }
-
-        // Where each id is learned, in file order — the COMMENT column, and the order he authors in.
-        var order = new[] { "fighter 1st", "mage 1st", "warrior 2nd", "tank 2nd", "rogue 2nd", "cleric 2nd",
-                            "nuker 2nd", "warrior 3rd", "war_aoe 3rd", "tank 3rd", "dual 3rd", "archer 3rd",
-                            "healer 3rd", "buffer 3rd", "nuker 3rd", "warrior 4th", "war_aoe 4th", "tank 4th",
-                            "dual 4th", "archer 4th", "healer 4th", "buffer 4th", "nuker 4th", "shared 4th",
-                            "buffs", "whisps_skills" };
-        var files = new Dictionary<string, List<string>>();
-        var seq = new List<string>();
-        foreach (var name in order)
-        {
-            string f = Path.Combine(csvDir, name + ".csv");
-            if (!File.Exists(f)) continue;
-            var lines = File.ReadAllLines(f);
-            if (lines.Length == 0) continue;
-            var head = SplitCsv(lines[0]);
-            int idCol = head.FindIndex(h => h.Trim() is "SKILL_ID" or "ID");
-            if (idCol < 0) continue;
-            foreach (var l in lines.Skip(1))
-            {
-                var c = SplitCsv(l);
-                if (c.Count <= idCol) continue;
-                string id = c[idCol].Trim();
-                if (id.Length == 0 || SkillCatalog.Get(id) is null) continue;
-                if (!files.TryGetValue(id, out var fl)) { files[id] = fl = new List<string>(); seq.Add(id); }
-                if (!fl.Contains(name)) fl.Add(name);
+                var f = SplitCsv(lines[i]);
+                string id = f.Count > idCol ? f[idCol].Trim() : "";
+                if (id.Length == 0 || SkillCatalog.Get(id) is not SkillDef def || !plain.TryGetValue(id, out var p)) continue;
+                string nm = f.Count > nameCol ? f[nameCol].Trim() : "";
+                if (nm != p.Name && !Explained(id, def, variants).Contains(nm))
+                {
+                    lines[i] = ReplaceField(lines[i], nameCol, p.Name);
+                    renames.Add($"{file}.csv line {i + 1}: \"{nm}\" → \"{p.Name}\"");
+                    nm = p.Name;
+                }
+                hits.Add((fi, i, id, nm, SplitCsv(lines[i]).Count));
             }
         }
 
-        // The racial faces that exist today (the Holy Bolt names, the three Mights he split in BL-263).
-        var extra = new Dictionary<string, List<(string Race, string Class, string Name, string Descr)>>
+        // Pass 2: each skill's description onto ONE row — the first bearing its plain name.
+        var skipped = new List<string>();
+        foreach (var g in hits.GroupBy(h => h.Id))
         {
-            ["holy_bolt"] = new()
+            var p = plain[g.Key];
+            if (p.Descr.Length == 0) continue;
+            var home = g.Where(h => h.Name == p.Name).Concat(g).First();
+            var (path, lines, _, _, width, _, _) = files[home.File];
+            if (home.Fields > width)
             {
-                ("human", "", "Holy Bolt", ""), ("elf", "", "Moonlight Bolt", ""), ("demon", "", "Spirit Bolt", ""),
-            },
-            ["cast_atk_phys"] = new()
-            {
-                ("human", "", "Blessing of Might", "A magical blessing that increases P.Atk by @{patk} for @{duration}."),
-                ("elf",   "", "Forest Might",      "By the help of the forest: +@{patk} P.Atk for @{duration}."),
-                ("demon", "", "Demonic Strength",  "Signing a demonic contract: +@{patk} P.Atk for @{duration}."),
-            },
+                skipped.Add($"{g.Key}: {Path.GetFileName(path)} line {home.Line + 1} has more cells than its header");
+                continue;
+            }
+            lines[home.Line] = lines[home.Line] + new string(',', width - home.Fields) + "," + Quote(p.Descr);
+        }
+        foreach (var (path, lines, eol, bom, _, _, _) in files)
+        {
+            lines[0] += "," + DescrHeader;
+            WriteRaw(path, lines, eol, bom);
+        }
+
+        // The face files.
+        var inCsv = hits.Select(h => h.Id).ToHashSet();
+        var sbOther = new StringBuilder(OtherHeader + "\n");
+        foreach (var p in plain.Values.Where(p => !inCsv.Contains(p.Id)))
+            sbOther.Append(Line(p.Id, p.Name, p.Descr, p.Comment));
+        File.WriteAllText(DataPath(repoRoot, OtherName), sbOther.ToString().Replace("\n", "\r\n"), new UTF8Encoding(false));
+
+        var raw = new Dictionary<string, string[]>
+        {
+            [FacesName] = File.ReadAllLines(DataPath(repoRoot, FacesName)),
+            [OldSingle] = File.ReadAllLines(DataPath(repoRoot, OldSingle)),
         };
+        var sbFaces = new StringBuilder(FacesHeader + "\n");
+        foreach (var v in variants) sbFaces.Append(raw[v.File][v.Line - 1]).Append('\n');
+        File.WriteAllText(DataPath(repoRoot, FacesName), sbFaces.ToString().Replace("\n", "\r\n"), new UTF8Encoding(false));
+        File.Delete(DataPath(repoRoot, OldSingle));
 
-        // The tank's Backlash: one id, the rung carries the race (ClassSkillTables.Fourth).
-        extra["backlash"] = new()
-        {
-            ("human", "", "Physical Backlash", ""), ("elf", "", "Magical Backlash", ""), ("demon", "", "Physical Backlash", ""),
-        };
-        // The three per-class Momentum names that were `ClassSkill.DisplayName` overrides until BL-327.
-        var momentum = extra["reuse_reset_momentum"] = new();
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
-        {
-            foreach (var d in new[] { Discipline.Ravager, Discipline.Warlord })
-                momentum.Add(("", ClassNames.Fourth(d, race), "Battle Momentum", ""));
-        }
-        foreach (var (race, d) in new[] { (Race.Human, Discipline.Sharpshooter), (Race.Elf, Discipline.Trapper), (Race.Demon, Discipline.Hunter) })
-            momentum.Add(("", ClassNames.Fourth(d, race), "Bow Momentum", ""));
-        foreach (var (race, d) in new[] { (Race.Human, Discipline.Nullblade), (Race.Elf, Discipline.Phantom), (Race.Demon, Discipline.Venomweaver) })
-            momentum.Add(("", ClassNames.Fourth(d, race), "Stab Momentum", ""));
+        foreach (var r in renames) Console.WriteLine("  NAME " + r);
+        foreach (var s in skipped) Console.WriteLine("  🟡 NOT MOVED " + s);
+        Console.WriteLine($"{files.Count} class CSVs got a DESCRIPTION column; {renames.Count} NAME(s) corrected; " +
+                          $"{plain.Count - inCsv.Count} skill(s) → {OtherName}; {variants.Count} exception row(s) kept.");
+        return skipped.Count == 0 ? 0 : 1;
+    }
 
-        string Sect(SkillDef d) => d.Category == SkillCategory.Passive ? "PASSIVE"
-                                 : d.Category == SkillCategory.Buff ? "BUFF" : "ACTIVE";
-        var sb = new StringBuilder(Header + "\n");
-        int typedCount = 0;
-        void Emit(SkillDef def, string where)
+    /// <summary>A file's lines exactly as written: its line ending and its BOM are handed back to restore.</summary>
+    private static (List<string> Lines, string Eol, bool Bom) ReadRaw(string path)
+    {
+        var bytes = File.ReadAllBytes(path);
+        bool bom = bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF;
+        string text = new UTF8Encoding(false).GetString(bytes, bom ? 3 : 0, bytes.Length - (bom ? 3 : 0));
+        string eol = text.Contains("\r\n") ? "\r\n" : "\n";
+        return (text.Split('\n').Select(l => l.TrimEnd('\r')).ToList(), eol, bom);
+    }
+
+    private static void WriteRaw(string path, List<string> lines, string eol, bool bom) =>
+        File.WriteAllText(path, string.Join(eol, lines), new UTF8Encoding(bom));
+
+    /// <summary>Replace one field of a CSV line, leaving every other character of it as written.</summary>
+    private static string ReplaceField(string line, int index, string value)
+    {
+        int field = 0, start = 0;
+        bool q = false;
+        for (int i = 0; i <= line.Length; i++)
         {
-            var (templ, typed) = Templatize(def);
-            if (typed.Count > 0) typedCount++;
-            string comment = where + (typed.Count > 0 ? $" | typed numbers kept: {string.Join(" ", typed.Distinct())}" : "");
-            // Typed numbers + text that CHANGES per level = the top rung's numbers would show at every level. Leave
-            // the cell empty (the game's own per-level text) and say so, until he writes a template.
-            bool perLevel = Enumerable.Range(1, Math.Max(1, def.MaxLevel)).Select(def.DescriptionAt).Distinct().Count() > 1;
-            if (typed.Count > 0 && perLevel)
+            if (i < line.Length && line[i] == '"') q = !q;
+            if (i == line.Length || (line[i] == ',' && !q))
             {
-                comment = where + " | EMPTY = the game's per-level text; top rung reads: " + templ.Replace(",", ";");
-                templ = "";
+                if (field == index) return line[..start] + Quote(value) + line[i..];
+                field++;
+                start = i + 1;
             }
-            sb.Append(Line(def.Id, def.Name, "", "", templ, comment));
-            if (extra.TryGetValue(def.Id, out var ex))
-                foreach (var (race, cls, name, d) in ex)
-                    sb.Append(Line(def.Id, name, race, cls, d.Length > 0 ? d : templ, ""));
         }
-        foreach (var sect in new[] { "ACTIVE", "BUFF", "PASSIVE" })
-        {
-            sb.Append($",,,,,---------------------------- {sect} ----------------------------\n");
-            foreach (var id in seq)
-                if (SkillCatalog.Get(id) is SkillDef def && Sect(def) == sect)
-                    Emit(def, string.Join(", ", files[id]));
-        }
-        sb.Append(",,,,,---------------------------- NOT IN A CLASS CSV (mobs, NPCs, items, internal) ----------------------------\n");
-        foreach (var def in SkillCatalog.AllSkills.Where(d => !files.ContainsKey(d.Id)).OrderBy(d => d.Id, StringComparer.Ordinal))
-            Emit(def, "");
-
-        File.WriteAllText(path, sb.ToString().Replace("\n", "\r\n"), new UTF8Encoding(false));
-        Console.WriteLine($"skill_faces.csv seeded: {SkillCatalog.AllSkills.Count()} skills, {typedCount} with typed numbers left.");
-        return 0;
+        return line + new string(',', index - field + 1) + Quote(value);
     }
 
     private static string Line(params string[] f) => string.Join(",", f.Select(Quote)) + "\n";

@@ -1,4 +1,4 @@
-LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPLACES,RACE,Comment
+LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPLACES,RACE,Comment,DESCRIPTION
 ,,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
 40,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +43",0,25.7k,[]
 44,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +49",0,30.3k,[]
@@ -104,7 +104,7 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 62,Phase Shift,phase_shift,Magic/Buff,,,0,0,self/single,0,8,0,Blink 400 away from the nearest enemy to create distance (no target needed).,116,382k,[],
 72,Phase Shift,phase_shift,Magic/Buff,,,0,0,self/single,0,8,0,Blink 600 away from the nearest enemy to create distance (no target needed).,138,1360k,[],
 ,,,,,,,,,,,,,,,,,-----------------------------Elemental Blast-----------------------------
-40,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +52,33,117k,[elemental_bolt]
+40,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +52,33,117k,[elemental_bolt],,,"Magic damage, power @."
 44,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +58,38,138k,[elemental_bolt]
 48,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +65,44,247k,[elemental_bolt]
 52,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +72,48,192k,[elemental_bolt]
@@ -119,19 +119,19 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 72,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +105,67,2040k,[elemental_bolt]
 74,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +108,69,2620k,[elemental_bolt]
 ,,,,,,,,,,,,,,,,,-----------------------------Elemental Burst-----------------------------
-58,Elemental Burst,elemental_burst,Magic/Dmg,,,900,0,enemy/single,1,300,0,"Gathers Elemental energy to burst the enemy, power 120. Consumes 2 Elemental Stone.",120,238k,[],
+58,Elemental Burst,elemental_burst,Magic/Dmg,,,900,0,enemy/single,1,300,0,"Gathers Elemental energy to burst the enemy, power 120. Consumes 2 Elemental Stone.",120,238k,[],,,"Magic damage, power @. Consumes @{reagent} Elemental Stones."
 66,Elemental Burst,elemental_burst,Magic/Dmg,,,900,0,enemy/single,1,300,0,"Gathers Elemental energy to burst the enemy, power 133. Consumes 2 Elemental Stone.",133,737k,[],
 74,Elemental Burst,elemental_burst,Magic/Dmg,,,900,0,enemy/single,1,300,0,"Gathers Elemental energy to burst the enemy, power 154. Consumes 2 Elemental Stone.",154,2620k,[],
 ,,,,,,,,,,,,,,,,,-----------------------------Thunderstorm-----------------------------
-62,Thunderstorm,thunderstorm,Magic/Dmg,,,900,0,enemy/single,5,300,0,"Calls down thunderstorm to stike the enemy, power 178. Consumes 3 Elemental Stone.",178,573k,[],
+62,Thunderstorm,thunderstorm,Magic/Dmg,,,900,0,enemy/single,5,300,0,"Calls down thunderstorm to stike the enemy, power 178. Consumes 3 Elemental Stone.",178,573k,[],,,"Storm damage, power @. Consumes @{reagent} Elemental Stones."
 70,Thunderstorm,thunderstorm,Magic/Dmg,,,900,0,enemy/single,5,300,0,"Calls down thunderstorm to stike the enemy, power 204. Consumes 3 Elemental Stone.",204,1160k,[],
 74,Thunderstorm,thunderstorm,Magic/Dmg,,,900,0,enemy/single,5,300,0,"Calls down thunderstorm to stike the enemy, power 216. Consumes 3 Elemental Stone.",216,2620k,[],
 ,,,,,,,,,,,,,,,,,-----------------------------Race Bursts (74)-----------------------------
 74,Arcane Burst,arcane_burst,Magic/Dmg,,,900,0,enemy/single,1,300,15,"Arcance Magic spell, power 150. Decrease SPT resistance by 40%, Never Fizzle",150,2620k,[],Human
-74,Frost Burst,frost_burst,Magic/Dmg,,,900,0,enemy/single,1,300,15,"Frost Magic spell, power 150. Freeze the enemy: -30% M.def and prevents movement, Never Fizzle",150,2620k,[],Elf
+74,Frost Burst,frost_burst,Magic/Dmg,,,900,0,enemy/single,1,300,15,"Frost Magic spell, power 150. Freeze the enemy: -30% M.def and prevents movement, Never Fizzle",150,2620k,[],Elf,,"Power @, never fizzles, and freezes for @{duration}: -@{mdef} M.Def, cannot move."
 74,Pyro Burst,pyro_burst,Magic/Dmg,,,900,0,enemy/single,1,300,15,"Fire Magic spell, power 150. Burn the enemy for -100/s HP; Never Fizzle",150,2620k,[],Demon,new effect like a DOT but its not poision nor bleed nor venom -> burn = true dmg per second no cure and can kill 
 ,,,,,,,,,,,,,,,,,-----------------------------Quick Blast-----------------------------
-40,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +42; Power in PVP x0.5,33,117k,[quick_bolt]
+40,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +42; Power in PVP x0.5,33,117k,[quick_bolt],,,"Magic damage, power @. Half power in PvP."
 44,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +47; Power in PVP x0.5,38,138k,[quick_bolt]
 48,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +52; Power in PVP x0.5,44,247k,[quick_bolt]
 52,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +57; Power in PVP x0.5,48,192k,[quick_bolt]
@@ -195,7 +195,7 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 62,Arcane Void,arcane_void,Magic/Buff,,,900,0,enemy/single,4,30,0,Chance to remove 2~3 positive effect of the target,116,573k,[],Human,lower success rate
 72,Arcane Void,arcane_void,Magic/Buff,,,900,0,enemy/single,4,30,0,Chance to remove 2~4 positive effect of the target,138,2040k,[],Human,lower success rate
 ,,,,,,,,,,,,,,,,,-----------------------------Witches Curse-----------------------------
-40,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +42; A chance to curse enemies for -10% M.Def;,66,117k,[],Demon,does dmg but have a lower success rate for the curse
+40,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +42; A chance to curse enemies for -10% M.Def;,66,117k,[],Demon,does dmg but have a lower success rate for the curse,"Power @, and a chance to cut M.Def by @{mdef} for @{duration}."
 44,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +47; A chance to curse enemies for -10% M.Def;,76,138k,[],Demon
 48,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +52; A chance to curse enemies for -13% M.Def;,88,247k,[],Demon
 52,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +57; A chance to curse enemies for -13% M.Def;,96,192k,[],Demon
@@ -210,7 +210,7 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 72,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +84; A chance to curse enemies for -30% M.Def;,134,2040k,[],Demon
 74,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +87; A chance to curse enemies for -30% M.Def;,138,2620k,[],Demon
 ,,,,,,,,,,,,,,,,,-----------------------------Witches Scarecrow-----------------------------
-40,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,66,117k,[],Demon,lower success rate
+40,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,66,117k,[],Demon,lower success rate,Terrifies the target for @{duration}.
 44,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,76,138k,[],Demon
 48,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,88,247k,[],Demon
 52,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,96,192k,[],Demon

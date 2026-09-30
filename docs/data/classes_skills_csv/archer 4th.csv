@@ -1,4 +1,4 @@
-LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment
+LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment,DESCRIPTION
 ,,,,,,,,,,,,,,,,,,,==== SP CONSUMATION PER LEVEL ====
 ,,,,,,,,,,,,,,,,,,,76 - 6.5kk SP + 1kk Gold
 ,,,,,,,,,,,,,,,,,,,77 - 11kk SP + 1kk Gold
@@ -96,15 +96,15 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +7800  power;",230,0,100kk
 90,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +8000  power;",235,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Strong Arrows----------------------------
-84,Heavy Arrow,heavy_arrow,Physical/Active,bow,,900,0,target/single,3,10,0,"Shoot arrow dealing +17000 power;",195,0,100kk,2
-85,Arrow barrage,archer_arrow_barrage,Physical/Active,bow,,900,150,target/single,3,30,2,"Shoot 10 arrows (over 2s) each dealing +2000 power;",208,0,100kk,5,,,Like a channeling skill; Stat to cast and for the next 2 second it continue to cast 1arrow/200ms; can be cancaled like normal skill
-85,Bleeding Arrow,bleeding_arrow,Physical/Active,bow,,900,0,target/single,3,15,30,"Shoot arrow dealing +15000 power and inflicts bleed for 30s tire 11 and 30% slow;",208,0,100kk,5,,Demon
-85,Dazzling Arrow,dazzling_arrow,Physical/Active,bow,,900,0,target/single,3,15,10,"Shoot arrow dealing +15000 power and inflicts stun for 10s and chance to cancel 3 buffs;",208,0,100kk,5,,Human
-85,Healing Arrow,healing_arrow,Physical/Active,bow,,900,0,target/single,3,15,0,"Shoot arrow dealing +15000 power and heals for 40% of the dmg;",208,0,100kk,5,,Elf
+84,Heavy Arrow,heavy_arrow,Physical/Active,bow,,900,0,target/single,3,10,0,"Shoot arrow dealing +17000 power;",195,0,100kk,2,,,,"Strikes for power 17,000."
+85,Arrow Barrage,archer_arrow_barrage,Physical/Active,bow,,900,150,target/single,3,30,2,"Shoot 10 arrows (over 2s) each dealing +2000 power;",208,0,100kk,5,,,Like a channeling skill; Stat to cast and for the next 2 second it continue to cast 1arrow/200ms; can be cancaled like normal skill,"Looses 10 arrows over @{duration}, each for power 2,000 with a 150 splash."
+85,Bleeding Arrow,bleeding_arrow,Physical/Active,bow,,900,0,target/single,3,15,30,"Shoot arrow dealing +15000 power and inflicts bleed for 30s tire 11 and 30% slow;",208,0,100kk,5,,Demon,,"Strikes for power 15,000 and leaves a tier-11 bleed for @{duration}."
+85,Dazzling Arrow,dazzling_arrow,Physical/Active,bow,,900,0,target/single,3,15,10,"Shoot arrow dealing +15000 power and inflicts stun for 10s and chance to cancel 3 buffs;",208,0,100kk,5,,Human,,"Strikes for power 15,000, stuns for @{duration} and strips up to 3 buffs."
+85,Healing Arrow,healing_arrow,Physical/Active,bow,,900,0,target/single,3,15,0,"Shoot arrow dealing +15000 power and heals for 40% of the dmg;",208,0,100kk,5,,Elf,,"Strikes for power 15,000 and heals you for @{lifesteal} of the damage dealt."
 ,,,,,,,,,,,,,,,,,,,----------------------------Archery Mastery----------------------------
-76,Swift Mastery,bow_swift_mastery,passive,bow,,0,900,party/aoe,0,30,30,"Bow: with 3% chance to increase attack/cast speed with 10% for self and party;",0,2.24kk,1kk,,,Demon
-76,Damage Mastery,bow_damage_mastery,passive,bow,,0,900,party/aoe,0,30,30,"Bow: with 3% chance to increase p/m final damage with 10% for self and party;",0,2.24kk,1kk,,,Human
-76,Spirit Mastery,bow_management_mastery,passive,bow,,0,900,party/aoe,0,30,30,"Bow: with 3% chance to decrease p/m.mana consumption and p.skill cast time by 20% and increase critical damage by 10%for you and party;",0,2.24kk,1kk,,,Elf
+76,Swift Mastery,bow_swift_mastery,passive,bow,,0,900,party/aoe,0,30,30,"Bow: with 3% chance to increase attack/cast speed with 10% for self and party;",0,2.24kk,1kk,,,Demon,,Passive. Your rhythm carries the whole party: now and then everyone quickens.
+76,Damage Mastery,bow_damage_mastery,passive,bow,,0,900,party/aoe,0,30,30,"Bow: with 3% chance to increase p/m final damage with 10% for self and party;",0,2.24kk,1kk,,,Human,,Passive. Your aim sharpens the whole party: now and then everyone hits harder.
+76,Spirit Mastery,bow_management_mastery,passive,bow,,0,900,party/aoe,0,30,30,"Bow: with 3% chance to decrease p/m.mana consumption and p.skill cast time by 20% and increase critical damage by 10%for you and party;",0,2.24kk,1kk,,,Elf,,"Passive. Your economy steadies the whole party: now and then everyone acts cheaper, faster and crueller — bow and spell alike."
 ,,,,,,,,,,,,,,,,,,,----------------------------Explosive Arrow----------------------------
 76,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +2600 power;",158,10.2kk,1kk
 77,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +2700 power;",164,14.2kk,1kk

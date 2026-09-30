@@ -1,4 +1,4 @@
-LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment
+LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment,DESCRIPTION
 ,,,,,,,,,,,,,,,,,,,==== SP CONSUMATION PER LEVEL ====
 ,,,,,,,,,,,,,,,,,,,76 - 6.5kk SP + 1kk Gold
 ,,,,,,,,,,,,,,,,,,,77 - 11kk SP + 1kk Gold
@@ -79,7 +79,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +350",0,0,33.3kk
 90,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +400",0,0,33.3kk
 ,,,,,,,,,,,,,,,,,,,----------------------------M.Def Mastery----------------------------
-76,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +2%",0,1.83kk,333k
+76,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +2%",0,1.83kk,333k,,,,,mDef +@{mdef}
 77,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +4%",0,3.47kk,500k
 78,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +5%",0,4.03kk,250k
 79,M.Def Mastery,mdef_mastery,Passive,,,0,0,self/single,0,0,0,"mDef +7%",0,25.2kk,500k
@@ -99,7 +99,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 81,Mana Efficiency,mp_cost_mastery,Passive,,,0,0,self/single,0,0,0,"Decrease Mp Consumption with 8%",0,0,1.9kk
 86,Mana Efficiency,mp_cost_mastery,Passive,,,0,0,self/single,0,0,0,"Decrease Mp Consumption with 10%",0,0,18.8kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Healer Shield Mastery----------------------------
-76,Healers Shield Mastery,healers_shield_mastery,Passive,,/shield,0,0,self/single,0,0,0,When Shield is equiped increase healing power and MP regeneration with 10%,0,1.83kk,1kk
+76,Healer's Shield Mastery,healers_shield_mastery,Passive,,/shield,0,0,self/single,0,0,0,When Shield is equiped increase healing power and MP regeneration with 10%,0,1.83kk,1kk,,,,,With a shield equipped: healing power +10% and MP regeneration +@{mpreg}.
 ,,,,,,,,,,,,,,,,,,,----------------------------Great Heal----------------------------
 76,Great Heal,great_heal,Magic/Heal,,,600,0,target/single,5,3,0,heal with power  865,122,8.32kk,1k
 77,Great Heal,great_heal,Magic/Heal,,,600,0,target/single,5,3,0,heal with power  875,124,15.8kk,1kk
@@ -126,14 +126,14 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Ultimate Heal,ultimate_heal,Magic/Heal,,,600,0,target/single,5,1,0,heal with power 1800. Consumes 2 skill stone,146,0,100kk
 90,Ultimate Heal,ultimate_heal,Magic/Heal,,,600,0,target/single,5,1,0,heal with power 2000. Consumes 2 skill stone,150,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Ultimate party Heal----------------------------
-76,Ultimate party Heal,ultimate_party_heal,Magic/Heal,,,0,1000,party/aoe,7,3,0,heal with power 1100. Consumes 5 skill stone,244,8.32kk,1k
-78,Ultimate party Heal,ultimate_party_heal,Magic/Heal,,,0,1000,party/aoe,7,3,0,heal with power 1200. Consumes 5 skill stone,252,18.3kk,1kk
-80,Ultimate party Heal,ultimate_party_heal,Magic/Heal,,,0,1000,party/aoe,7,3,0,heal with power 1300. Consumes 5 skill stone,260,0,5kk
-82,Ultimate party Heal,ultimate_party_heal,Magic/Heal,,,0,1000,party/aoe,7,3,0,heal with power 1400. Consumes 5 skill stone,268,0,10kk
-84,Ultimate party Heal,ultimate_party_heal,Magic/Heal,,,0,1000,party/aoe,7,3,0,heal with power 1500. Consumes 5 skill stone,276,0,30kk
-86,Ultimate party Heal,ultimate_party_heal,Magic/Heal,,,0,1000,party/aoe,7,3,0,heal with power 1600. Consumes 5 skill stone,284,0,75kk
-88,Ultimate party Heal,ultimate_party_heal,Magic/Heal,,,0,1000,party/aoe,7,3,0,heal with power 1800. Consumes 5 skill stone,292,0,100kk
-90,Ultimate party Heal,ultimate_party_heal,Magic/Heal,,,0,1000,party/aoe,7,3,0,heal with power 2000. Consumes 5 skill stone,300,0,100kk
+76,Ultimate Party Heal,ultimate_party_heal,Magic/Heal,,,0,1000,party/aoe,7,3,0,heal with power 1100. Consumes 5 skill stone,244,8.32kk,1k
+78,Ultimate Party Heal,ultimate_party_heal,Magic/Heal,,,0,1000,party/aoe,7,3,0,heal with power 1200. Consumes 5 skill stone,252,18.3kk,1kk
+80,Ultimate Party Heal,ultimate_party_heal,Magic/Heal,,,0,1000,party/aoe,7,3,0,heal with power 1300. Consumes 5 skill stone,260,0,5kk
+82,Ultimate Party Heal,ultimate_party_heal,Magic/Heal,,,0,1000,party/aoe,7,3,0,heal with power 1400. Consumes 5 skill stone,268,0,10kk
+84,Ultimate Party Heal,ultimate_party_heal,Magic/Heal,,,0,1000,party/aoe,7,3,0,heal with power 1500. Consumes 5 skill stone,276,0,30kk
+86,Ultimate Party Heal,ultimate_party_heal,Magic/Heal,,,0,1000,party/aoe,7,3,0,heal with power 1600. Consumes 5 skill stone,284,0,75kk
+88,Ultimate Party Heal,ultimate_party_heal,Magic/Heal,,,0,1000,party/aoe,7,3,0,heal with power 1800. Consumes 5 skill stone,292,0,100kk
+90,Ultimate Party Heal,ultimate_party_heal,Magic/Heal,,,0,1000,party/aoe,7,3,0,heal with power 2000. Consumes 5 skill stone,300,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Party Great Heal----------------------------
 76,Party Great Heal,party_great_heal,Magic/Heal,,,0,1000,party/aoe,7,6,0,heal party with power  720,244,8.32kk,1k
 77,Party Great Heal,party_great_heal,Magic/Heal,,,0,1000,party/aoe,7,6,0,heal party with power  730,248,15.8kk,1kk
@@ -214,13 +214,13 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 76,Resurrection Field,resurrection_field,Magic/Heal,,,0,900,party/aoe,10,60,0,Revive Dead allies 900 range around the caster at 35% HP/MP; restore 70% of lost exp.,410,8.32kk,1kk
 80,Resurrection Field,resurrection_field,Magic/Heal,,,0,900,party/aoe,5,60,0,Revive Dead allies 900 range around the caster at 40% HP/MP; restore 70% of lost exp.,500,0,5kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Rite of Preservation----------------------------
-83,Rite of Preservation,rite_of_preservation,Magic/Buff,,,600,0,party/single,1,3600,3600,"Blesses an ally (or yourself): they DIE normally, keep their buffs, and are offered a resurrection where they fell at 30% HP and MP, losing NO experience. The offer waits as long as they like. Lasts 60 minutes or until it saves them. 60 minute reuse., Consumes 5 Holy stone",500,306kk,100kk
+83,Rite of Preservation,rite_of_preservation,Magic/Buff,,,600,0,party/single,1,3600,3600,"Blesses an ally (or yourself): they DIE normally, keep their buffs, and are offered a resurrection where they fell at 30% HP and MP, losing NO experience. The offer waits as long as they like. Lasts 60 minutes or until it saves them. 60 minute reuse., Consumes 5 Holy stone",500,306kk,100kk,,,,,"Blesses an ally (or yourself): they DIE normally, keep their buffs, and are offered a resurrection where they fell at 30% HP and MP, losing NO experience. The offer waits as long as they like. Lasts @{duration} or until it saves them. @{duration} reuse. Consumes @{reagent} Holy Stones."
 ,,,,,,,,,,,,,,,,,,,----------------------------Urgent Party Heal----------------------------
-83,Urgent Great Heal,urgent_great_heal,Magic/Heal,,,0,1000,target/aoe,3,5,0,"Heals 10 most injured friendly target around the caster (900 range) starting with most injured one by 30% and every next target is healed -2% less form the one before, Consumes 5 skill stones",500,459kk,100kk,,[urgent_heal],,heals everyone in 900 range and each next target is healed with 2% less (caster is always healed - just placed based on injury) -> 30 -> 28 -> 26 -> .. -> 10%; find the 10 injured and include the caster -> order by % hp missing and heal from top 30-2x(index)%
+83,Urgent Great Heal,urgent_great_heal,Magic/Heal,,,0,1000,target/aoe,3,5,0,"Heals 10 most injured friendly target around the caster (900 range) starting with most injured one by 30% and every next target is healed -2% less form the one before, Consumes 5 skill stones",500,459kk,100kk,,[urgent_heal],,heals everyone in 900 range and each next target is healed with 2% less (caster is always healed - just placed based on injury) -> 30 -> 28 -> 26 -> .. -> 10%; find the 10 injured and include the caster -> order by % hp missing and heal from top 30-2x(index)%,"Finds the ten most badly hurt allies within 900, plus yourself, and heals them worst-first — 30% of their own maximum HP for the worst, 2% less for each one after, down to 10%. Consumes @{reagent} Skill Stones."
 ,,,,,,,,,,,,,,,,,,,---------------------------Restoration----------------------------
-83,Elven Restoration,elven_restoration,Magic/Heal,,,900,900,party/aoe,5,3600,0,Fully Restores MP (100%) and Restore HP with 50% to the party,300,459kk,100kk,,,Elf
-83,Life Restoration,life_restoration,Magic/Heal,,,900,900,party/aoe,5,3600,0,Fully Restores HP (100%) and Restores MP with 50% to the party,300,459kk,100kk,,,Human
-83,Spirit Restoration,spirit_restoration,Magic/Heal,,,900,900,party/aoe,5,3600,15,Restore MP/HP +30% and Increase Healing received with 30% to the pary,300,459kk,100kk,,,Demon
+83,Elven Restoration,elven_restoration,Magic/Heal,,,900,900,party/aoe,5,3600,0,Fully Restores MP (100%) and Restore HP with 50% to the party,300,459kk,100kk,,,Elf,,Refills your whole party's MP completely and half their HP. Once an hour.
+83,Life Restoration,life_restoration,Magic/Heal,,,900,900,party/aoe,5,3600,0,Fully Restores HP (100%) and Restores MP with 50% to the party,300,459kk,100kk,,,Human,,Refills your whole party's HP completely and half their MP. Once an hour.
+83,Spirit Restoration,spirit_restoration,Magic/Heal,,,900,900,party/aoe,5,3600,15,Restore MP/HP +30% and Increase Healing received with 30% to the pary,300,459kk,100kk,,,Demon,,"Restores @{power} of your party's HP and MP, and for @{duration} every heal they receive is 30% stronger. Once an hour."
 ,,,,,,,,,,,,,,,,,,,---------------------------Mark----------------------------
 78,Holy Mark,holy_mark,Magic/Heal,,,900,0,party/single,5,5,300,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, SPT Debuff Resists +15%, M.Acc +4, M.Crit.Rate +20%, Max MP +20%, Decrease movement speed with 10%, Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",150,12.2kk,1kk,,,Elf,Same Principle as Great Might/Bulwark
 83,Holy Mark,holy_mark,Magic/Heal,,,900,0,party/single,5,5,300,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, SPT Debuff Resists +15%, M.Acc +4, M.Crit.Rate +20%, Max MP +20%, M.Crit.Rate.Received -10%, Decrease movement speed with 10%, Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",150,306kk,15kk,,,Elf,
@@ -229,11 +229,11 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 78,Blood Mark,blood_mark,Magic/Heal,,,900,0,party/single,5,5,300,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, Mele vampirism +5%, Acc +3, Crit.Dmg +20%, Natural Regen +20%, Decrease movement speed with 10%, Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",150,12.2kk,1kk,,,Demon
 83,Blood Mark,blood_mark,Magic/Heal,,,900,0,party/single,5,5,300,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, Mele vampirism +5%, Acc +3, Crit.Dmg +20%, Natural Regen +20%, P.Crit.Dmg.Received -30%, Decrease movement speed with 10%, Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",150,306kk,15kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Healers Power----------------------------
-80,Healers Power,healers_power,Magic/Buff,,,0,0,self/single,1,300,15,"Increase Healing Power +1000",100,150kk,10kk
-83,Healers Power,healers_power,Magic/Buff,,,0,0,self/single,1,300,15,"Increase Healing Power +1250",150,0,15kk
-85,Healers Power,healers_power,Magic/Buff,,,0,0,self/single,1,300,15,"Increase Healing Power +1500",200,0,50kk
-87,Healers Power,healers_power,Magic/Buff,,,0,0,self/single,1,300,15,"Increase Healing Power +1750",250,0,100kk
-90,Healers Power,healers_power,Magic/Buff,,,0,0,self/single,1,300,15,"Increase Healing Power +2000",300,0,100kk
+80,Healer's Power,healers_power,Magic/Buff,,,0,0,self/single,1,300,15,"Increase Healing Power +1000",100,150kk,10kk
+83,Healer's Power,healers_power,Magic/Buff,,,0,0,self/single,1,300,15,"Increase Healing Power +1250",150,0,15kk
+85,Healer's Power,healers_power,Magic/Buff,,,0,0,self/single,1,300,15,"Increase Healing Power +1500",200,0,50kk
+87,Healer's Power,healers_power,Magic/Buff,,,0,0,self/single,1,300,15,"Increase Healing Power +1750",250,0,100kk
+90,Healer's Power,healers_power,Magic/Buff,,,0,0,self/single,1,300,15,"Increase Healing Power +2000",300,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Mana Blessing----------------------------
 76,Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 21% and Magic MP Cost by 11%,130,5.54kk,1kk,,,Human;Demon
 78,Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 22% and Magic MP Cost by 12%,140,12.2kk,1kk,,,Human;Demon
@@ -244,7 +244,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 28% and Magic MP Cost by 18%,190,0,100kk,,,Human;Demon
 90,Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 30% and Magic MP Cost by 20%,200,0,100kk,,,Human;Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Arcane Resistance----------------------------
-76,Arcane Resistance,arcane_resistance,Magic/Buff,,,600,0,party/single,1,1,1200,30% resist to Buff removal,130,5.54kk,1kk
+76,Arcane Resistance,arcane_resistance,Magic/Buff,,,600,0,party/single,1,1,1200,30% resist to Buff removal,130,5.54kk,1kk,,,,,For @{duration} each of the target's buffs has a 30% chance to survive an enemy's dispel.
 ,,,,,,,,,,,,,,,,,,,----------------------------Fortitude----------------------------
 76,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,23% resist to CON debuffs,130,5.54kk,1kk,,,Elf;Demon
 78,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,25% resist to CON debuffs,140,12.2kk,1kk,,,Elf;Demon
@@ -257,7 +257,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,,,----------------------------Antidote----------------------------
 76,Antidote,antidote,Magic/Heal,,,600,0,party/single,0.8,3,0,"Cures poison, venom and bleed of rank 10 or lower from an ally (or self).",72,8.32kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Holy Blessing----------------------------
-78,Holy Blessing,holy_blessing,Magic/Heal,,,600,0,party/single,0.8,3,0,"Remove every debuff (burning and venom 11 as well) comsumes 1 holy stones",72,18.3kk,1kk,,,,'Holy Stone' is the same as 'Elemental Stone'
+78,Holy Blessing,holy_blessing,Magic/Heal,,,600,0,party/single,0.8,3,0,"Remove every debuff (burning and venom 11 as well) comsumes 1 holy stones",72,18.3kk,1kk,,,,'Holy Stone' is the same as 'Elemental Stone',"Strips every harmful effect from an ally, and is the only cure that reaches a tier-11 burn or venom. Tier 12 is beyond it. Consumes one Holy Stone."
 ,,,,,,,,,,,,,,,,,,,----------------------------Holy Ray----------------------------
 76,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk  +88,69,8.32kk,1kk
 77,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk  +90,71,15.8kk,1kk
@@ -329,9 +329,9 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Armor Break,armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 38% and MDef by 19%,111,0,100kk,,,Demon
 90,Armor Break,armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 40% and MDef by 20%,115,0,100kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,---------------------------Holy Soul----------------------------
-76,Holy Soul,holy_soul,Toggle,,,0,0,self/single,0,0,0,Decrease MP Consumtion by 30% and Casting speed by 10%; Consume 50 HP/s,0,5.54kk,1kk,,,,Intentional decrease in Cast speed
+76,Holy Soul,holy_soul,Toggle,,,0,0,self/single,0,0,0,Decrease MP Consumtion by 30% and Casting speed by 10%; Consume 50 HP/s,0,5.54kk,1kk,,,,Intentional decrease in Cast speed,"Stance. Every skill costs 30% less MP, but you cast @{cast} slower and burn 50 HP a second."
 ,,,,,,,,,,,,,,,,,,,----------------------------Lasting Enchantment----------------------------
-76,Lasting Enchantment,lasting_enchantment,Passive,,,0,0,self/single,0,0,0,double duration rate 10% - buffs and debuffs you cast have that chance to last TWICE as long - one roll per cast so an area blessing doubles for everyone or no one - scales with ATK,0,1.83kk,1kk
+76,Lasting Enchantment,lasting_enchantment,Passive,,,0,0,self/single,0,0,0,double duration rate 10% - buffs and debuffs you cast have that chance to last TWICE as long - one roll per cast so an area blessing doubles for everyone or no one - scales with ATK,0,1.83kk,1kk,,,,,Buffs and debuffs you cast have a chance to last TWICE as long. Scales with your ATK.
 ,,,,,,,,,,,,,,,,,,,----------------------------Soul Reinforcement----------------------------
 76,Soul Reinforcement,holy_soul_reinforcement_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 21% and Magic MP Cost by 11%",330,5.54kk,1kk,,,Elf
 78,Soul Reinforcement,holy_soul_reinforcement_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 22% and Magic MP Cost by 12%",340,12.2kk,1kk,,,Elf

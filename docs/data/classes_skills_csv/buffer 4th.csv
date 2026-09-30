@@ -1,4 +1,4 @@
-LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment
+LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment,DESCRIPTION
 ,,,,,,,,,,,,,,,,,,,==== SP CONSUMATION PER LEVEL ====
 ,,,,,,,,,,,,,,,,,,,76 - 6.5kk SP + 1kk Gold
 ,,,,,,,,,,,,,,,,,,,77 - 11kk SP + 1kk Gold
@@ -169,7 +169,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 76,Accuracy,fighter_accuracy,Passive,,,0,0,self/single,0,0,0,"acc +1",0,2.31kk,500k,,,Human
 86,Accuracy,fighter_accuracy,Passive,,,0,0,self/single,0,0,0,"acc +2",0,0,37.5kk,,,Human
 ,,,,,,,,,,,,,,,,,,,---------------------------Mark----------------------------
-76,Buffer Shield Mastery,buffer_shield_mastery,Passive,,robe/shield,0,0,self/single,0,0,0,"When Robe+Shield are equipped increase Max HP/MP and natural regeneration with 10%",0,6.5kk,1kk
+76,Buffer Shield Mastery,buffer_shield_mastery,Passive,,robe/shield,0,0,self/single,0,0,0,"When Robe+Shield are equipped increase Max HP/MP and natural regeneration with 10%",0,6.5kk,1kk,,,,,In a robe and carrying a shield: +@{mpreg} maximum HP and MP and +10% natural regeneration.
 ,,,,,,,,,,,,,,,,,,,----------------------------Bow Mastery----------------------------
 76,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +750",0,2.31kk,1kk,,,Elf
 78,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +800",0,5.32kk,1kk,,,Elf
@@ -194,7 +194,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 82,Harmony of the Soul,harmony_of_the_soul,Magic/Buff,,,600,800,party/aoe,1,120,300,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +15% Healing Received, +20% SPT Debuff Resistance",464,0,10kk
 83,Harmony of the Soul,harmony_of_the_soul,Magic/Buff,,,600,800,party/aoe,1,120,300,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +20% Healing Received, +20% SPT Debuff Resistance",464,0,15kk
 ,,,,,,,,,,,,,,,,,,,------------------------------Harmony of Madness------------------------------
-83,Harmony of Madness,harmony_of_madness,Magic/Buff,,,600,800,party/aoe,1,120,300,"−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion.",367,400kk,100kk
+83,Harmony of Madness,harmony_of_madness,Magic/Buff,,,600,800,party/aoe,1,120,300,"−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion.",367,400kk,100kk,,,,,"-10% maximum HP and MP, +8% attack, attack speed and cast speed, +@{ms} move speed, -@{eva} evasion (@{duration})."
 ,,,,,,,,,,,,,,,,,,,---------------------------Harmony of Restoration----------------------------
 76,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +110 HP/s and +11 MP/s for 30s,470,10.5kk,1
 77,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +115 HP/s and +11 MP/s for 30s,476,16.2kk,1k
@@ -301,4 +301,4 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,,,----------------------------Lasting Enchantment----------------------------
 76,Lasting Enchantment,lasting_enchantment,Passive,,,0,0,self/single,0,0,0,double duration rate 10% - buffs and debuffs you cast have that chance to last TWICE as long - one roll per cast so an area blessing doubles for everyone or no one - scales with ATK,0,2.31kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Urgent Lesser Heal----------------------------
-83,Urgent Lesser Heal,urgent_lesser_heal,Magic/Heal,,,0,1000,target/aoe,3,5,0,"Heals 4 most injured friendly target around the caster (including caster in 1000 range) starting with most injured one by 20% and every next target is healed -2% less form the one before, Consumes 3 skill stones",250,600kk,100kk,,,,half the MP / stones / targets of the healer's Urgent Great Heal and 20% instead of 30% - his 2026-09-13 ask. The -2% per rank is carried over from the healer's row (he did not give one): 20 -> 18 -> 16 -> 14 -> 12%
+83,Urgent Lesser Heal,urgent_lesser_heal,Magic/Heal,,,0,1000,target/aoe,3,5,0,"Heals 4 most injured friendly target around the caster (including caster in 1000 range) starting with most injured one by 20% and every next target is healed -2% less form the one before, Consumes 3 skill stones",250,600kk,100kk,,,,half the MP / stones / targets of the healer's Urgent Great Heal and 20% instead of 30% - his 2026-09-13 ask. The -2% per rank is carried over from the healer's row (he did not give one): 20 -> 18 -> 16 -> 14 -> 12%,"Finds the four most badly hurt allies within 1000, plus yourself, and heals them worst-first — 20% of their own maximum HP for the worst, 2% less for each one after, down to 12%. Consumes @{reagent} Skill Stones."

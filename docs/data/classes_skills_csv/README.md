@@ -3,18 +3,23 @@
 **These files are AUTHORITATIVE.** Nothing in the repo retunes them; the code reads them, never the
 other way round. Where there is no CSV, nothing is invented (`BL-02`).
 
-## Names and descriptions live in `../skill_faces.csv` (2026-09-30, `BL-327`)
+## NAME and DESCRIPTION are what the player reads (2026-09-30, `BL-327`)
 
-These files are the **numbers per level**; `docs/data/skill_faces.csv` is **what the player reads**. The `NAME` column
-here is a label for you — the game shows the skill's face (a blank row for everyone, plus any race or class row you add).
-In a face's DESCRIPTION, `@` is the power, `@{m.def}` / `@{max hp}` / `@{duration}` any number by its `DESCR-KEYS.md`
-word, `[ … ]` a piece shown only where the level has it. Then `dotnet run --project tools/SkillCsvSeed -- --gen-faces`.
+Your call: *"build it that way"*. In these files:
 
-**Two files, same format** (your call, 2026-09-30): `skill_faces.csv` holds the SHARED skills — two or more races, or
-two classes that are not one line (Might, Bow Expertise, Twin Arrows, the stat swaps) — the ones a race/class row can
-split. `skill_faces_single.csv` holds the rest: one race on one class line (`elf_heal`, `human_vampiric_bolt`) and every
-skill no class learns (mobs, NPCs, whisps). Which file a row is in changes nothing in the game. When a skill gains a
-second race or class, `--check` says it belongs in the other file and `--sort-faces` moves it.
+- **`NAME`** is the skill's real name in the game. Every row of a skill carries the same one; a different name on some
+  rows needs a race/class row in `../skill_faces.csv` that explains it (the Momentums, the racial Mights), or `--check`
+  reports it — that is how a typo in one file gets caught.
+- **`DESCRIPTION`** (the LAST column) is the text the player reads. Write it on **one** row of the skill; leave the rest
+  blank. `@` is the power, `@{m.def}` / `@{max hp}` / `@{duration}` any number by its `DESCR-KEYS.md` word, `[ … ]` a
+  piece shown only where the level has it; a level that lacks a number drops that clause, so write the TOP rung's text.
+  Empty = the game's own per-level text.
+- **`DESCR`** stays what it was: the numbers per level, which `--check` reads against the game.
+
+`../skill_faces.csv` holds only the **exceptions**: a RACE or CLASS row that names a skill differently for them (Forest
+Strength, the harmonist's Bow Expertise, "NPC Blood Mark" with CLASS = `NPC` for the spirit helper). A blank
+DESCRIPTION there keeps the plain one. `../skill_faces_other.csv` names the skills no class learns (mobs, NPC blessings,
+items). After any edit: `dotnet run --project tools/SkillCsvSeed -- --gen-faces`.
 
 ## The names are CLASS TIERS, not level bands (2026-08-17)
 
