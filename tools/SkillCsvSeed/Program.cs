@@ -50,6 +50,9 @@ if (args.Contains("--reweigh-sp"))
 // `--seed-faces` / `--gen-faces` — `BL-327`: docs/data/skill_faces.csv, the DISPLAY half of every skill. See Faces.cs.
 if (args.Contains("--seed-faces")) return Faces.Seed(outDir, dir.FullName, force);
 if (args.Contains("--gen-faces")) return Faces.Gen(dir.FullName);
+// `--sort-faces` — moves each row between skill_faces.csv (shared skills) and skill_faces_single.csv (one race, one
+// class line, or no class at all). Which file a row sits in changes nothing in the game; `--check` flags a stray.
+if (args.Contains("--sort-faces")) return Faces.Sort(dir.FullName);
 
 if (args.Contains("--check"))
 {

@@ -358,6 +358,10 @@ CLASS row (a real class name, any tier) overrides it — class lineage (4th → 
 Mobs/NPCs read the blank row. The class CSVs' `NAME` column is a LABEL now; the face owns the name.
 - DESCRIPTION placeholders: `@` = power, `@{key}` = any `DESCR-KEYS.md` word, `@{duration}`, `[ … ]` = all-or-nothing;
   a number a level lacks drops its clause, so he writes the TOP rung's text. EMPTY = the code's own per-level text.
+- 🔑 **TWO FILES, ONE FORMAT** (owner, 2026-09-30): `skill_faces.csv` = SHARED skills (2+ races, or 2 classes not on
+  one line, or already has a race/class row); `skill_faces_single.csv` = one race on one class line + every skill no
+  class learns. Ownership is read off the compiled `ClassSkills` lineages, not the CSVs. Placement is cosmetic; `--check`
+  flags a stray and `SkillCsvSeed -- --sort-faces` moves it. A NEW skill's blank row goes in whichever file it belongs.
 - `dotnet run --project tools/SkillCsvSeed -- --gen-faces` renders every level into `Game.Shared/SkillFaces.g.cs`
   (never hand-edit). The numbers come from the code, so **any skill retune owes a `--gen-faces`**; `--check` flags a
   STALE file, a bad word/race/class, and a skill with no blank row. 🔑 **A NEW SKILL SHIPS WITH ITS BLANK FACE ROW.**

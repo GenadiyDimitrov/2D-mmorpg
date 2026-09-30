@@ -10,6 +10,12 @@ here is a label for you — the game shows the skill's face (a blank row for eve
 In a face's DESCRIPTION, `@` is the power, `@{m.def}` / `@{max hp}` / `@{duration}` any number by its `DESCR-KEYS.md`
 word, `[ … ]` a piece shown only where the level has it. Then `dotnet run --project tools/SkillCsvSeed -- --gen-faces`.
 
+**Two files, same format** (your call, 2026-09-30): `skill_faces.csv` holds the SHARED skills — two or more races, or
+two classes that are not one line (Might, Bow Expertise, Twin Arrows, the stat swaps) — the ones a race/class row can
+split. `skill_faces_single.csv` holds the rest: one race on one class line (`elf_heal`, `human_vampiric_bolt`) and every
+skill no class learns (mobs, NPCs, whisps). Which file a row is in changes nothing in the game. When a skill gains a
+second race or class, `--check` says it belongs in the other file and `--sort-faces` moves it.
+
 ## The names are CLASS TIERS, not level bands (2026-08-17)
 
 Your call: *"well for fighters 20-35 is not right .. they have skills at 36 .. so 2nd class is more

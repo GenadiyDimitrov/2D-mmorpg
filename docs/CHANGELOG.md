@@ -24,7 +24,22 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-09-30 (latest) — 0.217.1: "Lv.N" is YOUR step, not the ladder's rung
+## 2026-09-30 (latest) — tools only: the face file splits in two (no build, no version)
+
+His ask: *"the skill_faces only contains skills that are duplicates like bow_expertise and might and twin_arrow"* — and
+of the two ways offered, *"2 files … you wont lose any information"*. Nothing in the game moves; `SkillFaces.g.cs` is
+the same 788 faces in a new order.
+
+- **`docs/data/skill_faces.csv`** (251 rows) — the SHARED skills: learned by two or more races, or by two classes of
+  one race that are not one line, or already wearing a race/class face. Strike, Might, Bow Expertise, Twin Arrows, Holy
+  Bolt, the stat swaps.
+- **`docs/data/skill_faces_single.csv`** (537 rows) — one race on one class line (`elf_heal`, `human_vampiric_bolt`,
+  the rogue disciplines' own kits) and every skill no class learns (mobs, NPCs, whisps, items). Same columns, same rules.
+- Ownership comes from the compiled `ClassSkills` lineages, not the CSVs (their Race column is only in the 1st-class
+  files, and a rogue 3rd discipline is one race). **`SkillCsvSeed -- --sort-faces`** moves rows to the right file,
+  section by section; **`--check`** flags a row in the wrong one.
+
+## 2026-09-30 — 0.217.1: "Lv.N" is YOUR step, not the ladder's rung
 
 His find: *"when i learn a skill i learn it lvl 2 directly .. i learned agility and it automatically gave me lvl 2"*, and
 the fear behind it: *"will one learn lvls 3-5-10 the other 6-8-12?"* — yes, it would. `BL-314` made every shared passive

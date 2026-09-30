@@ -21,18 +21,31 @@ using Game.Shared;
 //
 //  Numbers render WITHOUT a sign (he writes the `+`) and percents carry their `%`.
 //
+//  TWO FILES, ONE FORMAT (owner, 2026-09-30: *"2 files … so you wont lose any information"*):
+//    skill_faces.csv         SHARED skills — more than one race learns it, or two classes that are not one
+//                            line (a class and its own later classes count as one), or it already has a
+//                            race/class row. The skills a face can split: Might, Bow Expertise, Twin Arrows.
+//    skill_faces_single.csv  everything else — one race on one class line (`elf_heal`, `human_vampiric_bolt`)
+//                            and every skill no class learns (mobs, NPCs, whisps, items).
+//  Both are read the same way; which file a row sits in changes nothing in the game. `--check` flags a row
+//  in the wrong file (a skill that gained a second race moves up), and `--sort-faces` moves it.
+//
 //  --seed-faces   ONE-OFF: writes the first file from the code's names/descriptions (refuses to overwrite)
 //  --gen-faces    renders every row for every level and writes SkillFaces.g.cs
-//  --check        calls Faces.Check: bad ids/races/classes/keys, a skill with no blank row, a stale .g.cs
+//  --sort-faces   moves every row to the file it belongs in, keeping its section
+//  --check        calls Faces.Check: bad ids/races/classes/keys, a skill with no blank row, a row in the
+//                 wrong file, a stale .g.cs
 // =====================================================================================================
 
 internal static class Faces
 {
     private const string Header = "SKILL_ID,NAME,RACE,CLASS,DESCRIPTION,COMMENT";
 
-    internal sealed record Row(string Id, string Name, string Race, string Class, string Descr, string Comment, int Line);
+    internal sealed record Row(string Id, string Name, string Race, string Class, string Descr, string Comment, int Line,
+                               string File);
 
-    private static string CsvPath(string repoRoot) => Path.Combine(repoRoot, "docs", "data", "skill_faces.csv");
+    private const string SharedName = "skill_faces.csv", SingleName = "skill_faces_single.csv";
+    private static string CsvPath(string repoRoot, string name = SharedName) => Path.Combine(repoRoot, "docs", "data", name);
     private static string GenPath(string repoRoot) => Path.Combine(repoRoot, "Game.Shared", "SkillFaces.g.cs");
 
     // ---------------------------------------------------------------------------------------------
@@ -159,33 +172,99 @@ internal static class Faces
     //  READ
     // ---------------------------------------------------------------------------------------------
 
+    /// <summary>Both files' rows, shared first. null = the shared file is missing (the single one is optional).</summary>
     internal static List<Row>? Read(string repoRoot)
     {
-        string path = CsvPath(repoRoot);
-        if (!File.Exists(path)) return null;
+        if (!File.Exists(CsvPath(repoRoot))) return null;
         var rows = new List<Row>();
-        var lines = File.ReadAllLines(path);
-        for (int i = 1; i < lines.Length; i++)
+        foreach (var name in new[] { SharedName, SingleName })
         {
-            var f = SplitCsv(lines[i]);
-            while (f.Count < 6) f.Add("");
-            if (f[0].Trim().Length == 0) continue;
-            rows.Add(new Row(f[0].Trim(), f[1].Trim(), f[2].Trim().ToLowerInvariant(), f[3].Trim(), f[4].Trim(),
-                             f[5].Trim(), i + 1));
+            string path = CsvPath(repoRoot, name);
+            if (!File.Exists(path)) continue;
+            var lines = File.ReadAllLines(path);
+            for (int i = 1; i < lines.Length; i++)
+            {
+                var f = SplitCsv(lines[i]);
+                while (f.Count < 6) f.Add("");
+                if (f[0].Trim().Length == 0) continue;
+                rows.Add(new Row(f[0].Trim(), f[1].Trim(), f[2].Trim().ToLowerInvariant(), f[3].Trim(), f[4].Trim(),
+                                 f[5].Trim(), i + 1, name));
+            }
         }
         return rows;
     }
 
-    /// <summary>Every problem in the file. Empty = clean.</summary>
+    // ---------------------------------------------------------------------------------------------
+    //  WHICH FILE — shared or single
+    // ---------------------------------------------------------------------------------------------
+
+    /// <summary>Every skill id → the (race, class node) pairs that learn it, off the compiled class tables — not
+    /// the CSVs, whose Race column only exists in the 1st-class files (a rogue 3rd discipline is one race, and
+    /// only the tables say so). A node is the class path: "Fighter", "Fighter/Warrior", "Fighter/Warrior/Ravager",
+    /// "Fighter/Warrior/Ravager/4". Each class's LINEAGE is walked (the ShownLevel rule), so a skill learned at
+    /// the 1st class is held by every class below it too.</summary>
+    private static Dictionary<string, HashSet<(Race Race, string Node)>> Holders()
+    {
+        var h = new Dictionary<string, HashSet<(Race, string)>>();
+        void Add(Race race, string node, IEnumerable<ClassSkill> skills)
+        {
+            foreach (var cs in skills)
+            {
+                if (!h.TryGetValue(cs.SkillId, out var set)) h[cs.SkillId] = set = new();
+                set.Add((race, node));
+            }
+        }
+        foreach (var race in Enum.GetValues<Race>())
+            foreach (var bc in Enum.GetValues<BaseClass>())
+            {
+                var baseList = ClassSkills.ForClass(race, bc, null, null);
+                Add(race, $"{bc}", ClassSkills.Cumulative(race, bc, null, null));
+                foreach (var a in Enum.GetValues<Archetype>())
+                {
+                    if ((a is Archetype.Healer or Archetype.Nuker ? BaseClass.Mage : BaseClass.Fighter) != bc) continue;
+                    Add(race, $"{bc}/{a}", ClassSkills.Cumulative(race, bc, a, null).Concat(baseList));
+                    foreach (var d in Enum.GetValues<Discipline>())
+                    {
+                        if (Disciplines.Parent(d) != a) continue;
+                        Add(race, $"{bc}/{a}/{d}", ClassSkills.Cumulative(race, bc, a, d).Concat(baseList));
+                        Add(race, $"{bc}/{a}/{d}/4", ClassSkills.Cumulative(race, bc, a, d, true).Concat(baseList));
+                    }
+                }
+            }
+        return h;
+    }
+
+    /// <summary>Does this skill belong in the SHARED file? Yes when it already wears a race/class face, when two
+    /// races learn it, or when two classes of one race learn it that are not one line (neither descends from
+    /// the other). A skill no class learns (mobs, NPCs) is single.</summary>
+    private static bool BelongsShared(string id, Dictionary<string, HashSet<(Race Race, string Node)>> holders,
+                                      HashSet<string> hasVariant)
+    {
+        if (hasVariant.Contains(id)) return true;
+        if (!holders.TryGetValue(id, out var set) || set.Count == 0) return false;
+        if (set.Select(x => x.Race).Distinct().Count() > 1) return true;
+        string root = set.Select(x => x.Node).OrderBy(n => n.Length).First();
+        return !set.All(x => x.Node == root || x.Node.StartsWith(root + "/"));
+    }
+
+    private static HashSet<string> WithVariants(List<Row> rows) =>
+        rows.Where(r => r.Race.Length > 0 || r.Class.Length > 0).Select(r => r.Id).ToHashSet();
+
+    /// <summary>Every problem in the files. Empty = clean.</summary>
     private static List<string> Problems(List<Row> rows)
     {
         var errs = new List<string>();
         var races = new HashSet<string> { "", "human", "elf", "demon" };
         var classNames = AllClassNames();
         var seen = new HashSet<string>();
+        var holders = Holders();
+        var variants = WithVariants(rows);
         foreach (var r in rows)
         {
-            string at = $"line {r.Line} ({r.Id})";
+            string at = $"{r.File} line {r.Line} ({r.Id})";
+            string want = BelongsShared(r.Id, holders, variants) ? SharedName : SingleName;
+            if (SkillCatalog.Get(r.Id) is not null && r.File != want)
+                errs.Add($"{at}: belongs in {want} — run `SkillCsvSeed -- --sort-faces`");
             if (SkillCatalog.Get(r.Id) is not SkillDef def) { errs.Add($"{at}: no skill has this id"); continue; }
             if (r.Id.Any(c => c > 127)) errs.Add($"{at}: non-ASCII character in the id");
             if (!races.Contains(r.Race)) errs.Add($"{at}: race '{r.Race}' — use human / elf / demon or leave it blank");
@@ -219,7 +298,7 @@ internal static class Faces
     {
         var sb = new StringBuilder();
         sb.Append("// <auto-generated>\n");
-        sb.Append("//   `BL-327` — GENERATED from docs/data/skill_faces.csv by\n");
+        sb.Append("//   `BL-327` — GENERATED from docs/data/skill_faces.csv + skill_faces_single.csv by\n");
         sb.Append("//     dotnet run --project tools/SkillCsvSeed -- --gen-faces\n");
         sb.Append("//   DO NOT EDIT BY HAND: edit the CSV row and regenerate. See tools/SkillCsvSeed/Faces.cs.\n");
         sb.Append("//   One line per face: id, race, class, name, then the description per level (one = every level).\n");
@@ -261,8 +340,59 @@ internal static class Faces
         if (!File.Exists(gen) || File.ReadAllText(gen).Replace("\r\n", "\n") != Generate(rows))
             errs.Add("SkillFaces.g.cs is STALE — run `SkillCsvSeed -- --gen-faces`");
         foreach (var e in errs) Console.WriteLine("  🟡 FACE " + e);
-        Console.WriteLine($"skill_faces.csv: {rows.Count} faces, {errs.Count} problem(s).");
+        Console.WriteLine($"skill_faces.csv + skill_faces_single.csv: {rows.Count} faces, {errs.Count} problem(s).");
         return errs.Count;
+    }
+
+    /// <summary>`--sort-faces`: move every row to the file it belongs in. A skill's rows travel together, each
+    /// keeps its section (the `,,,,,---- X ----` lines), a moved row lands at the end of its section, and a
+    /// section with no rows left is dropped from that file.</summary>
+    internal static int Sort(string repoRoot)
+    {
+        var rows = Read(repoRoot);
+        if (rows is null) { Console.Error.WriteLine("docs/data/skill_faces.csv is missing."); return 1; }
+        var holders = Holders();
+        var variants = WithVariants(rows);
+        // section header → its lines, per target file, sections in first-seen order
+        var outp = new Dictionary<string, List<(string Head, List<string> Lines)>>
+            { [SharedName] = new(), [SingleName] = new() };
+        List<string> Section(string file, string head)
+        {
+            var list = outp[file];
+            var s = list.Find(x => x.Head == head);
+            if (s.Lines is null) list.Add(s = (head, new List<string>()));
+            return s.Lines;
+        }
+        int moved = 0;
+        foreach (var name in new[] { SharedName, SingleName })
+        {
+            string path = CsvPath(repoRoot, name);
+            if (!File.Exists(path)) continue;
+            string head = "";
+            foreach (var line in File.ReadAllLines(path).Skip(1))
+            {
+                if (line.Trim().Length == 0) continue;
+                string id = SplitCsv(line)[0].Trim();
+                if (id.Length == 0) { head = line; continue; }
+                string want = BelongsShared(id, holders, variants) ? SharedName : SingleName;
+                if (want != name) moved++;
+                Section(want, head).Add(line);
+            }
+        }
+        foreach (var (name, sections) in outp)
+        {
+            var sb = new StringBuilder(Header + "\n");
+            foreach (var (head, lines) in sections)
+            {
+                if (lines.Count == 0) continue;
+                if (head.Length > 0) sb.Append(head).Append('\n');
+                foreach (var l in lines) sb.Append(l).Append('\n');
+            }
+            File.WriteAllText(CsvPath(repoRoot, name), sb.ToString().Replace("\n", "\r\n"), new UTF8Encoding(false));
+            Console.WriteLine($"{name}: {sections.Sum(s => s.Lines.Count)} rows");
+        }
+        Console.WriteLine($"{moved} row(s) moved.");
+        return 0;
     }
 
     // ---------------------------------------------------------------------------------------------
