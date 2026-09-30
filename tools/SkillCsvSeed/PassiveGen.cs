@@ -242,6 +242,7 @@ internal static partial class PassiveGen
             Console.WriteLine($"  {id,-30} {l.Count,3} rung(s)  {string.Join("  ", l.Select(r => Show(specs[id], r)))}");
         Console.WriteLine($"wrote {Path.GetRelativePath(repoRoot, defs)}");
         Console.WriteLine($"wrote {Path.GetRelativePath(repoRoot, tables)}");
+        Console.WriteLine("⚠ face descriptions read these numbers: build, then run `--gen-faces` (`--check` flags it STALE otherwise).");
         return 0;
     }
 
@@ -382,7 +383,6 @@ internal static partial class PassiveGen
         sb.Append("    private static void RegisterPassiveLadders()\n    {\n");
         foreach (var fk in used) sb.Append($"        Passives{Method(fk.File)}();\n");
         sb.Append("    }\n");
-        var canon = rows.Select(r => r.Id).Distinct().ToDictionary(id => id, id => CanonicalName(rows, id));
         foreach (var fk in used)
         {
             var fileRows = rows.Where(r => r.File == fk.File).OrderBy(r => r.Level).ThenBy(r => r.Id).ToList();
@@ -400,7 +400,6 @@ internal static partial class PassiveGen
                     var r = list[i];
                     var args = new List<string> { Const(r.Id), r.Level.ToString(), $"SkillLevel: {r.Rung}", $"SpCost: {basePrice[r]}" };
                     if (r.Gold > 0) args.Add($"GoldCost: {r.Gold}");
-                    if (r.Name != canon[r.Id]) args.Add($"DisplayName: {Q(r.Name)}");
                     if (r.Replaces.Length > 0) args.Add($"Replaces: new[] {{ {string.Join(", ", r.Replaces.Select(Q))} }}");
                     sb.Append($"                new ClassSkill({string.Join(", ", args)}){(i < list.Count - 1 ? "," : ");")}\n");
                 }

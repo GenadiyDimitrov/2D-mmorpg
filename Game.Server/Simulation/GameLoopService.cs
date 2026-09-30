@@ -6744,7 +6744,7 @@ public class GameLoopService : BackgroundService
             float reuseSec = Math.Max(0.1f, cycleTicks * GameConstants.TickSeconds);
             float mps = mp / reuseSec;
             totalMps += mps;
-            string name = ClassSkills.DisplayName(def.Id, p.Race, p.BaseClass, p.Archetype, p.Discipline);
+            string name = SkillName(p, def.Id);
             rows.Add(new AutoSkillReuse(def.Id, name, reuseSec, mps));
         }
         SendTo(p, "AutoHunt", new AutoHuntStatus(p.AutoHuntEnabled, totalMps, rows.ToArray(),
@@ -10443,8 +10443,7 @@ public class GameLoopService : BackgroundService
                 continue;
             totem.NextPulseIn = totem.PulseTicks;
 
-            string name = ClassSkills.DisplayName(
-                totem.SkillId, owner.Race, owner.BaseClass, owner.Archetype, owner.Discipline);
+            string name = SkillName(owner, totem.SkillId);
             bool heals    = totem.Effect.HasFlag(SkillEffect.Heal);
             bool restores = totem.Effect.HasFlag(SkillEffect.RestoreMp);
             foreach (var ally in AlliesAroundPoint(owner, totem.X, totem.Y, totem.Radius, friendly: true))
@@ -10482,8 +10481,7 @@ public class GameLoopService : BackgroundService
         if (def.SummonsWhisp is not { Length: > 0 } ids)
             return;
 
-        string name = ClassSkills.DisplayName(def.Id, master.Race, master.BaseClass,
-                                              master.Archetype, master.Discipline);
+        string name = SkillName(master, def.Id);
         int life = def.DurationTicksAt(level);
         if (life <= 0) life = 12000;   // 20 minutes, his default for every whisp
 
@@ -10942,8 +10940,7 @@ public class GameLoopService : BackgroundService
     {
         if (SkillCatalog.Get(trap.SkillId) is not SkillDef def)
             return;
-        string name = ClassSkills.DisplayName(
-            def.Id, owner.Race, owner.BaseClass, owner.Archetype, owner.Discipline);
+        string name = SkillName(owner, def.Id);
 
         float r2 = trap.Radius * trap.Radius;
         // Materialised before delivering: DeliverSimpleHit can kill, and a kill mutates the world.
@@ -11396,8 +11393,7 @@ public class GameLoopService : BackgroundService
                 continue;
 
             owner.ProcCooldowns[skillId] = Math.Max(1, def.ProcCooldownTicks);
-            string label = ClassSkills.DisplayName(def.Id, owner.Race, owner.BaseClass,
-                                                   owner.Archetype, owner.Discipline);
+            string label = SkillName(owner, def.Id);
 
             if (Rung(def.ProcSelfRungs, level) is SkillDef selfPayload)
                 PayOutProc(owner, selfPayload, label, def.Id);
@@ -11811,6 +11807,8 @@ public class GameLoopService : BackgroundService
             ApplyBuff(p, def, snap.Level, displayName: snap.DisplayName, refresh: false, toggle: toggle,
                       durationOverride: toggle ? -1 : ticksLeft,
                       sourceSkillId: string.IsNullOrEmpty(snap.SourceSkillId) ? null : snap.SourceSkillId,
+                      // `BL-327` — the caster's face, by id (a row since removed from the file falls back to the def).
+                      face: SkillFaces.Get(snap.FaceId), faceLevel: snap.FaceLevel,
                       // The bar ROW belongs to whatever granted it (a potion's child stays in the
                       // consumable row); the child's own def only knows the plain buff row.
                       rowOverride: SkillCatalog.Get(snap.SourceSkillId)?.BuffRow);
@@ -12819,12 +12817,11 @@ public class GameLoopService : BackgroundService
         caster.Mp -= caster.CastInitialMpPaid;
 
         // Show the caster's CLASS-specific name for the skill (e.g. "Moonlight Bolt").
-        string shown = ClassSkills.DisplayName(def.Id, caster.Race, caster.BaseClass,
-            caster.Archetype, caster.Discipline);
+        string shown = SkillName(caster, def.Id);
         float castSeconds = caster.CastTicksRemaining * GameConstants.TickSeconds;
         if (_world.EntityToConnection.TryGetValue(caster.Id, out var conn))
         {
-            _ = _hub.Clients.Client(conn).SendAsync("Cast", new CastInfo(shown, castSeconds));
+            _ = _hub.Clients.Client(conn).SendAsync("Cast", new CastInfo(shown, castSeconds, def.Id));
         }
         else if (caster.Kind == EntityKind.Mob)
         {
@@ -13003,8 +13000,7 @@ public class GameLoopService : BackgroundService
             && _rng.NextDouble() < caster.CooldownResetRate)
         {
             caster.SkillCooldowns.Remove(def.Id);
-            SendSystemToEntity(caster, ClassSkills.DisplayName(
-                def.Id, caster.Race, caster.BaseClass, caster.Archetype, caster.Discipline)
+            SendSystemToEntity(caster, SkillName(caster, def.Id)
                 + " is ready again!");
         }
         else caster.SkillCooldowns[def.Id] = cooldown;
@@ -13063,8 +13059,7 @@ public class GameLoopService : BackgroundService
         bool offensive = false;
         // The name shown in combat text is the CASTER's class label for this skill, so a
         // race's renamed spell (e.g. Elf "Moonlight Bolt") reads correctly in floating text.
-        string castName = ClassSkills.DisplayName(
-            def.Id, caster.Race, caster.BaseClass, caster.Archetype, caster.Discipline);
+        string castName = SkillName(caster, def.Id);
 
         // ═══ A WRAPPER STARTS ITS VOLLEY HERE AND RESOLVES NOTHING ITSELF (`SkillDef.ChannelSkill`) ═
         //
@@ -13128,7 +13123,7 @@ public class GameLoopService : BackgroundService
             //   ten arrows every two ticks really do span the two seconds the bar promises, and the bar
             //   empties as the last one lands.
             float volleySeconds = caster.ChannelShotsLeft * caster.ChannelInterval * GameConstants.TickSeconds;
-            SendTo(caster, "Cast", new CastInfo(castName, volleySeconds));
+            SendTo(caster, "Cast", new CastInfo(castName, volleySeconds, def.Id));
             return;
         }
 
@@ -13901,10 +13896,10 @@ public class GameLoopService : BackgroundService
             && ((effect & SkillEffect.AnyBuff) != 0 || def.Category == SkillCategory.Buff
                 || def.KeepsBuffsOnDeath || def.GrantsMobStealth))
         {
-            // The display name is the CASTER's class label for this skill, so a
-            // cleric's Wind Walk shows as "Holy Speed" wherever it lands.
-            string buffName = ClassSkills.DisplayName(
-                def.Id, caster.Race, caster.BaseClass, caster.Archetype, caster.Discipline);
+            // The display name is the CASTER's FACE for this skill (`BL-327`), so an Elf's Might
+            // shows as "Forest Might" wherever it lands — name AND description, via `face`.
+            var buffFace = FaceOf(caster, def.Id);
+            string buffName = SkillFaces.NameOf(buffFace, def.Id, lvl);
             // A doubled duration is announced on the floating text, or it is invisible.
             string shownName = durationDoubled ? buffName + " [Double]" : buffName;
 
@@ -13914,7 +13909,7 @@ public class GameLoopService : BackgroundService
                 // Buff the caster + every nearby player character in range.
                 foreach (var ally in PlayersInRadius(caster, def.AreaRadiusAt(lvl), FriendlyScope(def)))
                 {
-                    ApplyBuff(ally, def, lvl, buffName, durationOverride: doubledTicks);
+                    ApplyBuff(ally, def, lvl, buffName, durationOverride: doubledTicks, face: buffFace);
                     BroadcastCombat(caster, ally, 0, CombatOutcome.Buff, shownName);
                     OnSupport(caster, ally);   // `BL-59`/`BL-98` — blessing an outlaw flags you; blessing a raid you tower over petrifies you
                     blessed.Add(ally.Id);
@@ -13923,7 +13918,7 @@ public class GameLoopService : BackgroundService
             else
             {
                 var buffTarget = def.TargetMode == TargetMode.SelfOnly ? caster : target;
-                ApplyBuff(buffTarget, def, lvl, buffName, durationOverride: doubledTicks);
+                ApplyBuff(buffTarget, def, lvl, buffName, durationOverride: doubledTicks, face: buffFace);
                 BroadcastCombat(caster, buffTarget, 0, CombatOutcome.Buff, shownName);
                 OnSupport(caster, buffTarget);   // `BL-59`/`BL-98`
                 blessed.Add(buffTarget.Id);
@@ -14085,7 +14080,7 @@ public class GameLoopService : BackgroundService
     private bool ApplyBuff(Entity target, SkillDef def, int level = 1, string? displayName = null,
         bool refresh = true, bool toggle = false, int maxStacks = -1,
         int durationOverride = -1, string? sourceSkillId = null, BuffRow? rowOverride = null,
-        Entity? source = null, bool force = false)
+        Entity? source = null, bool force = false, SkillFace? face = null, int faceLevel = 0)
     {
         // ---- ONE-CHILD WRAPPER (a potion, a scroll, a buffer class's single blessing): it owns the
         //      duration and the bar row, but the buff that lands is the CHILD — the family's rung,
@@ -14098,7 +14093,12 @@ public class GameLoopService : BackgroundService
                              sourceSkillId: string.IsNullOrEmpty(sourceSkillId) ? def.Id : sourceSkillId,
                              rowOverride: rowOverride ?? def.BuffRow,
                              source: source,    // a charm through a wrapper still knows who cast it
-                             force: force);     // …and a forced admin buff stays forced through the wrapper
+                             force: force,      // …and a forced admin buff stays forced through the wrapper
+                             // `BL-327` — the caster's NAME and FACE ride through the wrapper too. This branch used to drop
+                             // `displayName`, which is why a cast bar and the buff it left behind could disagree. (Only WITH a face:
+                             // a potion's wrapper still pours a buff under the child's own name, as it always has.)
+                             displayName: face is null ? null : displayName, face: face,
+                             faceLevel: faceLevel > 0 ? faceLevel : level);
 
         // ---- IMPROVED (group) buff — MORE than one child. It is ONE buff carrying every child's
         //      numbers, on the group's own key, at GROUP rank, declaring the families it COVERS.
@@ -14154,24 +14154,15 @@ public class GameLoopService : BackgroundService
         // so a refusal message can never disagree with what actually happens.
         var (key, rank, covered, _) = BuffPlan(def, level);
 
-        // ---- `BL-263`: THE WRAPPER'S FACE. -------------------------------------------------------
-        //      A one-child wrapper hands out its CHILD, so by default the bar reads with the child's
-        //      name and description — right for a potion ("Potion of Might" pours a buff called
-        //      "Might"), wrong for the racial wrappers he asked for: *"a demon_cast_atk_phys to
-        //      provide the same as human/elf_cast_atk_phys but have different description/icon/name"*.
-        //      A wrapper that sets `NamesItsBuff` lends its name and description as well as its
-        //      duration and row.
-        //
-        //      🔑 RESOLVED FROM `sourceSkillId` RATHER THAN PASSED DOWN THE RECURSION, because that
-        //      is the id the ICON already follows — one answer for all three halves of "which skill is
-        //      this buff" — and because SourceSkillId is PERSISTED, so the face survives a relog for
-        //      free (RestorePersistedBuffs rebuilds from the CHILD def and would otherwise show the
-        //      generic rung name the moment the player logged back in).
-        var faceDef = string.IsNullOrEmpty(sourceSkillId) || sourceSkillId == def.Id
-            ? null
-            : SkillCatalog.Get(sourceSkillId!) is SkillDef w && w.NamesItsBuff ? w : null;
+        // ---- `BL-327`: THE CASTER'S FACE. -------------------------------------------------------
+        //      The caster's face (skill_faces.csv, resolved by FaceOf at cast time) names the buff and
+        //      writes its description at the rung the CASTER cast — so an Elf's Might reads "Forest
+        //      Might" on the Human he buffed. It replaces `BL-263`'s `NamesItsBuff` wrappers, which
+        //      needed a whole skill per race to say the same thing. The face id is stored on the buff
+        //      (and persisted), so it survives a relog.
+        int shownFaceLevel = faceLevel > 0 ? faceLevel : level;
         string shownName = !string.IsNullOrEmpty(displayName) ? displayName!
-                         : faceDef?.Name ?? def.Name;
+                         : face?.NameAt(def, shownFaceLevel) ?? def.Name;
         int eff = maxStacks >= 0 ? maxStacks : def.EffectiveMaxStacks;
         int duration = toggle ? int.MaxValue
                               : (durationOverride >= 0 ? durationOverride : def.DurationTicksAt(level));
@@ -14454,8 +14445,10 @@ public class GameLoopService : BackgroundService
             // reward rune's ("+50% experience"), where the skill's own blurb is only the first rung.
             // DescriptionAt falls back to the skill's own text, so a level that authored none is
             // unchanged from when this read DescriptionOf(def.Id).
-            // …unless a `NamesItsBuff` wrapper owns the face — see `faceDef` above.
-            Description = faceDef?.Description ?? def.DescriptionAt(level)
+            // …unless the caster's FACE writes it (`BL-327`) — see `shownName` above.
+            Description = face?.DescriptionAt(shownFaceLevel) ?? def.DescriptionAt(level),
+            FaceId = face?.Id ?? "",
+            FaceLevel = face is null ? 0 : shownFaceLevel
         });
 
         // Re-bake derived stats (Max HP/MP, shield, atk/def) and refresh the owner's
@@ -18779,11 +18772,23 @@ public class GameLoopService : BackgroundService
         return false;
     }
 
+    /// <summary>`BL-327` — the FACE an entity wears for a skill (docs/data/skill_faces.csv): its class
+    /// lineage first, then its race, then the blank row. A creature or NPC has no race of its own and
+    /// always gets the blank row, so a mob's Holy Bolt is never an Elf's Moonlight Bolt.</summary>
+    private static SkillFace? FaceOf(Entity e, string skillId) =>
+        e.Kind == EntityKind.Player
+            ? SkillFaces.For(skillId, e.Race, e.BaseClass, e.Archetype, e.Discipline, e.HasFourthClass)
+            : SkillFaces.For(skillId, null, null);
+
+    /// <summary>The skill's name as this entity shows it — its face, at the rung it holds.</summary>
+    private static string SkillName(Entity e, string skillId) =>
+        SkillFaces.NameOf(FaceOf(e, skillId), skillId, Math.Max(1, e.SkillLevelOf(skillId)));
+
     /// <summary>The group's name as THIS character knows it (per-class flavour), for the one square
     /// its children collapse into.</summary>
     private static string GroupDisplayName(Entity p, string skillId) =>
         SkillCatalog.Get(skillId) is SkillDef def
-            ? ClassSkills.DisplayName(def.Id, p.Race, p.BaseClass, p.Archetype, p.Discipline)
+            ? SkillName(p, def.Id)
             : "";
 
     /// <summary>The buff's description with a SOURCE line in front of it when what applied the buff was
@@ -18874,8 +18879,6 @@ public class GameLoopService : BackgroundService
     private static string BuffIcon(Entity p, string skillId)
     {
         if (string.IsNullOrEmpty(skillId)) return "";
-        string? classIcon = ClassSkills.Icon(skillId, p.Race, p.BaseClass, p.Archetype, p.Discipline);
-        if (!string.IsNullOrWhiteSpace(classIcon)) return classIcon!;
         string defIcon = SkillCatalog.Get(skillId)?.Icon ?? "";
         return defIcon.Length > 0 ? defIcon : SkillIcons.For(skillId);
     }

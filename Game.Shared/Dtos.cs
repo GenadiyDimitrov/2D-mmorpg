@@ -234,7 +234,7 @@ public record ProgressUpdate(
 
 /// <summary>Server -> the casting client: show/update the cast bar.
 /// Seconds &lt;= 0 means the cast was cancelled — hide the bar.</summary>
-public record CastInfo(string SkillName, float Seconds);
+public record CastInfo(string SkillName, float Seconds, string SkillId = "");
 
 /// <summary>Server -> a fallen player: an ally (or a scroll) offers to resurrect you. The client shows a
 /// confirm prompt; the player accepts/declines (see ResurrectResponse) so they don't revive on top of the

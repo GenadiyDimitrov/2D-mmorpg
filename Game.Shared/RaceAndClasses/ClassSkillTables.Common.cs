@@ -209,26 +209,19 @@ public static partial class ClassSkillTables
     }
 
     /// <summary>2nd-class Healer kit (lvls 20/25/30/35), shared by Human/Elf/Demon. Holy
-    /// Bolt is ONE skill with a per-race DISPLAY NAME (Holy/Moonlight/Spirit Bolt). Force,
+    /// Bolt is ONE skill with a per-race FACE (Holy/Moonlight/Spirit Bolt — skill_faces.csv). Force,
     /// Focus, Frenzy, Might lvl 4 (vampirism) and the data-driven Armor Mastery arrive in
     /// later increments.</summary>
     private static void RegisterHealers()
     {
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
         {
-            string holyBolt = race switch
-            {
-                Race.Elf => "Moonlight Bolt",
-                Race.Demon => "Spirit Bolt",
-                _        => "Holy Bolt",
-            };
-
             ClassSkills.Register(race, BaseClass.Mage, Archetype.Healer,
-                // Holy Bolt — same skill, per-race name. Continues the Magic Bolt curve.
-                new ClassSkill(HolyBolt, 20, DisplayName: holyBolt, SkillLevel: 1),
-                new ClassSkill(HolyBolt, 25, DisplayName: holyBolt, SkillLevel: 2),
-                new ClassSkill(HolyBolt, 30, DisplayName: holyBolt, SkillLevel: 3),
-                new ClassSkill(HolyBolt, 35, DisplayName: holyBolt, SkillLevel: 4),
+                // Holy Bolt — same skill, per-race face. Continues the Magic Bolt curve.
+                new ClassSkill(HolyBolt, 20, SkillLevel: 1),
+                new ClassSkill(HolyBolt, 25, SkillLevel: 2),
+                new ClassSkill(HolyBolt, 30, SkillLevel: 3),
+                new ClassSkill(HolyBolt, 35, SkillLevel: 4),
 
                 // Heal — the healer's targeted heal; REPLACES the base-mage Self Heal at 20.
                 new ClassSkill(Heal, 20, SkillLevel: 1),   // power 151

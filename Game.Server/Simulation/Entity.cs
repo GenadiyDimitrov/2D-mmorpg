@@ -64,6 +64,11 @@ public class BuffInstance
     /// synthetic grade-penalty rows, which supply their own icon).</summary>
     public string SourceSkillId { get; init; } = "";
 
+    /// <summary>`BL-327` — the CASTER's face for this buff (SkillFace.Id) and the rung it was cast at, so an Elf's
+    /// Might reads "Forest Might" on whoever he buffed, and still does after a relog. "" = no face was passed.</summary>
+    public string FaceId { get; init; } = "";
+    public int FaceLevel { get; init; }
+
     /// <summary>The skill that actually CREATED this buff — the same as <see cref="SourceSkillId"/>
     /// except for a group buff's child, where the source is the parent. This is the one that can
     /// rebuild the buff, so it is what persistence saves: saving the parent instead would re-apply

@@ -3,6 +3,13 @@
 **These files are AUTHORITATIVE.** Nothing in the repo retunes them; the code reads them, never the
 other way round. Where there is no CSV, nothing is invented (`BL-02`).
 
+## Names and descriptions live in `../skill_faces.csv` (2026-09-30, `BL-327`)
+
+These files are the **numbers per level**; `docs/data/skill_faces.csv` is **what the player reads**. The `NAME` column
+here is a label for you — the game shows the skill's face (a blank row for everyone, plus any race or class row you add).
+In a face's DESCRIPTION, `@` is the power, `@{m.def}` / `@{max hp}` / `@{duration}` any number by its `DESCR-KEYS.md`
+word, `[ … ]` a piece shown only where the level has it. Then `dotnet run --project tools/SkillCsvSeed -- --gen-faces`.
+
 ## The names are CLASS TIERS, not level bands (2026-08-17)
 
 Your call: *"well for fighters 20-35 is not right .. they have skills at 36 .. so 2nd class is more

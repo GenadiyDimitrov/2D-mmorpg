@@ -53,7 +53,7 @@ namespace Game.Client
 
             // NameAt / HasLevelNames — a rank-named rung ("Grade C") already says which step it is,
             // so appending "Lv.4" to it would say the opposite. See SkillDef.HasLevelNames.
-            _detailTitle.text = def.NameAt(level)
+            _detailTitle.text = SkillNameAt(def, level)
                               + (def.MaxLevel > 1 && !def.HasLevelNames ? "   Lv." + level : "");
 
             var text = new StringBuilder();
@@ -62,7 +62,7 @@ namespace Game.Client
             // its generic line is "Burns HP to restore MP", and every per-level line carries the
             // real pair ("Burns 200 HP to restore 120 MP"), so the price was invisible at every
             // level (playtest-20 `55b`). The same slip ran through MP / Power below.
-            string desc = def.DescriptionAt(level);
+            string desc = SkillDescriptionAt(def, level);
             if (!string.IsNullOrWhiteSpace(desc)) text.AppendLine(desc).AppendLine();
 
             bool passive = def.Passive != null || def.Category == SkillCategory.Passive;

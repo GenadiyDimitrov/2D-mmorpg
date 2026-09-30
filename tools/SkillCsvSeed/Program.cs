@@ -47,7 +47,17 @@ if (args.Contains("--reweigh-sp"))
     return PassiveGen.Reweigh(outDir, dir.FullName, si >= 0 && si + 1 < args.Length ? args[si + 1] : null);
 }
 
-if (args.Contains("--check")) { Check.Verbose = args.Contains("-v") || args.Contains("--verbose"); return Check.Run(outDir); }
+// `--seed-faces` / `--gen-faces` — `BL-327`: docs/data/skill_faces.csv, the DISPLAY half of every skill. See Faces.cs.
+if (args.Contains("--seed-faces")) return Faces.Seed(outDir, dir.FullName, force);
+if (args.Contains("--gen-faces")) return Faces.Gen(dir.FullName);
+
+if (args.Contains("--check"))
+{
+    Check.Verbose = args.Contains("-v") || args.Contains("--verbose");
+    int rc = Check.Run(outDir);
+    int faces = Faces.Check(dir.FullName);
+    return rc != 0 ? rc : faces == 0 ? 0 : 1;
+}
 
 // --retarget rewrites the TARGET column of every file into his `[scope]/[breadth]` scheme (2026-08-27).
 // It is a ONE-OFF migration, not part of the normal flow: after it has run, `--check` is what keeps the
@@ -163,7 +173,7 @@ foreach (var (fileName, disciplines) in groups)
             foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
                 foreach (var cs in ClassSkills.ForClass(race, BaseOf(d), Disciplines.Parent(d), d))
                     if (cs.LearnLevel >= min && cs.LearnLevel <= max)
-                        rows.Add((cs.LearnLevel, cs.SkillLevel, cs.SkillId, cs.DisplayName, cs.SpCost, race));
+                        rows.Add((cs.LearnLevel, cs.SkillLevel, cs.SkillId, (string?)null, cs.SpCost, race));
 
         var collapsed = rows
             .GroupBy(r => (r.Lvl, r.SkillLvl, r.Id, r.Name, r.Sp))

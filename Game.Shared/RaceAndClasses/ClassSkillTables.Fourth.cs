@@ -145,7 +145,7 @@ public static partial class ClassSkillTables
             foreach (var d in new[] { Discipline.Ravager, Discipline.Warlord })
                 ClassSkills.RegisterFourth(race, d,
                     new ClassSkill(Overpower, 76, SkillLevel: 3),
-                    new ClassSkill(ReuseResetMomentum, 76, "Battle Momentum", SkillLevel: 1),
+                    new ClassSkill(ReuseResetMomentum, 76, SkillLevel: 1),
                     new ClassSkill(DoubleMastery, 81, SkillLevel: 1));
 
             // HEALER + BUFFER — duration only. The one archetype `BL-213` did not move.
@@ -173,7 +173,7 @@ public static partial class ClassSkillTables
             //   the stance does the same thing for an archer that it does for a warrior.
             foreach (var d in new[] { Discipline.Sharpshooter, Discipline.Trapper, Discipline.Hunter })
                 ClassSkills.RegisterFourth(race, d,
-                    new ClassSkill(ReuseResetMomentum, 76, "Bow Momentum", SkillLevel: 1),
+                    new ClassSkill(ReuseResetMomentum, 76, SkillLevel: 1),
                     new ClassSkill(DoubleMastery, 81, SkillLevel: 1));
         }
 
@@ -213,7 +213,7 @@ public static partial class ClassSkillTables
             //   warrior. `Stab Momentum` stays because the rogue's base IS a different mechanic from
             //   the Magus's Arcane Momentum wearing the same id.
             ClassSkills.RegisterFourth(race, d,
-                new ClassSkill(ReuseResetMomentum, 76, "Stab Momentum", SkillLevel: 1),
+                new ClassSkill(ReuseResetMomentum, 76, SkillLevel: 1),
                 new ClassSkill(DoubleMastery,      81, SkillLevel: 1));
     }
 
@@ -287,12 +287,10 @@ public static partial class ClassSkillTables
         shared.Add(new ClassSkill(UndyingWill, 83));
 
         // ---- BACKLASH. ONE ID, SIX RUNGS, and the rung index is what carries the race: 1-3 are
-        //      Physical Backlash, 4-6 Magical Backlash. The DisplayName override is what makes each
-        //      race see his own name for it — the same mechanism the per-class flavour names use.
-        var physicalBacklash = At(Backlash, (77, 1), (80, 2), (83, 3))
-            .Select(cs => cs with { DisplayName = "Physical Backlash" }).ToArray();
-        var magicalBacklash = At(Backlash, (77, 4), (80, 5), (83, 6))
-            .Select(cs => cs with { DisplayName = "Magical Backlash" }).ToArray();
+        //      Physical Backlash, 4-6 Magical Backlash. Each race's NAME for it is its FACE
+        //      (skill_faces.csv, `BL-327`: Human/Demon "Physical Backlash", Elf "Magical Backlash").
+        var physicalBacklash = At(Backlash, (77, 1), (80, 2), (83, 3)).ToArray();
+        var magicalBacklash = At(Backlash, (77, 4), (80, 5), (83, 6)).ToArray();
 
         // ---- HUMAN: taunt, mass taunt, the rate smash, the physical silence, taunt+bind whisps. ----
         var human = new List<ClassSkill>(shared);

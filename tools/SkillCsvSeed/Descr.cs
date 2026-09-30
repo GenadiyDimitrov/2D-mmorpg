@@ -35,7 +35,7 @@ internal static class Descr
     /// <summary>One value read out of the DESCR text.</summary>
     /// <param name="Metric">Canonical stat key — see <see cref="Aliases"/>.</param>
     /// <param name="Pct">true = a fraction (0.15 = +15% / x1.15), false = a flat addend.</param>
-    internal sealed record Token(string Metric, bool Pct, float Value, string Raw);
+    internal sealed record Token(string Metric, bool Pct, float Value, string Raw, int At = -1, int Len = 0, bool Mult = false);
 
     /// <summary>What a segment's values must be read from. null = anything the skill has.</summary>
     internal sealed record Scope(ArmorWeight? Weight, WeaponType? Weapon, string Label);
@@ -44,7 +44,7 @@ internal static class Descr
     //  LONGEST FIRST inside each metric: `magic def` must win over `def`, `cast speed` over `speed`,
     //  `crit dmg` over `dmg`. The matcher walks this list in order and takes the first hit.
 
-    private static readonly (string Metric, string[] Words)[] Aliases =
+    internal static readonly (string Metric, string[] Words)[] Aliases =
     {
         // POWER IS FIRST ON PURPOSE. Ties in distance fall back to this order, and his transfer/heal
         // lines put a stat word the same distance away on the other side ("Transfers 60 MP to an ally" —
@@ -405,7 +405,7 @@ internal static class Descr
     /// warrior's accuracy as wrong on all five rungs.</summary>
     private const int MaxMetricDistance = 18;
 
-    private static List<Token> Tokens(string text, List<string> unread)
+    internal static List<Token> Tokens(string text, List<string> unread)
     {
         // ⚠ THE IGNORE RULES RUN FIRST, and they run on POSITIONS, not on a text window. Both matter:
         // filtering after the metric search let "2h" become a stat, and matching a rule anywhere near the
@@ -474,7 +474,7 @@ internal static class Descr
             // the minus is decoration and the MAGNITUDE is the value. ⚠ It also keeps the ladder check
             // honest: −20% → −30% is a ladder getting STRONGER, and a signed reading called it a dip.
             if (MagnitudeOnly.Contains(metric)) val = Math.Abs(val);
-            found.Add(new Token(metric, pct, val, raw));
+            found.Add(new Token(metric, pct, val, raw, m.Index, m.Length, mult));
         }
         return found;
     }
@@ -538,7 +538,7 @@ internal static class Descr
     /// <summary>Every (metric, pct) → value this skill actually carries at this rung, within the given
     /// scope. A scope narrows the source; no scope pools everything the skill has, which is what keeps
     /// an unlabelled line like "+8% PAttack" from caring whether it is a buff or a passive.</summary>
-    private static Dictionary<(string, bool), List<float>> Pool(SkillDef def, int level, Scope? scope)
+    internal static Dictionary<(string, bool), List<float>> Pool(SkillDef def, int level, Scope? scope)
     {
         var pool = new Dictionary<(string, bool), List<float>>();
         void Add(string metric, bool pct, float v)

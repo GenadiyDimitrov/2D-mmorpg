@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.216.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.217.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,42 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-09-29 (latest) — 0.216.0: SP is one pot per level, split by weight (`BL-326`)
+## 2026-09-30 (latest) — 0.217.0: skill FACES — how a skill looks, apart from what it does (`BL-327`)
+
+His question: *"is it possible to tell a skill to use "this" shell for the visuals (name/description/icon/animation) but
+underneath to be "that" skill?"* — and his split once it was: *"the class csv is the numbers per lvl while the face is
+the display"*. ⚠ **New APK** and a **`game.db` delete** (three skill ids removed).
+
+- **`docs/data/skill_faces.csv` is his** — `SKILL_ID,NAME,RACE,CLASS,DESCRIPTION,COMMENT`, a blank row for every one of
+  the 767 skills (actives, then buffs, passives, then everything outside a class CSV), plus race/class rows. Resolution:
+  a CLASS row anywhere in the character's lineage (4th → 3rd → 2nd name → Fighter/Mage) → a RACE row → the blank row;
+  creatures and NPCs read the blank row only. `SkillFaces.For` in Game.Shared is the one lookup.
+- **Placeholders:** `@` = power, `@{key}` = any `DESCR-KEYS.md` word (or the metric key; `%`/`#` suffix forces the
+  reading), `@{duration}`, `[ … ]` = all-or-nothing. An unbracketed number a level lacks drops its CLAUSE, so the top
+  rung's text serves every lower rung (his *"use the maximum … the lower lvls will take from there"*). Numbers come from
+  the same `Descr.Pool` `--check` proves against the class CSVs, and are **pre-rendered per level** by
+  `SkillCsvSeed --gen-faces` into `SkillFaces.g.cs` — no templating at runtime. `--check` now also walks the faces (bad
+  id/race/class/word, a skill without a blank row, a stale `.g.cs`). An EMPTY description = the code's own per-level
+  text (144 seeded that way, where the code's text changes per level and still has numbers the seeder could not tie).
+- **Everything reads the face:** the server's cast bar, combat text, reuse message, auto-hunt list, totems, traps,
+  whisps, procs, group names (`GameLoopService.FaceOf` / `SkillName`); the client's skill bar letters, skill window,
+  Learn/Known lists. `CastInfo` carries the skill id, so the bar lights the casting square by ID — for an Elf or Demon
+  healer it never lit before (it compared `def.Name` to "Moonlight Bolt").
+- **A buff wears its CASTER's face**, name and description at the caster's rung, stored on the buff (`FaceId`,
+  `FaceLevel`) and in `BuffSnapshot`, so it survives a relog. The one-child wrapper branch of `ApplyBuff` now passes the
+  name through (it dropped it — the cast-bar/buff-bar mismatch noted under `BL-263`); a potion still pours its child's name.
+- **The three racial Mights are ONE skill** (his *"merge them as one ill split them in the file as faces"*): a mage learns
+  `cast_atk_phys` rung 1 at 7; Forest Might / Demonic Strength / Blessing of Might are its elf/demon/human faces, and a
+  cleric continues the same skill (and name) from 20. `elf_/demon_/human_cast_atk_phys`, `MageMightFor`,
+  `MageMightSet`, the cleric row's `Replaces` and `SkillDef.NamesItsBuff` are deleted; `mage 1st.csv` is one Might row.
+  SP unchanged (the reweigh is a fixed point on it).
+- **The old overrides moved into the file:** `ClassSkill.DisplayName`/`Icon` are deleted. Holy/Moonlight/Spirit Bolt,
+  Physical/Magical Backlash (race rows) and Battle/Bow/Stab Momentum (12 class rows) are faces now. The rogue 2nd's
+  "Critical Damage" came only from the CSV NAME cell and is dropped (the NAME column is a label now).
+- `ClassSkills.DisplayName` survives as a forwarder for the dev tools that match CSV rows by name. `--check` clean;
+  Unity type-check clean.
+
+## 2026-09-29 — 0.216.0: SP is one pot per level, split by weight (`BL-326`)
 
 His rule: *"i want Sp to be some how equal not one active skill to cost 880k SP and one passive that give me +0.1mp
 regen to cost 2600k ... sum all the sp/lvl and split it for skills as weighted ... active skills are x1 passives should

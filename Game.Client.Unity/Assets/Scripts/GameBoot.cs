@@ -1600,6 +1600,7 @@ namespace Game.Client
 
                 if (c == null || c.Seconds <= 0f) { CastingSkill = null; return; }
                 CastingSkill = c.SkillName;
+                CastingSkillId = c.SkillId ?? "";
                 CastStartedAt = Time.realtimeSinceStartup;
                 CastEndsAt = CastStartedAt + c.Seconds;
 
@@ -2163,6 +2164,9 @@ namespace Game.Client
         /// <summary>What this character is casting, and when it finishes (realtime). Name is null when
         /// nothing is being cast.</summary>
         public string CastingSkill { get; private set; }
+        /// <summary>`BL-327` — the id of what is being cast, so the bar can find its square by ID. The NAME is the
+        /// caster's face ("Moonlight Bolt") and no longer matches <c>def.Name</c>.</summary>
+        public string CastingSkillId { get; private set; } = "";
         public float CastStartedAt { get; private set; }
         public float CastEndsAt { get; private set; }
 

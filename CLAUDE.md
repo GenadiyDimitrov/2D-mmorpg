@@ -185,11 +185,10 @@ from IG references.
   what makes it true; nothing in the catalog ranks a single higher than 10.
   ⚠ `SkillCatalog.HarmonyRank` (= `NpcBuffRank + 1`) is the ONLY thing holding a covering harmony
   above the NPC singles it covers now that equal rank means "whoever cast last" — never collapse it.
-  🔑 **A RACIAL VARIANT IS A WRAPPER, NOT A NEW BUFF** (`BL-263`): `elf_/demon_/human_cast_atk_phys`
-  all name the SAME child rung (`buff_atk_phys_1`), so they land at one `(family, rank)` and replace
-  one another for free — a wrapper states no key and no rank of its own, which is exactly why two of
-  them cannot disagree. `SkillDef.NamesItsBuff` gives the wrapper's own name/description to the buff
-  (the icon already followed `SourceSkillId`). Per-class flavor = `DisplayName` override on `ClassSkill`.
+  🔑 **A RACIAL/CLASS VARIANT IS A FACE, NOT A SKILL** (`BL-327`, 0.217.0 — it replaced `BL-263`'s wrapper
+  skills): same id, same numbers, a row per race/class in `docs/data/skill_faces.csv`. The racial Mights are ONE
+  `cast_atk_phys`; a buff wears its CASTER's face (`BuffInstance.FaceId`, persisted). Never mint a copy of a skill to
+  change its name, description or look — add a face row. See the faces section below.
 - **Spell range is PER-SPELL** (the skill's own `Range`), NOT class-tier-based:
   `SkillMath.EffectiveRange` returns `def.Range` for spells (heals shorter than attack
   spells; healer attack ~750, nuker ~900, base nuke 600 — authored per skill). The ONE
@@ -351,6 +350,19 @@ Every number in every checked file is now either verified or explained; `--check
 coverage, and a number it could not read prints as `UNREAD` rather than being silently skipped.
 ⚠ **It only walks the files listed in `Check.Specs`** — the seven 1st/2nd files plus `healer 3rd`.
 A 3rd-tier file earns its line the day he finishes it, never while it is a placeholder.
+
+### 🔑 `docs/data/skill_faces.csv` IS HOW A SKILL LOOKS (owner, 2026-09-30, `BL-327`)
+*"the class csv is the numbers per lvl while the face is the display"*. One row per (skill, race, class):
+`SKILL_ID,NAME,RACE,CLASS,DESCRIPTION,COMMENT`. Every skill has a BLANK row (race and class empty); a race row or a
+CLASS row (a real class name, any tier) overrides it — class lineage (4th → 3rd → 2nd → Fighter/Mage) → race → blank.
+Mobs/NPCs read the blank row. The class CSVs' `NAME` column is a LABEL now; the face owns the name.
+- DESCRIPTION placeholders: `@` = power, `@{key}` = any `DESCR-KEYS.md` word, `@{duration}`, `[ … ]` = all-or-nothing;
+  a number a level lacks drops its clause, so he writes the TOP rung's text. EMPTY = the code's own per-level text.
+- `dotnet run --project tools/SkillCsvSeed -- --gen-faces` renders every level into `Game.Shared/SkillFaces.g.cs`
+  (never hand-edit). The numbers come from the code, so **any skill retune owes a `--gen-faces`**; `--check` flags a
+  STALE file, a bad word/race/class, and a skill with no blank row. 🔑 **A NEW SKILL SHIPS WITH ITS BLANK FACE ROW.**
+- Server: `GameLoopService.FaceOf(entity, skillId)` / `SkillName`; client: `GameUi.MyFace` / `SkillNameAt`. Reading
+  `def.Name` for anything the player sees is the bug.
 
 ### 🔑 `docs/data/debuff_landmods.csv` IS THE AUTHORITY FOR `DebuffLandMod` (owner, 2026-09-13)
 *"take all the debuffs each single skill make them in a table and put the modifiers there … Then each

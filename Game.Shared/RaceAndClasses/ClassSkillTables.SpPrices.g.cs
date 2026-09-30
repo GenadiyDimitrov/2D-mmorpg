@@ -78,9 +78,9 @@ Demon,Mage,-,-,0,magic_bolt,7,1140
 Human,Mage,-,-,0,magic_bolt,14,3830
 Elf,Mage,-,-,0,magic_bolt,14,3830
 Demon,Mage,-,-,0,magic_bolt,14,3830
-Elf,Mage,-,-,0,elf_cast_atk_phys,7,759
-Demon,Mage,-,-,0,demon_cast_atk_phys,7,759
-Human,Mage,-,-,0,human_cast_atk_phys,7,759
+Human,Mage,-,-,0,cast_atk_phys,7,759
+Elf,Mage,-,-,0,cast_atk_phys,7,759
+Demon,Mage,-,-,0,cast_atk_phys,7,759
 Human,Mage,-,-,0,anti_magic,7,251
 Elf,Mage,-,-,0,anti_magic,7,251
 Demon,Mage,-,-,0,anti_magic,7,251

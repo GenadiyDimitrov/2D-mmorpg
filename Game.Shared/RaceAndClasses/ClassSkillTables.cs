@@ -57,15 +57,13 @@ public static partial class ClassSkillTables
                 // row on 2026-08-19 and put Bulwark at 14 (*"i splitted them"*), so a level-7 mage buys
                 // offence and waits a tier for defence. 20 MP and 960 SP each — his numbers.
                 //
-                // 🔑 `BL-263` — MIGHT IS THREE SKILLS NOW, one per race, and this loop picks the
-                //    race's. They are WRAPPERS over one rung (SkillCatalog.MageMightFor): same
-                //    +8% P.Atk, same price, different name/description/icon. The generic
-                //    `cast_atk_phys` is still what a buffer CLASS casts from 20 up, and it
-                //    `Replaces` all three — see ClassSkillTables.Common.
+                // 🔑 `BL-327` — ONE Might, rung 1 of the shared `cast_atk_phys` a cleric climbs from 20. The
+                //    Elf's Forest Might, the Demon's Demonic Strength and the Human's Blessing of Might are its
+                //    three FACES (skill_faces.csv), not three skills — they were until 0.217.0 (`BL-263`).
                 // ⚠ Stays in the BASE-CLASS list rather than the race injector: it is one rung at 7
                 //   that a 2nd class supersedes, not a ladder that follows you. Same lifecycle it
                 //   has always had.
-                new ClassSkill(MageMightFor(race), 7),               // Might   +8% P.Atk
+                new ClassSkill(CastId(FamPhysAtk), 7),              // Might   +8% P.Atk
                 new ClassSkill(MagicBolt, 14, SkillLevel: 3),
                 new ClassSkill(CastId(FamPhysDef), 14));             // Bulwark +8% P.Def
 

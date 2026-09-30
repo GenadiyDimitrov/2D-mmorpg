@@ -6,9 +6,7 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 ,,,,,,,,,,,,,,,,----------------------------Spellcaster Mastery----------------------------
 1,Spellcaster Mastery,spellcaster_mastery,passive,,,0,0,self/single,0,0,0,"ARMOR - Robe: cast x1, mpReg x1.2; Light/Heavy/None: cast x0.5, as x0.5. WEAPON - Sword/Blunt: cast x1, mAtk x1; Bow/Dagger/None: cast x0.5, mAtk x0.5, mAcc x0.5. Auto-granted and NEVER replaced - every mage weapon/weight penalty lives here and nowhere else.",0,0,[weapon_proficiency]
 ,,,,,,,,,,,,,,,,----------------------------Might----------------------------
-7,Forest Might,elf_cast_atk_phys,buff,,,600,0,party/single,1,1,1200,By the help of the forest: +8% PAttack,20,759,[],Elf
-7,Demonic Strength,demon_cast_atk_phys,buff,,,600,0,party/single,1,1,1200,Signing a demonic contract: +8% PAttack,20,759,[],Demon
-7,Blessing of Might,human_cast_atk_phys,buff,,,600,0,party/single,1,1,1200,A magical blessing that increases +8% PAttack,20,759,[],Human
+7,Might,cast_atk_phys,buff,,,600,0,party/single,1,1,1200,+8% PAttack,20,759,[],
 ,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
 7,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +12,0,251,[]
 14,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +16,0,843,[]

@@ -17,6 +17,36 @@
 
 ---
 
+## §112 — 0.217.0: skill FACES — one skill, a look per race or class (`BL-327`, 2026-09-30)
+
+⚠ **New APK** and a **`game.db` delete** (the three racial Might ids are gone — they are one skill now).
+
+Your design: `docs/data/skill_faces.csv` is how a skill LOOKS, the class CSVs are what it DOES. Columns
+`SKILL_ID,NAME,RACE,CLASS,DESCRIPTION,COMMENT`. Every skill has a blank row (everyone); add a `human`/`elf`/`demon` row,
+or a CLASS row with a real class name ("Ice Master"), and that race/class sees its own name and text. Most specific wins:
+your class (4th → 3rd → 2nd name) → your race → the blank row. Mobs and NPCs always read the blank row.
+
+**Numbers in DESCRIPTION:** `@` = the skill's power; `@{m.def}`, `@{max hp}`, `@{duration}` = a named number (any word
+from `DESCR-KEYS.md`); `[ … ]` = shown only at levels that have it. Write the TOP level's text — a clause whose number a
+lower level does not have drops out by itself (Harmony of Protection at 44 reads "+30% M.Def."). After editing run
+`dotnet run --project tools/SkillCsvSeed -- --gen-faces`; `--check` reports a bad word, race, class or a stale file.
+
+The seed: 767 skills, actives first. 144 cells are EMPTY on purpose (the game's own per-level text shows until you write
+one — their COMMENT shows the top level's wording); a COMMENT with "typed numbers kept" means a number I could not tie to
+the skill's data, so it is fixed text.
+
+- `112a` [ ] - **Elf / Demon healer:** the bar, the skill window and the Learn list say **Moonlight / Spirit Bolt** (they
+  said Holy Bolt), the cast bar says the same, and the bar square lights up while you cast it (it did not before). ->
+- `112b` [ ] - **Mage at 7 learns ONE Might**, named for your race (Forest Might / Demonic Strength / Blessing of Might);
+  a cleric at 20 continues the same skill at rung 2 under the same name. ->
+- `112c` [ ] - **An Elf buffs a Human:** the Human's buff bar reads **Forest Might** with the Elf's text — and still does
+  after the Human relogs. ->
+- `112d` [ ] - **Harmony of Protection** tooltip at 44 / 56 / 76 shows only what that level gives. ->
+- `112e` [ ] - Rogue 2nd's "Critical Damage" is now **Critical Damage Mastery** (the CSV NAME is a label now, the face is
+  the name). Add a class row if you want the short name back. ->
+
+---
+
 ## §111 — 0.216.0: SP is one pot per level, split by weight (`BL-326`, 2026-09-29)
 
 ⚠ **New APK** (the Learn tab reads prices compiled into the client). No `game.db` delete needed.

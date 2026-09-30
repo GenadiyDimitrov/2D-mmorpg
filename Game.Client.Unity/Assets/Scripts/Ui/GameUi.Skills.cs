@@ -132,13 +132,13 @@ namespace Game.Client
         private string LearnBlockedReason(SkillDef def, int levelGate, bool levelMet, int sp, long gold)
         {
             if (!levelMet)
-                return def.Name + " requires level " + levelGate + " — you are " + (Boot.ActiveClass?.Level ?? 0) + ".";
+                return SkillTitle(def) + " requires level " + levelGate + " — you are " + (Boot.ActiveClass?.Level ?? 0) + ".";
             if (Boot.SkillPoints < sp)
-                return def.Name + " costs " + sp + " SP — you have " + Boot.SkillPoints + ".";
+                return SkillTitle(def) + " costs " + sp + " SP — you have " + Boot.SkillPoints + ".";
             if (gold > 0 && Boot.Gold < gold)
-                return def.Name + " costs " + gold.ToString("N0") + " " + GameConstants.CurrencyName
+                return SkillTitle(def) + " costs " + gold.ToString("N0") + " " + GameConstants.CurrencyName
                      + " — you have " + Boot.Gold.ToString("N0") + ".";
-            return def.Name + " can't be learned right now.";
+            return SkillTitle(def) + " can't be learned right now.";
         }
 
         /// <summary>The owner's §7: never spend SP blind. Show what the purchase changes — for an
@@ -154,7 +154,7 @@ namespace Game.Client
         /// wired in the first place.</para></summary>
         private void ConfirmLearn(SkillDef def, int newLevel, int sp, long gold, string blockedReason = null)
         {
-            _learnTitle.text = def.NameAt(newLevel)
+            _learnTitle.text = SkillNameAt(def, newLevel)
                              + (def.MaxLevel > 1 && !def.HasLevelNames ? "   Lv." + newLevel : "");
 
             var t = new System.Text.StringBuilder();
@@ -300,7 +300,7 @@ namespace Game.Client
                 if (passive)
                 {
                     // A passive has nothing to press and nowhere to be placed.
-                    Row(SkillLetters(def) + "  " + def.NameAt(rung) + level, null, null, UiKit.TextDim,
+                    Row(SkillLetters(def) + "  " + SkillNameAt(def, rung) + level, null, null, UiKit.TextDim,
                         def.Id, Boot.Learned[def.Id]);
                     continue;
                 }
@@ -311,7 +311,7 @@ namespace Game.Client
                 // `BL-321` — "To bar" is NEVER disabled and places a COPY: *"i can make 10slots with 1 skill
                 // ... one page to be for solo fighting .. the other to be for party .. some skills will be on
                 // both pages"*. It also reaches a skill parked on a bar you are not showing.
-                Row2Buttons(SkillLetters(def) + "  " + def.NameAt(rung) + level,
+                Row2Buttons(SkillLetters(def) + "  " + SkillNameAt(def, rung) + level,
                             "Use", () => Boot.UseSlot(token),
                             _pendingAssign == token ? "Cancel" : "To bar",
                             () => BeginAssign(token),
@@ -396,7 +396,7 @@ namespace Game.Client
 
                     string levelTag = def.MaxLevel > 1 && !def.HasLevelNames
                                     ? "  Lv." + cs.SkillLevel : "";
-                    string learnName = def.NameAt(cs.SkillLevel);
+                    string learnName = SkillNameAt(def, cs.SkillLevel);
                     // 🔴🔑 BOTH PRICES, WHEN THERE ARE BOTH (§100, 2026-09-16: *"the SP requirement is
                     //    sometimes missing in the skills to learn list"*). This read
                     //    `gold > 0 ? gold : SP`, so the moment a rung carried a gold price its SP cost
@@ -537,7 +537,7 @@ namespace Game.Client
                     if (def == null) continue;
 
                     bool have = Boot.Learned.ContainsKey(id);
-                    string label = "   " + def.Name;
+                    string label = "   " + SkillTitle(def);
                     Color colour = UiKit.TextDim;
                     string button = null;
                     System.Action act = null;
@@ -626,7 +626,7 @@ namespace Game.Client
                 bool canAdd = SkillCatalog.StatSwapConflict(id, at + 1, projected) == null;
                 string capturedId = id;
 
-                SwapRow(def.Name + "      " + moves,
+                SwapRow(SkillTitle(def) + "      " + moves,
                         plan > 0 ? UiKit.Accent : at > 0 ? UiKit.Text : UiKit.TextDim,
                         id, Mathf.Max(1, at),
                         paid, plan,
@@ -794,10 +794,35 @@ namespace Game.Client
         /// Emoji need a TMP font asset with an emoji fallback, which has to be generated in the
         /// Editor. Until that exists, letters are honest; boxes are not.
         /// </summary>
-        internal static string SkillLetters(SkillDef def)
+        internal string SkillLetters(SkillDef def)
         {
+            // `BL-327` — a face with its own name ("Moonlight Bolt") gets its own letters; the def's authored
+            // Abbrev belongs to the def's own name.
+            string name = SkillTitle(def);
+            if (name != def.Name) return Abbreviations.For(name);
             return string.IsNullOrWhiteSpace(def.Abbrev) ? Abbreviations.For(def.Name) : def.Abbrev;
         }
+
+        /// <summary>`BL-327` — the FACE this character wears for a skill (docs/data/skill_faces.csv): its class
+        /// lineage first, then its race, then the blank row. The server resolves the same face for the cast
+        /// bar, combat text and buffs, so every surface names a skill the same way.</summary>
+        private SkillFace MyFace(string skillId)
+        {
+            var a = Boot != null ? Boot.ActiveClass : null;
+            if (a == null) return SkillFaces.For(skillId, (Race?)null, null);
+            var archetype = a.SecondClass > 0 ? ClassCatalog.Get(a.SecondClass)?.Archetype : null;
+            var discipline = a.ThirdClass > 0 ? ThirdClassCatalog.Get(a.ThirdClass)?.Discipline : null;
+            return SkillFaces.For(skillId, a.Race, a.BaseClass, archetype, discipline, a.FourthClass > 0);
+        }
+
+        /// <summary>The skill's name under this character's face, at a rung (a rank-named ladder keeps its rung names).</summary>
+        private string SkillNameAt(SkillDef def, int level) => SkillFaces.NameOf(MyFace(def.Id), def.Id, level);
+
+        /// <summary>The skill's name under this character's face, with no rung in play.</summary>
+        private string SkillTitle(SkillDef def) => MyFace(def.Id)?.Name ?? def.Name;
+
+        /// <summary>The face's description at a rung — its `@` numbers are already that rung's.</summary>
+        private string SkillDescriptionAt(SkillDef def, int level) => SkillFaces.DescriptionOf(MyFace(def.Id), def.Id, level);
 
         private void Note(string text)
         {

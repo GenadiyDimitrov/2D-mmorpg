@@ -534,7 +534,7 @@ internal static class Check
                 //   is both, so prefer the stride only when DurationTicks has nothing to say.
                 if (def.ChargesToTarget && duration <= 0f)
                     duration = def.PullSeconds;
-                rows.Add(new Rung(cs.DisplayName ?? def.Name, cs.LearnLevel,
+                rows.Add(new Rung(def.Name, cs.LearnLevel,
                     def.RangeAt(cs.SkillLevel), def.CastTicksAt(cs.SkillLevel) / 10f, cooldown,
                     duration,
                     def.MpCostAt(cs.SkillLevel),

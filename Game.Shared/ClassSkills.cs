@@ -3,11 +3,8 @@
 /// <summary>One skill a class can learn, and the level at which it becomes
 /// learnable. SpCost comes from the SkillDef; level gates visibility in the
 /// "Skills to Learn" tab.</summary>
-/// <summary>One skill a class can learn at LearnLevel. DisplayName/Icon are
-/// OPTIONAL per-class presentation overrides — the underlying skill id, effect,
-/// and BuffKey stay shared, but this class sees its own name/icon on the skill
-/// bar, buff bar and skills window. Leave them null to use the SkillDef's
-/// canonical name.</summary>
+/// <summary>One skill a class can learn at LearnLevel. How it LOOKS (name, description) is not here: that
+/// is its face in docs/data/skill_faces.csv (`BL-327`, SkillFaces).</summary>
 /// <param name="SpCost">OPTIONAL per-class SP price for this rung. Null = the SkillDef's own
 /// <c>SpCostAt(SkillLevel)</c>, which is what almost every entry wants. It exists because SP in this
 /// game is priced by the LEVEL YOU LEARN AT, not by the ability: Shield Mastery is ONE skill that the
@@ -25,7 +22,7 @@
 /// who climbs the same `mage_armor_mastery`, keeps his. On a shared skill the def-level field would take it from
 /// everyone — the cleric included, who learns the same ladder at 20.</param>
 public readonly record struct ClassSkill(
-    string SkillId, int LearnLevel, string? DisplayName = null, string? Icon = null,
+    string SkillId, int LearnLevel,
     int SkillLevel = 1, int? SpCost = null, int? GoldCost = null, string[]? Replaces = null)
 {
     /// <summary>What THIS class pays for THIS rung — the per-class override when it has one, the
@@ -401,24 +398,10 @@ public static class ClassSkills
         return false;
     }
 
-    /// <summary>The class-specific display name for a skill (falls back to the
-    /// SkillDef's canonical name). Same shared id, different label per class.</summary>
+    /// <summary>The name this class sees for a skill — its FACE (`BL-327`, docs/data/skill_faces.csv). The per-class
+    /// `ClassSkill.DisplayName` / `Icon` overrides that used to answer this are gone; this forwarder stays for the
+    /// dev tools that match CSV rows by name. The game itself resolves faces from the entity (GameLoopService.FaceOf).</summary>
     public static string DisplayName(string skillId, Race race, BaseClass baseClass,
-        Archetype? archetype, Discipline? discipline = null, bool fourth = false)
-    {
-        foreach (var cs in Cumulative(race, baseClass, archetype, discipline, fourth))
-            if (cs.SkillId == skillId && !string.IsNullOrEmpty(cs.DisplayName))
-                return cs.DisplayName!;
-        return SkillCatalog.Get(skillId)?.Name ?? skillId;
-    }
-
-    /// <summary>The class-specific icon key for a skill (null if none set).</summary>
-    public static string? Icon(string skillId, Race race, BaseClass baseClass,
-        Archetype? archetype, Discipline? discipline = null, bool fourth = false)
-    {
-        foreach (var cs in Cumulative(race, baseClass, archetype, discipline, fourth))
-            if (cs.SkillId == skillId && !string.IsNullOrEmpty(cs.Icon))
-                return cs.Icon;
-        return null;
-    }
+        Archetype? archetype, Discipline? discipline = null, bool fourth = false) =>
+        SkillFaces.NameOf(SkillFaces.For(skillId, race, baseClass, archetype, discipline, fourth), skillId, 1);
 }

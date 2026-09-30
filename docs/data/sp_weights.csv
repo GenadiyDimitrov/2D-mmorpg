@@ -81,7 +81,6 @@ crippling_shout,Crippling Shout,debuff,1.5,default
 dazzling_arrow,Dazzling Arrow,physical,1.5,default
 defensive_wall,Defensive Wall,buff,1,default
 demon_blessing,Domonic Blessing,passive,0.33,default
-demon_cast_atk_phys,Demonic Strength,buff,1,default
 demon_contract,Demon Contract,buff,1,default
 demon_drain,Demonic Drain,physical,1.5,default
 demon_over_limit,Over the limit,buff,1,default
@@ -97,7 +96,6 @@ elemental_burst,Elemental Burst,magic,1.5,default
 elemental_wave,Elemental Wave,magic,1.5,default
 elf_antidote,Antidote,heal,1.5,default
 elf_blessing,Forest Blessing,passive,0.33,default
-elf_cast_atk_phys,Forest Might,buff,1,default
 elf_heal,Healing Leaf,heal,1.5,default
 elven_restoration,Elven Restoration,heal,1.5,default
 evasion_boost,Evasion Boost,buff,1,default
@@ -162,7 +160,6 @@ holy_wind_grace_single,Wind Grace,buff,1,default
 hp_boost,HP Boost,passive,0.33,default
 hp_regeneration,HP regeneration,passive,0.33,default
 human_blessing,Kings Blessing,passive,0.33,default
-human_cast_atk_phys,Blessing of Might,buff,1,default
 human_parry,Weapon Parry,physical,1,default
 human_relaxation,Relax,physical,1,default
 human_vampiric_bolt,Vampiric Bolt,magic,1.5,default

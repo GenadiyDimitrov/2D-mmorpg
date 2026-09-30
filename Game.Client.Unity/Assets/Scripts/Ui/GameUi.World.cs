@@ -1945,13 +1945,12 @@ namespace Game.Client
             return SkillLetters(def);
         }
 
-        /// <summary>Is this token the skill currently being cast? Matched by NAME, because the cast
-        /// push (CastInfo) carries a display name rather than the skill id.</summary>
+        /// <summary>Is this token the skill currently being cast? Matched by ID (`BL-327`): the cast push's
+        /// NAME is the caster's face ("Moonlight Bolt"), which no longer equals <c>def.Name</c>.</summary>
         private bool IsCastingSlot(string token)
         {
             if (!Boot.IsCasting || string.IsNullOrEmpty(token)) return false;
-            var def = SkillCatalog.Get(token);
-            return def != null && def.Name == Boot.CastingSkill;
+            return token == Boot.CastingSkillId;
         }
 
         private void FireSlot(int slotOnPage)

@@ -8209,3 +8209,16 @@ and a +0.1mp regen should not cost milions"* (example: archer at 60, low 0.33 / 
 offered: *"just the sum divided to the count"* = every weight 1). Built as `docs/data/sp_weights.csv` +
 `SkillCsvSeed --reweigh-sp`; replaces the passive ×k of `BL-314`. Details: `docs/CHANGELOG.md` 0.216.0; his review of the
 weights is `Open-Checklist.md` §111.
+
+## `BL-327` ✅ BUILT in 0.217.0 — skill FACES: one skill, a look per race or class (2026-09-30)
+
+His question: *"is it possible to tell a skill to use "this" shell for the visuals (name/description/icon/animation) but
+underneath to be "that" skill? … same goes for the buffs"*. His design, same day: `skill_faces.csv` with
+`id,name,race,class,description,comment` (class *"empty if for the whole race"*, `@` for numbers, *"if there is
+description that rises with lvl lets use the maximum … the lower lvls will take from there"*), and his four answers:
+blank rows for everything (*"ill author where i want (start with active ones)"*), real class names (*"'ice master'
+'inferno master'"*), *"merge them as one ill split them in the file as faces"* (the racial Mights), and *"the class csv
+is the numbers per lvl while the face is the display"*. Built as `docs/data/skill_faces.csv` + `SkillCsvSeed
+--gen-faces`; `@` widened to `@{key}` and `[ … ]` because a bare `@` cannot say which of six numbers it is. Icon and
+animation columns wait until there are icons/animations to point at (*"ill expand later"*). Details:
+`docs/CHANGELOG.md` 0.217.0; his playtest rows are `Open-Checklist.md` §112.

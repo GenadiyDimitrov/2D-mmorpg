@@ -1163,9 +1163,9 @@ public class PersistenceService
     /// the CURRENT definition rather than a stale snapshot of the old one.
     ///
     /// <paramref name="ExpiresAtUtc"/> is wall-clock (null = a toggle, which has no duration), so an
-    /// hour spent logged out costs an hour of a one-hour buff. DisplayName is kept because per-class
-    /// flavour names (Holy/Moonlight/Spirit Bolt) are an argument to ApplyBuff, not a property of the
-    /// def.</summary>
+    /// hour spent logged out costs an hour of a one-hour buff. DisplayName and FaceId are kept because
+    /// the CASTER's face (`BL-327`: an Elf's "Forest Might") is an argument to ApplyBuff, not a property of
+    /// the def — the buff's owner may be a Human who could never resolve it from his own class.</summary>
     /// <param name="SkillId">The skill that CREATED the buff — for a child of an improved (group)
     /// buff that is the child, never the parent: re-applying the parent on login would restore every
     /// sibling at full duration, so a relog would refresh the whole blessing for free.</param>
@@ -1173,7 +1173,7 @@ public class PersistenceService
     /// child). "" = same as SkillId, which is also what an older save deserializes to.</param>
     public sealed record BuffSnapshot(
         string SkillId, int Level, DateTime? ExpiresAtUtc, int Stacks, int ShieldPool,
-        string DisplayName, string SourceSkillId = "")
+        string DisplayName, string SourceSkillId = "", string FaceId = "", int FaceLevel = 0)
     {
         /// <summary>The buffs on an entity that are worth saving.
         ///
@@ -1199,7 +1199,7 @@ public class PersistenceService
                     ? null
                     : now.AddSeconds(b.TicksRemaining * GameConstants.TickSeconds);
                 list.Add(new BuffSnapshot(skillId, b.Level, expires, b.Stacks, b.ShieldPool,
-                                          b.Name, b.SourceSkillId));
+                                          b.Name, b.SourceSkillId, b.FaceId, b.FaceLevel));
             }
             return list;
         }
