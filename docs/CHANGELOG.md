@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.217.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.217.3**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,28 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-09-30 (latest) — 0.217.2: the class CSV names the skill again; the spirit helper reads the faces
+## 2026-10-01 (latest) — 0.217.3: his CSV pass into the code; race faces for the 3rd-class single buffs
+
+His pass over the fighter/rogue/tank/warrior/buffer CSVs, then *"do the 3rd class single buffs as ive done them"* and
+*"then do the code"*. ⚠ **New APK** (class tables + faces). No `game.db` delete. Checklist §115.
+
+- **Race faces for the 12 third-class single buffs**, in his three templates (Blessing: X / Forest X / Demonic Contract:
+  X): Ferocity, Fortitude, Endurance (Body), Wellspring (Soul), Serenity, Insight, Fury, Guard (Shield Blessing), Bastion
+  (Shield Hardening), Mana, and Great Strength / Great Bulwark, each naming its own race's ordinary buff. **The group
+  buffs and harmonies stay one name for every race** (his ruling: *"gruped stay"*).
+- **`@{mpcost.2}`** — a face placeholder can name the 2nd number of a word (Mana Blessing's magic MP cost). `Faces.cs`.
+- **`fighter_accuracy` is "Hit Rate Mastery" everywhere** (buffer 4th still said Accuracy). His renames ride the
+  generated ladders: Faster Attack Mastery (`fury_mastery`), Swiftness, Light armor Evasion.
+- **Archer 4th Light armor Evasion = +13..+17**, 2 under the dagger's +15..+19 (the archer 3rd never levels it). The
+  generated ladder now gives the archer rungs 10-14 instead of 12-16.
+- **The buffer's 3rd-class equipment passives are free**: `cleric_heavy_armor_mastery` and `harmonist_bow_proficiency`
+  SP 0 (*"so buffers can freely use their designed equipment at 3rd class"*). SP-0 rows sit outside the level pot, so no
+  other price moved. His new REPLACES: Heavy Caster Mastery replaces Light Caster Mastery; Heavy Armor Mastery replaces
+  Light Armor Mastery (Human/Demon buffer).
+- His new DESCRIPTION texts (tank/rogue/warrior/fighter 1st passives, harmonies, Warchanter group buffs) regenerated.
+- Verified: `--gen-passives`, `--gen-faces` (876, 0 problems), `--check` 0 discrepancies, server + Unity build.
+
+## 2026-09-30 — 0.217.2: the class CSV names the skill again; the spirit helper reads the faces
 
 His ask, after the two-file split: *"i wonder if we remove those files and just author them inside the classes csvs as
 it was before .. now it looks so confusing"* — then *"build it that way"*. It REPLACES the split below the same day.

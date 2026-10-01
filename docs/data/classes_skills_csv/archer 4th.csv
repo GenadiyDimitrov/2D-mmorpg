@@ -43,10 +43,10 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 82,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +16",0,0,3.3kk
 85,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +17",0,0,16.7kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Swift----------------------------
-76,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +12;",0,2.24kk,333k
-79,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +13;",0,21.6kk,500k
-82,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +14;",0,0,3.3kk
-85,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +15;",0,0,16.7kk
+76,Swiftness,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +12;",0,2.24kk,333k
+79,Swiftness,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +13;",0,21.6kk,500k
+82,Swiftness,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +14;",0,0,3.3kk
+85,Swiftness,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +15;",0,0,16.7kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Bow Mastery----------------------------
 76,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +820",0,2.24kk,500k
 77,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +840",0,3.12kk,500k

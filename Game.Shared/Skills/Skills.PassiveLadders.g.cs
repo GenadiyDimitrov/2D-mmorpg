@@ -211,7 +211,7 @@ public static partial class SkillCatalog
     private static SkillDef PieceClericHeavyArmorMastery() => ArmorLadder(ClericHeavyArmorMastery, "Heavy Caster Mastery", BaseClass.Mage,
         "Passive. In HEAVY armour: cast and attack as fast as in a robe, with better MP regeneration.",
         r => new StatMods(AtkSpeedPct: r.S[0], CastSpeedPct: r.S[1], MpRegenPct: r.S[2]),
-        new RungRow(new[] { 1f, 0.9f, 0.2f }, 21600, 0, "Heavy: mpReg x1.2, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)", Armor: ArmorWeights.Heavy));
+        new RungRow(new[] { 1f, 0.9f, 0.2f }, 0, 0, "Heavy: mpReg x1.2, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)", Armor: ArmorWeights.Heavy));
 
     private static SkillDef PieceClericsLightArmorMastery() => ArmorLadder(ClericsLightArmorMastery, "Light Caster Mastery", BaseClass.Mage,
         "Passive. In LIGHT armour: cast and attack as fast as in a robe, with better MP regeneration.",
@@ -225,7 +225,7 @@ public static partial class SkillCatalog
         new RungRow(new[] { 0.15f }, 25700, 0, "Decreses the reuse delay with 15%"),
         new RungRow(new[] { 0.2f }, 54400, 0, "Decreses the reuse delay with 20%"));
 
-    private static SkillDef PieceFighterAccuracy() => PlainLadder(FighterAccuracy, "Accuracy", BaseClass.Fighter,
+    private static SkillDef PieceFighterAccuracy() => PlainLadder(FighterAccuracy, "Hit Rate Mastery", BaseClass.Fighter,
         "Passive. Better accuracy.",
         r => new PassiveEffect(Accuracy: (int)r.S[0]),
         new RungRow(new[] { 1f }, 2310000, 500000, "acc +1"),
@@ -335,7 +335,7 @@ public static partial class SkillCatalog
         new RungRow(new[] { 1290f }, 0, 50000000, "crit dmg +1290"),
         new RungRow(new[] { 1300f }, 0, 50000000, "crit dmg +1300"));
 
-    private static SkillDef PieceFuryMastery() => PlainLadder(FuryMastery, "Fury", BaseClass.Fighter,
+    private static SkillDef PieceFuryMastery() => PlainLadder(FuryMastery, "Faster Attack Mastery", BaseClass.Fighter,
         "Passive. Faster attack speed.",
         r => new PassiveEffect(AtkSpeedPct: r.S[0]),
         new RungRow(new[] { 0.01f }, 1840000, 500000, "AS x1.01"),
@@ -735,7 +735,7 @@ public static partial class SkillCatalog
         new RungRow(new[] { 0.4f }, 74900, 0, "crit rate x1.4", Weapon: WeaponType.Dual | WeaponType.Bow, Hands: WeaponHands.Any),
         new RungRow(new[] { 0.5f }, 419000, 0, "crit rate x1.5", Weapon: WeaponType.Dual | WeaponType.Bow, Hands: WeaponHands.Any));
 
-    private static SkillDef PieceRogueEvasion() => ArmorLadder(RogueEvasion, "Evasion", BaseClass.Fighter,
+    private static SkillDef PieceRogueEvasion() => ArmorLadder(RogueEvasion, "Light armor Evasion", BaseClass.Fighter,
         "Passive. Evasion while wearing LIGHT armour.",
         r => new StatMods(Evasion: r.S[0]),
         new RungRow(new[] { 2f }, 9980, 0, "light: eva +2", Armor: ArmorWeights.Light),
@@ -755,7 +755,7 @@ public static partial class SkillCatalog
         new RungRow(new[] { 18f }, 0, 3300000, "light: eva +18", Armor: ArmorWeights.Light),
         new RungRow(new[] { 19f }, 0, 16700000, "light: eva +19", Armor: ArmorWeights.Light));
 
-    private static SkillDef PieceRogueSwiftMastery() => ArmorLadder(RogueSwiftMastery, "Swift", BaseClass.Fighter,
+    private static SkillDef PieceRogueSwiftMastery() => ArmorLadder(RogueSwiftMastery, "Swiftness", BaseClass.Fighter,
         "Passive. Faster run speed while wearing LIGHT armour.",
         r => new StatMods(MoveSpeed: r.S[0]),
         new RungRow(new[] { 7f }, 8910, 0, "speed +7", Armor: ArmorWeights.Light),

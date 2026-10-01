@@ -28,6 +28,7 @@ using Game.Shared;
 //    @            the skill's POWER (Holy Bolt's "+@ power")
 //    @{m.def}     a named number — any word from DESCR-KEYS.md, or the metric key itself
 //    @{p.def%}    force the percent reading; @{p.def#} the flat one (only needed when a skill has both)
+//    @{mpcost.2}  the 2nd number of that word (Mana Blessing's magic MP cost; plain @{mpcost} = the 1st)
 //    @{duration}  the buff's duration ("20 min")
 //    [ … ]        shown only when every placeholder inside has a value at that level
 //  An unbracketed placeholder with no value at a level drops the CLAUSE around it (the text between
@@ -71,11 +72,14 @@ internal static class Faces
 
     private static readonly Regex Placeholder = new(@"@(\{(?<key>[^}]*)\})?", RegexOptions.Compiled);
     private static readonly Regex Bracket = new(@"\[(?<in>[^\[\]]*)\]", RegexOptions.Compiled);
+    /// <summary>`@{mpcost.2}` = the 2nd such number (Mana Blessing: physical, then magic MP cost).</summary>
+    private static readonly Regex Nth = new(@"\.(?<n>\d+)$", RegexOptions.Compiled);
 
     /// <summary>Resolve one placeholder key to (metric, forced pct?). null = no such word.</summary>
     internal static (string Metric, bool? Pct)? Key(string key)
     {
         key = key.Trim().ToLowerInvariant();
+        key = Nth.Replace(key, "");
         if (key.Length == 0) return ("power", false);
         bool? pct = null;
         if (key.EndsWith("%")) { pct = true; key = key[..^1].TrimEnd(); }
@@ -92,13 +96,15 @@ internal static class Faces
         var k = Key(key ?? "");
         if (k is null) return null;
         var (metric, forced) = k.Value;
+        var nth = Nth.Match((key ?? "").Trim());
+        int skip = nth.Success ? int.Parse(nth.Groups["n"].Value) - 1 : 0;
         if (metric == "duration")
         {
             int ticks = def.DurationTicksAt(level);
             return ticks > 0 ? Duration(ticks) : null;
         }
         float? Pick(bool pct) =>
-            pool.TryGetValue((metric, pct), out var l) && l.Find(v => v != 0f) is float v && v != 0f ? v : null;
+            pool.TryGetValue((metric, pct), out var l) && l.Where(v => v != 0f).Skip(skip).FirstOrDefault() is float v && v != 0f ? v : null;
         bool usePct = forced ?? Pick(true) is not null;
         if (Pick(usePct) is not float val) return null;
         return usePct ? Num(Math.Abs(val) * 100f) + "%" : Num(Math.Abs(val));

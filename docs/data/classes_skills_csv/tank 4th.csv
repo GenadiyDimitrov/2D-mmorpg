@@ -60,9 +60,9 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +192",0,0,100kk
 90,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +200",0,0,100kk
 ,,,,,,,,,,,,,,,,,----------------------------Fury----------------------------
-76,Fury,fury_mastery,Passive,,,0,0,self/single,0,0,0,"AS x1.01",0,1.84kk,500k
-80,Fury,fury_mastery,Passive,,,0,0,self/single,0,0,0,"AS x1.03",0,0,2.5kk
-85,Fury,fury_mastery,Passive,,,0,0,self/single,0,0,0,"AS x1.05",0,0,25kk
+76,Faster Attack Mastery,fury_mastery,Passive,,,0,0,self/single,0,0,0,"AS x1.01",0,1.84kk,500k
+80,Faster Attack Mastery,fury_mastery,Passive,,,0,0,self/single,0,0,0,"AS x1.03",0,0,2.5kk
+85,Faster Attack Mastery,fury_mastery,Passive,,,0,0,self/single,0,0,0,"AS x1.05",0,0,25kk
 ,,,,,,,,,,,,,,,,,----------------------------Whisp Mastery----------------------------
 83,Whisp Mastery,whisp_mastery,Passive,,,0,0,self/single,0,0,0,"Increase the limit of active whisps to 3",0,0,15kk
 ,,,,,,,,,,,,,,,,,----------------------------Backlash----------------------------

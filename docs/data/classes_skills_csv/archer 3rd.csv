@@ -19,7 +19,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 40,Critical Resist,rogue_crit_resist,Passive,,light,0,0,self/single,0,0,0,"light: crit rate resist +25%",0,101
 60,Critical Resist,rogue_crit_resist,Passive,,light,0,0,self/single,0,0,0,"light: crit rate resist +35%",0,287
 ,,,,,,,,,,,,,,,,,----------------------------Swift----------------------------
-43,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +11;",0,32.2
+43,Swiftness,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +11;",0,32.2
 ,,,,,,,,,,,,,,,,,----------------------------HpRegen----------------------------
 43,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +3.0;",0,32.2
 46,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +3.5;",0,38.3

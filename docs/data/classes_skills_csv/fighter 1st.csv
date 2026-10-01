@@ -10,7 +10,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,----------------------------Evasion----------------------------
 15,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,light: eva +3,0,258,[],,,Increase evasion when wearing light armor with @{eva}
 ,,,,,,,,,,,,,,,,----------------------------Spirit Mastery----------------------------
-5,Spirit Mastery,fighter_spirit_mastery,passive,,,0,0,self/single,0,0,0,MP rege x1.1,0,52,[],,,"Passive. Your MP regenerates @{mpreg} faster, whatever you are wearing."
+5,Spirit Mastery,fighter_spirit_mastery,passive,,,0,0,self/single,0,0,0,MP rege x1.1,0,52,[],,,"Increase natural MP regeneration with @{mpreg}."
 ,,,,,,,,,,,,,,,,----------------------------Spirit Mastery----------------------------
 5,Strength Mastery,strength_mastery,passive,,,0,0,self/single,0,0,0,p.Atk x1.085,0,52,[]
 ,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------

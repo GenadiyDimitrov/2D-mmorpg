@@ -28,10 +28,10 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 52,Critical Rate,rogue_critical_rate_mastery,passive,bow|duals,,0,0,self/single,0,0,0,"crit rate x1.4;",0,74.9
 70,Critical Rate,rogue_critical_rate_mastery,passive,bow|duals,,0,0,self/single,0,0,0,"crit rate x1.5;",0,419
 ,,,,,,,,,,,,,,,,,----------------------------Fury----------------------------
-46,Fury,fury_mastery,passive,,,0,0,self/single,0,0,0,"AS x1.07;",0,36.2
-58,Fury,fury_mastery,passive,,,0,0,self/single,0,0,0,"AS x1.1;",0,102
+46,Faster Attack Mastery,fury_mastery,passive,,,0,0,self/single,0,0,0,"AS x1.07;",0,36.2
+58,Faster Attack Mastery,fury_mastery,passive,,,0,0,self/single,0,0,0,"AS x1.1;",0,102
 ,,,,,,,,,,,,,,,,,----------------------------Swift----------------------------
-43,Swift,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +11;",0,37.9
+43,Swiftness,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +11;",0,37.9
 ,,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
 43,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +23",0,37.9
 46,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +26",0,36.2

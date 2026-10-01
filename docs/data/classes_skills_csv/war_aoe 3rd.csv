@@ -2,7 +2,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
 40,Strength Mastery,strength_mastery,passive,sword|blunt/2,,0,0,self/single,0,0,0,"With 2h sword/blunt: p.atk +25%;",0,23.9
 ,,,,,,,,,,,,,,,,,----------------------------Accuracy----------------------------
-52,Accuracy,fighter_accuracy,passive,,,0,0,self/single,0,0,0,"acc +6;",0,56.6
+52,Hit Rate Mastery,fighter_accuracy,passive,,,0,0,self/single,0,0,0,"acc +6;",0,56.6
 ,,,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
 40,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +50",0,23.9
 43,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"heavy: p.def +57",0,39.6

@@ -6,10 +6,10 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 32,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +41,0,23800,[]
 36,Heavy Armor Mastery,heavy_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,heavy: p.def +60,0,38200,[]
 ,,,,,,,,,,,,,,,,----------------------------MpRegen----------------------------
-36,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,increase mpReg +3.1,0,38200,[],,mpReg +@{mpreg}
+36,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,increase mpReg +3.1,0,38200,[],,Speed up natural MP regeneration +@{mpreg}
 ,,,,,,,,,,,,,,,,----------------------------Tank Defence----------------------------
-20,Tank Defence,tank_defence_mastery,passive,,heavy,0,0,self/single,0,0,0,with heavy: p.def x1.07; eva -2,0,4350,[],,with heavy: p.def +@{pdef} and eva -@{eva}
-20,Critical Damage Resist,tank_crit_resist,passive,,heavy,0,0,self/single,0,0,0,with heavy: crit dmg reduction 15%,0,4350,[],,with heavy: crit dmg reduction @{critdmgres}
+20,Tank Defence,tank_defence_mastery,passive,,heavy,0,0,self/single,0,0,0,with heavy: p.def x1.07; eva -2,0,4350,[],,Increase the defense of Heavy armor with @{pdef} but decreases evasion with @{eva}
+20,Critical Damage Resist,tank_crit_resist,passive,,heavy,0,0,self/single,0,0,0,with heavy: crit dmg reduction 15%,0,4350,[],,Decrease received critical damage with @{critdmgres} when wearing Heavy armor
 ,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
 20,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +25,0,4350,[]
 24,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,m.def +30,0,6930,[]
@@ -25,7 +25,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,----------------------------Defensive Wall----------------------------
 20,Defensive Wall,defensive_wall,pfysical buff,,,0,0,self/single,0.5,900,30,increase p.def +1800; m.def +1600; buff cancel resist x1.8; ms x0.5,20,13200,[]
 ,,,,,,,,,,,,,,,,----------------------------Shield Mastery----------------------------
-20,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +15%, Shield Rate +50%;",0,4350,[],,"Passive. In HEAVY armor with a shield: greatly improves your shield's block chance and defence, your resistance to bows from level 2, and your whole P.Def from level 3. In any other armor it does nothing."
+20,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +15%, Shield Rate +50%;",0,4350,[],,"Increase Shield Damage Reduction with @{blockreduction}, chance with @{blockrate}[, bow resistance with @{bowresist}][ and P.Def with @{pdef}] when Heavy armor and Shield are equipped"
 28,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +20%, Shield Rate +70%; bow resistance 16%",0,12800,[]
 ,,,,,,,,,,,,,,,,----------------------------Taunt----------------------------
 24,Taunt,provoke,physical active,,,400,0,enemy/single,0,6,1.5,Agro enemy (power 4500) - locks it onto you for 1.5s then leaves you 4500 aggro ahead,0,6400,[],Human;Demon
@@ -38,7 +38,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 32,Charm,charm,Magical Debuff,,,400,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you  5500 aggro ahead (sucsess: x0.7);",0,22000,[],Elf
 36,Charm,charm,Magical Debuff,,,400,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you  6000 aggro ahead (sucsess: x0.7);",0,40000,[],Elf
 ,,,,,,,,,,,,,,,,----------------------------Shield Stun----------------------------
-24,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",15,31500,,,"Slams the target with your shield, stunning it for @{duration}. ATK-vs-CON; bosses immune. Requires a shield."
+24,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",15,31500,,,"Slams the target with your shield, stunning it for @{duration}. Requires a shield."
 28,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",18,58200
 32,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",22,108000
 36,Shield Shock,shield_shock,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",26,174000

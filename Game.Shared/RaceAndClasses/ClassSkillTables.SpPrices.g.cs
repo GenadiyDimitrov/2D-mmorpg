@@ -3947,13 +3947,13 @@ Demon,Mage,Healer,Warchanter,0,mana_vampirism,60,84100
 Human,Mage,Healer,Warchanter,0,mana_vampirism,70,293000
 Elf,Mage,Healer,Warchanter,0,mana_vampirism,70,293000
 Demon,Mage,Healer,Warchanter,0,mana_vampirism,70,293000
-Human,Mage,Healer,Warchanter,0,cleric_heavy_armor_mastery,40,21600
-Demon,Mage,Healer,Warchanter,0,cleric_heavy_armor_mastery,40,21600
+Human,Mage,Healer,Warchanter,0,cleric_heavy_armor_mastery,40,0
+Demon,Mage,Healer,Warchanter,0,cleric_heavy_armor_mastery,40,0
 Human,Mage,Healer,Warchanter,0,tank_crit_resist,40,21600
 Demon,Mage,Healer,Warchanter,0,tank_crit_resist,40,21600
 Elf,Mage,Healer,Warchanter,0,rogue_evasion,40,21600
 Elf,Mage,Healer,Warchanter,0,rogue_crit_resist,40,65300
-Elf,Mage,Healer,Warchanter,0,harmonist_bow_proficiency,40,21600
+Elf,Mage,Healer,Warchanter,0,harmonist_bow_proficiency,40,0
 Elf,Mage,Healer,Warchanter,0,bow_mastery,40,21600
 Elf,Mage,Healer,Warchanter,0,bow_mastery,48,29000
 Elf,Mage,Healer,Warchanter,0,bow_mastery,56,36100

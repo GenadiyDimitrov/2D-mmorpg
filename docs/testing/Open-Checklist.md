@@ -17,6 +17,20 @@
 
 ---
 
+## §115 — 0.217.3: your CSV pass in the code; race faces for the 3rd-class single buffs (2026-10-01)
+
+⚠ **New APK.** No `game.db` delete.
+
+- `115a` [ ] - **3rd-class single buffs wear the caster's race:** a Human healer/buffer casts "Blessing: Ferocity", an
+  Elf "Forest Ferocity", a Demon "Demonic Contract: Ferocity" — the same for Fortitude, Endurance, Wellspring, Serenity,
+  Insight, Fury, Guard, Bastion, Mana, Great Strength, Great Bulwark. Renamed nouns are mine, change any: Body →
+  Endurance, Soul → Wellspring, Shield Blessing → Guard, Shield Hardening → Bastion. ->
+- `115b` [ ] - **Buffer's equipment passives cost 0 SP at 40:** Heavy Caster Mastery (Human/Demon) and Harmonist Bow
+  Proficiency (Elf); learning Heavy Caster Mastery removes Light Caster Mastery. ->
+- `115c` [ ] - **Archer 4th Light armor Evasion** reads +13..+17 (2 under the dagger). ->
+
+---
+
 ## §114 — 0.217.2: names live in the class CSVs again; the spirit helper reads its names from them (2026-09-30)
 
 ⚠ **New APK.** No `game.db` delete. Your call: the class CSV's `NAME` is the name again and a new last column

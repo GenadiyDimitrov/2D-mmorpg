@@ -10,6 +10,9 @@ elemental_blast,Forbidden magic: Blast,demon,,"Forbidden magic: BLAST! Damage th
 holy_bolt,Holy Bolt,human,,"Gather Holy energy to punish the enemy with @ power.",
 holy_bolt,Moonlight Bolt,elf,,"Gather Moonlight energy to damage the enemy with @ power.",
 holy_bolt,Spirit Bolt,demon,,"Gather Spirit energy to damage the enemy with @ power.",
+holy_ray,Holy Ray,human,,"Focuses Holy energy to punish the enemy with @ power.",
+holy_ray,Moonlight Ray,elf,,"Focuses Moonlight energy to damage the enemy with @ power.",
+holy_ray,Spirit Ray,demon,,"Focuses Spirit energy to damage the enemy with @ power.",
 ,,,,,- Buffers -
 bow_expertise,Bow Enhancement,elf,harmonist,"Enhance your bow for @{as} faster attacks.",
 ,,,,,- Buffers/Healers -
@@ -55,13 +58,43 @@ cast_def_mag,Demonic Contract: Ward,demon,,Sign a demonic contract to increase M
 holy_frenzy,Blessing: Frenzy,human,,"A magical blessing that increases offence and speed by @{offencespeed}, Move Speed by @{ms}; But Decreases Max HP/MP by @{maxhp} and evasion by @{eva}.",
 holy_frenzy,Forest Frenzy,elf,,"With the help of the forest: +@{offencespeed} offence and speed, +@{ms} move; -@{maxhp} Max HP/MP, -@{eva} evasion.",
 holy_frenzy,Demonic Contract: Frenzy,demon,,"Sign a demonic contract to increase offence and speed by @{offencespeed}, Move Speed by @{ms}; But Decreases Max HP/MP by @{maxhp} and evasion by @{eva}.",
-,,,,,- Tank -
-,,,,,- Archer -
-,,,,,- Duals -
-,,,,,- Archer/Duals -
-,,,,,- Warrior -
-,,,,,- War_Aoe -
-,,,,,- Warrior/War_Aoe -
+,,,,,- Buffers/Healers 3rd -
+cast_crit_dmg,Blessing: Ferocity,human,,A magical blessing that increases critical damage by @{critdmg}.,
+cast_crit_dmg,Forest Ferocity,elf,,With the help of the forest: +@{critdmg} critical damage.,
+cast_crit_dmg,Demonic Contract: Ferocity,demon,,Sign a demonic contract to increase critical damage by @{critdmg}.,
+cast_cc_res_phys,Blessing: Fortitude,human,,A magical blessing that increases resistance to CON attacks by @{ccresist}.,
+cast_cc_res_phys,Forest Fortitude,elf,,With the help of the forest: +@{ccresist} resistance to CON attacks.,
+cast_cc_res_phys,Demonic Contract: Fortitude,demon,,Sign a demonic contract to increase resistance to CON attacks by @{ccresist}.,
+cast_hp_max,Blessing: Endurance,human,,A magical blessing that increases Max HP by @{maxhp}.,
+cast_hp_max,Forest Endurance,elf,,With the help of the forest: +@{maxhp} Max HP.,
+cast_hp_max,Demonic Contract: Endurance,demon,,Sign a demonic contract to increase Max HP by @{maxhp}.,
+cast_mp_max,Blessing: Wellspring,human,,A magical blessing that increases Max MP by @{maxmp}.,
+cast_mp_max,Forest Wellspring,elf,,With the help of the forest: +@{maxmp} Max MP.,
+cast_mp_max,Demonic Contract: Wellspring,demon,,Sign a demonic contract to increase Max MP by @{maxmp}.,
+cast_mp_regen,Blessing: Serenity,human,,A magical blessing that increases natural MP Regeneration by @{mpreg}.,
+cast_mp_regen,Forest Serenity,elf,,With the help of the forest: +@{mpreg} natural MP Regeneration.,
+cast_mp_regen,Demonic Contract: Serenity,demon,,Sign a demonic contract to increase natural MP Regeneration by @{mpreg}.,
+cast_mcrit_rate,Blessing: Insight,human,,A magical blessing that increases magic critical rate by @{magiccritrate}.,
+cast_mcrit_rate,Forest Insight,elf,,With the help of the forest: +@{magiccritrate} magic critical rate.,
+cast_mcrit_rate,Demonic Contract: Insight,demon,,Sign a demonic contract to increase magic critical rate by @{magiccritrate}.,
+cast_spd_as,Blessing: Fury,human,,A magical blessing that increases Attack Speed by @{as}.,
+cast_spd_as,Forest Fury,elf,,With the help of the forest: +@{as} Attack Speed.,
+cast_spd_as,Demonic Contract: Fury,demon,,Sign a demonic contract to increase Attack Speed by @{as}.,
+cast_shield_block,Blessing: Guard,human,,A magical blessing that increases shield block chance by @{blockrate}.,
+cast_shield_block,Forest Guard,elf,,With the help of the forest: +@{blockrate} shield block chance.,
+cast_shield_block,Demonic Contract: Guard,demon,,Sign a demonic contract to increase shield block chance by @{blockrate}.,
+cast_shield_def,Blessing: Bastion,human,,A magical blessing that increases shield damage reduction by @{blockreduction}.,
+cast_shield_def,Forest Bastion,elf,,With the help of the forest: +@{blockreduction} shield damage reduction.,
+cast_shield_def,Demonic Contract: Bastion,demon,,Sign a demonic contract to increase shield damage reduction by @{blockreduction}.,
+mana_blessing,Blessing: Mana,human,,A magical blessing that decreases the MP cost of physical skills by @{mpcost} and of spells by @{mpcost.2}.,
+mana_blessing,Forest Mana,elf,,With the help of the forest: -@{mpcost} physical and -@{mpcost.2} magic skill MP cost.,
+mana_blessing,Demonic Contract: Mana,demon,,Sign a demonic contract to decrease the MP cost of physical skills by @{mpcost} and of spells by @{mpcost.2}.,
+great_might,Blessing: Great Strength,human,,A greater magical blessing that increases P.Atk by @{patk} on top of Blessing: Strength. Does not stack with other Great effects.,
+great_might,Great Forest Strength,elf,,With the great help of the forest: +@{patk} P.Atk on top of Forest Strength. Does not stack with other Great effects.,
+great_might,Demonic Contract: Great Strength,demon,,Sign a greater demonic contract to increase P.Atk by @{patk} on top of Demonic Contract: Strength. Does not stack with other Great effects.,
+great_bulwark,Blessing: Great Bulwark,human,,A greater magical blessing that increases P.Def by @{pdef} on top of Blessing: Bulwark. Does not stack with other Great effects.,
+great_bulwark,Great Forest Bulwark,elf,,With the great help of the forest: +@{pdef} P.Def on top of Forest Bulwark. Does not stack with other Great effects.,
+great_bulwark,Demonic Contract: Great Bulwark,demon,,Sign a greater demonic contract to increase P.Def by @{pdef} on top of Demonic Contract: Bulwark. Does not stack with other Great effects.,
 ,,,,,- Other -
 reuse_reset_momentum,Battle Momentum,,Sword Master,A skill you cast has a chance to come off reuse immediately. Scales with your ATK.,
 reuse_reset_momentum,Battle Momentum,,War Master,A skill you cast has a chance to come off reuse immediately. Scales with your ATK.,
@@ -81,6 +114,3 @@ backlash,Physical Backlash,demon,,,
 holy_mark,NPC Holy Mark,,NPC,,spirit helper's label (the shelf sells the healer's own Mark)
 life_mark,NPC Life Mark,,NPC,,spirit helper's label (the shelf sells the healer's own Mark)
 blood_mark,NPC Blood Mark,,NPC,,spirit helper's label (the shelf sells the healer's own Mark)
-
-
-,,,,,- NOT DONE -

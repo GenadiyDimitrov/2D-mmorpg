@@ -163,11 +163,11 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +150",0,0,50kk,,,Elf
 90,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +155",0,0,50kk,,,Elf
 ,,,,,,,,,,,,,,,,,,,----------------------------Accuracy----------------------------
-76,Accuracy,fighter_accuracy,Passive,,,0,0,self/single,0,0,0,"acc +4",0,2.31kk,500k,,,Demon
-86,Accuracy,fighter_accuracy,Passive,,,0,0,self/single,0,0,0,"acc +5",0,0,37.5kk,,,Demon
+76,Hit Rate Mastery,fighter_accuracy,Passive,,,0,0,self/single,0,0,0,"acc +4",0,2.31kk,500k,,,Demon
+86,Hit Rate Mastery,fighter_accuracy,Passive,,,0,0,self/single,0,0,0,"acc +5",0,0,37.5kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Accuracy (Human)----------------------------
-76,Accuracy,fighter_accuracy,Passive,,,0,0,self/single,0,0,0,"acc +1",0,2.31kk,500k,,,Human
-86,Accuracy,fighter_accuracy,Passive,,,0,0,self/single,0,0,0,"acc +2",0,0,37.5kk,,,Human
+76,Hit Rate Mastery,fighter_accuracy,Passive,,,0,0,self/single,0,0,0,"acc +1",0,2.31kk,500k,,,Human
+86,Hit Rate Mastery,fighter_accuracy,Passive,,,0,0,self/single,0,0,0,"acc +2",0,0,37.5kk,,,Human
 ,,,,,,,,,,,,,,,,,,,---------------------------Mark----------------------------
 76,Buffer Shield Mastery,buffer_shield_mastery,Passive,,robe/shield,0,0,self/single,0,0,0,"When Robe+Shield are equipped increase Max HP/MP and natural regeneration with 10%",0,6.5kk,1kk,,,,,In a robe and carrying a shield: +@{mpreg} maximum HP and MP and +10% natural regeneration.
 ,,,,,,,,,,,,,,,,,,,----------------------------Bow Mastery----------------------------
@@ -194,7 +194,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 82,Harmony of the Soul,harmony_of_the_soul,Magic/Buff,,,600,800,party/aoe,1,120,300,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +15% Healing Received, +20% SPT Debuff Resistance",464,0,10kk
 83,Harmony of the Soul,harmony_of_the_soul,Magic/Buff,,,600,800,party/aoe,1,120,300,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +20% Healing Received, +20% SPT Debuff Resistance",464,0,15kk
 ,,,,,,,,,,,,,,,,,,,------------------------------Harmony of Madness------------------------------
-83,Harmony of Madness,harmony_of_madness,Magic/Buff,,,600,800,party/aoe,1,120,300,"−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion.",367,400kk,100kk,,,,,"-10% maximum HP and MP, +8% attack, attack speed and cast speed, +@{ms} move speed, -@{eva} evasion (@{duration})."
+83,Harmony of Madness,harmony_of_madness,Magic/Buff,,,600,800,party/aoe,1,120,300,"−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion.",367,400kk,100kk,,,,,"-10% maximum HP and MP, +8% attack, attack speed and cast speed, +@{ms} move speed, -@{eva} evasion."
 ,,,,,,,,,,,,,,,,,,,---------------------------Harmony of Restoration----------------------------
 76,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +110 HP/s and +11 MP/s for 30s,470,10.5kk,1
 77,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +115 HP/s and +11 MP/s for 30s,476,16.2kk,1k
