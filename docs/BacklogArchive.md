@@ -8260,3 +8260,39 @@ fantasy/gamey like .. just some day haters not to say "I move faster in the town
 - ❓ **One question: the whole town inside the wall (my pick: simple, and the streets carry you everywhere anyway), or
   only while standing ON the drawn streets?** The second needs the street shapes on the server (the `BL-323` geodata
   kind of work).
+
+---
+
+## `BL-331` 📝 REWRITTEN 2026-10-01 — his answer: Route B, game-icons.net (step 1 built in 0.219.0)
+
+**As filed:**
+
+
+His question, 2026-10-01 (My Finds): *"Can we add skill images ? Discussion: How/Can you/what must be done/ where to get
+images and hwat kind/etc"*. **Yes, and nothing in the client stands in the way** — every square already draws a
+coloured box with the skill's initials, so a picture is a swap inside that box.
+
+**What must be done (my side, ~one version):**
+- **One icon key per skill**, defaulting to the skill id; a face row (`skill_faces.csv`) may name another, so a racial
+  variant can look different without becoming a new skill (`BL-327`'s rule: a face, not a copy).
+- **The client loads** `Assets/Resources/SkillIcons/<key>.png` into one sprite atlas (one draw call), and falls back to
+  today's initials when a file is missing, so icons can arrive a few at a time.
+- **Everywhere a skill is drawn**: the bar, the Skills / Learn windows, the buff bar, the cast bar, the skill tree.
+- **A `SkillCsvSeed` report** of which ids still have no picture, so the gap is a list and not a guess.
+
+**What kind:** square **128×128 PNG**, transparent corners, one consistent style. Shown at 64-96 px on the phone. About
+400 distinct pictures cover every player skill once faces are counted (~3-6 MB in the APK, compressed).
+
+**Where from (pick one, or mix):**
+1. **game-icons.net**: 4,000+ fantasy icons, **CC BY 3.0** (free, commercial use OK, a credits line is required).
+   One-colour silhouettes, which suits us: I tint them per school (fire red, holy gold, shadow purple…) so a whole kit
+   reads at a glance. **My pick to start: free, consistent, legal, and I can fit all ~400 myself.**
+2. **A paid icon pack** (Unity Asset Store / itch.io, "RPG skill icons", ~€10-60): painted and full-colour, but a pack
+   rarely has 400, and mixing two packs shows.
+3. **An artist**: the best result and the only truly unique one; €5-30 per icon, so later and for signature skills.
+4. **AI-generated**: fast, but each picture comes out in a slightly different style, and who owns the result is
+   legally unsettled. I would not ship them.
+🔴 Never anything taken from IG or another game's client (the naming rule, `BL-58`, applies to pictures too).
+
+❓ **Your call:** start with (1) as the base set and replace the signature skills later with (2) or (3)? If yes, I build
+the loader + fallback first (no pictures yet, nothing changes on screen), then fill the icons in kit by kit.

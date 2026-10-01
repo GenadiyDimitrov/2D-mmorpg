@@ -513,7 +513,12 @@ public record BuffDto(string Name, string Description, float SecondsLeft, bool I
     /// <para>⚠ Which BAR a buff is drawn in and whether it COUNTS are two different questions, and
     /// they do not always agree — a potion's effect counts but has its own bar. The header counts
     /// this flag across every bar, so the number stays true whatever the grouping does.</para></summary>
-    bool Counts = false);
+    bool Counts = false,
+    /// <summary>`BL-331` — the skill whose PICTURE the square shows (<c>BuffInstance.SourceSkillId</c>: the
+    /// group's id for a group child, else the skill that applied it). Sent for EVERY buff, unlike
+    /// <see cref="SourceSkillId"/>, which is only the grouping key. "" = a synthetic row; the client then
+    /// draws the initials, as it does for any skill with no icon yet.</summary>
+    string IconSkillId = "");
 
 /// <summary>Server -> client: the character's learned skills (id + current level) + SP.</summary>
 public record LearnedSkills(SkillRef[] Skills, int SkillPoints);

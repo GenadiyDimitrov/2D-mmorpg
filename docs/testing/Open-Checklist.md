@@ -19,6 +19,23 @@
 
 ---
 
+## §122 — 0.219.0: skill icons on the skill bar and the buff bar (`BL-331`, 2026-10-01)
+
+Your answer to `BL-331`, *"ok lets do the route B"*. ⚠ **New APK.** No `game.db` delete.
+
+- `122a` [ ] - **Review the icons** on the page: https://claude.ai/artifact/LXQ1CA8WEyRuK99FLn73ni (or
+  `docs/design/SkillIcons.html`). All 356 skills are grouped by class file, with a filter box. Name any you want changed,
+  and to what if you have an idea; or edit its row in `docs/data/skill_icons.csv` (ICON = the end of the icon's address on
+  game-icons.net). Colours by school are in the legend at the top. ->
+- `122b` [ ] - **The skill bar shows pictures.** Each square shows its skill's icon; the number, the "A", the reuse sheet
+  and the cancel X still sit on top of it. A skill you cannot use there (not learned on this class) is greyed. Item and
+  action slots keep their letters. ->
+- `122c` [ ] - **The buff bar shows pictures.** The timer sits on a dark strip at the bottom, a stack count stays at the
+  top, and the colour round the edge still means what it did: red = debuff, blinking = under a minute, grey = gated off.
+  Potions, scrolls and the NPC shelf still show letters (they come from skills no class file lists: `BL-331` step 3). ->
+- `122d` [ ] - **Readable at phone size?** The pictures are drawn at 128 px and shown at ~45-75 px. If any glyph is too
+  fine to read on the phone, name it. ->
+
 ## §121 — 0.218.2: copy that pastes, the Learn page's face, the whole-city sprint, the guide to Cera (2026-10-01)
 
 Your finds and answers from the 0.218.1 pass, quoted in each row. ⚠ **New APK.** No `game.db` delete.

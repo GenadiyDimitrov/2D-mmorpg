@@ -65,3 +65,6 @@ Desktop.ini
 *.gmap
 *.gsite
 *.glink
+
+# `BL-331`: the game-icons.net set, cloned on first run of tools/SkillIcons (only the rendered PNGs are committed)
+tools/SkillIcons/.game-icons/

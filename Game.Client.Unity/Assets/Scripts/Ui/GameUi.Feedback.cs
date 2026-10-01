@@ -142,6 +142,8 @@ namespace Game.Client
         {
             public RectTransform Root;
             public Image Box;
+            /// <summary>`BL-331` — the picture (over the box), and the dark strip that keeps the timer readable on it.</summary>
+            public Image Icon, TimeBack;
             public TextMeshProUGUI Label, Time;
             /// <summary>The buff key(s) this square currently SHOWS — more than one when it is a
             /// collapsed group, and cancelling it must then drop every part of the blessing.</summary>
@@ -171,6 +173,8 @@ namespace Game.Client
             public int Stacks = 1;
             public int Level;
             public string SkillId = "";
+            /// <summary>`BL-331` — whose picture the square shows; "" draws the initials.</summary>
+            public string IconId = "";
             /// <summary>`BL-111` — does this occupy one of the 20 buff slots? Sent by the SERVER off
             /// the same predicate that evicts, never re-derived here: whether a skill counts is
             /// authored per skill and the client cannot see that field. A collapsed GROUP counts if
@@ -214,6 +218,7 @@ namespace Game.Client
                         Name = b.Name, Description = b.Description, Seconds = b.SecondsLeft,
                         IsDebuff = b.IsDebuff, Stacks = b.Stacks, Row = b.Row, Level = b.Level,
                         Suppressed = b.Suppressed, Counts = b.Counts,
+                        IconId = b.IconSkillId,
                     };
                     single.Keys.Add(b.Key);
                     views.Add(single);
@@ -228,6 +233,7 @@ namespace Game.Client
                         Description = b.Description,
                         Seconds = b.SecondsLeft, IsDebuff = b.IsDebuff, Row = b.Row, Level = b.Level,
                         SkillId = b.SourceSkillId, Suppressed = true, Counts = b.Counts,
+                        IconId = b.SourceSkillId,
                     };
                     byGroup[b.SourceSkillId] = view;
                     parts[b.SourceSkillId] = new List<string>();
@@ -565,6 +571,19 @@ namespace Game.Client
 
                 square.Box.color = tint;
                 square.Label.color = buff.Suppressed ? new Color(1f, 1f, 1f, 0.40f) : Color.white;
+
+                // `BL-331` — the picture, when the skill has one. The letters give way to it (a stack count
+                // stays: it is the number being read), and the box's tint becomes a thin frame round it, so
+                // a debuff, the under-a-minute blink and the gated-off grey all still show.
+                var sprite = SkillSprite(buff.IconId);
+                square.Icon.enabled = sprite != null;
+                square.TimeBack.enabled = sprite != null && square.Time.text.Length > 0;
+                if (sprite != null)
+                {
+                    square.Icon.sprite = sprite;
+                    square.Icon.color = buff.Suppressed ? new Color(0.5f, 0.5f, 0.5f, 0.6f) : Color.white;
+                    square.Label.text = buff.Stacks > 1 ? "x" + buff.Stacks : "";
+                }
             }
 
             if (shown == 0) return y;
@@ -603,9 +622,19 @@ namespace Game.Client
                     HideBuffPopup();
                 };
 
+                square.Icon = UiKit.Box(box.transform, "Icon", Color.white, blocksInput: false);
+                UiKit.Stretch(UiKit.Rect(square.Icon.gameObject), 3f, 3f, 3f, 3f);
+                square.Icon.preserveAspect = true;
+                square.Icon.enabled = false;
+
                 square.Label = UiKit.Label(box.transform, "", 14f, UiKit.Text, TextAlignmentOptions.Center);
                 UiKit.Place(UiKit.Rect(square.Label.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                             new Vector2(0f, -3f), new Vector2(42f, 20f));
+
+                square.TimeBack = UiKit.Box(box.transform, "TimeBack", new Color(0f, 0f, 0f, 0.62f), blocksInput: false);
+                UiKit.Place(UiKit.Rect(square.TimeBack.gameObject), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+                            new Vector2(0f, 2f), new Vector2(BuffSize - 4f, 14f));
+                square.TimeBack.enabled = false;
 
                 square.Time = UiKit.Label(box.transform, "", 11f, UiKit.TextDim, TextAlignmentOptions.Center);
                 UiKit.Place(UiKit.Rect(square.Time.gameObject), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),

@@ -91,6 +91,8 @@ namespace Game.Client
         private RectTransform _skillBarPanel;
         private readonly Button[] _slotButtons = new Button[MaxVisibleSlots];
         private readonly TextMeshProUGUI[] _slotFaces = new TextMeshProUGUI[MaxVisibleSlots];
+        /// <summary>`BL-331` — the skill's picture, over the letters; hidden when the skill has none yet.</summary>
+        private readonly Image[] _slotIcons = new Image[MaxVisibleSlots];
         private readonly Image[] _slotBorders = new Image[MaxVisibleSlots];
         /// <summary>The "this stance is ON" ring — one per square, drawn OUTSIDE the green auto ring so
         /// a slot can carry both marks at once (owner, playtest 28: *"toggle skill on the skill bar
@@ -672,6 +674,14 @@ namespace Game.Client
                             at, new Vector2(slot, slot));
                 _slotButtons[i] = button;
                 _slotFaces[i] = button.GetComponentInChildren<TextMeshProUGUI>();
+
+                // `BL-331` — the icon sits over the letters and UNDER everything else (number, "A", count,
+                // the reuse sheet, the cancel X), so every mark the square already carries still reads.
+                var icon = UiKit.Box(button.transform, "Icon", Color.white, blocksInput: false);
+                UiKit.Stretch(UiKit.Rect(icon.gameObject), 3f, 3f, 3f, 3f);
+                icon.preserveAspect = true;
+                icon.enabled = false;
+                _slotIcons[i] = icon;
 
                 // Slot number, top-left, like the WPF squares.
                 var hotkey = UiKit.Label(button.transform, "", 12f, UiKit.TextDim);   // `BL-299`: set per refresh
@@ -1820,6 +1830,17 @@ namespace Game.Client
 
                 bool usable;
                 _slotFaces[i].text = SlotFace(token, out usable);
+
+                // `BL-331` — a skill with a picture shows the picture; the letters stay underneath as the
+                // fallback for one that has none yet. Greyed like the letters when it cannot be used here.
+                var sprite = !string.IsNullOrEmpty(token) && SkillCatalog.Get(token) != null ? SkillSprite(token) : null;
+                _slotIcons[i].enabled = sprite != null;
+                if (sprite != null)
+                {
+                    _slotIcons[i].sprite = sprite;
+                    _slotIcons[i].color = usable ? Color.white : new Color(0.55f, 0.55f, 0.55f, 0.55f);
+                    _slotFaces[i].text = "";
+                }
 
                 // How many of this consumable remain (32n) — 1…99 then "99+", so a full stack of 300
                 // potions cannot push the digits across the face of the square.

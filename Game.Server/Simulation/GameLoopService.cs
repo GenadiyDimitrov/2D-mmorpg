@@ -18884,7 +18884,8 @@ public class GameLoopService : BackgroundService
             b.Suppressed,
             // `BL-111` — off the SAME predicate the eviction uses, so the counter on his bar and the
             // rule that throws a buff away can never disagree.
-            CountsAgainstBuffCap(b.SourceRow, b.Toggle, b.CountsTowardBuffLimit, b.IsDebuff, b.Internal))).ToList();
+            CountsAgainstBuffCap(b.SourceRow, b.Toggle, b.CountsTowardBuffLimit, b.IsDebuff, b.Internal),
+            b.SourceSkillId)).ToList();   // `BL-331`: the picture
 
         // The GRADE PENALTY rides along as a synthetic, never-expiring DEBUFF row. It is not a real
         // BuffInstance (nothing casts it — it's a property of what you're wearing), but without a row on

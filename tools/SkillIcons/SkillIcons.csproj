@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- `BL-331`: the skill icons. Dev tool, deliberately NOT in Game.sln (same rule as SkillCsvSeed and
+       BalanceMatrix): it carries a native dependency (SkiaSharp) the owner's build should never see.
+
+           dotnet run (project: tools/SkillIcons)
+
+       Reads docs/data/skill_icons.csv, renders one 128x128 PNG per skill into
+       Game.Client.Unity/Assets/Resources/SkillIcons/, and writes the review page docs/design/SkillIcons.html.
+       The glyphs are game-icons.net (CC BY 3.0); the set is cloned on first run into .game-icons/ (gitignored). -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Game.Tools.SkillIcons</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Game.Shared\Game.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" Version="4.153.1" />
+  </ItemGroup>
+
+</Project>

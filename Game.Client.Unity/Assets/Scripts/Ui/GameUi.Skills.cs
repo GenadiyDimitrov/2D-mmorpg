@@ -817,6 +817,27 @@ namespace Game.Client
             return string.IsNullOrWhiteSpace(def.Abbrev) ? Abbreviations.For(def.Name) : def.Abbrev;
         }
 
+        private static readonly Dictionary<string, Sprite> SkillSprites = new Dictionary<string, Sprite>();
+
+        /// <summary>`BL-331` — a skill's PICTURE: <c>Resources/SkillIcons/&lt;skill id&gt;.png</c>, rendered by
+        /// <c>tools/SkillIcons</c> from docs/data/skill_icons.csv. Null when the skill has none yet, and every caller
+        /// falls back to the letters — so icons can arrive a few at a time. Loaded once per id (a miss is
+        /// cached too: the bar refreshes every frame).</summary>
+        internal static Sprite SkillSprite(string skillId)
+        {
+            if (string.IsNullOrEmpty(skillId)) return null;
+            if (SkillSprites.TryGetValue(skillId, out var cached)) return cached;
+            var tex = Resources.Load<Texture2D>("SkillIcons/" + skillId);
+            Sprite sprite = null;
+            if (tex != null)
+            {
+                tex.wrapMode = TextureWrapMode.Clamp;
+                sprite = Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100f);
+            }
+            SkillSprites[skillId] = sprite;
+            return sprite;
+        }
+
         /// <summary>`BL-327` — the FACE this character wears for a skill (docs/data/skill_faces.csv): its class
         /// lineage first, then its race, then the blank row. The server resolves the same face for the cast
         /// bar, combat text and buffs, so every surface names a skill the same way.</summary>

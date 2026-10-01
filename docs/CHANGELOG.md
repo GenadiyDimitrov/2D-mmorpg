@@ -24,7 +24,29 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-01 (latest) — 0.218.2: copy reaches the phone's clipboard, the Learn page wears the face, Paved Streets = the whole city, a guide to Cera
+## 2026-10-01 (latest) — 0.219.0: skill icons on the skill bar and the buff bar (`BL-331`)
+
+His answer to `BL-331`: *"ok lets do the route B"*, game-icons.net. **New APK** (the pictures live in the client). No
+`game.db` delete. Checklist §122.
+
+- **`docs/data/skill_icons.csv`** (new, his to edit): one row per skill, `SKILL_ID,ICON,SCHOOL,COMMENT`. All **356**
+  class-CSV skills matched to a game-icons.net glyph and one of 18 colour schools. A racial variant, a harmony, a healer
+  single and a whisp wear the glyph of the skill they mirror, in their own colour.
+- **`tools/SkillIcons`** (new dev tool, not in `Game.sln`; SkiaSharp): clones the icon set on first run (gitignored),
+  validates every row, renders 128×128 PNGs into `Assets/Resources/SkillIcons/<skill id>.png` (passives dimmer), deletes
+  stale ones, and writes the review page **`docs/design/SkillIcons.html`**. Every game-icons.net file is one white path on
+  a black square, so the path is drawn directly: no SVG library.
+- **Client:** `GameUi.SkillSprite(id)` loads and caches the sprite (a miss is cached too). The skill bar draws it over the
+  letters, under the number, "A", count, reuse sheet and cancel X; greyed when the skill cannot be used. The buff bar
+  draws it inside the square's tint (debuff red, expiry blink and gated-off grey stay visible as a frame), with the timer
+  on a dark strip and the stack count kept. No icon = the letters, as before.
+- **Wire:** `BuffDto.IconSkillId` (optional, defaults to "") = `BuffInstance.SourceSkillId` for every buff, so a group's
+  square shows the group's picture. No protocol bump.
+- **`docs/CREDITS.md`** (new): the CC BY 3.0 credit.
+- Still letters: the Skills / Learn windows, the cast bar, the Skill Tree page, and buffs from skills no class CSV lists
+  (potions, scrolls, the NPC shelf, mob debuffs). Listed in `BL-331`.
+
+## 2026-10-01 — 0.218.2: copy reaches the phone's clipboard, the Learn page wears the face, Paved Streets = the whole city, a guide to Cera
 
 His answers from the 0.218.1 pass. **New APK** (the clipboard and the Learn page are client). No `game.db` delete.
 Checklist §121.
