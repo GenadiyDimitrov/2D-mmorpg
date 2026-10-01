@@ -24,7 +24,30 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-01 (latest) — 0.218.1: the Android text boxes, found at last: a caret, mid-text taps, Copy / Cut / All
+## 2026-10-01 (latest) — 0.218.2: copy reaches the phone's clipboard, the Learn page wears the face, Paved Streets = the whole city, a guide to Cera
+
+His answers from the 0.218.1 pass. **New APK** (the clipboard and the Learn page are client). No `game.db` delete.
+Checklist §121.
+
+- 🔑 **§119c, Copy / Cut never reached the keyboard.** The strip wrote `GUIUtility.systemCopyBuffer`, which on the phone is
+  NOT Android's clipboard under GameActivity: the text left the box and could not be pasted anywhere. New `UiKit.Clipboard`
+  calls Android's own `ClipboardManager` on the UI thread (the Editor keeps `systemCopyBuffer`).
+- **His find, an unlearned skill's page showed the plain text.** The Learn confirm read `def.DescriptionAt` instead of the
+  face (`SkillDescriptionAt`), so a racial buff described itself in the plain words until you owned it. One line in
+  `GameUi.Skills.cs`.
+- **§118a, Paved Streets now covers the WHOLE city** (*"We can make it in the whole city.. no point only on the streets"*):
+  the same city test as the Favor minute (`WorldMap.SafeZoneAt`, a city with `RegenBoost`). `TownLayout.OnStreet` deleted.
+  The gardens and mud that slow you later are `BL-328`.
+- **§116d, his Frost Spikes text** (`mage 1st.csv`): *"…and slows them down with 15%."* Faces regenerated.
+- **His find, a new character is told where Cera is.** Born holding **"Adventure Begins"** (pinned to the tracker):
+  *"Go meet Cera, our Adventurers Guild Receptionist. She has something important to tell you"*. Talking to her closes
+  it on the spot, with no reward, and "Welcome, Traveller" is in the same window. New quest flag **`QuestDef.Guide`**:
+  granted, never offered by an NPC, closes itself on its last TalkTo, can be abandoned and never returns, and the log
+  lists it only while you hold it. Characters made before 0.218.2 do not get it (nothing to migrate pre-release).
+- SmokeTest: the "empty buff bar on arrival" check sets Paved Streets aside (a new character spawns inside the town now).
+  **ALL CHECKS PASSED.**
+
+## 2026-10-01 — 0.218.1: the Android text boxes, found at last: a caret, mid-text taps, Copy / Cut / All
 
 His F1-F3 from the 0.216.0 farm pass: *"still dont see the cursor when typing"*, *"still cannot copy text (paste
 works)"*, *"still cannot select part of text or go to its middle"*. **New APK.** No `game.db` delete. Checklist §119.

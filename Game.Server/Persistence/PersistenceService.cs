@@ -544,6 +544,12 @@ public class PersistenceService
             Spt = stats.Spt,
             X = GameConstants.ZoneWidth / 2,
             Y = GameConstants.ZoneHeight / 2,
+            // Born holding the signpost to Cera, pinned to the tracker (owner, 2026-10-01: she is out of view of the
+            // plaza). It closes itself when she is spoken to — see QuestDef.Guide.
+            ActiveQuestsJson = JsonSerializer.Serialize(new List<CharacterQuestState>
+            {
+                new(QuestCatalog.QuestAdventureBegins, StepIndex: 0, Counter: 0, Completed: false, Tracked: true),
+            }),
         };
 
         // The character's FIRST class (slot 0). The load path can also reconstruct this from the mirror

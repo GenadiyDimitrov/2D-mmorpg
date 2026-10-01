@@ -328,8 +328,8 @@ public static class MovementTuning
     /// pays the full recovery regardless: that is a combat interrupt, not a voluntary stand.</summary>
     public const float SettledSeconds = 3f;
 
-    /// <summary>`BL-324` PAVED STREETS — flat run speed added while RUNNING on a city's streets
-    /// (<see cref="TownLayout.OnStreet"/>) and out of combat. Added after every buff, then the usual
+    /// <summary>`BL-324` PAVED STREETS — flat run speed added while RUNNING anywhere inside a city
+    /// (its safe zone, `WorldMap.SafeZoneAt` with RegenBoost) and out of combat. Added after every buff, then the usual
     /// <see cref="StatCaps.MoveSpeed"/> clamp, so it never lifts anyone past 250. Walking is a choice and
     /// does not get it.</summary>
     public const float PavedStreetsRunBonus = 50f;

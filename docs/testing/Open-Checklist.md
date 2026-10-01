@@ -19,13 +19,43 @@
 
 ---
 
+## §121 — 0.218.2: copy that pastes, the Learn page's face, the whole-city sprint, the guide to Cera (2026-10-01)
+
+Your finds and answers from the 0.218.1 pass, quoted in each row. ⚠ **New APK.** No `game.db` delete.
+
+- `121a` [ ] - **Copy / Cut reach the keyboard now** (your 119c: *"they deselect/remove but it dont enters the keyboard
+  clipboard and cannot be pasted back"*). The strip wrote Unity's own copy buffer, which on the phone is not Android's
+  clipboard; it now writes Android's. Copy a word, paste it back with the keyboard, and in another app. ->
+- `121b` [ ] - **An unlearned skill's page wears the face** (your find: *"when the skill is not yet learned … its
+  description is the default one"*). Open a racial buff in the Learn list before you own it: same text as after. ->
+- `121c` [ ] - **Paved Streets = the whole city** (your 118a). Anywhere inside a city, out of combat and running: +50.
+  Your gardens/mud idea is written into `BL-328`. ->
+- `121d` [ ] - **A new character is born holding "Adventure Begins"** (your find, your text), pinned to the tracker with
+  the arrow on Cera. Talk to her: it is gone, no reward, and "Welcome, Traveller" is in her window. Abandon it instead:
+  it never comes back. Only characters made on 0.218.2 or later have it. ->
+- `121e` [ ] - **Skill images (your `?`)**: my answer is `BL-331` in the Backlog: what it takes, picture size, and four
+  places to get them. My pick is game-icons.net (free, CC BY 3.0, one style, tinted per school). Your call on the
+  source. ->
+
+---
+
 ## §120 — the Skill Tree page, step 1 of `BL-330` (2026-10-01)
 
 Not in the game: a web page, https://claude.ai/artifact/XWdiQ5hCA42HF6qn7zPXBo. Pick a race, then Fighter or Mage, then
 the 2nd and 3rd class; each section lists what that class adds, and tapping a skill shows its text and every level it is
 learned at. It is generated from the game's own tables, so a wrong row here is a wrong row in the game.
 
-- `120a` [ ] - **Is this the shape you wanted** before it goes in game (at character creation and the class masters)? ->
+- `120a` [~] - **Is this the shape you wanted** before it goes in game (at character creation and the class masters)? ->
+  - when skill is expanded 
+    > Light Armor Mastery --- Passive\
+    > Increase defense when wearing Light armor with 35\
+    > Learned at levels 20 · 25 · 30 · 35 <- This part to become:\
+    > Level 20: Increase defense when wearing Light armor with 20\
+    > Level 25: Increase defense when wearing Light armor with 25\
+    > Level 30: Increase defense when wearing Light armor with 30\
+    > Level 35: Increase defense when wearing Light armor with 35\
+  - in a way a expanded skill to expand downwards as "per lvl" rows and each row to show its own descirpion -> to compare powers etc
+  - otherwise is very awesome! I like it
 
 ---
 
@@ -37,15 +67,16 @@ there and moving, just invisible), and Android's own copy menu **cannot exist** 
 GameActivity, which has no native text box to hang that menu on). So copy is a small strip of ours, shown only while you
 have text selected; paste stays the keyboard's.
 
-- `119a` [ ] - **The caret:** tap any text box (chat, login, a gold amount, a window's search) and type. A blinking bar
+- `119a` [x] - **The caret:** tap any text box (chat, login, a gold amount, a window's search) and type. A blinking bar
   shows where you are typing. ->
-- `119b` [ ] - **The middle of the text:** type a line in chat, then tap between two letters. The caret goes there, and
+- `119b` [x] - **The middle of the text:** type a line in chat, then tap between two letters. The caret goes there, and
   typing or deleting changes the middle, not the end. A box that already holds text and gets focus from code (Reply, the
   whisper action) still starts at the end. ->
-- `119c` [ ] - **Select + copy:** drag your finger across part of the text, or double-tap a word. It highlights, and a
+- `119c` [!] - **Select + copy:** drag your finger across part of the text, or double-tap a word. It highlights, and a
   **Copy / Cut / All** strip appears just above the box. Copy, then paste with the keyboard somewhere else. Cut removes the
-  part, All selects everything. Password boxes have no strip, on purpose. ->
-- `119d` [ ] - **Chat box specifically:** it no longer has Android's own input strip above the keyboard (0.114.0's attempt
+  part, All selects everything. Password boxes have no strip, on purpose. -> I tried cut/copy they deselec/remove but it dont enters the keyboard clipboard and cannot be pasted back
+    - the selection works
+- `119d` [x] - **Chat box specifically:** it no longer has Android's own input strip above the keyboard (0.114.0's attempt
   at the native menu, which never worked here and cost chat its caret). You type straight into our box like every other
   one. Anything wrong with how it sits above the keyboard now? ->
 
@@ -55,9 +86,9 @@ have text selected; paste stays the keyboard's.
 
 No new APK (the server sends the speed and the bar row). No `game.db` delete.
 
-- `118a` [ ] - **Run on a city's plaza, roads or side paths, out of combat:** a "Paved Streets" row appears on the buff
+- `118a` [~] - **Run on a city's plaza, roads or side paths, out of combat:** a "Paved Streets" row appears on the buff
   bar and you run +50 faster (never past 250). Step off the paving, walk instead of run, or get into a fight and it goes.
-  Does the edge of the road feel right, or too strict (a road's width is 270 in the big cities, 210 in Stonewatch/Ironreach)? ->
+  Does the edge of the road feel right, or too strict (a road's width is 270 in the big cities, 210 in Stonewatch/Ironreach)? -> We can make it in the whole city.. no point only on the streets its usless logic. U run in town faster -> the description says so .. later when we add mud etc and we add "gardens" in towns when player walks across it it will hinder him even +50 speed it will look like he is moveing where not suppose to
 - `118b` [ ] - **Re-measure the Demon buffer** from your farm pass (Bdd needed ~2 h more than the Elves to 40) now that
   0.217.4 gave Human/Demon priests Holy Spike and Monster Knowledge and 0.217.5 cut the 40-75 SP. Is the Demon still
   behind, and by how much? ->
@@ -77,14 +108,14 @@ No new APK (the server sends the speed and the bar row). No `game.db` delete.
 
 ⚠ **New APK.** No `game.db` delete.
 
-- `116a` [ ] - **Human/Demon cleric learns Holy Spike at 20/25/30/35** (Demon sees "Spirit Spike"). It hits a monster;
+- `116a` [x] - **Human/Demon cleric learns Holy Spike at 20/25/30/35** (Demon sees "Spirit Spike"). It hits a monster;
   aimed at a player it is refused outright. The Elf cleric does not get it. ->
-- `116b` [ ] - **Monster Knowledge** for the Human/Demon cleric at 35 (+5%), then the Human/Demon Warchanter at 40/48/52
+- `116b` [x] - **Monster Knowledge** for the Human/Demon cleric at 35 (+5%), then the Human/Demon Warchanter at 40/48/52
   (+10/15/20%). The Lightbringer stops at +5%. ->
-- `116c` [ ] - **At 40 the spike and the bolt leave:** Holy Ray (Lightbringer) retires both; Sound Smash / Acoustic Shock
+- `116c` [x] - **At 40 the spike and the bolt leave:** Holy Ray (Lightbringer) retires both; Sound Smash / Acoustic Shock
   retire both on the Human/Demon Warchanter, Sound Burst retires the bolt on the Elf. The race spell (Vampiric Bolt /
   Frost Spikes) stays. ->
-- `116d` [ ] - **Frost Spikes' description** reads "Slow the enemy for 15%." (new `@{slow}` placeholder). ->
+- `116d` [~] - **Frost Spikes' description** reads "Slow the enemy for 15%." (new `@{slow}` placeholder). -> Its ok the @{slow} works, I just made it sound redundant "and slows them down. Slows the enemy ...."
 
 ---
 
@@ -92,13 +123,13 @@ No new APK (the server sends the speed and the bar row). No `game.db` delete.
 
 ⚠ **New APK.** No `game.db` delete.
 
-- `115a` [ ] - **3rd-class single buffs wear the caster's race:** a Human healer/buffer casts "Blessing: Ferocity", an
+- `115a` [x] - **3rd-class single buffs wear the caster's race:** a Human healer/buffer casts "Blessing: Ferocity", an
   Elf "Forest Ferocity", a Demon "Demonic Contract: Ferocity" — the same for Fortitude, Endurance, Wellspring, Serenity,
   Insight, Fury, Guard, Bastion, Mana, Great Strength, Great Bulwark. Renamed nouns are mine, change any: Body →
   Endurance, Soul → Wellspring, Shield Blessing → Guard, Shield Hardening → Bastion. ->
-- `115b` [ ] - **Buffer's equipment passives cost 0 SP at 40:** Heavy Caster Mastery (Human/Demon) and Harmonist Bow
+- `115b` [x] - **Buffer's equipment passives cost 0 SP at 40:** Heavy Caster Mastery (Human/Demon) and Harmonist Bow
   Proficiency (Elf); learning Heavy Caster Mastery removes Light Caster Mastery. ->
-- `115c` [ ] - **Archer 4th Light armor Evasion** reads +13..+17 (2 under the dagger). ->
+- `115c` [x] - **Archer 4th Light armor Evasion** reads +13..+17 (2 under the dagger). ->
 
 ---
 
@@ -108,13 +139,13 @@ No new APK (the server sends the speed and the bar row). No `game.db` delete.
 `DESCRIPTION` is the text; `skill_faces.csv` holds only race/class exceptions; `skill_faces_other.csv` the skills no
 class learns. The game should read EXACTLY as before, except for the rows below.
 
-- `114a` [ ] - **Spirit helper window:** every blessing reads "NPC Might", "NPC Aim", "NPC Harmony of the Might" … and
+- `114a` [x] - **Spirit helper window:** every blessing reads "NPC Might", "NPC Aim", "NPC Harmony of the Might" … and
   the Marks read "NPC Blood Mark" / "NPC Holy Mark" / "NPC Life Mark". The buff bar shows the SAME name (no "NPC NPC").
   A healer's own Blood Mark still reads "Blood Mark". ->
-- `114b` [ ] - **Your new racial faces:** Elf "Forest Strength" / Demon "Fire Strength" (Might), Elf "Forest Bulwark" /
+- `114b` [x] - **Your new racial faces:** Elf "Forest Strength" / Demon "Fire Strength" (Might), Elf "Forest Bulwark" /
   Demon "Fire Defence", Human "Blessing of Swiftness" / Elf "Wind Flow" / Demon "Hell" (Swift — ⚠ is "Hell" the name you
   meant?), and the Elf harmonist's Bow Expertise text. ->
-- `114c` [ ] - **Typo fixes carried into the CSVs** (the game already showed the right spelling): Wirlwind → Whirlwind,
+- `114c` [x] - **Typo fixes carried into the CSVs** (the game already showed the right spelling): Wirlwind → Whirlwind,
   Shattaring → Shattering Shout, Bow Stence → Bow Stance, Domonic → Demonic Blessing, Monster Knowlege → Knowledge,
   Healers Power → Healer's Power, rogue 2nd "Critical Damage" → Critical Damage Mastery, and capitals (Arrow Barrage,
   Ultimate Party Heal, Life/Blood/Vanguard Support, Over the Limit); buffs.csv harmonies → "NPC Harmony of …". Nothing
@@ -128,12 +159,12 @@ class learns. The game should read EXACTLY as before, except for the rows below.
 The engine still climbs the shared ladder (that is what lets one skill serve every class); the LABEL now counts your own
 class path's steps, from your 1st class on.
 
-- `113a` [ ] - **Cleric @30 learns Agility → "Agility Lv.1"** (+2 Evasion); Lightbringer/Warchanter @44 → Lv.2 (+3), @52
+- `113a` [x] - **Cleric @30 learns Agility → "Agility Lv.1"** (+2 Evasion); Lightbringer/Warchanter @44 → Lv.2 (+3), @52
   → Lv.3 (+4). The buff bar shows the same Lv on whoever you buff. ->
-- `113b` [ ] - **Rogue/archer Critical Damage Mastery** reads Lv.1, 2, 3 … with no gaps; a 3rd-class rung continues from
+- `113b` [x] - **Rogue/archer Critical Damage Mastery** reads Lv.1, 2, 3 … with no gaps; a 3rd-class rung continues from
   your 2nd-class count. The learn confirm's "Now → After" shows YOUR current numbers. ->
-- `113c` [ ] - **NPC buffer:** the bar reads **"NPC Might"**, "NPC Agility" … with no level. Potions/scrolls: no level. ->
-- `113d` [ ] - **Your question — rename shared passives per class?** Archer and dagger both show "Critical Damage Mastery
+- `113c` [x] - **NPC buffer:** the bar reads **"NPC Might"**, "NPC Agility" … with no level. Potions/scrolls: no level. ->
+- `113d` [x] - **Your question — rename shared passives per class?** Archer and dagger both show "Critical Damage Mastery
   Lv.8" at 46, one +252, the other +282. My take: not a bug players will report (each sees only his own), but the face
   file makes a per-class name free — a CLASS row in `skill_faces.csv`, no code. Worth it where the numbers split hard
   (crit damage: +665 vs +1015 at 74), not for every ladder. Your names, if you want them. ->
@@ -158,14 +189,14 @@ The seed: 767 skills, actives first. 144 cells are EMPTY on purpose (the game's 
 one — their COMMENT shows the top level's wording); a COMMENT with "typed numbers kept" means a number I could not tie to
 the skill's data, so it is fixed text.
 
-- `112a` [ ] - **Elf / Demon healer:** the bar, the skill window and the Learn list say **Moonlight / Spirit Bolt** (they
+- `112a` [x] - **Elf / Demon healer:** the bar, the skill window and the Learn list say **Moonlight / Spirit Bolt** (they
   said Holy Bolt), the cast bar says the same, and the bar square lights up while you cast it (it did not before). ->
-- `112b` [ ] - **Mage at 7 learns ONE Might**, named for your race (Forest Might / Demonic Strength / Blessing of Might);
+- `112b` [x] - **Mage at 7 learns ONE Might**, named for your race (Forest Might / Demonic Strength / Blessing of Might);
   a cleric at 20 continues the same skill at rung 2 under the same name. ->
-- `112c` [ ] - **An Elf buffs a Human:** the Human's buff bar reads **Forest Might** with the Elf's text — and still does
+- `112c` [x] - **An Elf buffs a Human:** the Human's buff bar reads **Forest Might** with the Elf's text — and still does
   after the Human relogs. ->
-- `112d` [ ] - **Harmony of Protection** tooltip at 44 / 56 / 76 shows only what that level gives. ->
-- `112e` [ ] - Rogue 2nd's "Critical Damage" is now **Critical Damage Mastery** (the CSV NAME is a label now, the face is
+- `112d` [x] - **Harmony of Protection** tooltip at 44 / 56 / 76 shows only what that level gives. ->
+- `112e` [x] - Rogue 2nd's "Critical Damage" is now **Critical Damage Mastery** (the CSV NAME is a label now, the face is
   the name). Add a class row if you want the short name back. ->
 
 ---
@@ -181,9 +212,9 @@ skill; your archer example is marked `owner`, the rest `default`). Edit a WEIGHT
 "the sum divided by the count". The passive ×k is gone; each level costs what it cost before (affordability unchanged,
 except Elf Ravager 0.72→0.78 and Magus 0.60→0.57-0.63, whose three races' kits differ).
 
-- `111a` [ ] - **Archer at 60**: Light Armor / Bow / Crit Damage Mastery 94.7k each, Critical Resist, Signal Flare and
+- `111a` [x] - **Archer at 60**: Light Armor / Bow / Crit Damage Mastery 94.7k each, Critical Resist, Signal Flare and
   Bow Stance 287k, Twin Arrows / Explosive Arrow / your trap / your Magic Arrow 431k. Is that the shape you wanted? ->
-- `111b` [ ] - **Skim `sp_weights.csv`** (318 skills): anything at the wrong weight? A passive you rate higher (like
+- `111b` [x] - **Skim `sp_weights.csv`** (318 skills): anything at the wrong weight? A passive you rate higher (like
   Critical Resist at 1), or an active that is only utility? ->
 - `111c` [x] - **In game, the Learn tab** shows the new prices at 20-75 (passives far cheaper, actives dearer). -> passed (your [x] on the version in the 2026-10-01 note)
 
@@ -194,18 +225,18 @@ minor towns Y, the majors at r 3000, NPCs at the door, and the **Adventurers Gui
 Your two side ideas are filed: server-side collision is **`BL-323`** (waits on the models) and the town sprint is **`BL-324`**.
 ⚠ **New APK.** The old one still connects but draws no streets.
 
-- `108a` [ ] - **Brackenford is an X.** Four roads from the plaza to four gates, with two guards at each. The church is
+- `108a` [x] - **Brackenford is an X.** Four roads from the plaza to four gates, with two guards at each. The church is
   north-west (Vael, Oren, Marius, and the Mindwright at its north door). Arms & Armour and the Apothecary are north-east,
   the Keeper south-east, and the crafthall south-west (Master Crafter at the south door, Anvil right behind him). Does it
   read as a town? ->
-- `108b` [ ] - **Greymarsh and Frostmere are the same X, now r 3000**, with their fields 1000 further out. Greymarsh
+- `108b` [x] - **Greymarsh and Frostmere are the same X, now r 3000**, with their fields 1000 further out. Greymarsh
   has the Grandmaster at the church and the Assayer beside the Apothecary; Frostmere has the Archmaster, Ledgerkeep Mora at
   the Keeper's side door, and the three recipe givers at the crafthall. Is the walk too long? (That is `BL-324`'s job.) ->
-- `108c` [ ] - **Stonewatch and Ironreach are Ys.** Stonewatch's stem points south at Brackenford; Ironreach is the
+- `108c` [x] - **Stonewatch and Ironreach are Ys.** Stonewatch's stem points south at Brackenford; Ironreach is the
   same Y turned round (stem north). Guild up the short road, shrine and keeper in the side wedges, shops on the stem. ->
-- `108d` [ ] - **The Guild Receptionist** (was the Huntmaster) gives the same contracts under the new name; the
+- `108d` [x] - **The Guild Receptionist** (was the Huntmaster) gives the same contracts under the new name; the
   tutorial's first step now says "Pell on the plaza". ->
-- `108e` [ ] - **The roads between towns leave through a gate** and meet the other town's gate. Tap to move inside a
+- `108e` [x] - **The roads between towns leave through a gate** and meet the other town's gate. Tap to move inside a
   building's footprint: the move marker must still show on top. ->
 - - ->
 

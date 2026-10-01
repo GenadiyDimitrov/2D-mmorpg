@@ -3154,8 +3154,8 @@ await gm.DisposeAsync();
         Check("the buff bar is pushed on ARRIVAL, so a client can never keep a stale one",
               br.Buffs is not null,
               br.Buffs is null ? "no \"Buffs\" push in 8s" : "a \"Buffs\" push arrived");
-        Check("...and it is EMPTY for a character carrying nothing",
-              br.Buffs is null || br.Buffs.Buffs.Length == 0,
+        Check("...and it is EMPTY for a character carrying nothing (Paved Streets aside: a new character is born in town, 0.218.2)",
+              br.Buffs is null || br.Buffs.Buffs.All(b => b.Name == "Paved Streets"),
               br.Buffs is null ? null : $"{br.Buffs.Buffs.Length} row(s): "
                   + string.Join(", ", br.Buffs.Buffs.Select(b => b.Name)));
     }

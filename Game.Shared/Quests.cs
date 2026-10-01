@@ -156,7 +156,11 @@ public record QuestDef(
     //       and T80 quests are one group, so between 80 and 85 handing in one locks the other out for the day
     //       (owner, Q4 follow-up: "one or the other"). While one is ACTIVE its siblings are not offered either,
     //       which is what stops a player holding both and handing in both. null = the quest's own id.
-    string? DailyGroup = null)
+    string? DailyGroup = null,
+    // ----- GUIDE (owner, 2026-10-01): a signpost, not an errand. NO NPC offers it — the server GRANTS it (today: at
+    //       character creation) — and it closes ITSELF, with no reward, the moment its last TalkTo NPC is spoken
+    //       to. It can be abandoned and never comes back; abandoned or done, the quest log stops listing it.
+    bool Guide = false)
 {
     /// <summary>The key of this quest's daily stamp: its <see cref="DailyGroup"/>, else its own id.</summary>
     public string DailyKey => DailyGroup ?? Id;
@@ -331,6 +335,7 @@ public static partial class QuestCatalog
         foreach (var q in AllQuests)
         {
             if (!q.GivenBy(npcId)) continue;
+            if (q.Guide) continue;   // granted, never offered
             // LEVEL RANGE, not just a floor (owner): a quest you have outgrown stops being offered
             // rather than sitting in the list for a level-60 to farm. Class quests set no ceiling.
             if (!q.LevelInRange(level)) continue;

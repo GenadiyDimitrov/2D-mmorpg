@@ -158,7 +158,7 @@ namespace Game.Client
                              + (def.MaxLevel > 1 && !def.HasLevelNames ? "   Lv." + ShownLevel(def.Id, newLevel) : "");
 
             var t = new System.Text.StringBuilder();
-            string desc = def.DescriptionAt(newLevel);
+            string desc = SkillDescriptionAt(def, newLevel);   // the FACE — `def.DescriptionAt` is the plain text
             if (!string.IsNullOrWhiteSpace(desc)) t.AppendLine(desc).AppendLine();
 
             // What you OWN, not `newLevel - 1`: a shared ladder skips rungs, and the one below is often another class's.

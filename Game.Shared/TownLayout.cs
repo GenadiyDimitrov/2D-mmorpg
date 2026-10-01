@@ -136,33 +136,6 @@ public static class TownLayout
 
     public static TownPlan? PlanOf(string townId) => Plans.FirstOrDefault(p => p.TownId == townId);
 
-    /// <summary>`BL-324` — is (x,y) on a city's PAVING: the plaza, a main road or a side path? The roads end at
-    /// the wall, so this is also "inside the walls". Owner, 2026-10-01: *"the 'Only Streets' effect idea is
-    /// good"* — the street shapes were already here, so no geodata is needed for it.</summary>
-    public static bool OnStreet(float x, float y)
-    {
-        var at = new Vec2(x, y);
-        foreach (var plan in Plans)
-        {
-            // Cheap reject: nothing of a plan lies further from its centre than its longest road.
-            float dx = x - plan.Centre.X, dy = y - plan.Centre.Y;
-            if (dx * dx + dy * dy > 4000f * 4000f) continue;
-            if (dx * dx + dy * dy <= plan.PlazaRadius * plan.PlazaRadius) return true;
-            foreach (var s in plan.Roads)
-                if (DistToSegment(at, s.A, s.B) <= s.Width / 2f) return true;
-        }
-        return false;
-    }
-
-    private static float DistToSegment(Vec2 p, Vec2 a, Vec2 b)
-    {
-        float vx = b.X - a.X, vy = b.Y - a.Y;
-        float len2 = vx * vx + vy * vy;
-        float t = len2 <= 0f ? 0f : Math.Clamp(((p.X - a.X) * vx + (p.Y - a.Y) * vy) / len2, 0f, 1f);
-        float cx = a.X + t * vx - p.X, cy = a.Y + t * vy - p.Y;
-        return MathF.Sqrt(cx * cx + cy * cy);
-    }
-
     /// <summary>Where a road leaves town toward (tx,ty): the gate whose outward direction is closest to that
     /// bearing. The world's inter-city roads run centre → this gate → the other town's gate → its centre.</summary>
     public static Vec2 GateToward(string townId, float tx, float ty)

@@ -106,8 +106,31 @@ public static partial class QuestCatalog
     public const string QuestTutorialBlooded = "tutorial_blooded";
     public const string QuestTutorialTrade = "tutorial_trade";
 
+    /// <summary>The signpost every new character is born holding (owner, 2026-10-01: *"we must tell players when they
+    /// are born ... how to get to cera"* — she is up the north road, out of view of the plaza where you spawn). A
+    /// <see cref="QuestDef.Guide"/>: granted at creation, closed by speaking to her, no reward, never re-taken.</summary>
+    public const string QuestAdventureBegins = "tutorial_arrival";
+
     static partial void RegisterTutorialChain()
     {
+        // ---- PART 0: the walk to Cera. Its own quest, not a step of part 1 — she GIVES part 1, and his spec is that
+        // this one disappears when you reach her and THEN you take "Welcome, Traveller". OfferNpcId is hers so the
+        // client's tracker arrow points at her; `Guide` keeps her from ever offering it.
+        Register(new QuestDef(
+            Id: QuestAdventureBegins,
+            Name: "Adventure Begins",
+            Description: "You have arrived in Brackenford with nothing but the clothes on your back. The Adventurers "
+                       + "Guild takes in newcomers: find its receptionist, Cera, up the north road.",
+            OfferNpcId: NpcHuntmaster,
+            Steps: new[]
+            {
+                new QuestStep(QuestStepType.TalkTo,
+                    "Go meet Cera, our Adventurers Guild Receptionist. She has something important to tell you",
+                    TargetId: NpcHuntmaster),
+            },
+            Reward: new QuestReward(),
+            Guide: true));
+
         // ---- PART 1 (beats 1-3): Pell, five pups, level 3, back to Cera. -------------------------
         // Cera GIVES it rather than Pell: beat 1 is "go and meet the gatekeeper", and a quest whose
         // first step is "talk to the man who just gave it to you" reads as a bug. She stands beside

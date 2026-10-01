@@ -758,7 +758,7 @@ namespace Game.Client
 
         private void Copy()
         {
-            GUIUtility.systemCopyBuffer = Selected();
+            Clipboard.Set(Selected());
             PlaceCaret(SelectionStart() + SelectionLength());   // the strip goes: the copy happened
         }
 
@@ -766,7 +766,7 @@ namespace Game.Client
         {
             if (_field.readOnly) { Copy(); return; }
             int start = SelectionStart(), len = SelectionLength();
-            GUIUtility.systemCopyBuffer = _field.text.Substring(start, len);
+            Clipboard.Set(_field.text.Substring(start, len));
             _field.text = _field.text.Remove(start, len);
             PlaceCaret(start);
         }
@@ -821,6 +821,41 @@ namespace Game.Client
             public void OnBeginDrag(PointerEventData _) { }
             public void OnDrag(PointerEventData _) { }
             public void OnEndDrag(PointerEventData _) { }
+        }
+    }
+
+    /// <summary>Writes to the OS clipboard, so a copy can be pasted from the keyboard and in other apps.
+    ///
+    /// 🔑 On the phone <c>GUIUtility.systemCopyBuffer</c> is NOT the OS clipboard under GameActivity
+    /// (0.218.1's strip used it: the text left the box and never reached the keyboard, §119c). Android
+    /// gets Android's own <c>ClipboardManager</c>, called on the UI thread: a ClipboardManager made on a
+    /// thread with no Looper throws on older Androids. The Editor keeps systemCopyBuffer, which works there.</summary>
+    public static class Clipboard
+    {
+        public static void Set(string text)
+        {
+            text ??= "";
+#if UNITY_ANDROID && !UNITY_EDITOR
+            try
+            {
+                using var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                var activity = player.GetStatic<AndroidJavaObject>("currentActivity");
+                activity.Call("runOnUiThread", new AndroidJavaRunnable(() =>
+                {
+                    try
+                    {
+                        using var manager = activity.Call<AndroidJavaObject>("getSystemService", "clipboard");
+                        using var clipData = new AndroidJavaClass("android.content.ClipData");
+                        using var clip = clipData.CallStatic<AndroidJavaObject>("newPlainText", "text", text);
+                        manager.Call("setPrimaryClip", clip);
+                    }
+                    catch (Exception e) { Debug.LogWarning("Clipboard: " + e.Message); }
+                }));
+                return;
+            }
+            catch (Exception e) { Debug.LogWarning("Clipboard: " + e.Message); }
+#endif
+            GUIUtility.systemCopyBuffer = text;
         }
     }
 }

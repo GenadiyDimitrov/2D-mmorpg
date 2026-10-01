@@ -11560,7 +11560,10 @@ public class GameLoopService : BackgroundService
         // `BL-324` (owner, 2026-10-01: *"Agree with your proposal -> automatic visible buff"*, *"the 'Only Streets'
         // effect idea is good"*): on a city's paving and out of combat = +50 run, shown on the buff bar so the
         // speed is never unexplained. Re-sent only on a change: the bar row and the stats line carry it.
-        bool on = !p.Dead && !p.IsOfflineFarming && !IsInCombat(p) && TownLayout.OnStreet(p.X, p.Y);
+        // 🔑 THE WHOLE CITY, not its streets (0.218.2, §118a: *"We can make it in the whole city.. no point only on the
+        // streets"*) — the same city test as the Favor minute. Terrain that slows you (mud, gardens) is `BL-328`'s job.
+        bool on = !p.Dead && !p.IsOfflineFarming && !IsInCombat(p)
+                  && WorldMap.SafeZoneAt(p.X, p.Y) is { RegenBoost: true };
         if (on == p.OnPavedStreets) return;
         p.OnPavedStreets = on;
         PushBuffs(p);
@@ -18891,7 +18894,7 @@ public class GameLoopService : BackgroundService
         if (player.OnPavedStreets)
             dtos.Add(new BuffDto("Paved Streets",
                 $"The blessed paving of the town quickens your step: +{MovementTuning.PavedStreetsRunBonus:0} run "
-                + $"speed (max {StatCaps.MoveSpeed:0}) while you run on its streets. Leaving them or any fight ends it.",
+                + $"speed (max {StatCaps.MoveSpeed:0}) while you run inside the town. Leaving it or any fight ends it.",
                 -1f, false, "paved_streets", 1, BuffRow.Buff, ""));   // "" = initials: the TMP atlas is static, a new emoji may not draw
 
         if (dtos.Count == 0)
@@ -21961,7 +21964,7 @@ public class GameLoopService : BackgroundService
         foreach (var (qid, state) in player.ActiveQuests)
         {
             var def = QuestCatalog.Get(qid);
-            if (def is null) continue;
+            if (def is null || def.Guide) continue;   // a guide closes on this talk (AdvanceTalkStep), never turned in
             var summary = Summarize(player, def, state);
 
             // If current step is a TalkTo this npc, advancing happens on talk.
@@ -22142,7 +22145,7 @@ public class GameLoopService : BackgroundService
         if (step.Type == QuestStepType.CollectItem && state is not null)
             counter = Math.Min(needed, CountItem(player, step.TargetId ?? ""));
         // Ready to turn in = on the final step and that step is a TalkTo.
-        bool canComplete = state is not null
+        bool canComplete = state is not null && !def.Guide
             && stepIndex == def.Steps.Length - 1
             && def.Steps[^1].Type == QuestStepType.TalkTo;
         return new QuestSummary(def.Id, def.Name, def.Description, GatherText(player, def, state, step.Text),
@@ -22384,6 +22387,16 @@ public class GameLoopService : BackgroundService
             var step = def.Steps[state.StepIndex];
             if (step.Type == QuestStepType.TalkTo && def.StepTargetMatches(step.TargetId, npcId))
             {
+                // A GUIDE closes itself here — no Complete button, no reward (*"you go and talk to Cera and the quest
+                // disapears"*). Recorded as completed so nothing could ever hand it back.
+                if (def.Guide && state.StepIndex == def.Steps.Length - 1)
+                {
+                    player.ActiveQuests.Remove(qid);
+                    player.CompletedQuests.Add(qid);
+                    SendSystemToEntity(player, $"{def.Name}: done.");
+                    changed = true;
+                    continue;
+                }
                 // Final step talk = ready to complete (handled by Complete button);
                 // mid-chain talk = advance to next step now.
                 if (state.StepIndex < def.Steps.Length - 1)
@@ -22974,6 +22987,7 @@ public class GameLoopService : BackgroundService
         {
             player.ActiveQuests.TryGetValue(def.Id, out var state);
             bool everDone = player.CompletedQuests.Contains(def.Id);
+            if (def.Guide && state is null) continue;   // a signpost is only listed while you hold it
 
             // ----- hidden: nothing this character could ever do -------------------------------------
             if (state is null && !everDone)
@@ -23047,7 +23061,7 @@ public class GameLoopService : BackgroundService
         else if (def.Repeatable) status = everDone ? "Repeatable — take it again" : "Repeatable";
 
         // Ready to hand in = on the final step and that step is a TalkTo (same rule as Summarize).
-        bool canComplete = state is not null
+        bool canComplete = state is not null && !def.Guide
             && state.StepIndex == def.Steps.Length - 1
             && def.Steps[^1].Type == QuestStepType.TalkTo;
         if (state is not null)
