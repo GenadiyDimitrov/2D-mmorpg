@@ -510,6 +510,12 @@ namespace Game.Client
                 }
                 else if (ItemCatalog.CategoryOf(d) == ItemCategory.Quest) continue;
 
+                // Only what something DROPS. The window answers "where does it drop", so a craft-, vendor-,
+                // box- or quest-reward-only item is a row that can only ever lead to an empty table — and the
+                // bound loaners (`_bound`) and 2-hour box pieces (`_temp`) are clones under the SAME name,
+                // so before this every one of them was a second, identical row beside the real item.
+                if (!DroppableIds().Contains(d.Id)) continue;
+
                 if (_dropFilterRarity >= 0 && (int)d.Rarity != _dropFilterRarity) continue;
                 if (_dropFilterGrade >= 0 && System.Array.IndexOf(ItemCatalog.GradeLabel(d).Split('/'), GradePenalty.GradeNames[_dropFilterGrade]) < 0) continue;
                 if (q.Length > 0
@@ -531,6 +537,20 @@ namespace Game.Client
                 return string.Compare(a.Name, b.Name, System.StringComparison.OrdinalIgnoreCase);
             });
             return outList;
+        }
+
+        // Every item id at least one spawn pays, off the SAME `DropIndex.Build()` the server holds — it walks
+        // the spawns and `MobCatalog.KillTable` exactly as the kill roll does, so "is it in here" is the same
+        // answer the server's lookup would give. Built once, on first open (~13 ms on a PC). It answers only
+        // WHETHER something drops an item; the chance stays the server's (see the comment above the fields).
+        private HashSet<string> _droppableIds;
+
+        private HashSet<string> DroppableIds()
+        {
+            if (_droppableIds != null) return _droppableIds;
+            _droppableIds = new HashSet<string>(System.StringComparer.Ordinal);
+            foreach (var s in DropIndex.Build().Sources) _droppableIds.Add(s.ItemId);
+            return _droppableIds;
         }
 
         /// <summary>Polled from the world refresh — the revision idiom the rest of this client uses.

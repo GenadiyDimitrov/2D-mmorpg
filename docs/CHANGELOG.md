@@ -24,7 +24,16 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-01 (latest) — 0.219.1: icons in the Skills window (Known, Learn, Actions) and for every action (`BL-331`)
+## 2026-10-01 (latest) — drops window lists only what DROPS (client-only, unversioned, rides the next APK)
+
+His find: *"if I search something I get 2 of the same thing ... 1st gives me 45lvl mob the other nothing"*, then
+*"If item doesn't drop from any mob should not be there"*. The "Where does it drop?" candidate list walked the whole
+`ItemCatalog`, so every `_temp` (2-hour box gear, D/C) and `_bound` (newbie kit, tutorial scrolls/potions) clone sat as
+a second identical row beside its original, and craft/vendor/box-only items led to an empty table. The client now
+builds the same `DropIndex.Build()` the server holds (once, on first open) and lists only ids in it: 774 → 520 rows,
+0 identical-looking rows left. Chances stay the server's. `GameUi.DroppableIds`.
+
+## 2026-10-01 — 0.219.1: icons in the Skills window (Known, Learn, Actions) and for every action (`BL-331`)
 
 His ask: *"Skill icons need to be in skills window and actions also need icons so the 3 tab (known,learn,actions) need
 icons"*. **New APK.** No `game.db` delete. Checklist §123.
