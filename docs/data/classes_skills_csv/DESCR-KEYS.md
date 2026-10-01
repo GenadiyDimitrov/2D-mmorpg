@@ -56,6 +56,7 @@ multi-part row a number belongs to.
 | `as` | `p.atk.speed`, `atk.speed`, `attack.speed`, `attack speed`, `atack speed`, `atk speed`, `as` |
 | `movatkspeed` | `move/attack.speed`, `move/attack speed` |
 | `atkcastspeed` | `atk/cast.speed`, `atk/cast speed`, `attack/cast speed` |
+| `slow` | `slowed by`, `slowed with`, `slow` |
 | `ms` | `move speed`, `movement speed`, `ms`, `speed`, `move` |
 | `reuse` | `reuse delay`, `reuse`, `cooldown` |
 | `mres` | `mres`, `m.res`, `magic resist`, `magic resistance`, `chance for spells to fizzle`, `spells to fizzle` |
@@ -110,7 +111,7 @@ multi-part row a number belongs to.
 | `hpprice` | `hp price` |
 | `mpprice` | `mp price` |
 
-72 keys, 217 spellings.
+73 keys, 220 spellings.
 
 ## Words that are read but are not stats
 

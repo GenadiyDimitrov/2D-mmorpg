@@ -98,7 +98,7 @@ public static partial class SkillCatalog
         new(HolyRay, "Holy Ray", BaseClass.Mage, SkillEffect.MagicDamage,
             MpCost: 30, CastTicks: 25, CooldownTicks: 10, Range: 750, Power: 42,
             Category: SkillCategory.Magic,  SpCost: 36000,
-            Replaces: new[] { HolyBolt },
+            Replaces: new[] { HolyBolt, HolySpike },   // + the Human/Demon monster-only spike (2026-10-01)
             Description: "The healer's attack spell: faster and stronger than Holy Bolt, at shorter range.",
             // ⚠ The level-52 rung read 52, the SAME as 48. He ruled a duplicate description is the
             // ERROR (2026-08-20), so it is 57 — continuing the +5 stride and smoothing the +11 jump to 63.

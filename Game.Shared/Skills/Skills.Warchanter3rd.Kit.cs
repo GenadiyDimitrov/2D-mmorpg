@@ -384,7 +384,9 @@ public static partial class SkillCatalog
             // caught with the wrong weapon in his hands now has no attack skill at all rather than a weak
             // one. That is consistent with the rest of his 3rd-class design — each race's Warchanter is
             // built around one weapon — but it is a door closing, not just a door opening.
-            Replaces: new[] { HolyBolt },
+            // Holy Spike too (owner, 2026-10-01): the Human/Demon cleric's monster-only nuke retires at
+            // 40 with the bolt — a buffer fights with the weapon, not with spells.
+            Replaces: new[] { HolyBolt, HolySpike },
             RequiredWeapon: weapon, HitCount: hits,
             DurationTicks: stunTicks,
             DebuffSchool: stunTicks > 0 ? DebuffSchool.Physical : DebuffSchool.None,

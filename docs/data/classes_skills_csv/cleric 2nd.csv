@@ -48,6 +48,13 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 25,Holy Bolt,holy_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +25,23,12500,[]
 30,Holy Bolt,holy_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +30,26,23700,[]
 35,Holy Bolt,holy_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +36,31,45400,[]
+,,,,,,,,,,,,,,,,----------------------------Holy Bolt----------------------------
+20,Holy Spike,holy_spike,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,Attack the enemy with m.Atk +18; Can only be used agains monsters;,15,3k,,Demon;Human,"Magic damage, power @."
+25,Holy Spike,holy_spike,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,Attack the enemy with m.Atk +21; Can only be used agains monsters;,18,6k,,Demon;Human
+30,Holy Spike,holy_spike,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,Attack the enemy with m.Atk +24; Can only be used agains monsters;,21,12k,,Demon;Human
+35,Holy Spike,holy_spike,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,Attack the enemy with m.Atk +27; Can only be used agains monsters;,26,25k,,Demon;Human
+,,,,,,,,,,,,,,,,----------------------------Monster Knowlegee----------------------------
+35,Monster Knowledge,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 5%,20,9980,[],Demon;Human
 ,,,,,,,,,,,,,,,,----------------------------Heal----------------------------
 20,Heal,heal,Magic/Heal,,,600,0,target/single,5,3,0,heal with power 151,30,5570,[],,Heal friendly target with @ power.
 25,Heal,heal,Magic/Heal,,,600,0,target/single,5,3,0,heal with power 195,38,12500,[]

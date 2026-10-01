@@ -18,6 +18,7 @@ public static partial class SkillCatalog
     // (`greater_heal` — deleted 2026-08-07 with the God layer, playtest-19 `0b`.)
     public const string FlameBolt = "flame_bolt";
     public const string HolyBolt = "holy_bolt";
+    public const string HolySpike = "holy_spike";   // Human/Demon cleric, monsters only
     public const string ElementalBurst = "elemental_burst";   // nuker 3rd-class ultimate (consumes Elemental Stones)
     public const string FrostBind = "frost_bind";             // nuker CC — magical Slow (first contested-CC skill)
     public const string EntanglingRoots = "entangling_roots"; // nuker CC — magical Root (contested)
@@ -396,6 +397,22 @@ public static partial class SkillCatalog
                 new SkillLevel(Power: 25, MpCost: 23,  SpCost: 6400,  Description: "Magic damage, power 25."),
                 new SkillLevel(Power: 30, MpCost: 26,  SpCost: 12800, Description: "Magic damage, power 30."),
                 new SkillLevel(Power: 36, MpCost: 31,  SpCost: 25000, Description: "Magic damage, power 36."),
+            }),
+
+        // Holy Spike — HUMAN + DEMON clerics, 20-35 (owner, 2026-10-01): a cheap fast nuke that only
+        // works on MONSTERS, his answer to the elf's Frost Spikes for levelling. MobTargetOnly refuses a
+        // player target outright. Retired at 40 by Holy Ray and the Warchanter's sound skills.
+        new(HolySpike, "Holy Spike", BaseClass.Mage, SkillEffect.MagicDamage,
+            MpCost: 15, CastTicks: 25, CooldownTicks: 10, Range: 750, Power: 18,
+            MobTargetOnly: true,
+            Category: SkillCategory.Magic,
+            Description: "A spike of holy power that only works against monsters.",
+            Levels: new[]
+            {
+                new SkillLevel(Power: 18, MpCost: 15, SpCost: 3000,  Description: "Magic damage, power 18. Monsters only."),
+                new SkillLevel(Power: 21, MpCost: 18, SpCost: 6000,  Description: "Magic damage, power 21. Monsters only."),
+                new SkillLevel(Power: 24, MpCost: 21, SpCost: 12000, Description: "Magic damage, power 24. Monsters only."),
+                new SkillLevel(Power: 27, MpCost: 26, SpCost: 25000, Description: "Magic damage, power 27. Monsters only."),
             }),
 
         new(GreaterWeakness, "Greater Weakness", BaseClass.Mage, SkillEffect.DebuffDef,

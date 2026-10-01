@@ -117,6 +117,9 @@ internal static class Descr
         // "CSV 20% vs code 10%" — a mis-read wearing the clothes of a defect. Longest-first, so this
         // pair is matched before `ms` ever sees the word. Same shape as `movatkspeed` above.
         ("atkcastspeed",  new[] { "atk/cast.speed", "atk/cast speed", "attack/cast speed" }),
+        // A DEBUFF's slow — *"Apply 15% Slow effect"*, *"slowed by 75%"*. Its own key (`@{slow}` on a
+        // face), not `ms`: the number is the CUT the target takes, not a move-speed buff.
+        ("slow",          new[] { "slowed by", "slowed with", "slow" }),
         ("ms",            new[] { "move speed", "movement speed", "ms", "speed", "move" }),
         ("reuse",         new[] { "reuse delay", "reuse", "cooldown" }),
         // ⚠ "chance for spells to fizzle" IS mRes in his mage file. The number is the same one the code
@@ -900,6 +903,7 @@ internal static class Descr
         SkillEffect.BuffCastSpeed or SkillEffect.DebuffCastSpeed => "cast",
         SkillEffect.BuffAtkSpeed or SkillEffect.DebuffAtkSpeed => "as",
         SkillEffect.BuffMoveSpeed => "ms",
+        SkillEffect.Slow => "slow",
         SkillEffect.BuffEvasion => "eva",
         SkillEffect.BuffAccuracy => "acc",
         SkillEffect.BuffCritRate => "critrate",

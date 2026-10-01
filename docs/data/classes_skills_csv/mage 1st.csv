@@ -39,7 +39,7 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 60,Over the Limit,demon_over_limit,Magic/Buff,,,0,0,self/single,0,60,10,Increase P/M.Atk with 15%; P/M.Crit.Rate and Atk/Cast Speed +8%;,76,120k,,Demon
 70,Over the Limit,demon_over_limit,Magic/Buff,,,0,0,self/single,0,60,10,Increase P/M.Atk with 20%; P/M.Crit.Rate and Atk/Cast Speed +10%;,114,390k,,Demon
 ,,,,,,,,,,,,,,,,-----------------------------Frost Spikes-----------------------------
-14,Frost Spikes,frost_spikes,Magic/Dmg,,,600,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +15; Apply 15% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,28,2k,,Elf,,does dmg but have a lower success rate for the slow - interrupt unaffected
+14,Frost Spikes,frost_spikes,Magic/Dmg,,,600,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +15; Apply 15% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,28,2k,,Elf,,does dmg but have a lower success rate for the slow - interrupt unaffected,"Creates spikes of ice that damages the enemy and slows them down. Slow the enemy for @{slow}. Have higher chance to interrupt enemy casts."
 20,Frost Spikes,frost_spikes,Magic/Dmg,,,750,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +18; Apply 15% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,40,3k,,Elf
 25,Frost Spikes,frost_spikes,Magic/Dmg,,,750,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +21; Apply 15% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,46,6k,,Elf
 30,Frost Spikes,frost_spikes,Magic/Dmg,,,750,0,enemy/single,2.5,1,30,Attack the enemt with m.Atk +24; Apply 15% Slow effect; Higher chance to interrupt enemy casts (interrupt chance x2);,52,12k,,Elf

@@ -13,6 +13,8 @@ holy_bolt,Spirit Bolt,demon,,"Gather Spirit energy to damage the enemy with @ po
 holy_ray,Holy Ray,human,,"Focuses Holy energy to punish the enemy with @ power.",
 holy_ray,Moonlight Ray,elf,,"Focuses Moonlight energy to damage the enemy with @ power.",
 holy_ray,Spirit Ray,demon,,"Focuses Spirit energy to damage the enemy with @ power.",
+holy_spike,Holy Spike,human,,"Creates Holy spike and hurls it at enemy with @ power. Effective only against monsters.",
+holy_spike,Spirit Spike,demon,,"Creates Spirit spike and hurls it at enemy with @ power. Effective only against monsters.",
 ,,,,,- Buffers -
 bow_expertise,Bow Enhancement,elf,harmonist,"Enhance your bow for @{as} faster attacks.",
 ,,,,,- Buffers/Healers -

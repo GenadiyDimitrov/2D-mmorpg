@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.217.3**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.217.4**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,22 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-01 (latest) — 0.217.3: his CSV pass into the code; race faces for the 3rd-class single buffs
+## 2026-10-01 (latest) — 0.217.4: Holy Spike + Monster Knowledge for Human/Demon priests; buffers fight with the weapon
+
+His `cleric 2nd` / `buffer 3rd` / `healer 3rd` rows: *"a pve-only spell to help them lvl up somewhat closer to the elf"*,
+and from 40 *"buffers are the fighters"*. ⚠ **New APK** (class tables). No `game.db` delete. Checklist §116.
+
+- **`holy_spike` (new, Human + Demon cleric, 20/25/30/35)** — power 18/21/24/27, MP 15/18/21/26, cast 2.5s, reuse 1s,
+  750 range, `MobTargetOnly` (refuses a player target). Faces: Holy Spike / Spirit Spike. Its DURATION cell was 30 (copied
+  from Frost Spikes' slow; the spike has no effect) — set to 0.
+- **`monster_knowledge_active`** — rung 1 at 35 on the Human/Demon cleric, rungs 2-4 at 40/48/52 on the Human/Demon
+  Warchanter. Same ladder the warrior climbs.
+- **Retirement at 40:** Holy Ray and all three sound skills now `Replaces` Holy Spike as well as Holy Bolt.
+- **`@{slow}`** — a debuff's slow % is a DESCR key (`SkillEffect.Slow`), so a face can say "Slow the enemy for @{slow}"
+  and `--check` now verifies every "15% Slow" it used to skip.
+- `sp_weights.csv` row for holy_spike (magic, 1.5). `--gen-passives`, `--gen-faces` (879, 0 problems), `--check` 0.
+
+## 2026-10-01 — 0.217.3: his CSV pass into the code; race faces for the 3rd-class single buffs
 
 His pass over the fighter/rogue/tank/warrior/buffer CSVs, then *"do the 3rd class single buffs as ive done them"* and
 *"then do the code"*. ⚠ **New APK** (class tables + faces). No `game.db` delete. Checklist §115.

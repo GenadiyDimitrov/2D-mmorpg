@@ -148,6 +148,7 @@ holy_arcane_serenity_single,Arcane Serenity,buff,1,default
 holy_blessing,Holy Blessing,heal,1.5,default
 holy_body_reinforcement_single,Body Reinforcement,buff,1,default
 holy_bolt,Holy Bolt,magic,1.5,default
+holy_spike,Holy Spike,magic,1.5,default
 holy_feral_bloodlust_single,Feral Bloodlust,buff,1,default
 holy_feral_precision_single,Feral Precision,buff,1,default
 holy_frenzy,Frenzy,buff,1,default

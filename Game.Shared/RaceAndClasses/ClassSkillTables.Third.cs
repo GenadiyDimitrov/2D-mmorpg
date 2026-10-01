@@ -489,7 +489,12 @@ public static partial class ClassSkillTables
         kit2.AddRange(Ladder(ManaVampirism, new[] { 40, 60, 70 }));
 
         // ---- HUMAN: the shield tank. Blunt + shield, ONE damage skill. ---------------------------
+        // 🔑 MONSTER KNOWLEDGE — HUMAN + DEMON (owner, 2026-10-01, his `buffer 3rd.csv` rows). Rungs 2-4,
+        //    continuing the cleric's rung 1 at 35; the elf levels on its own Frost Spikes instead.
+        var mk = Ladder(MonsterKnowledgeActive, new[] { 40, 48, 52 }, startRung: 2).ToArray();
+
         var human = new List<ClassSkill>(kit2);
+        human.AddRange(mk);
         human.AddRange(Ladder(SoundSmash, band13));
         // The Human's own weapon line, authored 2026-09-02 — the same eight-rung band the Elf's bow
         // and the Demon's maul run on, so all three buffers finally have one.
@@ -504,6 +509,7 @@ public static partial class ClassSkillTables
         //      2026-08-21: *"ork is mele fighter so need more than 1dmg skill"*. Acoustic Shock is
         //      Sound Smash's twin with a stun, and it exists for exactly that reason. -------------
         var demon = new List<ClassSkill>(kit2);
+        demon.AddRange(mk);
         demon.AddRange(Ladder(SoundSmash, band13));
         demon.AddRange(Ladder(AcousticShock, band13));
 

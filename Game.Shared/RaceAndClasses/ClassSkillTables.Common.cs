@@ -319,5 +319,19 @@ public static partial class ClassSkillTables
                 new ClassSkill(Resurrection, 20, SkillLevel: 1),
                 new ClassSkill(Resurrection, 30, SkillLevel: 2));
         }
+
+        // 🔑 HUMAN + DEMON ONLY (owner, 2026-10-01, his `cleric 2nd.csv` rows): a monster-only nuke and
+        //    Monster Knowledge rung 1, to level these two closer to the elf, who has Frost Spikes from 14.
+        //    Holy Spike retires at 40 (Holy Ray / the sound skills); Monster Knowledge continues on the
+        //    Warchanter (ClassSkillTables.Third.cs).
+        foreach (var race in new[] { Race.Human, Race.Demon })
+        {
+            ClassSkills.Register(race, BaseClass.Mage, Archetype.Healer,
+                new ClassSkill(HolySpike, 20, SkillLevel: 1),
+                new ClassSkill(HolySpike, 25, SkillLevel: 2),
+                new ClassSkill(HolySpike, 30, SkillLevel: 3),
+                new ClassSkill(HolySpike, 35, SkillLevel: 4),
+                new ClassSkill(MonsterKnowledgeActive, 35, SkillLevel: 1));
+        }
     }
 }

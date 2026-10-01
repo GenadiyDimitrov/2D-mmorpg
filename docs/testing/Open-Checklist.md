@@ -17,6 +17,21 @@
 
 ---
 
+## §116 — 0.217.4: Holy Spike + Monster Knowledge for Human/Demon priests; buffers fight with the weapon (2026-10-01)
+
+⚠ **New APK.** No `game.db` delete.
+
+- `116a` [ ] - **Human/Demon cleric learns Holy Spike at 20/25/30/35** (Demon sees "Spirit Spike"). It hits a monster;
+  aimed at a player it is refused outright. The Elf cleric does not get it. ->
+- `116b` [ ] - **Monster Knowledge** for the Human/Demon cleric at 35 (+5%), then the Human/Demon Warchanter at 40/48/52
+  (+10/15/20%). The Lightbringer stops at +5%. ->
+- `116c` [ ] - **At 40 the spike and the bolt leave:** Holy Ray (Lightbringer) retires both; Sound Smash / Acoustic Shock
+  retire both on the Human/Demon Warchanter, Sound Burst retires the bolt on the Elf. The race spell (Vampiric Bolt /
+  Frost Spikes) stays. ->
+- `116d` [ ] - **Frost Spikes' description** reads "Slow the enemy for 15%." (new `@{slow}` placeholder). ->
+
+---
+
 ## §115 — 0.217.3: your CSV pass in the code; race faces for the 3rd-class single buffs (2026-10-01)
 
 ⚠ **New APK.** No `game.db` delete.
