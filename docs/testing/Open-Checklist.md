@@ -56,6 +56,11 @@ learned at. It is generated from the game's own tables, so a wrong row here is a
     > Level 35: Increase defense when wearing Light armor with 35\
   - in a way a expanded skill to expand downwards as "per lvl" rows and each row to show its own descirpion -> to compare powers etc
   - otherwise is very awesome! I like it
+  - and (in chat): *"from the skills tree remove the skill swap and the sigils -> add them as separate tab next to race"*
+  - **Built on the page (same link, version 2):** an expanded skill lists one row per learn level with that level's own
+    text, and the stat swaps + sigils are on a **Swaps & Sigils** tab after the three races. The in-game version is next.
+- `120b` [ ] - **The page again:** open a skill (Light Armor Mastery) and check the per-level rows read the way you meant;
+  open the Swaps & Sigils tab (each swap says which classes may buy it; each sigil says its slot). ->
 
 ---
 

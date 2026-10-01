@@ -281,7 +281,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-323` | ⏸ | **Server-side collision (geodata)** — the server checks walls/buildings too, not only the 3D models; waits on `BL-281` | world |
 | `BL-328` | ⏸ | **Terrain movement** — water (−70% + breath gauge, drowning) and mud (−30-50%); *"lot later"*; needs terrain data | world |
 | `BL-329` | ⏸ | **Login session timer** — 1 min from Login to entering the world, 10 min during character creation; waits for character customization | systems |
-| `BL-330` | 🔵 | **Skill tree** — page BUILT (`--skill-tree`, per race); still owed: in game at creation + class masters | ui |
+| `BL-330` | 🔵 | **Skill tree** — page BUILT (`--skill-tree`, per race, per-level rows, Swaps & Sigils tab); still owed: in game at creation + class masters | ui |
 | `BL-331` | ❓ | **Skill icons** — how, where from (game-icons.net CC BY 3.0 my pick), what it takes; your call on the source | ui |
 
 ---
@@ -2309,6 +2309,11 @@ when creating char or on any class master to know hwat u are getting your self i
   class tables + faces; re-run and republish after any class-table or face change. Each section lists only what that
   step adds (1st class, kept-for-life race + grade layer, 2nd, 3rd incl. stat swaps, 4th, and the shared 4th kit once),
   each skill with its face name, kind, every learn level, and its top-rung text. **Still owed: step 2, in game.**
+- 🟢 **His §120a answer (2026-10-01): approved, two changes, both BUILT on the page the same day:** an expanded skill shows
+  ONE ROW PER LEARN LEVEL with that rung's own text (*"to compare powers"*), and the stat swaps + sigils left the paths for
+  their own **Swaps & Sigils** tab beside the races (*"remove the skill swap and the sigils -> add them as separate tab next
+  to race"*). 🔵 **Step 2 next:** the same view in game at character creation and the class masters. Move the data build
+  out of `tools/SkillCsvSeed/SkillTree.cs` into `Game.Shared` so the page and the client read ONE builder.
 
 ## `BL-331` ❓ SKILL ICONS — how, where from, and what it takes
 
