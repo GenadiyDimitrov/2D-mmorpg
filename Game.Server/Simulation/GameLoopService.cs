@@ -1382,6 +1382,8 @@ public class GameLoopService : BackgroundService
 
         entity.TargetX = tx;
         entity.TargetY = ty;
+        entity.ManualMoveX = tx;   // see Entity.WalkingManually — the autopilot's fight arms wait on it
+        entity.ManualMoveY = ty;
         // 🔑 THE PLAYER HAS TAKEN THE FEET BACK. While this is running, the autopilot's own movement
         //    arm (AutoRoam) leaves the destination alone — his standing rule, *"auto farm should not
         //    prevent me from moving … it should allow me to kite"*. It is set unconditionally rather
@@ -5431,9 +5433,10 @@ public class GameLoopService : BackgroundService
     /// been since playtest 22; the autopilot owns the fighting, the player owns the feet.</para>
     ///
     /// <para>⚠ Five seconds, not forever: the static spot is still a feature, and after you have
-    /// finished moving and stood still for a beat it may take you home again. It is the FIGHT arms
-    /// that are untouched by this — attacking and casting carry on throughout, which is exactly what
-    /// "it should allow me to kite" asks for.</para></summary>
+    /// finished moving and stood still for a beat it may take you home again. The FIGHT arms are not
+    /// held by this timer — they wait only while the walk itself lasts (<see cref="Entity.WalkingManually"/>,
+    /// 2026-10-01: they used to run throughout, re-acquire the mob he walked away from and drag him
+    /// back), and resume the tick he stops.</para></summary>
     private const int AutoManualMoveHoldTicks = 50;   // 5s @ 10 ticks/s
 
     // Server-default DAILY caps (docs/design/AutoHunt.md): online auto 8h, offline farm 2h; disconnect
@@ -5749,6 +5752,18 @@ public class GameLoopService : BackgroundService
         }
         if (p.IsCommitted || p.QueuedSkillId is not null)
             return;   // let an in-progress cast/volley/queue resolve
+
+        // 🔴 HIS WALK FIRST — the FIGHT arms wait too, not just AutoRoam (2026-10-01: *"I auto-farm ->
+        //    I fight some mob -> I click on the ground -> char start to move -> gets rubber back and
+        //    continue with the fight"*). HandleMove drops the fight, but the very next tick
+        //    RetaliationTarget / ValidAutoTarget picked the same mob straight back up, and the chase or
+        //    the queued skill's approach overwrote his destination. His rule, §100: *"it should allow me
+        //    to kite; only when stopped then it attacks and use skills."* Every arm below either writes
+        //    a destination or starts a cast that roots him, so none of them may run mid-walk. The moment
+        //    he arrives (or anything else redirects him) WalkingManually goes false and the hunt resumes
+        //    from where he stands; only AutoRoam waits out the longer ManualMoveHoldTicks.
+        if (p.WalkingManually)
+            return;
 
         // Counter-attack: if a player just hit us and counter-attack is on, retaliate — unless we're
         // about to finish a nearly-dead mob (owner-delegated heuristic: <25% HP = finish it first).

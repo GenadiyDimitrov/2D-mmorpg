@@ -19,6 +19,17 @@
 
 ---
 
+## §126 — 0.220.2: three rubber-bands (2026-10-01)
+
+Your report of three cases. ⚠ **New APK + server restart.** No `game.db` delete.
+
+- `126a` [ ] - **Paved Streets:** tap a point well off the street. The character visibly slows as it steps off and
+  arrives with NO snap back. Same with Run → Walk toggled mid-walk. ->
+- `126b` [ ] - **Auto-farm:** mid-fight, tap the ground. You walk all the way there; the autopilot picks a fight again
+  only once you've stopped. ->
+- `126c` [ ] - **Skill mid-walk:** walking to a point, target a mob out of range, press an attack skill. You turn
+  toward the mob right away (at most a short glide), never reach the point and get pulled back. ->
+
 ## §125 — 0.220.1: an expiring buff pulses instead of flashing yellow (2026-10-01)
 
 Your ask: *"not a background color but the opacity .. Going 0.5~1"*. ⚠ **New APK.**

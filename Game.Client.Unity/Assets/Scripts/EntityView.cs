@@ -85,10 +85,36 @@ namespace Game.Client
         private const float ArrivalHoldSeconds = 0.75f;
         private const float ArrivalSettled = 0.02f;
 
-        /// <summary>Distance from the SERVER's last position to our predicted destination, and whether
-        /// we have one yet. Used to notice that the server is no longer heading where we predicted.</summary>
-        private float _serverDist;
-        private bool _hasServerDist;
+        /// <summary>
+        /// IS THE SERVER WALKING OUR WALK? (2026-10-01, three rubber-bands in one report.) A prediction
+        /// is only believed while the server's own samples HEAD for our destination. Until one does
+        /// (<see cref="_serverConfirmed"/>) the samples still in flight belong to the previous order and
+        /// prove nothing either way; once one has, any sample heading elsewhere ends the prediction at
+        /// once — the server took us toward a mob (an out-of-range skill) or somewhere we did not ask.
+        ///
+        /// <para>This replaced "is the distance to our destination shrinking", which a server walking
+        /// at an angle of up to 90° off our line passes every sample — so a skill on a mob roughly ahead
+        /// was predicted all the way to the tapped point and yanked back from there. And it watches for
+        /// SILENCE too: a server that never moves us (the order was dropped) or stops short sends no
+        /// samples at all, and the old check only ran when one arrived.</para>
+        /// </summary>
+        private bool _serverConfirmed;
+        private float _predictStartTime;
+        private float _lastServerMoveTime;
+
+        /// <summary>cos 25°: how close to our line the server's step must point to count as ours.</summary>
+        private const float HeadingAgreeCos = 0.906f;
+
+        /// <summary>Below this distance from our destination (Unity units) heading is noise, not intent.</summary>
+        private const float HeadingCheckMin = 0.2f;
+
+        /// <summary>No server step heading our way this long after the tap → the order went nowhere.
+        /// Generous on purpose: it has to cover a phone's round trip, not a LAN's.</summary>
+        private const float UnconfirmedTimeout = 0.8f;
+
+        /// <summary>A confirmed walk whose server stream goes quiet this long has stopped short (samples
+        /// arrive every 0.1s while it moves).</summary>
+        private const float StalledTimeout = 0.4f;
 
         /// <summary>The last <c>EntityDto.Warp</c> we saw for this entity, and whether we have one at
         /// all yet. A CHANGE means the server teleported it — see <see cref="SetTarget"/>.</summary>
@@ -296,30 +322,32 @@ namespace Game.Client
             // it was what left a stale segment waiting to be obeyed the moment prediction stopped.
             if (_predicting && IsSelf)
             {
-                // Is the server still taking us where we think we are going? Distance from the SERVER's
-                // position to our predicted destination should shrink every sample. When it GROWS, the
-                // server is walking us somewhere else and the prediction is already wrong — no need to
-                // wait for the error to pile up past ReconcileSnapDistance.
-                //
-                // That wait was the second-long "teleport": tap a skill on a far target and the server
-                // discards your walk and closes on the ENEMY instead. The client happily predicted the
-                // opposite direction until the guard tripped, then jumped. This notices in one sample
-                // (~100ms) instead of ~1s, and hands over without a jump because the error decays.
-                float dist = (next - _predictTarget).magnitude;
-                bool serverGoingElsewhere = _hasServerDist && dist > _serverDist + 0.01f;
+                // Is the server still taking us where we think we are going? Judge by the HEADING of
+                // its step, from the last sample to this one, against the line from that sample to our
+                // destination — see _serverConfirmed. Noticing in one sample (~100ms) is what turns a
+                // disagreement into a short glide instead of a walk to the tapped point and a yank back.
+                bool headingElsewhere = false;
+                var stepDir = next - _toPos; stepDir.y = 0f;
+                var wantDir = _predictTarget - _toPos; wantDir.y = 0f;
+                if (_hasFrom && stepDir.sqrMagnitude > 0.000001f)
+                {
+                    _lastServerMoveTime = Time.time;
+                    if (wantDir.sqrMagnitude > HeadingCheckMin * HeadingCheckMin)
+                    {
+                        if (Vector3.Dot(stepDir.normalized, wantDir.normalized) >= HeadingAgreeCos)
+                            _serverConfirmed = true;
+                        else if (_serverConfirmed)
+                            headingElsewhere = true;
+                    }
+                }
 
-                if (serverGoingElsewhere
+                if (headingElsewhere
                     || (next - _predictPos).sqrMagnitude > ReconcileSnapDistance * ReconcileSnapDistance)
                 {
                     // NOT SnapTo. Ending prediction leaves the accumulated error to decay, so the
                     // correction is a short glide instead of a teleport. A genuine teleport is still
                     // caught below, by distance, where it belongs.
                     EndPrediction();
-                }
-                else
-                {
-                    _serverDist = dist;
-                    _hasServerDist = true;
                 }
             }
 
@@ -356,10 +384,33 @@ namespace Game.Client
             _predictPos = transform.position;
             _predicting = true;
             _arrived = false;   // a new walk cancels any hold left by the last one's arrival
-            // A fresh destination: the previous walk's distance tells us nothing about this one, and
-            // carrying it over would read as "the server is going elsewhere" on the very first sample.
-            _hasServerDist = false;
+            // A fresh order: nothing the server sent before it can confirm or refute it.
+            _serverConfirmed = false;
+            _predictStartTime = _lastServerMoveTime = Time.time;
         }
+
+        /// <summary>
+        /// Follow the server's speed DURING the walk, not just at the tap (2026-10-01: *"he gets off the
+        /// pavement but the move speed don't change visually ... he reaches the point then gets rubber
+        /// back and walk the rest of the way"*). The speed was read once in <see cref="PredictTo"/>, so
+        /// leaving the Paved Streets, a Run/Walk toggle, a slow landing mid-walk all left the prediction
+        /// running at the old number — ahead of the server by more every second, under the reconcile
+        /// distance on any normal walk, until it arrived and had to give it all back. Every server
+        /// sample now carries the speed it is moving at (EntityLean.Speed); 0 = rooted/stunned, which no
+        /// walk survives.
+        /// </summary>
+        public void SetPredictSpeed(float speed)
+        {
+            if (!_predicting) return;
+            if (speed <= 0f) EndPrediction();
+            else _predictSpeed = speed;
+        }
+
+        /// <summary>Has the server stopped answering our last walk order — never confirmed it in
+        /// <see cref="UnconfirmedTimeout"/>, or confirmed it and then gone quiet for <see cref="StalledTimeout"/>?</summary>
+        private bool ServerSilent() => _serverConfirmed
+            ? Time.time - _lastServerMoveTime > StalledTimeout
+            : Time.time - _predictStartTime > UnconfirmedTimeout;
 
         public void CancelPrediction() => EndPrediction();
 
@@ -487,6 +538,10 @@ namespace Game.Client
             // is left, and it fades. Either way the character's drawn position is continuous — there
             // is no frame where it changes rule and jumps, which is what every previous attempt at
             // this bug got wrong.
+            // The server's SILENCE is an answer too (see _serverConfirmed): an order it never walked,
+            // or a walk it stopped short, sends no samples for SetTarget to judge.
+            if (_predicting && ServerSilent()) EndPrediction();
+
             if (_predicting)
             {
                 float step = _predictSpeed * Time.deltaTime;
@@ -519,8 +574,11 @@ namespace Game.Client
                 float d = (_arrivedTarget - basePos).magnitude;
                 // Keep holding only while the server is genuinely still closing on the same point. If it
                 // stops closing it is taking us somewhere else, and standing still would be its own bug.
+                // ...and only while it is still MOVING: a server that never walked this order, or
+                // stopped short, sends nothing, so "not further away" alone held the character on a
+                // point it was never going to reach for the whole hold.
                 if (d > ArrivalSettled && d <= _arrivedDist + 0.001f
-                    && Time.time - _arrivedSince < ArrivalHoldSeconds)
+                    && Time.time - _arrivedSince < ArrivalHoldSeconds && !ServerSilent())
                 {
                     _arrivedDist = d;
                     _selfError = _arrivedTarget - basePos;   // measured, not decayed

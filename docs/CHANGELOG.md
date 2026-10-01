@@ -24,7 +24,30 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-01 (latest) — 0.220.1: an expiring buff PULSES its opacity instead of flashing a colour
+## 2026-10-01 (latest) — 0.220.2: three rubber-bands — pavement speed, auto-farm walk-away, skill mid-walk
+
+His report: *"I walk on the blessed pavement (+50 speed) -> click somewhere -> he gets off the pavement but the move
+speed don't change visually -> he reaches the point then gets rubber back"*; *"I auto-farm -> I fight some mob -> I
+click on the ground -> char start to move -> gets rubber back and continue with the fight"*; *"I click on the ground
+to move -> I target a mob and click spell (not in range) -> char continue to point -> gets rubber back and go towards
+the mob"*. **New APK + server restart.** No wire change, no `game.db` delete. Checklist §126.
+
+- **Speed (case 1).** The client's walk prediction read your speed ONCE, at the tap, so leaving the Paved Streets, a
+  Run/Walk toggle or a slow landing mid-walk left it running at the old number, further ahead every second, until it
+  arrived and gave it all back. It now follows the speed every server sample carries (`EntityView.SetPredictSpeed`; a 0
+  = rooted ends the walk). Server side, the spawn DTO (which the delta diff compares) carried the RAW base speed, so a
+  speed change while STANDING was never sent at all; it carries `EffectiveSpeed` now, like the lean update.
+- **Auto-farm (case 2).** A ground tap dropped the fight, but the next tick the autopilot picked the same mob back up
+  and the chase overwrote your walk. The manual-move hold only gated roaming. Now ALL of the autopilot (except potions)
+  waits while you walk your own tap (`Entity.WalkingManually`) and resumes the tick you stop: *"only when stopped then
+  it attacks and use skills"*.
+- **Skill mid-walk (case 3), and any other disagreement.** The client trusted the walk while the server's distance to
+  the tapped point shrank, which a server heading toward a mob anywhere up to 90° off the line passes every sample. It
+  now checks the HEADING of each server step (within 25° of our line), and treats silence as an answer too: no step our
+  way within 0.8s of the tap, or a confirmed walk quiet for 0.4s, ends the prediction. A disagreement shows as a short
+  glide where it happened instead of a walk to the point and a yank back. The arrival hold lets go on silence as well.
+
+## 2026-10-01 — 0.220.1: an expiring buff PULSES its opacity instead of flashing a colour
 
 His ask: *"now with the icons we need to make the 60s remaining buff bar blink to not be a background color but the
 opacity .. Going 0.5~1"*. The under-a-minute warning swapped the square's box to yellow for half of every second, which

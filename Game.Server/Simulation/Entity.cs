@@ -1048,6 +1048,19 @@ public class Entity
     /// then gets rubber banded back"*. See <c>GameLoopService.AutoManualMoveHoldTicks</c>.</para></summary>
     public int ManualMoveHoldTicks { get; set; }
 
+    /// <summary>Where the player's OWN last move order is taking him — written by a manual move
+    /// command only, so it tells his walk apart from a destination the autopilot or a chase wrote.
+    /// Runtime only.</summary>
+    public float? ManualMoveX { get; set; }
+    public float? ManualMoveY { get; set; }
+
+    /// <summary>True while the destination being walked is still the one the player tapped: he has
+    /// neither arrived nor been sent anywhere else since. The autopilot's FIGHT arms wait on this
+    /// (2026-10-01: *"I auto-farm -> I fight some mob -> I click on the ground -> char start to move ->
+    /// gets rubber back and continue with the fight"*).</summary>
+    public bool WalkingManually =>
+        ManualMoveX is float mx && ManualMoveY is float my && TargetX == mx && TargetY == my;
+
     /// <summary>Tick the entity last SAT DOWN, so a voluntary stand can tell a genuine rest from
     /// sit/stand spam. Runtime only — sitting does not survive a relog.</summary>
     public long SatDownTick { get; set; }
@@ -4524,7 +4537,10 @@ public class Entity
         new(Id, Name, IsGuardMob ? EntityKind.Npc : Kind,
             Kind == EntityKind.Player ? AppearanceClass.Race : Race,
             Kind == EntityKind.Player ? AppearanceClass.BaseClass : BaseClass,
-            X, Y, Speed, Level,
+            // EffectiveSpeed for the same reason as ToLean — and because the delta diff compares THESE
+            // DTOs, so with the raw Speed here a speed change while standing still (Run/Walk toggle, a
+            // buff landing) was never sent at all, and the next tap predicted at the stale number.
+            X, Y, EffectiveSpeed, Level,
             Hp, MaxHp, Mp, MaxMp, SecondClass, ThirdClass, Dead, IsDisconnected, FlagState,
             Kind == EntityKind.Mob && Aggressive && !IsGuardMob, Title, TitleColor, SocialClanShown,
             ModelCategory, ModelRole, Warp);

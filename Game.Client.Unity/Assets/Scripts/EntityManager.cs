@@ -235,6 +235,7 @@ namespace Game.Client
 
             view.IsSelf = e.Id == SelfId;
             view.SetTarget(WorldMapper.ToUnity(e.X, e.Y), e.Warp);
+            if (view.IsSelf) view.SetPredictSpeed(e.Speed * WorldMapper.Scale);   // a walk tracks speed changes mid-way
             view.SetColor(ColorFor(e));
             if (view.IsSelf) ApplySelfVisual(view);   // `BL-82` — survives a respawn of the marker
             // Dead entities stay in the world (corpses are lootable/visible) but are dimmed rather
