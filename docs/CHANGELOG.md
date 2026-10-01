@@ -24,7 +24,15 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-01 (latest) — 0.220.0: the SKILL TREE in game, at creation and every class master (`BL-330` step 2)
+## 2026-10-01 (latest) — 0.220.1: an expiring buff PULSES its opacity instead of flashing a colour
+
+His ask: *"now with the icons we need to make the 60s remaining buff bar blink to not be a background color but the
+opacity .. Going 0.5~1"*. The under-a-minute warning swapped the square's box to yellow for half of every second, which
+with the `BL-331` pictures flashed a yellow block over the icon. Now the whole square (picture, frame, stack count,
+timer) breathes 1 → 0.5 → 1 once a second (a `CanvasGroup` per square, a cosine, so it is smooth rather than a hard
+on/off). Debuffs and a gated-off (suppressed) buff do not pulse, as before. Client-only: **new APK**. Checklist §125.
+
+## 2026-10-01 — 0.220.0: the SKILL TREE in game, at creation and every class master (`BL-330` step 2)
 
 His ruling: *"Or we just can make a full skill tree at any class master. When opening each time it preselects whatever
 u have (u can change and compare with other classes)"*, then *"Build the not locking one (with preselects)"*. **New

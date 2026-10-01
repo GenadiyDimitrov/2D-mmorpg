@@ -19,6 +19,13 @@
 
 ---
 
+## §125 — 0.220.1: an expiring buff pulses instead of flashing yellow (2026-10-01)
+
+Your ask: *"not a background color but the opacity .. Going 0.5~1"*. ⚠ **New APK.**
+
+- `125a` [ ] - **Under 60s left**, the whole buff square fades 1 → 0.5 → 1 once a second, smoothly; the picture is never
+  covered by a colour. Debuffs and a greyed (inactive) buff don't pulse. ->
+
 ## §124 — 0.220.0: the skill tree in game (`BL-330`, 2026-10-01)
 
 Your ruling: *"full skill tree at any class master. When opening each time it preselects whatever u have (u can change

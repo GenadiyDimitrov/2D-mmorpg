@@ -145,6 +145,8 @@ namespace Game.Client
             /// <summary>`BL-331` — the picture (over the box), and the dark strip that keeps the timer readable on it.</summary>
             public Image Icon, TimeBack;
             public TextMeshProUGUI Label, Time;
+            /// <summary>The whole square's opacity — the under-a-minute pulse.</summary>
+            public CanvasGroup Fade;
             /// <summary>The buff key(s) this square currently SHOWS — more than one when it is a
             /// collapsed group, and cancelling it must then drop every part of the blessing.</summary>
             public readonly List<string> Keys = new List<string>();
@@ -392,7 +394,7 @@ namespace Game.Client
 
         /// <summary>
         /// Buffs as SQUARES with the remaining time under them. Debuffs are tinted red so a poison is
-        /// not mistaken for a blessing at a glance, and a buff blinks under 60s so you have warning
+        /// not mistaken for a blessing at a glance, and a buff pulses (opacity) under 60s so you have warning
         /// before it drops mid-fight. Tapping a BUFF cancels it; tapping a debuff does nothing,
         /// because being able to click away a poison would make debuffs pointless.
         ///
@@ -559,14 +561,16 @@ namespace Game.Client
 
                 var tint = buff.IsDebuff ? new Color(0.45f, 0.18f, 0.18f, 0.95f) : UiKit.PanelLight;
 
-                // Under a minute, blink — a buff that expires mid-fight should not be a surprise.
-                // For a collapsed group this is the SHORTEST part, which is the right warning.
-                if (!buff.IsDebuff && buff.Seconds > 0f && buff.Seconds <= 60f
-                    && Mathf.Repeat(Time.unscaledTime, 1f) < 0.5f)
-                    tint = new Color(0.50f, 0.42f, 0.15f, 0.95f);
+                // Under a minute, PULSE — a buff that expires mid-fight should not be a surprise. For a
+                // collapsed group this is the SHORTEST part, which is the right warning. The whole square's
+                // OPACITY breathes 1 → 0.5 → 1 once a second (owner, 2026-10-01: *"not a background color but
+                // the opacity .. Going 0.5~1"*): the old colour swap flashed a yellow box over the picture.
+                // Gated OFF beats it, as before: a buff that is paying nothing has no expiry worth warning about.
+                bool expiring = !buff.IsDebuff && !buff.Suppressed && buff.Seconds > 0f && buff.Seconds <= 60f;
+                square.Fade.alpha = expiring
+                    ? 0.75f + 0.25f * Mathf.Cos(Time.unscaledTime * 2f * Mathf.PI)
+                    : 1f;
 
-                // Gated OFF beats every other tint, including the expiry blink: a buff that is paying
-                // nothing has no expiry worth warning about.
                 if (buff.Suppressed) tint = new Color(0.16f, 0.16f, 0.18f, 0.95f);
 
                 square.Box.color = tint;
@@ -574,7 +578,7 @@ namespace Game.Client
 
                 // `BL-331` — the picture, when the skill has one. The letters give way to it (a stack count
                 // stays: it is the number being read), and the box's tint becomes a thin frame round it, so
-                // a debuff, the under-a-minute blink and the gated-off grey all still show.
+                // a debuff and the gated-off grey still show (the under-a-minute pulse fades the whole square).
                 var sprite = SkillSprite(buff.IconId);
                 square.Icon.enabled = sprite != null;
                 square.TimeBack.enabled = sprite != null && square.Time.text.Length > 0;
@@ -599,6 +603,7 @@ namespace Game.Client
                             Vector2.zero, new Vector2(BuffSize, BuffSize));
 
                 var square = new BuffSquare { Root = UiKit.Rect(box.gameObject), Box = box };
+                square.Fade = box.gameObject.AddComponent<CanvasGroup>();
 
                 // No Button/onClick: PressAndHold owns both gestures, exactly as the skill-bar slots do.
                 // Closes over the SQUARE, not over a position in a list that reshuffles every time a
