@@ -56,6 +56,8 @@ if (args.Contains("--reweigh-sp"))
 // exceptions + skill_faces_other.csv). See Faces.cs. `--faces-to-csv` is the ONE-OFF that moved it there (2026-09-30).
 if (args.Contains("--gen-faces")) return Faces.Gen(dir.FullName);
 if (args.Contains("--faces-to-csv")) return Faces.Migrate(dir.FullName);
+// `--skill-tree` — `BL-330` step 1: docs/design/SkillTree.html, every race's tree off the compiled tables + faces.
+if (args.Contains("--skill-tree")) return SkillTree.Run(dir.FullName);
 
 if (args.Contains("--check"))
 {

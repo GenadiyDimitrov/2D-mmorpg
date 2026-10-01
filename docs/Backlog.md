@@ -281,7 +281,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-323` | ⏸ | **Server-side collision (geodata)** — the server checks walls/buildings too, not only the 3D models; waits on `BL-281` | world |
 | `BL-328` | ⏸ | **Terrain movement** — water (−70% + breath gauge, drowning) and mud (−30-50%); *"lot later"*; needs terrain data | world |
 | `BL-329` | ⏸ | **Login session timer** — 1 min from Login to entering the world, 10 min during character creation; waits for character customization | systems |
-| `BL-330` | 🔵 | **Skill tree** — a generated page first (per RACE: race → Fighter/Mage → onward, 1st-4th), then in game at creation + class masters | ui |
+| `BL-330` | 🔵 | **Skill tree** — page BUILT (`--skill-tree`, per race); still owed: in game at creation + class masters | ui |
 
 ---
 
@@ -2300,4 +2300,8 @@ when creating char or on any class master to know hwat u are getting your self i
   shown) — my pick, since race splits several kits — or one tree per path with race markers on the skills?
 - ✅ **His answer, 2026-10-01: per RACE.** *"skill tree per race. U select a race then select fighter or mage and then
   from there onward"*. So the page opens on a race picker, then Fighter / Mage, then the 2nd → 3rd → 4th branches.
-  Step 1 is unblocked.
+- 🟢 **Step 1 BUILT 2026-10-01: https://claude.ai/artifact/XWdiQ5hCA42HF6qn7zPXBo** (source `docs/design/SkillTree.html`,
+  GENERATED — never hand-edit). `dotnet run --project tools/SkillCsvSeed -- --skill-tree` rebuilds it from the compiled
+  class tables + faces; re-run and republish after any class-table or face change. Each section lists only what that
+  step adds (1st class, kept-for-life race + grade layer, 2nd, 3rd incl. stat swaps, 4th, and the shared 4th kit once),
+  each skill with its face name, kind, every learn level, and its top-rung text. **Still owed: step 2, in game.**

@@ -19,6 +19,16 @@
 
 ---
 
+## §120 — the Skill Tree page, step 1 of `BL-330` (2026-10-01)
+
+Not in the game: a web page, https://claude.ai/artifact/XWdiQ5hCA42HF6qn7zPXBo. Pick a race, then Fighter or Mage, then
+the 2nd and 3rd class; each section lists what that class adds, and tapping a skill shows its text and every level it is
+learned at. It is generated from the game's own tables, so a wrong row here is a wrong row in the game.
+
+- `120a` [ ] - **Is this the shape you wanted** before it goes in game (at character creation and the class masters)? ->
+
+---
+
 ## §119 — 0.218.1: the Android text boxes — a caret, mid-text taps, Copy / Cut / All (your F1-F3, 2026-10-01)
 
 ⚠ **New APK.** No `game.db` delete. Your three finds (*"still dont see the cursor"*, *"still cannot copy text"*, *"still
