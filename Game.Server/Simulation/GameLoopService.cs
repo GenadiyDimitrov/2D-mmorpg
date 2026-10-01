@@ -10100,6 +10100,7 @@ public class GameLoopService : BackgroundService
                 TickRegionNotice(entity);
                 TickOnlineTime(entity);
                 TickFavorTown(entity);   // `BL-277` the city minute
+                TickPavedStreets(entity);   // `BL-324`
                 if (_tick % GameConstants.SecondIntervalTicks == 0) TickBlessing(entity);   // `BL-277` part 2
                 EnforceDungeonWalls(entity);
                 if (_tick % GameConstants.TickRate == 0) ReconcileTimedItems(entity);   // runes, ~1/s
@@ -11554,6 +11555,18 @@ public class GameLoopService : BackgroundService
     /// x40"*): that one is paid at login for time spent out of the world, and this only runs for a
     /// character in it. An offline-farmer is in the world but is not a player sitting in town, so it is
     /// excluded here and gains nothing either way.</para></summary>
+    private void TickPavedStreets(Entity p)
+    {
+        // `BL-324` (owner, 2026-10-01: *"Agree with your proposal -> automatic visible buff"*, *"the 'Only Streets'
+        // effect idea is good"*): on a city's paving and out of combat = +50 run, shown on the buff bar so the
+        // speed is never unexplained. Re-sent only on a change: the bar row and the stats line carry it.
+        bool on = !p.Dead && !p.IsOfflineFarming && !IsInCombat(p) && TownLayout.OnStreet(p.X, p.Y);
+        if (on == p.OnPavedStreets) return;
+        p.OnPavedStreets = on;
+        PushBuffs(p);
+        SendStats(p);
+    }
+
     private void TickFavorTown(Entity p)
     {
         bool inCity = !p.Dead && !p.IsOfflineFarming
@@ -18875,6 +18888,11 @@ public class GameLoopService : BackgroundService
         // the bar there is NO way to tell whether it's applying, which is exactly what the owner hit when
         // he tried to verify it and had to report "not sure if the penalty is working".
         dtos.AddRange(GradePenaltyRows(player));
+        if (player.OnPavedStreets)
+            dtos.Add(new BuffDto("Paved Streets",
+                $"The blessed paving of the town quickens your step: +{MovementTuning.PavedStreetsRunBonus:0} run "
+                + $"speed (max {StatCaps.MoveSpeed:0}) while you run on its streets. Leaving them or any fight ends it.",
+                -1f, false, "paved_streets", 1, BuffRow.Buff, ""));   // "" = initials: the TMP atlas is static, a new emoji may not draw
 
         if (dtos.Count == 0)
         {

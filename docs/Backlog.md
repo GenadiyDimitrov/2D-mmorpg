@@ -279,7 +279,9 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-288` | ⏸ | **CONSUMABLE RARITY → PLAIN LEVELS 1-6** — potions/scrolls may drop the rarity word entirely; deferred by him, split out of `BL-272` | items |
 | `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
 | `BL-323` | ⏸ | **Server-side collision (geodata)** — the server checks walls/buildings too, not only the 3D models; waits on `BL-281` | world |
-| `BL-324` | 🔵 | **Town sprint** — 📝 PROPOSED 2026-09-29: a visible **Paved Streets** buff inside the wall (+50 run, cap 250, off in combat), no button; 1 Q (whole town or streets only) | world |
+| `BL-328` | ⏸ | **Terrain movement** — water (−70% + breath gauge, drowning) and mud (−30-50%); *"lot later"*; needs terrain data | world |
+| `BL-329` | 🔵 | **Login session timer** — 1 min from Login to entering the world, 10 min during character creation; 2 Qs | systems |
+| `BL-330` | 🔵 | **Skill tree** — a generated page first (race × path, 1st-4th), then in game at creation + class masters; 1 Q | ui |
 
 ---
 
@@ -2256,31 +2258,40 @@ a wall. The town walls and footprints of `BL-319` (`TownLayout`) are the first d
 polygons) per town on the server, movement and knockback clamped against it, and mob chasing and auto-hunt pathing
 around it.
 
-## `BL-324` 🔵 TOWN SPRINT
+## `BL-328` ⏸ TERRAIN THAT CHANGES HOW YOU MOVE — water and mud
 
-His `BL-319` answer 3, 2026-09-28: *"later we can make `srpint popup` when u click to move a after a second or two a
-popup button shows and u click it ot (settings auto-sprint in towns) ur char sets its move to +50 (max still 250) -
-something like that for only cities/towns"*.
-The major cities are now r 3000, so a walk across one takes a while. Only inside a safe zone: a click-to-move shows a
-**Sprint** button after 1-2 s, or a Setup toggle **"auto-sprint in towns"** does it for you. Sprinting adds **+50 run
-speed**, still capped at 250, and ends at the town wall. Marked "later" by him; not started.
+His `BL-324` answer, 2026-10-01: *"we later can add water outside (swiming slows you with 70% - and adds a breath gauge
+that depleated start to drain life until u die) or a muddy/hard to walk on terrain decreasing speed with 30~50% -> but
+thats lot later and can still be separate from towns just as an idea"*.
+- **Water:** −70% move speed while swimming, plus a **breath gauge**; empty, it drains HP until you die.
+- **Mud / rough ground:** −30-50% move speed.
+- Same shape as Paved Streets (`BL-324`, 0.218.0): a region test on the server + a visible bar row, so the speed is
+  never unexplained. Needs terrain data the world does not have yet (water and mud areas), so it sits with `BL-281`.
+⏸ *"lot later"*, his words.
 
-**His note, 2026-09-29:** *"Town sprint look like a cheap one .. it can even be automatic without any popup button without
-any option etc - u start to run/move if u moved about 200~300 distance without stopping it activates sprint - or even
-better and easier ... towns are laid with blessed/magical bricks that you move faster on them ... whatever is more
-fantasy/gamey like .. just some day haters not to say "I move faster in the town and dont know why, its a bug!" - so the
-1st type with the visible buff can be better in that way .. but tell me your idea"*.
+## `BL-329` 🔵 LOGIN SESSION TIMER — no lingering on the login screens
 
-📝 **My proposal: BOTH of your ideas at once, the paving as the REASON and a buff icon as the PROOF.**
-- Inside a town's wall, out of combat, you get a buff called **Paved Streets**: *"The blessed paving of the town
-  quickens your step. +50 run speed (max 250) while inside the walls."* It shows in the buff bar like any other buff,
-  so the speed is never unexplained. It appears on stepping inside, and it goes at the gate or the moment you enter
-  combat (a PvP brawl in town is not a race).
-- No button, no Setup option, no distance counter. The "200-300 distance without stopping" trigger reads as random to a
-  player: you stop at an NPC, and the speed disappears for a reason nobody can see. The streets `BL-319` already draws are
-  what the buff's text points at.
-- Built server-side as an ordinary buff (so the client needs nothing but its icon and name), applied and removed where
-  the server already knows you are inside a town (the safe-zone check). Walking speed is not raised (walking is a choice).
-- ❓ **One question: the whole town inside the wall (my pick: simple, and the streets carry you everywhere anyway), or
-  only while standing ON the drawn streets?** The second needs the street shapes on the server (the `BL-323` geodata
-  kind of work).
+His idea, 2026-10-01: *"we need some sort of login session time - like 1min or something - when you click `login`
+until u enter the game with a char. - not to linger on the login screen - once we make a char customization and takes
+time when creating char when you click on create it will stop that (login/charselection) time for 10mins - after the
+creation it start the login timer again."*
+- The clock starts at `Login` and stops when a character enters the world; on expiry the server drops the connection
+  back to the login screen.
+- **~1 min** on login / character select. Opening **character creation** swaps it for a **10 min** clock; leaving
+  creation (made or cancelled) restarts the 1 min one.
+- Server-side (the hub knows an authenticated connection with no entity); the client only needs to show it and to
+  handle the drop cleanly.
+- ❓ **Two questions:** (1) should the client show a countdown, or just drop you with a message? (my pick: a small
+  countdown in the last 15 s, then "Session timed out"); (2) the customization screen does not exist yet: build the 1 min
+  login/select timer now and add the 10 min one with `BL-281`-era customization, or wait and build both together?
+
+## `BL-330` 🔵 THE SKILL TREE — see what a path gives before you pick it
+
+His idea, 2026-10-01: *"i want a skill tree of sort -> first in a md/or http(as the town artifact one ) then in gmame
+when creating char or on any class master to know hwat u are getting your self into"*.
+- **Step 1 — a page** (like the town sketch artifact): every race × path, 1st → 4th class, each skill on its learn
+  levels, generated from `ClassSkills` + the face names (`SkillFaces.g.cs`) so it can never drift from the game.
+- **Step 2 — in game:** a read-only tree at character creation and at any class master (Class Master / Grandmaster /
+  Archmaster), showing the paths that class can still take.
+- ❓ Step 1 first, as he said. One question for the page: per-RACE trees (8 paths each, race faces and race-only skills
+  shown) — my pick, since race splits several kits — or one tree per path with race markers on the skills?

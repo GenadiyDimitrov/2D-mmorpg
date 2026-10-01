@@ -1632,6 +1632,11 @@ public class Entity
     public int GradeArmorGap { get; set; }
     public int GradeWeaponGap { get; set; }
 
+    /// <summary>`BL-324` — standing on a city's paving and out of combat; written once a tick by
+    /// <c>GameLoopService.TickPavedStreets</c>. Like the grade penalty it is a STATE, not a BuffInstance:
+    /// nothing casts it, nothing persists it, and the buff bar shows it as a synthetic row.</summary>
+    public bool OnPavedStreets { get; set; }
+
     /// <summary>Future perk hook (owner): "this character may equip gear N levels early". Lifts the
     /// effective level used for GRADE comparisons only — never real level. 0 = no perk, today's behaviour.</summary>
     public int GradeLevelBonus { get; set; }
@@ -2107,6 +2112,8 @@ public class Entity
             // you are different things — see BuffSpeedPenaltyFraction.
             float withBuffs = ModifiedStat(baseSpeed, SkillEffect.BuffMoveSpeed)
                             * (1f - SlowFraction) * (1f - BuffSpeedPenaltyFraction);
+            if (OnPavedStreets && MoveState == MoveState.Running)
+                withBuffs += MovementTuning.PavedStreetsRunBonus;   // `BL-324`, under the same cap
             return Math.Min(withBuffs, MoveSpeedCap);
         }
     }

@@ -12,6 +12,7 @@ original file's content, unchanged, under its own marker. The reason for the mer
 
 | pass | date | what it was |
 |---|---|---|
+| [The five-buffer farm pass, 0.216.0](#playtest-0216-farm) | 2026-10-01 | §110a answered: five buffers 1→40, Elf fastest, Human +1 h, Demon +2 h; SP short at 40. Fed 0.217.4 (Holy Spike), 0.217.5 (SP −30%), 0.218.0 (`BL-324`) and `BL-328`-`BL-330` |
 | [Open-Checklist, 2026-09-29](#open-checklist-2026-09-29) | 2026-08-28 → 09-28 | the whole old checklist, retired on his note — §81-§108, the 0.93.0-era rows never played, §0 and KNOWN OPEN as they stood |
 | [The 0.77.0→0.89.0 pass](#pass-0770-0890) | 2026-08-22/26 | §90's answered rows — the two 3rd-class kits played (Lightbringer + Warchanter), the totem/AoE circles, the ork mage's ATK, and playtest 26's three fixes confirmed gone. What he did NOT reach stayed on the live checklist |
 | [Playtests 27 & 28](#playtest-27-28) | 2026-08-23 | his own finds across two passes, **all built** — twelve in 28 alone. The mana-restore exploit reading the KIT not the book, chat per character, a chat log table, runes off the buff cap, the NPC buffer free to 75, flat buffs applying AFTER percentages, a blunt skill that refused a maul, and the vamp-bolt question that REVERSED a shipped rule (fizzle reads the RUNG's learn level, 0.81.2). Cost 0.79.0-0.82.0 |
@@ -36,6 +37,136 @@ original file's content, unchanged, under its own marker. The reason for the mer
 Answered checklists that fed these passes (`Open-Checklist-0.45.0/-0.47.0/-0.48.0.md`) were
 transcribed into the playtest files at the time and are in git history.
 
+
+---
+
+<a id="playtest-0216-farm"></a>
+
+## THE FIVE-BUFFER FARM PASS — played on 0.216.0, written 2026-10-01
+
+Answers `110a` (*"your five-buffer farm test"*). Five buffers from level 1 (Bht/Bhm Human tank/mage gear, Bea/Bem Elf
+archer/mage gear, Bdd Demon 2H), six 1-hour farms from 20 on.
+
+**Where each finding went:**
+- **Human/Demon slower than the Elf at 1-40; the Demon by ~2 h** → his own fix, **0.217.4** (Holy Spike 20-35 +
+  Monster Knowledge for Human/Demon priests and Warchanters). Re-measure is row `118b`.
+- **SP not enough at 40** (*"sp not enough"*) → **0.217.5**, SP ×0.7 on everything learned 40-75.
+- **`BL-324` answer** (*"automatic visible buff"*, *"the 'Only Streets' effect idea is good"*) → built in **0.218.0**:
+  Paved Streets on the plaza, roads and paths only.
+- **Swimming / mud terrain** → `BL-328` (his *"lot later"*). **Login-session timer** → `BL-329`. **Skill tree** → `BL-330`.
+- **Three text-input bugs** (no caret while typing, no copy, no mid-text select/edit) → Open-Checklist, My Finds.
+- **Not acted on, recorded:** an Elf mage can die when MP runs dry while the MP pot is on cooldown; the Human never
+  drains MP (Holy Bolt + Vampiric Bolt heals); gold at 40 is 1.5-2.5kk and rides on lucky Mythic drops.
+
+**The checklist rows it closed** — §110 and §109 as they stood, his `[x]` on the versions (`110a` answered by this pass):
+
+## §110 — 0.215.0-0.215.2: the passive split, and one damage spell per mage race (2026-09-29)
+
+⚠ **New APK** and a **`game.db` delete** (0.215.0 retired dozens of skill ids; 0.215.1 retires `elf_self_heal` and
+`tank_spell_ward`).
+
+- `110a` [x] - **Your five-buffer farm test**: Human + Elf buffer in robe + magic weapon, Human + Elf buffer with mace or
+  bow, Demon buffer with a 2H. Farm speed, MP use, and whether the SP runs short at 20-75 as intended (×k 3.73 on the
+  Warchanter's passives). -> answered by your farm pass of 2026-10-01, archived verbatim in Playtest-Archive (`#playtest-0216-farm`)
+- `110b` [ ] - **Elf mystics (cleric, buffer, nuker) learn Frost Spikes at 14**: power 15, 15% slow, 600 range at 14,
+  750 from 20. Is the Elf nuker's ladder unchanged from 40 on (except the range)? ->
+- `110c` [ ] - **Vampiric Bolt and Frost Spikes stop at 750 range** from 20 up, 40+ included (was 900), Holy Bolt's
+  reach. A nuker's own spells still reach 900. **Holy Ray too** (0.215.2): 750 on every rung, was 600. ->
+- `110d` [ ] - **Demon Over the Limit at 14**: 10s window, +10% P/M.Atk and +5% P/M crit rate, attack and cast speed;
+  CD 60. Is the buff bar showing it, and does it end after 10s? ->
+- `110e` [x] - **No Elf Self Heal** on any Elf mage; an Elf cleric's Heal at 20 no longer replaces anything. -> passed (your [x] on the version in the 2026-10-01 note)
+- `110f` [x] - **A tank has no auto fizzle passive** (Spell Ward gone, `BL-325`); Magic Protection @80 is the only one. -> passed (your [x] on the version in the 2026-10-01 note)
+- - ->
+
+## §109 — 0.214.42: the Blessing bar you can read (2026-09-29)
+
+⚠ **New APK** (a client-only change; the server is the same as 0.214.41).
+
+- `109a` [ ] - **A running Blessing is deep amber now**, not bright gold, and its timer has a firmer outline. The
+  filling gauge (not running) is a slightly darker gold than before, so the two states still differ at a glance. Can
+  you read `Blessing 12:34` at a glance, on both the full and the nearly empty bar? ->
+- - ->
+
+
+<details><summary>His note, verbatim</summary>
+
+```
+# Playtest (human/elf as mages, human as tank, Elf as archer, demon as fighter)
+## setup: 
+> 5 chars @1 given box_newbie_ jewels/weapons/robe\
+> named Bht/Bhm/Bea/Bem/Bdd -> Buffer[human|elf|demon][tank|archer|mage|dmg] (Buffer Human Tank -> Bht | Buffer Elf Mage -> Bem)
+> under 40 the Bht == Bhm and Bea == Bem
+## playtest
+- made Bdd start to lvl up -> made Bem start to lvl up -> Bem catches up to Bdd -> moved Bdd to 15+ spot -> made Bea move to Bem spot -> Bem moved to Bdd spot learned frost spike -> Bem catches up to Bdd and overshooted it (Bem 20/Bdd 18) -> Bea changed spot learned frost spike -> catches up to Bdd -> (Bdd@20 Bea@19) while fixing Bdd -> elf@20 ..
+- made humans -> humans 1~20 seems middle ground -> felt faster than demon
+1. all lvl 20 -> bought 300mp (admin spell rune 1d - they didn't do quest to have it) -> send to farm zone 20~24
+    - Bea/Bem@26 took 6~7min for 20~26 (21/22 mp pots used) (270k/45k gold)
+    - Bht/Bhm@26 took 15-16min for 20~26 (16 mp pots used) (40k/140k)
+    - Bdd@26 took 15-16min for 20~26 (12 mp pots used) (350k gold)
+2. 1h farm (until buffs worn off) (they will share common equipment) (not selling in shop - end gold after restoring mp pots to 300)
+    - Bea/Bem@29 at 66/66% exp (118/117 mp pots used) - (455k/190k)
+    - Bht/Bhm@29-26/26% (46/45 mp pots used) (200k/300k)
+    - Bdd@28-62% (77 mp pots used - farmed in higher spot more heals more mp usage - not close to elfs though)(450k)
+3. 1h farm (until buffs worn off) (they will share equipment) (not selling in shop - end gold after restoring mp pots to 300)
+    - Bea/Bem@32-75/68% (109/97 mp pots used) - (650k/380k) -> Bea died 2 times (when mp pots on cooldown managed to depleate whole MP and mob lucky crits) -> both got lucky E mytic weapon
+    - Bht/Bhm@32-40/43% (47/53 mp pots used) (390k/490k)
+    - Bdd@30-88% (33 mp pots used) (600k)
+4. 1h farm (until buffs worn off) (they will share equipment) (not selling in shop - end gold after: selling remaining common MP pots, buying 999 uncommon heal pots, 300 uncommon MP pots)
+    - Bea/Bem@35-26/24% (115/124 mp pots used) - (478k/224k) -> Bea died 1 times (difference with bem is that Bem uses wand+aegis and Bea-Battlestaff -Bea bought 999 hp unc potions prematurly and used 10 <50%)
+    - Bht/Bhm@34-19/22% (38/38 mp pots used) (174k/283k)
+    - Bdd@32-86% (33 mp pots used) (391k)
+5. 1h farm (until buffs worn off) (they will share equipment) (not selling in shop - end gold after restoring uncommon mp pots to 300)
+    - Bea/Bem@38-54/41% (109/112 mp pots used, 50/38 hp pots used) - (600k/332k)
+    - Bht/Bhm@36-16/11% (33/39 mp pots used, 91/120 hp pots used) (k/339k) - both mages started at 34lvl and didnt havve learner holy_bolt and vamp and frenzy @35/ also lower lvl than elf so their magic failed more
+    - Bdd@34-63% (14 mp pots used, 0 hp pots used) (546k)
+6. 1h farm (until buffs worn off) (they will share equipment) (not selling in shop - end gold after restoring uncommon mp pots to 300)
+    - Bea/Bem@40 only needed 25/32 min - sp not enough (for Bea learned bow stuff with 1-2 buffs, for bem learned casting stuff) 2500k/2200k gold
+    - Bht/Bhm@38-40/12%
+    - Bdd@36-37%
+7. 1h farm (until buffs worn off) (they will share equipment) (not selling in shop - end gold after restoring uncommon mp pots to 300)
+    - Bht/Bhm@40 only needed 20/25 min
+    - Bdd@39 - need boost
+# overview
+- Feel 1~40
+  - demon slowest, human close to demon slightly faster, elf fastest (hit MP - 0 and w8 for next spell)
+  - if elf depleates his mp and mp pot is on cooldown and he dont have few hp pots to keep himself alive he could potentioly die
+  - human is imposible to kill mp cannot be depleated because he uses only holy bolt and vampiric is only used when hp is low -> he dont uses quick heal as other races but heals from vampiric
+  - demon is the slowest -> he does a bit more dmg than other races but slowcast make him farm significally slower 
+- Feel 40+ 
+  - both Bea and Bem felt okish both farm seems like the same speed (once the holy_bolt stop working and its left with only ice_spikes) 
+  - humans needed 1h more than elfs farm to become lvl 40
+  - demon needed 2h more than the elfs -> demon need boost in pve
+- @20 -> 1 luckiest sold everitying and end up with 350k gold, next somewhat lucky 250k, one average 1 single mytic end up at 140k, 2 unlucky no full drop only few commins end up with 40k gold
+- @40 -> both elfes end up with over 2kk humans end up around 1.5-2kk and demon end up on 1.7kk --> that depends on the lucky drops ... elfes end up with 1,2 more mytic weapons than the other .. just luck .
+# Tests 0.214.42 ~ 0.216.0
+- [x] 0.214.42: the Blessing bar you can read 
+- [x] 0.214.43: one Vampiric Bolt for the Human mage; the passive CSVs re-authored (`BL-314`)
+- [x] 0.215.0: the passive split, built (`BL-314`)
+- [x] 0.215.1: one damage answer per mage race; Spell Ward gone (`BL-325`)
+- [x] 0.215.2: Holy Ray at 750
+- [x] 0.216.0: SP is one pot per level, split by weight (`BL-326`)
+---
+# Backlog answers
+1. `BL-324` TOWN SPRINT
+    > Agree with your proposal -> automatic visible buff
+   - the "Only Streets" effect idea is good -> we later can add water outside (swiming slows you with 70% - and adds a breath gauge that depleated start to drain life until u die) or a muddy/hard to walk on terrain decreasing speed with 30~50% -> but thats lot later and can still be separate from towns just as an idea
+---
+# bugs
+- still dont see the cursor when typing
+- still cannot copy text (paste works)
+- still cannot select part of text or go to its middle to delete/change middle part
+---
+# ideas for new BL entries
+- we need some sort of login session time 
+  - like 1min or something 
+  - when you click `login` until u enter the game with a char.
+  - not to linger on the login screen
+  - once we make a char customization and takes time when creating char when you click on create it will stop that (login/charselection) time for 10mins
+  - after the creation it start the login timer again.
+- i want a skill tree of sort -> first in a md/or http(as the town artifact one ) then in gmame when creating char or on any class master to know hwat u are getting your self into
+```
+
+</details>
 
 ---
 

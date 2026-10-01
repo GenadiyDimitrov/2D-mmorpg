@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.217.5**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.218.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,24 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-01 (latest) — 0.217.5: SP −30% on every skill learned at 40-75
+## 2026-10-01 (latest) — 0.218.0: Paved Streets — run faster on a city's streets (`BL-324`)
+
+His answer from the 0.216.0 farm pass: *"Agree with your proposal -> automatic visible buff"*, *"the 'Only Streets' effect
+idea is good"*. **No new APK** (the speed and the bar row come from the server). No `game.db` delete. Checklist §118.
+
+- **+50 run speed while RUNNING on a city's plaza, main roads or side paths, out of combat**, still capped at 250.
+  Walking, a fight (`IsInCombat`: 30 s after a blow, or a DoT ticking), death and offline farming all switch it off.
+- **Streets only, with no geodata:** the street shapes `BL-319` drew were already in `Game.Shared/TownLayout.cs`, so
+  `TownLayout.OnStreet` is a distance test against each road strip (half its width) and the plaza radius. My Backlog
+  proposal said this would need `BL-323`'s geodata; it did not.
+- **A state, not a buff:** `Entity.OnPavedStreets`, written by `TickPavedStreets` each tick and re-sent (bar + stats)
+  only when it flips. The bar shows it as a synthetic **"Paved Streets"** row, the same pattern as the grade-penalty rows,
+  so nothing casts, stacks against Swift, counts toward the buff limit, or persists. `MovementTuning.PavedStreetsRunBonus`.
+- **The farm pass is recorded** (Playtest-Archive `#playtest-0216-farm`): §109/§110 closed, `110a` answered; its three
+  text-box bugs are My Finds `F1`-`F3`; new entries `BL-328` (water/mud terrain, *"lot later"*), `BL-329` (login session
+  timer), `BL-330` (skill tree). SmokeTest ALL PASS.
+
+## 2026-10-01 — 0.217.5: SP −30% on every skill learned at 40-75
 
 His playtest: *"cut the sp requirements with 30% on everyone for 40~75 - it's impossible to learn skills even can't learn
 the one to farm with"*. ⚠ **New APK** (the Learn tab prices locally). No `game.db` delete. Checklist §117.

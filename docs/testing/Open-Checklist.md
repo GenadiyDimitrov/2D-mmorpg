@@ -13,7 +13,25 @@
 
 ---
 
-## My Finds — next pass (empty, write here)
+## My Finds — next pass (write here)
+
+From the 0.216.0 farm pass (2026-10-01), verbatim — all three are the Android text boxes:
+- `F1` [!] - still dont see the cursor when typing ->
+- `F2` [!] - still cannot copy text (paste works) ->
+- `F3` [!] - still cannot select part of text or go to its middle to delete/change middle part ->
+
+---
+
+## §118 — 0.218.0: Paved Streets — run faster on a city's streets (`BL-324`, 2026-10-01)
+
+No new APK (the server sends the speed and the bar row). No `game.db` delete.
+
+- `118a` [ ] - **Run on a city's plaza, roads or side paths, out of combat:** a "Paved Streets" row appears on the buff
+  bar and you run +50 faster (never past 250). Step off the paving, walk instead of run, or get into a fight and it goes.
+  Does the edge of the road feel right, or too strict (a road's width is 270 in the big cities, 210 in Stonewatch/Ironreach)? ->
+- `118b` [ ] - **Re-measure the Demon buffer** from your farm pass (Bdd needed ~2 h more than the Elves to 40) now that
+  0.217.4 gave Human/Demon priests Holy Spike and Monster Knowledge and 0.217.5 cut the 40-75 SP. Is the Demon still
+  behind, and by how much? ->
 
 ---
 
@@ -138,34 +156,7 @@ except Elf Ravager 0.72→0.78 and Magus 0.60→0.57-0.63, whose three races' ki
   Bow Stance 287k, Twin Arrows / Explosive Arrow / your trap / your Magic Arrow 431k. Is that the shape you wanted? ->
 - `111b` [ ] - **Skim `sp_weights.csv`** (318 skills): anything at the wrong weight? A passive you rate higher (like
   Critical Resist at 1), or an active that is only utility? ->
-- `111c` [ ] - **In game, the Learn tab** shows the new prices at 20-75 (passives far cheaper, actives dearer). ->
-
-## §110 — 0.215.0-0.215.2: the passive split, and one damage spell per mage race (2026-09-29)
-
-⚠ **New APK** and a **`game.db` delete** (0.215.0 retired dozens of skill ids; 0.215.1 retires `elf_self_heal` and
-`tank_spell_ward`).
-
-- `110a` [ ] - **Your five-buffer farm test**: Human + Elf buffer in robe + magic weapon, Human + Elf buffer with mace or
-  bow, Demon buffer with a 2H. Farm speed, MP use, and whether the SP runs short at 20-75 as intended (×k 3.73 on the
-  Warchanter's passives). ->
-- `110b` [ ] - **Elf mystics (cleric, buffer, nuker) learn Frost Spikes at 14**: power 15, 15% slow, 600 range at 14,
-  750 from 20. Is the Elf nuker's ladder unchanged from 40 on (except the range)? ->
-- `110c` [ ] - **Vampiric Bolt and Frost Spikes stop at 750 range** from 20 up, 40+ included (was 900), Holy Bolt's
-  reach. A nuker's own spells still reach 900. **Holy Ray too** (0.215.2): 750 on every rung, was 600. ->
-- `110d` [ ] - **Demon Over the Limit at 14**: 10s window, +10% P/M.Atk and +5% P/M crit rate, attack and cast speed;
-  CD 60. Is the buff bar showing it, and does it end after 10s? ->
-- `110e` [ ] - **No Elf Self Heal** on any Elf mage; an Elf cleric's Heal at 20 no longer replaces anything. ->
-- `110f` [ ] - **A tank has no auto fizzle passive** (Spell Ward gone, `BL-325`); Magic Protection @80 is the only one. ->
-- - ->
-
-## §109 — 0.214.42: the Blessing bar you can read (2026-09-29)
-
-⚠ **New APK** (a client-only change; the server is the same as 0.214.41).
-
-- `109a` [ ] - **A running Blessing is deep amber now**, not bright gold, and its timer has a firmer outline. The
-  filling gauge (not running) is a slightly darker gold than before, so the two states still differ at a glance. Can
-  you read `Blessing 12:34` at a glance, on both the full and the nearly empty bar? ->
-- - ->
+- `111c` [x] - **In game, the Learn tab** shows the new prices at 20-75 (passives far cheaper, actives dearer). -> passed (your [x] on the version in the 2026-10-01 note)
 
 ## §108 — THE TOWNS, BUILT (0.214.41, `BL-319`) — your five answers, 2026-09-28
 
