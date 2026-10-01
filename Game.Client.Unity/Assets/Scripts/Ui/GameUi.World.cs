@@ -1833,7 +1833,7 @@ namespace Game.Client
 
                 // `BL-331` — a skill with a picture shows the picture; the letters stay underneath as the
                 // fallback for one that has none yet. Greyed like the letters when it cannot be used here.
-                var sprite = !string.IsNullOrEmpty(token) && SkillCatalog.Get(token) != null ? SkillSprite(token) : null;
+                var sprite = TokenSprite(token);   // a skill or an action
                 _slotIcons[i].enabled = sprite != null;
                 if (sprite != null)
                 {

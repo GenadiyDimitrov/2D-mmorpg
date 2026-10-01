@@ -282,7 +282,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-328` | ⏸ | **Terrain movement** — water (−70% + breath gauge, drowning) and mud (−30-50%); *"lot later"*; needs terrain data | world |
 | `BL-329` | ⏸ | **Login session timer** — 1 min from Login to entering the world, 10 min during character creation; waits for character customization | systems |
 | `BL-330` | 🔵 | **Skill tree** — page BUILT (`--skill-tree`, per race, per-level rows, Swaps & Sigils tab); still owed: in game at creation + class masters | ui |
-| `BL-331` | 🔵 | **Skill icons** — game-icons.net tinted per school, `docs/data/skill_icons.csv` + `tools/SkillIcons`; bar + buff bar BUILT 0.219.0; your review of `docs/design/SkillIcons.html`, then the windows | ui |
+| `BL-331` | 🔵 | **Skill icons** — game-icons.net tinted per school, `docs/data/skill_icons.csv` + `tools/SkillIcons`; bar, buff bar, Skills window (Known / Learn / Actions) BUILT 0.219.0-0.219.1; your review of `docs/design/SkillIcons.html`, then the cast bar + tree page | ui |
 
 ---
 
@@ -2336,13 +2336,13 @@ handful of SIGNATURE skills later, which is a one-row change because every skill
 - **Family rule:** a racial variant, a harmony, a healer single and a whisp wear the SAME glyph as the skill they mirror,
   in their own colour (Magic Arrow: nature / blood / arcane; Might → NPC Harmony of the Might in `sound`). Passives are
   drawn dimmer than skills you press.
-- **In game:** the skill bar and the buff bar show the picture; a skill with no icon keeps its letters, so icons can
+- **In game:** the skill bar, the buff bar and the Skills window's three tabs (Known, Learn, Actions; his ask 2026-10-01: *"Skill icons need to be in skills window and actions also need icons so the 3 tab (known,learn,actions) need icons"*) show the picture. The 19 ACTIONS have rows too, as `action:<id>` (rendered into `Resources/ActionIcons/`), so an action on the bar shows its icon as well; a skill with no icon keeps its letters, so icons can
   arrive a few at a time. A buff's square keeps its timer (on a dark strip), its stack count and its tint as a frame.
 - **Credit:** CC BY 3.0 needs a credits line — `docs/CREDITS.md`, and the review page's footer.
 
 **Still owed (steps 2-3):**
 - 🔵 **Your review** of the page: name any icon you want changed (or edit the row).
-- The **Skills / Learn windows**, the **cast bar** and the **Skill Tree page** still draw letters.
+- The **cast bar** and the **Skill Tree page** still draw letters.
 - Skills **no class CSV lists** (potions/scrolls' buffs, the NPC shelf, mob debuffs on you): they show letters. Each is a
   row away (the tool accepts any skill id).
 - A **face** wanting its own picture (a racial name with a different look) is not supported yet: one picture per skill id.

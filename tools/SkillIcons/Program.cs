@@ -7,7 +7,7 @@ using SkiaSharp;
 //  SKILL ICONS — `BL-331` (owner, 2026-10-01: *"ok lets do the route B"*).
 //
 //  docs/data/skill_icons.csv is HIS, same two-way contract as the class CSVs: one row per skill,
-//  `SKILL_ID,ICON,SCHOOL,COMMENT`. ICON is a game-icons.net name (the last part of the site's URL,
+//  `SKILL_ID,ICON,SCHOOL,COMMENT` (an ACTION is `action:<id>`, e.g. `action:sit_stand`). ICON is a game-icons.net name (the last part of the site's URL,
 //  e.g. game-icons.net/1x1/lorc/fireball.html → `fireball`); SCHOOL picks the colour from the palette
 //  below. Change a row, re-run, and the PNG follows.
 //
@@ -15,7 +15,8 @@ using SkiaSharp;
 //    1. clones the game-icons.net set into tools/SkillIcons/.game-icons/ on first use (gitignored);
 //    2. checks every row (a known skill, an icon that exists, a school that exists) and lists every
 //       class-CSV skill with no row — those draw as initials in the game until they get one;
-//    3. renders one 128x128 PNG per row into Game.Client.Unity/Assets/Resources/SkillIcons/<id>.png,
+//    3. renders one 128x128 PNG per row into Game.Client.Unity/Assets/Resources/SkillIcons/<id>.png, or
+//       Resources/ActionIcons/<id>.png for an action,
 //       deleting PNGs whose row is gone;
 //    4. writes docs/design/SkillIcons.html — every icon grouped by class file, for review.
 //
@@ -63,7 +64,8 @@ var errors = new List<string>();
         if (c.Count == 0 || string.IsNullOrWhiteSpace(c[0])) continue;
         string id = c[0].Trim(), icon = c.Count > 1 ? c[1].Trim() : "", school = c.Count > 2 ? c[2].Trim() : "";
         if (rows.Any(r => r.Id == id)) errors.Add($"line {i + 1}: {id} has two rows");
-        if (SkillCatalog.Get(id) is null) errors.Add($"line {i + 1}: {id} is not a skill");
+        if (Rows.IsAction(id) ? ActionCatalog.Get(Rows.ActionId(id)) is null : SkillCatalog.Get(id) is null)
+            errors.Add($"line {i + 1}: {id} is not a " + (Rows.IsAction(id) ? "known action" : "skill"));
         if (!icons.ContainsKey(icon)) errors.Add($"line {i + 1}: {id} — no icon called '{icon}' on game-icons.net");
         if (!Palette.Schools.ContainsKey(school))
             errors.Add($"line {i + 1}: {id} — unknown SCHOOL '{school}' (known: {string.Join(", ", Palette.Schools.Keys)})");
@@ -91,30 +93,36 @@ foreach (var file in Directory.GetFiles(classDir, "*.csv").OrderBy(f => Order(Pa
         if (id.Length > 0 && id.All(ch => ch is >= 'a' and <= 'z' or >= '0' and <= '9' or '_')) fileOf.TryAdd(id, label);
     }
 }
-var missing = fileOf.Keys.Where(id => rows.All(r => r.Id != id)).OrderBy(x => x).ToList();
+var missing = fileOf.Keys.Where(id => rows.All(r => r.Id != id))
+    .Concat(ActionCatalog.All.Select(a => Rows.ActionPrefix + a.Id).Where(id => rows.All(r => r.Id != id)))
+    .OrderBy(x => x).ToList();
 
 foreach (var e in errors) Console.WriteLine("🔴 " + e);
 if (errors.Count > 0) { Console.WriteLine($"{errors.Count} error(s) — nothing written."); return 1; }
 
 // ---- render ----------------------------------------------------------------------------------------------
-string outDir = Path.Combine(repo, "Game.Client.Unity", "Assets", "Resources", "SkillIcons");
-Directory.CreateDirectory(outDir);
-var keep = new HashSet<string>();
+// Skills → Resources/SkillIcons/<skill id>.png; actions (`action:<id>` rows) → Resources/ActionIcons/<id>.png.
+string resources = Path.Combine(repo, "Game.Client.Unity", "Assets", "Resources");
+string skillDir = Path.Combine(resources, "SkillIcons"), actionDir = Path.Combine(resources, "ActionIcons");
+Directory.CreateDirectory(skillDir);
+Directory.CreateDirectory(actionDir);
+var keep = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 var pngs = new Dictionary<string, byte[]>();
 foreach (var r in rows)
 {
-    bool passive = SkillCatalog.Get(r.Id)!.Category == SkillCategory.Passive;
+    bool isAction = Rows.IsAction(r.Id);
+    bool passive = !isAction && SkillCatalog.Get(r.Id)!.Category == SkillCategory.Passive;
     byte[] png = Render.Icon(Svg.PathData(icons[r.Icon]), Palette.Schools[r.School], passive, 128);
-    string path = Path.Combine(outDir, r.Id + ".png");
+    string path = isAction ? Path.Combine(actionDir, Rows.ActionId(r.Id) + ".png") : Path.Combine(skillDir, r.Id + ".png");
     // Only rewrite a file whose bytes changed, so git and Unity see real changes only.
     if (!File.Exists(path) || !File.ReadAllBytes(path).AsSpan().SequenceEqual(png)) File.WriteAllBytes(path, png);
-    keep.Add(r.Id + ".png");
+    keep.Add(path);
     pngs[r.Id] = Render.Thumb(png, 64);   // the review page embeds small WebP copies, not the 128px PNGs
 }
 int removed = 0;
-foreach (var f in Directory.GetFiles(outDir, "*.png"))
+foreach (var f in Directory.GetFiles(skillDir, "*.png").Concat(Directory.GetFiles(actionDir, "*.png")))
 {
-    if (keep.Contains(Path.GetFileName(f))) continue;
+    if (keep.Contains(f)) continue;
     File.Delete(f);
     if (File.Exists(f + ".meta")) File.Delete(f + ".meta");
     removed++;
@@ -125,10 +133,10 @@ string page = Path.Combine(repo, "docs", "design", "SkillIcons.html");
 File.WriteAllText(page, Gallery.Html(rows.Select(r => (r.Id, r.Icon, r.School)).ToList(), fileOf, fileOrder, pngs, missing),
                   new UTF8Encoding(false));
 
-Console.WriteLine($"{rows.Count} icons rendered → {Path.GetRelativePath(repo, outDir)}" + (removed > 0 ? $" ({removed} stale removed)" : ""));
+Console.WriteLine($"{rows.Count} icons rendered → {Path.GetRelativePath(repo, resources)}" + (removed > 0 ? $" ({removed} stale removed)" : ""));
 Console.WriteLine($"Review page → {Path.GetRelativePath(repo, page)}");
 if (missing.Count > 0)
-    Console.WriteLine($"⚪ {missing.Count} class-CSV skill(s) with no icon row (they show initials): {string.Join(", ", missing)}");
+    Console.WriteLine($"⚪ {missing.Count} skill(s)/action(s) with no icon row (they show initials): {string.Join(", ", missing)}");
 return 0;
 
 static int Order(string file)
@@ -176,7 +184,17 @@ internal static class Palette
         ["whisp"]   = new("Whisp",                   new SKColor(0x3f, 0xaa, 0xb8), new SKColor(0xe0, 0xfb, 0xff)),
         ["sigil"]   = new("Sigil",                   new SKColor(0xa8, 0x74, 0x2a), new SKColor(0xff, 0xe3, 0xb0)),
         ["neutral"] = new("Neutral",                 new SKColor(0x6a, 0x6a, 0x6a), new SKColor(0xee, 0xee, 0xee)),
+        ["social"]  = new("Social / party / chat",   new SKColor(0x4a, 0x6f, 0xa5), new SKColor(0xdd, 0xe8, 0xf7)),
     };
+}
+
+/// <summary>A row's SKILL_ID is a skill id, or `action:<id>` for one of the built-in actions (ActionCatalog) —
+/// the same spelling the skill bar stores, so the Actions tab and the bar read one row.</summary>
+internal static class Rows
+{
+    public const string ActionPrefix = "action:";
+    public static bool IsAction(string id) => id.StartsWith(ActionPrefix, StringComparison.Ordinal);
+    public static string ActionId(string id) => id.Substring(ActionPrefix.Length);
 }
 
 internal static class Svg
@@ -351,14 +369,16 @@ colours below — or just say which one. Passives are drawn dimmer than skills y
             sb.Append($"<span><i style=\"background:#{s.Base.Red:x2}{s.Base.Green:x2}{s.Base.Blue:x2}\"></i>{E(key)} — {E(s.Label)}</span>");
         sb.Append("</div>\n");
 
-        foreach (var file in fileOrder.Append("(no class file)"))
+        foreach (var file in fileOrder.Append("actions").Append("(no class file)"))
         {
-            var mine = rows.Where(r => (fileOf.TryGetValue(r.Id, out var f) ? f : "(no class file)") == file).ToList();
+            var mine = rows.Where(r => (Rows.IsAction(r.Id) ? "actions" : fileOf.TryGetValue(r.Id, out var f) ? f : "(no class file)") == file).ToList();
             if (mine.Count == 0) continue;
             sb.Append($"<section><h2>{E(file)} · {mine.Count}</h2><div class=\"grid\">\n");
             foreach (var r in mine)
             {
-                string name = SkillFaces.NameOf(SkillFaces.Get(r.Id), r.Id, 1);
+                string name = Rows.IsAction(r.Id)
+                    ? ActionCatalog.Get(Rows.ActionId(r.Id))!.Name
+                    : SkillFaces.NameOf(SkillFaces.Get(r.Id), r.Id, 1);
                 string b64 = Convert.ToBase64String(pngs[r.Id]);
                 string hay = (name + " " + r.Id + " " + r.Icon + " " + r.School).ToLowerInvariant();
                 sb.Append($"<div class=\"card\" data-k=\"{E(hay)}\"><img alt=\"\" src=\"data:image/webp;base64,{b64}\">"

@@ -24,7 +24,21 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-01 (latest) — 0.219.0: skill icons on the skill bar and the buff bar (`BL-331`)
+## 2026-10-01 (latest) — 0.219.1: icons in the Skills window (Known, Learn, Actions) and for every action (`BL-331`)
+
+His ask: *"Skill icons need to be in skills window and actions also need icons so the 3 tab (known,learn,actions) need
+icons"*. **New APK.** No `game.db` delete. Checklist §123.
+
+- **Skills window:** every row on Known, Learn and Actions starts with the picture (38 px); the letters drop out of the
+  text when there is one and stay when there is not. A Learn row you cannot buy yet greys its picture with its text;
+  a passive on Known is already drawn dimmer, so it is not greyed twice. `GameUi.RowIcon`, an optional `icon` on
+  `Row` / `Row2Buttons`.
+- **Actions have icons:** 19 `action:<id>` rows in `docs/data/skill_icons.csv` (the same spelling the bar stores),
+  rendered by `tools/SkillIcons` into `Resources/ActionIcons/<id>.png`; a new `social` colour for the party / chat /
+  friend ones. `GameUi.TokenSprite` resolves a bar token to a skill or an action picture, so an action on the SKILL BAR
+  shows its icon too. The review page has an Actions section.
+
+## 2026-10-01 — 0.219.0: skill icons on the skill bar and the buff bar (`BL-331`)
 
 His answer to `BL-331`: *"ok lets do the route B"*, game-icons.net. **New APK** (the pictures live in the client). No
 `game.db` delete. Checklist §122.

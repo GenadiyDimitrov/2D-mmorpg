@@ -19,6 +19,16 @@
 
 ---
 
+## §123 — 0.219.1: icons in the Skills window and for the actions (`BL-331`, 2026-10-01)
+
+Your ask: *"Skill icons need to be in skills window and actions also need icons so the 3 tab (known,learn,actions) need
+icons"*. ⚠ **New APK.** No `game.db` delete.
+
+- `123a` [ ] - **Known, Learn and Actions show the picture** at the start of every row. A Learn row you cannot buy yet is
+  greyed, picture too. A skill with no picture yet still shows its letters. ->
+- `123b` [ ] - **Actions have pictures**, in the Actions tab and on the skill bar (Attack, Sit / Stand, Target Closest…).
+  Their icons are on the review page too, in the "actions" section at the bottom. ->
+
 ## §122 — 0.219.0: skill icons on the skill bar and the buff bar (`BL-331`, 2026-10-01)
 
 Your answer to `BL-331`, *"ok lets do the route B"*. ⚠ **New APK.** No `game.db` delete.

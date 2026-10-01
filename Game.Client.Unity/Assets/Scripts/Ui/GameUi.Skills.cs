@@ -297,12 +297,13 @@ namespace Game.Client
                 // category-only passives onto the bar, where they sit as buttons that can never do
                 // anything.
                 bool passive = def.Passive != null || def.Category == SkillCategory.Passive;
+                var icon = SkillSprite(def.Id);   // `BL-331`
 
                 if (passive)
                 {
                     // A passive has nothing to press and nowhere to be placed.
-                    Row(SkillLetters(def) + "  " + SkillNameAt(def, rung) + level, null, null, UiKit.TextDim,
-                        def.Id, Boot.Learned[def.Id]);
+                    Row(Lettered(def, icon) + SkillNameAt(def, rung) + level, null, null, UiKit.TextDim,
+                        def.Id, Boot.Learned[def.Id], icon: icon);
                     continue;
                 }
 
@@ -312,11 +313,11 @@ namespace Game.Client
                 // `BL-321` — "To bar" is NEVER disabled and places a COPY: *"i can make 10slots with 1 skill
                 // ... one page to be for solo fighting .. the other to be for party .. some skills will be on
                 // both pages"*. It also reaches a skill parked on a bar you are not showing.
-                Row2Buttons(SkillLetters(def) + "  " + SkillNameAt(def, rung) + level,
+                Row2Buttons(Lettered(def, icon) + SkillNameAt(def, rung) + level,
                             "Use", () => Boot.UseSlot(token),
                             _pendingAssign == token ? "Cancel" : "To bar",
                             () => BeginAssign(token),
-                            def.Id, Boot.Learned[def.Id]);
+                            def.Id, Boot.Learned[def.Id], icon);
             }
         }
 
@@ -442,10 +443,11 @@ namespace Game.Client
                     int lvlGate = group.Key;
                     string blocked = canLearn ? null : LearnBlockedReason(learnDef, lvlGate, levelMet, sp, gold);
 
-                    Row(SkillLetters(def) + "  " + learnName + levelTag + "   " + price,
+                    var learnIcon = SkillSprite(def.Id);   // `BL-331`
+                    Row(Lettered(def, learnIcon) + learnName + levelTag + "   " + price,
                         null, null,
                         canLearn ? UiKit.Text : UiKit.TextDim,
-                        onRowClick: () => ConfirmLearn(learnDef, learnLevel, sp, gold, blocked));
+                        onRowClick: () => ConfirmLearn(learnDef, learnLevel, sp, gold, blocked), icon: learnIcon);
                 }
             }
 
@@ -462,9 +464,10 @@ namespace Game.Client
             foreach (var action in ActionCatalog.All)
             {
                 string token = GameConstants.ActionSlotToken(action.Id);
-                Row2Buttons(Abbreviations.For(action.Name) + "  " + action.Name,
+                var icon = ActionSprite(action.Id);   // `BL-331`
+                Row2Buttons((icon != null ? "" : Abbreviations.For(action.Name) + "  ") + action.Name,
                             "Use", () => Boot.UseSlot(token),
-                            "To bar", () => BeginAssign(token));
+                            "To bar", () => BeginAssign(token), icon: icon);
             }
         }
 
@@ -817,24 +820,43 @@ namespace Game.Client
             return string.IsNullOrWhiteSpace(def.Abbrev) ? Abbreviations.For(def.Name) : def.Abbrev;
         }
 
+        /// <summary>A row's text starts with the skill's letters only when there is no picture to stand for it.</summary>
+        private string Lettered(SkillDef def, Sprite icon) => icon != null ? "" : SkillLetters(def) + "  ";
+
         private static readonly Dictionary<string, Sprite> SkillSprites = new Dictionary<string, Sprite>();
 
         /// <summary>`BL-331` — a skill's PICTURE: <c>Resources/SkillIcons/&lt;skill id&gt;.png</c>, rendered by
         /// <c>tools/SkillIcons</c> from docs/data/skill_icons.csv. Null when the skill has none yet, and every caller
         /// falls back to the letters — so icons can arrive a few at a time. Loaded once per id (a miss is
         /// cached too: the bar refreshes every frame).</summary>
-        internal static Sprite SkillSprite(string skillId)
+        internal static Sprite SkillSprite(string skillId) =>
+            string.IsNullOrEmpty(skillId) ? null : LoadIcon("SkillIcons/" + skillId);
+
+        /// <summary>An ACTION's picture (<c>Resources/ActionIcons/&lt;action id&gt;.png</c>, the `action:` rows of the
+        /// same CSV). Null = draw its letters.</summary>
+        internal static Sprite ActionSprite(string actionId) =>
+            string.IsNullOrEmpty(actionId) ? null : LoadIcon("ActionIcons/" + actionId);
+
+        /// <summary>The picture for anything a bar slot can hold that has one: a skill or an action. Items and
+        /// presets keep their letters.</summary>
+        internal static Sprite TokenSprite(string token)
         {
-            if (string.IsNullOrEmpty(skillId)) return null;
-            if (SkillSprites.TryGetValue(skillId, out var cached)) return cached;
-            var tex = Resources.Load<Texture2D>("SkillIcons/" + skillId);
+            if (string.IsNullOrEmpty(token)) return null;
+            if (ActionCatalog.FromToken(token) is ActionDef action) return ActionSprite(action.Id);
+            return SkillCatalog.Get(token) != null ? SkillSprite(token) : null;
+        }
+
+        private static Sprite LoadIcon(string path)
+        {
+            if (SkillSprites.TryGetValue(path, out var cached)) return cached;
+            var tex = Resources.Load<Texture2D>(path);
             Sprite sprite = null;
             if (tex != null)
             {
                 tex.wrapMode = TextureWrapMode.Clamp;
                 sprite = Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100f);
             }
-            SkillSprites[skillId] = sprite;
+            SkillSprites[path] = sprite;
             return sprite;
         }
 
@@ -873,7 +895,7 @@ namespace Game.Client
         /// which is how a row ends up with exactly one target instead of two.</param>
         private void Row(string text, string buttonText, System.Action onClick, Color colour,
                          string detailSkill = null, int detailLevel = 1,
-                         System.Action onRowClick = null)
+                         System.Action onRowClick = null, Sprite icon = null)
         {
             var row = UiKit.Box(_skillsContent, "Row", UiKit.PanelLight);
             row.gameObject.AddComponent<LayoutElement>().minHeight = 44f;
@@ -892,8 +914,9 @@ namespace Game.Client
                 });
             }
 
+            float textLeft = RowIcon(row.transform, icon, colour == UiKit.TextDim && onRowClick != null);   // a Learn row you cannot buy yet (a passive is already drawn dimmer)
             var label = UiKit.Label(row.transform, text, 16f, colour, TextAlignmentOptions.Left);
-            UiKit.Stretch(UiKit.Rect(label.gameObject), 12f, 0f, buttonText != null ? 120f : 12f, 0f);
+            UiKit.Stretch(UiKit.Rect(label.gameObject), textLeft, 0f, buttonText != null ? 120f : 12f, 0f);
 
             if (buttonText == null) return;
 
@@ -909,7 +932,7 @@ namespace Game.Client
         /// is how "already on the bar" is shown.</summary>
         private void Row2Buttons(string text, string leftText, System.Action onLeft,
                                  string rightText, System.Action onRight,
-                                 string detailSkill = null, int detailLevel = 1)
+                                 string detailSkill = null, int detailLevel = 1, Sprite icon = null)
         {
             var row = UiKit.Box(_skillsContent, "Row", UiKit.PanelLight);
             row.gameObject.AddComponent<LayoutElement>().minHeight = 44f;
@@ -923,8 +946,9 @@ namespace Game.Client
                 open.onClick.AddListener(() => ShowSkillDetail(id, level));
             }
 
+            float textLeft = RowIcon(row.transform, icon, false);
             var label = UiKit.Label(row.transform, text, 16f, UiKit.Text, TextAlignmentOptions.Left);
-            UiKit.Stretch(UiKit.Rect(label.gameObject), 12f, 0f, 220f, 0f);
+            UiKit.Stretch(UiKit.Rect(label.gameObject), textLeft, 0f, 220f, 0f);
 
             var right = UiKit.TextButton(row.transform, rightText, onRight, 15f);
             right.interactable = onRight != null;
@@ -935,6 +959,20 @@ namespace Game.Client
             left.interactable = onLeft != null;
             UiKit.Place(UiKit.Rect(left.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
                         new Vector2(-118f, 0f), new Vector2(84f, 36f));
+        }
+
+        /// <summary>`BL-331` — a row's picture, at its left edge; returns where the text starts. No picture = the
+        /// text starts where it always did (the caller then keeps the skill's letters in the text). Dimmed with the
+        /// row when the row is (a passive, a skill you cannot learn yet).</summary>
+        private static float RowIcon(Transform row, Sprite icon, bool dim)
+        {
+            if (icon == null) return 12f;
+            var image = UiKit.Box(row, "Icon", dim ? new Color(0.75f, 0.75f, 0.75f, 0.8f) : Color.white, blocksInput: false);
+            image.sprite = icon;
+            image.preserveAspect = true;
+            UiKit.Place(UiKit.Rect(image.gameObject), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
+                        new Vector2(6f, 0f), new Vector2(38f, 38f));
+            return 52f;
         }
 
         // ----- assigning to the bar --------------------------------------------------------------
