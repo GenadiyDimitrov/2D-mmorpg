@@ -446,13 +446,8 @@ namespace Game.Client
             return height;
         }
 
-        /// <param name="nativeMobileInput">`BL-178` — opt OUT of the hidden-input trick below, for the
-        /// ONE field that wants Android's own copy / cut / select-all / paste menu. Default false
-        /// (= keep hiding the native input), because the switch cuts both ways and the fields this
-        /// defaults for are the ones the 0.47.0 caret bug was actually about.</param>
         public static TMP_InputField InputField(Transform parent, string placeholder,
-                                                bool password = false, float size = 18f,
-                                                bool nativeMobileInput = false)
+                                                bool password = false, float size = 18f)
         {
             var image = Box(parent, "Input", new Color(0.06f, 0.07f, 0.09f, 1f));
             var field = image.gameObject.AddComponent<TMP_InputField>();
@@ -494,17 +489,36 @@ namespace Game.Client
             //    hidden input, THIS is the line to flip back — the symptom would be "no keyboard at
             //    all", never "the caret is stuck".)
             //
-            // 🔑 `BL-178` — AND THAT SAME LINE IS WHY ANDROID'S COPY/PASTE MENU NEVER APPEARS (owner,
-            // 2026-09-05: *"the context menu after selection that shows 'copy/cut/select all' is not
-            // there ... I do not want new inner copy/paste system if we can make the normal work"*).
-            // The clipboard menu belongs to the native EditText we are hiding, so with the text buffer
-            // handed to TMP there is nothing for the OS to offer a menu ON. The native caret and the
-            // native menu are one switch pointing opposite ways, so it is now PER FIELD rather than
-            // global: `false` for the chat entry box, where you type fresh text and the caret bug has
-            // nothing to bite on, `true` for the URL / password / gold / tune fields, which are the
-            // pre-filled values 0.47.0 was about.
-            field.shouldHideMobileInput = !nativeMobileInput;
+            //
+            // 🔑 0.218.1 (his F2, *"still cannot copy text (paste works)"*): Android's copy / cut menu
+            // CANNOT exist in this client, whatever this switch says. The player runs on GAMEACTIVITY
+            // (`androidApplicationEntry: 2`), which has no native EditText at all: the keyboard talks to
+            // the game surface directly, so there is no OS text view to hang a selection menu on. 0.114.0
+            // (`BL-178`) turned this switch off for the chat box hoping the menu would come back; it did
+            // not, and it cost chat its caret entirely — with the native input "shown", TMP's
+            // `InPlaceEditing()` is false, so it draws no caret, refuses drags and ignores taps. Every
+            // field hides it now, and copy / cut / select-all is the ClipboardBar below.
+            field.shouldHideMobileInput = true;
+
+            // Thick enough to see on a phone, and the text's own colour (TMP's default is 1 unit wide).
+            field.caretWidth = 3;
+            field.customCaretColor = true;
+            field.caretColor = Text;
+            field.selectionColor = new Color(Accent.r, Accent.g, Accent.b, 0.45f);
+
+            // 🔑 0.218.1 (his F1, *"still dont see the cursor when typing"*) — THE CARET WAS NEVER BUILT.
+            // TMP creates the object that draws the caret AND the selection highlight in its OnEnable,
+            // and only `if (m_TextComponent != null)`. AddComponent above ran OnEnable at once, before
+            // `textComponent` was assigned, so for every field built inside an active window there was
+            // no caret object — the caret and the selection existed and moved, invisibly (which is half
+            // of F3 too: you could not see where a tap had put you). Cycling `enabled` re-runs OnEnable
+            // now that the text component is wired. A field built under an INACTIVE parent never hit
+            // this (its OnEnable waits for activation), which is why it was never all-or-nothing.
+            field.enabled = false;
+            field.enabled = true;
+
             field.gameObject.AddComponent<CaretToEnd>();
+            if (!password) field.gameObject.AddComponent<ClipboardBar>();
 
             field.text = "";
             return field;
@@ -675,9 +689,14 @@ namespace Game.Client
 
         private void Awake() => _field = GetComponent<TMP_InputField>();
 
-        public void OnSelect(BaseEventData _)
+        public void OnSelect(BaseEventData data)
         {
             if (!isActiveAndEnabled) return;
+            // 0.218.1 (his F3, *"cannot ... go to its middle"*): a FINGER put the caret where it tapped —
+            // TMP's OnPointerDown does that before selecting — and moving it to the end a frame later
+            // threw the tap away. Only focus given from CODE (Reply, the whisper action, a window that
+            // focuses its box) lands at the end; a tap past the last letter lands there by itself.
+            if (data is PointerEventData) return;
             StopAllCoroutines();
             StartCoroutine(PlaceCaret());
         }
@@ -692,6 +711,116 @@ namespace Game.Client
             _field.selectionAnchorPosition = end;
             _field.selectionFocusPosition = end;
             _field.ForceLabelUpdate();
+        }
+    }
+
+    /// <summary>A small Copy / Cut / All strip above a text box while part of its text is selected
+    /// (0.218.1, his F2: *"still cannot copy text (paste works)"*). Attached to every non-password
+    /// <see cref="UiKit.InputField"/>.
+    ///
+    /// 🔑 It exists because Android's own menu CANNOT appear in this client: the player runs on
+    /// GameActivity, which has no native EditText for the OS to hang a selection menu on (see
+    /// UiKit.InputField). He asked for *"the normal"* menu if it could be made to work; it cannot, so this
+    /// is the smallest stand-in: it shows only when there IS a selection, and paste stays the keyboard's,
+    /// which already works. Select text by dragging across it or double-tapping a word.
+    ///
+    /// ⚠ The strip is a CHILD of the field on purpose. The input module deselects the focused field when
+    /// you press something whose nearest select-handler is a different object; a child's nearest one is
+    /// the field itself, so tapping Copy does not close the keyboard or drop the selection. Each key also
+    /// swallows pointer-down and drag, or they would bubble to the field and move its caret. Its own
+    /// sorting canvas lifts it out of the text area's mask and above the windows around it.</summary>
+    public sealed class ClipboardBar : MonoBehaviour
+    {
+        private TMP_InputField _field;
+        private GameObject _bar;
+
+        private void Awake() => _field = GetComponent<TMP_InputField>();
+
+        private void LateUpdate()
+        {
+            bool show = _field != null && _field.isFocused && SelectionLength() > 0;
+            if (show && _bar == null) Build();
+            if (_bar != null && _bar.activeSelf != show) _bar.SetActive(show);
+        }
+
+        private int SelectionStart() =>
+            Mathf.Min(_field.selectionStringAnchorPosition, _field.selectionStringFocusPosition);
+
+        private int SelectionLength()
+        {
+            int len = _field.text?.Length ?? 0;
+            int a = Mathf.Clamp(_field.selectionStringAnchorPosition, 0, len);
+            int b = Mathf.Clamp(_field.selectionStringFocusPosition, 0, len);
+            return Mathf.Abs(a - b);
+        }
+
+        private string Selected() => _field.text.Substring(SelectionStart(), SelectionLength());
+
+        private void Copy()
+        {
+            GUIUtility.systemCopyBuffer = Selected();
+            PlaceCaret(SelectionStart() + SelectionLength());   // the strip goes: the copy happened
+        }
+
+        private void Cut()
+        {
+            if (_field.readOnly) { Copy(); return; }
+            int start = SelectionStart(), len = SelectionLength();
+            GUIUtility.systemCopyBuffer = _field.text.Substring(start, len);
+            _field.text = _field.text.Remove(start, len);
+            PlaceCaret(start);
+        }
+
+        private void SelectAll()
+        {
+            _field.selectionStringAnchorPosition = 0;
+            _field.selectionStringFocusPosition = _field.text?.Length ?? 0;
+            _field.ForceLabelUpdate();
+        }
+
+        private void PlaceCaret(int at)
+        {
+            _field.stringPosition = Mathf.Clamp(at, 0, _field.text?.Length ?? 0);
+            _field.ForceLabelUpdate();
+        }
+
+        private void Build()
+        {
+            const float keyW = 84f, keyH = 42f, gap = 4f;
+            var actions = new (string label, Action act)[] { ("Copy", Copy), ("Cut", Cut), ("All", SelectAll) };
+
+            var border = UiKit.Box(transform, "ClipboardBar", UiKit.Border);
+            _bar = border.gameObject;
+            var canvas = _bar.AddComponent<Canvas>();
+            canvas.overrideSorting = true;
+            canvas.sortingOrder = 1000;
+            _bar.AddComponent<GraphicRaycaster>();
+            float w = actions.Length * keyW + (actions.Length + 1) * gap;
+            UiKit.Place(UiKit.Rect(_bar), new Vector2(0f, 1f), new Vector2(0f, 0f),
+                        new Vector2(0f, 6f), new Vector2(w, keyH + 2f * gap));
+
+            for (int i = 0; i < actions.Length; i++)
+            {
+                var key = UiKit.Box(_bar.transform, "Key", UiKit.PanelLight);
+                UiKit.Place(UiKit.Rect(key.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
+                            new Vector2(gap + i * (keyW + gap), gap), new Vector2(keyW, keyH));
+                key.gameObject.AddComponent<Key>().Act = actions[i].act;
+                var label = UiKit.Label(key.transform, actions[i].label, 18f, UiKit.Text,
+                                        TextAlignmentOptions.Center);
+                UiKit.Stretch(UiKit.Rect(label.gameObject), 0f, 0f, 0f, 0f);
+            }
+        }
+
+        /// <summary>A key that keeps every pointer event to itself, so nothing reaches the field.</summary>
+        private sealed class Key : MonoBehaviour, IPointerDownHandler, IPointerClickHandler,
+                                   IBeginDragHandler, IDragHandler, IEndDragHandler
+        {
+            public Action Act;
+            public void OnPointerDown(PointerEventData _) { }
+            public void OnPointerClick(PointerEventData _) => Act?.Invoke();
+            public void OnBeginDrag(PointerEventData _) { }
+            public void OnDrag(PointerEventData _) { }
+            public void OnEndDrag(PointerEventData _) { }
         }
     }
 }

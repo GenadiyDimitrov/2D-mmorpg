@@ -15,10 +15,29 @@
 
 ## My Finds — next pass (write here)
 
-From the 0.216.0 farm pass (2026-10-01), verbatim — all three are the Android text boxes:
-- `F1` [!] - still dont see the cursor when typing ->
-- `F2` [!] - still cannot copy text (paste works) ->
-- `F3` [!] - still cannot select part of text or go to its middle to delete/change middle part ->
+- [ ] ->
+
+---
+
+## §119 — 0.218.1: the Android text boxes — a caret, mid-text taps, Copy / Cut / All (your F1-F3, 2026-10-01)
+
+⚠ **New APK.** No `game.db` delete. Your three finds (*"still dont see the cursor"*, *"still cannot copy text"*, *"still
+cannot select part of text or go to its middle"*) had one root cause plus one wall: the caret was **never built** (it was
+there and moving, just invisible), and Android's own copy menu **cannot exist** in this client (the app runs on
+GameActivity, which has no native text box to hang that menu on). So copy is a small strip of ours, shown only while you
+have text selected; paste stays the keyboard's.
+
+- `119a` [ ] - **The caret:** tap any text box (chat, login, a gold amount, a window's search) and type. A blinking bar
+  shows where you are typing. ->
+- `119b` [ ] - **The middle of the text:** type a line in chat, then tap between two letters. The caret goes there, and
+  typing or deleting changes the middle, not the end. A box that already holds text and gets focus from code (Reply, the
+  whisper action) still starts at the end. ->
+- `119c` [ ] - **Select + copy:** drag your finger across part of the text, or double-tap a word. It highlights, and a
+  **Copy / Cut / All** strip appears just above the box. Copy, then paste with the keyboard somewhere else. Cut removes the
+  part, All selects everything. Password boxes have no strip, on purpose. ->
+- `119d` [ ] - **Chat box specifically:** it no longer has Android's own input strip above the keyboard (0.114.0's attempt
+  at the native menu, which never worked here and cost chat its caret). You type straight into our box like every other
+  one. Anything wrong with how it sits above the keyboard now? ->
 
 ---
 

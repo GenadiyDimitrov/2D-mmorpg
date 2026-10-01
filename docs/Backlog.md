@@ -280,8 +280,8 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
 | `BL-323` | ⏸ | **Server-side collision (geodata)** — the server checks walls/buildings too, not only the 3D models; waits on `BL-281` | world |
 | `BL-328` | ⏸ | **Terrain movement** — water (−70% + breath gauge, drowning) and mud (−30-50%); *"lot later"*; needs terrain data | world |
-| `BL-329` | 🔵 | **Login session timer** — 1 min from Login to entering the world, 10 min during character creation; 2 Qs | systems |
-| `BL-330` | 🔵 | **Skill tree** — a generated page first (race × path, 1st-4th), then in game at creation + class masters; 1 Q | ui |
+| `BL-329` | ⏸ | **Login session timer** — 1 min from Login to entering the world, 10 min during character creation; waits for character customization | systems |
+| `BL-330` | 🔵 | **Skill tree** — a generated page first (per RACE: race → Fighter/Mage → onward, 1st-4th), then in game at creation + class masters | ui |
 
 ---
 
@@ -2269,7 +2269,7 @@ thats lot later and can still be separate from towns just as an idea"*.
   never unexplained. Needs terrain data the world does not have yet (water and mud areas), so it sits with `BL-281`.
 ⏸ *"lot later"*, his words.
 
-## `BL-329` 🔵 LOGIN SESSION TIMER — no lingering on the login screens
+## `BL-329` ⏸ LOGIN SESSION TIMER — no lingering on the login screens
 
 His idea, 2026-10-01: *"we need some sort of login session time - like 1min or something - when you click `login`
 until u enter the game with a char. - not to linger on the login screen - once we make a char customization and takes
@@ -2284,6 +2284,9 @@ creation it start the login timer again."*
 - ❓ **Two questions:** (1) should the client show a countdown, or just drop you with a message? (my pick: a small
   countdown in the last 15 s, then "Session timed out"); (2) the customization screen does not exist yet: build the 1 min
   login/select timer now and add the 10 min one with `BL-281`-era customization, or wait and build both together?
+- ⏸ **His answer, 2026-10-01: wait.** *"login timer to w8 for customization - now while I playtest I sit long on the char
+  select screen when chars are offline farming"*. Build both clocks together with character customization. Q1 (countdown
+  vs drop with a message) is still open and gets asked then.
 
 ## `BL-330` 🔵 THE SKILL TREE — see what a path gives before you pick it
 
@@ -2295,3 +2298,6 @@ when creating char or on any class master to know hwat u are getting your self i
   Archmaster), showing the paths that class can still take.
 - ❓ Step 1 first, as he said. One question for the page: per-RACE trees (8 paths each, race faces and race-only skills
   shown) — my pick, since race splits several kits — or one tree per path with race markers on the skills?
+- ✅ **His answer, 2026-10-01: per RACE.** *"skill tree per race. U select a race then select fighter or mage and then
+  from there onward"*. So the page opens on a race picker, then Fighter / Mage, then the 2nd → 3rd → 4th branches.
+  Step 1 is unblocked.

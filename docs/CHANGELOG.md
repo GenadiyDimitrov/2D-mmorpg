@@ -24,7 +24,30 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-01 (latest) — 0.218.0: Paved Streets — run faster on a city's streets (`BL-324`)
+## 2026-10-01 (latest) — 0.218.1: the Android text boxes, found at last: a caret, mid-text taps, Copy / Cut / All
+
+His F1-F3 from the 0.216.0 farm pass: *"still dont see the cursor when typing"*, *"still cannot copy text (paste
+works)"*, *"still cannot select part of text or go to its middle"*. **New APK.** No `game.db` delete. Checklist §119.
+Client only (`UiKit.cs`, one line in `GameUi.World.cs`).
+
+- 🔑 **F1, the caret was never BUILT.** TMP creates the object that draws the caret *and* the selection highlight in
+  `OnEnable`, and only when `textComponent` is already set. `UiKit.InputField` called `AddComponent<TMP_InputField>()`
+  first, so `OnEnable` ran with no text component, and every box built inside an active window had no caret object at all.
+  The caret and the selection were there and moving, just invisible. The fix cycles `enabled` after wiring. Earlier attempts
+  (0.47.0's `shouldHideMobileInput`, `CaretToEnd`, 0.114.0's `BL-178`) all tuned behaviour around a caret that could not
+  be drawn. The caret is also 3 units wide now, in the text colour.
+- 🔑 **F2, Android's own copy menu cannot exist in this client.** The player runs on **GameActivity**
+  (`androidApplicationEntry: 2`), which has no native EditText for the OS to put a selection menu on. 0.114.0 (`BL-178`)
+  gave the chat box the native input hoping the menu would return. It did not, and it cost chat its caret completely
+  (with the native input shown, TMP's `InPlaceEditing()` is false: no caret, no drag, taps ignored). Every box hides the
+  native input again, and **`ClipboardBar`** is a small Copy / Cut / All strip above a box while part of its text is
+  selected (drag across text, or double-tap a word). Paste stays the keyboard's, which already works. Password boxes get
+  no strip. He asked for *"the normal"* menu if it could be made to work; it cannot without leaving GameActivity.
+- **F3, a tap now keeps its place.** `CaretToEnd` moved the caret to the end a frame after any focus, so a first tap in
+  the middle of a box was thrown away. It now acts only on focus set from code (Reply, the whisper action); a finger's tap
+  stays where it landed.
+
+## 2026-10-01 — 0.218.0: Paved Streets — run faster on a city's streets (`BL-324`)
 
 His answer from the 0.216.0 farm pass: *"Agree with your proposal -> automatic visible buff"*, *"the 'Only Streets' effect
 idea is good"*. **No new APK** (the speed and the bar row come from the server). No `game.db` delete. Checklist §118.
