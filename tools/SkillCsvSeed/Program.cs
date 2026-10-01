@@ -41,6 +41,11 @@ Directory.CreateDirectory(outDir);
 if (args.Contains("--gen-passives")) return PassiveGen.Run(outDir, dir.FullName, args.Contains("--base"));
 // `--reweigh-sp` — `BL-326`: split each level's SP pot by the weights in docs/data/sp_weights.csv, then regenerate.
 // `--reweigh-sp --show archer` prints the per-level split for the files whose name contains "archer".
+// `--scale-sp 40 75 0.7` — every class-table SP cell learned at 40..75 times 0.7, then regenerate.
+int scaleAt = Array.IndexOf(args, "--scale-sp");
+if (scaleAt >= 0)
+    return PassiveGen.ScaleSp(outDir, dir.FullName, int.Parse(args[scaleAt + 1]), int.Parse(args[scaleAt + 2]),
+        double.Parse(args[scaleAt + 3], System.Globalization.CultureInfo.InvariantCulture));
 if (args.Contains("--reweigh-sp"))
 {
     int si = Array.IndexOf(args, "--show");

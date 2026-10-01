@@ -163,8 +163,32 @@ internal static partial class PassiveGen
                     Console.WriteLine($"      {r.Id,-34} w {weights[r.Id],4:0.##}  {r.Sp,12:N0} → {price[r],12:N0}  {(r.Races.Length == 3 ? "" : string.Join(";", r.Races))}");
             }
 
+        int changed = WriteSpCells(csvDir, price);
+        long before = potRows.Sum(r => r.Sp), after = potRows.Sum(r => (long)price[r]);
+        Console.WriteLine($"{changed} SP cell(s) rewritten; the pots summed {before:N0} before, {after:N0} after (rounding).");
+        return Run(csvDir, repoRoot, false);
+    }
+
+    /// <summary>`--scale-sp FROM TO FACTOR` — every class-table SP cell learned at FROM..TO times FACTOR (owner,
+    /// 2026-10-01: 40-75 × 0.7, *"it's impossible to learn skills"*). Every cell of a level moves together, so each
+    /// level's pot shrinks and its weight split is untouched; then regenerates like a reweigh.</summary>
+    public static int ScaleSp(string csvDir, string repoRoot, int from, int to, double factor)
+    {
+        var rows = ReadPriceRows(csvDir).Where(r => r.Sp > 0 && r.Level >= from && r.Level <= to
+                                   && r.Races.All(race => KeyFor(r.Fk, race, r.Id, r.Level) is not null)).ToList();
+        var price = rows.ToDictionary(r => r, r => Nice(r.Sp * factor));
+        int changed = WriteSpCells(csvDir, price);
+        long before = rows.Sum(r => r.Sp), after = rows.Sum(r => (long)price[r]);
+        Console.WriteLine($"{changed} SP cell(s) at {from}-{to} scaled ×{factor}: {before:N0} → {after:N0}.");
+        return Run(csvDir, repoRoot, false);
+    }
+
+    /// <summary>Writes each row's new price into its SP COST cell, keeping the cell's own unit (k / kk / ×1000), the
+    /// file's line endings and its BOM. Returns how many cells changed.</summary>
+    private static int WriteSpCells(string csvDir, Dictionary<PriceRow, int> price)
+    {
         int changed = 0;
-        foreach (var fg in potRows.GroupBy(r => r.Fk.File))
+        foreach (var fg in price.Keys.GroupBy(r => r.Fk.File))
         {
             string path = Path.Combine(csvDir, fg.Key + ".csv");
             bool bom = File.ReadAllBytes(path) is [0xEF, 0xBB, 0xBF, ..];
@@ -190,9 +214,7 @@ internal static partial class PassiveGen
             }
             File.WriteAllText(path, string.Join(nl, lines), new UTF8Encoding(bom));
         }
-        long before = potRows.Sum(r => r.Sp), after = potRows.Sum(r => (long)price[r]);
-        Console.WriteLine($"{changed} SP cell(s) rewritten; the pots summed {before:N0} before, {after:N0} after (rounding).");
-        return Run(csvDir, repoRoot, false);
+        return changed;
     }
 
     /// <summary>Three significant figures (below 1,000: to the unit), so the Learn tab reads 95,100 not 95,084.</summary>

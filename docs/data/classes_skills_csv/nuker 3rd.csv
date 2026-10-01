@@ -1,226 +1,226 @@
 LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPLACES,RACE,Comment,DESCRIPTION
 ,,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
-40,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +43",0,25.7k,[]
-44,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +49",0,30.3k,[]
-48,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +56",0,54.4k,[]
-52,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +63",0,42.3k,[]
-56,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +70",0,69k,[]
-58,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +74",0,52.4k,[]
-60,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +78",0,84.7k,[]
-62,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +82",0,126k,[]
-64,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +86",0,140k,[]
-66,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +91",0,162k,[]
-68,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +95",0,283k,[]
-70,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +99",0,255k,[]
-72,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +104",0,448k,[]
-74,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +108",0,576k,[]
+40,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +43",0,18k,[]
+44,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +49",0,21.2k,[]
+48,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +56",0,38.1k,[]
+52,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +63",0,29.6k,[]
+56,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +70",0,48.3k,[]
+58,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +74",0,36.7k,[]
+60,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +78",0,59.3k,[]
+62,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +82",0,88.2k,[]
+64,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +86",0,98k,[]
+66,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +91",0,113k,[]
+68,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +95",0,198k,[]
+70,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +99",0,178k,[]
+72,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +104",0,314k,[]
+74,Anti-Magic,anti_magic,Passive,,,0,0,self/single,0,0,0,"m.def +108",0,403k,[]
 ,,,,,,,,,,,,,,,,,----------------------------Magic Resistance----------------------------
-40,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +15%",0,25.7k,[]
-52,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +20%",0,42.3k,[]
-66,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +25%",0,162k,[]
-70,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +30%",0,255k,[]
+40,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +15%",0,18k,[]
+52,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +20%",0,29.6k,[]
+66,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +25%",0,113k,[]
+70,Magic Resistance,magic_resistance,Passive,,,0,0,self/single,0,0,0,"mRes +30%",0,178k,[]
 ,,,,,,,,,,,,,,,,,----------------------------Robe Armor Mastery----------------------------
-40,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +39",0,25.7k,[]
-44,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +44",0,30.3k,[]
-48,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +47",0,54.4k,[]
-52,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +50",0,42.3k,[]
-56,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +53",0,69k,[]
-58,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +56",0,52.4k,[]
-60,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +58",0,84.7k,[]
-62,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +64",0,126k,[]
-64,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +68",0,140k,[]
-66,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +72",0,162k,[]
-68,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +75",0,283k,[]
-70,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +79",0,255k,[]
-72,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +83",0,448k,[]
-74,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +87",0,576k,[]
+40,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +39",0,18k,[]
+44,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +44",0,21.2k,[]
+48,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +47",0,38.1k,[]
+52,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +50",0,29.6k,[]
+56,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +53",0,48.3k,[]
+58,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +56",0,36.7k,[]
+60,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +58",0,59.3k,[]
+62,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +64",0,88.2k,[]
+64,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +68",0,98k,[]
+66,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +72",0,113k,[]
+68,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +75",0,198k,[]
+70,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +79",0,178k,[]
+72,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +83",0,314k,[]
+74,Robe Armor Mastery,mage_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"robe: p.def +87",0,403k,[]
 ,,,,,,,,,,,,,,,,,----------------------------Mana Capacity----------------------------
-40,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +70",0,25.7k,[]
-48,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +100",0,54.4k,[]
-56,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +140",0,69k,[]
-60,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +150",0,84.7k,[]
-66,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +180",0,162k,[]
-72,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +200",0,448k,[]
+40,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +70",0,18k,[]
+48,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +100",0,38.1k,[]
+56,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +140",0,48.3k,[]
+60,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +150",0,59.3k,[]
+66,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +180",0,113k,[]
+72,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,"maxMP +200",0,314k,[]
 ,,,,,,,,,,,,,,,,,----------------------------Mana Recovery----------------------------
-40,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +33%",0,25.7k,[]
-44,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +35%",0,30.3k,[]
-48,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +37%",0,54.4k,[]
-52,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +40%",0,42.3k,[]
-56,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +43%",0,69k,[]
-58,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +45%",0,52.4k,[]
-60,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +47%",0,84.7k,[]
-62,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +50%",0,126k,[]
-64,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +53%",0,140k,[]
-66,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +55%",0,162k,[]
-68,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +57%",0,283k,[]
-70,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +60%",0,255k,[]
+40,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +33%",0,18k,[]
+44,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +35%",0,21.2k,[]
+48,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +37%",0,38.1k,[]
+52,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +40%",0,29.6k,[]
+56,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +43%",0,48.3k,[]
+58,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +45%",0,36.7k,[]
+60,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +47%",0,59.3k,[]
+62,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +50%",0,88.2k,[]
+64,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +53%",0,98k,[]
+66,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +55%",0,113k,[]
+68,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +57%",0,198k,[]
+70,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,"mpWhenRestored +60%",0,178k,[]
 ,,,,,,,,,,,,,,,,,----------------------------Spellcaster Weapon Mastery----------------------------
-40,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +23",0,25.7k,[]
-44,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +29",0,30.3k,[]
-48,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +36",0,54.4k,[]
-52,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +45",0,42.3k,[]
-56,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +52",0,69k,[]
-58,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +57",0,52.4k,[]
-60,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +62",0,84.7k,[]
-62,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +67",0,126k,[]
-64,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +72",0,140k,[]
-66,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +77",0,162k,[]
-68,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +83",0,283k,[]
-70,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +88",0,255k,[]
-72,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +94",0,448k,[]
-74,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +99",0,576k,[]
+40,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +23",0,18k,[]
+44,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +29",0,21.2k,[]
+48,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +36",0,38.1k,[]
+52,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +45",0,29.6k,[]
+56,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +52",0,48.3k,[]
+58,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +57",0,36.7k,[]
+60,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +62",0,59.3k,[]
+62,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +67",0,88.2k,[]
+64,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +72",0,98k,[]
+66,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +77",0,113k,[]
+68,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +83",0,198k,[]
+70,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +88",0,178k,[]
+72,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +94",0,314k,[]
+74,Spellcaster Weapon Mastery,spellcaster_weapon_mastery,Passive,sword|blunt|bow,,0,0,self/single,0,0,0,"m.Atk +99",0,403k,[]
 ,,,,,,,,,,,,,,,,,----------------------------Cooldown Mastery----------------------------
-40,Cooldown Mastery,cooldown_mastery,Passive,,,0,0,self/single,0,0,0,"Decreses the reuse delay with 15%",0,25.7k,[]
-48,Cooldown Mastery,cooldown_mastery,Passive,,,0,0,self/single,0,0,0,"Decreses the reuse delay with 20%",0,54.4k,[]
+40,Cooldown Mastery,cooldown_mastery,Passive,,,0,0,self/single,0,0,0,"Decreses the reuse delay with 15%",0,18k,[]
+48,Cooldown Mastery,cooldown_mastery,Passive,,,0,0,self/single,0,0,0,"Decreses the reuse delay with 20%",0,38.1k,[]
 ,,,,,,,,,,,,,,,,,----------------------------Cast Speed Mastery----------------------------
-40,Cast Speed Mastery,cast_speed_mastery,Passive,,,0,0,self/single,0,0,0,"cast speed x1.07",0,25.7k,[]
-56,Cast Speed Mastery,cast_speed_mastery,Passive,,,0,0,self/single,0,0,0,"cast speed x1.1",0,69k,[]
+40,Cast Speed Mastery,cast_speed_mastery,Passive,,,0,0,self/single,0,0,0,"cast speed x1.07",0,18k,[]
+56,Cast Speed Mastery,cast_speed_mastery,Passive,,,0,0,self/single,0,0,0,"cast speed x1.1",0,48.3k,[]
 ,,,,,,,,,,,,,,,,,----------------------------MpRegen----------------------------
-44,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +1.9",0,30.3k,[]
-52,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +2.3",0,42.3k,[]
-60,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +2.7",0,84.7k,[]
-68,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +3.1",0,283k,[]
-74,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +3.4",0,576k,[]
+44,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +1.9",0,21.2k,[]
+52,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +2.3",0,29.6k,[]
+60,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +2.7",0,59.3k,[]
+68,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +3.1",0,198k,[]
+74,Mp regeneration,mp_regeneration,Passive,,,0,0,self/single,0,0,0,"mpReg +3.4",0,403k,[]
 ,,,,,,,,,,,,,,,,,----------------------------HpRegen----------------------------
-44,HP regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"hpReg +1.6",0,30.3k,[]
-52,HP regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"hpReg +1.7",0,42.3k,[]
-58,HP regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"hpReg +2.1",0,52.4k,[]
-64,HP regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"hpReg +2.6",0,140k,[]
-74,HP regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"hpReg +2.7",0,576k,[]
+44,HP regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"hpReg +1.6",0,21.2k,[]
+52,HP regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"hpReg +1.7",0,29.6k,[]
+58,HP regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"hpReg +2.1",0,36.7k,[]
+64,HP regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"hpReg +2.6",0,98k,[]
+74,HP regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,"hpReg +2.7",0,403k,[]
 ,,,,,,,,,,,,,,,,,------------------------------Calm Spirit------------------------------
-40,Calm Spirit,calm_spirit,Passive,,,0,0,self/single,0,0,0,Multiplies the MP regen when walking x1.06,0,25.7k,[]
-48,Calm Spirit,calm_spirit,Passive,,,0,0,self/single,0,0,0,Multiplies the MP regen when walking x1.08,0,54.4k,[]
-56,Calm Spirit,calm_spirit,Passive,,,0,0,self/single,0,0,0,Multiplies the MP regen when walking x1.10,0,69k,[]
-62,Calm Spirit,calm_spirit,Passive,,,0,0,self/single,0,0,0,Multiplies the MP regen when walking x1.12 and standing still x1.01,0,126k,[]
-68,Calm Spirit,calm_spirit,Passive,,,0,0,self/single,0,0,0,Multiplies the MP regen when walking x1.14 and standing still x1.01,0,283k,[]
-74,Calm Spirit,calm_spirit,Passive,,,0,0,self/single,0,0,0,Multiplies the MP regen when walking x1.16 and standing still x1.01,0,576k,[]
+40,Calm Spirit,calm_spirit,Passive,,,0,0,self/single,0,0,0,Multiplies the MP regen when walking x1.06,0,18k,[]
+48,Calm Spirit,calm_spirit,Passive,,,0,0,self/single,0,0,0,Multiplies the MP regen when walking x1.08,0,38.1k,[]
+56,Calm Spirit,calm_spirit,Passive,,,0,0,self/single,0,0,0,Multiplies the MP regen when walking x1.10,0,48.3k,[]
+62,Calm Spirit,calm_spirit,Passive,,,0,0,self/single,0,0,0,Multiplies the MP regen when walking x1.12 and standing still x1.01,0,88.2k,[]
+68,Calm Spirit,calm_spirit,Passive,,,0,0,self/single,0,0,0,Multiplies the MP regen when walking x1.14 and standing still x1.01,0,198k,[]
+74,Calm Spirit,calm_spirit,Passive,,,0,0,self/single,0,0,0,Multiplies the MP regen when walking x1.16 and standing still x1.01,0,403k,[]
 ,,,,,,,,,,,,,,,,,------------------------------Restore Spirit------------------------------
-40,Restore Spirit,restore_spirit,Magic/MP Regen,,,0,0,self/single,4,5,0,exchanges HP (-100) for MP (+33) - multiplied by mpWhenRestored from Mage Armor Mastery,0,117k,[]
-52,Restore Spirit,restore_spirit,Magic/MP Regen,,,0,0,self/single,4,5,0,exchanges HP (-162) for MP (+54) - multiplied by mpWhenRestored from Mage Armor Mastery,0,192k,[]
-58,Restore Spirit,restore_spirit,Magic/MP Regen,,,0,0,self/single,4,5,0,exchanges HP (-213) for MP (+71) - multiplied by mpWhenRestored from Mage Armor Mastery,0,238k,[]
-66,Restore Spirit,restore_spirit,Magic/MP Regen,,,0,0,self/single,4,5,0,exchanges HP (-272) for MP (+94) - multiplied by mpWhenRestored from Mage Armor Mastery,0,737k,[],,Intentionally decreased as mp regen with x3.4(weapon mastery)/x1.2(Spellcaster)/x1.2 = ~x5; still alot more mp and alot less hp than IG;
+40,Restore Spirit,restore_spirit,Magic/MP Regen,,,0,0,self/single,4,5,0,exchanges HP (-100) for MP (+33) - multiplied by mpWhenRestored from Mage Armor Mastery,0,81.9k,[]
+52,Restore Spirit,restore_spirit,Magic/MP Regen,,,0,0,self/single,4,5,0,exchanges HP (-162) for MP (+54) - multiplied by mpWhenRestored from Mage Armor Mastery,0,134k,[]
+58,Restore Spirit,restore_spirit,Magic/MP Regen,,,0,0,self/single,4,5,0,exchanges HP (-213) for MP (+71) - multiplied by mpWhenRestored from Mage Armor Mastery,0,167k,[]
+66,Restore Spirit,restore_spirit,Magic/MP Regen,,,0,0,self/single,4,5,0,exchanges HP (-272) for MP (+94) - multiplied by mpWhenRestored from Mage Armor Mastery,0,516k,[],,Intentionally decreased as mp regen with x3.4(weapon mastery)/x1.2(Spellcaster)/x1.2 = ~x5; still alot more mp and alot less hp than IG;
 ,,,,,,,,,,,,,,,,,------------------------------Phase Shift------------------------------
-52,Phase Shift,phase_shift,Magic/Buff,,,0,0,self/single,0,8,0,Blink 200 away from the nearest enemy to create distance (no target needed).,96,128k,[],
-62,Phase Shift,phase_shift,Magic/Buff,,,0,0,self/single,0,8,0,Blink 400 away from the nearest enemy to create distance (no target needed).,116,382k,[],
-72,Phase Shift,phase_shift,Magic/Buff,,,0,0,self/single,0,8,0,Blink 600 away from the nearest enemy to create distance (no target needed).,138,1360k,[],
+52,Phase Shift,phase_shift,Magic/Buff,,,0,0,self/single,0,8,0,Blink 200 away from the nearest enemy to create distance (no target needed).,96,89.6k,[],
+62,Phase Shift,phase_shift,Magic/Buff,,,0,0,self/single,0,8,0,Blink 400 away from the nearest enemy to create distance (no target needed).,116,267k,[],
+72,Phase Shift,phase_shift,Magic/Buff,,,0,0,self/single,0,8,0,Blink 600 away from the nearest enemy to create distance (no target needed).,138,952k,[],
 ,,,,,,,,,,,,,,,,,-----------------------------Elemental Blast-----------------------------
-40,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +52,33,117k,[elemental_bolt],,,"Magic damage, power @."
-44,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +58,38,138k,[elemental_bolt]
-48,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +65,44,247k,[elemental_bolt]
-52,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +72,48,192k,[elemental_bolt]
-56,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +78,52,313k,[elemental_bolt]
-58,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +82,54,238k,[elemental_bolt]
-60,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +85,55,385k,[elemental_bolt]
-62,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +89,58,573k,[elemental_bolt]
-64,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +92,60,634k,[elemental_bolt]
-66,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +96,62,737k,[elemental_bolt]
-68,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +99,64,1290k,[elemental_bolt]
-70,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +102,65,1160k,[elemental_bolt]
-72,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +105,67,2040k,[elemental_bolt]
-74,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +108,69,2620k,[elemental_bolt]
+40,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +52,33,81.9k,[elemental_bolt],,,"Magic damage, power @."
+44,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +58,38,96.6k,[elemental_bolt]
+48,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +65,44,173k,[elemental_bolt]
+52,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +72,48,134k,[elemental_bolt]
+56,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +78,52,219k,[elemental_bolt]
+58,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +82,54,167k,[elemental_bolt]
+60,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +85,55,270k,[elemental_bolt]
+62,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +89,58,401k,[elemental_bolt]
+64,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +92,60,444k,[elemental_bolt]
+66,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +96,62,516k,[elemental_bolt]
+68,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +99,64,903k,[elemental_bolt]
+70,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +102,65,812k,[elemental_bolt]
+72,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +105,67,1430k,[elemental_bolt]
+74,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +108,69,1830k,[elemental_bolt]
 ,,,,,,,,,,,,,,,,,-----------------------------Elemental Burst-----------------------------
-58,Elemental Burst,elemental_burst,Magic/Dmg,,,900,0,enemy/single,1,300,0,"Gathers Elemental energy to burst the enemy, power 120. Consumes 2 Elemental Stone.",120,238k,[],,,"Magic damage, power @. Consumes @{reagent} Elemental Stones."
-66,Elemental Burst,elemental_burst,Magic/Dmg,,,900,0,enemy/single,1,300,0,"Gathers Elemental energy to burst the enemy, power 133. Consumes 2 Elemental Stone.",133,737k,[],
-74,Elemental Burst,elemental_burst,Magic/Dmg,,,900,0,enemy/single,1,300,0,"Gathers Elemental energy to burst the enemy, power 154. Consumes 2 Elemental Stone.",154,2620k,[],
+58,Elemental Burst,elemental_burst,Magic/Dmg,,,900,0,enemy/single,1,300,0,"Gathers Elemental energy to burst the enemy, power 120. Consumes 2 Elemental Stone.",120,167k,[],,,"Magic damage, power @. Consumes @{reagent} Elemental Stones."
+66,Elemental Burst,elemental_burst,Magic/Dmg,,,900,0,enemy/single,1,300,0,"Gathers Elemental energy to burst the enemy, power 133. Consumes 2 Elemental Stone.",133,516k,[],
+74,Elemental Burst,elemental_burst,Magic/Dmg,,,900,0,enemy/single,1,300,0,"Gathers Elemental energy to burst the enemy, power 154. Consumes 2 Elemental Stone.",154,1830k,[],
 ,,,,,,,,,,,,,,,,,-----------------------------Thunderstorm-----------------------------
-62,Thunderstorm,thunderstorm,Magic/Dmg,,,900,0,enemy/single,5,300,0,"Calls down thunderstorm to stike the enemy, power 178. Consumes 3 Elemental Stone.",178,573k,[],,,"Storm damage, power @. Consumes @{reagent} Elemental Stones."
-70,Thunderstorm,thunderstorm,Magic/Dmg,,,900,0,enemy/single,5,300,0,"Calls down thunderstorm to stike the enemy, power 204. Consumes 3 Elemental Stone.",204,1160k,[],
-74,Thunderstorm,thunderstorm,Magic/Dmg,,,900,0,enemy/single,5,300,0,"Calls down thunderstorm to stike the enemy, power 216. Consumes 3 Elemental Stone.",216,2620k,[],
+62,Thunderstorm,thunderstorm,Magic/Dmg,,,900,0,enemy/single,5,300,0,"Calls down thunderstorm to stike the enemy, power 178. Consumes 3 Elemental Stone.",178,401k,[],,,"Storm damage, power @. Consumes @{reagent} Elemental Stones."
+70,Thunderstorm,thunderstorm,Magic/Dmg,,,900,0,enemy/single,5,300,0,"Calls down thunderstorm to stike the enemy, power 204. Consumes 3 Elemental Stone.",204,812k,[],
+74,Thunderstorm,thunderstorm,Magic/Dmg,,,900,0,enemy/single,5,300,0,"Calls down thunderstorm to stike the enemy, power 216. Consumes 3 Elemental Stone.",216,1830k,[],
 ,,,,,,,,,,,,,,,,,-----------------------------Race Bursts (74)-----------------------------
-74,Arcane Burst,arcane_burst,Magic/Dmg,,,900,0,enemy/single,1,300,15,"Arcance Magic spell, power 150. Decrease SPT resistance by 40%, Never Fizzle",150,2620k,[],Human
-74,Frost Burst,frost_burst,Magic/Dmg,,,900,0,enemy/single,1,300,15,"Frost Magic spell, power 150. Freeze the enemy: -30% M.def and prevents movement, Never Fizzle",150,2620k,[],Elf,,"Power @, never fizzles, and freezes for @{duration}: -@{mdef} M.Def, cannot move."
-74,Pyro Burst,pyro_burst,Magic/Dmg,,,900,0,enemy/single,1,300,15,"Fire Magic spell, power 150. Burn the enemy for -100/s HP; Never Fizzle",150,2620k,[],Demon,new effect like a DOT but its not poision nor bleed nor venom -> burn = true dmg per second no cure and can kill 
+74,Arcane Burst,arcane_burst,Magic/Dmg,,,900,0,enemy/single,1,300,15,"Arcance Magic spell, power 150. Decrease SPT resistance by 40%, Never Fizzle",150,1830k,[],Human
+74,Frost Burst,frost_burst,Magic/Dmg,,,900,0,enemy/single,1,300,15,"Frost Magic spell, power 150. Freeze the enemy: -30% M.def and prevents movement, Never Fizzle",150,1830k,[],Elf,,"Power @, never fizzles, and freezes for @{duration}: -@{mdef} M.Def, cannot move."
+74,Pyro Burst,pyro_burst,Magic/Dmg,,,900,0,enemy/single,1,300,15,"Fire Magic spell, power 150. Burn the enemy for -100/s HP; Never Fizzle",150,1830k,[],Demon,new effect like a DOT but its not poision nor bleed nor venom -> burn = true dmg per second no cure and can kill 
 ,,,,,,,,,,,,,,,,,-----------------------------Quick Blast-----------------------------
-40,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +42; Power in PVP x0.5,33,117k,[quick_bolt],,,"Magic damage, power @. Half power in PvP."
-44,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +47; Power in PVP x0.5,38,138k,[quick_bolt]
-48,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +52; Power in PVP x0.5,44,247k,[quick_bolt]
-52,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +57; Power in PVP x0.5,48,192k,[quick_bolt]
-56,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +63; Power in PVP x0.5,52,313k,[quick_bolt]
-58,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +66; Power in PVP x0.5,54,238k,[quick_bolt]
-60,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +68; Power in PVP x0.5,55,385k,[quick_bolt]
-62,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +71; Power in PVP x0.5,58,573k,[quick_bolt]
-64,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +74; Power in PVP x0.5,60,634k,[quick_bolt]
-66,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +77; Power in PVP x0.5,62,737k,[quick_bolt]
-68,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +79; Power in PVP x0.5,64,1290k,[quick_bolt]
-70,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +82; Power in PVP x0.5,65,1160k,[quick_bolt]
-72,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +84; Power in PVP x0.5,67,2040k,[quick_bolt]
-74,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +87; Power in PVP x0.5,69,2620k,[quick_bolt]
+40,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +42; Power in PVP x0.5,33,81.9k,[quick_bolt],,,"Magic damage, power @. Half power in PvP."
+44,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +47; Power in PVP x0.5,38,96.6k,[quick_bolt]
+48,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +52; Power in PVP x0.5,44,173k,[quick_bolt]
+52,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +57; Power in PVP x0.5,48,134k,[quick_bolt]
+56,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +63; Power in PVP x0.5,52,219k,[quick_bolt]
+58,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +66; Power in PVP x0.5,54,167k,[quick_bolt]
+60,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +68; Power in PVP x0.5,55,270k,[quick_bolt]
+62,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +71; Power in PVP x0.5,58,401k,[quick_bolt]
+64,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +74; Power in PVP x0.5,60,444k,[quick_bolt]
+66,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +77; Power in PVP x0.5,62,516k,[quick_bolt]
+68,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +79; Power in PVP x0.5,64,903k,[quick_bolt]
+70,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +82; Power in PVP x0.5,65,812k,[quick_bolt]
+72,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +84; Power in PVP x0.5,67,1430k,[quick_bolt]
+74,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +87; Power in PVP x0.5,69,1830k,[quick_bolt]
 ,,,,,,,,,,,,,,,,,-----------------------------Elemental Wave-----------------------------
-40,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +30;,53,117k,[]
-44,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +35;,59,138k,[]
-48,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +39;,65,247k,[]
-52,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +43;,70,192k,[]
-56,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +46;,77,313k,[]
-58,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +48;,80,238k,[]
-60,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +50;,83,385k,[]
-62,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +52;,87,573k,[]
-64,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +54;,89,634k,[]
-66,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +56;,93,737k,[]
-68,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +58;,95,1290k,[]
-70,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +60;,98,1160k,[]
-72,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +62;,100,2040k,[]
-74,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +64;,103,2620k,[]
+40,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +30;,53,81.9k,[]
+44,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +35;,59,96.6k,[]
+48,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +39;,65,173k,[]
+52,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +43;,70,134k,[]
+56,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +46;,77,219k,[]
+58,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +48;,80,167k,[]
+60,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +50;,83,270k,[]
+62,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +52;,87,401k,[]
+64,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +54;,89,444k,[]
+66,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +56;,93,516k,[]
+68,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +58;,95,903k,[]
+70,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +60;,98,812k,[]
+72,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +62;,100,1430k,[]
+74,Elemental Wave,elemental_wave,Magic/Dmg,,,0,200,enemy/aoe,4,4,0,Hit nearby enemies in 200 radius with m.Atk +64;,103,1830k,[]
 ,,,,,,,,,,,,,,,,,-----------------------------Frost Pierce-----------------------------
-40,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +30; Applies bleed effect rank 3; Higher chance to interrupt enemy casts (interrupt chance x2);,33,117k,[],Elf,does dmg but have a lower success rate for the bleed - interrupt unaffected
-44,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +35; Applies bleed effect rank 4; Higher chance to interrupt enemy casts (interrupt chance x2);,38,138k,[],Elf
-48,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +39; Applies bleed effect rank 4; Higher chance to interrupt enemy casts (interrupt chance x2);,44,247k,[],Elf
-52,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +43; Applies bleed effect rank 5; Higher chance to interrupt enemy casts (interrupt chance x2);,48,192k,[],Elf
-56,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +46; Applies bleed effect rank 5; Higher chance to interrupt enemy casts (interrupt chance x2);,52,313k,[],Elf
-58,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +48; Applies bleed effect rank 6; Higher chance to interrupt enemy casts (interrupt chance x2);,54,238k,[],Elf
-60,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +50; Applies bleed effect rank 6; Higher chance to interrupt enemy casts (interrupt chance x2);,55,385k,[],Elf
-62,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +52; Applies bleed effect rank 7; Higher chance to interrupt enemy casts (interrupt chance x2);,58,573k,[],Elf
-64,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +54; Applies bleed effect rank 7; Higher chance to interrupt enemy casts (interrupt chance x2);,60,634k,[],Elf
-66,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +56; Applies bleed effect rank 8; Higher chance to interrupt enemy casts (interrupt chance x2);,62,737k,[],Elf
-68,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +58; Applies bleed effect rank 8; Higher chance to interrupt enemy casts (interrupt chance x2);,64,1290k,[],Elf
-70,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +60; Applies bleed effect rank 9; Higher chance to interrupt enemy casts (interrupt chance x2);,65,1160k,[],Elf
-72,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +62; Applies bleed effect rank 9; Higher chance to interrupt enemy casts (interrupt chance x2);,67,2040k,[],Elf
-74,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +64; Applies bleed effect rank 10; Higher chance to interrupt enemy casts (interrupt chance x2);,69,2620k,[],Elf
+40,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +30; Applies bleed effect rank 3; Higher chance to interrupt enemy casts (interrupt chance x2);,33,81.9k,[],Elf,does dmg but have a lower success rate for the bleed - interrupt unaffected
+44,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +35; Applies bleed effect rank 4; Higher chance to interrupt enemy casts (interrupt chance x2);,38,96.6k,[],Elf
+48,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +39; Applies bleed effect rank 4; Higher chance to interrupt enemy casts (interrupt chance x2);,44,173k,[],Elf
+52,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +43; Applies bleed effect rank 5; Higher chance to interrupt enemy casts (interrupt chance x2);,48,134k,[],Elf
+56,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +46; Applies bleed effect rank 5; Higher chance to interrupt enemy casts (interrupt chance x2);,52,219k,[],Elf
+58,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +48; Applies bleed effect rank 6; Higher chance to interrupt enemy casts (interrupt chance x2);,54,167k,[],Elf
+60,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +50; Applies bleed effect rank 6; Higher chance to interrupt enemy casts (interrupt chance x2);,55,270k,[],Elf
+62,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +52; Applies bleed effect rank 7; Higher chance to interrupt enemy casts (interrupt chance x2);,58,401k,[],Elf
+64,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +54; Applies bleed effect rank 7; Higher chance to interrupt enemy casts (interrupt chance x2);,60,444k,[],Elf
+66,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +56; Applies bleed effect rank 8; Higher chance to interrupt enemy casts (interrupt chance x2);,62,516k,[],Elf
+68,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +58; Applies bleed effect rank 8; Higher chance to interrupt enemy casts (interrupt chance x2);,64,903k,[],Elf
+70,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +60; Applies bleed effect rank 9; Higher chance to interrupt enemy casts (interrupt chance x2);,65,812k,[],Elf
+72,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +62; Applies bleed effect rank 9; Higher chance to interrupt enemy casts (interrupt chance x2);,67,1430k,[],Elf
+74,Frost Pierce,frost_pierce,Magic/Dmg,,,900,0,enemy/single,2.5,1,15,Attack the enemt with m.Atk +64; Applies bleed effect rank 10; Higher chance to interrupt enemy casts (interrupt chance x2);,69,1830k,[],Elf
 ,,,,,,,,,,,,,,,,,-----------------------------Arcane Wave-----------------------------
-40,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +30 in 400 radius around the target;,53,117k,[],Human
-44,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +35 in 400 radius around the target;,59,138k,[],Human
-48,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +39 in 400 radius around the target;,65,247k,[],Human
-52,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +43 in 400 radius around the target;,70,192k,[],Human
-56,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +46 in 400 radius around the target;,77,313k,[],Human
-58,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +48 in 400 radius around the target;,80,238k,[],Human
-60,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +50 in 400 radius around the target;,83,385k,[],Human
-62,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +52 in 400 radius around the target;,87,573k,[],Human
-64,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +54 in 400 radius around the target;,89,634k,[],Human
-66,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +56 in 400 radius around the target;,93,737k,[],Human
-68,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +58 in 400 radius around the target;,95,1290k,[],Human
-70,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +60 in 400 radius around the target;,98,1160k,[],Human
-72,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +62 in 400 radius around the target;,100,2040k,[],Human
-74,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +64 in 400 radius around the target;,103,2620k,[],Human
+40,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +30 in 400 radius around the target;,53,81.9k,[],Human
+44,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +35 in 400 radius around the target;,59,96.6k,[],Human
+48,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +39 in 400 radius around the target;,65,173k,[],Human
+52,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +43 in 400 radius around the target;,70,134k,[],Human
+56,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +46 in 400 radius around the target;,77,219k,[],Human
+58,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +48 in 400 radius around the target;,80,167k,[],Human
+60,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +50 in 400 radius around the target;,83,270k,[],Human
+62,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +52 in 400 radius around the target;,87,401k,[],Human
+64,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +54 in 400 radius around the target;,89,444k,[],Human
+66,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +56 in 400 radius around the target;,93,516k,[],Human
+68,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +58 in 400 radius around the target;,95,903k,[],Human
+70,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +60 in 400 radius around the target;,98,812k,[],Human
+72,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +62 in 400 radius around the target;,100,1430k,[],Human
+74,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +64 in 400 radius around the target;,103,1830k,[],Human
 ,,,,,,,,,,,,,,,,,------------------------------Arcane Void------------------------------
-52,Arcane Void,arcane_void,Magic/Buff,,,900,0,enemy/single,4,30,0,Chance to remove 1~2 positive effect of the target,96,192k,[],Human,lower success rate
-62,Arcane Void,arcane_void,Magic/Buff,,,900,0,enemy/single,4,30,0,Chance to remove 2~3 positive effect of the target,116,573k,[],Human,lower success rate
-72,Arcane Void,arcane_void,Magic/Buff,,,900,0,enemy/single,4,30,0,Chance to remove 2~4 positive effect of the target,138,2040k,[],Human,lower success rate
+52,Arcane Void,arcane_void,Magic/Buff,,,900,0,enemy/single,4,30,0,Chance to remove 1~2 positive effect of the target,96,134k,[],Human,lower success rate
+62,Arcane Void,arcane_void,Magic/Buff,,,900,0,enemy/single,4,30,0,Chance to remove 2~3 positive effect of the target,116,401k,[],Human,lower success rate
+72,Arcane Void,arcane_void,Magic/Buff,,,900,0,enemy/single,4,30,0,Chance to remove 2~4 positive effect of the target,138,1430k,[],Human,lower success rate
 ,,,,,,,,,,,,,,,,,-----------------------------Witches Curse-----------------------------
-40,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +42; A chance to curse enemies for -10% M.Def;,66,117k,[],Demon,does dmg but have a lower success rate for the curse,"Power @, and a chance to cut M.Def by @{mdef} for @{duration}."
-44,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +47; A chance to curse enemies for -10% M.Def;,76,138k,[],Demon
-48,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +52; A chance to curse enemies for -13% M.Def;,88,247k,[],Demon
-52,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +57; A chance to curse enemies for -13% M.Def;,96,192k,[],Demon
-56,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +63; A chance to curse enemies for -17% M.Def;,104,313k,[],Demon
-58,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +66; A chance to curse enemies for -17% M.Def;,108,238k,[],Demon
-60,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +68; A chance to curse enemies for -20% M.Def;,110,385k,[],Demon
-62,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +71; A chance to curse enemies for -20% M.Def;,116,573k,[],Demon
-64,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +74; A chance to curse enemies for -23% M.Def;,120,634k,[],Demon
-66,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +77; A chance to curse enemies for -23% M.Def;,124,737k,[],Demon
-68,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +79; A chance to curse enemies for -27% M.Def;,128,1290k,[],Demon
-70,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +82; A chance to curse enemies for -27% M.Def;,130,1160k,[],Demon
-72,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +84; A chance to curse enemies for -30% M.Def;,134,2040k,[],Demon
-74,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +87; A chance to curse enemies for -30% M.Def;,138,2620k,[],Demon
+40,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +42; A chance to curse enemies for -10% M.Def;,66,81.9k,[],Demon,does dmg but have a lower success rate for the curse,"Power @, and a chance to cut M.Def by @{mdef} for @{duration}."
+44,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +47; A chance to curse enemies for -10% M.Def;,76,96.6k,[],Demon
+48,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +52; A chance to curse enemies for -13% M.Def;,88,173k,[],Demon
+52,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +57; A chance to curse enemies for -13% M.Def;,96,134k,[],Demon
+56,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +63; A chance to curse enemies for -17% M.Def;,104,219k,[],Demon
+58,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +66; A chance to curse enemies for -17% M.Def;,108,167k,[],Demon
+60,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +68; A chance to curse enemies for -20% M.Def;,110,270k,[],Demon
+62,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +71; A chance to curse enemies for -20% M.Def;,116,401k,[],Demon
+64,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +74; A chance to curse enemies for -23% M.Def;,120,444k,[],Demon
+66,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +77; A chance to curse enemies for -23% M.Def;,124,516k,[],Demon
+68,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +79; A chance to curse enemies for -27% M.Def;,128,903k,[],Demon
+70,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +82; A chance to curse enemies for -27% M.Def;,130,812k,[],Demon
+72,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +84; A chance to curse enemies for -30% M.Def;,134,1430k,[],Demon
+74,Witches Curse,witches_curse,Magic/Debuff,,,900,0,enemy/single,2.5,1,30,m.Atk +87; A chance to curse enemies for -30% M.Def;,138,1830k,[],Demon
 ,,,,,,,,,,,,,,,,,-----------------------------Witches Scarecrow-----------------------------
-40,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,66,117k,[],Demon,lower success rate,Terrifies the target for @{duration}.
-44,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,76,138k,[],Demon
-48,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,88,247k,[],Demon
-52,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,96,192k,[],Demon
-56,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,104,313k,[],Demon
-58,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,108,238k,[],Demon
-60,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,110,385k,[],Demon
-62,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,116,573k,[],Demon
-64,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,120,634k,[],Demon
-66,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,124,737k,[],Demon
-68,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,128,1290k,[],Demon
-70,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,130,1160k,[],Demon
-72,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,134,2040k,[],Demon
-74,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,138,2620k,[],Demon
+40,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,66,81.9k,[],Demon,lower success rate,Terrifies the target for @{duration}.
+44,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,76,96.6k,[],Demon
+48,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,88,173k,[],Demon
+52,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,96,134k,[],Demon
+56,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,104,219k,[],Demon
+58,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,108,167k,[],Demon
+60,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,110,270k,[],Demon
+62,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,116,401k,[],Demon
+64,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,120,444k,[],Demon
+66,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,124,516k,[],Demon
+68,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,128,903k,[],Demon
+70,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,130,812k,[],Demon
+72,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,134,1430k,[],Demon
+74,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy;,138,1830k,[],Demon

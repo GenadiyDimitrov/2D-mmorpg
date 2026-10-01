@@ -17,6 +17,15 @@
 
 ---
 
+## §117 — 0.217.5: SP −30% for every skill learned at 40-75 (2026-10-01)
+
+⚠ **New APK.** No `game.db` delete.
+
+- `117a` [ ] - **Any 3rd class, levels 40-75:** every Learn-tab SP price is 70% of what it was (e.g. Tank Shield Mastery
+  at 40: 19,200 → 13,400). Can you now afford your farming skill when it unlocks? 76+ and below 40 are unchanged. ->
+
+---
+
 ## §116 — 0.217.4: Holy Spike + Monster Knowledge for Human/Demon priests; buffers fight with the weapon (2026-10-01)
 
 ⚠ **New APK.** No `game.db` delete.

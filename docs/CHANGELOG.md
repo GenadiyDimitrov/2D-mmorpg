@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.217.4**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.217.5**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,18 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-01 (latest) — 0.217.4: Holy Spike + Monster Knowledge for Human/Demon priests; buffers fight with the weapon
+## 2026-10-01 (latest) — 0.217.5: SP −30% on every skill learned at 40-75
+
+His playtest: *"cut the sp requirements with 30% on everyone for 40~75 - it's impossible to learn skills even can't learn
+the one to farm with"*. ⚠ **New APK** (the Learn tab prices locally). No `game.db` delete. Checklist §117.
+
+- **Every class-table SP cell learned at 40-75 × 0.7** (three significant figures), across the eight 3rd-class CSVs:
+  4,490 price rows, 1,763M → 1,234M SP. Each level's pot shrinks as a whole, so the weight split (`BL-326`) is
+  unchanged and a later `--reweigh-sp` keeps the new pots. Below 40 and 76+ untouched; 0-SP rows stay 0.
+- **New tool mode `SkillCsvSeed -- --scale-sp FROM TO FACTOR`**, sharing the reweigh's cell writer (keeps k/kk/×1000
+  units, CRLF, BOM). `--check` 0, faces 879 / 0.
+
+## 2026-10-01 — 0.217.4: Holy Spike + Monster Knowledge for Human/Demon priests; buffers fight with the weapon
 
 His `cleric 2nd` / `buffer 3rd` / `healer 3rd` rows: *"a pve-only spell to help them lvl up somewhat closer to the elf"*,
 and from 40 *"buffers are the fighters"*. ⚠ **New APK** (class tables). No `game.db` delete. Checklist §116.

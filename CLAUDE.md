@@ -340,6 +340,7 @@ and cast pieces (`*.g.cs`, 34 ids) come from the CSVs via `dotnet run --project 
 Never hand-edit a `.g.cs`: edit the row and regenerate. Their SP, and every other class row's, is the CSV cell: `ClassSkillTables.SpPrices.g.cs` is generated
 the same run. 🔑 **SP IS ONE POT PER LEVEL, SPLIT BY WEIGHT** (`BL-326`, 0.216.0): `docs/data/sp_weights.csv` is his; after
 editing a weight run `SkillCsvSeed -- --reweigh-sp` (rewrites the SP cells, then regenerates). The ×k (`SpScarcity`) is gone.
+A blanket price change is `SkillCsvSeed -- --scale-sp FROM TO FACTOR` (every cell learned in that band; 0.217.5 ran `40 75 0.7`).
 
 **Verify, don't eyeball:** `dotnet run --project tools/SkillCsvSeed -- --check` reads every authored row
 back against `ClassSkills.Cumulative` + `SkillCatalog`. Run it before committing skill work; it is the
