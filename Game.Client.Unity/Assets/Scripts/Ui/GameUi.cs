@@ -99,6 +99,7 @@ namespace Game.Client
             BuildLogin();
             BuildCharacterSelect();
             BuildWorld();
+            BuildSkillTree();   // `BL-330` — on the root canvas: character creation opens it too
             BuildOverlays();
             HookFeedback();
         }
@@ -141,6 +142,9 @@ namespace Game.Client
             bool world = Boot.Phase == ClientPhase.InWorld;
 
             _reconnectNotice.gameObject.SetActive(Boot.Restoring);
+            // The tree sits on the root canvas, outside both screens, so a phase change has to close it — one
+            // opened at character creation must not follow you into the world.
+            if (Boot.Phase != _builtPhase) CloseWindow(_treePanel);
 
             _loginPanel.gameObject.SetActive(login);
             _selectPanel.gameObject.SetActive(select);
@@ -415,7 +419,7 @@ namespace Game.Client
         {
             _createPanel = UiKit.PanelBox(parent, "CreateForm");
             UiKit.Place(_createPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                        Vector2.zero, new Vector2(520f, 300f));
+                        Vector2.zero, new Vector2(520f, 360f));
             var inner = _createPanel.GetChild(0);
 
             UiKit.Place(UiKit.Rect(UiKit.Label(inner, "New character", 24f).gameObject),
@@ -441,6 +445,12 @@ namespace Game.Client
             });
             UiKit.Place(UiKit.Rect(_classButton.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(266f, -116f), new Vector2(232f, 46f));
+
+            // `BL-330` — the whole tree, opened on the race and class picked above (and free to look anywhere else).
+            var tree = UiKit.TextButton(inner, "See the skill tree", () =>
+                OpenSkillTree(Races[_raceIndex], Classes[_classIndex]));
+            UiKit.Place(UiKit.Rect(tree.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(20f, -172f), new Vector2(478f, 46f));
 
             var confirm = UiKit.TextButton(inner, "Create", () =>
             {

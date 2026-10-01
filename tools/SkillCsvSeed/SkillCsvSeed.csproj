@@ -27,4 +27,9 @@
     <ProjectReference Include="..\..\Game.Shared\Game.Shared.csproj" />
   </ItemGroup>
 
+  <!-- The skill-tree page embeds the skill icons, shrunk from the PNGs tools/SkillIcons renders. -->
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" Version="4.153.1" />
+  </ItemGroup>
+
 </Project>

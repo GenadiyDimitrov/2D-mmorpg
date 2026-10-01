@@ -19,6 +19,19 @@
 
 ---
 
+## §124 — 0.220.0: the skill tree in game (`BL-330`, 2026-10-01)
+
+Your ruling: *"full skill tree at any class master. When opening each time it preselects whatever u have (u can change
+and compare with other classes)"*. ⚠ **New APK.** No `game.db` delete.
+
+- `124a` [ ] - **At creation:** *See the skill tree* under Race / Class opens on the race and class you picked. Change
+  them, press it again: it follows. ->
+- `124b` [ ] - **At a class master** (any of the three): a *Skill tree* row. It opens on YOUR race, Fighter/Mage, 2nd
+  and 3rd class; every other race and path is one tap away. ->
+- `124c` [ ] - **Reading it:** each row shows icon, learn level, name, kind; tap → one line per level with its own text,
+  tap again to hide. The *Swaps & Sigils* button sits beside the races. Readable on the phone? ->
+- `124d` [ ] - The **page** (artifact link in `BL-330`) has the icons too. ->
+
 ## §123 — 0.219.1: icons in the Skills window and for the actions (`BL-331`, 2026-10-01)
 
 Your ask: *"Skill icons need to be in skills window and actions also need icons so the 3 tab (known,learn,actions) need

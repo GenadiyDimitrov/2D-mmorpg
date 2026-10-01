@@ -8296,3 +8296,45 @@ coloured box with the skill's initials, so a picture is a swap inside that box.
 
 ❓ **Your call:** start with (1) as the base set and replace the signature skills later with (2) or (3)? If yes, I build
 the loader + fallback first (no pictures yet, nothing changes on screen), then fill the icons in kit by kit.
+
+## `BL-330` ✅ BUILT in 0.220.0 — THE SKILL TREE, page and in game (2026-10-01)
+
+His ruling for step 2: *"Or we just can make a full skill tree at any class master. When opening each time it
+preselects whatever u have (u can change and compare with other classes)"*, then *"Build the not locking one (with
+preselects)"*. Built: `Game.Shared/SkillTreeData.cs` is the one builder (the page tool and the client both read it),
+`GameUi.SkillTree.cs` the window, opened at character creation and at every class master, never locked. The page has
+the icons too. Details: `docs/CHANGELOG.md` 0.220.0; checklist §124. The entry as it stood:
+
+## `BL-330` 🔵 THE SKILL TREE — see what a path gives before you pick it
+
+His idea, 2026-10-01: *"i want a skill tree of sort -> first in a md/or http(as the town artifact one ) then in gmame
+when creating char or on any class master to know hwat u are getting your self into"*.
+- **Step 1 — a page** (like the town sketch artifact): every race × path, 1st → 4th class, each skill on its learn
+  levels, generated from `ClassSkills` + the face names (`SkillFaces.g.cs`) so it can never drift from the game.
+- **Step 2 — in game:** a read-only tree at character creation and at any class master (Class Master / Grandmaster /
+  Archmaster), showing the paths that class can still take.
+- ❓ Step 1 first, as he said. One question for the page: per-RACE trees (8 paths each, race faces and race-only skills
+  shown) — my pick, since race splits several kits — or one tree per path with race markers on the skills?
+- ✅ **His answer, 2026-10-01: per RACE.** *"skill tree per race. U select a race then select fighter or mage and then
+  from there onward"*. So the page opens on a race picker, then Fighter / Mage, then the 2nd → 3rd → 4th branches.
+- 🟢 **Step 1 BUILT 2026-10-01: https://claude.ai/artifact/XWdiQ5hCA42HF6qn7zPXBo** (source `docs/design/SkillTree.html`,
+  GENERATED — never hand-edit). `dotnet run --project tools/SkillCsvSeed -- --skill-tree` rebuilds it from the compiled
+  class tables + faces; re-run and republish after any class-table or face change. Each section lists only what that
+  step adds (1st class, kept-for-life race + grade layer, 2nd, 3rd incl. stat swaps, 4th, and the shared 4th kit once),
+  each skill with its face name, kind, every learn level, and its top-rung text. **Still owed: step 2, in game.**
+- 🟢 **His §120a answer (2026-10-01): approved, two changes, both BUILT on the page the same day:** an expanded skill shows
+  ONE ROW PER LEARN LEVEL with that rung's own text (*"to compare powers"*), and the stat swaps + sigils left the paths for
+  their own **Swaps & Sigils** tab beside the races (*"remove the skill swap and the sigils -> add them as separate tab next
+  to race"*). 🔵 **Step 2 next:** the same view in game at character creation and the class masters. Move the data build
+  out of `tools/SkillCsvSeed/SkillTree.cs` into `Game.Shared` so the page and the client read ONE builder.
+- 🟢 **Icons on the page, 2026-10-01** (his ask: *"Is there a chance this skill tree to have the icons aswell"*): every
+  row shows its `BL-331` icon, shrunk from the client's own PNGs (so `tools/SkillIcons` first, then `--skill-tree`, when
+  an icon changes). 337 of 349; the 12 stat swaps have no `skill_icons.csv` row yet and show a blank square.
+- 🔵 **Step 2 proposal (in game):** (1) the builder moves to `Game.Shared` (`SkillTreeData`), and the client builds the
+  tree LOCALLY, exactly as the Learn tab does: no server or protocol change, and the page and the game can never
+  disagree. (2) One read-only **Skill Tree window**: the same stepper as the page (Fighter/Mage → 2nd → 3rd/4th),
+  rows = icon + learn level + name + kind (the Learn tab's row), tap → one line per level. (3) Opened from **character
+  creation** (race + Fighter/Mage preselected from what you are picking), from **every class master** (your race and
+  current class locked, only the paths you can still take), and — my pick, his call — as a **4th "Tree" tab in the
+  Skills window**, so it is not only reachable at an NPC. Needs an APK, no `game.db` delete.
+  ❓ Q1: the Skills-window tab too, or only creation + class masters as he first said?

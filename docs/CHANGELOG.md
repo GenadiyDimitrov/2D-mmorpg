@@ -24,7 +24,27 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-01 (latest) — drops window lists only what DROPS (client-only, unversioned, rides the next APK)
+## 2026-10-01 (latest) — 0.220.0: the SKILL TREE in game, at creation and every class master (`BL-330` step 2)
+
+His ruling: *"Or we just can make a full skill tree at any class master. When opening each time it preselects whatever
+u have (u can change and compare with other classes)"*, then *"Build the not locking one (with preselects)"*. **New
+APK.** No server change, no `game.db` delete. Checklist §124.
+
+- **One builder, `Game.Shared/SkillTreeData.cs`** (moved out of `tools/SkillCsvSeed/SkillTree.cs`): per race, Fighter /
+  Mage → 2nd → 3rd/4th, each step listing only what it adds, plus the shared 4th kit, the stat swaps and the sigils.
+  The page tool now only reshapes it; the regenerated page came out **byte-identical** before the change, which is the
+  proof the move kept every row. The client builds the tree locally from it, like the Learn tab.
+- **The window** (`GameUi.SkillTree.cs`, on the ROOT canvas so character select can open it): the page's pickers (Race
+  incl. *Swaps & Sigils*, Start as, 2nd class, 3rd class) as button rows at the top of one scrolling column, then the
+  sections. A row = icon, first learn level, the face name for that race/path, kind; tap it for one line per learn
+  level with that rung's own text. Never locked: it opens on you and you can look anywhere.
+- **Opened from:** character creation (*See the skill tree*, opened on the race and class being picked; the form grew to
+  fit the button) and **every class master**, any tier (a *Skill tree* row in the dialog, opened on your race, base,
+  2nd and 3rd class). It closes itself on a phase change, so one opened at creation does not follow you in.
+- **The page** has the icons too (`--skill-tree` shrinks the client's PNGs to 48 px WebP; SkiaSharp added to the tool).
+  The 12 stat swaps have no `skill_icons.csv` row yet and show a blank square.
+
+## 2026-10-01 — drops window lists only what DROPS (client-only, unversioned, rides the next APK)
 
 His find: *"if I search something I get 2 of the same thing ... 1st gives me 45lvl mob the other nothing"*, then
 *"If item doesn't drop from any mob should not be there"*. The "Where does it drop?" candidate list walked the whole

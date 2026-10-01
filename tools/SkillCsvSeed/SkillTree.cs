@@ -7,122 +7,49 @@ using Game.Shared;
 /// <summary>`BL-330` step 1 — THE SKILL TREE PAGE, generated (owner, 2026-10-01: *"skill tree per race. U select a race
 /// then select fighter or mage and then from there onward"*).
 ///
-/// Writes `docs/design/SkillTree.html`: one self-contained page, its data embedded as JSON, built from the COMPILED
-/// tables (`ClassSkills`, `ClassCatalog`, `Disciplines`, `ClassNames`) and the faces (`SkillFaces`), so it says what the
-/// game teaches and can never drift from it — re-run after any class-table or face change.
+/// Writes `docs/design/SkillTree.html`: one self-contained page, its data embedded as JSON. The data is
+/// <see cref="SkillTreeData"/> in Game.Shared — the SAME builder the client's Skill Tree window reads (step 2), so the
+/// page and the game cannot disagree. Re-run after any class-table, face or icon change. This file only shapes that data
+/// into the page's short JSON keys, strips the TMP tags the game renders, and embeds the icons.
 ///
-/// Each step of a path lists only what THAT step adds: the 1st class's own list; what a fighter or mage keeps for life
-/// (race layer + grade, from `Cumulative` minus the base list); the 2nd class's list; the 3rd class's (its discipline
-/// list, again by difference); the 4th's own list. The all-classes 4th kit (`shared 4th.csv`) is listed once. A skill
-/// appears once per step, its name the face that race/lineage sees; expanded, it shows ONE ROW PER LEARN LEVEL with that
-/// rung's own text (his §120a: *"each row to show its own descirpion -> to compare powers"*).
-///
-/// The STAT SWAPS and the SIGILS are in no path: they are their own tab beside the races (his §120a follow-up, *"from the
-/// skills tree remove the skill swap and the sigils -> add them as separate tab next to race"*) — both are bought on
-/// their own shelf, not from Learn, and are the same for every race.</summary>
+/// Expanded, a skill shows ONE ROW PER LEARN LEVEL with that rung's own text (his §120a: *"each row to show its own
+/// descirpion -> to compare powers"*). The STAT SWAPS and the SIGILS are their own tab beside the races (his §120a
+/// follow-up).</summary>
 internal static class SkillTree
 {
-    private static readonly Race[] Races = { Race.Human, Race.Elf, Race.Demon };
     private static readonly Regex Tags = new("<[^>]+>", RegexOptions.Compiled);
-
-    /// <summary>One rung as the page shows it: the character level it is learned at, the rung, a name only when that
-    /// rung has its own (the Grade passives), and its text.</summary>
-    private sealed record Row(int l, int k, string? n, string d);
-    private sealed record Skill(string id, string n, string c, int[] lv, Row[] r, string? t = null);
-
-    /// <summary>Every stat-swap id (the Warchanter's shelf holds all of them) — kept out of the 3rd-class lists.</summary>
-    private static readonly HashSet<string> SwapIds =
-        SkillCatalog.StatSwapsFor(BaseClass.Mage, Discipline.Warchanter).ToHashSet();
 
     public static int Run(string repo)
     {
-        var races = new List<object>();
-        Skill[]? shared = null;
-
-        foreach (var race in Races)
+        var races = SkillTreeData.Races.Select(race => new
         {
-            var bases = new List<object>();
-            foreach (var bc in new[] { BaseClass.Fighter, BaseClass.Mage })
+            name = race.ToString(),
+            bases = SkillTreeData.For(race).Select(b => new
             {
-                var lin1 = SkillFaces.Lineage(race, bc, null, null, false);
-                var own1 = ClassSkills.ForClass(race, bc, null, null);
-                var life = Minus(ClassSkills.Cumulative(race, bc, null, null), own1);
-
-                var seconds = new List<object>();
-                foreach (var sc in ClassCatalog.OptionsFor(race, bc))
+                name = b.BaseClass.ToString(),
+                s1 = Page(b.First),
+                life = Page(b.Life),
+                seconds = b.Seconds.Select(s => new
                 {
-                    var arch = sc.Archetype;
-                    var lin2 = SkillFaces.Lineage(race, bc, arch, null, false);
-                    var thirds = new List<object>();
-                    var (a, b) = Disciplines.Of(race, arch);
-                    foreach (var d in b is Discipline bd ? new[] { a, bd } : new[] { a })
+                    name = s.Name,
+                    blurb = s.Blurb,
+                    s2 = Page(s.Second),
+                    thirds = s.Thirds.Select(t => new
                     {
-                        var lin3 = SkillFaces.Lineage(race, bc, arch, d, false);
-                        var lin4 = SkillFaces.Lineage(race, bc, arch, d, true);
-                        var own3 = Minus(ClassSkills.Cumulative(race, bc, arch, d), ClassSkills.Cumulative(race, bc, arch, null))
-                                   .Where(cs => !SwapIds.Contains(cs.SkillId));
-                        var own4 = ClassSkills.ForClass(race, bc, arch, d, fourth: true);
-                        if (shared is null)
-                        {
-                            var all4 = Minus(Minus(ClassSkills.Cumulative(race, bc, arch, d, true),
-                                                   ClassSkills.Cumulative(race, bc, arch, d)), own4)
-                                       .Where(cs => !SkillCatalog.AllSigilIds.Contains(cs.SkillId));
-                            shared = Group(all4, null, null);
-                        }
-                        thirds.Add(new
-                        {
-                            third = ClassNames.Third(d, race),
-                            fourth = ClassNames.Fourth(d, race),
-                            s3 = Group(own3, race, lin3),
-                            s4 = Group(own4, race, lin4),
-                        });
-                    }
-                    seconds.Add(new
-                    {
-                        name = sc.Name,
-                        blurb = ClassCatalog.ArchetypeBlurb(arch),
-                        s2 = Group(ClassSkills.ForClass(race, bc, arch, null), race, lin2),
-                        thirds,
-                    });
-                }
-                bases.Add(new
-                {
-                    name = bc.ToString(),
-                    s1 = Group(own1, race, lin1),
-                    life = Group(life, race, lin1),
-                    seconds,
-                });
-            }
-            races.Add(new { name = race.ToString(), bases });
-        }
+                        third = t.ThirdName,
+                        fourth = t.FourthName,
+                        s3 = Page(t.Third),
+                        s4 = Page(t.Fourth),
+                    }).ToArray(),
+                }).ToArray(),
+            }).ToArray(),
+        }).ToArray();
+        var shared = Page(SkillTreeData.Shared4th());
+        var swaps = Page(SkillTreeData.Swaps());
+        var sigils = SkillTreeData.Sigils().Select(g => new { name = g.Name, s = Page(g.Skills) }).ToArray();
 
-        // THE SWAPS: every swap once, its five ranks at 40, tagged with who may buy it (SkillCatalog.StatSwapsFor).
-        var fighter = SkillCatalog.StatSwapsFor(BaseClass.Fighter, null).ToHashSet();
-        var mage = SkillCatalog.StatSwapsFor(BaseClass.Mage, null).ToHashSet();
-        var swaps = Group(SwapIds.SelectMany(id => Enumerable.Range(1, 5)
-                              .Select(k => new ClassSkill(id, SkillCatalog.StatSwapLearnLevel, SkillLevel: k))),
-                          null, null, keepOrder: true)
-            .Select(s => s with
-            {
-                t = fighter.Contains(s.id) && mage.Contains(s.id) ? "Every class"
-                  : fighter.Contains(s.id) ? "Fighters and the Warchanter"
-                  : mage.Contains(s.id) ? "Mages, clerics and the Warchanter"
-                  : "The Warchanter only",
-            })
-            .ToArray();
-        // …and THE SIGILS, one section per flavour, its three in slot order (SigilsOfGroup sorts Attack/Defence/Support).
-        var sigils = Enum.GetValues<SkillCatalog.SigilFlavour>()
-            .Select(f => new
-            {
-                name = f.ToString(),
-                s = Group(SkillCatalog.SigilsOfGroup(f).Select(id => new ClassSkill(id, SkillCatalog.SigilLearnLevel)),
-                          null, null, keepOrder: true)
-                    .Select((s, i) => s with { t = (SkillCatalog.SigilSlot)i + " slot" })
-                    .ToArray(),
-            })
-            .ToArray();
-
-        var data = JsonSerializer.Serialize(new { version = GameConstants.GameVersion, races, shared, swaps, sigils },
+        var icons = Icons(repo);
+        var data = JsonSerializer.Serialize(new { version = GameConstants.GameVersion, races, shared, swaps, sigils, icons },
             new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull });
         string outPath = Path.Combine(repo, "docs", "design", "SkillTree.html");
         File.WriteAllText(outPath, Template.Replace("/*DATA*/null", data), new UTF8Encoding(false));
@@ -130,50 +57,42 @@ internal static class SkillTree
         return 0;
     }
 
-    /// <summary>The rows of <paramref name="all"/> that <paramref name="minus"/> does not have (a multiset difference
-    /// keyed on skill, learn level and rung).</summary>
-    private static List<ClassSkill> Minus(IEnumerable<ClassSkill> all, IEnumerable<ClassSkill> minus)
+    /// <summary>The page's shape for a skill: short keys (id, n = name, c = kind, lv = learn levels, r = rungs, t = tag),
+    /// text without TMP tags. Every skill passed here is also queued for an icon.</summary>
+    private sealed record Row(int l, int k, string? n, string d);
+    private sealed record Skill(string id, string n, string c, int[] lv, Row[] r, string? t);
+
+    private static Skill[] Page(IEnumerable<SkillTreeSkill> skills) => skills.Select(s =>
     {
-        var left = minus.GroupBy(Key).ToDictionary(g => g.Key, g => g.Count());
-        var result = new List<ClassSkill>();
-        foreach (var cs in all)
+        Shown.Add(s.Id);
+        return new Skill(s.Id, s.Name, s.Category.ToString(), s.Rungs.Select(r => r.Level).Distinct().ToArray(),
+                         s.Rungs.Select(r => new Row(r.Level, r.Rung, r.Name, Tags.Replace(r.Text, "").Trim())).ToArray(),
+                         s.Tag);
+    }).ToArray();
+
+    /// <summary>Every skill the page lists, so <see cref="Icons"/> embeds only those.</summary>
+    private static readonly HashSet<string> Shown = new();
+
+    /// <summary>`BL-331`'s icons, once per skill: the client's own 128px PNGs (rendered by tools/SkillIcons from
+    /// `skill_icons.csv`) shrunk to 48px WebP — the full PNGs would make the page ~7 MB. A skill with no PNG is left
+    /// out and the page draws an empty square, as the game keeps its letters.</summary>
+    private static Dictionary<string, string> Icons(string repo)
+    {
+        string dir = Path.Combine(repo, "Game.Client.Unity", "Assets", "Resources", "SkillIcons");
+        var icons = new Dictionary<string, string>();
+        foreach (var id in Shown.Order(StringComparer.Ordinal))
         {
-            var k = Key(cs);
-            if (left.TryGetValue(k, out int n) && n > 0) { left[k] = n - 1; continue; }
-            result.Add(cs);
+            string png = Path.Combine(dir, id + ".png");
+            if (!File.Exists(png)) continue;
+            using var src = SkiaSharp.SKBitmap.Decode(png);
+            using var small = src.Resize(new SkiaSharp.SKImageInfo(48, 48),
+                                         new SkiaSharp.SKSamplingOptions(SkiaSharp.SKCubicResampler.Mitchell));
+            using var img = SkiaSharp.SKImage.FromBitmap(small);
+            using var webp = img.Encode(SkiaSharp.SKEncodedImageFormat.Webp, 88);
+            icons[id] = Convert.ToBase64String(webp.ToArray());
         }
-        return result;
-    }
-
-    private static (string, int, int) Key(ClassSkill cs) => (cs.SkillId, cs.LearnLevel, cs.SkillLevel);
-
-    private static Skill[] Group(IEnumerable<ClassSkill> rows, Race? race, IReadOnlyList<string>? lineage,
-                                 bool keepOrder = false)
-    {
-        var skills = rows.GroupBy(r => r.SkillId)
-            .Select(g =>
-            {
-                var def = SkillCatalog.Get(g.Key);
-                int top = g.Max(r => r.SkillLevel);
-                var face = SkillFaces.For(g.Key, race, lineage);
-                string name = SkillFaces.NameOf(face, g.Key, top);
-                // One row per RUNG this step teaches, in learn order. Two rungs on one learn level (the swaps' five at
-                // 40) stay two rows, and the page labels them by rank.
-                var rungs = g.GroupBy(r => r.SkillLevel)
-                    .Select(rg => (l: rg.Min(r => r.LearnLevel), k: rg.Key))
-                    .OrderBy(x => x.l).ThenBy(x => x.k)
-                    .Select(x =>
-                    {
-                        string n = SkillFaces.NameOf(face, g.Key, x.k);
-                        return new Row(x.l, x.k, n == name ? null : n,
-                                       Tags.Replace(SkillFaces.DescriptionOf(face, g.Key, x.k), "").Trim());
-                    })
-                    .ToArray();
-                return new Skill(g.Key, name, (def?.Category ?? SkillCategory.Physical).ToString(),
-                                 rungs.Select(r => r.l).Distinct().ToArray(), rungs);
-            });
-        return keepOrder ? skills.ToArray()
-             : skills.OrderBy(s => s.lv[0]).ThenBy(s => s.n, StringComparer.OrdinalIgnoreCase).ToArray();
+        Console.WriteLine($"Icons: {icons.Count} of {Shown.Count} skills ({Shown.Count - icons.Count} keep the blank square).");
+        return icons;
     }
 
     // The page. `/*DATA*/null` is replaced with the JSON above.
@@ -220,16 +139,17 @@ section.tier { margin-top: 28px; }
 .tier .note { color: var(--dim); font-size: 0.85rem; margin: 0 0 10px; max-width: 65ch; }
 .list { border-top: 1px solid var(--line); }
 details { border-bottom: 1px solid var(--line); }
-summary { display: grid; grid-template-columns: 3.2rem minmax(0, 1fr) auto; gap: 12px; align-items: baseline;
+summary { display: grid; grid-template-columns: 3.2rem 32px minmax(0, 1fr) auto; gap: 12px; align-items: center;
   padding: 8px 4px; cursor: pointer; list-style: none; }
 summary::-webkit-details-marker { display: none; }
 summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .first { font: 400 0.85rem var(--mono); color: var(--accent); font-variant-numeric: tabular-nums; }
 .name { font-weight: 600; min-width: 0; }
+.icon { width: 32px; height: 32px; border-radius: 4px; display: block; background: var(--line); }
 .kind { font: 600 0.7rem var(--body); letter-spacing: 0.06em; text-transform: uppercase; }
 .k-Physical { color: var(--phys); } .k-Magic { color: var(--magic); } .k-Buff { color: var(--buff); }
 .k-Debuff { color: var(--debuff); } .k-Heal { color: var(--heal); } .k-Passive { color: var(--passive); }
-.more { padding: 0 4px 12px calc(3.2rem + 16px); display: grid; gap: 6px; }
+.more { padding: 0 4px 12px calc(3.2rem + 32px + 28px); display: grid; gap: 6px; }
 .more p { margin: 0; max-width: 65ch; }
 .tag { font: 600 0.75rem var(--body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); }
 .rung { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: 12px; align-items: baseline; }
@@ -285,7 +205,9 @@ function tier(title, band, note, skills) {
   skills.forEach(sk => {
     const d = el("details");
     const sum = el("summary");
-    sum.append(el("span", "first", "Lv " + sk.lv[0]), el("span", "name", sk.n), el("span", "kind k-" + sk.c, sk.c));
+    const ic = el(DATA.icons[sk.id] ? "img" : "span", "icon");
+    if (DATA.icons[sk.id]) { ic.src = "data:image/webp;base64," + DATA.icons[sk.id]; ic.alt = ""; }
+    sum.append(el("span", "first", "Lv " + sk.lv[0]), ic, el("span", "name", sk.n), el("span", "kind k-" + sk.c, sk.c));
     const more = el("div", "more");
     if (sk.t) more.append(el("span", "tag", sk.t));
     // One row per rung with its own text. Rungs sharing a learn level (the swaps' five at 40) read by rank.

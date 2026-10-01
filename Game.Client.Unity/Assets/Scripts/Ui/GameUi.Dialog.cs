@@ -128,6 +128,15 @@ namespace Game.Client
                           option.Meets ? UiKit.Text : UiKit.TextDim);
             }
 
+            // ----- skill tree (`BL-330`) ------------------------------------------------------------
+            // Every class master, every tier: the whole tree, opened on your own class (owner, 2026-10-01: *"full skill
+            // tree at any class master. When opening each time it preselects whatever u have"*).
+            if (d.NpcRole == NpcRole.ClassChange.ToString())
+            {
+                anything = true;
+                DialogRow("Skill tree — every path, opened on your class", "Tree", OpenSkillTreeForMe, UiKit.Text);
+            }
+
             // ----- vendor -------------------------------------------------------------------------
             // The vendor now ASKS buy-or-sell and hands off to the dedicated window (numpad, Max, a
             // confirm) rather than a one-tap Buy-x1 per row — see GameUi.Vendor.cs. Selling was
