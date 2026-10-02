@@ -1203,6 +1203,12 @@ public record AuthRequest(string Username, string Password, int Protocol = 0);
 /// the /give picker. <paramref name="OwnerName"/> is always the character the action TARGETS.</summary>
 public record AdminBagDto(string OwnerName, long Gold, InventoryItemDto[] Items);
 
+/// <summary>`/who <name>` (0.222.0, owner 2026-10-02: *"we need `/who <name>` command that opens stat window of the
+/// character - an *admin* command"*): everything the Character window reads, for an ONLINE player other than you. The
+/// same pieces your own sheet gets in separate pushes (Stats, the active subclass, PvpState, Favor, Gold), in one.</summary>
+public record AdminWhoDto(string Name, StatsUpdate Stats, SubclassDto? Active, int PvpCount, int PkCount, int Karma,
+                          bool PvpEnabled, FavorUpdate? Favor, long Gold, long Platinum);
+
 /// <summary>Server -> owning client: everything about YOUR OWN state that the world does not draw
 /// by itself (`BL-82`). Two families live here for one reason — both are states you are IN, and both
 /// were previously announced by a single chat line that had scrolled away by the time you wondered.

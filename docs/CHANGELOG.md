@@ -24,7 +24,23 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-02 (latest) — 0.221.0: `/help` for every rank, from one command list; actions show their typed command
+## 2026-10-02 (latest) — 0.222.0: `/who <name>` — an admin opens a player's Character window
+
+His ask (My Finds, 2026-10-02): *"also we need `/who <name>` command that opens stat window of the character - an
+*admin* command"*. **New APK + server restart.** A new server→client message (`AdminWho`); an older APK ignores it, so
+no protocol bump. No `game.db` delete. Checklist §129.
+
+- **Server:** `case "who"` (Admin and Owner; not in any moderator list) sends `AdminWhoDto` — the target's stats, active
+  class, PvP/karma, Favor block, gold and account platinum — in one message. ONLINE players only: the sheet is derived
+  numbers (buffs, gear, passives) that exist only on a live character. `SendStats`/`SendFavor` were split into
+  `BuildStats`/`BuildFavor` so `/who` reads exactly what the player's own sheet is sent, without touching the
+  sent-state fields `SendFavor` uses for its change test.
+- **Client:** the Character window reads a `SheetSource` (yours, assembled from the separate pushes; or the `/who`
+  one), so the two sheets cannot read differently. A `/who` sheet is headed with the name, is a snapshot (send `/who`
+  again to refresh), and closing the window drops it; the Char button reopens your own.
+- `/who` is in `/help`'s Admin section.
+
+## 2026-10-02 — 0.221.0: `/help` for every rank, from one command list; actions show their typed command
 
 His find (My Finds, 2026-10-02): `/help` to print a SYSTEM block — the `@s`/`@t` note, then *"--- Owner ONLY ---"*,
 *"--- Admin ONLY ---"*, Moderator, Chat Mod, Commands — where *"each lower group is available on the upper one"*, *"no

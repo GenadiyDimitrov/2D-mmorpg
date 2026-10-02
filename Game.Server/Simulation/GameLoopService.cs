@@ -8651,6 +8651,23 @@ public class GameLoopService : BackgroundService
                 RunBuffCommand(admin, arg, selfOnly: false);
                 break;
 
+            // `/who <name>` (0.222.0) — the player's Character window, opened on the admin's screen. Read-only and
+            // ONLINE only: the sheet is derived numbers (buffs, gear, passives), which exist only on a live Entity.
+            case "who":
+            {
+                if (FindOnlinePlayer(arg) is not Entity inspected)
+                {
+                    SendSystemToEntity(admin, arg.Length == 0 ? "Usage: /who <name>" : $"{arg} is not online.");
+                    break;
+                }
+                var sub = inspected.ActiveSubclass;
+                SendTo(admin, "AdminWho", new AdminWhoDto(inspected.Name, BuildStats(inspected),
+                    sub is null ? null : new SubclassDto(sub.Slot, sub.Race, sub.BaseClass, sub.SecondClass,
+                                                         sub.ThirdClass, inspected.Level, true, sub.FourthClass),
+                    inspected.PvpCount, inspected.PkCount, inspected.Karma, inspected.PvpEnabled, BuildFavor(inspected), inspected.Gold, PlatinumOf(inspected)));
+                break;
+            }
+
             case "bag":
             {
                 // Read-only-ish view of another player's inventory, with a remove button per row.
@@ -11746,16 +11763,23 @@ public class GameLoopService : BackgroundService
     private void SendFavor(Entity p)
     {
         if (p.Kind != EntityKind.Player) return;
-        var rates = RateConfig.World * p.Runes;
-        float bonus = KillExpBonus(p);
         p.FavorSentPoints = FavorShown(p);
         p.BlessingSentPercent = BlessingShown(p);
         p.CharismaSentCurrent = CharismaCurrent(p);
         p.BlessingSentPaused = BlessingPaused(p);
-        SendTo(p, "Favor", new FavorUpdate(p.FavorSentPoints, WayfarerFavor.Stage(p.FavorPoints),
+        SendTo(p, "Favor", BuildFavor(p));
+    }
+
+    /// <summary>The Favor block as it reads NOW, without touching the sent-state fields `SendFavor` keeps for its
+    /// change test — so `/who` (0.222.0) can read another player's without making his next push look redundant.</summary>
+    private FavorUpdate BuildFavor(Entity p)
+    {
+        var rates = RateConfig.World * p.Runes;
+        float bonus = KillExpBonus(p);
+        return new FavorUpdate(FavorShown(p), WayfarerFavor.Stage(p.FavorPoints),
             rates.Exp * bonus, rates.Sp * bonus, rates.Gold, rates.DropChance,
-            p.BlessingSentPercent, BlessingFillRate(p), p.BlessingActive,
-            p.CharismaLifetime, p.CharismaSentCurrent, p.BlessingSecondsLeft, p.BlessingSentPaused));
+            BlessingShown(p), BlessingFillRate(p), p.BlessingActive,
+            p.CharismaLifetime, CharismaCurrent(p), p.BlessingSecondsLeft, BlessingPaused(p));
     }
 
     // (The old RuneBuffKeys array is gone: SkillCatalog.IsRuneBuff answers the same question from the
@@ -19018,8 +19042,18 @@ public class GameLoopService : BackgroundService
 
     private void SendStats(Entity p)
     {
+        SendTo(p, "Stats", BuildStats(p));
+        // `BL-277` — the rates on the sheet move with the runes, which is a Stats-push moment; and this
+        // is also what delivers the gauge at world entry.
+        SendFavor(p);
+    }
+
+    /// <summary>The character sheet's numbers, built without sending — `SendStats` for yourself, `/who` (0.222.0) for
+    /// an admin reading someone else's.</summary>
+    private StatsUpdate BuildStats(Entity p)
+    {
         var (hpReg, mpReg) = StandingRegen(p);
-        SendTo(p, "Stats", new StatsUpdate(
+        return new StatsUpdate(
             // ⚠ ALL FIVE PRIMARIES ARE EFFECTIVE (owner, 2026-08-26). CON and ATK were the two sent
             // BASE while WIT/AGI/SPT went effective, so an armour set's `Con: -2, Str: +3` moved your
             // HP pool, your regen and your damage while the stat window showed nothing at all —
@@ -19044,10 +19078,7 @@ public class GameLoopService : BackgroundService
             // YOUR OWN LEVEL fizzles against you, which is the only reading of a defensive fizzle
             // number on a sheet with no attacker in it.
             p.RestoreMpMod, p.BlowRate, p.MagicCritRateResist,
-            StatCalculator.MagicFailChance(p.Level, p.Level, p.MagicFailMod, 1f, p.MagicFailBonus, 0f)));
-        // `BL-277` — the rates on the sheet move with the runes, which is a Stats-push moment; and this
-        // is also what delivers the gauge at world entry.
-        SendFavor(p);
+            StatCalculator.MagicFailChance(p.Level, p.Level, p.MagicFailMod, 1f, p.MagicFailBonus, 0f));
     }
 
     /// <summary>The player's HP/MP regen per second AS IT IS ACTUALLY PAID right now — base + flat

@@ -25,6 +25,18 @@
 
 ---
 
+## §129 — 0.222.0: `/who <name>` (2026-10-02)
+
+Your ask: *"`/who <name>` command that opens stat window of the character - an *admin* command"*. ⚠ **New APK + server
+restart.** No `game.db` delete.
+
+- `129a` [ ] - **`/who <name>` on an online player** (a second phone, or a second character): the Character window opens
+  headed with their name, Basic and Details tabs both theirs (class, stats, PvP/karma, Favor, gold). Close it and press
+  Char: your own sheet again. ->
+- `129b` [ ] - **`/who` on someone offline** says they are not online; a moderator typing `/who` is refused. ->
+
+---
+
 ## §128 — 0.221.0: `/help` per rank; actions show their typed command (2026-10-02)
 
 Your find: the `/help` layout by rank, no action commands in it, the missing admin ones, and `(/command)` on actions.

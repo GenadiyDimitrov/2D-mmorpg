@@ -65,6 +65,8 @@ namespace Game.Client
         /// flag locally by flipping a bool on every tap, which is a guess: the server refuses the
         /// toggle in a safe zone, and nothing told the button. This push is the authority.</summary>
         public event Action<PvpState> PvpStateReceived;
+        /// <summary>`/who` (0.222.0): another player's character sheet, for an admin.</summary>
+        public event Action<AdminWhoDto> AdminWhoReceived;
         /// <summary>Your OWN otherwise-undrawable state (`BL-82`): the staff flags (role, god mode,
         /// forced speeds) and which of the three kinds of invisibility you are in. Pushed on change,
         /// including once on entering the world, so nothing here has to be inferred from a chat line
@@ -193,6 +195,7 @@ namespace Game.Client
             _connection.On<TargetDetails>("TargetDetails", d => TargetDetailsReceived?.Invoke(d));
             _connection.On<DropLookupResult>("DropLookupResult", d => DropLookupReceived?.Invoke(d));
             _connection.On<PvpState>("PvpState", p => PvpStateReceived?.Invoke(p));
+            _connection.On<AdminWhoDto>("AdminWho", w => AdminWhoReceived?.Invoke(w));
             _connection.On<SelfStateDto>("SelfState", s => SelfStateReceived?.Invoke(s));
             _connection.On<TitlesDto>("Titles", t => TitlesReceived?.Invoke(t));
             _connection.On<ResurrectOffer>("ResurrectOffer", o => ResurrectOfferReceived?.Invoke(o));

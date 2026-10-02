@@ -1404,6 +1404,7 @@ namespace Game.Client
             });
             _net.TargetDetailsReceived += d => Main(() => Details = d);
             _net.DropLookupReceived += d => Main(() => { DropLookup = d; DropLookupRevision++; });
+            _net.AdminWhoReceived += w => Main(() => { if (w != null) Ui?.ShowWhoSheet(w); });   // `/who`, 0.222.0
             _net.PvpStateReceived += p => Main(() =>
             {
                 if (p == null) return;

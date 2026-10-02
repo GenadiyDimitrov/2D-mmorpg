@@ -83,6 +83,7 @@ public static class ChatCommandCatalog
         new("like", "/like <name> -f <value>", "force a player's current charisma", AccountRole.Admin),
         new("titleright", "/titleright <name> <on|off>", "grant or take the right to /title", AccountRole.Admin),
         new("whatdrops", "/whatdrops <item or mob>", "who drops it, or what it drops", AccountRole.Admin),
+        new("who", "/who <name>", "open an online player's character sheet", AccountRole.Admin),
         new("dropindex", "/dropindex", "the drop index's size and build time", AccountRole.Admin),
         new("droprate", "/droprate [group|gear|global|item <id>] [multiplier]", "drop-rate knobs; bare shows them", AccountRole.Admin),
         new("resetlimits", "/resetlimits [name]", "today's dailies, farm allowance, likes, Favor potion", AccountRole.Admin),

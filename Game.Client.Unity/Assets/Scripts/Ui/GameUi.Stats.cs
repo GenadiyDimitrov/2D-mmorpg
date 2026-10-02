@@ -78,21 +78,73 @@ namespace Game.Client
             _statsPanel.gameObject.SetActive(false);
         }
 
+        // ----- whose sheet: yours, or `/who`'s ------------------------------------------------------
+        //
+        // `/who <name>` (0.222.0, owner: *"opens stat window of the character - an *admin* command"*) shows ANOTHER
+        // player's sheet in this same window, so the two can never read differently. Everything the sheets read comes
+        // through a SheetSource: yours is assembled from the separate pushes, his arrives whole in one AdminWhoDto. It
+        // is a snapshot (send /who again to refresh it), and closing the window drops it — the Char button reopens yours.
+
+        private sealed class SheetSource
+        {
+            public string Name;   // null = your own sheet
+            public StatsUpdate Stats;
+            public SubclassDto Active;
+            public int PvpCount, PkCount, Karma;
+            public bool PvpEnabled;
+            public FavorUpdate Favor;
+            public long Gold, Platinum;
+        }
+
+        private AdminWhoDto _who;
+
+        /// <summary>Open the Character window on another player's sheet (the server's answer to `/who`).</summary>
+        public void ShowWhoSheet(AdminWhoDto who)
+        {
+            _who = who;
+            _statsStamp = -1;
+            OpenWindow(_statsPanel);
+        }
+
+        private SheetSource MySheet() => new SheetSource
+        {
+            Stats = Boot.Stats, Active = Boot.ActiveClass,
+            PvpCount = Boot.PvpCount, PkCount = Boot.PkCount, Karma = Boot.Karma, PvpEnabled = Boot.PvpEnabled,
+            Favor = Boot.Favor, Gold = Boot.Gold, Platinum = Boot.Platinum,
+        };
+
+        private static SheetSource WhoSheet(AdminWhoDto w) => new SheetSource
+        {
+            Name = w.Name, Stats = w.Stats, Active = w.Active,
+            PvpCount = w.PvpCount, PkCount = w.PkCount, Karma = w.Karma, PvpEnabled = w.PvpEnabled,
+            Favor = w.Favor, Gold = w.Gold, Platinum = w.Platinum,
+        };
+
         private void RefreshStatsWindow()
         {
-            if (!_statsPanel.gameObject.activeSelf) return;
+            if (!_statsPanel.gameObject.activeSelf)
+            {
+                if (_who != null) { _who = null; _statsStamp = -1; }   // closed: the next opening is yours
+                return;
+            }
 
-            var s = Boot.Stats;
-            if (s == null) { _statsBody.text = "Waiting for stats …"; return; }
+            int stamp;
+            if (_who != null)
+                stamp = _who.GetHashCode();
+            else
+            {
+                var s = Boot.Stats;
+                if (s == null) { _statsBody.text = "Waiting for stats …"; return; }
 
-            // Rebuild only when a number actually moved. Regen ticks every 3s and HP/MP change
-            // constantly, so a naive per-frame rebuild would re-lay out a long text block forever.
-            // Karma and the kill counts are in the stamp too — they arrive on their own push, so a
-            // sheet keyed only on StatsUpdate would keep showing yesterday's karma. The TAB is NOT in
-            // the stamp: switching it resets the stamp directly, which is cheaper and unambiguous.
-            int stamp = s.GetHashCode() ^ (Boot.Progress != null ? Boot.Progress.Level * 7919 : 0)
+                // Rebuild only when a number actually moved. Regen ticks every 3s and HP/MP change
+                // constantly, so a naive per-frame rebuild would re-lay out a long text block forever.
+                // Karma and the kill counts are in the stamp too — they arrive on their own push, so a
+                // sheet keyed only on StatsUpdate would keep showing yesterday's karma. The TAB is NOT in
+                // the stamp: switching it resets the stamp directly, which is cheaper and unambiguous.
+                stamp = s.GetHashCode() ^ (Boot.Progress != null ? Boot.Progress.Level * 7919 : 0)
                       ^ (Boot.Karma * 31 + Boot.PkCount * 7 + Boot.PvpCount + (Boot.PvpEnabled ? 1 : 0))
                       ^ (Boot.Favor != null ? Boot.Favor.GetHashCode() * 17 : 0);   // `BL-277`, its own push
+            }
             if (stamp == _statsStamp) return;
             _statsStamp = stamp;
 
@@ -101,7 +153,9 @@ namespace Game.Client
                     _statsTabButtons[i].targetGraphic.color =
                         i == _statsTab ? UiKit.TabActive : UiKit.PanelLight;
 
-            _statsBody.text = (_statsTab == 0 ? BuildBasicSheet(s) : BuildDetailsSheet(s)).TrimEnd();
+            var src = _who != null ? WhoSheet(_who) : MySheet();
+            string head = src.Name != null ? "<b>" + src.Name + "</b>  <color=#9AA3AD>(/who, as of now)</color>\n\n" : "";
+            _statsBody.text = head + (_statsTab == 0 ? BuildBasicSheet(src) : BuildDetailsSheet(src)).TrimEnd();
         }
 
         // ----- BASIC ---------------------------------------------------------------------------
@@ -110,11 +164,12 @@ namespace Game.Client
         // nothing conditional — this tab is the same length on every character, which is what makes it
         // readable at a glance.
 
-        private string BuildBasicSheet(StatsUpdate s)
+        private string BuildBasicSheet(SheetSource src)
         {
             var t = new StringBuilder();
 
-            var active = Boot.ActiveClass;
+            var s = src.Stats;
+            var active = src.Active;
             t.AppendLine(Head("Class"));
             if (active != null)
             {
@@ -145,10 +200,10 @@ namespace Game.Client
             // PvP / reputation. Karma is what turns guards hostile, makes you drop gear on death and
             // takes the safety out of towns, so a player carrying it must be able to see it.
             t.AppendLine(Head("PVP"));
-            t.AppendLine(Row2("PVP", Boot.PvpCount.ToString(), "PK", Boot.PkCount.ToString()));
-            t.AppendLine(Row2("Karma", Boot.Karma > 0
-                                  ? "<color=#FF6060>" + Boot.Karma.ToString("N0") + "</color>" : "0",
-                              "Flag", Boot.PvpEnabled ? "ON" : "off"));
+            t.AppendLine(Row2("PVP", src.PvpCount.ToString(), "PK", src.PkCount.ToString()));
+            t.AppendLine(Row2("Karma", src.Karma > 0
+                                  ? "<color=#FF6060>" + src.Karma.ToString("N0") + "</color>" : "0",
+                              "Flag", src.PvpEnabled ? "ON" : "off"));
 
             return t.ToString();
         }
@@ -159,11 +214,12 @@ namespace Game.Client
         // conditional number — the things you open a sheet to check when something did not behave the
         // way you expected it to.
 
-        private string BuildDetailsSheet(StatsUpdate s)
+        private string BuildDetailsSheet(SheetSource src)
         {
             var t = new StringBuilder();
 
-            var active = Boot.ActiveClass;
+            var s = src.Stats;
+            var active = src.Active;
             if (active != null)
             {
                 t.AppendLine(Head("Class"));
@@ -229,7 +285,7 @@ namespace Game.Client
 
             // `BL-277` — his "Other" block: the Wayfarer's Favor gauge and the FINISHED rates (server
             // rate × runes × Favor), sent by the server so the sheet never re-derives them.
-            var f = Boot.Favor;
+            var f = src.Favor;
             if (f != null)
             {
                 t.AppendLine(Head("Other"));
@@ -253,11 +309,11 @@ namespace Game.Client
             t.AppendLine(Head("Gear"));
             t.AppendLine(Row2("Armour", string.IsNullOrEmpty(s.ArmorMastery) ? "—" : s.ArmorMastery,
                               "Set", string.IsNullOrEmpty(s.ActiveSet) ? "—" : s.ActiveSet));
-            t.AppendLine(Row2("Gold", Boot.Gold.ToString("N0"), "SP", s.SkillPoints.ToString("N0")));
+            t.AppendLine(Row2("Gold", src.Gold.ToString("N0"), "SP", s.SkillPoints.ToString("N0")));
             // `BL-257` — platinum is the ACCOUNT's, so the row says so. Hidden at zero: a premium line
             // reading 0 on every character in the game is noise until he has any.
-            if (Boot.Platinum > 0)
-                t.AppendLine(Row2("Platinum (account)", Boot.Platinum.ToString("N0"), "", ""));
+            if (src.Platinum > 0)
+                t.AppendLine(Row2("Platinum (account)", src.Platinum.ToString("N0"), "", ""));
 
             return t.ToString();
         }
