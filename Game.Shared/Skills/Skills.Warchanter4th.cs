@@ -127,10 +127,13 @@ public static partial class SkillCatalog
         { 4100, 4200, 4300, 4400, 4500, 4600, 4700, 4800, 4900, 5000, 5300, 5600, 5900, 6200, 6500 };
     private static readonly int[] Wc4SoundMp =
         { 123, 126, 129, 132, 135, 138, 141, 144, 147, 150, 159, 168, 177, 186, 195 };
+    /// <summary>The melee pair's 4th-tier MP (his `buffer 4th.csv`, 2026-10-02) — 80 → 110, continuing the 3rd tier's 78.</summary>
+    private static readonly int[] Wc4SoundMeleeMp =
+        { 80, 82, 84, 86, 88, 90, 92, 95, 98, 100, 102, 104, 106, 108, 110 };
 
-    internal static SkillLevel[] BufferFourthSoundRungs(int hits, int stunTicks) =>
+    internal static SkillLevel[] BufferFourthSoundRungs(int hits, int stunTicks, int[] mp) =>
         F4Rungs(15, 1, (i, sp, gold) => new SkillLevel(
-            Power: Wc4SoundPower[i], MpCost: Wc4SoundMp[i], SpCost: sp, GoldCost: gold,
+            Power: Wc4SoundPower[i], MpCost: mp[i], SpCost: sp, GoldCost: gold,
             Magnitudes: stunTicks > 0
                 ? new EffectMagnitude[] { new(SkillEffect.Stun, 1f, ModifierMode.Flat) }
                 : null,

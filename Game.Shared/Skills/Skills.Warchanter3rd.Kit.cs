@@ -69,6 +69,11 @@ public static partial class SkillCatalog
         { 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400, 2700, 3000, 3300, 3700, 4000 };
     private static readonly int[] SoundMp =
         { 62, 76, 83, 90, 95, 98, 100, 105, 108, 112, 114, 117, 120 };
+    /// <summary>The MELEE pair's own MP column (Sound Smash, Acoustic Shock), lowered by his `buffer 3rd.csv`
+    /// edit of 2026-10-02: *"Decreased the MP cost for physical skills of buffer (archer the same - more dmg
+    /// more mp ..)"*. Sound Burst (two hits, bow) and the Warrior's Sundering Blow keep <see cref="SoundMp"/>.</summary>
+    private static readonly int[] SoundMeleeMp =
+        { 36, 43, 47, 50, 55, 56, 58, 62, 65, 68, 70, 75, 78 };
 
     private static SkillDef[] WarchanterKitSkills()
     {
@@ -249,7 +254,7 @@ public static partial class SkillCatalog
 
         // ---- Sound Smash (Demon + Human) — the melee twin: 40 range, blunt, one hit, faster cast. ----
         list.Add(SoundSkill(SoundSmash, "Sound Smash", WeaponType.Blunt, range: 40, castTicks: 10,
-            hits: 1, stunTicks: 0,
+            hits: 1, stunTicks: 0, melee: true,
             desc: "A concussive blow that rings through armour."));
 
         // ---- Acoustic Shock (DEMON ONLY) — HIS ADDITION, 2026-08-21: *"Add another skill to the ork
@@ -260,7 +265,7 @@ public static partial class SkillCatalog
         //      ⚠ Stun is CONTESTED (ATK vs CON, DebuffSchool.Physical) like every other CC in the
         //      game, so it is not a guaranteed lock and bosses are immune. ----
         list.Add(SoundSkill(AcousticShock, "Acoustic Shock", WeaponType.Blunt, range: 40, castTicks: 10,
-            hits: 1, stunTicks: 50,
+            hits: 1, stunTicks: 50, melee: true,
             desc: "A blow pitched to shatter the senses: damage, and the target reels."));
 
         // (Bow Expertise, Elf, is the archer's two-rung `bow_expertise` at rung 2 — Skills.Fighter.cs.
@@ -361,11 +366,13 @@ public static partial class SkillCatalog
     /// his SP column verbatim; what differs is the weapon, the range, the cast, how many times a cast
     /// resolves, and (Acoustic Shock only) a contested stun.</summary>
     private static SkillDef SoundSkill(string id, string name, WeaponType weapon, float range,
-        int castTicks, int hits, int stunTicks, string desc, int cooldownTicks = 30)
+        int castTicks, int hits, int stunTicks, string desc, int cooldownTicks = 30, bool melee = false)
     {
         var effect = SkillEffect.PhysicalDamage | (stunTicks > 0 ? SkillEffect.Stun : SkillEffect.None);
+        var mp = melee ? SoundMeleeMp : SoundMp;
+        var mp4 = melee ? Wc4SoundMeleeMp : Wc4SoundMp;
         return new SkillDef(id, name, BaseClass.Mage, effect,
-            MpCost: SoundMp[0], CastTicks: castTicks, CooldownTicks: cooldownTicks, Range: range, Power: SoundPower[0],
+            MpCost: mp[0], CastTicks: castTicks, CooldownTicks: cooldownTicks, Range: range, Power: SoundPower[0],
             Category: SkillCategory.Physical,
             // 🔑 A SOUND SKILL RETIRES HOLY BOLT (owner, playtest 28: *"holy bolt should be replaced from
             // sound smash/burst — [they] are the attack skills of buffers; healers replace [it] with a
@@ -392,7 +399,7 @@ public static partial class SkillCatalog
             DebuffSchool: stunTicks > 0 ? DebuffSchool.Physical : DebuffSchool.None,
             Description: desc,
             Levels: Enumerable.Range(0, SoundPower.Length).Select(i => new SkillLevel(
-                Power: SoundPower[i], MpCost: SoundMp[i], SpCost: BandSp13[i],
+                Power: SoundPower[i], MpCost: mp[i], SpCost: BandSp13[i],
                 Magnitudes: stunTicks > 0
                     ? new EffectMagnitude[] { new(SkillEffect.Stun, 1f, ModifierMode.Flat) }
                     : null,
@@ -401,6 +408,6 @@ public static partial class SkillCatalog
                     : hits > 1
                         ? $"Strikes {hits} times for power {SoundPower[i]} each."
                         : $"Strikes for power {SoundPower[i]}."))
-                .Concat(BufferFourthSoundRungs(hits, stunTicks)).ToArray());
+                .Concat(BufferFourthSoundRungs(hits, stunTicks, mp4)).ToArray());
     }
 }

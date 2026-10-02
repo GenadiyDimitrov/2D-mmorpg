@@ -24,7 +24,19 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-02 (latest) — 0.222.2: the Master's Trial — one gather step, and a fail keeps you at the anvil
+## 2026-10-02 (latest) — 0.222.3: the buffer's melee Sound skills cost less MP
+
+His CSV edit (`buffer 3rd.csv` + `buffer 4th.csv`, My Finds: *"Decreased the MP cost for physical skills of buffer (archer
+the same - more dmg more mp ..)"*).
+
+- **Sound Smash and Acoustic Shock** read their own MP column: 36 → 78 over the 3rd tier (was 62 → 120) and 80 → 110
+  over the 4th (was 123 → 195). `SoundMeleeMp` / `Wc4SoundMeleeMp`, chosen by `SoundSkill(..., melee: true)`.
+- **Sound Burst** (the Elf's bow, two hits) keeps the old column — his "archer the same". So does the Warrior's
+  **Sundering Blow**, which borrows the same ladder and was not in his edit.
+- `SkillCsvSeed --check` clean; `--gen-faces` unchanged (MP is not in the faces). Server-side; the next APK shows the new
+  number in the Learn tab.
+
+## 2026-10-02 — 0.222.2: the Master's Trial — one gather step, and a fail keeps you at the anvil
 
 His find (My Finds, `[!]`): after a failed hammer the trial went back to "20 Seasoned Hardwood", walked the five piles one
 by one, and refused the next craft (*"That recipe is only for the Master's trial, once you reach its craft step"*) while

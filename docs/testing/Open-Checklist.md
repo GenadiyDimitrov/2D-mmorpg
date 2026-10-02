@@ -28,8 +28,14 @@
   - 1h Pet Grand Rune -> 75k
   - 2h Pet Grand Rune -> 140k
   - so summoners second rune and anyone with a pet can use it -> but the Pet rune is defered as im not sure ill increase the default stats of the pet or will grand them a rune effect as well
-- [~] -> Decreased the MP cost for physical skills of buffer (archer the same - more dmg more mp ..) 
 ---
+
+## §131 — 0.222.3: the buffer's Sound Smash / Acoustic Shock MP (2026-10-02)
+
+Your CSV edit: *"Decreased the MP cost for physical skills of buffer (archer the same - more dmg more mp ..)"*. Server-only.
+
+- `131a` [ ] - **Sound Smash / Acoustic Shock** cost your new column (lvl 40: 36 MP; lvl 74: 78; lvl 90: 110). Sound Burst
+  (Elf, bow) is unchanged. ->
 
 ## §130 — 0.222.2: the Master's Trial — one gather step, retry while you hold mats (2026-10-02)
 
