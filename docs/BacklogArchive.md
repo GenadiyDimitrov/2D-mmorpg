@@ -8338,3 +8338,20 @@ when creating char or on any class master to know hwat u are getting your self i
   current class locked, only the paths you can still take), and — my pick, his call — as a **4th "Tree" tab in the
   Skills window**, so it is not only reachable at an NPC. Needs an APK, no `game.db` delete.
   ❓ Q1: the Skills-window tab too, or only creation + class masters as he first said?
+
+## `BL-334` ✅ BUILT in 0.225.0 — skill SP is a formula off the EXP curve, and every ladder rises (2026-10-02)
+
+His ask: *"I want the skills to have weight but then again I want each time skills to be with rising SP ... Not lvl 35
+buff to cost 45k 40 to cost 68k and 44 to cost 36k ... I want to go up. Make research on the IG skills sp requirement
+from the elo site."* Research: `docs/balance/SpVsIG.md`. His rulings the same day:
+1. Keep SP at 1/20 of EXP *"if we make a formula [so] each change in the exp will keep the balance with the sp"*.
+2. Targets *"1~19 x1.5~2, 20~39 x1~1.5, 40~51 ~x0.9, 52~60 ~x0.75, 61~75 ~x0.6 - and lower them depending on archetypes
+   +-5%"* (my split, his OK: tanks/warriors/daggers +5, Magus 0, bows/healers/buffers −5).
+3. Weights stay: an IG skill costs the same per tier (a mastery's 3 rungs = one skill), *"so a weight is OK"*.
+4. One curve. *"40 to be able to buy them all to 42~43 .. 52 to 55 ... I can then postpone few"*.
+5. Per-file curves, frozen: *"if I add 12 skills to the tank ... But we can start from somewhere"*.
+6. *"Make the floor of each skill to be one before x1.01"*.
+7. 76+ is another discussion.
+
+Built as `SkillCsvSeed -- --reprice-sp [--solve [file]]` + `docs/data/sp_bands.csv` + `docs/data/sp_curve.csv`; replaces
+`BL-326`'s `--reweigh-sp` and `--scale-sp`. Formula: `docs/Formulas.md`. Details: `docs/CHANGELOG.md` 0.225.0. Checklist §136.

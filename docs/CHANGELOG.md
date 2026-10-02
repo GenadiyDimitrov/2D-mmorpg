@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.218.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.225.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,36 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-02 (latest) — 0.224.0: whole-second cooldowns; sheets that open whole; the rune texts agree
+## 2026-10-02 (latest) — 0.225.0: skill SP is a formula, and every ladder rises (`BL-334`)
+
+**New APK + server restart** (the Learn tab reads the prices from the compiled tables). No `game.db` delete. Checklist §136.
+
+His ask: *"I want the skills to have weight but then again I want each time skills to be with rising SP ... Not lvl 35
+buff to cost 45k 40 to cost 68k and 44 to cost 36k ... I want to go up."* The `BL-326` pot split made a crowded level
+cheaper per skill; the CSVs had **365 falling steps across 321 ladders**. Research on IG: `docs/balance/SpVsIG.md`.
+
+- **Every SP cell at learn level 1-75 is now `weight × the SP one level pays × c(file, level)`**, written by
+  `SkillCsvSeed -- --reprice-sp` (`tools/SkillCsvSeed/SpCurve.cs`). The income comes from `ExpCurve`, so an EXP change
+  moves the prices with it (his condition for keeping SP at 1/20 of EXP). Formula: `docs/Formulas.md`.
+- **His knobs, three files:** `sp_weights.csv` (unchanged), `sp_bands.csv` (1-19 ×1.75, 20-39 ×1.25, 40-51 ×0.9,
+  52-60 ×0.75, 61-75 ×0.6) and `sp_curve.csv` (`ADJ`: tanks, warriors, daggers +5%; Magus 0; bows, healers, buffers
+  −5%). The curve anchors in `sp_curve.csv` are **frozen**. His point: re-solving on every run would make all the
+  tank's skills cheaper the day he adds twelve more. `--reprice-sp --solve [file]` re-fits them on request.
+- **A rung costs at least ×1.01 of the rung before** (same skill, same race, 1st → 2nd → 3rd), his floor.
+- **`--check` fails `SP STALE`** (a cell differs from the formula) **and `SP FALLS`**. The result: 0 falls, and a rerun
+  rewrites 0 cells.
+- `--reweigh-sp` and `--scale-sp` are gone. A blanket price change is now a band target.
+- **What moved** (`BalanceMatrix --sp-budget`, x = SP earned / kit cost, ×1):
+  - **1-19:** the kit costs ~26k, was ~12k (x 3 → 1.75).
+  - **20-39:** 0.57-0.72M, was 0.76-1.22M (x → 1.19-1.31).
+  - **60-75:** **67-78M, was 43-55M**. Your ×0.6 band lands about 40% dearer than before.
+  - A tier is bought ~3-5 levels after it opens (40 → 43-45, 52 → 55-56). The 72 and 74 tiers finish after the 76 EXP
+    wall.
+- ⚠ **A steep 2nd-class curve holds up the start of the 3rd.** The tank 2nd file has few skills, so its prices run
+  high, and Shield Shock's 3rd-class rungs at 40-52 sit on the +1% floor (122k → 130k).
+- **76+ is untouched** (a separate discussion, his ruling).
+
+## 2026-10-02 — 0.224.0: whole-second cooldowns; sheets that open whole; the rune texts agree
 
 **New APK + server restart.** No `game.db` delete. Checklist §135.
 

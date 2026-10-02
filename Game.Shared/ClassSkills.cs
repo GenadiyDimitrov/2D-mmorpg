@@ -115,8 +115,8 @@ public static class ClassSkills
     /// <summary>`BL-326` — THE CSV CELL IS THE PRICE. Every class-table row's SP is written from
     /// <see cref="ClassSkillTables.SpPrices"/> (generated from the class CSVs by `SkillCsvSeed --gen-passives`) once,
     /// here, so every reader — the learn handler, the client's Learn tab, `--check`, the SP budget — sees the price he
-    /// authored, actives included. The CSVs' per-level split by weight is `SkillCsvSeed --reweigh-sp`
-    /// (`docs/data/sp_weights.csv`); it replaced the passive ×k of 0.215.0. Rows the table does not name (the central
+    /// authored, actives included. Below 76 the CSV cells are written by `SkillCsvSeed --reprice-sp` (`BL-334`:
+    /// weight × the SP one level pays × a frozen per-file curve, every ladder rising). Rows the table does not name (the central
     /// injectors: race layers, grade, sigils, stat swaps, the shared 4th kit) keep their own price.</summary>
     private static void ApplyCsvPrices()
     {

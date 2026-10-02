@@ -39,17 +39,15 @@ Directory.CreateDirectory(outDir);
 // `--gen-passives` — `BL-314`: generate the shared passive ladders and every class's learn rows for them from the
 // CSVs (PassiveGen.cs). `--base` reads the SP column as the x1 base instead of the scaled price the player pays.
 if (args.Contains("--gen-passives")) return PassiveGen.Run(outDir, dir.FullName, args.Contains("--base"));
-// `--reweigh-sp` — `BL-326`: split each level's SP pot by the weights in docs/data/sp_weights.csv, then regenerate.
-// `--reweigh-sp --show archer` prints the per-level split for the files whose name contains "archer".
-// `--scale-sp 40 75 0.7` — every class-table SP cell learned at 40..75 times 0.7, then regenerate.
-int scaleAt = Array.IndexOf(args, "--scale-sp");
-if (scaleAt >= 0)
-    return PassiveGen.ScaleSp(outDir, dir.FullName, int.Parse(args[scaleAt + 1]), int.Parse(args[scaleAt + 2]),
-        double.Parse(args[scaleAt + 3], System.Globalization.CultureInfo.InvariantCulture));
-if (args.Contains("--reweigh-sp"))
+// `--reprice-sp` — `BL-334`: every SP cell learned at 1-75 = weight × the SP one level pays × the file's frozen curve
+// (docs/data/sp_curve.csv), each rung ≥ ×1.01 the one before; then regenerate. See SpCurve.cs.
+// `--reprice-sp --solve` re-fits EVERY file's curve to docs/data/sp_bands.csv; `--solve tank` only files naming "tank".
+// `--show archer` prints the per-level prices for the files whose name contains "archer".
+if (args.Contains("--reprice-sp"))
 {
-    int si = Array.IndexOf(args, "--show");
-    return PassiveGen.Reweigh(outDir, dir.FullName, si >= 0 && si + 1 < args.Length ? args[si + 1] : null);
+    int si = Array.IndexOf(args, "--show"), so = Array.IndexOf(args, "--solve");
+    string[]? solve = so < 0 ? null : args.Skip(so + 1).TakeWhile(a => !a.StartsWith("--")).ToArray();
+    return PassiveGen.Reprice(outDir, dir.FullName, solve, si >= 0 && si + 1 < args.Length ? args[si + 1] : null);
 }
 
 // `--gen-faces` — `BL-327`: the DISPLAY half of every skill (class CSVs' NAME/DESCRIPTION + docs/data/skill_faces.csv
@@ -64,7 +62,8 @@ if (args.Contains("--check"))
     Check.Verbose = args.Contains("-v") || args.Contains("--verbose");
     int rc = Check.Run(outDir);
     int faces = Faces.Check(dir.FullName);
-    return rc != 0 ? rc : faces == 0 ? 0 : 1;
+    int sp = PassiveGen.CheckSp(outDir);
+    return rc != 0 ? rc : faces == 0 && sp == 0 ? 0 : 1;
 }
 
 // --retarget rewrites the TARGET column of every file into his `[scope]/[breadth]` scheme (2026-08-27).

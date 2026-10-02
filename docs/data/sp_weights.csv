@@ -148,7 +148,6 @@ holy_arcane_serenity_single,Arcane Serenity,buff,1,default
 holy_blessing,Holy Blessing,heal,1.5,default
 holy_body_reinforcement_single,Body Reinforcement,buff,1,default
 holy_bolt,Holy Bolt,magic,1.5,default
-holy_spike,Holy Spike,magic,1.5,default
 holy_feral_bloodlust_single,Feral Bloodlust,buff,1,default
 holy_feral_precision_single,Feral Precision,buff,1,default
 holy_frenzy,Frenzy,buff,1,default
@@ -157,6 +156,7 @@ holy_ray,Holy Ray,magic,1.5,default
 holy_shield_reinforcement_single,Shield Reinforcement,buff,1,default
 holy_soul,Holy Soul,buff,1,default
 holy_soul_reinforcement_single,Soul Reinforcement,buff,1,default
+holy_spike,Holy Spike,magic,1.5,default
 holy_wind_grace_single,Wind Grace,buff,1,default
 hp_boost,HP Boost,passive,0.33,default
 hp_regeneration,HP regeneration,passive,0.33,default

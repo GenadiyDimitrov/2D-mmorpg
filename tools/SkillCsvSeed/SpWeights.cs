@@ -3,26 +3,15 @@ using System.Text;
 using Game.Shared;
 
 // =====================================================================================================
-//  `--reweigh-sp` — `BL-326`: EACH LEVEL'S SP IS ONE POT, SPLIT BY WEIGHT (owner, 2026-09-29).
+//  The SP-cell plumbing shared by `--reprice-sp` (`BL-334`, SpCurve.cs): reading every priced row, the weights file,
+//  writing cells back in their own unit, and the price table the engine loads.
 //
-//  His why: *"not one active skill to cost 880k SP and one passive that give me +0.1mp regen to cost 2600k ...
-//  sum all the sp/lvl and split it for skills as weighted ... active skills are x1 passives should be less"*.
-//  It replaced the passive ×k (`SpScarcity`, 0.215.0), which made every 20-75 passive rung 3.5-9× an active one.
-//
-//  THE RULE. For one class file, one level and one race, the pot is the sum of the SP cells of every row that race
-//  learns there. Each row takes  pot × its weight / the sum of the weights. So the pot is conserved (the kit costs
-//  what it cost, and his affordability targets still hold) and only the split moves. A race-only row counts by the
-//  share of races that learn it, which for a symmetric kit is each race's own pot, and makes a rerun a fixed point.
-//  His worked example, Human archer at 60: pot 2,868k over ten skills; three light pieces at 0.33, three at 1, four
-//  strikes at 1.5 → 95k / 287k / 430k (built: 94.7k / 287k / 431k).
+//  History: `BL-326` (2026-09-29) split each level's pot by weight here (`--reweigh-sp`), and `--scale-sp` scaled a
+//  level band. Both are gone (2026-10-02): a crowded level made each rung cheaper, so ladders fell. The weights stay.
 //
 //  THE WEIGHTS ARE HIS: `docs/data/sp_weights.csv`, one row per skill id. A skill not in the file gets a default
 //  (passive 0.33, buff/utility 1, damage/debuff/heal/trap 1.5) and is ADDED to the file as `default`, so a new skill
-//  shows up there for him to price. Setting every weight to 1 is his "just the sum divided by the count".
-//
-//  Rows the class tables do not carry (the central race blocks, auto-granted SP-0 rows) keep their price and stay out
-//  of the pot. After rewriting the cells it regenerates (`--gen-passives`), which also writes the price table the
-//  engine loads (`ClassSkillTables.SpPrices.g.cs`). Rerunning it is harmless: same pot, same weights, same split.
+//  shows up there for him to price.
 // =====================================================================================================
 
 internal static partial class PassiveGen
@@ -124,63 +113,6 @@ internal static partial class PassiveGen
         File.WriteAllText(path, sb.ToString(), new UTF8Encoding(false));
         if (added > 0) Console.WriteLine($"sp_weights.csv: {added} skill(s) added at their default weight.");
         return w;
-    }
-
-    // ---- the reweigh -----------------------------------------------------------------------------------------
-
-    public static int Reweigh(string csvDir, string repoRoot, string? show)
-    {
-        var rows = ReadPriceRows(csvDir);
-        var errors = new List<string>();
-        var weights = LoadWeights(csvDir, rows, errors);
-        if (errors.Count > 0) return Fail(errors);
-
-        // In the pot = priced (SP > 0) and carried by the class table for every race it names.
-        var potRows = rows.Where(r => r.Sp > 0 && weights.ContainsKey(r.Id)
-                                   && r.Races.All(race => KeyFor(r.Fk, race, r.Id, r.Level) is not null)).ToList();
-
-        // unit[(file, level)] = pot / Σ weights, each row counted by the share of the three races that learn it. For a
-        // symmetric kit (every race the same count of skills) that IS each race's own pot / Σ weights, and because every
-        // row then takes weight × one unit, a rerun reads back the same unit: the split is a fixed point.
-        var unit = new Dictionary<(string, int), double>();
-        foreach (var g in potRows.GroupBy(r => (r.Fk.File, r.Level)))
-            unit[g.Key] = g.Sum(r => r.Sp * (r.Races.Length / 3.0)) / g.Sum(r => weights[r.Id] * (r.Races.Length / 3.0));
-
-        var price = new Dictionary<PriceRow, int>();
-        foreach (var r in potRows)
-        {
-            int p = Nice(weights[r.Id] * unit[(r.Fk.File, r.Level)]);
-            // Within 0.5% of the cell already there = the same price; keeps rounding from flipping cells on a rerun.
-            price[r] = Math.Abs(p - r.Sp) <= 0.005 * r.Sp ? (int)r.Sp : p;
-        }
-
-        if (show is not null)
-            foreach (var g in potRows.Where(r => r.Fk.File.Contains(show, StringComparison.OrdinalIgnoreCase))
-                                     .GroupBy(r => (r.Fk.File, r.Level)).OrderBy(g => g.Key.File).ThenBy(g => g.Key.Level))
-            {
-                Console.WriteLine($"  {g.Key.File} @{g.Key.Level}: pot(Human) {potRows.Where(r => r.Fk.File == g.Key.File && r.Level == g.Key.Level && r.Races.Contains(Race.Human)).Sum(r => r.Sp):N0}");
-                foreach (var r in g)
-                    Console.WriteLine($"      {r.Id,-34} w {weights[r.Id],4:0.##}  {r.Sp,12:N0} → {price[r],12:N0}  {(r.Races.Length == 3 ? "" : string.Join(";", r.Races))}");
-            }
-
-        int changed = WriteSpCells(csvDir, price);
-        long before = potRows.Sum(r => r.Sp), after = potRows.Sum(r => (long)price[r]);
-        Console.WriteLine($"{changed} SP cell(s) rewritten; the pots summed {before:N0} before, {after:N0} after (rounding).");
-        return Run(csvDir, repoRoot, false);
-    }
-
-    /// <summary>`--scale-sp FROM TO FACTOR` — every class-table SP cell learned at FROM..TO times FACTOR (owner,
-    /// 2026-10-01: 40-75 × 0.7, *"it's impossible to learn skills"*). Every cell of a level moves together, so each
-    /// level's pot shrinks and its weight split is untouched; then regenerates like a reweigh.</summary>
-    public static int ScaleSp(string csvDir, string repoRoot, int from, int to, double factor)
-    {
-        var rows = ReadPriceRows(csvDir).Where(r => r.Sp > 0 && r.Level >= from && r.Level <= to
-                                   && r.Races.All(race => KeyFor(r.Fk, race, r.Id, r.Level) is not null)).ToList();
-        var price = rows.ToDictionary(r => r, r => Nice(r.Sp * factor));
-        int changed = WriteSpCells(csvDir, price);
-        long before = rows.Sum(r => r.Sp), after = rows.Sum(r => (long)price[r]);
-        Console.WriteLine($"{changed} SP cell(s) at {from}-{to} scaled ×{factor}: {before:N0} → {after:N0}.");
-        return Run(csvDir, repoRoot, false);
     }
 
     /// <summary>Writes each row's new price into its SP COST cell, keeping the cell's own unit (k / kk / ×1000), the

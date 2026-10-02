@@ -1415,6 +1415,28 @@ penalties   LIFETIME only: PK kill -karma*0.01; chatban 20 / jail 100 / kick 250
 
 ---
 
+## Skill SP prices, learn levels 1-75 (`BL-334`, 0.225.0)
+
+Generated into the class CSVs by `SkillCsvSeed -- --reprice-sp` (`tools/SkillCsvSeed/SpCurve.cs`); 76+ is not priced
+here.
+
+```
+income(L)  = ExpCurve.ExpToNext(L) * SpToExpRatio            (1/20: the SP one level of kills pays)
+c(file, L) = geometric interpolation between the file's anchors at each band's middle,
+             flat before the first and after the last         (docs/data/sp_curve.csv, frozen)
+price      = Nice( weight(skill) * income(L) * c(file, L) )   (weight: docs/data/sp_weights.csv; Nice = 3 sig. figures)
+floor      = price >= 1.01 * the previous rung of the same skill, same race, along 1st -> 2nd -> 3rd
+x(band)    = sum income(L) over the band / the path's kit cost in the band
+--solve    fits each file's anchors so x(band) = band X (docs/data/sp_bands.csv) * (1 + ADJ%) over the
+           bands it owns: 1st files 1-19, 2nd files 20-39, 3rd files 40-75 (averaged over its paths and races)
+```
+
+Bands (his, 2026-10-02): 1-19 ×1.75 · 20-39 ×1.25 · 40-51 ×0.9 · 52-60 ×0.75 · 61-75 ×0.6. ADJ: tank / warrior /
+war_aoe / dual +5%, nuker and rogue 2nd 0, cleric / healer / buffer / archer −5%. A row priced 0 is an auto-grant
+and stays free.
+
+---
+
 ## Where to look when this page is not enough
 
 | | |
