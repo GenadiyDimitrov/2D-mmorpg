@@ -24,7 +24,29 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-02 (latest) — 0.225.2: every RACE lands on its SP target, not the three-race average (`BL-334`)
+## 2026-10-02 (latest) — 0.226.0: icons for the NPC buffs, potions, scrolls, runes and the paving (`BL-331`)
+
+**New APK + server restart.** No `game.db` delete. Checklist §137.
+
+- **77 new rows in `docs/data/skill_icons.csv`**, his ask: *"Put icons on npc (can be the same as the singles) ... gp/mp
+  potions ... the 3 potions + dash ... pavement buff ... Runes"*. Every one is a row he can change.
+  - **NPC buffs** wear their class single's glyph and colour (NPC Might = Might). The four NPC groups have their own glyph.
+  - **HP potions** are red and **MP potions** blue, on the Restore Mana bottle. The glyph is the tier (round / ball /
+    standing); the Instant Healing Potion is a heart bottle.
+  - **Swift, Alacrity and Fury potions** have one flask each, and **Dash** a vapour bottle. The colour is the item's rarity
+    (the same colours as names in the bag).
+  - **Runes** are runic glyphs coloured by what they boost: War = blood, Spell = arcane, Grand = gold, and one each for the
+    Exp/SP/Gold/Drop/Sinister/Sinners/Favor Keep/Blessing Booster runes.
+  - **Paved Streets** is a stone path.
+  - Not in his list, added the same way: the **18 buff scrolls** (the single's glyph in the scroll's rarity colour) and the
+    two **Over-Grade** debuffs (broken shield / broken axe).
+- **Six new SCHOOLS**: `common` … `mythic`, for item buffs.
+- **New `buff:<key>` row type** for a buff-bar row no skill casts (Paved Streets, Over-Grade). The server sends that key
+  as the row's icon id.
+- **A potion or scroll on the skill bar** shows its picture too (the item's use-skill), with the count still on it.
+- The review page (`docs/design/SkillIcons.html`) has new sections: spirit helper, potions, scrolls, runes, buff bar.
+
+## 2026-10-02 — 0.225.2: every RACE lands on its SP target, not the three-race average (`BL-334`)
 
 **New APK + server restart.** No `game.db` delete. Checklist §136 (row 136d).
 

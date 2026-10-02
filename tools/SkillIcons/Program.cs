@@ -7,7 +7,8 @@ using SkiaSharp;
 //  SKILL ICONS — `BL-331` (owner, 2026-10-01: *"ok lets do the route B"*).
 //
 //  docs/data/skill_icons.csv is HIS, same two-way contract as the class CSVs: one row per skill,
-//  `SKILL_ID,ICON,SCHOOL,COMMENT` (an ACTION is `action:<id>`, e.g. `action:sit_stand`). ICON is a game-icons.net name (the last part of the site's URL,
+//  `SKILL_ID,ICON,SCHOOL,COMMENT` (an ACTION is `action:<id>`, e.g. `action:sit_stand`; a buff-bar row no skill
+//  casts is `buff:<key>`, e.g. `buff:paved_streets` — see Rows.BarRows). ICON is a game-icons.net name (the last part of the site's URL,
 //  e.g. game-icons.net/1x1/lorc/fireball.html → `fireball`); SCHOOL picks the colour from the palette
 //  below. Change a row, re-run, and the PNG follows.
 //
@@ -64,7 +65,12 @@ var errors = new List<string>();
         if (c.Count == 0 || string.IsNullOrWhiteSpace(c[0])) continue;
         string id = c[0].Trim(), icon = c.Count > 1 ? c[1].Trim() : "", school = c.Count > 2 ? c[2].Trim() : "";
         if (rows.Any(r => r.Id == id)) errors.Add($"line {i + 1}: {id} has two rows");
-        if (Rows.IsAction(id) ? ActionCatalog.Get(Rows.ActionId(id)) is null : SkillCatalog.Get(id) is null)
+        if (Rows.IsBuff(id))
+        {
+            if (!Rows.BarRows.ContainsKey(Rows.BuffKey(id)))
+                errors.Add($"line {i + 1}: {id} is not a known buff-bar row (known: {string.Join(", ", Rows.BarRows.Keys)})");
+        }
+        else if (Rows.IsAction(id) ? ActionCatalog.Get(Rows.ActionId(id)) is null : SkillCatalog.Get(id) is null)
             errors.Add($"line {i + 1}: {id} is not a " + (Rows.IsAction(id) ? "known action" : "skill"));
         if (!icons.ContainsKey(icon)) errors.Add($"line {i + 1}: {id} — no icon called '{icon}' on game-icons.net");
         if (!Palette.Schools.ContainsKey(school))
@@ -110,10 +116,12 @@ var keep = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 var pngs = new Dictionary<string, byte[]>();
 foreach (var r in rows)
 {
-    bool isAction = Rows.IsAction(r.Id);
-    bool passive = !isAction && SkillCatalog.Get(r.Id)!.Category == SkillCategory.Passive;
+    bool isAction = Rows.IsAction(r.Id), isBuff = Rows.IsBuff(r.Id);
+    bool passive = !isAction && !isBuff && SkillCatalog.Get(r.Id)!.Category == SkillCategory.Passive;
     byte[] png = Render.Icon(Svg.PathData(icons[r.Icon]), Palette.Schools[r.School], passive, 128);
-    string path = isAction ? Path.Combine(actionDir, Rows.ActionId(r.Id) + ".png") : Path.Combine(skillDir, r.Id + ".png");
+    // A `buff:` row lands beside the skills, under its bar key — the server sends that key as the buff's icon id.
+    string path = isAction ? Path.Combine(actionDir, Rows.ActionId(r.Id) + ".png")
+                : Path.Combine(skillDir, (isBuff ? Rows.BuffKey(r.Id) : r.Id) + ".png");
     // Only rewrite a file whose bytes changed, so git and Unity see real changes only.
     if (!File.Exists(path) || !File.ReadAllBytes(path).AsSpan().SequenceEqual(png)) File.WriteAllBytes(path, png);
     keep.Add(path);
@@ -185,6 +193,14 @@ internal static class Palette
         ["sigil"]   = new("Sigil",                   new SKColor(0xa8, 0x74, 0x2a), new SKColor(0xff, 0xe3, 0xb0)),
         ["neutral"] = new("Neutral",                 new SKColor(0x6a, 0x6a, 0x6a), new SKColor(0xee, 0xee, 0xee)),
         ["social"]  = new("Social / party / chat",   new SKColor(0x4a, 0x6f, 0xa5), new SKColor(0xdd, 0xe8, 0xf7)),
+        // An ITEM's buff (a potion, a scroll) wears its item's RARITY — the hues of GameUi.RarityColour, darkened
+        // for the frame, so the bottle on the bar reads the same colour as its name in the bag.
+        ["common"]    = new("Item: Common",    new SKColor(0x7a, 0x7a, 0x7a), new SKColor(0xf2, 0xf2, 0xf2)),
+        ["uncommon"]  = new("Item: Uncommon",  new SKColor(0x3a, 0x7c, 0xb8), new SKColor(0xd9, 0xef, 0xff)),
+        ["rare"]      = new("Item: Rare",      new SKColor(0xb0, 0x8a, 0x10), new SKColor(0xff, 0xf0, 0xb0)),
+        ["epic"]      = new("Item: Epic",      new SKColor(0x7a, 0x44, 0xc0), new SKColor(0xec, 0xdc, 0xff)),
+        ["legendary"] = new("Item: Legendary", new SKColor(0xc0, 0x5a, 0x10), new SKColor(0xff, 0xdc, 0xb8)),
+        ["mythic"]    = new("Item: Mythic",    new SKColor(0xb0, 0x26, 0x30), new SKColor(0xff, 0xc8, 0xcc)),
     };
 }
 
@@ -195,6 +211,31 @@ internal static class Rows
     public const string ActionPrefix = "action:";
     public static bool IsAction(string id) => id.StartsWith(ActionPrefix, StringComparison.Ordinal);
     public static string ActionId(string id) => id.Substring(ActionPrefix.Length);
+
+    /// <summary>`buff:<key>` — a buff-bar row that no skill casts (the server builds it from a state: standing on the
+    /// paving, wearing over-grade gear). Its key is what <c>BuffDto.IconSkillId</c> carries, so it must never collide
+    /// with a skill id. Name → shown on the review page.</summary>
+    public const string BuffPrefix = "buff:";
+    public static bool IsBuff(string id) => id.StartsWith(BuffPrefix, StringComparison.Ordinal);
+    public static string BuffKey(string id) => id.Substring(BuffPrefix.Length);
+    public static readonly Dictionary<string, string> BarRows = new()
+    {
+        ["paved_streets"]        = "Paved Streets",
+        ["grade_penalty_armor"]  = "Over-Grade Armor",
+        ["grade_penalty_weapon"] = "Over-Grade Weapon",
+    };
+
+    /// <summary>The review page's section for a row that no class file lists.</summary>
+    public static string Group(string id) =>
+        IsAction(id) ? "actions"
+        : IsBuff(id) ? "buff bar"
+        : id.StartsWith("npc_", StringComparison.Ordinal) ? "spirit helper (NPC buffs)"
+        : id.StartsWith("pot_", StringComparison.Ordinal) ? "potions"
+        : id.StartsWith("scr_", StringComparison.Ordinal) ? "scrolls"
+        : id.StartsWith("rune_", StringComparison.Ordinal) ? "runes"
+        : "(no class file)";
+    public static readonly string[] Groups =
+        { "actions", "spirit helper (NPC buffs)", "potions", "scrolls", "runes", "buff bar", "(no class file)" };
 }
 
 internal static class Svg
@@ -369,15 +410,15 @@ colours below — or just say which one. Passives are drawn dimmer than skills y
             sb.Append($"<span><i style=\"background:#{s.Base.Red:x2}{s.Base.Green:x2}{s.Base.Blue:x2}\"></i>{E(key)} — {E(s.Label)}</span>");
         sb.Append("</div>\n");
 
-        foreach (var file in fileOrder.Append("actions").Append("(no class file)"))
+        foreach (var file in fileOrder.Concat(Rows.Groups))
         {
-            var mine = rows.Where(r => (Rows.IsAction(r.Id) ? "actions" : fileOf.TryGetValue(r.Id, out var f) ? f : "(no class file)") == file).ToList();
+            var mine = rows.Where(r => (fileOf.TryGetValue(r.Id, out var f) ? f : Rows.Group(r.Id)) == file).ToList();
             if (mine.Count == 0) continue;
             sb.Append($"<section><h2>{E(file)} · {mine.Count}</h2><div class=\"grid\">\n");
             foreach (var r in mine)
             {
-                string name = Rows.IsAction(r.Id)
-                    ? ActionCatalog.Get(Rows.ActionId(r.Id))!.Name
+                string name = Rows.IsAction(r.Id) ? ActionCatalog.Get(Rows.ActionId(r.Id))!.Name
+                    : Rows.IsBuff(r.Id) ? Rows.BarRows[Rows.BuffKey(r.Id)]
                     : SkillFaces.NameOf(SkillFaces.Get(r.Id), r.Id, 1);
                 string b64 = Convert.ToBase64String(pngs[r.Id]);
                 string hay = (name + " " + r.Id + " " + r.Icon + " " + r.School).ToLowerInvariant();

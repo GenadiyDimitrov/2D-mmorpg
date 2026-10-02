@@ -25,6 +25,21 @@
 
 ---
 
+## §137 — 0.226.0: icons for the NPC buffs, potions, scrolls, runes and the paving (`BL-331`, 2026-10-02)
+
+⚠ **New APK + server restart.** No `game.db` delete. Every picture is a row in `docs/data/skill_icons.csv`; the review
+page is `docs/design/SkillIcons.html`.
+
+- `137a` [ ] - **Spirit helper:** take a few NPC singles and a group. Each single wears its class single's picture
+  (NPC Might = Might); the four groups have their own. ->
+- `137b` [ ] - **HP / MP potions** on the skill bar and their buff on the buff bar: red for HP, blue for MP, the bottle
+  shape is the tier, the Instant Healing Potion a heart bottle. The count still shows on the bar. ->
+- `137c` [ ] - **Swift / Alacrity / Fury potions and Dash:** a flask each, coloured by the potion's rarity. ->
+- `137d` [ ] - **Runes** (War / Spell / Grand and any reward rune you can `/give`): a runic glyph each on the buff bar. ->
+- `137e` [ ] - **Paved Streets** in town: a stone-path picture instead of letters. ->
+- `137f` [ ] - **Not in your list, done the same way:** the buff scrolls (the single's picture in the scroll's rarity
+  colour) and the two Over-Grade debuffs (broken shield / broken axe). Keep or change? ->
+
 ## §136 — 0.225.2: skill SP is a formula, and every ladder rises (`BL-334`, 2026-10-02)
 
 ⚠ **New APK + server restart.** No `game.db` delete. Your knobs: `docs/data/sp_bands.csv`, `sp_adj.csv` (±% per file),

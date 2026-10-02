@@ -18949,7 +18949,7 @@ public class GameLoopService : BackgroundService
             dtos.Add(new BuffDto("Paved Streets",
                 $"The blessed paving of the town quickens your step: +{MovementTuning.PavedStreetsRunBonus:0} run "
                 + $"speed (max {StatCaps.MoveSpeed:0}) while you run inside the town. Leaving it or any fight ends it.",
-                -1f, false, "paved_streets", 1, BuffRow.Buff, ""));   // "" = initials: the TMP atlas is static, a new emoji may not draw
+                -1f, false, "paved_streets", 1, BuffRow.Buff, "", IconSkillId: "paved_streets"));   // `BL-331`: a `buff:` row of skill_icons.csv
 
         if (dtos.Count == 0)
         {
@@ -18997,7 +18997,7 @@ public class GameLoopService : BackgroundService
                 $"Your armor/jewels are {p.GradeArmorGap} grade(s) above you (x{p.GradeArmorPenalty:0.##}): "
                 + $"-{pct}% P.Def, M.Def, evasion, and cast/attack/move speed. "
                 + "Level up, or wear your own grade, to clear it.",
-                -1f, true, "grade_penalty_armor", 1, BuffRow.Debuff, "🛡");
+                -1f, true, "grade_penalty_armor", 1, BuffRow.Debuff, "🛡", IconSkillId: "grade_penalty_armor");
         }
         if (p.GradeWeaponGap > 0)
         {
@@ -19007,7 +19007,7 @@ public class GameLoopService : BackgroundService
                 $"Your weapon is {p.GradeWeaponGap} grade(s) above you (x{p.GradeWeaponPenalty:0.##}): "
                 + $"-{pct}% P.Atk, M.Atk, crit rate, crit damage and accuracy. "
                 + "Level up, or wield your own grade, to clear it.",
-                -1f, true, "grade_penalty_weapon", 1, BuffRow.Debuff, "⚔");
+                -1f, true, "grade_penalty_weapon", 1, BuffRow.Debuff, "⚔", IconSkillId: "grade_penalty_weapon");
         }
     }
 

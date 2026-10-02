@@ -856,12 +856,16 @@ namespace Game.Client
         internal static Sprite ActionSprite(string actionId) =>
             string.IsNullOrEmpty(actionId) ? null : LoadIcon("ActionIcons/" + actionId);
 
-        /// <summary>The picture for anything a bar slot can hold that has one: a skill or an action. Items and
-        /// presets keep their letters.</summary>
+        /// <summary>The picture for anything a bar slot can hold that has one: a skill, an action, or an item that
+        /// drinks/reads a skill (a potion, a scroll) — the item wears its use-skill's picture, the same one its buff
+        /// shows. Other items and presets keep their letters.</summary>
         internal static Sprite TokenSprite(string token)
         {
             if (string.IsNullOrEmpty(token)) return null;
             if (ActionCatalog.FromToken(token) is ActionDef action) return ActionSprite(action.Id);
+            if (GameConstants.IsItemSlot(token))
+                return ItemCatalog.Get(token.Substring(GameConstants.SkillBarItemPrefix.Length)) is ItemDef item
+                    ? SkillSprite(item.UseSkillId) : null;
             return SkillCatalog.Get(token) != null ? SkillSprite(token) : null;
         }
 
