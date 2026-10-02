@@ -4,198 +4,198 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 43,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +31",0,25.9
 46,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +34",0,30.9
 49,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +37",0,31.3
-52,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +40",0,40.7
-55,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +43",0,50
-58,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +46",0,63
-60,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +49",0,122
-62,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +52",0,158
-64,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +55",0,203
-66,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +58",0,347
-68,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +61",0,443
-70,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +64",0,489
-72,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +67",0,808
-74,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +70",0,1180
+52,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +40",0,38.6
+55,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +43",0,46.2
+58,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +46",0,55.8
+60,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +49",0,105
+62,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +52",0,130
+64,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +55",0,162
+66,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +58",0,267
+68,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +61",0,329
+70,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +64",0,363
+72,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +67",0,600
+74,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +70",0,878
 ,,,,,,,,,,,,,,,,,----------------------------Evasion----------------------------
 46,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +13",0,30.9
-58,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +14",0,63
+58,Light armor Evasion,rogue_evasion,Passive,,light,0,0,self/single,0,0,0,"light: eva +14",0,55.8
 ,,,,,,,,,,,,,,,,,----------------------------Critical Resist----------------------------
 40,Critical Resist,rogue_crit_resist,Passive,,light,0,0,self/single,0,0,0,"light: crit rate resist +25%",0,61.9
-60,Critical Resist,rogue_crit_resist,Passive,,light,0,0,self/single,0,0,0,"light: crit rate resist +35%",0,371
+60,Critical Resist,rogue_crit_resist,Passive,,light,0,0,self/single,0,0,0,"light: crit rate resist +35%",0,317
 ,,,,,,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
 40,Dual Proficiency,dual_weapon_prof,passive,duals,,0,0,self/single,0,8,5,"With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% fot 5 sec",0,20.4,[],,,"With duals: @{procchance} chance, 60% less MP and +@{critdmg} crit damage for 5s (8s cooldown)."
 ,,,,,,,,,,,,,,,,,----------------------------Critical Rate Mastery----------------------------
 40,Critical Rate,rogue_critical_rate_mastery,passive,bow|duals,,0,0,self/single,0,0,0,"crit rate x1.3;",0,20.4
-52,Critical Rate,rogue_critical_rate_mastery,passive,bow|duals,,0,0,self/single,0,0,0,"crit rate x1.4;",0,40.7
-70,Critical Rate,rogue_critical_rate_mastery,passive,bow|duals,,0,0,self/single,0,0,0,"crit rate x1.5;",0,489
+52,Critical Rate,rogue_critical_rate_mastery,passive,bow|duals,,0,0,self/single,0,0,0,"crit rate x1.4;",0,38.6
+70,Critical Rate,rogue_critical_rate_mastery,passive,bow|duals,,0,0,self/single,0,0,0,"crit rate x1.5;",0,363
 ,,,,,,,,,,,,,,,,,----------------------------Fury----------------------------
 46,Faster Attack Mastery,fury_mastery,passive,,,0,0,self/single,0,0,0,"AS x1.07;",0,30.9
-58,Faster Attack Mastery,fury_mastery,passive,,,0,0,self/single,0,0,0,"AS x1.1;",0,63
+58,Faster Attack Mastery,fury_mastery,passive,,,0,0,self/single,0,0,0,"AS x1.1;",0,55.8
 ,,,,,,,,,,,,,,,,,----------------------------Swift----------------------------
 43,Swiftness,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +11;",0,25.9
 ,,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
 43,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +23",0,25.9
 46,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +26",0,30.9
 49,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +30",0,31.3
-52,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +35",0,40.7
-55,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +40",0,50
-58,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +45",0,63
-60,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +50",0,122
-62,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +53",0,158
-64,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +56",0,203
-66,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +60",0,347
-68,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +65",0,443
-70,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +70",0,489
-72,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +75",0,808
-74,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +80",0,1180
+52,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +35",0,38.6
+55,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +40",0,46.2
+58,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +45",0,55.8
+60,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +50",0,105
+62,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +53",0,130
+64,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +56",0,162
+66,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +60",0,267
+68,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +65",0,329
+70,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +70",0,363
+72,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +75",0,600
+74,Weapon Mastery,weapon_mastery,Passive,sword|blunt|duals,,0,0,self/single,0,0,0,"sword/blunt/dual: p.Atk +80",0,878
 ,,,,,,,,,,,,,,,,,----------------------------HpRegen----------------------------
 43,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +3.0;",0,25.9
 46,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +3.5;",0,30.9
 49,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +4.0;",0,31.3
-52,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +4.5;",0,40.7
-62,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +5.0;",0,158
-68,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +5.5;",0,443
-74,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +6.0;",0,1180
+52,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +4.5;",0,38.6
+62,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +5.0;",0,130
+68,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +5.5;",0,329
+74,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +6.0;",0,878
 ,,,,,,,,,,,,,,,,,----------------------------MpRegen----------------------------
 43,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +1.9;",0,25.9
 46,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.0;",0,30.9
 49,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.1;",0,31.3
-52,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.2;",0,40.7
-62,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.3;",0,158
-68,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.4;",0,443
-74,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.5;",0,1180
+52,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.2;",0,38.6
+62,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.3;",0,130
+68,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.4;",0,329
+74,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.5;",0,878
 ,,,,,,,,,,,,,,,,,----------------------------Critical Dmg Mastery----------------------------
 40,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +232;",0,20.4
 43,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +259;",0,25.9
 46,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +282;",0,30.9
 49,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +322;",0,31.3
-52,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +443;",0,40.7
-55,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +481;",0,50
-58,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +526;",0,63
-60,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +556;",0,122
-62,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +587;",0,158
-64,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +738;",0,203
-66,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +769;",0,347
-68,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +803;",0,443
-70,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +836;",0,489
-72,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +960;",0,808
-74,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1015;",0,1180
+52,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +443;",0,38.6
+55,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +481;",0,46.2
+58,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +526;",0,55.8
+60,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +556;",0,105
+62,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +587;",0,130
+64,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +738;",0,162
+66,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +769;",0,267
+68,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +803;",0,329
+70,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +836;",0,363
+72,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +960;",0,600
+74,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +1015;",0,878
 ,,,,,,,,,,,,,,,,,----------------------------Prowl----------------------------
 40,Prowl,prowl,physical active,,,0,0,self/single,0,2,0,Stance: monsters that haven't already noticed you leave you alone. Anything already chasing you keeps chasing. Costs 1 MP per second.,20,61.9,[],,,Stance: monsters that haven't already noticed you leave you alone. Anything already chasing you keeps chasing. Costs 1 MP per second.
 ,,,,,,,,,,,,,,,,,----------------------------Vanish----------------------------
-60,Vanish,vanish,physical active,,,0,0,self/single,0,120,30,"Vanish completely for 30s — nobody can see or target you, and every monster loses you. Anything but walking ends it.",30,371,[],,,"Vanish completely for @{duration} — nobody can see or target you, and every monster loses you. Anything but walking ends it."
+60,Vanish,vanish,physical active,,,0,0,self/single,0,120,30,"Vanish completely for 30s — nobody can see or target you, and every monster loses you. Anything but walking ends it.",30,317,[],,,"Vanish completely for @{duration} — nobody can see or target you, and every monster loses you. Anything but walking ends it."
 ,,,,,,,,,,,,,,,,,----------------------------Lure----------------------------
-52,Lure,lure,physical debuff,,,200,0,enemy/single,0,10,3,"Pulls ONE monster onto you from 200 range - aggro 400 - monsters only - does no damage so its clan never answers;",65,185,[],
-62,Lure,lure,physical debuff,,,400,0,enemy/single,0,10,3,"Pulls ONE monster onto you from 400 range - aggro 400 - monsters only - does no damage so its clan never answers;",80,718,[],
-74,Lure,lure,physical debuff,,,600,0,enemy/single,0,10,3,"Pulls ONE monster onto you from 600 range - aggro 400 - monsters only - does no damage so its clan never answers;",95,5380,[],
+52,Lure,lure,physical debuff,,,200,0,enemy/single,0,10,3,"Pulls ONE monster onto you from 200 range - aggro 400 - monsters only - does no damage so its clan never answers;",65,175,[],
+62,Lure,lure,physical debuff,,,400,0,enemy/single,0,10,3,"Pulls ONE monster onto you from 400 range - aggro 400 - monsters only - does no damage so its clan never answers;",80,592,[],
+74,Lure,lure,physical debuff,,,600,0,enemy/single,0,10,3,"Pulls ONE monster onto you from 600 range - aggro 400 - monsters only - does no damage so its clan never answers;",95,3990,[],
 ,,,,,,,,,,,,,,,,,---------------------------Sprint----------------------------
 46,Sprint,sprint,physical buff,,,0,0,self/single,0.2,30,15,"Increase speed +60",20,93.7
 ,,,,,,,,,,,,,,,,,----------------------------Evasion Boost----------------------------
-60,Evasion Boost,evasion_boost,physical buff,,,0,0,self/single,0.5,900,30,Increase evasion by +30; Increase skill evasion by x1.3; Increase magic evasion by x1.2; buff cancel resist x1.8; ,20,371,[]
+60,Evasion Boost,evasion_boost,physical buff,,,0,0,self/single,0.5,900,30,Increase evasion by +30; Increase skill evasion by x1.3; Increase magic evasion by x1.2; buff cancel resist x1.8; ,20,317,[]
 ,,,,,,,,,,,,,,,,,----------------------------Phantom Jump----------------------------
-52,Phantom Jump,rouge_huamn_pahantom_jump,physical debuff,,,450,0,enemy/single,0.5,20,3,Jumps to the target and renders is uncontious (stun);,90,185,[],Human
-60,Phantom Jump,rouge_huamn_pahantom_jump,physical debuff,,,600,0,enemy/single,0.5,20,3,Jumps to the target and renders is uncontious (stun);,120,556,[],Human
-74,Phantom Jump,rouge_huamn_pahantom_jump,physical debuff,,,750,0,enemy/single,0.5,20,3,Jumps to the target and renders is uncontious (stun);,150,5380,[],Human
+52,Phantom Jump,rouge_huamn_pahantom_jump,physical debuff,,,450,0,enemy/single,0.5,20,3,Jumps to the target and renders is uncontious (stun);,90,175,[],Human
+60,Phantom Jump,rouge_huamn_pahantom_jump,physical debuff,,,600,0,enemy/single,0.5,20,3,Jumps to the target and renders is uncontious (stun);,120,476,[],Human
+74,Phantom Jump,rouge_huamn_pahantom_jump,physical debuff,,,750,0,enemy/single,0.5,20,3,Jumps to the target and renders is uncontious (stun);,150,3990,[],Human
 ,,,,,,,,,,,,,,,,,----------------------------Phantom Jump----------------------------
-52,Phantom Jump,rouge_elf_pahantom_jump,magical debuff,,,450,0,enemy/single,0.5,20,3,Jumps to the target and renders charmed and slowed by 75%;,90,185,[],Elf
-60,Phantom Jump,rouge_elf_pahantom_jump,magical debuff,,,600,0,enemy/single,0.5,20,3,Jumps to the target and renders charmed and slowed by 75%;,120,556,[],Elf
-74,Phantom Jump,rouge_elf_pahantom_jump,magical debuff,,,750,0,enemy/single,0.5,20,3,Jumps to the target and renders charmed and slowed by 75%;,150,5380,[],Elf
+52,Phantom Jump,rouge_elf_pahantom_jump,magical debuff,,,450,0,enemy/single,0.5,20,3,Jumps to the target and renders charmed and slowed by 75%;,90,175,[],Elf
+60,Phantom Jump,rouge_elf_pahantom_jump,magical debuff,,,600,0,enemy/single,0.5,20,3,Jumps to the target and renders charmed and slowed by 75%;,120,476,[],Elf
+74,Phantom Jump,rouge_elf_pahantom_jump,magical debuff,,,750,0,enemy/single,0.5,20,3,Jumps to the target and renders charmed and slowed by 75%;,150,3990,[],Elf
 ,,,,,,,,,,,,,,,,,----------------------------Phantom Jump----------------------------
-52,Phantom Jump,rouge_demon_pahantom_jump,physical debuff,,,450,0,enemy/single,0.5,20,3,Jumps to the target and renders feared and slowed with 90%;,90,185,[],Demon
-60,Phantom Jump,rouge_demon_pahantom_jump,physical debuff,,,600,0,enemy/single,0.5,20,3,Jumps to the target and renders feared and slowed with 90%;,120,556,[],Demon
-74,Phantom Jump,rouge_demon_pahantom_jump,physical debuff,,,750,0,enemy/single,0.5,20,3,Jumps to the target and renders feared and slowed with 90%;,150,5380,[],Demon
+52,Phantom Jump,rouge_demon_pahantom_jump,physical debuff,,,450,0,enemy/single,0.5,20,3,Jumps to the target and renders feared and slowed with 90%;,90,175,[],Demon
+60,Phantom Jump,rouge_demon_pahantom_jump,physical debuff,,,600,0,enemy/single,0.5,20,3,Jumps to the target and renders feared and slowed with 90%;,120,476,[],Demon
+74,Phantom Jump,rouge_demon_pahantom_jump,physical debuff,,,750,0,enemy/single,0.5,20,3,Jumps to the target and renders feared and slowed with 90%;,150,3990,[],Demon
 ,,,,,,,,,,,,,,,,,----------------------------Killing Stab----------------------------
 40,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 625 - only when skill does critical - otherwise normal attack - require duals;",36,92.8,[precise_shot],Human;Elf
 43,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 750 - only when skill does critical - otherwise normal attack - require duals;",40,118,[precise_shot],Human;Elf
-46,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 875 - only when skill does critical - otherwise normal attack - require duals;",43,141,[precise_shot],Human;Elf
-49,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 1000 - only when skill does critical - otherwise normal attack - require duals;",45,143,[precise_shot],Human;Elf
-52,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 1200 - only when skill does critical - otherwise normal attack - require duals;",47,185,[precise_shot],Human;Elf
-55,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 1400 - only when skill does critical - otherwise normal attack - require duals;",50,227,[precise_shot],Human;Elf
-58,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 1600 - only when skill does critical - otherwise normal attack - require duals;",55,287,[precise_shot],Human;Elf
-60,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 1800 - only when skill does critical - otherwise normal attack - require duals;",56,556,[precise_shot],Human;Elf
-62,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 2000 - only when skill does critical - otherwise normal attack - require duals;",58,718,[precise_shot],Human;Elf
-64,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 2200 - only when skill does critical - otherwise normal attack - require duals;",62,922,[precise_shot],Human;Elf
-66,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 2400 - only when skill does critical - otherwise normal attack - require duals;",65,1580,[precise_shot],Human;Elf
-68,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 2600 - only when skill does critical - otherwise normal attack - require duals;",68,2010,[precise_shot],Human;Elf
-70,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 2800 - only when skill does critical - otherwise normal attack - require duals;",70,2220,[precise_shot],Human;Elf
-72,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 3000 - only when skill does critical - otherwise normal attack - require duals;",75,3670,[precise_shot],Human;Elf
-74,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 3200 - only when skill does critical - otherwise normal attack - require duals;",78,5380,[precise_shot],Human;Elf
+46,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 875 - only when skill does critical - otherwise normal attack - require duals;",43,140,[precise_shot],Human;Elf
+49,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 1000 - only when skill does critical - otherwise normal attack - require duals;",45,142,[precise_shot],Human;Elf
+52,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 1200 - only when skill does critical - otherwise normal attack - require duals;",47,175,[precise_shot],Human;Elf
+55,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 1400 - only when skill does critical - otherwise normal attack - require duals;",50,210,[precise_shot],Human;Elf
+58,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 1600 - only when skill does critical - otherwise normal attack - require duals;",55,254,[precise_shot],Human;Elf
+60,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 1800 - only when skill does critical - otherwise normal attack - require duals;",56,476,[precise_shot],Human;Elf
+62,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 2000 - only when skill does critical - otherwise normal attack - require duals;",58,592,[precise_shot],Human;Elf
+64,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 2200 - only when skill does critical - otherwise normal attack - require duals;",62,735,[precise_shot],Human;Elf
+66,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 2400 - only when skill does critical - otherwise normal attack - require duals;",65,1210,[precise_shot],Human;Elf
+68,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 2600 - only when skill does critical - otherwise normal attack - require duals;",68,1490,[precise_shot],Human;Elf
+70,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 2800 - only when skill does critical - otherwise normal attack - require duals;",70,1650,[precise_shot],Human;Elf
+72,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 3000 - only when skill does critical - otherwise normal attack - require duals;",75,2730,[precise_shot],Human;Elf
+74,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 3200 - only when skill does critical - otherwise normal attack - require duals;",78,3990,[precise_shot],Human;Elf
 ,,,,,,,,,,,,,,,,,----------------------------Venom Stab----------------------------
 40,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power  625 - only when skill does critical - otherwise normal attack - apply 1 venom stacks (max 10) tire 3 ;require duals;",36,92.8,[precise_shot],Demon
 43,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power  750 - only when skill does critical - otherwise normal attack - apply 1 venom stacks (max 10) tire 3 ;require duals;",40,118,[precise_shot],Demon
-46,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power  875 - only when skill does critical - otherwise normal attack - apply 2 venom stacks (max 10) tire 4 ;require duals;",43,141,[precise_shot],Demon
-49,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 1000 - only when skill does critical - otherwise normal attack - apply 2 venom stacks (max 10) tire 4 ;require duals;",45,143,[precise_shot],Demon
-52,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 1200 - only when skill does critical - otherwise normal attack - apply 2 venom stacks (max 10) tire 5 ;require duals;",47,185,[precise_shot],Demon
-55,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 1400 - only when skill does critical - otherwise normal attack - apply 2 venom stacks (max 10) tire 5 ;require duals;",50,227,[precise_shot],Demon
-58,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 1600 - only when skill does critical - otherwise normal attack - apply 2 venom stacks (max 10) tire 6 ;require duals;",55,287,[precise_shot],Demon
-60,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 1800 - only when skill does critical - otherwise normal attack - apply 2 venom stacks (max 10) tire 6 ;require duals;",56,556,[precise_shot],Demon
-62,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 2000 - only when skill does critical - otherwise normal attack - apply 3 venom stacks (max 10) tire 7 ;require duals;",58,718,[precise_shot],Demon
-64,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 2200 - only when skill does critical - otherwise normal attack - apply 3 venom stacks (max 10) tire 7 ;require duals;",62,922,[precise_shot],Demon
-66,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 2400 - only when skill does critical - otherwise normal attack - apply 3 venom stacks (max 10) tire 8 ;require duals;",65,1580,[precise_shot],Demon
-68,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 2600 - only when skill does critical - otherwise normal attack - apply 3 venom stacks (max 10) tire 8 ;require duals;",68,2010,[precise_shot],Demon
-70,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 2800 - only when skill does critical - otherwise normal attack - apply 3 venom stacks (max 10) tire 9 ;require duals;",70,2220,[precise_shot],Demon
-72,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 3000 - only when skill does critical - otherwise normal attack - apply 3 venom stacks (max 10) tire 9 ;require duals;",75,3670,[precise_shot],Demon
-74,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 3200 - only when skill does critical - otherwise normal attack - apply 3 venom stacks (max 10) tire 10;require duals;",78,5380,[precise_shot],Demon
+46,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power  875 - only when skill does critical - otherwise normal attack - apply 2 venom stacks (max 10) tire 4 ;require duals;",43,140,[precise_shot],Demon
+49,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 1000 - only when skill does critical - otherwise normal attack - apply 2 venom stacks (max 10) tire 4 ;require duals;",45,142,[precise_shot],Demon
+52,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 1200 - only when skill does critical - otherwise normal attack - apply 2 venom stacks (max 10) tire 5 ;require duals;",47,175,[precise_shot],Demon
+55,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 1400 - only when skill does critical - otherwise normal attack - apply 2 venom stacks (max 10) tire 5 ;require duals;",50,210,[precise_shot],Demon
+58,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 1600 - only when skill does critical - otherwise normal attack - apply 2 venom stacks (max 10) tire 6 ;require duals;",55,254,[precise_shot],Demon
+60,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 1800 - only when skill does critical - otherwise normal attack - apply 2 venom stacks (max 10) tire 6 ;require duals;",56,476,[precise_shot],Demon
+62,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 2000 - only when skill does critical - otherwise normal attack - apply 3 venom stacks (max 10) tire 7 ;require duals;",58,592,[precise_shot],Demon
+64,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 2200 - only when skill does critical - otherwise normal attack - apply 3 venom stacks (max 10) tire 7 ;require duals;",62,735,[precise_shot],Demon
+66,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 2400 - only when skill does critical - otherwise normal attack - apply 3 venom stacks (max 10) tire 8 ;require duals;",65,1210,[precise_shot],Demon
+68,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 2600 - only when skill does critical - otherwise normal attack - apply 3 venom stacks (max 10) tire 8 ;require duals;",68,1490,[precise_shot],Demon
+70,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 2800 - only when skill does critical - otherwise normal attack - apply 3 venom stacks (max 10) tire 9 ;require duals;",70,1650,[precise_shot],Demon
+72,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 3000 - only when skill does critical - otherwise normal attack - apply 3 venom stacks (max 10) tire 9 ;require duals;",75,2730,[precise_shot],Demon
+74,Venom Stab,venom_stab,physical active,duals,,40,0,enemy/single,1,3, 30,"power 3200 - only when skill does critical - otherwise normal attack - apply 3 venom stacks (max 10) tire 10;require duals;",78,3990,[precise_shot],Demon
 ,,,,,,,,,,,,,,,,,----------------------------Venom Burst----------------------------
 40,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x125 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 1 venom stacks (max 10) tire 3; a failed strike takes all stacks and leaves 1; require duals;",36,92.8,[precise_shot],Demon
 43,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x150 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 1 venom stacks (max 10) tire 3; a failed strike takes all stacks and leaves 1; require duals;",40,118,[precise_shot],Demon
-46,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x175 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 2 venom stacks (max 10) tire 4; a failed strike takes all stacks and leaves 2; require duals;",43,141,[precise_shot],Demon
-49,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x200 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 2 venom stacks (max 10) tire 4; a failed strike takes all stacks and leaves 2; require duals;",45,143,[precise_shot],Demon
-52,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x240 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 2 venom stacks (max 10) tire 5; a failed strike takes all stacks and leaves 2; require duals;",47,185,[precise_shot],Demon
-55,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x280 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 2 venom stacks (max 10) tire 5; a failed strike takes all stacks and leaves 2; require duals;",50,227,[precise_shot],Demon
-58,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x320 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 2 venom stacks (max 10) tire 6; a failed strike takes all stacks and leaves 2; require duals;",55,287,[precise_shot],Demon
-60,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x360 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 2 venom stacks (max 10) tire 6; a failed strike takes all stacks and leaves 2; require duals;",56,556,[precise_shot],Demon
-62,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x400 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 3 venom stacks (max 10) tire 7; a failed strike takes all stacks and leaves 3; require duals;",58,718,[precise_shot],Demon
-64,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x440 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 3 venom stacks (max 10) tire 7; a failed strike takes all stacks and leaves 3; require duals;",62,922,[precise_shot],Demon
-66,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x480 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 3 venom stacks (max 10) tire 8; a failed strike takes all stacks and leaves 3; require duals;",65,1580,[precise_shot],Demon
-68,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x520 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 3 venom stacks (max 10) tire 8; a failed strike takes all stacks and leaves 3; require duals;",68,2010,[precise_shot],Demon
-70,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x560 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 3 venom stacks (max 10) tire 9; a failed strike takes all stacks and leaves 3; require duals;",70,2220,[precise_shot],Demon
-72,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x600 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 3 venom stacks (max 10) tire 9; a failed strike takes all stacks and leaves 3; require duals;",75,3670,[precise_shot],Demon
-74,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x640 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 3 venom stacks (max 10) tire 10; a failed strike takes all stacks and leaves 3; require duals;",78,5380,[precise_shot],Demon
+46,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x175 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 2 venom stacks (max 10) tire 4; a failed strike takes all stacks and leaves 2; require duals;",43,140,[precise_shot],Demon
+49,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x200 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 2 venom stacks (max 10) tire 4; a failed strike takes all stacks and leaves 2; require duals;",45,142,[precise_shot],Demon
+52,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x240 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 2 venom stacks (max 10) tire 5; a failed strike takes all stacks and leaves 2; require duals;",47,175,[precise_shot],Demon
+55,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x280 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 2 venom stacks (max 10) tire 5; a failed strike takes all stacks and leaves 2; require duals;",50,210,[precise_shot],Demon
+58,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x320 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 2 venom stacks (max 10) tire 6; a failed strike takes all stacks and leaves 2; require duals;",55,254,[precise_shot],Demon
+60,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x360 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 2 venom stacks (max 10) tire 6; a failed strike takes all stacks and leaves 2; require duals;",56,476,[precise_shot],Demon
+62,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x400 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 3 venom stacks (max 10) tire 7; a failed strike takes all stacks and leaves 3; require duals;",58,592,[precise_shot],Demon
+64,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x440 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 3 venom stacks (max 10) tire 7; a failed strike takes all stacks and leaves 3; require duals;",62,735,[precise_shot],Demon
+66,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x480 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 3 venom stacks (max 10) tire 8; a failed strike takes all stacks and leaves 3; require duals;",65,1210,[precise_shot],Demon
+68,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x520 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 3 venom stacks (max 10) tire 8; a failed strike takes all stacks and leaves 3; require duals;",68,1490,[precise_shot],Demon
+70,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x560 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 3 venom stacks (max 10) tire 9; a failed strike takes all stacks and leaves 3; require duals;",70,1650,[precise_shot],Demon
+72,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x600 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 3 venom stacks (max 10) tire 9; a failed strike takes all stacks and leaves 3; require duals;",75,2730,[precise_shot],Demon
+74,Venom Burst,venom_burst,physical active,duals,,40,0,enemy/single,1,10, 30,"Does damage based on cosumed venom stacks x640 per stack - only when skill does critical - otherwise normal attack; If no stacks present apply 3 venom stacks (max 10) tire 10; a failed strike takes all stacks and leaves 3; require duals;",78,3990,[precise_shot],Demon
 ,,,,,,,,,,,,,,,,,----------------------------Swift Stab----------------------------
 40,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 625 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",36,92.8,,Elf
 43,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 750 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",40,118,,Elf
-46,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 875 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",43,141,,Elf
-49,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 1000 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",45,143,,Elf
-52,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 1200 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",47,185,,Elf
-55,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 1400 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",50,227,,Elf
-58,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 1600 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",55,287,,Elf
-60,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 1800 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",56,556,,Elf
-62,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 2000 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",58,718,,Elf
-64,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 2200 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",62,922,,Elf
-66,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 2400 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",65,1580,,Elf
-68,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 2600 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",68,2010,,Elf
-70,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 2800 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",70,2220,,Elf
-72,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 3000 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",75,3670,,Elf
-74,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 3200 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",78,5380,,Elf
+46,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 875 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",43,140,,Elf
+49,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 1000 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",45,142,,Elf
+52,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 1200 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",47,175,,Elf
+55,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 1400 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",50,210,,Elf
+58,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 1600 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",55,254,,Elf
+60,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 1800 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",56,476,,Elf
+62,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 2000 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",58,592,,Elf
+64,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 2200 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",62,735,,Elf
+66,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 2400 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",65,1210,,Elf
+68,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 2600 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",68,1490,,Elf
+70,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 2800 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",70,1650,,Elf
+72,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 3000 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",75,2730,,Elf
+74,Swift Stab,swift_stab,physical active,duals,,40,0,enemy/single,0.5,5,5,"power 3200 - only when skill does critical - otherwise normal attack - increase speed +5 - attack speed with 15%; require duals;",78,3990,,Elf
 ,,,,,,,,,,,,,,,,,----------------------------Heavy Stab----------------------------
 40,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 475  twice - only when skill does critical - otherwise normal attack - require duals;",36,92.8,,Human
 43,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 563 twice - only when skill does critical - otherwise normal attack - require duals;",40,118,,Human
-46,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 650 twice - only when skill does critical - otherwise normal attack - require duals;",43,141,,Human
-49,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 750 twice - only when skill does critical - otherwise normal attack - require duals;",45,143,,Human
-52,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 900 twice - only when skill does critical - otherwise normal attack - require duals;",47,185,,Human
-55,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 1050 twice - only when skill does critical - otherwise normal attack - require duals;",50,227,,Human
-58,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 1200 twice - only when skill does critical - otherwise normal attack - require duals;",55,287,,Human
-60,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 1350 twice - only when skill does critical - otherwise normal attack - require duals;",56,556,,Human
-62,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 1500 twice - only when skill does critical - otherwise normal attack - require duals;",58,718,,Human
-64,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 1650 twice - only when skill does critical - otherwise normal attack - require duals;",62,922,,Human
-66,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 1800 twice - only when skill does critical - otherwise normal attack - require duals;",65,1580,,Human
-68,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 1950 twice - only when skill does critical - otherwise normal attack - require duals;",68,2010,,Human
-70,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 2100 twice - only when skill does critical - otherwise normal attack - require duals;",70,2220,,Human
-72,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 2250 twice - only when skill does critical - otherwise normal attack - require duals;",75,3670,,Human
-74,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 2400 twice - only when skill does critical - otherwise normal attack - require duals;",78,5380,,Human
+46,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 650 twice - only when skill does critical - otherwise normal attack - require duals;",43,140,,Human
+49,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 750 twice - only when skill does critical - otherwise normal attack - require duals;",45,142,,Human
+52,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 900 twice - only when skill does critical - otherwise normal attack - require duals;",47,175,,Human
+55,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 1050 twice - only when skill does critical - otherwise normal attack - require duals;",50,210,,Human
+58,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 1200 twice - only when skill does critical - otherwise normal attack - require duals;",55,254,,Human
+60,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 1350 twice - only when skill does critical - otherwise normal attack - require duals;",56,476,,Human
+62,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 1500 twice - only when skill does critical - otherwise normal attack - require duals;",58,592,,Human
+64,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 1650 twice - only when skill does critical - otherwise normal attack - require duals;",62,735,,Human
+66,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 1800 twice - only when skill does critical - otherwise normal attack - require duals;",65,1210,,Human
+68,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 1950 twice - only when skill does critical - otherwise normal attack - require duals;",68,1490,,Human
+70,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 2100 twice - only when skill does critical - otherwise normal attack - require duals;",70,1650,,Human
+72,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 2250 twice - only when skill does critical - otherwise normal attack - require duals;",75,2730,,Human
+74,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 2400 twice - only when skill does critical - otherwise normal attack - require duals;",78,3990,,Human
 ,,,,,,,,,,,,,,,,,----------------------------Lethal Focus / Precision / Frenzy (BL-188)----------------------------
 40,Lethal Focus,lethal_focus,physical buff,duals,,0,0,self/single,0,90,300,"blow rate x1.05; crit dmg +5%;",100,61.9,[],Human
-60,Lethal Focus,lethal_focus,physical buff,duals,,0,0,self/single,0,90,300,"blow rate x1.075; crit dmg +7.5%;",125,371,[],Human
-70,Lethal Focus,lethal_focus,physical buff,duals,,0,0,self/single,0,90,300,"blow rate x1.1; crit dmg +10%;",150,1480,[],Human
+60,Lethal Focus,lethal_focus,physical buff,duals,,0,0,self/single,0,90,300,"blow rate x1.075; crit dmg +7.5%;",125,317,[],Human
+70,Lethal Focus,lethal_focus,physical buff,duals,,0,0,self/single,0,90,300,"blow rate x1.1; crit dmg +10%;",150,1100,[],Human
 40,Lethal Precision,lethal_precision,physical buff,duals,,0,0,self/single,0,90,300,"crit dmg +10%;",100,61.9,[],Elf
-60,Lethal Precision,lethal_precision,physical buff,duals,,0,0,self/single,0,90,300,"crit dmg +15%;",125,371,[],Elf
-70,Lethal Precision,lethal_precision,physical buff,duals,,0,0,self/single,0,90,300,"crit dmg +20%;",150,1480,[],Elf
+60,Lethal Precision,lethal_precision,physical buff,duals,,0,0,self/single,0,90,300,"crit dmg +15%;",125,317,[],Elf
+70,Lethal Precision,lethal_precision,physical buff,duals,,0,0,self/single,0,90,300,"crit dmg +20%;",150,1100,[],Elf
 40,Lethal Frenzy,lethal_frenzy,physical buff,duals,,0,0,self/single,0,90,300,"blow rate x1.1;",100,61.9,[],Demon
-60,Lethal Frenzy,lethal_frenzy,physical buff,duals,,0,0,self/single,0,90,300,"blow rate x1.15;",125,371,[],Demon
-70,Lethal Frenzy,lethal_frenzy,physical buff,duals,,0,0,self/single,0,90,300,"blow rate x1.2;",150,1480,[],Demon
+60,Lethal Frenzy,lethal_frenzy,physical buff,duals,,0,0,self/single,0,90,300,"blow rate x1.15;",125,317,[],Demon
+70,Lethal Frenzy,lethal_frenzy,physical buff,duals,,0,0,self/single,0,90,300,"blow rate x1.2;",150,1100,[],Demon
 ,,,,,,,,,,,,,,,,,----------------------------Vital Points (BL-188)----------------------------
-52,Vital Points,vital_points,passive,,,0,0,self/single,0,0,0,"blow rate x1.1;",0,40.7,[]
-64,Vital Points,vital_points,passive,,,0,0,self/single,0,0,0,"blow rate x1.15;",0,203,[]
-74,Vital Points,vital_points,passive,,,0,0,self/single,0,0,0,"blow rate x1.2;",0,1180,[]
+52,Vital Points,vital_points,passive,,,0,0,self/single,0,0,0,"blow rate x1.1;",0,38.6,[]
+64,Vital Points,vital_points,passive,,,0,0,self/single,0,0,0,"blow rate x1.15;",0,162,[]
+74,Vital Points,vital_points,passive,,,0,0,self/single,0,0,0,"blow rate x1.2;",0,878,[]
 ,,,,,,,,,,,,,,,,,----------------------------Overpower (BL-203)----------------------------
 40,Overpower,overpower,passive,,,0,0,self/single,0,0,0,double rate 3% - skills marked [Double] strike for DOUBLE damage that often - scales with ATK - without this passive NO skill can double,0,20.4,[]

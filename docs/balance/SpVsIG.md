@@ -19,13 +19,13 @@ same one, so IG earns about twice the SP, and its kits cost about twice ours to 
 
 ## 3. Affordability (x = SP earned in a band / the kit's cost in it)
 
-| band  | IG (at its own SP rate) | ours before 0.225.0 | ours from 0.225.0 (his targets) |
+| band  | IG (at its own SP rate) | ours before 0.225.0 | ours from 0.225.1 (his targets) |
 | ----- | ----------------------: | ------------------: | ------------------------------: |
 | 1-19  |                    ~2.4 |                  ~3 |                            1.75 |
 | 20-39 |                    ~1.5 |            0.6-0.96 |                            1.25 |
 | 40-51 |                         |                     |                             0.9 |
-| 52-60 |       0.83-1.06 (40-75) |     0.68-1.0 (40-75)|                            0.75 |
-| 61-75 |                         |                     |                             0.6 |
+| 52-60 |       0.83-1.06 (40-75) |     0.68-1.0 (40-75)|          0.85 (0.75 in 0.225.0) |
+| 61-75 |                         |                     |  0.8 (0.6 in 0.225.0, too hard) |
 
 The paths IG measured: Gladiator, Warlord, Paladin, Treasure Hunter, Hawkeye, Sorcerer, Bishop, Prophet.
 

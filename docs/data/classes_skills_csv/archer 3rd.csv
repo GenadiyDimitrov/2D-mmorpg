@@ -4,54 +4,54 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 43,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +31",0,20.8
 46,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +34",0,25
 49,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +37",0,25.3
-52,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +40",0,35.3
-55,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +43",0,45
-58,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +46",0,55.2
-60,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +49",0,103
-62,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +52",0,128
-64,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +55",0,158
-66,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +58",0,260
-68,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +61",0,319
-70,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +64",0,352
-72,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +67",0,582
-74,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +70",0,852
+52,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +40",0,33.4
+55,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +43",0,41.5
+58,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +46",0,48.7
+60,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +49",0,87.8
+62,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +52",0,105
+64,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +55",0,126
+66,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +58",0,199
+68,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +61",0,236
+70,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +64",0,261
+72,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +67",0,431
+74,Light Armor Mastery,light_armor_mastery,Passive,,light,0,0,self/single,0,0,0,"light: p.def +70",0,632
 ,,,,,,,,,,,,,,,,,----------------------------Critical Resist----------------------------
 40,Critical Resist,rogue_crit_resist,Passive,,light,0,0,self/single,0,0,0,"light: crit rate resist +25%",0,49.7
-60,Critical Resist,rogue_crit_resist,Passive,,light,0,0,self/single,0,0,0,"light: crit rate resist +35%",0,312
+60,Critical Resist,rogue_crit_resist,Passive,,light,0,0,self/single,0,0,0,"light: crit rate resist +35%",0,266
 ,,,,,,,,,,,,,,,,,----------------------------Swift----------------------------
 43,Swiftness,rogue_swift_mastery,passive,,light,0,0,self/single,0,0,0,"speed +11;",0,20.8
 ,,,,,,,,,,,,,,,,,----------------------------HpRegen----------------------------
 43,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +3.0;",0,20.8
 46,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +3.5;",0,25
 49,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +4.0;",0,25.3
-52,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +4.5;",0,35.3
-62,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +5.0;",0,128
-68,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +5.5;",0,319
-74,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +6.0;",0,852
+52,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +4.5;",0,33.4
+62,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +5.0;",0,105
+68,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +5.5;",0,236
+74,HP regeneration,hp_regeneration,passive,,,0,0,self/single,0,0,0,"hpReg +6.0;",0,632
 ,,,,,,,,,,,,,,,,,----------------------------MpRegen----------------------------
 43,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +1.9;",0,20.8
 46,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.0;",0,25
 49,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.1;",0,25.3
-52,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.2;",0,35.3
-62,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.3;",0,128
-68,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.4;",0,319
-74,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.5;",0,852
+52,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.2;",0,33.4
+62,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.3;",0,105
+68,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.4;",0,236
+74,Mp regeneration,mp_regeneration,passive,,,0,0,self/single,0,0,0,"mpReg +2.5;",0,632
 ,,,,,,,,,,,,,,,,,----------------------------Bow Mastery----------------------------
 40,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +200",0,16.4
 43,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +233",0,20.8
 46,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +266",0,25
 49,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +300",0,25.3
-52,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +350",0,35.3
-55,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +400",0,45
-58,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +450",0,55.2
-60,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +500",0,103
-62,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +533",0,128
-64,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +566",0,158
-66,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +600",0,260
-68,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +650",0,319
-70,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +700",0,352
-72,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +750",0,582
-74,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +800",0,852
+52,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +350",0,33.4
+55,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +400",0,41.5
+58,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +450",0,48.7
+60,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +500",0,87.8
+62,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +533",0,105
+64,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +566",0,126
+66,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +600",0,199
+68,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +650",0,236
+70,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +700",0,261
+72,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +750",0,431
+74,Bow Mastery,bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"bow: p.Atk +800",0,632
 ,,,,,,,,,,,,,,,,,----------------------------Bow Proficiency----------------------------
 40,Bow Proficiency,rogue_bow_proficiency,passive,bow,,0,0,self/single,0,0,0,"range +400;",0,16.4
 ,,,,,,,,,,,,,,,,,----------------------------Critical Dmg Mastery----------------------------
@@ -59,170 +59,170 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 43,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +222;",0,20.8
 46,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +252;",0,25
 49,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +285;",0,25.3
-52,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +322;",0,35.3
-55,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +362;",0,45
-58,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +405;",0,55.2
-60,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +435;",0,103
-62,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +466;",0,128
-64,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +499;",0,158
-66,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +531;",0,260
-68,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +565;",0,319
-70,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +598;",0,352
-72,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +632;",0,582
-74,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +665;",0,852
+52,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +322;",0,33.4
+55,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +362;",0,41.5
+58,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +405;",0,48.7
+60,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +435;",0,87.8
+62,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +466;",0,105
+64,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +499;",0,126
+66,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +531;",0,199
+68,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +565;",0,236
+70,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +598;",0,261
+72,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +632;",0,431
+74,Critical Damage Mastery,fighter_critical_dmg_mastery,passive,,,0,0,self/single,0,0,0,"crit dmg +665;",0,632
 ,,,,,,,,,,,,,,,,,----------------------------Signal Flare----------------------------
-60,Signal Flare,signal_flare,physical active,bow,,0,300,target/aoe,1,20,0,Fires a flare: everyone hidden within 300 is revealed and cannot hide again for 30s. Deals no damage.,28,312,[],,,Fires a flare: everyone hidden within 300 is revealed and cannot hide again for 30s. Deals no damage.
+60,Signal Flare,signal_flare,physical active,bow,,0,300,target/aoe,1,20,0,Fires a flare: everyone hidden within 300 is revealed and cannot hide again for 30s. Deals no damage.,28,266,[],,,Fires a flare: everyone hidden within 300 is revealed and cannot hide again for 30s. Deals no damage.
 ,,,,,,,,,,,,,,,,,---------------------------Bow Expertise----------------------------
-52,Bow Expertise,bow_expertise,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Increase Bow attack speed +12%, Requre: Bow",85,107,[],
+52,Bow Expertise,bow_expertise,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Increase Bow attack speed +12%, Requre: Bow",85,101,[],
 ,,,,,,,,,,,,,,,,,---------------------------Bow Blessing----------------------------
-58,Bow Blessing,bow_blessing,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Decrease p.skill cooldown with 10%, Requre: Bow",50,167,[],,,-@{reuse} physical reuse for @{duration}. Requires a bow.
-66,Bow Blessing,bow_blessing,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Decrease p.skill cooldown with 15%, Requre: Bow",75,787,[],
-74,Bow Blessing,bow_blessing,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Decrease p.skill cooldown with 20%, Requre: Bow",100,2580,[],
+58,Bow Blessing,bow_blessing,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Decrease p.skill cooldown with 10%, Requre: Bow",50,148,[],,,-@{reuse} physical reuse for @{duration}. Requires a bow.
+66,Bow Blessing,bow_blessing,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Decrease p.skill cooldown with 15%, Requre: Bow",75,604,[],
+74,Bow Blessing,bow_blessing,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Decrease p.skill cooldown with 20%, Requre: Bow",100,1910,[],
 ,,,,,,,,,,,,,,,,,---------------------------Bow Spirit----------------------------
-58,Bow Spirit,bow_spirit,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Decrease p.skill mp consumation with 10%, Requre: Bow",50,167,[],
-66,Bow Spirit,bow_spirit,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Decrease p.skill mp consumation with 20%, Requre: Bow",75,787,[],
-74,Bow Spirit,bow_spirit,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Decrease p.skill mp consumation with 30%, Requre: Bow",100,2580,[],
+58,Bow Spirit,bow_spirit,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Decrease p.skill mp consumation with 10%, Requre: Bow",50,148,[],
+66,Bow Spirit,bow_spirit,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Decrease p.skill mp consumation with 20%, Requre: Bow",75,604,[],
+74,Bow Spirit,bow_spirit,Physical/Buff,bow,,0,0,self/single,3,2,1200,"Decrease p.skill mp consumation with 30%, Requre: Bow",100,1910,[],
 ,,,,,,,,,,,,,,,,,---------------------------Bow Focus----------------------------
-58,Bow Focus,bow_focus,Physical/Buff,bow,,0,0,self/single,3,2,300,"Increase p.skill damage with 10%, accuracy +13, p.crit.rate +15%, p.crit.dmg +10%, p.Atk +100, atk.speed +10%, speed +3, 5% chance to inflict bleed on target tire 5 for 10s; Requre: Bow",50,167,[],Human
-66,Bow Focus,bow_focus,Physical/Buff,bow,,0,0,self/single,3,2,300,"Increase p.skill damage with 10%, accuracy +15, p.crit.rate +20%, p.crit.dmg +10%, p.Atk +150, atk.speed +10%, speed +3, 5% chance to inflict bleed on target tire 7 for 10s; Requre: Bow",75,787,[],Human
-74,Bow Focus,bow_focus,Physical/Buff,bow,,0,0,self/single,3,2,300,"Increase p.skill damage with 10%, accuracy +17, p.crit.rate +25%, p.crit.dmg +10%, p.Atk +200, atk.speed +10%, speed +3, 5% chance to inflict bleed on target tire 9 for 10s; Requre: Bow",100,2580,[],Human
+58,Bow Focus,bow_focus,Physical/Buff,bow,,0,0,self/single,3,2,300,"Increase p.skill damage with 10%, accuracy +13, p.crit.rate +15%, p.crit.dmg +10%, p.Atk +100, atk.speed +10%, speed +3, 5% chance to inflict bleed on target tire 5 for 10s; Requre: Bow",50,148,[],Human
+66,Bow Focus,bow_focus,Physical/Buff,bow,,0,0,self/single,3,2,300,"Increase p.skill damage with 10%, accuracy +15, p.crit.rate +20%, p.crit.dmg +10%, p.Atk +150, atk.speed +10%, speed +3, 5% chance to inflict bleed on target tire 7 for 10s; Requre: Bow",75,604,[],Human
+74,Bow Focus,bow_focus,Physical/Buff,bow,,0,0,self/single,3,2,300,"Increase p.skill damage with 10%, accuracy +17, p.crit.rate +25%, p.crit.dmg +10%, p.Atk +200, atk.speed +10%, speed +3, 5% chance to inflict bleed on target tire 9 for 10s; Requre: Bow",100,1910,[],Human
 ,,,,,,,,,,,,,,,,,---------------------------Bow Ferocity----------------------------
-58,Bow Ferocity,bow_ferocity,Physical/Buff,bow,,0,0,self/single,3,2,300,"Increase p.skill damage with 15%, accuracy +10, p.crit.rate +10%, p.crit.dmg +15%, p.Atk +100, atk.speed +10%, speed +3, 5% chance to inflict poison on target tire 5 for 10s; Requre: Bow",50,167,[],Demon
-66,Bow Ferocity,bow_ferocity,Physical/Buff,bow,,0,0,self/single,3,2,300,"Increase p.skill damage with 20%, accuracy +10, p.crit.rate +10%, p.crit.dmg +20%, p.Atk +150, atk.speed +10%, speed +3, 5% chance to inflict poison on target tire 7 for 10s; Requre: Bow",75,787,[],Demon
-74,Bow Ferocity,bow_ferocity,Physical/Buff,bow,,0,0,self/single,3,2,300,"Increase p.skill damage with 25%, accuracy +10, p.crit.rate +10%, p.crit.dmg +25%, p.Atk +200, atk.speed +10%, speed +3, 5% chance to inflict poison on target tire 9 for 10s; Requre: Bow",100,2580,[],Demon
+58,Bow Ferocity,bow_ferocity,Physical/Buff,bow,,0,0,self/single,3,2,300,"Increase p.skill damage with 15%, accuracy +10, p.crit.rate +10%, p.crit.dmg +15%, p.Atk +100, atk.speed +10%, speed +3, 5% chance to inflict poison on target tire 5 for 10s; Requre: Bow",50,148,[],Demon
+66,Bow Ferocity,bow_ferocity,Physical/Buff,bow,,0,0,self/single,3,2,300,"Increase p.skill damage with 20%, accuracy +10, p.crit.rate +10%, p.crit.dmg +20%, p.Atk +150, atk.speed +10%, speed +3, 5% chance to inflict poison on target tire 7 for 10s; Requre: Bow",75,604,[],Demon
+74,Bow Ferocity,bow_ferocity,Physical/Buff,bow,,0,0,self/single,3,2,300,"Increase p.skill damage with 25%, accuracy +10, p.crit.rate +10%, p.crit.dmg +25%, p.Atk +200, atk.speed +10%, speed +3, 5% chance to inflict poison on target tire 9 for 10s; Requre: Bow",100,1910,[],Demon
 ,,,,,,,,,,,,,,,,,---------------------------Bow Swiftness----------------------------
-58,Bow Swiftness,archer_bow_swiftness,Physical/Buff,bow,,0,0,self/single,3,2,300,"Increase p.skill damage with 10%, accuracy +10, p.crit.rate +10%, p.crit.dmg +10%, p.Atk +100, atk.speed +15%, speed +5, 5% to heal self with 400 power (10s reuse); Requre: Bow",50,167,[],Elf
-66,Bow Swiftness,archer_bow_swiftness,Physical/Buff,bow,,0,0,self/single,3,2,300,"Increase p.skill damage with 10%, accuracy +10, p.crit.rate +10%, p.crit.dmg +10%, p.Atk +150, atk.speed +20%, speed +7, 5% to heal self with 450 power (10s reuse); Requre: Bow",75,787,[],Elf
-74,Bow Swiftness,archer_bow_swiftness,Physical/Buff,bow,,0,0,self/single,3,2,300,"Increase p.skill damage with 10%, accuracy +10, p.crit.rate +10%, p.crit.dmg +10%, p.Atk +200, atk.speed +25%, speed +10, 5% to heal self with 500 power (10s reuse); Requre: Bow",100,2580,[],Elf
+58,Bow Swiftness,archer_bow_swiftness,Physical/Buff,bow,,0,0,self/single,3,2,300,"Increase p.skill damage with 10%, accuracy +10, p.crit.rate +10%, p.crit.dmg +10%, p.Atk +100, atk.speed +15%, speed +5, 5% to heal self with 400 power (10s reuse); Requre: Bow",50,148,[],Elf
+66,Bow Swiftness,archer_bow_swiftness,Physical/Buff,bow,,0,0,self/single,3,2,300,"Increase p.skill damage with 10%, accuracy +10, p.crit.rate +10%, p.crit.dmg +10%, p.Atk +150, atk.speed +20%, speed +7, 5% to heal self with 450 power (10s reuse); Requre: Bow",75,604,[],Elf
+74,Bow Swiftness,archer_bow_swiftness,Physical/Buff,bow,,0,0,self/single,3,2,300,"Increase p.skill damage with 10%, accuracy +10, p.crit.rate +10%, p.crit.dmg +10%, p.Atk +200, atk.speed +25%, speed +10, 5% to heal self with 500 power (10s reuse); Requre: Bow",100,1910,[],Elf
 ,,,,,,,,,,,,,,,,,---------------------------Bow Stence----------------------------
-60,Bow Stance,bow_stance,Physical/Buff,bow,,0,0,self/single,1,600,60,"Increse P.Atk, P.Crit.Rate, P.Crit.Dmg, P.Skill.Power with 15%; Range +200; Decrease speed by 50%; Requre: Bow",50,312,[],,,"Plant your feet for @{duration}: +15% attack power, critical rate, critical damage and physical skill power, and +200 bow range — at half your movement."
+60,Bow Stance,bow_stance,Physical/Buff,bow,,0,0,self/single,1,600,60,"Increse P.Atk, P.Crit.Rate, P.Crit.Dmg, P.Skill.Power with 15%; Range +200; Decrease speed by 50%; Requre: Bow",50,266,[],,,"Plant your feet for @{duration}: +15% attack power, critical rate, critical damage and physical skill power, and +200 bow range — at half your movement."
 ,,,,,,,,,,,,,,,,,----------------------------Twin Arrows----------------------------
 40,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +1000  power;",72,74.5,[precise_shot]
 43,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +1300  power;",79,94.4,[precise_shot]
 46,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +1600  power;",85,113,[precise_shot]
 49,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +1900  power;",90,115,[precise_shot]
-52,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +2100  power;",94,160,[precise_shot]
-55,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +2400  power;",101,204,[precise_shot]
-58,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +2700  power;",107,251,[precise_shot]
-60,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +3000  power;",112,469,[precise_shot]
-62,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +3300  power;",116,581,[precise_shot]
-64,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +3600  power;",123,718,[precise_shot]
-66,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +3900  power;",129,1180,[precise_shot]
-68,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +4100  power;",134,1450,[precise_shot]
-70,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +4400  power;",140,1600,[precise_shot]
-72,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +4700  power;",146,2650,[precise_shot]
-74,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +5000  power;",152,3870,[precise_shot]
+52,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +2100  power;",94,152,[precise_shot]
+55,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +2400  power;",101,188,[precise_shot]
+58,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +2700  power;",107,221,[precise_shot]
+60,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +3000  power;",112,399,[precise_shot]
+62,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +3300  power;",116,478,[precise_shot]
+64,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +3600  power;",123,571,[precise_shot]
+66,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +3900  power;",129,906,[precise_shot]
+68,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +4100  power;",134,1070,[precise_shot]
+70,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +4400  power;",140,1190,[precise_shot]
+72,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +4700  power;",146,1960,[precise_shot]
+74,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +5000  power;",152,2870,[precise_shot]
 ,,,,,,,,,,,,,,,,,----------------------------Explosive Arrow----------------------------
 40,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +500 power;",72,74.5
 43,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +650 power;",79,94.4
 46,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +800 power;",85,113
 49,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +950 power;",90,115
-52,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +1050 power;",94,160
-55,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +1200 power;",101,204
-58,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +1350 power;",107,251
-60,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +1500 power;",112,469
-62,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +1650 power;",116,581
-64,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +1800 power;",123,718
-66,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +1950 power;",129,1180
-68,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +2050 power;",134,1450
-70,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +2200 power;",140,1600
-72,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +2350 power;",146,2650
-74,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +2500 power;",152,3870
+52,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +1050 power;",94,152
+55,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +1200 power;",101,188
+58,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +1350 power;",107,221
+60,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +1500 power;",112,399
+62,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +1650 power;",116,478
+64,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +1800 power;",123,571
+66,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +1950 power;",129,906
+68,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +2050 power;",134,1070
+70,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +2200 power;",140,1190
+72,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +2350 power;",146,1960
+74,Explosive Arrow,explosive_arrow,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +2500 power;",152,2870
 ,,,,,,,,,,,,,,,,,----------------------------Binding Trap----------------------------
 40,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",72,74.5,,Elf,,Holds everything within 400 of the trap for @{duration} when it springs.
 43,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",79,94.4,,Elf
 46,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",85,113,,Elf
 49,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",90,115,,Elf
-52,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",94,160,,Elf
-55,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",101,204,,Elf
-58,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",107,251,,Elf
-60,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",112,469,,Elf
-62,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",116,581,,Elf
-64,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",123,718,,Elf
-66,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",129,1180,,Elf
-68,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",134,1450,,Elf
-70,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",140,1600,,Elf
-72,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",146,2650,,Elf
-74,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",152,3870,,Elf
+52,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",94,152,,Elf
+55,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",101,188,,Elf
+58,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",107,221,,Elf
+60,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",112,399,,Elf
+62,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",116,478,,Elf
+64,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",123,571,,Elf
+66,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",129,906,,Elf
+68,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",134,1070,,Elf
+70,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",140,1190,,Elf
+72,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",146,1960,,Elf
+74,Binding Trap,binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",152,2870,,Elf
 ,,,,,,,,,,,,,,,,,----------------------------Poison Trap----------------------------
 40,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 3 the enemis in range when triggered;",72,74.5,,Human
 43,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 3 the enemis in range when triggered;",79,94.4,,Human
 46,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 4 the enemis in range when triggered;",85,113,,Human
 49,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 4 the enemis in range when triggered;",90,115,,Human
-52,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 4 the enemis in range when triggered;",94,160,,Human
-55,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 5 the enemis in range when triggered;",101,204,,Human
-58,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 5 the enemis in range when triggered;",107,251,,Human
-60,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 6 the enemis in range when triggered;",112,469,,Human
-62,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 6 the enemis in range when triggered;",116,581,,Human
-64,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 7 the enemis in range when triggered;",123,718,,Human
-66,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 7 the enemis in range when triggered;",129,1180,,Human
-68,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 8 the enemis in range when triggered;",134,1450,,Human
-70,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 8 the enemis in range when triggered;",138,1600,,Human
-72,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 9 the enemis in range when triggered;",145,2650,,Human
-74,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range whent riggered;",151,3870,,Human
+52,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 4 the enemis in range when triggered;",94,152,,Human
+55,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 5 the enemis in range when triggered;",101,188,,Human
+58,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 5 the enemis in range when triggered;",107,221,,Human
+60,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 6 the enemis in range when triggered;",112,399,,Human
+62,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 6 the enemis in range when triggered;",116,478,,Human
+64,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 7 the enemis in range when triggered;",123,571,,Human
+66,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 7 the enemis in range when triggered;",129,906,,Human
+68,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 8 the enemis in range when triggered;",134,1070,,Human
+70,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 8 the enemis in range when triggered;",138,1190,,Human
+72,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 9 the enemis in range when triggered;",145,1960,,Human
+74,Poison Trap,poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range whent riggered;",151,2870,,Human
 ,,,,,,,,,,,,,,,,,----------------------------Bleeding Trap----------------------------
 40,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 3 the enemis in range when triggered;",72,74.5,,Demon
 43,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 3 the enemis in range when triggered;",79,94.4,,Demon
 46,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 4 the enemis in range when triggered;",85,113,,Demon
 49,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 4 the enemis in range when triggered;",90,115,,Demon
-52,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 4 the enemis in range when triggered;",94,160,,Demon
-55,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 5 the enemis in range when triggered;",101,204,,Demon
-58,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 5 the enemis in range when triggered;",107,251,,Demon
-60,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 6 the enemis in range when triggered;",112,469,,Demon
-62,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 6 the enemis in range when triggered;",116,581,,Demon
-64,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 7 the enemis in range when triggered;",123,718,,Demon
-66,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 7 the enemis in range when triggered;",129,1180,,Demon
-68,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 8 the enemis in range when triggered;",134,1450,,Demon
-70,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 8 the enemis in range when triggered;",138,1600,,Demon
-72,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 9 the enemis in range when triggered;",145,2650,,Demon
-74,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",151,3870,,Demon
+52,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 4 the enemis in range when triggered;",94,152,,Demon
+55,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 5 the enemis in range when triggered;",101,188,,Demon
+58,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 5 the enemis in range when triggered;",107,221,,Demon
+60,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 6 the enemis in range when triggered;",112,399,,Demon
+62,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 6 the enemis in range when triggered;",116,478,,Demon
+64,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 7 the enemis in range when triggered;",123,571,,Demon
+66,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 7 the enemis in range when triggered;",129,906,,Demon
+68,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 8 the enemis in range when triggered;",134,1070,,Demon
+70,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 8 the enemis in range when triggered;",138,1190,,Demon
+72,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 9 the enemis in range when triggered;",145,1960,,Demon
+74,Bleeding Trap,bleeding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",151,2870,,Demon
 ,,,,,,,,,,,,,,,,,----------------------------Magic Arrow----------------------------
 40,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +500 power (physical) and decreases Atack speed and Move speed with 30%;",72,74.5,,Elf
 43,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +650 power (physical) and decreases Atack speed and Move speed with 30%;",79,94.4,,Elf
 46,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +800 power (physical) and decreases Atack speed and Move speed with 30%;",85,113,,Elf
 49,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +950 power (physical) and decreases Atack speed and Move speed with 30%;",90,115,,Elf
-52,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1050 power (physical) and decreases Atack speed and Move speed with 30%;",94,160,,Elf
-55,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1200 power (physical) and decreases Atack speed and Move speed with 30%;",101,204,,Elf
-58,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1350 power (physical) and decreases Atack speed and Move speed with 30%;",107,251,,Elf
-60,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1500 power (physical) and decreases Atack speed and Move speed with 30%;",112,469,,Elf
-62,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1650 power (physical) and decreases Atack speed and Move speed with 30%;",116,581,,Elf
-64,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1800 power (physical) and decreases Atack speed and Move speed with 30%;",123,718,,Elf
-66,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1950 power (physical) and decreases Atack speed and Move speed with 30%;",129,1180,,Elf
-68,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +2050 power (physical) and decreases Atack speed and Move speed with 30%;",134,1450,,Elf
-70,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +2200 power (physical) and decreases Atack speed and Move speed with 30%;",138,1600,,Elf
-72,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +2350 power (physical) and decreases Atack speed and Move speed with 30%;",145,2650,,Elf
-74,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +2500 power (physical) and decreases Atack speed and Move speed with 30%;",151,3870,,Elf
+52,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1050 power (physical) and decreases Atack speed and Move speed with 30%;",94,152,,Elf
+55,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1200 power (physical) and decreases Atack speed and Move speed with 30%;",101,188,,Elf
+58,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1350 power (physical) and decreases Atack speed and Move speed with 30%;",107,221,,Elf
+60,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1500 power (physical) and decreases Atack speed and Move speed with 30%;",112,399,,Elf
+62,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1650 power (physical) and decreases Atack speed and Move speed with 30%;",116,478,,Elf
+64,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1800 power (physical) and decreases Atack speed and Move speed with 30%;",123,571,,Elf
+66,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1950 power (physical) and decreases Atack speed and Move speed with 30%;",129,906,,Elf
+68,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +2050 power (physical) and decreases Atack speed and Move speed with 30%;",134,1070,,Elf
+70,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +2200 power (physical) and decreases Atack speed and Move speed with 30%;",138,1190,,Elf
+72,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +2350 power (physical) and decreases Atack speed and Move speed with 30%;",145,1960,,Elf
+74,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +2500 power (physical) and decreases Atack speed and Move speed with 30%;",151,2870,,Elf
 ,,,,,,,,,,,,,,,,,----------------------------Magic Arrow----------------------------
 40,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +500 power (physical) and decreases P.Def and P.Atk with 30%;",72,74.5,,Demon
 43,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +650 power (physical) and decreases P.Def and P.Atk with 30%;",79,94.4,,Demon
 46,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +800 power (physical) and decreases P.Def and P.Atk with 30%;",85,113,,Demon
 49,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +950 power (physical) and decreases P.Def and P.Atk with 30%;",90,115,,Demon
-52,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1050 power (physical) and decreases P.Def and P.Atk with 30%;",94,160,,Demon
-55,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1200 power (physical) and decreases P.Def and P.Atk with 30%;",101,204,,Demon
-58,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1350 power (physical) and decreases P.Def and P.Atk with 30%;",107,251,,Demon
-60,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1500 power (physical) and decreases P.Def and P.Atk with 30%;",112,469,,Demon
-62,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1650 power (physical) and decreases P.Def and P.Atk with 30%;",116,581,,Demon
-64,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1800 power (physical) and decreases P.Def and P.Atk with 30%;",123,718,,Demon
-66,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1950 power (physical) and decreases P.Def and P.Atk with 30%;",129,1180,,Demon
-68,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +2050 power (physical) and decreases P.Def and P.Atk with 30%;",134,1450,,Demon
-70,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +2200 power (physical) and decreases P.Def and P.Atk with 30%;",138,1600,,Demon
-72,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +2350 power (physical) and decreases P.Def and P.Atk with 30%;",145,2650,,Demon
-74,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +2500 power (physical) and decreases P.Def and P.Atk with 30%;",151,3870,,Demon
+52,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1050 power (physical) and decreases P.Def and P.Atk with 30%;",94,152,,Demon
+55,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1200 power (physical) and decreases P.Def and P.Atk with 30%;",101,188,,Demon
+58,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1350 power (physical) and decreases P.Def and P.Atk with 30%;",107,221,,Demon
+60,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1500 power (physical) and decreases P.Def and P.Atk with 30%;",112,399,,Demon
+62,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1650 power (physical) and decreases P.Def and P.Atk with 30%;",116,478,,Demon
+64,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1800 power (physical) and decreases P.Def and P.Atk with 30%;",123,571,,Demon
+66,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +1950 power (physical) and decreases P.Def and P.Atk with 30%;",129,906,,Demon
+68,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +2050 power (physical) and decreases P.Def and P.Atk with 30%;",134,1070,,Demon
+70,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +2200 power (physical) and decreases P.Def and P.Atk with 30%;",138,1190,,Demon
+72,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +2350 power (physical) and decreases P.Def and P.Atk with 30%;",145,1960,,Demon
+74,Magic Arrow,archer_demon_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +2500 power (physical) and decreases P.Def and P.Atk with 30%;",151,2870,,Demon
 ,,,,,,,,,,,,,,,,,----------------------------Magic Arrow----------------------------
 40,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +500 power (physical) and stunning the target;",72,74.5,,Human
 43,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +650 power (physical) and stunning the target;",79,94.4,,Human
 46,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +800 power (physical) and stunning the target;",85,113,,Human
 49,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +950 power (physical) and stunning the target;",90,115,,Human
-52,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +1050 power (physical) and stunning the target;",94,160,,Human
-55,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +1200 power (physical) and stunning the target;",101,204,,Human
-58,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +1350 power (physical) and stunning the target;",107,251,,Human
-60,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +1500 power (physical) and stunning the target;",112,469,,Human
-62,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +1650 power (physical) and stunning the target;",116,581,,Human
-64,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +1800 power (physical) and stunning the target;",123,718,,Human
-66,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +1950 power (physical) and stunning the target;",129,1180,,Human
-68,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +2050 power (physical) and stunning the target;",134,1450,,Human
-70,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +2200 power (physical) and stunning the target;",138,1600,,Human
-72,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +2350 power (physical) and stunning the target;",145,2650,,Human
-74,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +2500 power (physical) and stunning the target;",151,3870,,Human
+52,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +1050 power (physical) and stunning the target;",94,152,,Human
+55,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +1200 power (physical) and stunning the target;",101,188,,Human
+58,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +1350 power (physical) and stunning the target;",107,221,,Human
+60,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +1500 power (physical) and stunning the target;",112,399,,Human
+62,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +1650 power (physical) and stunning the target;",116,478,,Human
+64,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +1800 power (physical) and stunning the target;",123,571,,Human
+66,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +1950 power (physical) and stunning the target;",129,906,,Human
+68,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +2050 power (physical) and stunning the target;",134,1070,,Human
+70,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +2200 power (physical) and stunning the target;",138,1190,,Human
+72,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +2350 power (physical) and stunning the target;",145,1960,,Human
+74,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +2500 power (physical) and stunning the target;",151,2870,,Human
 ,,,,,,,,,,,,,,,,,----------------------------Overpower----------------------------
 40,Overpower,overpower,passive,,,0,0,self/single,0,0,0,double rate 3% - skills marked [Double] strike for DOUBLE damage that often - scales with ATK - without this passive NO skill can double,0,16.4,[]

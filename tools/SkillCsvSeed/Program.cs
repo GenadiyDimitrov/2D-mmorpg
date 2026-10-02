@@ -39,15 +39,13 @@ Directory.CreateDirectory(outDir);
 // `--gen-passives` — `BL-314`: generate the shared passive ladders and every class's learn rows for them from the
 // CSVs (PassiveGen.cs). `--base` reads the SP column as the x1 base instead of the scaled price the player pays.
 if (args.Contains("--gen-passives")) return PassiveGen.Run(outDir, dir.FullName, args.Contains("--base"));
-// `--reprice-sp` — `BL-334`: every SP cell learned at 1-75 = weight × the SP one level pays × the file's frozen curve
-// (docs/data/sp_curve.csv), each rung ≥ ×1.01 the one before; then regenerate. See SpCurve.cs.
-// `--reprice-sp --solve` re-fits EVERY file's curve to docs/data/sp_bands.csv; `--solve tank` only files naming "tank".
-// `--show archer` prints the per-level prices for the files whose name contains "archer".
+// `--reprice-sp` — `BL-334`: every SP cell learned at 1-75 = weight × the SP one level pays × the file's curve, solved
+// every run to docs/data/sp_bands.csv × docs/data/sp_adj.csv; each rung ≥ ×1.01 the one before; then regenerate.
+// See SpCurve.cs. `--show archer` prints the per-level prices for the files whose name contains "archer".
 if (args.Contains("--reprice-sp"))
 {
-    int si = Array.IndexOf(args, "--show"), so = Array.IndexOf(args, "--solve");
-    string[]? solve = so < 0 ? null : args.Skip(so + 1).TakeWhile(a => !a.StartsWith("--")).ToArray();
-    return PassiveGen.Reprice(outDir, dir.FullName, solve, si >= 0 && si + 1 < args.Length ? args[si + 1] : null);
+    int si = Array.IndexOf(args, "--show");
+    return PassiveGen.Reprice(outDir, dir.FullName, si >= 0 && si + 1 < args.Length ? args[si + 1] : null);
 }
 
 // `--gen-faces` — `BL-327`: the DISPLAY half of every skill (class CSVs' NAME/DESCRIPTION + docs/data/skill_faces.csv

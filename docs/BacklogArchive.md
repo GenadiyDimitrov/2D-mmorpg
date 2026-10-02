@@ -8355,3 +8355,8 @@ from the elo site."* Research: `docs/balance/SpVsIG.md`. His rulings the same da
 
 Built as `SkillCsvSeed -- --reprice-sp [--solve [file]]` + `docs/data/sp_bands.csv` + `docs/data/sp_curve.csv`; replaces
 `BL-326`'s `--reweigh-sp` and `--scale-sp`. Formula: `docs/Formulas.md`. Details: `docs/CHANGELOG.md` 0.225.0. Checklist §136.
+
+**Re-ruled the same day, built 0.225.1:** *"freeze is not required (no files no nothing just formula).. Adding skills
+will make the current class cost lot more.. So having only formula each skill change will fix the class sp cost and
+class won't move from its x"* — the curve is now solved on every run, `sp_curve.csv` is replaced by `sp_adj.csv`
+(the ±% only). And *"61~75 at x0.8, 52~60 x0.85 and 40~51 x0.9 (as is) ... X0.6 apparently is way too hard"*.

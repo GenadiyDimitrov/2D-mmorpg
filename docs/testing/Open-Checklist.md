@@ -25,17 +25,17 @@
 
 ---
 
-## §136 — 0.225.0: skill SP is a formula, and every ladder rises (`BL-334`, 2026-10-02)
+## §136 — 0.225.1: skill SP is a formula, and every ladder rises (`BL-334`, 2026-10-02)
 
-⚠ **New APK + server restart.** No `game.db` delete. Your knobs: `docs/data/sp_bands.csv`, `sp_curve.csv` (`ADJ`),
+⚠ **New APK + server restart.** No `game.db` delete. Your knobs: `docs/data/sp_bands.csv`, `sp_adj.csv` (±% per file),
 `sp_weights.csv`, then `SkillCsvSeed -- --reprice-sp`.
 
 - `136a` [ ] - **Learn tab, any class:** every skill's next rung costs MORE than the one you bought before it, at every
   level up to 75, across the 2nd → 3rd class change too. ->
 - `136b` [ ] - **The pace, by feel:** a tier at 40 bought by ~43-45, 52 by ~55-56, and 61-75 tight enough that you
-  postpone some (×0.6). 1-19 has room to spare (×1.75). Too tight or too loose → change a band's X in `sp_bands.csv`. ->
+  postpone a few (52-60 ×0.85, 61-75 ×0.8). 1-19 has room to spare (×1.75). Too tight or too loose → change a band's X in `sp_bands.csv`. ->
 - `136c` [ ] - **Tank, 40-52:** Shield Shock's 3rd-class rungs climb only +1% (122k → 130k): the tank 2nd curve is
-  steep. OK as is, or raise the tank 2nd `ADJ` (a cheaper 2nd class) and `--reprice-sp --solve tank`? ->
+  steep. OK as is, or raise the tank 2nd `ADJ` (a cheaper 2nd class) in `sp_adj.csv` and `--reprice-sp`? ->
 
 ## §135 — 0.224.0: whole-second cooldowns; sheets that open whole; the rune texts agree (2026-10-02)
 

@@ -340,10 +340,10 @@ and cast pieces (`*.g.cs`, 34 ids) come from the CSVs via `dotnet run --project 
 Never hand-edit a `.g.cs`: edit the row and regenerate. Their SP, and every other class row's, is the CSV cell: `ClassSkillTables.SpPrices.g.cs` is generated
 the same run. 🔑 **SP BELOW 76 IS A FORMULA, AND EVERY LADDER RISES** (`BL-334`, 0.225.0 — replaced `BL-326`'s pot split,
 whose crowded levels made rungs fall): price = weight (`docs/data/sp_weights.csv`) × the SP one level pays (`ExpCurve`) ×
-a per-file curve (`docs/data/sp_curve.csv`), each rung ≥ ×1.01 the one before. **His knobs** are the weights, the band
-targets (`docs/data/sp_bands.csv`) and each file's `ADJ` %. `SkillCsvSeed -- --reprice-sp` applies them; the curve is
-**FROZEN** (his rule: adding skills must not cheapen the old ones), and `--reprice-sp --solve [file]` re-fits it — only
-when he asks. ⚠ **Any `ExpCurve` or weight change owes a `--reprice-sp`**; `--check` fails `SP STALE` / `SP FALLS`. Never
+a per-file curve, each rung ≥ ×1.01 the one before. **His knobs** are the weights, the band
+targets (`docs/data/sp_bands.csv`) and each file's `ADJ` % (`docs/data/sp_adj.csv`). `SkillCsvSeed -- --reprice-sp` solves the curve FRESH every run —
+**nothing is stored** (0.225.1, his: *"no files no nothing just formula"*), so adding skills makes each cheaper and the
+class keeps its x. ⚠ **Any `ExpCurve` or weight change owes a `--reprice-sp`**; `--check` fails `SP STALE` / `SP FALLS`. Never
 hand-edit an SP cell at 1-75 (the next run overwrites it); a new skill needs any non-zero number there (0 = auto-grant).
 
 **Verify, don't eyeball:** `dotnet run --project tools/SkillCsvSeed -- --check` reads every authored row

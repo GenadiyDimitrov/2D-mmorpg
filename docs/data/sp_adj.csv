@@ -1,0 +1,16 @@
+FILE,ADJ,COMMENT
+fighter 1st,0,
+mage 1st,0,
+tank 2nd,+5,
+warrior 2nd,+5,
+rogue 2nd,0,daggers +5 and bows -5 share it
+nuker 2nd,0,
+cleric 2nd,-5,healers and buffers
+tank 3rd,+5,
+warrior 3rd,+5,
+war_aoe 3rd,+5,
+nuker 3rd,0,
+healer 3rd,-5,
+buffer 3rd,-5,
+dual 3rd,+5,
+archer 3rd,-5,

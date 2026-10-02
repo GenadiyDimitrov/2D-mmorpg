@@ -1423,17 +1423,17 @@ here.
 ```
 income(L)  = ExpCurve.ExpToNext(L) * SpToExpRatio            (1/20: the SP one level of kills pays)
 c(file, L) = geometric interpolation between the file's anchors at each band's middle,
-             flat before the first and after the last         (docs/data/sp_curve.csv, frozen)
+             flat before the first and after the last         (solved every run, nothing stored)
 price      = Nice( weight(skill) * income(L) * c(file, L) )   (weight: docs/data/sp_weights.csv; Nice = 3 sig. figures)
 floor      = price >= 1.01 * the previous rung of the same skill, same race, along 1st -> 2nd -> 3rd
 x(band)    = sum income(L) over the band / the path's kit cost in the band
---solve    fits each file's anchors so x(band) = band X (docs/data/sp_bands.csv) * (1 + ADJ%) over the
+solve      fits each file's anchors so x(band) = band X (docs/data/sp_bands.csv) * (1 + ADJ%, sp_adj.csv) over the
            bands it owns: 1st files 1-19, 2nd files 20-39, 3rd files 40-75 (averaged over its paths and races)
 ```
 
-Bands (his, 2026-10-02): 1-19 ×1.75 · 20-39 ×1.25 · 40-51 ×0.9 · 52-60 ×0.75 · 61-75 ×0.6. ADJ: tank / warrior /
+Bands (his, 2026-10-02): 1-19 ×1.75 · 20-39 ×1.25 · 40-51 ×0.9 · 52-60 ×0.85 · 61-75 ×0.8 (0.225.1). ADJ: tank / warrior /
 war_aoe / dual +5%, nuker and rogue 2nd 0, cleric / healer / buffer / archer −5%. A row priced 0 is an auto-grant
-and stays free.
+and stays free. Adding skills to a file makes each of them cheaper; the class keeps its x (his rule, 0.225.1).
 
 ---
 

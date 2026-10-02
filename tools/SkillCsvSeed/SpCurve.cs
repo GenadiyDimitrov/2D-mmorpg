@@ -14,11 +14,11 @@ using Game.Shared;
 //      so an EXP change moves every price with it on the next run (his condition for keeping SP at 1/20 of EXP).
 //    - weight = docs/data/sp_weights.csv (his), the same file the pot split used.
 //    - c = a smooth curve per class FILE through one anchor per level band (geometric interpolation between the band
-//      middles). The anchors live in docs/data/sp_curve.csv and are FROZEN: `--solve` fits them so each band lands on
-//      its affordability target (docs/data/sp_bands.csv, × the file's own ADJ %), and plain `--reprice-sp` only
-//      applies them. His reason for freezing: re-solving on every run would make every tank skill cheaper the day he
-//      adds twelve more; frozen, the new skills simply cost what the curve says and `--sp-budget` shows the path
-//      getting harder, until he chooses to re-solve that file.
+//      middles), SOLVED ON EVERY RUN so each band the file owns lands on its affordability target
+//      (docs/data/sp_bands.csv, × the file's ±% in docs/data/sp_adj.csv). Nothing is stored: his ruling, 2026-10-02,
+//      *"freeze is not required (no files no nothing just formula) ... each skill change will fix the class sp cost and
+//      class won't move from its x"*. So adding twelve skills to a class makes each of its skills cheaper, never the
+//      class dearer. (0.225.0 froze the anchors in a file for one build; he retired it the same day.)
 //    - THE FLOOR: a rung costs at least ×1.01 of the rung before it on the same ladder (same skill, same race, along
 //      the 1st → 2nd → 3rd path), his "floor the skill to at least 1% more from its level before". The formula is
 //      smooth, so the floor only catches the small bends where an EXP wall meets a falling c.
@@ -35,19 +35,17 @@ internal static partial class PassiveGen
     private sealed record Band(int From, int To, double X)
     {
         public double Mid => (From + To) / 2.0;
-        public string Col => $"C_{From}_{To}";
     }
 
     private sealed class CurveRow
     {
         public string File = "";
         public double Adj;                       // his ±%, applied to the targets of the bands this file owns
-        public double?[] C = Array.Empty<double?>();
-        public string Comment = "";
+        public double?[] C = Array.Empty<double?>();   // the anchors, solved fresh every run
     }
 
     private static string BandsPath(string csvDir) => Path.Combine(csvDir, "..", "sp_bands.csv");
-    private static string CurvePath(string csvDir) => Path.Combine(csvDir, "..", "sp_curve.csv");
+    private static string AdjPath(string csvDir) => Path.Combine(csvDir, "..", "sp_adj.csv");
 
     private static int Tier(string file) => file.EndsWith("1st") ? 1 : file.EndsWith("2nd") ? 2 : file.EndsWith("3rd") ? 3 : 4;
 
@@ -109,47 +107,19 @@ internal static partial class PassiveGen
     private static Dictionary<string, CurveRow> LoadCurve(string csvDir, List<Band> bands, List<string> errors)
     {
         var curve = new Dictionary<string, CurveRow>(StringComparer.Ordinal);
-        string path = CurvePath(csvDir);
-        if (File.Exists(path))
-        {
-            var lines = File.ReadAllLines(path);
-            var head = SplitCsv(lines[0]).Select(x => x.Trim()).ToList();
-            int adj = head.IndexOf("ADJ"), com = head.IndexOf("COMMENT");
-            foreach (var line in lines.Skip(1))
-            {
-                var c = SplitCsv(line).Select(x => x.Trim()).ToList();
-                if (c.Count == 0 || c[0].Length == 0) continue;
-                var row = new CurveRow { File = c[0], C = new double?[bands.Count] };
-                if (adj >= 0 && adj < c.Count && c[adj].Length > 0
-                    && !double.TryParse(c[adj].TrimEnd('%'), NumberStyles.Float, CultureInfo.InvariantCulture, out row.Adj))
-                    errors.Add($"sp_curve.csv: {c[0]} ADJ '{c[adj]}' is not a number");
-                for (int b = 0; b < bands.Count; b++)
-                {
-                    int col = head.IndexOf(bands[b].Col);
-                    if (col >= 0 && col < c.Count && double.TryParse(c[col], NumberStyles.Float, CultureInfo.InvariantCulture, out var v) && v > 0)
-                        row.C[b] = v;
-                }
-                if (com >= 0 && com < c.Count) row.Comment = c[com];
-                curve[row.File] = row;
-            }
-        }
         foreach (var fk in Files.Where(f => Tier(f.File) <= 3))
-            if (!curve.ContainsKey(fk.File)) curve[fk.File] = new CurveRow { File = fk.File, C = new double?[bands.Count] };
+            curve[fk.File] = new CurveRow { File = fk.File, C = new double?[bands.Count] };
+        string path = AdjPath(csvDir);
+        if (!File.Exists(path)) return curve;   // no file = every ADJ 0
+        foreach (var line in File.ReadAllLines(path).Skip(1))
+        {
+            var c = SplitCsv(line).Select(x => x.Trim()).ToList();
+            if (c.Count < 2 || c[0].Length == 0) continue;
+            if (!curve.TryGetValue(c[0], out var row)) { errors.Add($"sp_adj.csv: no class file named '{c[0]}'"); continue; }
+            if (c[1].Length > 0 && !double.TryParse(c[1].TrimEnd('%'), NumberStyles.Float, CultureInfo.InvariantCulture, out row.Adj))
+                errors.Add($"sp_adj.csv: {c[0]} ADJ '{c[1]}' is not a number");
+        }
         return curve;
-    }
-
-    private static void SaveCurve(string csvDir, List<Band> bands, Dictionary<string, CurveRow> curve)
-    {
-        var sb = new StringBuilder("FILE,ADJ," + string.Join(",", bands.Select(b => b.Col)) + ",COMMENT\r\n");
-        foreach (var fk in Files.Where(f => Tier(f.File) <= 3))
-        {
-            var r = curve[fk.File];
-            sb.Append(fk.File).Append(',')
-              .Append(r.Adj == 0 ? "0" : r.Adj.ToString("+0.##;-0.##", CultureInfo.InvariantCulture)).Append(',')
-              .Append(string.Join(",", r.C.Select(v => v is { } x ? x.ToString("G4", CultureInfo.InvariantCulture) : "")))
-              .Append(',').Append(r.Comment.Contains(',') ? "\"" + r.Comment + "\"" : r.Comment).Append("\r\n");
-        }
-        File.WriteAllText(CurvePath(csvDir), sb.ToString(), new UTF8Encoding(false));
     }
 
     /// <summary>c(file, level): geometric interpolation between the file's anchors at the band middles, flat past the
@@ -231,20 +201,17 @@ internal static partial class PassiveGen
         return list;
     }
 
-    /// <summary>Fits the anchors of the named files (all, when <paramref name="only"/> is empty) so every band they
-    /// own lands on its target × (1 + ADJ). The other files keep their frozen anchors.</summary>
+    /// <summary>Fits every file's anchors so every band it
+    /// own lands on its target × (1 + ADJ). Starts from 1 every run, so the result depends only on the data.</summary>
     private static void Solve(List<PriceRow> rows, Dictionary<string, double> weights, List<Band> bands,
-                              Dictionary<string, CurveRow> curve, string[] only)
+                              Dictionary<string, CurveRow> curve)
     {
-        bool Picked(string f) => only.Length == 0 || only.Any(o => f.Contains(o, StringComparison.OrdinalIgnoreCase));
         foreach (var (f, r) in curve)
-            if (Picked(f))
                 for (int b = 0; b < bands.Count; b++)
                     if (Owns(f, bands[b]) && rows.Any(x => x.Fk.File == f && x.Level >= bands[b].From && x.Level <= bands[b].To))
-                        r.C[b] ??= 1;
+                        r.C[b] = 1;
         void Borrow()   // a 1st file's anchors in the bands it does not own: the geometric mean of the owners
         {
-            if (only.Length > 0) return;
             foreach (var first in curve.Values.Where(r => Tier(r.File) == 1))
                 for (int b = 0; b < bands.Count; b++)
                 {
@@ -262,7 +229,6 @@ internal static partial class PassiveGen
             var px = PathX(rows, price, bands);
             foreach (var (f, r) in curve)
             {
-                if (!Picked(f)) continue;
                 for (int b = 0; b < bands.Count; b++)
                 {
                     if (!Owns(f, bands[b]) || r.C[b] is null) continue;
@@ -282,8 +248,8 @@ internal static partial class PassiveGen
 
     // ---- the commands ----------------------------------------------------------------------------------------
 
-    /// <summary>`--reprice-sp [--solve [file…]] [--show file]`.</summary>
-    public static int Reprice(string csvDir, string repoRoot, string[]? solve, string? show)
+    /// <summary>`--reprice-sp [--show file]`.</summary>
+    public static int Reprice(string csvDir, string repoRoot, string? show)
     {
         var errors = new List<string>();
         var all = ReadPriceRows(csvDir);
@@ -294,15 +260,7 @@ internal static partial class PassiveGen
         if (errors.Count > 0) return Fail(errors);
         var rows = CurveRows(all).Where(r => weights.ContainsKey(r.Id)).ToList();
 
-        if (solve is not null)
-        {
-            Solve(rows, weights, bands, curve, solve);
-            SaveCurve(csvDir, bands, curve);
-            Console.WriteLine($"sp_curve.csv: anchors solved for {(solve.Length == 0 ? "every file" : string.Join(", ", solve))}.");
-        }
-        foreach (var f in rows.Select(r => r.Fk.File).Distinct())
-            if (curve[f].C.All(c => c is null)) errors.Add($"sp_curve.csv: {f} has no anchors — run `--reprice-sp --solve {f.Split(' ')[0]}`");
-        if (errors.Count > 0) return Fail(errors);
+        Solve(rows, weights, bands, curve);
 
         var price = PriceAll(rows, weights, bands, curve);
         foreach (var r in rows)   // within 0.5% of the cell already there = the same price, so a rerun never flips cells
@@ -331,7 +289,7 @@ internal static partial class PassiveGen
             Console.WriteLine($"  {race + " " + chain.Third,-36} " + string.Join(" ", x.Select(v => double.IsNaN(v) ? $"{"-",9}" : $"{v,9:0.00}")));
     }
 
-    /// <summary>`--check`'s half: every 1-75 cell must equal the formula under the frozen anchors (STALE otherwise — the
+    /// <summary>`--check`'s half: every 1-75 cell must equal the formula, solved fresh (STALE otherwise — the bands,
     /// curve, the weights or the EXP table moved and nobody repriced), and no ladder may fall.</summary>
     public static int CheckSp(string csvDir)
     {
@@ -345,6 +303,7 @@ internal static partial class PassiveGen
             errors.Add($"SP: {id} has no row in sp_weights.csv — run `--reprice-sp`");
         if (errors.Count == 0)
         {
+            Solve(rows, weights, bands, curve);
             var price = PriceAll(rows, weights, bands, curve);
             int stale = rows.Count(r => Math.Abs(price[r] - r.Sp) > 0.005 * r.Sp);
             if (stale > 0)
