@@ -7295,13 +7295,13 @@ public class GameLoopService : BackgroundService
         return true;
     }
 
-    /// <summary>Which commands each staff role may issue. A MODERATOR is a trusted PLAYER, not a GM:
+    /// <summary>Which commands each staff role may issue — read from <see cref="ChatCommandCatalog"/> since 0.221.0,
+    /// the same rows `/help` prints, so the list a moderator is shown is the list he is allowed. Today that is
+    /// Moderator = help, jail, unjail, jailed, kick, chatban, unchatban, where, chatlog; Chat Moderator = help,
+    /// chatban, unchatban, chatlog. A MODERATOR is a trusted PLAYER, not a GM:
     /// they police behaviour (jail / kick / chatban and the lookups that support it) and nothing else —
     /// no god mode, no teleporting, no item or gold creation (owner).</summary>
-    private static readonly HashSet<string> ModeratorCommands = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "help", "jail", "unjail", "jailed", "kick", "chatban", "unchatban", "where", "chatlog",
-    };
+    private static readonly HashSet<string> ModeratorCommands = ChatCommandCatalog.StaffAllowList(AccountRole.Moderator)!;
 
     /// <summary>A CHAT MODERATOR's whole vocabulary — the mute and nothing else (owner, playtest 26).
     ///
@@ -7313,10 +7313,7 @@ public class GameLoopService : BackgroundService
     /// `chatlog` is the one addition (`BL-89`), and it passes the same test: reading what was said in
     /// PUBLIC lets them justify the mute they already hold, and gives them no new way to grief anyone.
     /// The PRIVATE channel is withheld from this rank inside the command itself.</summary>
-    private static readonly HashSet<string> ChatModeratorCommands = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "help", "chatban", "unchatban", "chatlog",
-    };
+    private static readonly HashSet<string> ChatModeratorCommands = ChatCommandCatalog.StaffAllowList(AccountRole.ChatModerator)!;
 
     /// <summary>The allow-list for a role, or null for "everything" (Admin and Owner). The one power
     /// the Owner has and an Admin does not is not a command at all — it is `/role admin`, and that gate
@@ -7462,6 +7459,16 @@ public class GameLoopService : BackgroundService
 
     private void HandleAdmin(AdminCmd cmd)
     {
+        // `/help` is for EVERYONE (0.221.0): each rank sees its own section and every one below it. Answered above the
+        // staff gate, like `/where`, so a player is not told "unknown command" for the one command that lists the rest.
+        if (cmd.Command.Equals("help", StringComparison.OrdinalIgnoreCase)
+            && TryGetPlayer(cmd.ConnectionId, out var asker))
+        {
+            foreach (var line in ChatCommandCatalog.HelpLines(asker.Role))
+                SendSystemToEntity(asker, line);
+            return;
+        }
+
         // ⚠ ONE command on this path is NOT staff-only, and it is handled before the gate: a bare
         // `/where`. Owner, playtest 27: *"/where should work for anyone - they can see their own map
         // coordinates -> to tell friends where to find them -> while /where player-name should work
@@ -7551,33 +7558,6 @@ public class GameLoopService : BackgroundService
 
         switch (command)
         {
-            case "help":
-                SendSystemToEntity(admin, admin.Role switch
-                {
-                    AccountRole.ChatModerator =>
-                        "Chat Moderator: /chatban <name> [min], /unchatban <name>, "
-                        + "/chatlog [name] [-p <page>] (public channels only)",
-                    AccountRole.Moderator =>
-                        "Moderator: /jail <name> [min], /unjail <name>, /kick <name> [min], " +
-                        "/chatban <name> [min], /unchatban <name>, /jailed, /where <name>, " +
-                        "/chatlog [name] [-w] [around <time>] [-p <page>]",
-                    _ =>
-                        "Admin: /jail, /unjail, /kick, /ban, /unban, /chatban, /unchatban, /jailed, " +
-                        "/role <name> <player|chatmod|moderator|admin>, /tp <name>, /where <name>, " +
-                        "/god, /invis (both survive a relog), /heal [name], " +
-                        "/chatlog [name] [-w] [around <time>] [-p <page>], " +
-                        "/spd <m|a|c> <v> (bare /spd resets), /bag <name>, /give <name>, " +
-                        "/givegold <name> <amount>, /giveplat <name> <amount>, " +
-                        "/lvl [name] <level|max>, /sp [name] <amount|max>, " +
-                        "/exp [name] <amount|max>, /droprate [group|gear|global|amount|item <id>] [mult], " +
-                        "/titleright <name> <on|off>, /buff [name] [level], /clearbuffs [name], " +
-                        "/resetlimits [name] (today's dailies, farm allowance, likes, Favor potion), " +
-                        "/server <shutdown|reboot|on> [min] [adminOnly]" +
-                        (admin.Role == AccountRole.Owner
-                            ? "  —  Owner: only you may /role … admin." : ""),
-                });
-                break;
-
             case "god":
                 admin.GodMode = !admin.GodMode;
                 SendSystemToEntity(admin, $"God mode {(admin.GodMode ? "ON" : "OFF")}.");

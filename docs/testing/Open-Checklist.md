@@ -25,6 +25,23 @@
 
 ---
 
+## §128 — 0.221.0: `/help` per rank; actions show their typed command (2026-10-02)
+
+Your find: the `/help` layout by rank, no action commands in it, the missing admin ones, and `(/command)` on actions.
+⚠ **New APK + server restart.** No `game.db` delete.
+
+- `128a` [ ] - **`/help` as each rank** (switch with `/role`): a player sees the `@s`/`@t` line and **--- Commands ---**;
+  a Chat Moderator adds **--- Chat Moderator ---**; a Moderator adds **--- Moderator ---** above it; an Admin **--- Admin
+  only ---**; you, the Owner, **--- Owner only ---** on top. Each line is the command, then what it does. ->
+- `128b` [ ] - **Nothing is missing and nothing is wrong** in the Admin list (`/stat`, `/tpme`, `/enchant`, `/whatdrops`,
+  `/farmcap`, `/testcaps` were the missing ones). Name any line that reads wrong. ->
+- `128c` [ ] - **A moderator can still use exactly what he could** — `/jail`, `/kick`, `/where <name>`, `/chatlog -w` —
+  and is still refused `/tp` or `/god`. (The allow-list is now read from the same list `/help` prints.) ->
+- `128d` [ ] - **Skills window → Actions:** Invite to Party reads `(/ptinv <name>)` in small grey after its name; the same
+  for the friend, party, whisper, like and block actions. The chat `/help` no longer lists them. ->
+
+---
+
 ## §127 — 0.220.3: four of your finds (2026-10-02)
 
 ⚠ **New APK + server restart.** No `game.db` delete.

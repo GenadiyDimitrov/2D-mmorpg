@@ -465,7 +465,12 @@ namespace Game.Client
             {
                 string token = GameConstants.ActionSlotToken(action.Id);
                 var icon = ActionSprite(action.Id);   // `BL-331`
-                Row2Buttons((icon != null ? "" : Abbreviations.For(action.Name) + "  ") + action.Name,
+                // 0.221.0 — the typed twin, so a player learns he can invite someone out of sight by name. Plain ASCII
+                // in a smaller grey: the TMP atlas is static, and `/help` no longer lists these.
+                string typed = action.Command != null
+                    ? "  <size=75%><color=#9AA3AD>(<noparse>" + action.Command + "</noparse>)</color></size>"
+                    : "";
+                Row2Buttons((icon != null ? "" : Abbreviations.For(action.Name) + "  ") + action.Name + typed,
                             "Use", () => Boot.UseSlot(token),
                             "To bar", () => BeginAssign(token), icon: icon);
             }

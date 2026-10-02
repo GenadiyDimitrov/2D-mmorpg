@@ -21,13 +21,18 @@ public enum ActionNeeds
 /// <summary>One built-in action: something you DO that isn't a skill.
 ///
 /// Actions cost nothing, have no cooldown, and are never learned — which is exactly why they can't be
-/// SkillDefs. They are placed on the skill bar as "action:&lt;id&gt;" tokens.</summary>
+/// SkillDefs. They are placed on the skill bar as "action:&lt;id&gt;" tokens.
+///
+/// <c>Command</c> is the TYPED twin, when there is one (0.221.0, owner: *"action buttons can have in their description a
+/// `(/command)` player to know he can invite a distant player to his party by typing as well"*). The Actions tab shows
+/// it; `/help` leaves these out, see <see cref="ChatCommandCatalog"/>.</summary>
 public record ActionDef(
     string Id,
     string Name,
     string Icon,
     string Description,
-    ActionNeeds Needs = ActionNeeds.Nothing);
+    ActionNeeds Needs = ActionNeeds.Nothing,
+    string? Command = null);
 
 /// <summary>
 /// The ACTIONS catalog — the non-skill things a player does constantly and wants one click away:
@@ -63,7 +68,7 @@ public static class ActionCatalog
             "Ask the targeted player to trade.", ActionNeeds.PlayerTarget),
 
         new(GameConstants.ActionPartyInvite, "Invite to Party", "👥",
-            "Invite the targeted player to your party.", ActionNeeds.PlayerTarget),
+            "Invite the targeted player to your party.", ActionNeeds.PlayerTarget, "/ptinv <name>"),
 
         new(GameConstants.ActionFollowTarget, "Follow", "👣",
             "Walk after the targeted player until you move or they leave.", ActionNeeds.PlayerTarget),
@@ -78,41 +83,41 @@ public static class ActionCatalog
         new(GameConstants.ActionFriendAdd, "Add Friend", "➕",
             "Send the targeted player a friend request. Friendship is MUTUAL: until they add you back "
             + "you are only [pending] and neither of you sees the other's comings and goings.",
-            ActionNeeds.PlayerTarget),
+            ActionNeeds.PlayerTarget, "/fadd <name>"),
 
         new(GameConstants.ActionFriendRemove, "Remove Friend", "➖",
-            "Remove the targeted player from your friend list.", ActionNeeds.PlayerTarget),
+            "Remove the targeted player from your friend list.", ActionNeeds.PlayerTarget, "/frem <name>"),
 
         new(GameConstants.ActionFriendList, "Friend List", "📖",
-            "Show your friends and which of them are online."),
+            "Show your friends and which of them are online.", Command: "/flist"),
 
         new(GameConstants.ActionPartyLeave, "Leave Party", "🚪",
-            "Leave your current party."),
+            "Leave your current party.", Command: "/ptleave"),
 
         new(GameConstants.ActionPartyKick, "Kick from Party", "👢",
-            "Remove the targeted player from the party. Leader only.", ActionNeeds.PlayerTarget),
+            "Remove the targeted player from the party. Leader only.", ActionNeeds.PlayerTarget, "/ptkick <name>"),
 
         new(GameConstants.ActionPartyLeader, "Pass Leadership", "👑",
             "Make the targeted party member the leader. Leader only, and it cannot be undone by you.",
-            ActionNeeds.PlayerTarget),
+            ActionNeeds.PlayerTarget, "/ptcl <name>"),
 
         // The one exception to "a value must be typed": a whisper needs a MESSAGE, so this action
         // cannot send one. What it can do is everything up to the message — the half that is fiddly on
         // a phone — by putting "/w <name> " in the command box with the caret after it.
         new(GameConstants.ActionWhisperTarget, "Whisper", "✉",
             "Start a whisper to the targeted player: the command box is filled in with their name and "
-            + "you type the message.", ActionNeeds.PlayerTarget),
+            + "you type the message.", ActionNeeds.PlayerTarget, "/w <name> <message>"),
 
         new(GameConstants.ActionLike, "Like", "👍",
             "Give the targeted player +1 charisma from your daily budget (20/day). Their reputation "
-            + "grants an exp/sp bonus and ranks on the charisma board.", ActionNeeds.PlayerTarget),
+            + "grants an exp/sp bonus and ranks on the charisma board.", ActionNeeds.PlayerTarget, "/like <name>"),
 
         new(GameConstants.ActionBlock, "Block", "🚫",
             "Ignore the targeted player — you stop seeing their chat (whisper / world / local). "
-            + "They are not told.", ActionNeeds.PlayerTarget),
+            + "They are not told.", ActionNeeds.PlayerTarget, "/block <name>"),
 
         new(GameConstants.ActionUnblock, "Unblock", "🔊",
-            "Stop ignoring the targeted player.", ActionNeeds.PlayerTarget),
+            "Stop ignoring the targeted player.", ActionNeeds.PlayerTarget, "/unblock <name>"),
 
         // `BL-302`: *"it also need a to bar option -> u can add it as an action in the skills window ... a
         // single click"*. The same command as the bag window's button, which stays.

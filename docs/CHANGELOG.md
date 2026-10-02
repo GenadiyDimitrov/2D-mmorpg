@@ -24,7 +24,29 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-02 (latest) — 0.220.3: four finds — buffer's Rogue Evasion, 300 chat rows, the arrow on for every character, a deeper pulse
+## 2026-10-02 (latest) — 0.221.0: `/help` for every rank, from one command list; actions show their typed command
+
+His find (My Finds, 2026-10-02): `/help` to print a SYSTEM block — the `@s`/`@t` note, then *"--- Owner ONLY ---"*,
+*"--- Admin ONLY ---"*, Moderator, Chat Mod, Commands — where *"each lower group is available on the upper one"*, *"no
+action commands like `/like` they are as action buttons"*, *"missing commands like the /stats for the admin"*, and
+*"action buttons can have in their description a `(/command)`"*. **New APK + server restart.** No wire change, no
+`game.db` delete. Checklist §128.
+
+- **`Game.Shared/ChatCommands.cs` — `ChatCommandCatalog`**, every typed command with its usage, a short clause and the
+  lowest rank that may use it. `/help` prints the caller's rank and every rank below; a player now gets the plain
+  commands too (it used to be "Unknown command"). The admin list gained what was missing: `/stat`, `/tpme`, `/ban`
+  minutes, `/tp` coordinates, `/enchant`, `/like -f`, `/whatdrops`, `/dropindex`, `/farmcap`, `/testcaps`.
+- **The Moderator / Chat Moderator allow-lists are READ from it** (`StaffAllowList`) — the same nine and four commands
+  as before, but now the list a moderator is shown cannot drift from the list he is allowed. Player rows never enter a
+  staff list, so a Player-level name (`buff`) cannot open the admin half of the same command.
+- **`ActionDef.Command`** — the typed twin of 11 actions (`/ptinv`, `/ptkick`, `/ptcl`, `/ptleave`, `/fadd`, `/frem`,
+  `/flist`, `/w`, `/like`, `/block <name>`, `/unblock`). The Actions tab shows it after the name in small grey;
+  `/help` leaves them out.
+- ⚠ Two placeholders renamed because TextMesh Pro reads them as tags in chat: `-p <page>` → `-p <n>`, `<color>` →
+  `<colour>`.
+- `/who <name>` (his other ask, an admin's view of a player's character sheet) is the next version.
+
+## 2026-10-02 — 0.220.3: four finds — buffer's Rogue Evasion, 300 chat rows, the arrow on for every character, a deeper pulse
 
 His finds and answers from the 0.220.2 pass. **New APK + server restart.** No wire change, no `game.db` delete.
 Checklist §127, §125a, §121d.
