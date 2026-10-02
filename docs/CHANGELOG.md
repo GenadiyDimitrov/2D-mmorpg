@@ -24,7 +24,16 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-02 (latest) — 0.222.0: `/who <name>` — an admin opens a player's Character window
+## 2026-10-02 (latest) — 0.222.1: Over the Limit no longer takes a buff slot
+
+- **`demon_over_limit` carries `CountsTowardBuffLimit: false`.** Owner: *"over the limit should not go towards
+  the buff limit ... its a 10s buff"*. It sits on a shelf, which put it in `SkillCatalog.BuffLimitIds`; the
+  authored veto takes it out, so a 10-second burst can never evict one of the 20 real buffs (FIFO).
+- **Monster Knowledge is unchanged and still counts**: *"can be left as its a choice to warriors/buffer if
+  they gonna fight players or mobs"*. A slot spent on it is the price of the PvE choice.
+- Server-side only; the client reads the slot flag off `BuffDto`, so no new APK.
+
+## 2026-10-02 — 0.222.0: `/who <name>` — an admin opens a player's Character window
 
 His ask (My Finds, 2026-10-02): *"also we need `/who <name>` command that opens stat window of the character - an
 *admin* command"*. **New APK + server restart.** A new server→client message (`AdminWho`); an older APK ignores it, so

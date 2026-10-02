@@ -14565,7 +14565,7 @@ public class GameLoopService : BackgroundService
     /// 20-minute buff row), never typed out; read the note on it for what is in and why.</para>
     ///
     /// <para>⚠ <c>CountsTowardBuffLimit</c> survives as an authored VETO, and it is now nearly inert:
-    /// nothing currently in the collection carries it false. It is kept as the one-line escape hatch
+    /// Over the Limit (a 10s burst on the shelf) is the one collected buff that carries it false. It is kept as the one-line escape hatch
     /// for a buff that qualifies structurally but must not cost a square, which is the shape the runes
     /// needed before rule 2 learned to exclude the consumable row.</para></summary>
     private static bool OccupiesBuffSlot(SkillDef def) =>

@@ -134,6 +134,9 @@ public static partial class SkillCatalog
                 | SkillEffect.BuffMagicCritRate | SkillEffect.BuffAtkSpeed | SkillEffect.BuffCastSpeed,
             MpCost: overMp[0], CastTicks: 0, CooldownTicks: 600, Range: 0, Power: 0,
             DurationTicks: 100, BuffKey: "demon_over_limit",
+            // 2026-10-02, owner: *"over the limit should not go towards the buff limit ... its a 10s buff"*.
+            // It is on a shelf, which puts it in BuffLimitIds; this is the authored veto.
+            CountsTowardBuffLimit: false,
             Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: overSp[0],
             Magnitudes: OverMags(0),
             Description: "Push past what the body will take: ten seconds of pure havoc.",
