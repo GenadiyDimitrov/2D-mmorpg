@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.225.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.226.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,26 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-02 (latest) — 0.226.0: icons for the NPC buffs, potions, scrolls, runes and the paving (`BL-331`)
+## 2026-10-02 (latest) — 0.226.1: a replacement is transitive — the next skill retires what its predecessor retired
+
+**New APK + server restart.** No `game.db` delete: the login pass applies the new rule to every saved character.
+
+- **His find:** learning Sound Smash at 40 removed Holy Bolt and Holy Spike but **gave Magic Bolt back**. His rule:
+  *"If I learn skill A then I learn skill B that replaces A I'm left with only skill B but then I learn skill C that
+  replaces skill B I should be left with skill C only ... Any next skill replaces the skills that his predecessor
+  replaced as well."*
+- **The cause:** every "is this retired?" check read only a skill's DIRECT `Replaces` list. Holy Bolt retires Magic Bolt;
+  Sound Smash retires Holy Bolt — so once Holy Bolt was gone, nothing owned named Magic Bolt any more and the mage's
+  starter-nuke auto-grant put it back.
+- **The fix:** `SkillCatalog.ReplacedChain(id)` = the skill's `Replaces` plus, transitively, everything those replaced
+  (mutual replacers are safe; a skill never retires itself). Every reader goes through it: the learn, the learn list
+  (server and client), the starter-nuke grant, the login pass, the debug learn-all, the admin seed, the passive fold, and
+  a class row's own `Replaces` (`ClassSkills.RowReplaced`). `def.Replaces` stays the authored one-step list the CSVs show.
+- **Who it touches** (audited off the catalog — nothing else gains a retirement): Magic Bolt also leaves on Sound
+  Smash / Sound Burst / Acoustic Shock / Holy Ray / Elemental Blast; Strike / Shot / Stab also leave on the three racial
+  slashes, the three shouts, the six 3rd-tier stabs/bursts and Twin Arrows.
+
+## 2026-10-02 — 0.226.0: icons for the NPC buffs, potions, scrolls, runes and the paving (`BL-331`)
 
 **New APK + server restart.** No `game.db` delete. Checklist §137.
 

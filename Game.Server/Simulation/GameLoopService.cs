@@ -1746,7 +1746,7 @@ public class GameLoopService : BackgroundService
     private static bool IsSuperseded(Entity player, string skillId)
     {
         foreach (var learnedId in player.LearnedSkills.Keys)
-            if (SkillCatalog.Get(learnedId)?.Replaces is { } rep && Array.IndexOf(rep, skillId) >= 0)
+            if (SkillCatalog.ReplacedChain(learnedId).Contains(skillId))
                 return true;
         // `BL-314` — or one of the class's own rows retired it (ClassSkill.Replaces).
         return ClassSkills.RowReplaced(player.LearnedSkills, player.Race, player.BaseClass, player.Archetype,
@@ -1906,8 +1906,8 @@ public class GameLoopService : BackgroundService
         player.LearnedSkills[def.Id] = target;
 
         // Cross-skill replacement (FlameBolt replaces MagicBolt) — only on first learn.
-        if (cur == 0 && def.Replaces is { Length: > 0 })
-            foreach (var replacedId in def.Replaces)
+        if (cur == 0)
+            foreach (var replacedId in SkillCatalog.ReplacedChain(def.Id))
                 player.LearnedSkills.Remove(replacedId);
         // `BL-314` — and a CLASS ROW may retire something too (the Lightbringer's first robe rung retires the cleric's
         // light casting fix). Checked on every learn, not just the first: the row that retires is rarely rung 1.
@@ -4331,8 +4331,7 @@ public class GameLoopService : BackgroundService
             player.LearnedSkills[id] = lvl;
         // Cross-skill replacements (e.g. Flame Bolt replaces Magic Bolt).
         foreach (var id in byId.Keys.ToList())
-            if (SkillCatalog.Get(id)?.Replaces is { } rep)
-                foreach (var r in rep) player.LearnedSkills.Remove(r);
+            foreach (var r in SkillCatalog.ReplacedChain(id)) player.LearnedSkills.Remove(r);
         // …and what the class's own rows retire (`BL-314`, ClassSkill.Replaces).
         foreach (var r in ClassSkills.RowReplaced(player.LearnedSkills, player.Race, player.BaseClass,
                      player.Archetype, player.Discipline, player.HasFourthClass).ToList())

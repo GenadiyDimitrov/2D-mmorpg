@@ -25,6 +25,17 @@
 
 ---
 
+## §138 — 0.226.1: a replacement is transitive (2026-10-02)
+
+⚠ **New APK + server restart.** No `game.db` delete.
+
+- `138a` [ ] - **Your find:** a Demon buffer who owns Holy Bolt/Holy Spike learns Sound Smash at 40 — Holy Bolt, Holy
+  Spike AND Magic Bolt are all gone, and Magic Bolt does not come back on relog or level-up, nor in the Learn tab. ->
+- `138b` [ ] - **A fighter** with Smash (or a rogue with Precise Shot) learns a 3rd-tier slash/shout/stab: the 1st-tier
+  Strike / Shot / Stab does not reappear either. ->
+
+---
+
 ## §137 — 0.226.0: icons for the NPC buffs, potions, scrolls, runes and the paving (`BL-331`, 2026-10-02)
 
 ⚠ **New APK + server restart.** No `game.db` delete. Every picture is a row in `docs/data/skill_icons.csv`; the review

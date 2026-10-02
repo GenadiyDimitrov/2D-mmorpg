@@ -3690,8 +3690,7 @@ public class Entity
             // `Replaces` still wins: a superseded base mastery contributes nothing.
             var supersededMasteries = new HashSet<string>();
             foreach (var (skillId, _) in LearnedSkills)
-                if (SkillCatalog.Get(skillId)?.Replaces is { } rep)
-                    foreach (var r in rep) supersededMasteries.Add(r);
+                foreach (var r in SkillCatalog.ReplacedChain(skillId)) supersededMasteries.Add(r);
 
             bool dataMastery = false;
             foreach (var (skillId, skillLevel) in LearnedSkills)
@@ -3776,8 +3775,7 @@ public class Entity
             // doesn't double-apply. (Non-passive replaced skills are harmless no-ops here.)
             var replacedPassives = new HashSet<string>();
             foreach (var (skillId, _) in LearnedSkills)
-                if (SkillCatalog.Get(skillId)?.Replaces is { } rep)
-                    foreach (var r in rep) replacedPassives.Add(r);
+                foreach (var r in SkillCatalog.ReplacedChain(skillId)) replacedPassives.Add(r);
 
             // Fold one PassiveEffect into the derived stats. Shared by the always-on
             // discipline passives AND the weapon-conditional masteries below (which pass

@@ -344,7 +344,12 @@ public static class ClassSkills
         foreach (var cs in Cumulative(race, baseClass, archetype, discipline, fourth))
             if (cs.Replaces is { Length: > 0 } rep
                 && learned.TryGetValue(cs.SkillId, out int owned) && owned >= cs.SkillLevel)
-                foreach (var r in rep) yield return r;
+                foreach (var r in rep)
+                {
+                    yield return r;
+                    // …and whatever THAT retired: replacement is transitive (SkillCatalog.ReplacedChain).
+                    foreach (var rr in SkillCatalog.ReplacedChain(r)) yield return rr;
+                }
     }
 
     /// <summary>The next rung of <paramref name="skillId"/> this class may BUY, given the rung it

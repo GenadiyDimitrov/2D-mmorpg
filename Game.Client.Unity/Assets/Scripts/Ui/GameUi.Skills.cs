@@ -758,10 +758,7 @@ namespace Game.Client
         {
             foreach (var known in Boot.Learned.Keys)
             {
-                var def = SkillCatalog.Get(known);
-                if (def?.Replaces == null) continue;
-                foreach (var replaced in def.Replaces)
-                    if (replaced == skillId) return true;
+                if (SkillCatalog.ReplacedChain(known).Contains(skillId)) return true;
             }
             return false;
         }

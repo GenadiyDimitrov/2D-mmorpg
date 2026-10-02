@@ -259,8 +259,7 @@ public class PersistenceService
             learned.Remove(id);
         // Cross-skill replacements (a higher-tier spell removes the one it supersedes).
         foreach (var id in learned.Keys.ToList())
-            if (SkillCatalog.Get(id)?.Replaces is { } replaced)
-                foreach (var r in replaced) learned.Remove(r);
+            foreach (var r in SkillCatalog.ReplacedChain(id)) learned.Remove(r);
         // (The old training passive is gone — the admin tests the runes via the 30-day boxes added below.)
 
         string learnedCsv = string.Join(',', learned.Select(kv => $"{kv.Key}:{kv.Value}"));
@@ -638,8 +637,7 @@ public class PersistenceService
         // own supersedes it. A skill hidden from the shop and still on your bar was never a coherent
         // state; this makes the two agree at the one point where the character enters memory.
         foreach (var id in into.Keys.ToList())
-            if (SkillCatalog.Get(id)?.Replaces is { Length: > 0 } rep)
-                foreach (var r in rep) into.Remove(r);
+            foreach (var r in SkillCatalog.ReplacedChain(id)) into.Remove(r);
     }
 
     /// <summary>⚠ RETIRED-DISCIPLINE MIGRATION. A row written before 2026-08-28 can carry a Tempest

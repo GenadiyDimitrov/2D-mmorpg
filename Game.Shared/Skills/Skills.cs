@@ -2395,6 +2395,41 @@ public static partial class SkillCatalog
     }
 
     public static SkillDef? Get(string id) => id is null ? null : All.GetValueOrDefault(id);
+
+    /// <summary>Everything learning <paramref name="id"/> retires — its own <see cref="SkillDef.Replaces"/> AND,
+    /// transitively, everything THOSE replaced (owner, 2026-10-02: *"Any next skill replaces the skills that his
+    /// predecessor replaced as well"*). Holy Bolt retires Magic Bolt, Sound Smash retires Holy Bolt — so Sound
+    /// Smash retires Magic Bolt too. Reading only the direct list let the starter nuke come back: once its
+    /// replacer was itself replaced, nothing owned named it any more. Mutual replacers (the Warlord's interlock)
+    /// are safe: the walk never returns the skill itself. Every "is this retired?" question reads THIS, never
+    /// <c>def.Replaces</c> raw — that stays the authored, one-step list the CSVs and tools show.</summary>
+    public static IReadOnlyList<string> ReplacedChain(string id) =>
+        id is null ? Array.Empty<string>() : (_replacedChain ??= BuildReplacedChains()).GetValueOrDefault(id)
+                                              ?? (IReadOnlyList<string>)Array.Empty<string>();
+
+    private static Dictionary<string, IReadOnlyList<string>>? _replacedChain;
+
+    private static Dictionary<string, IReadOnlyList<string>> BuildReplacedChains()
+    {
+        var chains = new Dictionary<string, IReadOnlyList<string>>();
+        foreach (var def in All.Values)
+        {
+            if (def.Replaces is not { Length: > 0 }) continue;
+            var seen = new HashSet<string> { def.Id };
+            var order = new List<string>();
+            var stack = new Stack<string>(def.Replaces);
+            while (stack.Count > 0)
+            {
+                string r = stack.Pop();
+                if (!seen.Add(r)) continue;
+                order.Add(r);
+                if (Get(r)?.Replaces is { } next)
+                    foreach (var n in next) stack.Push(n);
+            }
+            chains[def.Id] = order;
+        }
+        return chains;
+    }
     public static string DescriptionOf(string id) => Get(id)?.Description ?? "";
     public static IEnumerable<SkillDef> AllSkills => All.Values;
 }
