@@ -25,7 +25,7 @@
 
 ---
 
-## §136 — 0.225.1: skill SP is a formula, and every ladder rises (`BL-334`, 2026-10-02)
+## §136 — 0.225.2: skill SP is a formula, and every ladder rises (`BL-334`, 2026-10-02)
 
 ⚠ **New APK + server restart.** No `game.db` delete. Your knobs: `docs/data/sp_bands.csv`, `sp_adj.csv` (±% per file),
 `sp_weights.csv`, then `SkillCsvSeed -- --reprice-sp`.
@@ -36,6 +36,8 @@
   postpone a few (52-60 ×0.85, 61-75 ×0.8). 1-19 has room to spare (×1.75). Too tight or too loose → change a band's X in `sp_bands.csv`. ->
 - `136c` [ ] - **Tank, 40-52:** Shield Shock's 3rd-class rungs climb only +1% (122k → 130k): the tank 2nd curve is
   steep. OK as is, or raise the tank 2nd `ADJ` (a cheaper 2nd class) in `sp_adj.csv` and `--reprice-sp`? ->
+- `136d` [ ] - **Races in one class:** each race's OWN skills cost that race's share (×0.5-×2, e.g. Demon Magus own skills
+  ~×0.7, Elf Magus ~×1.3), so a Human and an Elf of the same class feel equally tight. Compare two races at 60+ if you can. ->
 
 ## §135 — 0.224.0: whole-second cooldowns; sheets that open whole; the rune texts agree (2026-10-02)
 

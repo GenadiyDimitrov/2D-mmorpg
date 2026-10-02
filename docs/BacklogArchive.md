@@ -8360,3 +8360,8 @@ Built as `SkillCsvSeed -- --reprice-sp [--solve [file]]` + `docs/data/sp_bands.c
 will make the current class cost lot more.. So having only formula each skill change will fix the class sp cost and
 class won't move from its x"* — the curve is now solved on every run, `sp_curve.csv` is replaced by `sp_adj.csv`
 (the ±% only). And *"61~75 at x0.8, 52~60 x0.85 and 40~51 x0.9 (as is) ... X0.6 apparently is way too hard"*.
+
+**Re-ruled again, built 0.225.2:** *"one race have 20 skills the other 10 ... making average of 15 is a +50% more
+expensive for one and 50% less expensive for the other ... putting unique skills number inside ... the formula will
+balance"* — each race's own skills now carry a solved multiplier (×0.5-×2), so every race hits the target, not the
+three-race average.

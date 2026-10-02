@@ -19,6 +19,11 @@ using Game.Shared;
 //      *"freeze is not required (no files no nothing just formula) ... each skill change will fix the class sp cost and
 //      class won't move from its x"*. So adding twelve skills to a class makes each of its skills cheaper, never the
 //      class dearer. (0.225.0 froze the anchors in a file for one build; he retired it the same day.)
+//    - × m(race), on a skill only SOME races learn: each race's own skills carry a multiplier solved so THAT race lands
+//      on the target, not the three-race average (his, 2026-10-02: *"one race have 20 skills the other 10 ... making
+//      average of 15 is a +50% more expensive for one and 50% less for the other"*). The races only trade between
+//      themselves (the multipliers average 1), and each is capped at ×0.5-×2 — his ±50% — because a kit that is
+//      mostly shared (the buffer: 59 shared skills, 6-7 per race) would otherwise swing a race's few skills ×0.3-×3.3.
 //    - THE FLOOR: a rung costs at least ×1.01 of the rung before it on the same ladder (same skill, same race, along
 //      the 1st → 2nd → 3rd path), his "floor the skill to at least 1% more from its level before". The formula is
 //      smooth, so the floor only catches the small bends where an EXP wall meets a falling c.
@@ -31,6 +36,7 @@ internal static partial class PassiveGen
 {
     private const int SpCurveTop = 75;
     private const double LadderFloor = 1.01;
+    private const double RaceMulMin = 0.5, RaceMulMax = 2.0;
 
     private sealed record Band(int From, int To, double X)
     {
@@ -42,6 +48,10 @@ internal static partial class PassiveGen
         public string File = "";
         public double Adj;                       // his ±%, applied to the targets of the bands this file owns
         public double?[] C = Array.Empty<double?>();   // the anchors, solved fresh every run
+        /// <summary>Per race, anchors for a multiplier on that race's OWN skills only (rows not every race learns), solved
+        /// so each race lands on the target by itself, not on the three-race average. His point, 2026-10-02: a race with
+        /// 20 skills and one with 10 must not both pay for 15, so the one with fewer pays more per skill.</summary>
+        public Dictionary<Race, double?[]> M = new();
     }
 
     private static string BandsPath(string csvDir) => Path.Combine(csvDir, "..", "sp_bands.csv");
@@ -124,9 +134,25 @@ internal static partial class PassiveGen
 
     /// <summary>c(file, level): geometric interpolation between the file's anchors at the band middles, flat past the
     /// first and last anchor.</summary>
-    private static double CurveAt(CurveRow r, List<Band> bands, int level)
+    private static double CurveAt(CurveRow r, List<Band> bands, int level) => Interp(r.C, bands, level);
+
+    /// <summary>The race multiplier for a row: 1 for a skill every race learns, else the mean (geometric) of the
+    /// multipliers of the races that learn it.</summary>
+    private static double RaceMul(CurveRow r, PriceRow row, List<Band> bands)
     {
-        var pts = bands.Select((b, i) => (b.Mid, C: r.C[i])).Where(p => p.C is > 0).Select(p => (p.Mid, C: p.C!.Value)).ToList();
+        if (row.Races.Length >= Races.Length) return 1;
+        double log = 0;
+        foreach (var race in row.Races)
+        {
+            double m = r.M.TryGetValue(race, out var a) ? Interp(a, bands, row.Level) : 0;
+            log += Math.Log(m > 0 ? m : 1);
+        }
+        return Math.Exp(log / row.Races.Length);
+    }
+
+    private static double Interp(double?[] anchors, List<Band> bands, int level)
+    {
+        var pts = bands.Select((b, i) => (b.Mid, C: anchors[i])).Where(p => p.C is > 0).Select(p => (p.Mid, C: p.C!.Value)).ToList();
         if (pts.Count == 0) return 0;
         if (level <= pts[0].Mid) return pts[0].C;
         if (level >= pts[^1].Mid) return pts[^1].C;
@@ -155,7 +181,8 @@ internal static partial class PassiveGen
         var byId = new Dictionary<string, List<(PriceRow Row, int Sp)>>(StringComparer.Ordinal);
         foreach (var r in rows.OrderBy(r => Tier(r.Fk.File)).ThenBy(r => r.Level))
         {
-            double raw = weights[r.Id] * SpIncome(r.Level) * CurveAt(curve[r.Fk.File], bands, r.Level);
+            double raw = weights[r.Id] * SpIncome(r.Level) * CurveAt(curve[r.Fk.File], bands, r.Level)
+                       * RaceMul(curve[r.Fk.File], r, bands);
             var pre = Predecessors(r.Fk.File);
             if (!byId.TryGetValue(r.Id, out var seen)) byId[r.Id] = seen = new();
             long floor = 0;
@@ -209,7 +236,16 @@ internal static partial class PassiveGen
         foreach (var (f, r) in curve)
                 for (int b = 0; b < bands.Count; b++)
                     if (Owns(f, bands[b]) && rows.Any(x => x.Fk.File == f && x.Level >= bands[b].From && x.Level <= bands[b].To))
+                    {
                         r.C[b] = 1;
+                        foreach (var race in Races)
+                            if (rows.Any(x => x.Fk.File == f && x.Races.Length < Races.Length && x.Races.Contains(race)
+                                              && x.Level >= bands[b].From && x.Level <= bands[b].To))
+                            {
+                                if (!r.M.TryGetValue(race, out var m)) r.M[race] = m = new double?[bands.Count];
+                                m[b] = 1;
+                            }
+                    }
         void Borrow()   // a 1st file's anchors in the bands it does not own: the geometric mean of the owners
         {
             foreach (var first in curve.Values.Where(r => Tier(r.File) == 1))
@@ -237,13 +273,31 @@ internal static partial class PassiveGen
                     if (xs.Count == 0) continue;
                     double target = bands[b].X * (1 + r.Adj / 100.0);
                     r.C[b] *= Math.Pow(Math.Exp(xs.Average()) / target, 0.7);
+
+                    // each race's own skills move that race onto the target; the mean multiplier stays 1, so c keeps
+                    // the average and the races only trade between themselves
+                    var own = r.M.Where(kv => kv.Value[b] is not null).ToList();
+                    foreach (var (race, m) in own)
+                    {
+                        var xr = px.Where(p => p.Race == race && (Tier(f) == 1 ? p.Chain.First : Tier(f) == 2 ? p.Chain.Second : p.Chain.Third) == f)
+                                   .Select(p => p.X[b]).Where(x => !double.IsNaN(x)).Select(x => Math.Log(x)).ToList();
+                        if (xr.Count > 0) m[b] *= Math.Pow(Math.Exp(xr.Average()) / target, 0.7);
+                    }
+                    if (own.Count > 0)
+                    {
+                        double gm = Math.Exp(own.Average(kv => Math.Log(kv.Value[b]!.Value)));
+                        foreach (var (_, m) in own) m[b] = Math.Clamp(m[b]!.Value / gm, RaceMulMin, RaceMulMax);
+                    }
                 }
             }
             Borrow();
         }
+        static double? G4(double? v) => v is { } x ? double.Parse(x.ToString("G4", CultureInfo.InvariantCulture), CultureInfo.InvariantCulture) : null;
         foreach (var r in curve.Values)
-            for (int b = 0; b < r.C.Length; b++)
-                if (r.C[b] is { } v) r.C[b] = double.Parse(v.ToString("G4", CultureInfo.InvariantCulture), CultureInfo.InvariantCulture);
+        {
+            for (int b = 0; b < r.C.Length; b++) r.C[b] = G4(r.C[b]);
+            foreach (var m in r.M.Values) for (int b = 0; b < m.Length; b++) m[b] = G4(m[b]);
+        }
     }
 
     // ---- the commands ----------------------------------------------------------------------------------------
@@ -276,6 +330,11 @@ internal static partial class PassiveGen
             }
 
         PrintPathX(rows, price, bands);
+        Console.WriteLine("  race multipliers on each race's OWN skills (1 = the shared price; per band):");
+        foreach (var (f, r) in curve.Where(kv => kv.Value.M.Count > 0))
+            foreach (var (race, m) in r.M)
+                Console.WriteLine($"    {f,-12} {race,-6} " + string.Join(" ", bands.Select((b, i) =>
+                    m[i] is { } v ? $"{b.From}-{b.To}:×{v:0.00}" : "")).Trim());
         int changed = WriteSpCells(csvDir, price);
         Console.WriteLine($"{changed} SP cell(s) rewritten at 1-{SpCurveTop}.");
         return Run(csvDir, repoRoot, false);

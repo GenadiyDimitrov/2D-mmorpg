@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.225.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.225.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,23 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-02 (latest) — 0.225.1: SP targets eased; the curve is solved every run, nothing stored (`BL-334`)
+## 2026-10-02 (latest) — 0.225.2: every RACE lands on its SP target, not the three-race average (`BL-334`)
+
+**New APK + server restart.** No `game.db` delete. Checklist §136 (row 136d).
+
+- **Each race's own skills now carry that race's multiplier.** His point: *"one race have 20 skills the other 10 ... making
+  average of 15 is a +50% more expensive for one and 50% less expensive for the other"*. A skill only some races learn is
+  priced × m(race), solved so that race hits the band target alone; skills every race learns keep one price.
+  - The races only trade between themselves (the multipliers average 1).
+  - The multipliers are capped at ×0.5-×2, his ±50%.
+- **Result: every race of every class lands on its target**, except Demon Warchanter (×0.74 vs ×0.77 at 61-75). The
+  buffer kit is 59 shared skills and only 6-7 per race, so uncapped it needed Human ×3.3 and Demon ×0.3.
+  - The biggest moves elsewhere: Demon Magus own skills ×0.63-0.73, Elf Magus ×1.25-1.35, Elf Ravager ×1.23-1.29,
+    Human Ravager ×0.81-1.07.
+  - Tank, war_aoe, dagger and archer kits were already even (×1.00).
+- `--reprice-sp` prints the multipliers under the x table.
+
+## 2026-10-02 — 0.225.1: SP targets eased; the curve is solved every run, nothing stored (`BL-334`)
 
 **New APK + server restart.** No `game.db` delete. Checklist §136 (rewritten for this build).
 

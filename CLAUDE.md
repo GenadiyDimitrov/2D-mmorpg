@@ -340,7 +340,7 @@ and cast pieces (`*.g.cs`, 34 ids) come from the CSVs via `dotnet run --project 
 Never hand-edit a `.g.cs`: edit the row and regenerate. Their SP, and every other class row's, is the CSV cell: `ClassSkillTables.SpPrices.g.cs` is generated
 the same run. 🔑 **SP BELOW 76 IS A FORMULA, AND EVERY LADDER RISES** (`BL-334`, 0.225.0 — replaced `BL-326`'s pot split,
 whose crowded levels made rungs fall): price = weight (`docs/data/sp_weights.csv`) × the SP one level pays (`ExpCurve`) ×
-a per-file curve, each rung ≥ ×1.01 the one before. **His knobs** are the weights, the band
+a per-file curve (× a per-race multiplier on race-only skills, ×0.5-×2, so every RACE hits the target), each rung ≥ ×1.01 the one before. **His knobs** are the weights, the band
 targets (`docs/data/sp_bands.csv`) and each file's `ADJ` % (`docs/data/sp_adj.csv`). `SkillCsvSeed -- --reprice-sp` solves the curve FRESH every run —
 **nothing is stored** (0.225.1, his: *"no files no nothing just formula"*), so adding skills makes each cheaper and the
 class keeps its x. ⚠ **Any `ExpCurve` or weight change owes a `--reprice-sp`**; `--check` fails `SP STALE` / `SP FALLS`. Never
