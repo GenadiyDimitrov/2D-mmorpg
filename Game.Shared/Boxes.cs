@@ -206,9 +206,9 @@ public static class BoxCatalog
                  })
             yield return new BoxDef(boxId, new[] { new BoxEntry(ItemCatalog.SpellRune, 1f) });
 
-        // `BL-187` — the combined rune has exactly ONE box, because it has exactly one rung.
-        yield return new BoxDef(ItemCatalog.BoxGrandRune24h,
-            new[] { new BoxEntry(ItemCatalog.GrandRune, 1f) });
+        // `BL-187` — the combined rune: the premium 24h, and since 0.223.0 the shelf's 1h/2h.
+        foreach (var boxId in new[] { ItemCatalog.BoxGrandRune1h, ItemCatalog.BoxGrandRune2h, ItemCatalog.BoxGrandRune24h })
+            yield return new BoxDef(boxId, new[] { new BoxEntry(ItemCatalog.GrandRune, 1f) });
     }
 
 

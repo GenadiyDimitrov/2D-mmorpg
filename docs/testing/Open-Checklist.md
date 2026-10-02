@@ -21,14 +21,18 @@
 
 ## My Finds — next pass (write here)
 
-- [~] -> Toggle buffs/skills to be in their own group in the "Known" tab of skill window. -> now they are inbetween the buffs and its hard to locate them -> no need for different type or some sort of big sills change .. only the known tab to separate them
-- [~] -> some1 that will need the 2 types of runes is having bad time ... buffers currently later summoners (they will need spell+rune_grand_pets) -> i want in the shop rune grand for 1h and 2h and to be the price of 1+half of the second -> no1 with a single spec will by it .. only the one that rly need it
-  - 1h Grand Rune -> 150k + 75k = 225k
-  - 2h Grand Rune -> 280k + 140k = 420k 
-  - 1h Pet Grand Rune -> 75k
-  - 2h Pet Grand Rune -> 140k
-  - so summoners second rune and anyone with a pet can use it -> but the Pet rune is defered as im not sure ill increase the default stats of the pet or will grand them a rune effect as well
+- [ ] ->
+
 ---
+
+## §132 — 0.223.0: Grand Rune boxes; Toggles group on Known (2026-10-02)
+
+⚠ **New APK + server restart.** Your two `~` finds; the Pet Grand Rune is deferred as you said (`BL-333`).
+
+- `132a` [ ] - **Apothecary**: Grand Rune Box (1h) 225,000 and (2h) 420,000 on the shelf. Open one: a Grand Rune with
+  1h/2h on its clock, both damage channels ×2. ->
+- `132b` [ ] - **Skills → Known**: toggles (Reinforcement, Sharpening, any stance) sit under their own **Toggles** heading
+  after Buffs, no longer mixed into Buffs. ->
 
 ## §131 — 0.222.3: the buffer's Sound Smash / Acoustic Shock MP (2026-10-02)
 

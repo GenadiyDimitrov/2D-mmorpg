@@ -164,6 +164,9 @@ public static class ShopCatalog
                 ItemCatalog.BoxWarRune2h,
                 ItemCatalog.BoxSpellRune1h,
                 ItemCatalog.BoxSpellRune2h,
+                // The Grand Rune, 1h/2h (0.223.0) — one rune plus half the other, for a class that needs both.
+                ItemCatalog.BoxGrandRune1h,
+                ItemCatalog.BoxGrandRune2h,
                 // ⚠ THE RUNE OF TINCTURE IS NO LONGER SOLD HERE (owner, playtest-21 `63i`: *"remove the
                 // Rune of Tincture from the Apothecary — it will be only event/premium bought"*). It
                 // stays a real item with a real use; what changed is that gold is not how you get one,

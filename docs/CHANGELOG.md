@@ -24,7 +24,19 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-02 (latest) — 0.222.3: the buffer's melee Sound skills cost less MP
+## 2026-10-02 (latest) — 0.223.0: Grand Rune boxes on the shelf; Toggles get their own group on Known
+
+**New APK + server restart.** No `game.db` delete. Checklist §132.
+
+- **Grand Rune Box (1h) 225,000 and (2h) 420,000** at the Apothecary, beside the War/Spell boxes. His find: *"some1 that
+  will need the 2 types of runes is having bad time ... the price of 1+half of the second -> no1 with a single spec will
+  by it"*. Same Grand Rune as the premium 24h box (both channels ×2, casts −30%); tradable sealed, like the single 1h/2h.
+  The **Pet Grand Rune** half (75k/140k) is deferred by him → `BL-333` ⏸.
+- **Skills window, Known tab: toggles are their own "Toggles" group**, right after Buffs. His find: *"now they are
+  inbetween the buffs and its hard to locate them ... only the known tab to separate them"*. Display only — no category
+  or skill data changed (`KnownGroup` in `GameUi.Skills.cs`).
+
+## 2026-10-02 — 0.222.3: the buffer's melee Sound skills cost less MP
 
 His CSV edit (`buffer 3rd.csv` + `buffer 4th.csv`, My Finds: *"Decreased the MP cost for physical skills of buffer (archer
 the same - more dmg more mp ..)"*).

@@ -212,7 +212,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 
 ---
 
-## Index — 59 open entries
+## Index — 60 open entries
 
 | id       |     | what it is                                                                                                                                                                                                                                                                                                                                                                                                                                                     | area         |
 | -------- | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
@@ -283,6 +283,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-329` | ⏸   | **Login session timer** — 1 min from Login to entering the world, 10 min during character creation; waits for character customization                                                                                                                                                                                                                                                                                                                          | systems      |
 | `BL-331` | 🔵   | **Skill icons** — game-icons.net tinted per school, `docs/data/skill_icons.csv` + `tools/SkillIcons`; bar, buff bar, Skills window (Known / Learn / Actions) BUILT 0.219.0-0.219.1, your review passed; owed: the cast bar, non-class buffs; your own redraw "a lot later"                                                                                                                                                                                     | ui           |
 | `BL-332` | ❓   | **Notifications** — low HP / low potions / farm time over / died: in-game alerts, scheduled phone notifications, server push; my pick + four questions                                                                                                                                                                                                                                                                                                         | ui           |
+| `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
 
 ---
 
@@ -2356,3 +2357,13 @@ nothing in A or B is thrown away when it comes.
 2. Thresholds: fixed (30% HP, 10 potions) or a number each player sets in Settings?
 3. Vibration on the phone for the urgent ones (low HP, died), or banners only?
 4. A and B now, C parked — agreed?
+
+## `BL-333` ⏸ PET GRAND RUNE — DEFERRED UNTIL PETS ARE DESIGNED (2026-10-02)
+
+His find (My Finds, 2026-10-02), the half that was NOT built: *"1h Pet Grand Rune -> 75k · 2h Pet Grand Rune -> 140k ·
+so summoners second rune and anyone with a pet can use it -> but the Pet rune is defered as im not sure ill increase the
+default stats of the pet or will grand them a rune effect as well"*. The player half (Grand Rune Box 1h 225k / 2h 420k
+on the Apothecary shelf) shipped in 0.223.0.
+
+⏸ **Waits on him**: whether a pet gets stronger base stats or a rune effect of its own decides whether this item exists at
+all. Prices above are his, for when it does. Pets/summons themselves are `BL-38`.

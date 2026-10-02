@@ -271,19 +271,22 @@ namespace Game.Client
             }
 
             // Grouped by CATEGORY and sorted by name inside each, like the WPF panel — a flat
-            // alphabetical list of forty skills is unreadable on a phone.
+            // alphabetical list of forty skills is unreadable on a phone. TOGGLES get their own group,
+            // right after Buffs (owner, 2026-10-02: *"now they are inbetween the buffs and its hard to
+            // locate them ... only the known tab to separate them"*) — a display group, not a category.
             var known = Boot.Learned.Keys
                 .Select(id => SkillCatalog.Get(id))
                 .Where(d => d != null)
-                .OrderBy(d => d.Category).ThenBy(d => d.Name);
+                .OrderBy(KnownGroup).ThenBy(d => d.Name);
 
-            SkillCategory? current = null;
+            int? current = null;
             foreach (var def in known)
             {
-                if (current == null || current.Value != def.Category)
+                int group = KnownGroup(def);
+                if (current != group)
                 {
-                    current = def.Category;
-                    Note(CategoryName(def.Category));
+                    current = group;
+                    Note(IsKnownToggle(def) ? "Toggles" : CategoryName(def.Category));
                 }
 
                 // A rung that carries its OWN NAME says which step it is already ("Grade C"), so the
@@ -793,6 +796,14 @@ namespace Game.Client
                 if (!string.IsNullOrEmpty(bar[i])) stamp = stamp * 31 + i + bar[i].Length;
             return stamp;
         }
+
+        /// <summary>A pressable toggle (a stance or aura); a passive never counts, whatever its flag.</summary>
+        private static bool IsKnownToggle(SkillDef def) =>
+            def.Toggle && def.Passive == null && def.Category != SkillCategory.Passive;
+
+        /// <summary>The Known tab's sort/heading key: the category, with toggles slotted in just after Buffs.</summary>
+        private static int KnownGroup(SkillDef def) =>
+            IsKnownToggle(def) ? (int)SkillCategory.Buff * 2 + 1 : (int)def.Category * 2;
 
         private static string CategoryName(SkillCategory category)
         {

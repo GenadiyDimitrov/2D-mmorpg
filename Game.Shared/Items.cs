@@ -1296,6 +1296,9 @@ public static class ItemCatalog
     // no vendor price, no 1h/2h/30d ladder. See SkillCatalog.GrandRuneBuff.
     public const string GrandRune        = "rune_grand";
     public const string BoxGrandRune24h  = "box_grand_rune_24h";
+    // 0.223.0 — the Grand Rune on the shelf, 1h/2h, priced one rune plus half the other (his find, 2026-10-02).
+    public const string BoxGrandRune1h   = "box_grand_rune_1h";
+    public const string BoxGrandRune2h   = "box_grand_rune_2h";
     // `BL-277` part 3 — the Wayfarer's items: four runes (two buffs × 1 h / 2 h), the restore potion,
     // and the box a subclass slot pays the first time it is ever filled.
     public const string FavorKeepRune1h      = "rune_favor_keep_1h";
@@ -1532,7 +1535,7 @@ public static class ItemCatalog
             Tradable: false, Value: 0,
             Description: "Held rune: increases your final MAGICAL damage ×2, and cast speed, while in your bag. Boosts MAGIC (spells) only — useless for melee/bow. Move it to the warehouse to switch it off; it can't be deleted."));
         // `BL-187` — the combined rune. Same held-rune machinery as the two above; the only
-        // differences are that it carries BOTH channels and that nothing sells it.
+        // differences are that it carries BOTH channels and costs half again (its 1h/2h boxes, 0.223.0).
         list.Add(new ItemDef(GrandRune, "Grand Rune", EquipSlot.Rune, ItemGrade.F, ItemRarity.Mythic,
             IsRune: true, RuneBuffSkillId: SkillCatalog.GrandRuneBuff, GrantsRuneSeconds: 24 * 3600,
             Tradable: false, Value: 0,
@@ -1561,6 +1564,12 @@ public static class ItemCatalog
         //    `-1`, which is precisely the platinum-ONLY shape; it is left at 0 because he has not
         //    priced them, and an invented premium price is not ours to author.
         RuneBox(BoxGrandRune24h, "Grand Rune Box (1d)", 1 * D, -1, false, "Opens to a Grand Rune lasting 24 hours. Grand Runes multiply your final PHYSICAL and MAGICAL damage x2, shorten your casts by 30% and raise cast speed - both channels of the War and Spell Runes in one item, each at full strength.");
+        // 🔑 ON THE SHELF since 0.223.0 (owner, 2026-10-02): *"some1 that will need the 2 types of runes is having bad time
+        // ... i want in the shop rune grand for 1h and 2h and to be the price of 1+half of the second -> no1 with a single
+        // spec will by it .. only the one that rly need it"*. 150k + 75k and 280k + 140k: a hybrid saves a quarter, a
+        // single-channel class pays half again for nothing. Tradable sealed, like the single 1h/2h boxes.
+        RuneBox(BoxGrandRune1h, "Grand Rune Box (1h)", 1 * H, 225000, true, "Opens to a Grand Rune lasting 1 hour. Grand Runes multiply your final PHYSICAL and MAGICAL damage x2, shorten your casts by 30% and raise cast speed - for a class that fights with both weapon and spell.");
+        RuneBox(BoxGrandRune2h, "Grand Rune Box (2h)", 2 * H, 420000, true, "Opens to a Grand Rune lasting 2 hours. Grand Runes multiply your final PHYSICAL and MAGICAL damage x2, shorten your casts by 30% and raise cast speed - for a class that fights with both weapon and spell.");
 
         // ----- `BL-277` part 3 — THE WAYFARER'S ITEMS. Four held runes on the same machinery as every
         // rune above (the item's wall clock drives the buff; the kill and the fill rate ask whether the
