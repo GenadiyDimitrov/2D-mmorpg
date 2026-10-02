@@ -17328,7 +17328,7 @@ public class GameLoopService : BackgroundService
         // one unrelated quest event late — caught by the SmokeTest, which found no markers at all on a
         // level-81 character who had every starter quest available.
         SendQuestLog(player);
-        BroadcastSystem($"{player.Name} reached level {player.Level}!");
+        SendSystemToEntity(player, $"You reached level {player.Level}!");   // self only (his find, 0.223.1)
 
         if (player.Level >= GameConstants.ClassChangeLevel && player.SecondClass == 0)
             SendSystemToEntity(player,

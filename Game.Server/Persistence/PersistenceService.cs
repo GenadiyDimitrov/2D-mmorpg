@@ -978,6 +978,16 @@ public class PersistenceService
         Stacking.Normalize(entity.Inventory, GameConstants.InventorySize);
         Stacking.Normalize(entity.Warehouse, GameConstants.WarehouseSize);
 
+        // Presets are SAVED by the item ROW's id (the runtime InstanceId is minted fresh on every load,
+        // which is why every preset read "N items missing" after a restart) — translate them back to
+        // the live ids now that the bag exists. A row that is gone stays as-is and counts as missing.
+        foreach (var preset in entity.EquipPresets)
+            for (int k = 0; k < preset.Count; k++)
+            {
+                var held = entity.Inventory.FirstOrDefault(i => i.PersistentInstanceId == preset[k]);
+                if (held is not null) preset[k] = held.InstanceId;
+            }
+
         entity.RecomputeDerived();
         entity.Mp = entity.MaxMp;
         // Logged out DEAD? The death STICKS — log in DEAD (res prompt), not healed. True for ANY death
@@ -1103,9 +1113,11 @@ public class PersistenceService
         {
             if (e.PersistentId is not int id) return null;
             var items = new List<ItemSnapshot>(e.Inventory.Count + e.Warehouse.Count);
+            // A bag item gets its row id at its FIRST save, not its first reload: the equipment presets
+            // below are written by that id, so it must already be the one the row will carry.
             foreach (var i in e.Inventory)
                 items.Add(new ItemSnapshot(
-                    i.PersistentInstanceId ?? Guid.NewGuid(), i.DefId, i.Equipped,
+                    i.PersistentInstanceId ??= Guid.NewGuid(), i.DefId, i.Equipped,
                     i.Enchant, i.Quantity, new List<ItemAttribute>(i.Attributes), i.ExpiresAtUtc,
                     SellPriceOverride: i.SellPriceOverride, TradableOverride: i.TradableOverride,
                     CustomName: i.CustomName, CanStorePrivate: i.CanStorePrivate,
@@ -1141,7 +1153,8 @@ public class PersistenceService
                     e.AutoFarmRange, e.AutoFarmStatic, e.AutoAttackNormal, e.AutoAttackElite, e.AutoAttackBoss,
                     e.AutoHealPotions.ToArray(), e.AutoCyclic, e.AutoHealPct, e.AutoAssistLeader,
                     e.AutoBuffs.ToArray(), e.AutoMpPct, e.AutoManaPotions.ToArray())),
-                JsonSerializer.Serialize(e.EquipPresets),
+                JsonSerializer.Serialize(e.EquipPresets.Select(p => p.Select(iid =>
+                    e.Inventory.FirstOrDefault(i => i.InstanceId == iid)?.PersistentInstanceId ?? iid).ToArray()).ToArray()),
                 JsonSerializer.Serialize(BuffSnapshot.CaptureAll(e)),
                 e.ActiveSubclass.Slot, subs,
                 e.SubclassSlotsUnlocked, e.SubclassTicketsEarned,

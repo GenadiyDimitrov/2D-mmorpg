@@ -24,7 +24,22 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-02 (latest) — 0.223.0: Grand Rune boxes on the shelf; Toggles get their own group on Known
+## 2026-10-02 (latest) — 0.223.1: equipment presets survive a restart; level-ups are your own news
+
+**Server restart only.** No APK, no `game.db` delete. Checklist §133.
+
+- **Equipment presets work after a server restart / relog.** His find (`[!]`): *"11 items are missing skipping … it
+  happen again after game restart"*. The preset stored each item's RUNTIME id, and that id is minted fresh on every
+  load — so every saved item read as missing after any restart. Presets are now written by the item ROW's id and
+  translated back to the live ids on load (`PersistenceService`); a bag item gets its row id on its first save rather
+  than its first reload, so a preset saved minutes after a pickup survives too. ⚠ Presets saved BEFORE this build hold
+  the old ids: re-save each once.
+- **"X reached level N" is no longer broadcast to everyone.** His find: *"it should be self only -> 'you reached x
+  lvl'"*. Only you see "You reached level N!".
+- **`/help` lists the player `/buff` only while the server hands out free buffs** (`RateConfig.FreeBuffs`, `BL-126`).
+  His 128a: *"remove the /buff command from common ones or check if server allows it then add it"* — it does the second.
+
+## 2026-10-02 — 0.223.0: Grand Rune boxes on the shelf; Toggles get their own group on Known
 
 **New APK + server restart.** No `game.db` delete. Checklist §132.
 

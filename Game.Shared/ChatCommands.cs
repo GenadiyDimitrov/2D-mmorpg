@@ -127,7 +127,12 @@ public static class ChatCommandCatalog
             if (sectionRole > role) continue;
             lines.Add(header);
             foreach (var c in All.Where(c => c.MinRole == sectionRole))
+            {
+                // The player `/buff` works only while the server hands out free buffs (`BL-126`), so `/help`
+                // offers it only then (his 128a: *"remove the /buff command … or check if server allows it"*).
+                if (c.Name == "buff" && c.MinRole == AccountRole.Player && !RateConfig.FreeBuffs) continue;
                 lines.Add($"{c.Usage}  —  {c.What}");
+            }
         }
         lines.Add("Party, friends, whisper, like, block a player: on the Actions tab (each shows its typed command).");
         return lines;
