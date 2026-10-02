@@ -24,7 +24,20 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-02 (latest) — 0.225.0: skill SP is a formula, and every ladder rises (`BL-334`)
+## 2026-10-02 (latest) — 0.225.1: SP targets eased; the curve is solved every run, nothing stored (`BL-334`)
+
+**New APK + server restart.** No `game.db` delete. Checklist §136 (rewritten for this build).
+
+- **Bands eased**, his call: *"X0.6 apparently is way too hard"*. The targets are now 40-51 ×0.9, **52-60 ×0.85** (was
+  0.75) and **61-75 ×0.8** (was 0.6), each ±5% by archetype as before. The 60-75 kit is back to **44-58M** (0.225.0 had
+  it at 67-78M; before `BL-334` it was 43-55M), and every ladder still rises.
+- **The freeze is gone.** His words: *"freeze is not required (no files no nothing just formula) ... each skill change
+  will fix the class sp cost and class won't move from its x"*. `--reprice-sp` solves every file's curve fresh on every
+  run, so adding skills makes each of them cheaper and the class keeps its affordability.
+  - `--solve` is gone, and so is `sp_curve.csv`. His ±% per file now lives in `docs/data/sp_adj.csv`.
+  - `--check` re-solves too, so `SP STALE` still means "a knob moved and nobody repriced".
+
+## 2026-10-02 — 0.225.0: skill SP is a formula, and every ladder rises (`BL-334`)
 
 **New APK + server restart** (the Learn tab reads the prices from the compiled tables). No `game.db` delete. Checklist §136.
 
