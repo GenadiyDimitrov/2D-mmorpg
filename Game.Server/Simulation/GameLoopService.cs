@@ -3565,21 +3565,14 @@ public class GameLoopService : BackgroundService
 
         if (trial && made == 0)
         {
-            // *"5.1. fail go to 1"* — back to the gather step, but ONLY when another attempt can't be paid
-            // for (0.222.2: *"when i have x3 mats ... I should be able to craft 3 times and fail ... not to go
-            // back after each fail"*). Leftovers still count: the collect re-check that SendInventory runs
-            // below moves the quest straight on if the piles are still held.
+            // A fail NEVER walks the trial back (0.223.2, his 130a: *"i need only succesful craft .. i go
+            // gather/craft on my own, no going back steps"*) — it stays on the craft step, and the trial's
+            // drops keep coming while it is active. The message only says which of the two you are.
             bool canRetry = inputs.All(inp => CraftCount(player, inp.ItemId, useWh) >= inp.Qty)
                             && (recipeItemId is null || CraftCount(player, recipeItemId, useWh) >= 1);
-            if (canRetry)
-                SendSystemToEntity(player, "The Master's Trial: you have the materials for another attempt.");
-            else if (player.ActiveQuests.TryGetValue(QuestCatalog.QuestBecomeCrafter, out var qs))
-            {
-                player.ActiveQuests[QuestCatalog.QuestBecomeCrafter] =
-                    qs with { StepIndex = QuestCatalog.CrafterQuestGatherStep, Counter = 0 };
-                SendSystemToEntity(player, "The Master's Trial: gather the materials again.");
-                SendQuestLog(player);
-            }
+            SendSystemToEntity(player, canRetry
+                ? "The Master's Trial: you have the materials for another attempt."
+                : "The Master's Trial: gather another set — the craft window shows what the recipe needs.");
         }
         SendInventory(player);
     }
@@ -22913,8 +22906,8 @@ public class GameLoopService : BackgroundService
             if (def is null || state.Completed) continue;
 
             // 🔑 WALKS every satisfied step in one pass (`BL-273` part 2). The crafter trial has five collect
-            // steps in a row, and a player who farmed them in any order, or who comes back to step 1 after
-            // a failed craft still holding the leftovers, must not need five separate bag changes to move.
+            // steps in a row, and a player who farmed them in any order (or picked a pile up before the trial
+            // reached its step) must not need five separate bag changes to move.
             while (true)
             {
                 var step = def.Steps[state.StepIndex];
@@ -22926,8 +22919,8 @@ public class GameLoopService : BackgroundService
                 }
                 else
                 {
-                    // The trial's "learn the recipe" beat, when the recipe is ALREADY known — after a
-                    // failed craft the quest comes back round, and a learned recipe cannot be relearned.
+                    // The trial's "learn the recipe" beat, when the recipe is ALREADY known (learned on an
+                    // earlier, abandoned try) — a learned recipe cannot be relearned.
                     satisfied = step.Type == QuestStepType.DoAction && step.TargetId == QuestActions.LearnRecipe
                                 && player.KnownRecipes.ContainsKey(Crafting.HammerRecipeId);
                 }

@@ -24,7 +24,24 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-02 (latest) — 0.223.1: equipment presets survive a restart; level-ups are your own news
+## 2026-10-02 (latest) — 0.223.2: the Master's Trial — five gather steps again, and a fail never walks you back
+
+**Server restart only.** No APK, no `game.db` delete. Checklist §134. ⚠ A character mid-trial: the steps are renumbered
+again — abandon and retake it.
+
+His 130a, superseding 0.222.2: *"return the individual steps ... after ive done the individual steps once and fail a craft
+i should not go back steps ... i need only succesful craft .. i go gather/craft on my own"*.
+
+- **Five gather steps again**, each with its own counter (`0/20` wood, iron, gems; `0/2` recipes; `0/1` head) — the single
+  `0/63` step hid which pile was short. Farmed in any order, they are walked in one pass once all are held.
+- **A failed hammer NEVER sends the trial back.** It stays on the craft step whether or not you hold another set; the
+  message says which (*"you have the materials for another attempt"* / *"gather another set — the craft window shows
+  what the recipe needs"*). No talk-back, no relearn.
+- The trial's drops (wood, iron, gems, recipes, heads) already roll while the quest is active at ANY step, so they keep
+  coming until it completes — nothing to change there. `QuestStep.Items` stays in the engine, now unused.
+- SmokeTest updated: the five steps, and a fail with nothing spare stays on the craft step and re-crafts with no talk.
+
+## 2026-10-02 — 0.223.1: equipment presets survive a restart; level-ups are your own news
 
 **Server restart only.** No APK, no `game.db` delete. Checklist §133.
 
