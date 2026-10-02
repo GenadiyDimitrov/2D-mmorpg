@@ -17,6 +17,7 @@ namespace Game.Client
     {
         private RectTransform _detailPanel;
         private TextMeshProUGUI _detailTitle, _detailBody;
+        private ScrollRect _detailScroll;
 
         private void BuildSkillDetail()
         {
@@ -33,6 +34,7 @@ namespace Game.Client
             ScrollRect scroll;
             var content = UiKit.ScrollArea(inner, out scroll, 2f);
             UiKit.Stretch((RectTransform)scroll.transform, 16f, chrome + 42f, 16f, 16f);
+            _detailScroll = scroll;
 
             _detailBody = UiKit.Label(content, "", 16f, UiKit.Text, TextAlignmentOptions.TopLeft);
             var fitter = _detailBody.gameObject.AddComponent<ContentSizeFitter>();
@@ -138,6 +140,7 @@ namespace Game.Client
 
             _detailBody.text = text.ToString().TrimEnd();
             OpenWindow(_detailPanel);
+            UiKit.RefitScroll(_detailBody, _detailScroll, toTop: true);
         }
 
         /// <summary>One "label: a, b, c" block, or nothing at all when the list is empty — a heading

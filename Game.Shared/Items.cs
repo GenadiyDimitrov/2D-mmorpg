@@ -1533,13 +1533,13 @@ public static class ItemCatalog
         list.Add(new ItemDef(SpellRune, "Spell Rune", EquipSlot.Rune, ItemGrade.F, ItemRarity.Mythic,
             IsRune: true, RuneBuffSkillId: SkillCatalog.SpellRuneBuff, GrantsRuneSeconds: 3600,
             Tradable: false, Value: 0,
-            Description: "Held rune: increases your final MAGICAL damage ×2, and cast speed, while in your bag. Boosts MAGIC (spells) only — useless for melee/bow. Move it to the warehouse to switch it off; it can't be deleted."));
+            Description: "Held rune: increases your final MAGICAL damage ×2 and shortens spell cast time while in your bag. Boosts MAGIC (spells) only — useless for melee/bow. Move it to the warehouse to switch it off; it can't be deleted."));
         // `BL-187` — the combined rune. Same held-rune machinery as the two above; the only
         // differences are that it carries BOTH channels and costs half again (its 1h/2h boxes, 0.223.0).
         list.Add(new ItemDef(GrandRune, "Grand Rune", EquipSlot.Rune, ItemGrade.F, ItemRarity.Mythic,
             IsRune: true, RuneBuffSkillId: SkillCatalog.GrandRuneBuff, GrantsRuneSeconds: 24 * 3600,
             Tradable: false, Value: 0,
-            Description: "Held rune: increases your final PHYSICAL and MAGICAL damage ×2, shortens your casts by 30%, and raises cast speed, while in your bag. Supersedes a War or Spell Rune held at the same time. Move it to the warehouse to switch it off; it can't be deleted."));
+            Description: "Held rune: increases your final PHYSICAL and MAGICAL damage ×2 and shortens spell cast time while in your bag. Supersedes a War or Spell Rune held at the same time. Move it to the warehouse to switch it off; it can't be deleted."));
 
         // Sealed rune boxes. 1h/2h are vendor-stocked (Apothecary, real gold price) and TRADABLE (giftable
         // sealed — the RUNE inside is still bound). 24h/30d are premium/pass items: not buyable (BuyPrice
@@ -1553,23 +1553,23 @@ public static class ItemCatalog
         RuneBox(BoxWarRune2h,  "War Rune Box (2h)",  2 * H, 280000, true,  "Opens to a War Rune lasting 2 hours. War Runes multiply your final PHYSICAL damage ×2 (melee/bow) — useless for spells.");
         RuneBox(BoxWarRune24h, "War Rune Box (1d)",  1 * D, -1,  false,  "Opens to a War Rune lasting 24 hours. War Runes multiply your final PHYSICAL damage ×2 (melee/bow) — useless for spells.");
         RuneBox(BoxWarRune30d, "War Rune Box (30d)", 30 * D, -1, false,  "Opens to a War Rune lasting 30 days. War Runes multiply your final PHYSICAL damage ×2 (melee/bow) — useless for spells.");
-        RuneBox(BoxSpellRune1h,  "Spell Rune Box (1h)",  1 * H, 150000, true,  "Opens to a Spell Rune lasting 1 hour. Spell Runes multiply your final MAGICAL damage ×2 (spells) — useless for melee/bow.");
-        RuneBox(BoxSpellRune2h,  "Spell Rune Box (2h)",  2 * H, 280000, true,  "Opens to a Spell Rune lasting 2 hours. Spell Runes multiply your final MAGICAL damage ×2 (spells) — useless for melee/bow.");
-        RuneBox(BoxSpellRune24h, "Spell Rune Box (1d)",  1 * D, -1,  false,  "Opens to a Spell Rune lasting 24 hours. Spell Runes multiply your final MAGICAL damage ×2 (spells) — useless for melee/bow.");
-        RuneBox(BoxSpellRune30d, "Spell Rune Box (30d)", 30 * D, -1, false,  "Opens to a Spell Rune lasting 30 days. Spell Runes multiply your final MAGICAL damage ×2 (spells) — useless for melee/bow.");
+        RuneBox(BoxSpellRune1h,  "Spell Rune Box (1h)",  1 * H, 150000, true,  "Opens to a Spell Rune lasting 1 hour. Spell Runes multiply your final MAGICAL damage ×2 (spells) and shorten spell cast time — useless for melee/bow.");
+        RuneBox(BoxSpellRune2h,  "Spell Rune Box (2h)",  2 * H, 280000, true,  "Opens to a Spell Rune lasting 2 hours. Spell Runes multiply your final MAGICAL damage ×2 (spells) and shorten spell cast time — useless for melee/bow.");
+        RuneBox(BoxSpellRune24h, "Spell Rune Box (1d)",  1 * D, -1,  false,  "Opens to a Spell Rune lasting 24 hours. Spell Runes multiply your final MAGICAL damage ×2 (spells) and shorten spell cast time — useless for melee/bow.");
+        RuneBox(BoxSpellRune30d, "Spell Rune Box (30d)", 30 * D, -1, false,  "Opens to a Spell Rune lasting 30 days. Spell Runes multiply your final MAGICAL damage ×2 (spells) and shorten spell cast time — useless for melee/bow.");
         // ⚠ PREMIUM ONLY — `BuyPriceOverride: -1` and not tradable, exactly like the 24h/30d singles.
         // Its one route into a bag today is the Admin panel. `BL-187` closes here.
         // 🔑 THE CURRENCY EXISTS NOW (`BL-257`, 2026-09-16) — this and the 24h/30d singles are the
         //    items it was waiting for. Giving one a price is a single `PlatinumPrice: N` beside the
         //    `-1`, which is precisely the platinum-ONLY shape; it is left at 0 because he has not
         //    priced them, and an invented premium price is not ours to author.
-        RuneBox(BoxGrandRune24h, "Grand Rune Box (1d)", 1 * D, -1, false, "Opens to a Grand Rune lasting 24 hours. Grand Runes multiply your final PHYSICAL and MAGICAL damage x2, shorten your casts by 30% and raise cast speed - both channels of the War and Spell Runes in one item, each at full strength.");
+        RuneBox(BoxGrandRune24h, "Grand Rune Box (1d)", 1 * D, -1, false, "Opens to a Grand Rune lasting 24 hours. Grand Runes multiply your final PHYSICAL and MAGICAL damage x2 and shorten spell cast time - both channels of the War and Spell Runes in one item, each at full strength.");
         // 🔑 ON THE SHELF since 0.223.0 (owner, 2026-10-02): *"some1 that will need the 2 types of runes is having bad time
         // ... i want in the shop rune grand for 1h and 2h and to be the price of 1+half of the second -> no1 with a single
         // spec will by it .. only the one that rly need it"*. 150k + 75k and 280k + 140k: a hybrid saves a quarter, a
         // single-channel class pays half again for nothing. Tradable sealed, like the single 1h/2h boxes.
-        RuneBox(BoxGrandRune1h, "Grand Rune Box (1h)", 1 * H, 225000, true, "Opens to a Grand Rune lasting 1 hour. Grand Runes multiply your final PHYSICAL and MAGICAL damage x2, shorten your casts by 30% and raise cast speed - for a class that fights with both weapon and spell.");
-        RuneBox(BoxGrandRune2h, "Grand Rune Box (2h)", 2 * H, 420000, true, "Opens to a Grand Rune lasting 2 hours. Grand Runes multiply your final PHYSICAL and MAGICAL damage x2, shorten your casts by 30% and raise cast speed - for a class that fights with both weapon and spell.");
+        RuneBox(BoxGrandRune1h, "Grand Rune Box (1h)", 1 * H, 225000, true, "Opens to a Grand Rune lasting 1 hour. Grand Runes multiply your final PHYSICAL and MAGICAL damage x2 and shorten spell cast time - for a class that fights with both weapon and spell.");
+        RuneBox(BoxGrandRune2h, "Grand Rune Box (2h)", 2 * H, 420000, true, "Opens to a Grand Rune lasting 2 hours. Grand Runes multiply your final PHYSICAL and MAGICAL damage x2 and shorten spell cast time - for a class that fights with both weapon and spell.");
 
         // ----- `BL-277` part 3 — THE WAYFARER'S ITEMS. Four held runes on the same machinery as every
         // rune above (the item's wall clock drives the buff; the kill and the fill rate ask whether the

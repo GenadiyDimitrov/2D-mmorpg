@@ -563,6 +563,20 @@ namespace Game.Client
             return rt;
         }
 
+        /// <summary>Lay a ScrollArea out against the text JUST assigned to <paramref name="body"/> — call it after the
+        /// window is active. Without it the content keeps the label's PREVIOUS height for a pass (two nested
+        /// ContentSizeFitters resolve a frame apart), which on a first opening is the empty label's: the sheet shows a
+        /// sliver and the rest is cut off until it is reopened (his find, 0.224.0: the Character Details tab and the
+        /// skill card's description). <paramref name="toTop"/> also scrolls back to the start.</summary>
+        public static void RefitScroll(TMP_Text body, ScrollRect scroll, bool toTop)
+        {
+            if (body == null || scroll == null || !body.gameObject.activeInHierarchy) return;
+            body.ForceMeshUpdate();
+            LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)body.transform);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(scroll.content);
+            if (toTop) scroll.verticalNormalizedPosition = 1f;
+        }
+
         /// <summary>
         /// A labelled slider row. Returns the Slider so the caller can read it; the label updates
         /// itself with the live value, because a slider with no number on it is a guess.

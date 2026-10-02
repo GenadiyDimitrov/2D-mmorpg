@@ -32,6 +32,7 @@ namespace Game.Client
     {
         private RectTransform _statsPanel;
         private TextMeshProUGUI _statsBody;
+        private ScrollRect _statsScroll;
         private int _statsStamp = -1;
 
         /// <summary>Which tab is showing. 0 = BASIC, 1 = DETAILS. Not persisted: the sheet is opened
@@ -70,6 +71,7 @@ namespace Game.Client
             ScrollRect scroll;
             var content = UiKit.ScrollArea(inner, out scroll, 2f);
             UiKit.Stretch((RectTransform)scroll.transform, 16f, chrome + 44f, 16f, 16f);
+            _statsScroll = scroll;
 
             _statsBody = UiKit.Label(content, "", 16f, UiKit.Text, TextAlignmentOptions.TopLeft);
             var fitter = _statsBody.gameObject.AddComponent<ContentSizeFitter>();
@@ -146,6 +148,7 @@ namespace Game.Client
                       ^ (Boot.Favor != null ? Boot.Favor.GetHashCode() * 17 : 0);   // `BL-277`, its own push
             }
             if (stamp == _statsStamp) return;
+            bool fresh = _statsStamp == -1;   // opened or tab switched: back to the top; a regen tick: stay put
             _statsStamp = stamp;
 
             for (int i = 0; i < _statsTabButtons.Length; i++)
@@ -156,6 +159,7 @@ namespace Game.Client
             var src = _who != null ? WhoSheet(_who) : MySheet();
             string head = src.Name != null ? "<b>" + src.Name + "</b>  <color=#9AA3AD>(/who, as of now)</color>\n\n" : "";
             _statsBody.text = head + (_statsTab == 0 ? BuildBasicSheet(src) : BuildDetailsSheet(src)).TrimEnd();
+            UiKit.RefitScroll(_statsBody, _statsScroll, fresh);
         }
 
         // ----- BASIC ---------------------------------------------------------------------------

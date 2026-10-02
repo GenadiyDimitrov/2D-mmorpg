@@ -1885,10 +1885,9 @@ namespace Game.Client
                     var size = _slotReuseRects[i].sizeDelta;
                     size.y = SlotSize * fraction;
                     _slotReuseRects[i].sizeDelta = size;
-                    // Tenths under 10s — the difference between "now" and "still a while" is the whole
-                    // reason to look; a bare "1" for anything under two seconds hides it.
-                    _slotReuseText[i].text = left >= 10f ? Mathf.CeilToInt(left).ToString()
-                                                         : left.ToString("0.0");
+                    // WHOLE seconds, rounded up (0.224.0, his find: *"remove the miliseconds … 3s,2s,1s ~ done
+                    // .... is enough"*). The tenths under 10s it used to show were noise nobody read.
+                    _slotReuseText[i].text = Mathf.CeilToInt(left).ToString();
                 }
                 else if (outOfStock)
                 {

@@ -12,6 +12,7 @@ original file's content, unchanged, under its own marker. The reason for the mer
 
 | pass | date | what it was |
 |---|---|---|
+| [The 0.220.3 → 0.223.0 checklist pass](#checklist-0223-pass) | 2026-10-02 | §117-§132 + his finds: preset bug, cut-off sheets, cooldown seconds, the trial's steps again, rune texts. Fed 0.223.1, 0.223.2, 0.224.0 |
 | [The 0.214.41 → 0.220.2 checklist pass](#checklist-0220-pass) | 2026-09-28 → 10-02 | §108-§126 as he marked them: the towns, SP pots, faces, the tree, icons, the rubber-bands. Closed under his new rule (checked rows leave the live file); his finds fed 0.220.3 and 0.221.0 |
 | [The five-buffer farm pass, 0.216.0](#playtest-0216-farm) | 2026-10-01 | §110a answered: five buffers 1→40, Elf fastest, Human +1 h, Demon +2 h; SP short at 40. Fed 0.217.4 (Holy Spike), 0.217.5 (SP −30%), 0.218.0 (`BL-324`) and `BL-328`-`BL-330` |
 | [Open-Checklist, 2026-09-29](#open-checklist-2026-09-29) | 2026-08-28 → 09-28 | the whole old checklist, retired on his note — §81-§108, the 0.93.0-era rows never played, §0 and KNOWN OPEN as they stood |
@@ -37,6 +38,135 @@ original file's content, unchanged, under its own marker. The reason for the mer
 
 Answered checklists that fed these passes (`Open-Checklist-0.45.0/-0.47.0/-0.48.0.md`) were
 transcribed into the playtest files at the time and are in git history.
+
+
+---
+
+<a id="checklist-0223-pass"></a>
+
+## THE 0.220.3 → 0.223.0 CHECKLIST PASS — closed 2026-10-02
+
+Sections §117-§132 and My Finds as he marked them, **verbatim**, closed under his housekeeping rule. Fed 0.223.1 (presets,
+level-up message, `/help` `/buff`), 0.223.2 (the trial's five steps, 130a) and 0.224.0 (cooldown seconds, cut-off
+sheets, rune texts). The `~` rows 128a/130a/132a stayed live, reworded; `127d` (`BL-332`) is still waiting on him.
+
+## My Finds — next pass (write here)
+
+- [!] -> After game update/server my saved equipment preset didnt work it sais "11 items are missing skipping" after reequip all the sets again they continue to work
+  - it happen again after game restart .. its not rly connected to update
+- [~] -> system messages -> remove the "<name> has reached x level" it should be self only -> "you reached x lvl";
+- [!] -> cannot explain but when i open a char window the details panel is not the full one it scrols just a bit and most stats are cut off after reopen it works and everritihn is visible -> same problem can be when i open a skill details from the skill window the description is missing or cut of .. when i open it again i see it all .. very often it happens to "learn" skills
+- [~] -> remove the miliseconds from the skill bar when skill is reusing ... im not sure if anyone needs it to know how much miliseconds are remaining -> 3s,2s,1s ~ done .... is enough
+---
+
+## §132 — 0.223.0: Grand Rune boxes; Toggles group on Known (2026-10-02)
+
+⚠ **New APK + server restart.** Your two `~` finds; the Pet Grand Rune is deferred as you said (`BL-333`).
+
+- `132a` [~] - **Apothecary**: Grand Rune Box (1h) 225,000 and (2h) 420,000 on the shelf. Open one: a Grand Rune with
+  1h/2h on its clock, both damage channels ×2. -> the rune is OK just description -> remove the casting part and only say "shorten spell cast time" and add the same sentence to the spell rune aswell. Ppl not to think the grand is better.
+- `132b` [x] - **Skills → Known**: toggles (Reinforcement, Sharpening, any stance) sit under their own **Toggles** heading
+  after Buffs, no longer mixed into Buffs. ->
+
+## §131 — 0.222.3: the buffer's Sound Smash / Acoustic Shock MP (2026-10-02)
+
+Your CSV edit: *"Decreased the MP cost for physical skills of buffer (archer the same - more dmg more mp ..)"*. Server-only.
+
+- `131a` [x] - **Sound Smash / Acoustic Shock** cost your new column (lvl 40: 36 MP; lvl 74: 78; lvl 90: 110). Sound Burst
+  (Elf, bow) is unchanged. ->
+
+## §130 — 0.222.2: the Master's Trial — one gather step, retry while you hold mats (2026-10-02)
+
+Your find (`[!]`): *"the gathering steps should be compined into one .. So when i have x3 mats ... I should be able to
+craft 3 times and fail ... not to go back after each fail"*. Server-only, no APK. ⚠ A character already mid-trial may
+read oddly (the steps were renumbered) — abandon and retake it.
+
+- `130a` [~] - **Take the trial**: after the first talk, ONE step lists all five piles (counter 0/63); the quest window's
+  gather list shows each pile. Holding all five moves it on to "bring the materials back". ->
+  - showing 0/62 is not ok .. if i have 62 of one mat and 0 from the others i can go and try to craft .. 
+  - return the individual steps
+  - but after ive done the individual steps once and fail a craft i should not go back steps ... 
+  - the 1st time gather steps are done and the master ask for hammer and i learn the recipe ... i need only succesful craft .. i go gather/craft on my own, no going bakc steps no nothing .. the anvils recipe in the craft window shows needed mats .. they only should continue to drop until the whole craft quest is compleate.
+  - if u need more explanation ask before build
+- `130b` [x] - **Fail a hammer while holding a second set** (2 heads, 40+ of each mat, a spare recipe): the trial STAYS on
+  the craft step ("you have the materials for another attempt") and you craft again at once. ->
+- `130c` [x] - **Fail with nothing spare**: back to the gather step, which now asks only ONE hammer recipe (you know it
+  already). ->
+
+## 0.222.1: Over the Limit no longer takes one of the 20 buff slots (2026-10-02)
+- [x] - **Over the Limit no longer takes one of the 20 buff slots**
+
+## §129 — 0.222.0: `/who <name>` (2026-10-02)
+
+Your ask: *"`/who <name>` command that opens stat window of the character - an *admin* command"*. ⚠ **New APK + server
+restart.** No `game.db` delete.
+
+- `129a` [x] - **`/who <name>` on an online player** (a second phone, or a second character): the Character window opens
+  headed with their name, Basic and Details tabs both theirs (class, stats, PvP/karma, Favor, gold). Close it and press
+  Char: your own sheet again. ->
+- `129b` [x] - **`/who` on someone offline** says they are not online; a moderator typing `/who` is refused. ->
+
+---
+
+## §128 — 0.221.0: `/help` per rank; actions show their typed command (2026-10-02)
+
+Your find: the `/help` layout by rank, no action commands in it, the missing admin ones, and `(/command)` on actions.
+⚠ **New APK + server restart.** No `game.db` delete.
+
+- `128a` [~] - **`/help` as each rank** (switch with `/role`): a player sees the `@s`/`@t` line and **--- Commands ---**;
+  a Chat Moderator adds **--- Chat Moderator ---**; a Moderator adds **--- Moderator ---** above it; an Admin **--- Admin
+  only ---**; you, the Owner, **--- Owner only ---** on top. Each line is the command, then what it does. -> remove the /buff command from common ones or check if server allows it then add it. 
+- `128b` [x] - **Nothing is missing and nothing is wrong** in the Admin list (`/stat`, `/tpme`, `/enchant`, `/whatdrops`,
+  `/farmcap`, `/testcaps` were the missing ones). Name any line that reads wrong. ->
+- `128c` [x] - **A moderator can still use exactly what he could** — `/jail`, `/kick`, `/where <name>`, `/chatlog -w` —
+  and is still refused `/tp` or `/god`. (The allow-list is now read from the same list `/help` prints.) ->
+- `128d` [x] - **Skills window → Actions:** Invite to Party reads `(/ptinv <name>)` in small grey after its name; the same
+  for the friend, party, whisper, like and block actions. The chat `/help` no longer lists them. ->
+
+---
+
+## §127 — 0.220.3: four of your finds (2026-10-02)
+
+⚠ **New APK + server restart.** No `game.db` delete.
+
+- `127a` [x] - **Human / Demon buffer at 40:** learning Heavy Armor Mastery removes Rogue Evasion as well as Light Armor
+  Mastery (your CSV edit: *"no point of human and demon to keep the `rogue_evasion` when their `light_armor_mastery` is
+  being replaced"*). The Elf buffer keeps both. ->
+- `127b` [x] - **Chat keeps 300 rows** (was 120). Fight a while, then scroll the System tab back to what dropped earlier. ->
+- `127c` [x] - **The quest arrow is on for every character you enter** (your 121d: *"set location to true … Newbies need an
+  arrow"*). The cause: turning the arrow off ("Location: current") on one character kept it off on the next one in the
+  same session. A new character now points at Cera from the first second, no tap needed. ->
+- `127d` [ ] - **Notifications** (your `?`): my answer is `BL-332` in the Backlog — what each kind would take, and four
+  questions. ->
+
+---
+
+## §125 — 0.220.1: an expiring buff pulses instead of flashing yellow (2026-10-01)
+
+- `125a` [x] - **Under 60s left, the buff square now fades 1 → 0.3 → 1** once a second (0.220.3; it went to 0.5, which
+  you found *"almost visible"*). Debuffs and a greyed (inactive) buff don't pulse. ->
+
+---
+
+## §121 — 0.218.2: copy that pastes, the guide to Cera (2026-10-01)
+
+- `121a` [x] - **Copy / Cut in the Secure Folder copy of the game.** It works in the main game (your answer). Samsung's
+  Secure Folder keeps its OWN clipboard, walled off from the phone's, so a word copied inside it pastes only inside it.
+  Test it there: copy in chat, paste back into chat in the same Secure Folder game. If THAT fails it is ours; if only
+  pasting out to the main side fails, that is the wall, and the Secure Folder's settings decide it, not the game. -> it was a "Allow Clipboard" settings.. after turning it on it works now
+- `121d` [x] - **A new character is born holding "Adventure Begins"** with the arrow already on Cera (see `127c`). Talk to
+  her: it is gone, no reward, and "Welcome, Traveller" is in her window. ->
+
+---
+
+## §117 — 0.217.5: SP −30% for every skill learned at 40-75 (2026-10-01)
+
+⚠ **New APK.** No `game.db` delete.
+
+- `117a` [x] - **Any 3rd class, levels 40-75:** every Learn-tab SP price is 70% of what it was (e.g. Tank Shield Mastery
+  at 40: 19,200 → 13,400). Can you now afford your farming skill when it unlocks? 76+ and below 40 are unchanged. -> Im lvling at the moment in few minutes ill be 40 and start checing after 40 farms -> if no db reset will be needed ill finish this test as well -> still hard though
+
+---
 
 
 ---

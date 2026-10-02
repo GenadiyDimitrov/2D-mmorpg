@@ -278,11 +278,11 @@ rune_exp,Rune of Experience,,| EMPTY = the game's per-level text; top rung reads
 rune_expsp,Rune of Exp/SP,,| EMPTY = the game's per-level text; top rung reads: Held rune: +100% experience AND +100% SP from monsters while it is in your bag.
 rune_favor_keep,Favor Keep-Rune,Held rune: your kills do not drain the Wayfarer's Favor while it is in your bag.,
 rune_gold,Rune of Gold,,| EMPTY = the game's per-level text; top rung reads: Held rune: +100% GOLD from monsters while it is in your bag.
-rune_grand,Grand Rune,"Grand Rune: increases the final PHYSICAL and MAGICAL damage x2, casts 30% shorter, and cast speed, while the rune is held.",| typed numbers kept: 2 30%
+rune_grand,Grand Rune,"Grand Rune: increases the final PHYSICAL and MAGICAL damage x2 and shortens spell cast time while the rune is held.",| typed numbers kept: 2
 rune_sinister,Rune of Sinister,Held rune: you gain NO experience and NO SP from monsters while it is in your bag. Gold and drops are untouched — grind for items without levelling.,
 rune_sinners,Rune of Sinners,"A timed rune given by the Gods to punish those who sinned: experience, SP, gold and drops are ALL zero while it is in your bag. Bound to your soul for the time it has left — no keeper will accept it, and it cannot be sold, traded or destroyed. It leaves when it expires.",
 rune_sp,Rune of Skillpoints,,| EMPTY = the game's per-level text; top rung reads: Held rune: +100% SP from monsters while it is in your bag.
-rune_spell,Spell Rune,"Spell Rune: the final MAGICAL damage x2, casts 30% shorter, and cast speed, while the rune is held.",| typed numbers kept: 2 30%
+rune_spell,Spell Rune,"Spell Rune: increases the final MAGICAL damage x2 and shortens spell cast time while the rune is held.",| typed numbers kept: 2
 rune_war,War Rune,War Rune: increases the final PHYSICAL damage x2 while the rune is held.,| typed numbers kept: 2
 rupture,Rupture,Opens a bleeding wound — a flat physical DoT (+15% slow) plus a stack that builds toward a burst. Lands on a AGI-vs-CON contest.,| typed numbers kept: 15%
 scr_acc_c,Scroll of Aim (Lesser),+@{acc} Accuracy for @{duration}.,

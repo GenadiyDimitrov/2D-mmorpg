@@ -25,107 +25,37 @@
 
 ---
 
-## §132 — 0.223.0: Grand Rune boxes; Toggles group on Known (2026-10-02)
+## §135 — 0.224.0: whole-second cooldowns; sheets that open whole; the rune texts agree (2026-10-02)
 
-⚠ **New APK + server restart.** Your two `~` finds; the Pet Grand Rune is deferred as you said (`BL-333`).
+⚠ **New APK + server restart.** No `game.db` delete. Your finds.
 
-- `132a` [ ] - **Apothecary**: Grand Rune Box (1h) 225,000 and (2h) 420,000 on the shelf. Open one: a Grand Rune with
-  1h/2h on its clock, both damage channels ×2. ->
-- `132b` [ ] - **Skills → Known**: toggles (Reinforcement, Sharpening, any stance) sit under their own **Toggles** heading
-  after Buffs, no longer mixed into Buffs. ->
+- `135a` [ ] - **Skill bar reuse counter** shows whole seconds only (`3`, `2`, `1`), no tenths. ->
+- `135b` [ ] - **Character window → Details** on the FIRST open after a fresh start: every stat visible, the scroll runs
+  to the bottom. Same for a **skill card** and a **Learn** card (tap a Learn row): the description is all there first
+  time. Leave the Character window open while you regen: it does not jump back to the top. ->
+- `135c` [ ] - **Rune texts** (your 132a): the Spell Rune and the Grand Rune (item, each box at the Apothecary, the buff
+  icon) both say *"shortens spell cast time"* and nothing else about casting. ->
 
-## §131 — 0.222.3: the buffer's Sound Smash / Acoustic Shock MP (2026-10-02)
+## §134 — 0.223.2: the Master's Trial — five gather steps, and a fail never walks you back (2026-10-02)
 
-Your CSV edit: *"Decreased the MP cost for physical skills of buffer (archer the same - more dmg more mp ..)"*. Server-only.
+Server-only. ⚠ A character already mid-trial: abandon and retake it (the steps are renumbered again).
 
-- `131a` [ ] - **Sound Smash / Acoustic Shock** cost your new column (lvl 40: 36 MP; lvl 74: 78; lvl 90: 110). Sound Burst
-  (Elf, bow) is unchanged. ->
+- `134a` [ ] - **Take the trial** (your 130a): after the first talk you get the five separate gather steps again, each
+  with its own counter (wood 0/20, iron 0/20, gems 0/20, recipes 0/2, head 0/1). Gather in any order. ->
+- `134b` [ ] - **Fail the hammer with nothing spare**: you STAY on the craft step — no going back, no talk-back. The
+  message says to gather another set; the trial's mats keep dropping; craft again at the anvil when you have them. ->
 
-## §130 — 0.222.2: the Master's Trial — one gather step, retry while you hold mats (2026-10-02)
+## §133 — 0.223.1: presets survive a restart; level-ups are your own news; `/help` and `/buff` (2026-10-02)
 
-Your find (`[!]`): *"the gathering steps should be compined into one .. So when i have x3 mats ... I should be able to
-craft 3 times and fail ... not to go back after each fail"*. Server-only, no APK. ⚠ A character already mid-trial may
-read oddly (the steps were renumbered) — abandon and retake it.
+Server-only. No `game.db` delete.
 
-- `130a` [ ] - **Take the trial**: after the first talk, ONE step lists all five piles (counter 0/63); the quest window's
-  gather list shows each pile. Holding all five moves it on to "bring the materials back". ->
-- `130b` [ ] - **Fail a hammer while holding a second set** (2 heads, 40+ of each mat, a spare recipe): the trial STAYS on
-  the craft step ("you have the materials for another attempt") and you craft again at once. ->
-- `130c` [ ] - **Fail with nothing spare**: back to the gather step, which now asks only ONE hammer recipe (you know it
-  already). ->
-
-## 0.222.1: Over the Limit no longer takes one of the 20 buff slots (2026-10-02)
-- [ ] - **Over the Limit no longer takes one of the 20 buff slots**
-
-## §129 — 0.222.0: `/who <name>` (2026-10-02)
-
-Your ask: *"`/who <name>` command that opens stat window of the character - an *admin* command"*. ⚠ **New APK + server
-restart.** No `game.db` delete.
-
-- `129a` [ ] - **`/who <name>` on an online player** (a second phone, or a second character): the Character window opens
-  headed with their name, Basic and Details tabs both theirs (class, stats, PvP/karma, Favor, gold). Close it and press
-  Char: your own sheet again. ->
-- `129b` [ ] - **`/who` on someone offline** says they are not online; a moderator typing `/who` is refused. ->
-
----
-
-## §128 — 0.221.0: `/help` per rank; actions show their typed command (2026-10-02)
-
-Your find: the `/help` layout by rank, no action commands in it, the missing admin ones, and `(/command)` on actions.
-⚠ **New APK + server restart.** No `game.db` delete.
-
-- `128a` [ ] - **`/help` as each rank** (switch with `/role`): a player sees the `@s`/`@t` line and **--- Commands ---**;
-  a Chat Moderator adds **--- Chat Moderator ---**; a Moderator adds **--- Moderator ---** above it; an Admin **--- Admin
-  only ---**; you, the Owner, **--- Owner only ---** on top. Each line is the command, then what it does. ->
-- `128b` [ ] - **Nothing is missing and nothing is wrong** in the Admin list (`/stat`, `/tpme`, `/enchant`, `/whatdrops`,
-  `/farmcap`, `/testcaps` were the missing ones). Name any line that reads wrong. ->
-- `128c` [ ] - **A moderator can still use exactly what he could** — `/jail`, `/kick`, `/where <name>`, `/chatlog -w` —
-  and is still refused `/tp` or `/god`. (The allow-list is now read from the same list `/help` prints.) ->
-- `128d` [ ] - **Skills window → Actions:** Invite to Party reads `(/ptinv <name>)` in small grey after its name; the same
-  for the friend, party, whisper, like and block actions. The chat `/help` no longer lists them. ->
-
----
-
-## §127 — 0.220.3: four of your finds (2026-10-02)
-
-⚠ **New APK + server restart.** No `game.db` delete.
-
-- `127a` [ ] - **Human / Demon buffer at 40:** learning Heavy Armor Mastery removes Rogue Evasion as well as Light Armor
-  Mastery (your CSV edit: *"no point of human and demon to keep the `rogue_evasion` when their `light_armor_mastery` is
-  being replaced"*). The Elf buffer keeps both. ->
-- `127b` [ ] - **Chat keeps 300 rows** (was 120). Fight a while, then scroll the System tab back to what dropped earlier. ->
-- `127c` [ ] - **The quest arrow is on for every character you enter** (your 121d: *"set location to true … Newbies need an
-  arrow"*). The cause: turning the arrow off ("Location: current") on one character kept it off on the next one in the
-  same session. A new character now points at Cera from the first second, no tap needed. ->
+- `133a` [ ] - **Equipment presets** (your `[!]`): ⚠ re-save each preset ONCE on this build (the old saves hold ids
+  that no longer exist). Then restart the game / relog: applying the preset equips everything, no "N items missing". ->
+- `133b` [ ] - **Level up**: you see "You reached level N!"; nobody else gets a line about it. ->
+- `133c` [ ] - **`/help` as a Player** (your 128a): `/buff` is listed only while the server hands out free buffs
+  (`RateConfig.FreeBuffs`, off by default) — so normally it is gone. ->
 - `127d` [ ] - **Notifications** (your `?`): my answer is `BL-332` in the Backlog — what each kind would take, and four
   questions. ->
-
----
-
-## §125 — 0.220.1: an expiring buff pulses instead of flashing yellow (2026-10-01)
-
-- `125a` [ ] - **Under 60s left, the buff square now fades 1 → 0.3 → 1** once a second (0.220.3; it went to 0.5, which
-  you found *"almost visible"*). Debuffs and a greyed (inactive) buff don't pulse. ->
-
----
-
-## §121 — 0.218.2: copy that pastes, the guide to Cera (2026-10-01)
-
-- `121a` [ ] - **Copy / Cut in the Secure Folder copy of the game.** It works in the main game (your answer). Samsung's
-  Secure Folder keeps its OWN clipboard, walled off from the phone's, so a word copied inside it pastes only inside it.
-  Test it there: copy in chat, paste back into chat in the same Secure Folder game. If THAT fails it is ours; if only
-  pasting out to the main side fails, that is the wall, and the Secure Folder's settings decide it, not the game. ->
-- `121d` [ ] - **A new character is born holding "Adventure Begins"** with the arrow already on Cera (see `127c`). Talk to
-  her: it is gone, no reward, and "Welcome, Traveller" is in her window. ->
-
----
-
-## §117 — 0.217.5: SP −30% for every skill learned at 40-75 (2026-10-01)
-
-⚠ **New APK.** No `game.db` delete.
-
-- `117a` [ ] - **Any 3rd class, levels 40-75:** every Learn-tab SP price is 70% of what it was (e.g. Tank Shield Mastery
-  at 40: 19,200 → 13,400). Can you now afford your farming skill when it unlocks? 76+ and below 40 are unchanged. -> Im lvling at the moment in few minutes ill be 40 and start checing after 40 farms -> if no db reset will be needed ill finish this test as well
 
 ---
 

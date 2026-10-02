@@ -736,8 +736,8 @@ public static partial class SkillCatalog
                 new(SkillEffect.BuffCastSpeed, 40, ModifierMode.Flat),
             },
             Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable, CountsTowardBuffLimit: false,
-            Description: "Grand Rune: increases the final PHYSICAL and MAGICAL damage ×2, casts 30% "
-                       + "shorter, and cast speed, while the rune is held."),
+            Description: "Grand Rune: increases the final PHYSICAL and MAGICAL damage ×2 and shortens "
+                       + "spell cast time while the rune is held."),
 
         // ================== BUFF LADDERS — the single buffs and their consumables ==================
         //  See docs/design/BuffLadders.md. Four families, three rungs each; the improved "Speed"

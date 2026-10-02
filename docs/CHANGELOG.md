@@ -24,7 +24,24 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-02 (latest) — 0.223.2: the Master's Trial — five gather steps again, and a fail never walks you back
+## 2026-10-02 (latest) — 0.224.0: whole-second cooldowns; sheets that open whole; the rune texts agree
+
+**New APK + server restart.** No `game.db` delete. Checklist §135.
+
+- **The skill bar's reuse counter shows whole seconds**, rounded up (`3`, `2`, `1`). His find: *"remove the miliseconds
+  ... 3s,2s,1s ~ done .... is enough"*. The tenths it showed under 10s are gone.
+- **The Character window's Details tab, the skill card and the Learn card open whole the first time.** His find
+  (`[!]`): *"the details panel is not the full one ... most stats are cut off after reopen it works ... very often it
+  happens to 'learn' skills"*. The scroll content was laid out against the label's PREVIOUS (empty) height — two nested
+  ContentSizeFitters resolve a pass apart. New `UiKit.RefitScroll` forces the rebuild after the text is set, the fix the
+  Target window and the item card already had; the Character sheet jumps to the top only on open / tab switch, never on
+  a regen tick.
+- **Spell and Grand Rune texts say the same thing about casting**: *"shortens spell cast time"* on both (item, every box,
+  and the buff's face). His 132a: *"remove the casting part and only say 'shorten spell cast time' and add the same
+  sentence to the spell rune aswell. Ppl not to think the grand is better."* The two always carried the identical cast
+  cut (`CastTimePct 0.30` + 40 cast stat); only the words differed. Numbers unchanged.
+
+## 2026-10-02 — 0.223.2: the Master's Trial — five gather steps again, and a fail never walks you back
 
 **Server restart only.** No APK, no `game.db` delete. Checklist §134. ⚠ A character mid-trial: the steps are renumbered
 again — abandon and retake it.

@@ -87,6 +87,7 @@ namespace Game.Client
 
         private RectTransform _learnPanel;
         private TextMeshProUGUI _learnTitle, _learnBody;
+        private ScrollRect _learnScroll;
         private System.Action _learnAction;
         /// <summary>`BL-138` — kept so the confirm can be GREYED rather than the window refusing to
         /// open. A skill you cannot afford still opens its page; the button below it is dim and the
@@ -108,6 +109,7 @@ namespace Game.Client
             ScrollRect scroll;
             var content = UiKit.ScrollArea(inner, out scroll, 2f);
             UiKit.Stretch((RectTransform)scroll.transform, 16f, chrome + 42f, 16f, 70f);
+            _learnScroll = scroll;
             _learnBody = UiKit.Label(content, "", 16f, UiKit.Text, TextAlignmentOptions.TopLeft);
             _learnBody.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
@@ -193,6 +195,7 @@ namespace Game.Client
             _learnAction = canBuy ? () => { Boot.LearnSkill(id); _skillsRevision = -1; } : (System.Action)null;
             if (_learnConfirmButton != null) _learnConfirmButton.interactable = canBuy;
             OpenWindow(_learnPanel);
+            UiKit.RefitScroll(_learnBody, _learnScroll, toTop: true);
         }
 
         /// <summary>Every numeric effect a skill has at one LEVEL, on one line per source. Silent when
