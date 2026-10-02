@@ -145,6 +145,10 @@ namespace Game.Client
             // The tree sits on the root canvas, outside both screens, so a phase change has to close it — one
             // opened at character creation must not follow you into the world.
             if (Boot.Phase != _builtPhase) CloseWindow(_treePanel);
+            // The quest arrow's pick is per CHARACTER, but these fields live on the UI for the whole app session —
+            // an arrow turned off on one character used to stay off on the next, which is how a brand-new character
+            // got no arrow to Cera (`121d`). Every world entry starts on the default: follow the first pinned quest.
+            if (world && _builtPhase != ClientPhase.InWorld) { _arrowOff = false; _arrowQuestId = ""; }
 
             _loginPanel.gameObject.SetActive(login);
             _selectPanel.gameObject.SetActive(select);

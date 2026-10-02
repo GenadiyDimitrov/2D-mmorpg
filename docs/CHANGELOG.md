@@ -24,7 +24,26 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-01 (latest) — 0.220.2: three rubber-bands — pavement speed, auto-farm walk-away, skill mid-walk
+## 2026-10-02 (latest) — 0.220.3: four finds — buffer's Rogue Evasion, 300 chat rows, the arrow on for every character, a deeper pulse
+
+His finds and answers from the 0.220.2 pass. **New APK + server restart.** No wire change, no `game.db` delete.
+Checklist §127, §125a, §121d.
+
+- **His CSV edit (`buffer 3rd.csv`):** the Human/Demon buffer's Heavy Armor Mastery at 40 now replaces
+  `[light_armor_mastery rogue_evasion]` (*"no point of human and demon to keep the `rogue_evasion` when their
+  `light_armor_mastery` is being replaced"*). Regenerated with `--gen-passives`; `--check` clean.
+- **Chat keeps 300 rows** (`ConsoleDisplayRows`, was 120): *"120 are very low number for when you want to know what the
+  monster before have given you"*. The buffer behind it was already 1000; only the drawn rows were capped, and
+  `RefreshConsole` builds at most that many per batch, so the cost is bounded.
+- **The quest arrow is reset on every world entry** (`121d`: *"I had the quest but until i opened the details and click
+  to track location the arrow isnt shown. Newbies need an arrow"*). The server already pins "Adventure Begins" as
+  tracked; the client's "arrow off" choice lived on the UI for the whole app session, so turning it off on one
+  character silenced it on the next. Entering the world now starts on the default: follow the first pinned quest.
+- **The expiring-buff pulse goes 1 → 0.3** (`125a`: *"make it 0.3 now its almost visible"*), was 0.5.
+- Docs: his new checklist rule (checked rows leave, `~` rows stay reworded) applied — §108-§126 moved verbatim to
+  `Playtest-Archive.md`; `BL-332` (notifications) filed as a question; `BL-331`'s icon review closed.
+
+## 2026-10-01 — 0.220.2: three rubber-bands — pavement speed, auto-farm walk-away, skill mid-walk
 
 His report: *"I walk on the blessed pavement (+50 speed) -> click somewhere -> he gets off the pavement but the move
 speed don't change visually -> he reaches the point then gets rubber back"*; *"I auto-farm -> I fight some mob -> I

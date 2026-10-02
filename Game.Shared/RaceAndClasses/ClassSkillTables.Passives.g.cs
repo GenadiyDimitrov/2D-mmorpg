@@ -765,7 +765,7 @@ public static partial class ClassSkillTables
         foreach (var race in new[] { Race.Human, Race.Demon })
             ClassSkills.RegisterThird(race, Discipline.Warchanter,
                 new ClassSkill(ClericHeavyArmorMastery, 40, SkillLevel: 1, SpCost: 0, Replaces: new[] { "clerics_light_armor_mastery" }),
-                new ClassSkill(HeavyArmorMastery, 40, SkillLevel: 12, SpCost: 15100, Replaces: new[] { "light_armor_mastery" }),
+                new ClassSkill(HeavyArmorMastery, 40, SkillLevel: 12, SpCost: 15100, Replaces: new[] { "light_armor_mastery", "rogue_evasion" }),
                 new ClassSkill(TankCritResist, 40, SkillLevel: 1, SpCost: 15100),
                 new ClassSkill(WeaponMastery, 40, SkillLevel: 28, SpCost: 15100),
                 new ClassSkill(HeavyArmorMastery, 44, SkillLevel: 14, SpCost: 12700),

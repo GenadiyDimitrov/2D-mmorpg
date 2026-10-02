@@ -565,10 +565,11 @@ namespace Game.Client
                 // collapsed group this is the SHORTEST part, which is the right warning. The whole square's
                 // OPACITY breathes 1 → 0.5 → 1 once a second (owner, 2026-10-01: *"not a background color but
                 // the opacity .. Going 0.5~1"*): the old colour swap flashed a yellow box over the picture.
-                // Gated OFF beats it, as before: a buff that is paying nothing has no expiry worth warning about.
+                // 0.220.3 deepened it to 0.3 (`125a`: *"make it 0.3 now its almost visible"* — on today's plain
+                // ground 0.5 barely reads). Gated OFF beats it: a buff paying nothing has no expiry worth warning about.
                 bool expiring = !buff.IsDebuff && !buff.Suppressed && buff.Seconds > 0f && buff.Seconds <= 60f;
                 square.Fade.alpha = expiring
-                    ? 0.75f + 0.25f * Mathf.Cos(Time.unscaledTime * 2f * Mathf.PI)
+                    ? 0.65f + 0.35f * Mathf.Cos(Time.unscaledTime * 2f * Mathf.PI)
                     : 1f;
 
                 if (buff.Suppressed) tint = new Color(0.16f, 0.16f, 0.18f, 0.95f);

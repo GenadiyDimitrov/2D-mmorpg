@@ -281,7 +281,8 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-323` | ⏸ | **Server-side collision (geodata)** — the server checks walls/buildings too, not only the 3D models; waits on `BL-281` | world |
 | `BL-328` | ⏸ | **Terrain movement** — water (−70% + breath gauge, drowning) and mud (−30-50%); *"lot later"*; needs terrain data | world |
 | `BL-329` | ⏸ | **Login session timer** — 1 min from Login to entering the world, 10 min during character creation; waits for character customization | systems |
-| `BL-331` | 🔵 | **Skill icons** — game-icons.net tinted per school, `docs/data/skill_icons.csv` + `tools/SkillIcons`; bar, buff bar, Skills window (Known / Learn / Actions) BUILT 0.219.0-0.219.1; your review of `docs/design/SkillIcons.html`, then the cast bar + tree page | ui |
+| `BL-331` | 🔵 | **Skill icons** — game-icons.net tinted per school, `docs/data/skill_icons.csv` + `tools/SkillIcons`; bar, buff bar, Skills window (Known / Learn / Actions) BUILT 0.219.0-0.219.1, your review passed; owed: the cast bar, non-class buffs; your own redraw "a lot later" | ui |
+| `BL-332` | ❓ | **Notifications** — low HP / low potions / farm time over / died: in-game alerts, scheduled phone notifications, server push; my pick + four questions | ui |
 
 ---
 
@@ -2317,9 +2318,41 @@ handful of SIGNATURE skills later, which is a one-row change because every skill
 - **Credit:** CC BY 3.0 needs a credits line — `docs/CREDITS.md`, and the review page's footer.
 
 **Still owed (steps 2-3):**
-- 🔵 **Your review** of the page: name any icon you want changed (or edit the row).
+- ✅ ~~**Your review** of the page~~ — passed (`122a`-`122d`, 2026-10-02), and your plan for later: *"later ill remake
+  each and everyone of the skills. but that will be alot later wehn the classes are finished and game has no other things
+  to do"*. The CSV makes that a row-by-row swap: a new picture replaces a game-icons one without touching code.
 - The **cast bar** and the **Skill Tree page** still draw letters.
 - Skills **no class CSV lists** (potions/scrolls' buffs, the NPC shelf, mob debuffs on you): they show letters. Each is a
   row away (the tool accepts any skill id).
 - A **face** wanting its own picture (a racial name with a different look) is not supported yet: one picture per skill id.
 - Before any public release: the credit on an in-game screen, not only in the repo.
+
+## `BL-332` ❓ NOTIFICATIONS — low HP, low potions, farm time over, died … (discussion, 2026-10-02)
+
+His find (checklist My Finds, 2026-10-02): *"Notifications - low hp/low pots/farming done (time ended)/died/etc ?
+Discusion and open BL entry"*. Nothing built. This is the shape of it, and four questions.
+
+**There are three different kinds, and each costs a different amount:**
+
+| kind | when it reaches you | examples | what it takes |
+|---|---|---|---|
+| **A. In-game alerts** | the game is OPEN on screen | low HP, low potions, died, whisper/party invite while chat is closed | client only: a banner + vibration (+ a sound later), each with an on/off in Settings. Cheap. |
+| **B. Phone notifications the game SCHEDULES** | the game is in the background or closed | "your auto-farm time ends now", "offline farming has ended" | Unity's Mobile Notifications package, and on Android 13+ the phone asks the player once for permission. Medium. ⚠ Only things whose TIME is known when you leave the game: the moment Android backgrounds us the connection to the server goes quiet, so the phone cannot react to anything that happens after (we reconnect when you come back). |
+| **C. Push from the SERVER** | the game is closed | "you died while offline farming", "Ana whispered you" | Google's Firebase messaging: a Firebase project, a key file in the APK, the server sending through Google, a device token stored per account. Large, and it ties the game to a Google account. |
+
+**My recommendation:** build **A** now and **B for the farm timers** with it (both known in advance: the server already
+tells the client the auto-farm and offline allowances). Park **C** until there is a release and real players to reach;
+nothing in A or B is thrown away when it comes.
+
+**What A would watch (proposal):**
+- **Low HP** — below 30% of max, once per drop (it re-arms above 50%), so a long fight does not buzz every second.
+- **Low potions** — the potion auto-farm uses drops below 10 in the bag, once.
+- **Died** — always.
+- **Farm time over** — the auto-farm allowance ran out while you watched (today this is a chat line only).
+- **Whisper / party invite / trade request** — only while the chat window is closed.
+
+❓ **What I need from you:**
+1. Is that list right — add or drop anything (a boss spawn? a quest step done? a full bag?).
+2. Thresholds: fixed (30% HP, 10 potions) or a number each player sets in Settings?
+3. Vibration on the phone for the urgent ones (low HP, died), or banners only?
+4. A and B now, C parked — agreed?

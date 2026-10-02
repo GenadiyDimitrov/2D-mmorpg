@@ -171,8 +171,10 @@ namespace Game.Client
         /// and lights up while that window is open.</summary>
         private Button _combatTabButton;
         /// <summary>Cap on console ROWS kept alive. Plenty of scrollback, but bounded so the window can
-        /// never accumulate hundreds of live labels — see RefreshConsole for why that mattered.</summary>
-        private const int ConsoleDisplayRows = 120;
+        /// never accumulate unbounded live labels — see RefreshConsole for why that mattered. 300 since 0.220.3
+        /// (owner: *"120 are very low number for when you want to know what the monster before have given you"*);
+        /// safe because RefreshConsole builds at most this many per batch and only appends after that.</summary>
+        private const int ConsoleDisplayRows = 300;
 
         // bag / debug
         private RectTransform _bagPanel, _bagContent, _debugPanel;
