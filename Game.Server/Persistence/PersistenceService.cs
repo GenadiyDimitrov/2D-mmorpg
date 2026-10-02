@@ -847,7 +847,12 @@ public class PersistenceService
                 var states = JsonSerializer.Deserialize<List<CharacterQuestState>>(rec.ActiveQuestsJson);
                 if (states is not null)
                     foreach (var st in states)
-                        entity.ActiveQuests[st.QuestId] = st;
+                        // A quest re-authored SHORTER (the crafter trial, 0.222.2) would leave a step index past
+                        // its end, which every step lookup indexes blind — start such a quest over instead.
+                        entity.ActiveQuests[st.QuestId] =
+                            QuestCatalog.Get(st.QuestId) is { } qd && st.StepIndex >= qd.Steps.Length
+                                ? st with { StepIndex = 0, Counter = 0, Completed = false }
+                                : st;
             }
             catch { /* ignore malformed quest json */ }
         }

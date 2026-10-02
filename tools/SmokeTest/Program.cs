@@ -1694,7 +1694,7 @@ b.MyId = entered2.EntityId;
         await b.Settle();
         var q = Q();
         Check("the trial is active, and his pitch hands over to the first GATHER step",
-              q is { StepIndex: QuestCatalog.CrafterQuestGatherStep, CounterNeeded: 20 },
+              q is { StepIndex: QuestCatalog.CrafterQuestGatherStep, CounterNeeded: 63 },
               q is null ? "quest not active at all" : $"step {q.StepIndex}, needs {q.CounterNeeded}");
 
         // 0.67.1's bug, kept: a PARTIAL pile moves the counter and does not advance the step.
@@ -1705,11 +1705,11 @@ b.MyId = entered2.EntityId;
               q is { StepIndex: QuestCatalog.CrafterQuestGatherStep, Counter: 7 },
               $"step {q?.StepIndex}, counter {q?.Counter}");
 
-        // All five piles at once: the collect steps WALK in one pass (wood, iron, gems, recipes, head).
+        // All five piles: ONE gather step (0.222.2) is met only when every pile is held.
         await GiveTrialMats();
         q = Q();
-        Check("🔑 holding all five piles walks every gather step in ONE pass, to the talk-back",
-              q is { StepIndex: 6 }, $"step {q?.StepIndex}");
+        Check("🔑 holding all five piles meets the ONE gather step, to the talk-back",
+              q is { StepIndex: QuestCatalog.CrafterQuestGatherStep + 1 }, $"step {q?.StepIndex}");
         Check("nothing was consumed in the field — the mats are still carried",
               Held(ItemCatalog.CrafterQuestWood) >= 20 && Held(ItemCatalog.CrafterQuestRecipe) >= 2,
               $"wood {Held(ItemCatalog.CrafterQuestWood)}, recipes {Held(ItemCatalog.CrafterQuestRecipe)}");
@@ -1724,7 +1724,8 @@ b.MyId = entered2.EntityId;
         await b.Hub.SendAsync("TalkToNpc", masterId);
         await b.Settle();
         q = Q();
-        Check("bringing the mats back hands over to the LEARN step", q is { StepIndex: 7 }, $"step {q?.StepIndex}");
+        Check("bringing the mats back hands over to the LEARN step",
+              q is { StepIndex: QuestCatalog.CrafterQuestCraftStep - 1 }, $"step {q?.StepIndex}");
 
         // Learn one quest recipe from the bag (anywhere; here, at the Master).
         var rRow = b.Inv?.Items.FirstOrDefault(i => i.DefId == ItemCatalog.CrafterQuestRecipe);
@@ -1738,18 +1739,31 @@ b.MyId = entered2.EntityId;
               + $"recipes held {Held(ItemCatalog.CrafterQuestRecipe)}");
 
         // Try the craft until the hammer lands. 40% a try, so a fail is LIKELY and is checked when it
-        // happens; the cap is a runaway guard. After a fail: back to step 1, mats and the used recipe
-        // gone; re-supply, talk back (the learn step then passes on its own), and try again.
-        int tries = 0, fails = 0;
-        bool failPathOk = true;
+        // happens; the cap is a runaway guard. 0.222.2: on odd tries a SPARE set is carried, so a fail must
+        // stay on the craft step; on even tries none is, so a fail goes back to gather — re-supply, talk back
+        // (the learn step then passes on its own, and the recipe pile asks one less), and try again.
+        int tries = 0, fails = 0, retries = 0;
+        bool failPathOk = true, retryOk = true;
         while (Held(ItemCatalog.CrafterHammer) == 0 && tries < 25)
         {
             tries++;
+            bool spare = tries % 2 == 1;
+            if (spare)
+                foreach (var (id, n) in new[] { (ItemCatalog.CrafterQuestWood, 40), (ItemCatalog.CrafterQuestIron, 40),
+                             (ItemCatalog.CrafterQuestGem, 40), (ItemCatalog.CrafterQuestRecipe, 2), (ItemCatalog.CrafterHammerHead, 2) })
+                    if (n - Held(id) > 0) await b.Hub.SendAsync("DebugGive", id, n - Held(id));
+            await b.Settle();
             await b.Hub.SendAsync("Craft", Crafting.HammerRecipeId, true, Crafting.HammerRecipePercent, 1);
             await b.Settle();
             if (Held(ItemCatalog.CrafterHammer) > 0) break;
             fails++;
             q = Q();
+            if (spare)
+            {
+                retries++;
+                retryOk &= q is { StepIndex: QuestCatalog.CrafterQuestCraftStep };
+                continue;
+            }
             failPathOk &= q is { StepIndex: QuestCatalog.CrafterQuestGatherStep }
                           && Held(ItemCatalog.CrafterQuestWood) == 0 && Held(ItemCatalog.CrafterHammerHead) == 0;
             await GiveTrialMats();
@@ -1759,9 +1773,11 @@ b.MyId = entered2.EntityId;
         }
         Check("the hammer is forged at the anvil", Held(ItemCatalog.CrafterHammer) == 1,
               $"{tries} tries, {fails} fails");
-        if (fails > 0)
-            Check($"🔑 a FAILED hammer ({fails}x) sends the trial back to step 1 with the mats gone, and the "
-                  + "learn step passes on its own the second time round", failPathOk);
+        if (retries > 0)
+            Check($"🔑 a FAILED hammer with a spare set carried ({retries}x) STAYS on the craft step (0.222.2)", retryOk);
+        if (fails > retries)
+            Check($"🔑 a FAILED hammer with nothing spare ({fails - retries}x) sends the trial back to gather with the "
+                  + "mats gone, and the learn step passes on its own the second time round", failPathOk);
         else
             Console.WriteLine("  (info) the hammer landed first try, so the fail path was not exercised this run");
         q = Q();

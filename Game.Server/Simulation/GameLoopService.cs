@@ -3565,9 +3565,15 @@ public class GameLoopService : BackgroundService
 
         if (trial && made == 0)
         {
-            // *"5.1. fail go to 1"* — back to the first gather step. Leftovers still count: the collect
-            // re-check that SendInventory runs below moves the quest straight on past anything still held.
-            if (player.ActiveQuests.TryGetValue(QuestCatalog.QuestBecomeCrafter, out var qs))
+            // *"5.1. fail go to 1"* — back to the gather step, but ONLY when another attempt can't be paid
+            // for (0.222.2: *"when i have x3 mats ... I should be able to craft 3 times and fail ... not to go
+            // back after each fail"*). Leftovers still count: the collect re-check that SendInventory runs
+            // below moves the quest straight on if the piles are still held.
+            bool canRetry = inputs.All(inp => CraftCount(player, inp.ItemId, useWh) >= inp.Qty)
+                            && (recipeItemId is null || CraftCount(player, recipeItemId, useWh) >= 1);
+            if (canRetry)
+                SendSystemToEntity(player, "The Master's Trial: you have the materials for another attempt.");
+            else if (player.ActiveQuests.TryGetValue(QuestCatalog.QuestBecomeCrafter, out var qs))
             {
                 player.ActiveQuests[QuestCatalog.QuestBecomeCrafter] =
                     qs with { StepIndex = QuestCatalog.CrafterQuestGatherStep, Counter = 0 };
@@ -18582,6 +18588,41 @@ public class GameLoopService : BackgroundService
         return n;
     }
 
+    /// <summary>The piles a <see cref="QuestStepType.CollectItem"/> step asks this player to HOLD: its
+    /// <see cref="QuestStep.Items"/>, or the one TargetId/Count. A recipe book whose recipe is already learned
+    /// asks one less (never below 1): the crafter trial's "one to learn, one to use" has been half spent once
+    /// a failed craft sends you back to gather.</summary>
+    private static IEnumerable<(string ItemId, int Need)> CollectNeeds(Entity player, QuestStep step)
+    {
+        var piles = step.Items is { Length: > 0 } items
+            ? items.Select(n => (n.ItemId, n.Count))
+            : string.IsNullOrEmpty(step.TargetId) ? Enumerable.Empty<(string, int)>() : new[] { (step.TargetId, step.Count) };
+        foreach (var (id, count) in piles)
+        {
+            int need = Math.Max(1, count);
+            if (need > 1 && ItemCatalog.Get(id) is { TeachesRecipeId.Length: > 0 } book
+                && player.KnownRecipes.ContainsKey(book.TeachesRecipeId))
+                need--;
+            yield return (id, need);
+        }
+    }
+
+    /// <summary>A collect step's progress as one have/need pair (each pile capped at its need), and whether every
+    /// pile is met. Read from the BAG every time, never a stored tally.</summary>
+    private static (int Have, int Need, bool Met) CollectProgress(Entity player, QuestStep step)
+    {
+        int have = 0, need = 0;
+        bool met = true;
+        foreach (var (id, n) in CollectNeeds(player, step))
+        {
+            int held = CountItem(player, id);
+            have += Math.Min(n, held);
+            need += n;
+            met &= held >= n;
+        }
+        return (have, Math.Max(1, need), met && need > 0);
+    }
+
     /// <summary>Remove <paramref name="amount"/> of an item across stacks, SMALLEST STACK FIRST (§102.5).
     /// Returns false (removing nothing) if the player doesn't have enough.</summary>
     private static bool ConsumeItem(Entity player, string defId, int amount)
@@ -22169,8 +22210,12 @@ public class GameLoopService : BackgroundService
         // 🔑 A COLLECT step reads the BAG, never a stored tally: mats leave a bag (sold, salvaged, spent
         // on a craft) as easily as they arrive, so a counter incremented on pickup would drift the first
         // time one is spent and then lie about a step the player can no longer satisfy.
-        if (step.Type == QuestStepType.CollectItem && state is not null)
-            counter = Math.Min(needed, CountItem(player, step.TargetId ?? ""));
+        if (step.Type == QuestStepType.CollectItem)
+        {
+            var (have, need, _) = CollectProgress(player, step);
+            needed = need;
+            if (state is not null) counter = have;
+        }
         // Ready to turn in = on the final step and that step is a TalkTo.
         bool canComplete = state is not null && !def.Guide
             && stepIndex == def.Steps.Length - 1
@@ -22459,19 +22504,20 @@ public class GameLoopService : BackgroundService
         for (int i = 0; i < def.Steps.Length; i++)
         {
             var s = def.Steps[i];
-            if (s.Type != QuestStepType.CollectItem || s.TargetId is null || !s.PaidAtHandIn) continue;
-            int need = Math.Max(1, s.Count);
-            if (CountItem(player, s.TargetId) >= need) continue;
+            if (s.Type != QuestStepType.CollectItem || !s.PaidAtHandIn) continue;
+            var short_ = CollectNeeds(player, s).FirstOrDefault(n => CountItem(player, n.ItemId) < n.Need);
+            if (short_.ItemId is null) continue;
             SendSystemToEntity(player,
-                $"{def.Name}: bring {need}x {ItemCatalog.Get(s.TargetId)?.Name ?? s.TargetId}.");
+                $"{def.Name}: bring {short_.Need}x {ItemCatalog.Get(short_.ItemId)?.Name ?? short_.ItemId}.");
             player.ActiveQuests[questId] = state with { StepIndex = i, Counter = 0 };
             SendQuestLog(player);
             SendDialog(player, npc);
             return;
         }
         foreach (var s in def.Steps)
-            if (s.Type == QuestStepType.CollectItem && s.TargetId is not null && s.PaidAtHandIn)
-                ConsumeItem(player, s.TargetId, Math.Max(1, s.Count));
+            if (s.Type == QuestStepType.CollectItem && s.PaidAtHandIn)
+                foreach (var (id, need) in CollectNeeds(player, s))
+                    ConsumeItem(player, id, need);
 
         // Grant rewards. The gathered tokens are cashed FIRST so their exp joins the quest's own in one
         // levelling pass rather than two.
@@ -22873,10 +22919,10 @@ public class GameLoopService : BackgroundService
             {
                 var step = def.Steps[state.StepIndex];
                 bool satisfied;
-                if (step.Type == QuestStepType.CollectItem && step.TargetId is not null)
+                if (step.Type == QuestStepType.CollectItem)
                 {
                     onCollectStep = true;
-                    satisfied = CountItem(player, step.TargetId) >= Math.Max(1, step.Count);
+                    satisfied = CollectProgress(player, step).Met;
                 }
                 else
                 {
@@ -23110,8 +23156,9 @@ public class GameLoopService : BackgroundService
             bool done = state is not null && (state.Completed || state.StepIndex > i);
             // A collect step's counter is the BAG, same as in Summarize — the two windows must not
             // disagree about how many ingots you are holding.
+            if (step.Type == QuestStepType.CollectItem) needed = CollectProgress(player, step).Need;
             int have = current && step.Type == QuestStepType.CollectItem
-                     ? Math.Min(needed, CountItem(player, step.TargetId ?? ""))
+                     ? CollectProgress(player, step).Have
                      : current ? state!.Counter : done ? needed : 0;
             steps[i] = new QuestStepDto(step.Text, StepLocation(def, step),
                                         have, needed, done, current);

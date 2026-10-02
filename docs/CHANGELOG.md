@@ -24,7 +24,25 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-02 (latest) — 0.222.1: Over the Limit no longer takes a buff slot
+## 2026-10-02 (latest) — 0.222.2: the Master's Trial — one gather step, and a fail keeps you at the anvil
+
+His find (My Finds, `[!]`): after a failed hammer the trial went back to "20 Seasoned Hardwood", walked the five piles one
+by one, and refused the next craft (*"That recipe is only for the Master's trial, once you reach its craft step"*) while
+he still held two more Hammer Heads. *"the gathering steps should be combined into one ... when i have x3 mats ... I
+should be able to craft 3 times and fail ... not to go back after each fail"*.
+
+- **The five collect steps are ONE step** — `QuestStep.Items` (`QuestItemNeed[]`), met when every pile is held. Its
+  counter is the sum (0/63); the quest window's gather list still shows each pile. The trial is now 6 steps (craft step 4).
+- **A recipe-book pile asks one less once its recipe is learned** (`CollectNeeds`), so after a fail you need 1 hammer
+  recipe, not 2 — the "one to learn" was already spent.
+- **A failed hammer stays on the craft step while you can pay for another attempt** (inputs + a 40% recipe, bag or
+  shelf the same way the craft reads them). Only a fail that leaves you short goes back to gather.
+- **A saved quest past its new end restarts at step 0** (load guard in `PersistenceService`): a character that was on
+  the old step 8 would otherwise index past the array. Mid-trial characters on old steps 1-7 may read oddly — abandon
+  and retake if so. No `game.db` delete.
+- Server-only. SmokeTest: the retry-with-a-spare path and the go-back path are both checked.
+
+## 2026-10-02 — 0.222.1: Over the Limit no longer takes a buff slot
 
 - **`demon_over_limit` carries `CountsTowardBuffLimit: false`.** Owner: *"over the limit should not go towards
   the buff limit ... its a 10s buff"*. It sits on a shelf, which put it in `SkillCatalog.BuffLimitIds`; the

@@ -12,7 +12,9 @@ namespace Game.Shared;
 /// <para>🔑 <b>The quest IS the first craft.</b> Everything a crafter does later happens once here: gather,
 /// learn a recipe into a slot, spend a recipe on an attempt at the Master, and lose it all on a fail. That
 /// is why a failed craft sends you back to step 1 rather than letting you retry: the mats and the used
-/// recipe are gone, exactly as they will be at T80.</para>
+/// recipe are gone, exactly as they will be at T80. ⚠ Since 0.222.2 a fail only goes back to gather when
+/// you can no longer pay for another attempt: *"when i have x3 mats ... I should be able to craft 3 times and
+/// fail ... not to go back after each fail"*.</para>
 ///
 /// <para>⚠ The gathered mats are <c>PaidAtHandIn: false</c>: the CRAFT spends them, so the final talk must
 /// not re-check them (it would find none and send you back to gather). Only the hammer is paid to him.
@@ -30,7 +32,7 @@ public static partial class QuestCatalog
     public const int CrafterQuestGatherStep = 1;
 
     /// <summary>The step on which the hammer may be crafted (his "try craft").</summary>
-    public const int CrafterQuestCraftStep = 8;
+    public const int CrafterQuestCraftStep = 4;
 
     static partial void RegisterCrafterQuest()
     {
@@ -50,28 +52,28 @@ public static partial class QuestCatalog
             Steps: new[]
             {
                 new QuestStep(QuestStepType.TalkTo, "Hear the Master Crafter out", TargetId: master),
+                // ONE step for all five piles (0.222.2): a failed craft used to walk you back through five
+                // steps in a row. The recipe pile asks one less once the recipe is learned.
                 new QuestStep(QuestStepType.CollectItem,
-                    "Gather at least 20 Seasoned Hardwood from the Dune Orc Archers",
-                    TargetId: ItemCatalog.CrafterQuestWood, Count: 20, PaidAtHandIn: false),
-                new QuestStep(QuestStepType.CollectItem,
-                    "Gather at least 20 Raw Iron from the Dune Orc Archers",
-                    TargetId: ItemCatalog.CrafterQuestIron, Count: 20, PaidAtHandIn: false),
-                new QuestStep(QuestStepType.CollectItem,
-                    "Gather at least 20 Rough Gems from the Harpies",
-                    TargetId: ItemCatalog.CrafterQuestGem, Count: 20, PaidAtHandIn: false),
-                new QuestStep(QuestStepType.CollectItem,
-                    "Take at least 2 hammer recipes from the Marsh Marauders (one to learn, one to use)",
-                    TargetId: ItemCatalog.CrafterQuestRecipe, Count: 2, PaidAtHandIn: false),
-                new QuestStep(QuestStepType.CollectItem,
-                    "Take a Hammer Head from the Marsh Marauders",
-                    TargetId: ItemCatalog.CrafterHammerHead, Count: 1, PaidAtHandIn: false),
+                    "Gather the materials: 20 Seasoned Hardwood and 20 Raw Iron (Dune Orc Archers), "
+                  + "20 Rough Gems (Harpies), 2 hammer recipes (one to learn, one to use) and a Hammer Head "
+                  + "(Marsh Marauders)",
+                    PaidAtHandIn: false,
+                    Items: new[]
+                    {
+                        new QuestItemNeed(ItemCatalog.CrafterQuestWood, 20),
+                        new QuestItemNeed(ItemCatalog.CrafterQuestIron, 20),
+                        new QuestItemNeed(ItemCatalog.CrafterQuestGem, 20),
+                        new QuestItemNeed(ItemCatalog.CrafterQuestRecipe, 2),
+                        new QuestItemNeed(ItemCatalog.CrafterHammerHead, 1),
+                    }),
                 new QuestStep(QuestStepType.TalkTo, "Bring the materials back to the Master Crafter",
                     TargetId: master),
                 new QuestStep(QuestStepType.DoAction,
                     "Learn the hammer recipe: use one from your bag",
                     TargetId: QuestActions.LearnRecipe),
                 new QuestStep(QuestStepType.CollectItem,
-                    "Try to craft the Blacksmith's Hammer at the Master Crafter (a fail sends you back to gather)",
+                    "Try to craft the Blacksmith's Hammer at the Master Crafter (a fail with nothing spare sends you back to gather)",
                     TargetId: ItemCatalog.CrafterHammer, Count: 1),
                 new QuestStep(QuestStepType.TalkTo, "Give the hammer to the Master Crafter", TargetId: master),
             },

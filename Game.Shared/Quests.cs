@@ -75,7 +75,15 @@ public record QuestStep(
     //       and a missing pile sends you back to its step. False: something ELSE spends them before the
     //       hand-in (the crafter quest's mats are eaten by its craft, `BL-273` part 2), so the final talk
     //       neither re-checks nor takes them.
-    bool PaidAtHandIn = true);
+    bool PaidAtHandIn = true,
+    // ----- SEVERAL ITEMS IN ONE STEP (CollectItem only; when set, TargetId/Count are ignored). The crafter
+    //       trial's five piles were five steps in a row, so a failed craft walked you back through them one
+    //       by one (owner, 2026-10-02: *"the gathering steps should be combined into one .. go and get this
+    //       mats 0/20,0/20"*). The step is met when EVERY pile is held.
+    QuestItemNeed[]? Items = null);
+
+/// <summary>One pile of a multi-item <see cref="QuestStepType.CollectItem"/> step.</summary>
+public record QuestItemNeed(string ItemId, int Count);
 
 /// <summary>What the player gets on completion. ItemIds grants quest items.
 ///

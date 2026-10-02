@@ -214,75 +214,75 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 
 ## Index — 59 open entries
 
-| id | | what it is | area |
-|---|---|---|---|
-| `BL-02` | 🔵 | The 40+ class kits, 3rd and 4th tier — five files done, the rest wait on your CSVs | classes |
-| `BL-09` | 🔵 | A floor under the wrong-weapon magic penalty, bought back by Spellcaster Mastery | combat |
-| `BL-15` | 🟡 | `precision` / `anti_magic` as LEARNABLE passives — gated on the warrior/rogue CSVs | combat |
-| `BL-18` | 🔵 | The nuker-vs-champion measurement — 19% apart, and whether that is wrong | combat |
-| `BL-19` | ⏸ | Combat depth — perfect/excellent block, position bonuses | combat |
-| `BL-21` | 🟡 | Per-mob and per-zone drop identity — queued behind `BL-48` | items |
-| `BL-23` | 🔵 | The coin curve — measured, and it is not what the old entry claimed | items |
-| `BL-25` | 🔵 | The drop-group simplification — half built, half unquotable | items |
-| `BL-30` | ⏸ | Recipe drops below A grade | items |
-| `BL-38` | 🔵 | Pets and summons — totems, class pets, the mage summoner | classes |
-| `BL-41` | 🔵 | A grade filter on the craft Gear page | UI |
-| `BL-44` | 🟡 | "Everything is a skill" — armor sets and weapon specials, the last two pieces | classes |
-| `BL-45` | 🔵 | The presentation pass — sounds, effects, the feel of it | UI |
-| `BL-48` | ⏸ | Instances — one decision open: daily attempts GLOBAL vs PER-INSTANCE | world |
-| `BL-51` | 🔵 | Castles + vault — needs the siege design first | world |
-| `BL-52` | 🔵 | World expansion toward 1kk+ | world |
-| `BL-60` | 🔵 | Death penalty, resurrection skills, Angel's Protection | systems |
-| `BL-61` | ⏸ | Network payload optimisation | systems |
-| `BL-62` | ⏸ | Bot-prevention CAPTCHA | systems |
-| `BL-72` | 🔵 | Unbuffed auto-farm is not survivable for either damage kit | world |
-| `BL-73` | 🔵 | Mob social clans go back ON once the map spreads the camps out | world |
-| `BL-74` | 🔵 | The phone still does not treat the app as a game | UI |
-| `BL-75` | 🔵 | The heal-at-0 skill wants a warrior/demon home — waits on `BL-02` | classes |
-| `BL-76` | 🔴 | Boss skill gems — a boss drops a gem that grants a skill, three rarities | items |
-| `BL-78` | 🔵 | Mobs are too easy — three of four built, only THE BILL is left | world |
-| `BL-80` | 🔵 | Fortress sieges — your own design, transcribed whole | world |
-| `BL-93` | 🔵 | In-game visuals — models, terrain, the look of the world | UI |
-| `BL-102` | 🔴 | The character models have no animation clips — one file from you | UI |
-| `BL-103` | 🔵 | Visible weapons — the shape is settled, the meshes are not | UI |
-| `BL-104` | 🔵 | The warrior's sword-vs-blunt split — ruled, nothing to attach it to yet | classes |
-| `BL-106` | ❓ | Your cross-chain id rule — six ids disobey it; three answers wanted | classes |
-| `BL-157` | 🔵 | The worm — a polymorph debuffer/nuker class, a seed only | classes |
-| `BL-165` | 🔵 | What the tank's 4th tier LEFT OPEN — the two AoE pulls (yours), and one clamp | combat |
-| `BL-170` | 🔵 | THE CLIFF AT 80 — party dps triples across the S-grade flip; three ways out, your pick | combat |
-| `BL-171` | 🔵 | THE WORLD BOSS — stats built; the encounter, mass-PvP rules and loot are owed | combat |
-| `BL-179` | 🔵 | The two TEST skills are granted to EVERY character — three ways to gate them, your pick | systems |
-| `BL-185` | 🔵 | THE DAMAGE REWORK — ✅ the SHOT (runes x2) and the DEFENCE SHAPE built 0.117.0; the armour spread + the x1.17 residual are open | combat |
-| `BL-186` | ⏸ | THE MAX LEVEL CAP — can it be removed? POSTPONED on your call 2026-09-10; not the next thing | systems |
-| `BL-189` | 🔵 | Weapon-type protection — `BowResist` generalised to every weapon type | combat |
-| `BL-202` | 🔵 | THE WARRIOR'S DAMAGE + CONTROL SKILLS — the half of both 3rd kits still owed | classes |
-| `BL-208` | ❓ | ONE cosmetic cell left from the Magus's 4th kit — three of four closed the same day | classes |
-| `BL-213` | 🟡 | The mastery roster, rewritten to your table — BUILT; two display names and four learn levels are mine | classes |
-| `BL-215` | 🔵 | THE MAGE'S DAMAGE — two levers pulled (≈×2.3 since 0.132.0); the crit-rate CAP is the third | combat |
-| `BL-218` | 🟢 | DEBUFF LAND RATES — all rulings built; nothing owed unless a playtest says so | combat |
-| `BL-228` | ⏸ | FUTURE — boss jewels that trade one school of control against another | items |
-| `BL-229` | 🔵 | THE 74→76 DEBUFF CLIFF — an un-ascended caster keeps casting the @74 rung while the world levels past it | combat |
-| `BL-230` | 🔵 | CONTROL RESISTANCE IS NOT ON THE NPC SHELF — part 1 only; part 2 built in 0.142.0 | buffs |
-| `BL-231` | 🟢 | THE LANDING-MODIFIER SCHEMA — superseded by `BL-232`; the five-bucket version was rejected | combat |
-| `BL-232` | 🔵 | `debuff_landmods.csv` IS LIVE — 74 rows built and checked; the SUCCESS column is yours to author | combat |
-| `BL-233` | ❓ | THE DEMON BUFFER'S P.DEF — measured three ways and heavy is AHEAD; I need your two sheets | classes |
-| `BL-234` | ❓ | URGENT LESSER HEAL — built to your four numbers; the per-rank falloff is mine to confirm | classes |
-| `BL-250` | 🟢 | THE SUBCLASS SYSTEM — **BUILT WHOLE** (0.155.0 server, 0.169.0 sigils, 0.170.0 the class master's dialogue). Only the APK is owed. ❓ one question in §9.6 | classes |
-| `BL-260` | ❓ | **SUMMONERS — the conversation we have never had**, and four shipped decisions already lean on it | classes |
-| `BL-263` | 🟡 | **BUFFS ARE WRAPPERS OVER `(family, level)`** — [design/BuffFamilies.md](design/BuffFamilies.md). Duration is out of the conflict rule and the first three racial wrappers are built (0.176.0); per-family group rank DECLINED, and so is the group-vs-single authoring check — a group ALWAYS outranks its singles. Left: the passive check and the racial split, both DEFERRED on your call — the racial split now carries your colour-not-abbreviation rule | skills |
-| `BL-264` | ❓ | **NO CSV SAYS WHICH BUFFS FIGHT EACH OTHER** — from `mage 1st` you cannot tell the three Mights are one family. A generated `FAMILY` + `RANK` column, checked like every other; §2 the RACE cell nothing verifies | skills |
-| `BL-270` | 🔵 | A vertical skill bar, or a wheel, for hand-held play | client |
-| `BL-281` | ⏸ | New models + animations, map order, roads, line of sight | presentation |
-| `BL-282` | 🟡 | **`BalanceMatrix --craft-cost`** ✅ built + all inputs ruled; only C5 (consumables) left, waits on §2.2 #8 — kills + hours per crafted T40/52/61/76/80 item under the NEW rules, by recipe %; extends M1-M9 | items |
-| `BL-284` | 🔵 | **RECURRING RUNE GRANT** — premium/event: a 1 h rune a day + 1-2 2 h runes a week; needs a premium status or events (neither exists) — split out of `BL-277` | progression |
-| `BL-286` | ⏸ | **CASTLE "NOBLE" CHARISMA** — a castle-holding clan leader gets charisma decay/loss protection or a grant; split out of `BL-283`; waits on castles | social |
-| `BL-288` | ⏸ | **CONSUMABLE RARITY → PLAIN LEVELS 1-6** — potions/scrolls may drop the rarity word entirely; deferred by him, split out of `BL-272` | items |
-| `BL-298` | ⏸ | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note | premium |
-| `BL-323` | ⏸ | **Server-side collision (geodata)** — the server checks walls/buildings too, not only the 3D models; waits on `BL-281` | world |
-| `BL-328` | ⏸ | **Terrain movement** — water (−70% + breath gauge, drowning) and mud (−30-50%); *"lot later"*; needs terrain data | world |
-| `BL-329` | ⏸ | **Login session timer** — 1 min from Login to entering the world, 10 min during character creation; waits for character customization | systems |
-| `BL-331` | 🔵 | **Skill icons** — game-icons.net tinted per school, `docs/data/skill_icons.csv` + `tools/SkillIcons`; bar, buff bar, Skills window (Known / Learn / Actions) BUILT 0.219.0-0.219.1, your review passed; owed: the cast bar, non-class buffs; your own redraw "a lot later" | ui |
-| `BL-332` | ❓ | **Notifications** — low HP / low potions / farm time over / died: in-game alerts, scheduled phone notifications, server push; my pick + four questions | ui |
+| id       |     | what it is                                                                                                                                                                                                                                                                                                                                                                                                                                                     | area         |
+| -------- | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| `BL-02`  | 🔵   | The 40+ class kits, 3rd and 4th tier — five files done, the rest wait on your CSVs                                                                                                                                                                                                                                                                                                                                                                             | classes      |
+| `BL-09`  | 🔵   | A floor under the wrong-weapon magic penalty, bought back by Spellcaster Mastery                                                                                                                                                                                                                                                                                                                                                                               | combat       |
+| `BL-15`  | 🟡   | `precision` / `anti_magic` as LEARNABLE passives — gated on the warrior/rogue CSVs                                                                                                                                                                                                                                                                                                                                                                             | combat       |
+| `BL-18`  | 🔵   | The nuker-vs-champion measurement — 19% apart, and whether that is wrong                                                                                                                                                                                                                                                                                                                                                                                       | combat       |
+| `BL-19`  | ⏸   | Combat depth — perfect/excellent block, position bonuses                                                                                                                                                                                                                                                                                                                                                                                                       | combat       |
+| `BL-21`  | 🟡   | Per-mob and per-zone drop identity — queued behind `BL-48`                                                                                                                                                                                                                                                                                                                                                                                                     | items        |
+| `BL-23`  | 🔵   | The coin curve — measured, and it is not what the old entry claimed                                                                                                                                                                                                                                                                                                                                                                                            | items        |
+| `BL-25`  | 🔵   | The drop-group simplification — half built, half unquotable                                                                                                                                                                                                                                                                                                                                                                                                    | items        |
+| `BL-30`  | ⏸   | Recipe drops below A grade                                                                                                                                                                                                                                                                                                                                                                                                                                     | items        |
+| `BL-38`  | 🔵   | Pets and summons — totems, class pets, the mage summoner                                                                                                                                                                                                                                                                                                                                                                                                       | classes      |
+| `BL-41`  | 🔵   | A grade filter on the craft Gear page                                                                                                                                                                                                                                                                                                                                                                                                                          | UI           |
+| `BL-44`  | 🟡   | "Everything is a skill" — armor sets and weapon specials, the last two pieces                                                                                                                                                                                                                                                                                                                                                                                  | classes      |
+| `BL-45`  | 🔵   | The presentation pass — sounds, effects, the feel of it                                                                                                                                                                                                                                                                                                                                                                                                        | UI           |
+| `BL-48`  | ⏸   | Instances — one decision open: daily attempts GLOBAL vs PER-INSTANCE                                                                                                                                                                                                                                                                                                                                                                                           | world        |
+| `BL-51`  | 🔵   | Castles + vault — needs the siege design first                                                                                                                                                                                                                                                                                                                                                                                                                 | world        |
+| `BL-52`  | 🔵   | World expansion toward 1kk+                                                                                                                                                                                                                                                                                                                                                                                                                                    | world        |
+| `BL-60`  | 🔵   | Death penalty, resurrection skills, Angel's Protection                                                                                                                                                                                                                                                                                                                                                                                                         | systems      |
+| `BL-61`  | ⏸   | Network payload optimisation                                                                                                                                                                                                                                                                                                                                                                                                                                   | systems      |
+| `BL-62`  | ⏸   | Bot-prevention CAPTCHA                                                                                                                                                                                                                                                                                                                                                                                                                                         | systems      |
+| `BL-72`  | 🔵   | Unbuffed auto-farm is not survivable for either damage kit                                                                                                                                                                                                                                                                                                                                                                                                     | world        |
+| `BL-73`  | 🔵   | Mob social clans go back ON once the map spreads the camps out                                                                                                                                                                                                                                                                                                                                                                                                 | world        |
+| `BL-74`  | 🔵   | The phone still does not treat the app as a game                                                                                                                                                                                                                                                                                                                                                                                                               | UI           |
+| `BL-75`  | 🔵   | The heal-at-0 skill wants a warrior/demon home — waits on `BL-02`                                                                                                                                                                                                                                                                                                                                                                                              | classes      |
+| `BL-76`  | 🔴   | Boss skill gems — a boss drops a gem that grants a skill, three rarities                                                                                                                                                                                                                                                                                                                                                                                       | items        |
+| `BL-78`  | 🔵   | Mobs are too easy — three of four built, only THE BILL is left                                                                                                                                                                                                                                                                                                                                                                                                 | world        |
+| `BL-80`  | 🔵   | Fortress sieges — your own design, transcribed whole                                                                                                                                                                                                                                                                                                                                                                                                           | world        |
+| `BL-93`  | 🔵   | In-game visuals — models, terrain, the look of the world                                                                                                                                                                                                                                                                                                                                                                                                       | UI           |
+| `BL-102` | 🔴   | The character models have no animation clips — one file from you                                                                                                                                                                                                                                                                                                                                                                                               | UI           |
+| `BL-103` | 🔵   | Visible weapons — the shape is settled, the meshes are not                                                                                                                                                                                                                                                                                                                                                                                                     | UI           |
+| `BL-104` | 🔵   | The warrior's sword-vs-blunt split — ruled, nothing to attach it to yet                                                                                                                                                                                                                                                                                                                                                                                        | classes      |
+| `BL-106` | ❓   | Your cross-chain id rule — six ids disobey it; three answers wanted                                                                                                                                                                                                                                                                                                                                                                                            | classes      |
+| `BL-157` | 🔵   | The worm — a polymorph debuffer/nuker class, a seed only                                                                                                                                                                                                                                                                                                                                                                                                       | classes      |
+| `BL-165` | 🔵   | What the tank's 4th tier LEFT OPEN — the two AoE pulls (yours), and one clamp                                                                                                                                                                                                                                                                                                                                                                                  | combat       |
+| `BL-170` | 🔵   | THE CLIFF AT 80 — party dps triples across the S-grade flip; three ways out, your pick                                                                                                                                                                                                                                                                                                                                                                         | combat       |
+| `BL-171` | 🔵   | THE WORLD BOSS — stats built; the encounter, mass-PvP rules and loot are owed                                                                                                                                                                                                                                                                                                                                                                                  | combat       |
+| `BL-179` | 🔵   | The two TEST skills are granted to EVERY character — three ways to gate them, your pick                                                                                                                                                                                                                                                                                                                                                                        | systems      |
+| `BL-185` | 🔵   | THE DAMAGE REWORK — ✅ the SHOT (runes x2) and the DEFENCE SHAPE built 0.117.0; the armour spread + the x1.17 residual are open                                                                                                                                                                                                                                                                                                                                 | combat       |
+| `BL-186` | ⏸   | THE MAX LEVEL CAP — can it be removed? POSTPONED on your call 2026-09-10; not the next thing                                                                                                                                                                                                                                                                                                                                                                   | systems      |
+| `BL-189` | 🔵   | Weapon-type protection — `BowResist` generalised to every weapon type                                                                                                                                                                                                                                                                                                                                                                                          | combat       |
+| `BL-202` | 🔵   | THE WARRIOR'S DAMAGE + CONTROL SKILLS — the half of both 3rd kits still owed                                                                                                                                                                                                                                                                                                                                                                                   | classes      |
+| `BL-208` | ❓   | ONE cosmetic cell left from the Magus's 4th kit — three of four closed the same day                                                                                                                                                                                                                                                                                                                                                                            | classes      |
+| `BL-213` | 🟡   | The mastery roster, rewritten to your table — BUILT; two display names and four learn levels are mine                                                                                                                                                                                                                                                                                                                                                          | classes      |
+| `BL-215` | 🔵   | THE MAGE'S DAMAGE — two levers pulled (≈×2.3 since 0.132.0); the crit-rate CAP is the third                                                                                                                                                                                                                                                                                                                                                                    | combat       |
+| `BL-218` | 🟢   | DEBUFF LAND RATES — all rulings built; nothing owed unless a playtest says so                                                                                                                                                                                                                                                                                                                                                                                  | combat       |
+| `BL-228` | ⏸   | FUTURE — boss jewels that trade one school of control against another                                                                                                                                                                                                                                                                                                                                                                                          | items        |
+| `BL-229` | 🔵   | THE 74→76 DEBUFF CLIFF — an un-ascended caster keeps casting the @74 rung while the world levels past it                                                                                                                                                                                                                                                                                                                                                       | combat       |
+| `BL-230` | 🔵   | CONTROL RESISTANCE IS NOT ON THE NPC SHELF — part 1 only; part 2 built in 0.142.0                                                                                                                                                                                                                                                                                                                                                                              | buffs        |
+| `BL-231` | 🟢   | THE LANDING-MODIFIER SCHEMA — superseded by `BL-232`; the five-bucket version was rejected                                                                                                                                                                                                                                                                                                                                                                     | combat       |
+| `BL-232` | 🔵   | `debuff_landmods.csv` IS LIVE — 74 rows built and checked; the SUCCESS column is yours to author                                                                                                                                                                                                                                                                                                                                                               | combat       |
+| `BL-233` | ❓   | THE DEMON BUFFER'S P.DEF — measured three ways and heavy is AHEAD; I need your two sheets                                                                                                                                                                                                                                                                                                                                                                      | classes      |
+| `BL-234` | ❓   | URGENT LESSER HEAL — built to your four numbers; the per-rank falloff is mine to confirm                                                                                                                                                                                                                                                                                                                                                                       | classes      |
+| `BL-250` | 🟢   | THE SUBCLASS SYSTEM — **BUILT WHOLE** (0.155.0 server, 0.169.0 sigils, 0.170.0 the class master's dialogue). Only the APK is owed. ❓ one question in §9.6                                                                                                                                                                                                                                                                                                      | classes      |
+| `BL-260` | ❓   | **SUMMONERS — the conversation we have never had**, and four shipped decisions already lean on it                                                                                                                                                                                                                                                                                                                                                              | classes      |
+| `BL-263` | 🟡   | **BUFFS ARE WRAPPERS OVER `(family, level)`** — [design/BuffFamilies.md](design/BuffFamilies.md). Duration is out of the conflict rule and the first three racial wrappers are built (0.176.0); per-family group rank DECLINED, and so is the group-vs-single authoring check — a group ALWAYS outranks its singles. Left: the passive check and the racial split, both DEFERRED on your call — the racial split now carries your colour-not-abbreviation rule | skills       |
+| `BL-264` | ❓   | **NO CSV SAYS WHICH BUFFS FIGHT EACH OTHER** — from `mage 1st` you cannot tell the three Mights are one family. A generated `FAMILY` + `RANK` column, checked like every other; §2 the RACE cell nothing verifies                                                                                                                                                                                                                                              | skills       |
+| `BL-270` | 🔵   | A vertical skill bar, or a wheel, for hand-held play                                                                                                                                                                                                                                                                                                                                                                                                           | client       |
+| `BL-281` | ⏸   | New models + animations, map order, roads, line of sight                                                                                                                                                                                                                                                                                                                                                                                                       | presentation |
+| `BL-282` | 🟡   | **`BalanceMatrix --craft-cost`** ✅ built + all inputs ruled; only C5 (consumables) left, waits on §2.2 #8 — kills + hours per crafted T40/52/61/76/80 item under the NEW rules, by recipe %; extends M1-M9                                                                                                                                                                                                                                                     | items        |
+| `BL-284` | 🔵   | **RECURRING RUNE GRANT** — premium/event: a 1 h rune a day + 1-2 2 h runes a week; needs a premium status or events (neither exists) — split out of `BL-277`                                                                                                                                                                                                                                                                                                   | progression  |
+| `BL-286` | ⏸   | **CASTLE "NOBLE" CHARISMA** — a castle-holding clan leader gets charisma decay/loss protection or a grant; split out of `BL-283`; waits on castles                                                                                                                                                                                                                                                                                                             | social       |
+| `BL-288` | ⏸   | **CONSUMABLE RARITY → PLAIN LEVELS 1-6** — potions/scrolls may drop the rarity word entirely; deferred by him, split out of `BL-272`                                                                                                                                                                                                                                                                                                                           | items        |
+| `BL-298` | ⏸   | **PREMIUM MAIN-CLASS CHANGE** — a player swaps his main class for a new one at the same level/EXP/SP, and keeps his quests; later, his note                                                                                                                                                                                                                                                                                                                    | premium      |
+| `BL-323` | ⏸   | **Server-side collision (geodata)** — the server checks walls/buildings too, not only the 3D models; waits on `BL-281`                                                                                                                                                                                                                                                                                                                                         | world        |
+| `BL-328` | ⏸   | **Terrain movement** — water (−70% + breath gauge, drowning) and mud (−30-50%); *"lot later"*; needs terrain data                                                                                                                                                                                                                                                                                                                                              | world        |
+| `BL-329` | ⏸   | **Login session timer** — 1 min from Login to entering the world, 10 min during character creation; waits for character customization                                                                                                                                                                                                                                                                                                                          | systems      |
+| `BL-331` | 🔵   | **Skill icons** — game-icons.net tinted per school, `docs/data/skill_icons.csv` + `tools/SkillIcons`; bar, buff bar, Skills window (Known / Learn / Actions) BUILT 0.219.0-0.219.1, your review passed; owed: the cast bar, non-class buffs; your own redraw "a lot later"                                                                                                                                                                                     | ui           |
+| `BL-332` | ❓   | **Notifications** — low HP / low potions / farm time over / died: in-game alerts, scheduled phone notifications, server push; my pick + four questions                                                                                                                                                                                                                                                                                                         | ui           |
 
 ---
 
@@ -496,11 +496,11 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
   clause is part of the spec: ***"the % and values can be then altered"*** — the numbers below are
   placeholders you have pre-authorised to move, so do not treat a retune of them as re-speccing you.
 
-  | Rarity | Drop chance / boss | What the gem carries |
-  |---|---|---|
-  | Epic | **50%** | one damage skill (magic OR physical) at the boss's level, **1/5** of the class skill's damage |
-  | Legendary | **5%** | a passive: PvP/PvE **atk + def** — plus the skill at **1/2** damage |
-  | Mythic | **0.5%** | the Legendary passive at a **higher** PvP/PvE %, **+1 to a random stat**, skill at **1/1** |
+  | Rarity    | Drop chance / boss | What the gem carries                                                                          |
+  | --------- | ------------------ | --------------------------------------------------------------------------------------------- |
+  | Epic      | **50%**            | one damage skill (magic OR physical) at the boss's level, **1/5** of the class skill's damage |
+  | Legendary | **5%**             | a passive: PvP/PvE **atk + def** — plus the skill at **1/2** damage                           |
+  | Mythic    | **0.5%**           | the Legendary passive at a **higher** PvP/PvE %, **+1 to a random stat**, skill at **1/1**    |
 
   🔑 **Why this one is worth building even before the numbers settle:** it is the first content that
   makes a boss kill matter *for its own sake* rather than as a lump of EXP, and it is the only reward
@@ -792,11 +792,11 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
   🔵 **2. Six ids ARE learned by both chains, and every one of them is the WARCHANTER** — which makes
   sense, since the buffer is the mage that borrows from the fighter:
 
-  | id | also learned by | what it is |
-  | --- | --- | --- |
-  | `tank_shield_mastery` | Tank, Bulwark | the Human buffer's Shield Mastery **is** the tank's skill |
-  | `hp_boost` | Warrior, Ravager, Warlord | shared HP ladder |
-  | `swap_atk_con` · `swap_atk_dex` · `swap_con_atk` · `swap_dex_atk` | most fighter classes | the ATK/CON/DEX stat swaps |
+  | id                                                                | also learned by           | what it is                                                |
+  | ----------------------------------------------------------------- | ------------------------- | --------------------------------------------------------- |
+  | `tank_shield_mastery`                                             | Tank, Bulwark             | the Human buffer's Shield Mastery **is** the tank's skill |
+  | `hp_boost`                                                        | Warrior, Ravager, Warlord | shared HP ladder                                          |
+  | `swap_atk_con` · `swap_atk_dex` · `swap_con_atk` · `swap_dex_atk` | most fighter classes      | the ATK/CON/DEX stat swaps                                |
 
   ⚠ **26 more ids are shared and are NOT violations** — `shared 4th` (your own ALL-CLASSES block) plus
   the eighteen Sigils, which every ascended class learns on purpose. The audit separates them by a
@@ -944,11 +944,11 @@ a silent bug waiting at any one of them.
 **1. How many parties is "several"? Measured, 172 kk is a very large pool for our damage model.**
 One 5-man does **694 dps** against its 3,860 P.Def. So:
 
-| raid | time to kill |
-|---|---|
-| 1 party (5) | 69 hours |
-| 9 parties (45) | **7.6 hours** |
-| 34 parties (172) | 2 hours |
+| raid             | time to kill  |
+| ---------------- | ------------- |
+| 1 party (5)      | 69 hours      |
+| 9 parties (45)   | **7.6 hours** |
+| 34 parties (172) | 2 hours       |
 
 Even read generously — much of a mass-PvP fight is spent fighting *people*, not the boss — 7.6 hours
 for nine full parties is a long evening. Either the pool comes down, or a world boss is explicitly an
@@ -987,11 +987,11 @@ two castable skills whose power is whatever the owner last typed into a tuning b
 
 **Three ways you named, and what each really costs:**
 
-| | what it is | verdict |
-|---|---|---|
-| **owner-only** | `Entity.Role` already exists (`AccountRole`), so the grant becomes one `if` and a `Remove` for everyone else | ~2 lines, server-only, **no APK** |
-| **from the admin menu** | a button in the Debug tab that adds/removes the two ids on demand | the above, plus one command + one button |
-| **an item that casts it** | the Scroll of Return pattern — the item's skill is invoked on use and never learned | most work, and a test skill you want to spam at a dummy is the worst fit for a consumable |
+|                           | what it is                                                                                                   | verdict                                                                                   |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| **owner-only**            | `Entity.Role` already exists (`AccountRole`), so the grant becomes one `if` and a `Remove` for everyone else | ~2 lines, server-only, **no APK**                                                         |
+| **from the admin menu**   | a button in the Debug tab that adds/removes the two ids on demand                                            | the above, plus one command + one button                                                  |
+| **an item that casts it** | the Scroll of Return pattern — the item's skill is invoked on use and never learned                          | most work, and a test skill you want to spam at a dummy is the worst fit for a consumable |
 
 🔴 **My pick: the middle one — role-gate the grant to nothing by default, and put a `Test skills
 ON/OFF` toggle in the admin Function tab.** It clears the two rows off every character's list
@@ -1020,16 +1020,16 @@ directions, and each produced a confident, wrong proposal from me.
 
 **What the real data says:**
 
-| | verdict |
-|---|---|
-| formula + `PhysicalK 77` + `MagicK 91` | ✅ correct, confirmed twice over. Not to be touched. |
-| weapon catalogue | ✅ **is IG's, verbatim** — bow 323/84, 400/99, 581/132; staff 226/167, 274/193; 2H 282/114. Our level-80 row is ~10% hot; that is the only drift. |
-| jewel M.Def | ✅ **is IG's, verbatim** — 95 / 71 / 48. |
-| nuke power ladder | ✅ **is IG's, verbatim** — 52/58/65/72/78/82/85/89/92/96… **Magic spell power was never short.** |
-| our mage, unbuffed | ✅ **436 vs his 365 at level 76 — we are 1.19x ABOVE.** |
-| ~~take the √ off M.Atk~~ | 🔴 **WITHDRAWN.** It rested on a units error of mine: the old page compared IG's *internal* M.Atk to our *shown* one (`min(internal, 20·√internal)`) and invented a 3x gap. |
-| ~~cut the M.Def buff legs~~ | 🔴 **WITHDRAWN (2nd time).** Your buff stack moves magic damage ×1.79; ours ×1.71. They already match. |
-| ~~rescale the archer/warrior kits~~ | 🔴 **WITHDRAWN.** Your authored `archer 3rd.csv` (Twin Arrows 1000→5000, two arrows) matches IG's real ladder (1110→4870). 0.116.0 was right. |
+|                                        | verdict                                                                                                                                                                    |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| formula + `PhysicalK 77` + `MagicK 91` | ✅ correct, confirmed twice over. Not to be touched.                                                                                                                        |
+| weapon catalogue                       | ✅ **is IG's, verbatim** — bow 323/84, 400/99, 581/132; staff 226/167, 274/193; 2H 282/114. Our level-80 row is ~10% hot; that is the only drift.                           |
+| jewel M.Def                            | ✅ **is IG's, verbatim** — 95 / 71 / 48.                                                                                                                                    |
+| nuke power ladder                      | ✅ **is IG's, verbatim** — 52/58/65/72/78/82/85/89/92/96… **Magic spell power was never short.**                                                                            |
+| our mage, unbuffed                     | ✅ **436 vs his 365 at level 76 — we are 1.19x ABOVE.**                                                                                                                     |
+| ~~take the √ off M.Atk~~               | 🔴 **WITHDRAWN.** It rested on a units error of mine: the old page compared IG's *internal* M.Atk to our *shown* one (`min(internal, 20·√internal)`) and invented a 3x gap. |
+| ~~cut the M.Def buff legs~~            | 🔴 **WITHDRAWN (2nd time).** Your buff stack moves magic damage ×1.79; ours ×1.71. They already match.                                                                      |
+| ~~rescale the archer/warrior kits~~    | 🔴 **WITHDRAWN.** Your authored `archer 3rd.csv` (Twin Arrows 1000→5000, two arrows) matches IG's real ladder (1110→4870). 0.116.0 was right.                               |
 
 **🔴 THE ONE REAL GAP — THE PER-CAST SHOT, MEASURED ×2.35.** Taking your five in-game rows, running
 your buffed M.Atk / stated M.Def / stated power through our formula and comparing to what you
@@ -1078,14 +1078,14 @@ is a mild rise with level, 58 → 70 → 76 → 87 across 40/52/76/85 — a **le
 
 **Six changes, in the order they should land** — revised 2026-09-06 after your answers:
 
-| # | change | why, measured |
-|---|---|---|
-| 1 | **Build the ARCHER and WARRIOR damage kits from the HARMONIST kits, +20%** — archer = elf harmonist skills + bow passives ×1.2; fighter = demon harmonist skills + 2H passives ×1.2 (your recipe) | 🔑 **My original "physical skill power is 10x short" was wrong as a global claim.** Our elf harmonist Sound Burst already hits a buffed mage for **495**; our archer Precise Shot for **235** — the harmonist kits are close to right and the archer/warrior kits are the ones that do not exist. 495 × 1.2 = 594 against IG's 870 @85: inside ~1.5x, not 10x. IG's ladder for reference: archer 1200/2400/6200/10200, fighter 1800/3200/7500/12500, tank 800/1400/3100/5200 at 40/52/76/85. Carries your **+20% on the passives** too. |
-| 2 | **Raise base light/robe P.Def toward IG's** | Naked-to-naked (IG @85 vs ours @90): tank 3200 vs **2682 ✅**, but fighter 2400 vs **944** and mage 1600 vs **715** — 2.2-2.5x LOW. **IG's robe→plate spread is 2.0x; ours is 3.75x.** That is the structural cause of the archer's 1:9.2 across tank/fighter/mage, and it lives in the BASE SHEETS, not the shelf. Alone it would REDUCE damage to squishies — it only lands correctly beside #1, whose numerator term is far larger (IG gets 870 on a mage from `5800+10200`; we get 236 from `4494+870`). |
-| 3 | **Take the √ off the BASE M.Atk and refit `MagicK`** | 🔴🔑 **CORRECTION — magic PERCENTAGE buffs are ALREADY outside the √.** `Entity.EffectiveMagicAttack` squares them deliberately (`magFactor * magFactor`, *Owner 2026-07-16*) so +32% yields +32%. What is still under the √ is `MagicAttack + magFlat`: the INT base, **the weapon's M.Atk and its enchant**, and flat buffs. **That is the +16 complaint exactly** (+16 staff = internal ×1.27 = damage **×1.13**), and it is the worse half because the base is the only part that GROWS. Naked, the magic attack term (`dmg·mDef/power`) grows **×8.8 for IG across 40→85 and ×2.6 for us across 40→90**. Fitting his 16 mage rows: linear M.Atk needs K to drift only **×1.40** across the grades, where √ needs **×5.1** — and physical drifts ×1.49, so **linear magic and physical want ONE shared level modifier**. Confirming: his table puts mage M.Atk 6500 beside archer P.Atk 5800; under a √ an M.Atk of 6500 contributes 80. |
-| 4 | **The shelf's COMPOUNDING (the HP legs) — NOT its M.Def legs** | 🔑 **Your correction:** the IG figures are GEARED, NO BUFFS — and naked our M.Def matches IG on all three classes (1633/1700, 2032/2000, 2261/1850). **"Cut Ward / Harmony of Ward" is WITHDRAWN.** What stands, measured inside our own game and citing nothing external: buffing BOTH sides drops every damage cell 25-40%, because HP (×2.05) and defence (×2.45) MULTIPLY while attack has one multiplier (×1.44) — ~3x survivability against ~1.5x offence. That is compounding, and the HP legs (Body +35%, Harmony of Body +30%) are the cheapest half to remove. |
-| 5 | **Crit: multipliers UNCHANGED** — ×1.35 Ferocity, ×1.35 harmony, ×1.2 Mark | Your ruling: *"The crit dmg should be as is now"*. The two missing pieces are the **archer's 700 flat crit damage** and the **+20% passives** (which ride with #1). ⚠ Today's top rung is `RogueWM` critDmg **165**, so 700 is ×4.2 — but know its size: flat crit damage joins pAtk INSIDE the ratio (`StatCalculator.CritFlatFactor`), so at P.Atk 4494 the 700 is **+15.6% on a basic crit**, and once #1 gives the archer's skills a real flat power it falls to about **+5%**. A real lever, not a fix. |
-| 6 | *last* — **the level modifier**, if still needed | Your call: *"This depends on the outcome of all others"*. The physical K his rows demand drifts 58 → 70 → 76 → 87 across 40/52/76/85 (×1.49); linear magic drifts ×1.40. One shared modifier would cover both — but only measure it after 1-5. |
+| #   | change                                                                                                                                                                                            | why, measured                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | **Build the ARCHER and WARRIOR damage kits from the HARMONIST kits, +20%** — archer = elf harmonist skills + bow passives ×1.2; fighter = demon harmonist skills + 2H passives ×1.2 (your recipe) | 🔑 **My original "physical skill power is 10x short" was wrong as a global claim.** Our elf harmonist Sound Burst already hits a buffed mage for **495**; our archer Precise Shot for **235** — the harmonist kits are close to right and the archer/warrior kits are the ones that do not exist. 495 × 1.2 = 594 against IG's 870 @85: inside ~1.5x, not 10x. IG's ladder for reference: archer 1200/2400/6200/10200, fighter 1800/3200/7500/12500, tank 800/1400/3100/5200 at 40/52/76/85. Carries your **+20% on the passives** too.                                                                                                                                                                                                                                                                                                                                                                                                     |
+| 2   | **Raise base light/robe P.Def toward IG's**                                                                                                                                                       | Naked-to-naked (IG @85 vs ours @90): tank 3200 vs **2682 ✅**, but fighter 2400 vs **944** and mage 1600 vs **715** — 2.2-2.5x LOW. **IG's robe→plate spread is 2.0x; ours is 3.75x.** That is the structural cause of the archer's 1:9.2 across tank/fighter/mage, and it lives in the BASE SHEETS, not the shelf. Alone it would REDUCE damage to squishies — it only lands correctly beside #1, whose numerator term is far larger (IG gets 870 on a mage from `5800+10200`; we get 236 from `4494+870`).                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| 3   | **Take the √ off the BASE M.Atk and refit `MagicK`**                                                                                                                                              | 🔴🔑 **CORRECTION — magic PERCENTAGE buffs are ALREADY outside the √.** `Entity.EffectiveMagicAttack` squares them deliberately (`magFactor * magFactor`, *Owner 2026-07-16*) so +32% yields +32%. What is still under the √ is `MagicAttack + magFlat`: the INT base, **the weapon's M.Atk and its enchant**, and flat buffs. **That is the +16 complaint exactly** (+16 staff = internal ×1.27 = damage **×1.13**), and it is the worse half because the base is the only part that GROWS. Naked, the magic attack term (`dmg·mDef/power`) grows **×8.8 for IG across 40→85 and ×2.6 for us across 40→90**. Fitting his 16 mage rows: linear M.Atk needs K to drift only **×1.40** across the grades, where √ needs **×5.1** — and physical drifts ×1.49, so **linear magic and physical want ONE shared level modifier**. Confirming: his table puts mage M.Atk 6500 beside archer P.Atk 5800; under a √ an M.Atk of 6500 contributes 80. |
+| 4   | **The shelf's COMPOUNDING (the HP legs) — NOT its M.Def legs**                                                                                                                                    | 🔑 **Your correction:** the IG figures are GEARED, NO BUFFS — and naked our M.Def matches IG on all three classes (1633/1700, 2032/2000, 2261/1850). **"Cut Ward / Harmony of Ward" is WITHDRAWN.** What stands, measured inside our own game and citing nothing external: buffing BOTH sides drops every damage cell 25-40%, because HP (×2.05) and defence (×2.45) MULTIPLY while attack has one multiplier (×1.44) — ~3x survivability against ~1.5x offence. That is compounding, and the HP legs (Body +35%, Harmony of Body +30%) are the cheapest half to remove.                                                                                                                                                                                                                                                                                                                                                                    |
+| 5   | **Crit: multipliers UNCHANGED** — ×1.35 Ferocity, ×1.35 harmony, ×1.2 Mark                                                                                                                        | Your ruling: *"The crit dmg should be as is now"*. The two missing pieces are the **archer's 700 flat crit damage** and the **+20% passives** (which ride with #1). ⚠ Today's top rung is `RogueWM` critDmg **165**, so 700 is ×4.2 — but know its size: flat crit damage joins pAtk INSIDE the ratio (`StatCalculator.CritFlatFactor`), so at P.Atk 4494 the 700 is **+15.6% on a basic crit**, and once #1 gives the archer's skills a real flat power it falls to about **+5%**. A real lever, not a fix.                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| 6   | *last* — **the level modifier**, if still needed                                                                                                                                                  | Your call: *"This depends on the outcome of all others"*. The physical K his rows demand drifts 58 → 70 → 76 → 87 across 40/52/76/85 (×1.49); linear magic drifts ×1.40. One shared modifier would cover both — but only measure it after 1-5.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
 🔴 **Your boss worry is right, and it is ASYMMETRIC** — *"I just hope if we fix the formulas the dmg
 of bosses that we fixed not to skyrocket"*. Raising PLAYER skill power raises player→boss damage but
@@ -1108,21 +1108,21 @@ with ~20%"* / *"For fighter kit take demon harmonist skills and 2h wepon passive
 ~20%"*. Built at **×1.25**, the midpoint of your 20~30%, in `Skills.FighterKits3rd.cs` — every number
 is a source ladder times that factor, nothing is invented, and each one names its source.
 
-| | warrior (Ravager / Warlord) | archer (Sharpshooter / Hunter / Trapper) |
-|---|---|---|
-| weapon line | **Two-Handed Sword Mastery** — Warlock Weapon Mastery ×1.25 (P.Atk 38→125, +3 acc), 2H SWORD | **Archer Bow Mastery** — Harmonist Bow Mastery ×1.25 (P.Atk 125→750), +400 range unscaled |
-| damage skill | **Sundering Blow** — Sound Smash's 13 rungs ×1.25 (power 1250→5000), 2H sword | **Split Volley** — Sound Burst's 13 rungs ×1.25, 900 range, **2 hits** |
-| armour | rungs 6-20 of the warrior's own Armor Mastery = the tank's heavy ladder **minus the crit-damage reduction**, exactly as you said | rungs 6-20 of the rogue's own Armor Mastery = **half the tank's P.Def ladder** (32→86 flat, ×1.055→×1.075), your pick |
-| extras | — | **Bow Expertise** (+12%, the harmonist's rung, cloned to Fighter) · **Killing Focus** (+20% crit damage, +700 flat) |
+|              | warrior (Ravager / Warlord)                                                                                                      | archer (Sharpshooter / Hunter / Trapper)                                                                              |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| weapon line  | **Two-Handed Sword Mastery** — Warlock Weapon Mastery ×1.25 (P.Atk 38→125, +3 acc), 2H SWORD                                     | **Archer Bow Mastery** — Harmonist Bow Mastery ×1.25 (P.Atk 125→750), +400 range unscaled                             |
+| damage skill | **Sundering Blow** — Sound Smash's 13 rungs ×1.25 (power 1250→5000), 2H sword                                                    | **Split Volley** — Sound Burst's 13 rungs ×1.25, 900 range, **2 hits**                                                |
+| armour       | rungs 6-20 of the warrior's own Armor Mastery = the tank's heavy ladder **minus the crit-damage reduction**, exactly as you said | rungs 6-20 of the rogue's own Armor Mastery = **half the tank's P.Def ladder** (32→86 flat, ×1.055→×1.075), your pick |
+| extras       | —                                                                                                                                | **Bow Expertise** (+12%, the harmonist's rung, cloned to Fighter) · **Killing Focus** (+20% crit damage, +700 flat)   |
 
 **Measured, level 90, mythic, both sides buffed** — archer P.Atk **4494 → 6647**, warrior **4256 → 4615**:
 
-| | before | after | your target |
-|---|---|---|---|
-| archer skill crit on a mage, **per arrow** | 618 | **1513** | 1500 |
-| archer skill crit on a mage, **per use (2 arrows)** | 618 | **3025** | 1500 ⚠ |
-| archer skill crit on a fighter, per use | 468 | 1778 | 1000 |
-| warrior skill crit on a mage | 524 | **1088** | 700-1500 ✅ |
+|                                                     | before | after    | your target |
+| --------------------------------------------------- | ------ | -------- | ----------- |
+| archer skill crit on a mage, **per arrow**          | 618    | **1513** | 1500        |
+| archer skill crit on a mage, **per use (2 arrows)** | 618    | **3025** | 1500 ⚠      |
+| archer skill crit on a fighter, per use             | 468    | 1778     | 1000        |
+| warrior skill crit on a mage                        | 524    | **1088** | 700-1500 ✅  |
 
 🔴 **THE ARCHER LANDS AT DOUBLE YOUR NUMBER, and it is your recipe doing it, not a slip.** Sound Burst
 carries `HitCount: 2` — two independent resolutions, each rolling its own crit — so Split Volley
@@ -1257,15 +1257,15 @@ number that does nothing. Say the word and the three cells go.
 
 **BUILT (0.133.0).** Your table, verbatim, and what each line became:
 
-| you said | who that is | built |
-|---|---|---|
-| mages → duration/reuse, no toggle | Magus | had reuse @76; **gains Lasting Enchantment @76** |
-| archers/warriors/duals → double_dmg/reuse + toggle | Ravager + Warlord | had Overpower 3/7/10% @20/40/76 and the toggle @81; **gain reuse @76** |
-| ” | the three MELEE rogues | already had all three (`BL-203` gave them Overpower @40/76) — **unchanged** |
-| ” | the three ARCHERS | **all four are new**: Overpower @40/76, reuse @76, toggle @81 |
-| “1 rung lower than warriors … (40,76)” | archers + duals | rung 1 (3%) at 40, rung 2 (7%) at 76 — the ladder `BL-203` already gave the duals |
-| buffer/healer → duration no toggle | Lightbringer + Warchanter | **unchanged** |
-| tank → nothing | Bulwark | **unchanged**, and the only line of the old roster that survived |
+| you said                                           | who that is               | built                                                                             |
+| -------------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------- |
+| mages → duration/reuse, no toggle                  | Magus                     | had reuse @76; **gains Lasting Enchantment @76**                                  |
+| archers/warriors/duals → double_dmg/reuse + toggle | Ravager + Warlord         | had Overpower 3/7/10% @20/40/76 and the toggle @81; **gain reuse @76**            |
+| ”                                                  | the three MELEE rogues    | already had all three (`BL-203` gave them Overpower @40/76) — **unchanged**       |
+| ”                                                  | the three ARCHERS         | **all four are new**: Overpower @40/76, reuse @76, toggle @81                     |
+| “1 rung lower than warriors … (40,76)”             | archers + duals           | rung 1 (3%) at 40, rung 2 (7%) at 76 — the ladder `BL-203` already gave the duals |
+| buffer/healer → duration no toggle                 | Lightbringer + Warchanter | **unchanged**                                                                     |
+| tank → nothing                                     | Bulwark                   | **unchanged**, and the only line of the old roster that survived                  |
 
 This **reverses `BL-191`'s "ARCHER — never"**, which was ruled 2026-09-10 with a reason (*"archer have
 enough skills that are always hit wit big power"*) and which I asked you to confirm before writing it
@@ -1316,11 +1316,11 @@ second one: fix `BL-212` as a level mod, raise the 76+ spell power.
 *"increase the mages spell power ... atleast 30% ... (so about 20~40 points up 110-> 130, 138->180/190)
 after 76"*. Built as **×1.30 on all three 4th-tier rotation ladders**:
 
-| ladder | skills | was | now |
-|---|---|---|---|
-| blast | Elemental Blast · Vampiric Bolt | 110 → 138 | **143 → 179** |
-| fast/rider | Quick Blast · Witches Curse | 88 → 109 | **114 → 142** |
-| area/rider | Elemental Wave · Arcane Wave · Frost Spikes · Frost Pierce | 66 → 105 | **86 → 137** |
+| ladder     | skills                                                     | was       | now           |
+| ---------- | ---------------------------------------------------------- | --------- | ------------- |
+| blast      | Elemental Blast · Vampiric Bolt                            | 110 → 138 | **143 → 179** |
+| fast/rider | Quick Blast · Witches Curse                                | 88 → 109  | **114 → 142** |
+| area/rider | Elemental Wave · Arcane Wave · Frost Spikes · Frost Pierce | 66 → 105  | **86 → 137**  |
 
 ⚠ **×1.30 rather than your two point figures, because they disagree with each other**: +20 on 110 is
 +18%, under your own *"atleast 30%"* floor, while +40 on 138 is +29%. The percentage is the ruling and
@@ -1341,12 +1341,12 @@ be short on crit"*. At ×3.12 crit damage, **every 5 points of cap is about +10%
 
 ### 📐 What the mage has gained since you last played (0.132.0 → 0.134.0)
 
-| | |
-|---|---|
-| crit pass (`BL-209`/`BL-210` + the `BL-214` bug) | **×1.25** |
-| 76+ spell power | **×1.30** |
-| Elemental Blast's reuse 1.0s → 0.5s (cycle 1.40s → 1.00s) | **×1.40** |
-| **compounded** | **≈ ×2.3** |
+|                                                           |            |
+| --------------------------------------------------------- | ---------- |
+| crit pass (`BL-209`/`BL-210` + the `BL-214` bug)          | **×1.25**  |
+| 76+ spell power                                           | **×1.30**  |
+| Elemental Blast's reuse 1.0s → 0.5s (cycle 1.40s → 1.00s) | **×1.40**  |
+| **compounded**                                            | **≈ ×2.3** |
 
 ⚠ **Re-playtest before pulling lever 3.** That is a lot in one pass, and if it lands you will not be
 able to tell which of the three did it.
@@ -1365,10 +1365,10 @@ ruling are all built. The old text is in the archive. 📐 Tables:
 
 ### ✅ Where it landed — a `×1.00` debuff against a fully-buffed level 90
 
-| | before this pass | now |
-|---|---|---|
-| magical (SPT) | 10-11% | **20-23%** |
-| physical (CON) | 8-10% | **19-24%** |
+|                | before this pass | now        |
+| -------------- | ---------------- | ---------- |
+| magical (SPT)  | 10-11%           | **20-23%** |
+| physical (CON) | 8-10%            | **19-24%** |
 
 Both inside your *"15-25% which is good"*, and the two schools are within a couple of points of each
 other for the first time. A `×0.50` skill (Numbing Shock) halves those; a `×1.50` one (Arcane Burst,
@@ -1386,12 +1386,12 @@ Your question: *"I wonder just logically shouldnt mresist add to magic debuffs r
 tank and a nullblade(for 10s) will have aditional anti magic - like endLandRate x 0.3(30% mresist)"*.
 Table A of `--ccprofile`, where the last column is now the BUILD:
 
-| defender | SPT | mRes | without mRes | **with mRes (built)** |
-|---|---|---|---|---|
-| Magus (mage) | 36 | 35% | 19.8% | **12.9%** |
-| Bulwark (tank) | 26 | 21% | 22.8% | **17.9%** |
-| Nullblade | 27 | 10% | 22.4% | **20.2%** |
-| Nullblade + Magical Armor (10s) | 27 | 60% | 22.4% | **9.0%** |
+| defender                        | SPT | mRes | without mRes | **with mRes (built)** |
+| ------------------------------- | --- | ---- | ------------ | --------------------- |
+| Magus (mage)                    | 36  | 35%  | 19.8%        | **12.9%**             |
+| Bulwark (tank)                  | 26  | 21%  | 22.8%        | **17.9%**             |
+| Nullblade                       | 27  | 10%  | 22.4%        | **20.2%**             |
+| Nullblade + Magical Armor (10s) | 27  | 60%  | 22.4%        | **9.0%**              |
 
 Your ruling: *"I like the idea mresist to decrease the chance ..it look not so much op ... and we
 espect nullblade with magical armor to resist more."* Built, passives included — you looked at the
@@ -1459,13 +1459,13 @@ ladder worth climbing. The consequence at the top of the 3rd tier is a wall.
 
 **Witches Curse (`x0.70`), against a same-level melee creature (SPT 38):**
 
-| your level | best rung you hold | it lands |
-|---|---|---|
-| 40 – 74 | tracks you (`@40` … `@74`) | **36.7%** every step |
-| 80, still `@74` | `@74` | **24.3%** |
-| 85, still `@74` | `@74` | **15.7%** |
-| 90, still `@74` | `@74` | **9.5%** |
-| 90, ascended (`@90`) | `@90` | **36.7%** |
+| your level           | best rung you hold         | it lands             |
+| -------------------- | -------------------------- | -------------------- |
+| 40 – 74              | tracks you (`@40` … `@74`) | **36.7%** every step |
+| 80, still `@74`      | `@74`                      | **24.3%**            |
+| 85, still `@74`      | `@74`                      | **15.7%**            |
+| 90, still `@74`      | `@74`                      | **9.5%**             |
+| 90, ascended (`@90`) | `@90`                      | **36.7%**            |
 
 The 4th tier fixes it completely — its rungs run `@76, @77, @78 … @90`, one per level, so an ascended
 caster never drifts. **The cliff is entirely the gap between reaching 76 and paying the 100kk Rite at
@@ -1503,11 +1503,11 @@ every race of **Warchanter** can learn, and the Warchanter learns **Clarity and 
 magic debuffs DO drop with it, 24% → 13-16%. **This section is about the NPC SHELF only, and it is
 not what you were seeing.** What you saw is §2: the two casters equal to EACH OTHER, in both states.
 
-| vs Hunter (Demon bow), lvl 90 | bare | **+ NPC shelf** | + full shelf | + Warchanter + Holy Mark |
-|---|---|---|---|---|
-| Frost Spikes (Ice, SPT, ×0.70) | 23% | **23%** | 20% | 13% |
-| Witches Curse (Inferno, SPT, ×0.70) | 24% | **24%** | 21% | 13% |
-| Frost Pierce (Ice, **CON**, ×0.50) | 13% | **13%** | **13%** | 9% |
+| vs Hunter (Demon bow), lvl 90       | bare | **+ NPC shelf** | + full shelf | + Warchanter + Holy Mark |
+| ----------------------------------- | ---- | --------------- | ------------ | ------------------------ |
+| Frost Spikes (Ice, SPT, ×0.70)      | 23%  | **23%**         | 20%          | 13%                      |
+| Witches Curse (Inferno, SPT, ×0.70) | 24%  | **24%**         | 21%          | 13%                      |
+| Frost Pierce (Ice, **CON**, ×0.50)  | 13%  | **13%**         | **13%**      | 9%                       |
 
 `magRes` reads **20% bare and 20% buffed**; `phyRes` reads **10% and 10%**. The whole 30-blessing
 shelf — Might, Ward, Body, Soul, Insight, eight harmonies, three Marks — contains **neither Clarity
@@ -1626,13 +1626,13 @@ worked example.
 The file ships as a faithful mirror of today's code, so **nothing moved except Witches Curse**. Edit
 `SUCCESS`, tell me, and I move the code to match. The `SHAPE` column sorts the work for you:
 
-| SHAPE | rows | your rule says |
-|---|---|---|
-| `DEBUFF ONLY (1)` | 32 | ×1.00 — *"a solo slow or a solo dot should be at x1"* |
-| `DEBUFF ONLY (2)` | 15 | ? — two cuts, no damage. **Armor Break is here, at ×1.5** |
-| `dmg+1 debuff` | 16 | ×0.85 — *"witches curse that does dmg should be x0.85"* |
-| `dmg+2 debuffs` | 8 | ? — *"with dmg or other debuff should go lower"*. Lower than 0.85 — 0.70? |
-| `dmg+3 debuffs` | 3 | ? — lower still? |
+| SHAPE             | rows | your rule says                                                            |
+| ----------------- | ---- | ------------------------------------------------------------------------- |
+| `DEBUFF ONLY (1)` | 32   | ×1.00 — *"a solo slow or a solo dot should be at x1"*                     |
+| `DEBUFF ONLY (2)` | 15   | ? — two cuts, no damage. **Armor Break is here, at ×1.5**                 |
+| `dmg+1 debuff`    | 16   | ×0.85 — *"witches curse that does dmg should be x0.85"*                   |
+| `dmg+2 debuffs`   | 8    | ? — *"with dmg or other debuff should go lower"*. Lower than 0.85 — 0.70? |
+| `dmg+3 debuffs`   | 3    | ? — lower still?                                                          |
 
 ⚠ **Four questions the file cannot answer for you:**
 1. **`DEBUFF ONLY (2)` vs `(1)`** — is Armor Break ×1.5 *because* it is debuff-only, or is ×1.5 its
@@ -1682,13 +1682,13 @@ multiplies whatever it lands on. So buffing *amplifies* an armour lead, it canno
 at all** — not CON, not AGI (`Entity.RecomputeDerived`, and `docs/Formulas.md`) — so its only inputs
 are items, armour masteries, set bonuses and buffs, and all four were checked:
 
-| input | heavy (Demon) | light (Elf) |
-|---|---|---|
-| epic 76 body | **232** | 174 |
-| helm + gloves + boots + jewels | 134 | 134 |
-| `buffer_armor_mastery` rung 29 | +193 (identical for all three weights, by your own one-line rows) | +193 |
-| race mastery (`Heavy Armor Mastery` / `Harmonist Light Mastery`) | no P.Def — speed clauses, crit-damage resist, MP regen | no P.Def — speed clauses, evasion, crit-rate resist |
-| tier-76 set bonus | Ironforge A: HP/STR/CON/CC — **no P.Def** | Nightleaf A: P.Atk/atk speed/MP — **no P.Def** |
+| input                                                            | heavy (Demon)                                                     | light (Elf)                                         |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------- | --------------------------------------------------- |
+| epic 76 body                                                     | **232**                                                           | 174                                                 |
+| helm + gloves + boots + jewels                                   | 134                                                               | 134                                                 |
+| `buffer_armor_mastery` rung 29                                   | +193 (identical for all three weights, by your own one-line rows) | +193                                                |
+| race mastery (`Heavy Armor Mastery` / `Harmonist Light Mastery`) | no P.Def — speed clauses, crit-damage resist, MP regen            | no P.Def — speed clauses, evasion, crit-rate resist |
+| tier-76 set bonus                                                | Ironforge A: HP/STR/CON/CC — **no P.Def**                         | Nightleaf A: P.Atk/atk speed/MP — **no P.Def**      |
 
 ### ❓ What I need from you (any one of these settles it)
 
@@ -1749,24 +1749,24 @@ Today `SigilSlot` is a real exclusion axis — one per slot, enforced by `Exclus
 three subs are required to open the 3 slot -> then every other just opens their tree (if not
 opened)"*.
 
-| what | rule |
-|---|---|
-| **level gate** | that SUBCLASS is **75** |
-| **class gate** | it holds its **3rd class**, granted automatically when the subclass is created (`BL-252`) |
-| **slots** | subclass #1 → sigil slot 1, #2 → slot 2, #3 → slot 3. **Three is the ceiling** |
-| **subs 4 and up** | open **only their tree**, never a fourth sigil slot |
-| **main class** | opens **nothing** — no slot, and no tree of its own group |
+| what              | rule                                                                                      |
+| ----------------- | ----------------------------------------------------------------------------------------- |
+| **level gate**    | that SUBCLASS is **75**                                                                   |
+| **class gate**    | it holds its **3rd class**, granted automatically when the subclass is created (`BL-252`) |
+| **slots**         | subclass #1 → sigil slot 1, #2 → slot 2, #3 → slot 3. **Three is the ceiling**            |
+| **subs 4 and up** | open **only their tree**, never a fourth sigil slot                                       |
+| **main class**    | opens **nothing** — no slot, and no tree of its own group                                 |
 
 ### 3. 🔑 A SIGIL GROUP IS UNLOCKED BY OWNING A SUBCLASS OF IT
 
-| group | the classes that unlock it | its three sigils |
-|---|---|---|
-| mage | the 3 Apprentice | Frenzy · Mage Defence · Arcane Support |
-| healer | the 3 Priest, healer discipline | Holy Power · Holy Protection · Holy Support |
-| buffer | the 3 Priest, buffer discipline | Soul · Spirit · Immortality |
-| rogue | the 6 Rogue | Focus · Agility · Aim |
-| warrior | the 6 Warrior | Fury · Duel · Fortitude |
-| tank | the 3 Knight | Body · Aegis · Critical Protection |
+| group   | the classes that unlock it      | its three sigils                            |
+| ------- | ------------------------------- | ------------------------------------------- |
+| mage    | the 3 Apprentice                | Frenzy · Mage Defence · Arcane Support      |
+| healer  | the 3 Priest, healer discipline | Holy Power · Holy Protection · Holy Support |
+| buffer  | the 3 Priest, buffer discipline | Soul · Spirit · Immortality                 |
+| rogue   | the 6 Rogue                     | Focus · Agility · Aim                       |
+| warrior | the 6 Warrior                   | Fury · Duel · Fortitude                     |
+| tank    | the 3 Knight                    | Body · Aegis · Critical Protection          |
 
 **Your own count, verbatim:** *"as warrior/rogue u can have 6 subs and all trees and change them as u
 like for the price of 100kk, tank,buffer,healer will get up to 5 trees without their own, mage for now
@@ -1781,11 +1781,11 @@ here either.
 *"we can remove their sp/gold cost -> they are their own system. only clearing will cost 100kk (its
 10kk now i think + losing the 60kk sp and 30kk gold)"*.
 
-| | today | after |
-|---|---|---|
-| commit one sigil | 20kk SP + 10kk gold (`SigilSpCost` / `SigilGoldCost`) | **free** |
-| commit all three | 60kk SP + 30kk gold | **free** |
-| clear one | 10kk gold, no refund (`SigilResetGold`) | **100kk gold** |
+|                  | today                                                 | after          |
+| ---------------- | ----------------------------------------------------- | -------------- |
+| commit one sigil | 20kk SP + 10kk gold (`SigilSpCost` / `SigilGoldCost`) | **free**       |
+| commit all three | 60kk SP + 30kk gold                                   | **free**       |
+| clear one        | 10kk gold, no refund (`SigilResetGold`)               | **100kk gold** |
 
 ✅ **ANSWERED 2026-09-17: `SigilResetGold` is 100kk and it WIPES ALL THREE** — *"100kk wipes all"*.
 My reading was the other one (100kk per sigil, which would have made a full reset 300kk) and you chose
@@ -1797,16 +1797,16 @@ more.
 A character does not simply "have" subclass slots any more. **Three arrive with your progress, and
 every one after that is bought.**
 
-| slot | how it opens | your words |
-|---|---|---|
-| **1** | your MAIN reaches **76** and takes its 4th class | *"When you get main to 76(4th) u get your 1st ticket"* |
-| **2** | subclass #1 reaches **75** | *"then once sub gets to 75 u get ur secondTicket (+ sigils and etc)"* |
-| **3** | subclass #2 reaches **75** | *"same for second"* |
-| — | subclass #3 reaching 75 pays **no ticket** | *"then u lvl up ur 3rd sub class and no ticket only sigils"* |
-| **4** | bought for **500kk gold** | |
-| **5** | bought for **5kkk gold** (5 billion — checked: `Gold` is a `long` on the entity, the record and every DTO, so it fits) | |
-| **6 · 7** | bought for **100 / 1,000 PLATINUM** ✅ | *"make the slots tickets buy able with plat need 100/1000/5000"* (2026-09-16) |
-| ~~**8**~~ | ~~5,000 platinum~~ — **CUT 2026-09-17, until the summoner exists** | *"remove last platinum rung for now and when summoner is build we will add it back"* |
+| slot      | how it opens                                                                                                           | your words                                                                           |
+| --------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| **1**     | your MAIN reaches **76** and takes its 4th class                                                                       | *"When you get main to 76(4th) u get your 1st ticket"*                               |
+| **2**     | subclass #1 reaches **75**                                                                                             | *"then once sub gets to 75 u get ur secondTicket (+ sigils and etc)"*                |
+| **3**     | subclass #2 reaches **75**                                                                                             | *"same for second"*                                                                  |
+| —         | subclass #3 reaching 75 pays **no ticket**                                                                             | *"then u lvl up ur 3rd sub class and no ticket only sigils"*                         |
+| **4**     | bought for **500kk gold**                                                                                              |                                                                                      |
+| **5**     | bought for **5kkk gold** (5 billion — checked: `Gold` is a `long` on the entity, the record and every DTO, so it fits) |                                                                                      |
+| **6 · 7** | bought for **100 / 1,000 PLATINUM** ✅                                                                                  | *"make the slots tickets buy able with plat need 100/1000/5000"* (2026-09-16)        |
+| ~~**8**~~ | ~~5,000 platinum~~ — **CUT 2026-09-17, until the summoner exists**                                                     | *"remove last platinum rung for now and when summoner is build we will add it back"* |
 
 ✅ **THE LADDER IS SEVEN RUNGS AND THE ROSTER IS SEVEN SUBCLASSES — they match exactly.** Three earned
 + four bought (500kk · 5kkk · 100 plat · 1,000 plat) = **7 slots**, and `--paths` measures **8 paths**,
@@ -1954,12 +1954,12 @@ The point of the entry is that the discussion is owed **before** any of them is 
 `BL-38` (*"Pets and summons — immovable totems, class pets, the mage summoner"*) is the old,
 never-scheduled design note. This is the **live** one, because four things now depend on it:
 
-| what already assumes it | where | what it assumes |
-|---|---|---|
-| the **8th subclass slot** | `BL-250` §5 | cut until *"summoner is build"* — 5,000 platinum comes back with it |
-| the **mage sigil group** | `BL-250` §3 | a mage can only reach his OWN group once nuker ↔ summoner is a second **path** |
-| the **path count** | `BL-255` | 8 paths today; the summoner is the **ninth**, and that is what makes eight subclasses reachable |
-| the **roster shape** | `CLAUDE.md` | *"EIGHT choosable paths per race and 24 third classes"* — a ninth path moves both numbers |
+| what already assumes it   | where       | what it assumes                                                                                 |
+| ------------------------- | ----------- | ----------------------------------------------------------------------------------------------- |
+| the **8th subclass slot** | `BL-250` §5 | cut until *"summoner is build"* — 5,000 platinum comes back with it                             |
+| the **mage sigil group**  | `BL-250` §3 | a mage can only reach his OWN group once nuker ↔ summoner is a second **path**                  |
+| the **path count**        | `BL-255`    | 8 paths today; the summoner is the **ninth**, and that is what makes eight subclasses reachable |
+| the **roster shape**      | `CLAUDE.md` | *"EIGHT choosable paths per race and 24 third classes"* — a ninth path moves both numbers       |
 
 ### What has to be decided, and none of it is decided
 1. **Is it a base class, a DISCIPLINE of the mage, or a 3rd-class branch?** `BL-255` makes this the
@@ -2117,11 +2117,11 @@ skill grants, plus `CoveredKeys` on a group.
 
 **Your own worked example, `mage 1st.csv` rows 9-11:**
 
-| row | id | name | race | what the row tells you |
-|---|---|---|---|---|
-| 7 | `elf_cast_atk_phys` | Forest Might | Elf | nothing about Might |
-| 7 | `demon_cast_atk_phys` | Demonic Strength | Demon | nothing about Might |
-| 7 | `human_cast_atk_phys` | Blessing of Might | Human | nothing about Might |
+| row | id                    | name              | race  | what the row tells you |
+| --- | --------------------- | ----------------- | ----- | ---------------------- |
+| 7   | `elf_cast_atk_phys`   | Forest Might      | Elf   | nothing about Might    |
+| 7   | `demon_cast_atk_phys` | Demonic Strength  | Demon | nothing about Might    |
+| 7   | `human_cast_atk_phys` | Blessing of Might | Human | nothing about Might    |
 
 All three name the same child rung (`buff_atk_phys_1`), which is the whole reason they replace each
 other — and `cast_atk_phys` on the cleric's ladder, the NPC's shelf row, the potion and the scroll
@@ -2334,11 +2334,11 @@ Discusion and open BL entry"*. Nothing built. This is the shape of it, and four 
 
 **There are three different kinds, and each costs a different amount:**
 
-| kind | when it reaches you | examples | what it takes |
-|---|---|---|---|
-| **A. In-game alerts** | the game is OPEN on screen | low HP, low potions, died, whisper/party invite while chat is closed | client only: a banner + vibration (+ a sound later), each with an on/off in Settings. Cheap. |
-| **B. Phone notifications the game SCHEDULES** | the game is in the background or closed | "your auto-farm time ends now", "offline farming has ended" | Unity's Mobile Notifications package, and on Android 13+ the phone asks the player once for permission. Medium. ⚠ Only things whose TIME is known when you leave the game: the moment Android backgrounds us the connection to the server goes quiet, so the phone cannot react to anything that happens after (we reconnect when you come back). |
-| **C. Push from the SERVER** | the game is closed | "you died while offline farming", "Ana whispered you" | Google's Firebase messaging: a Firebase project, a key file in the APK, the server sending through Google, a device token stored per account. Large, and it ties the game to a Google account. |
+| kind                                          | when it reaches you                     | examples                                                             | what it takes                                                                                                                                                                                                                                                                                                                                     |
+| --------------------------------------------- | --------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **A. In-game alerts**                         | the game is OPEN on screen              | low HP, low potions, died, whisper/party invite while chat is closed | client only: a banner + vibration (+ a sound later), each with an on/off in Settings. Cheap.                                                                                                                                                                                                                                                      |
+| **B. Phone notifications the game SCHEDULES** | the game is in the background or closed | "your auto-farm time ends now", "offline farming has ended"          | Unity's Mobile Notifications package, and on Android 13+ the phone asks the player once for permission. Medium. ⚠ Only things whose TIME is known when you leave the game: the moment Android backgrounds us the connection to the server goes quiet, so the phone cannot react to anything that happens after (we reconnect when you come back). |
+| **C. Push from the SERVER**                   | the game is closed                      | "you died while offline farming", "Ana whispered you"                | Google's Firebase messaging: a Firebase project, a key file in the APK, the server sending through Google, a device token stored per account. Large, and it ties the game to a Google account.                                                                                                                                                    |
 
 **My recommendation:** build **A** now and **B for the farm timers** with it (both known in advance: the server already
 tells the client the auto-farm and offline allowances). Park **C** until there is a release and real players to reach;

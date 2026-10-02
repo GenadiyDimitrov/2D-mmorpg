@@ -21,9 +21,31 @@
 
 ## My Finds — next pass (write here)
 
-- [ ] ->
-
+- [~] -> Toggle buffs/skills to be in their own group in the "Known" tab of skill window. -> now they are inbetween the buffs and its hard to locate them -> no need for different type or some sort of big sills change .. only the known tab to separate them
+- [~] -> some1 that will need the 2 types of runes is having bad time ... buffers currently later summoners (they will need spell+rune_grand_pets) -> i want in the shop rune grand for 1h and 2h and to be the price of 1+half of the second -> no1 with a single spec will by it .. only the one that rly need it
+  - 1h Grand Rune -> 150k + 75k = 225k
+  - 2h Grand Rune -> 280k + 140k = 420k 
+  - 1h Pet Grand Rune -> 75k
+  - 2h Pet Grand Rune -> 140k
+  - so summoners second rune and anyone with a pet can use it -> but the Pet rune is defered as im not sure ill increase the default stats of the pet or will grand them a rune effect as well
+- [~] -> Decreased the MP cost for physical skills of buffer (archer the same - more dmg more mp ..) 
 ---
+
+## §130 — 0.222.2: the Master's Trial — one gather step, retry while you hold mats (2026-10-02)
+
+Your find (`[!]`): *"the gathering steps should be compined into one .. So when i have x3 mats ... I should be able to
+craft 3 times and fail ... not to go back after each fail"*. Server-only, no APK. ⚠ A character already mid-trial may
+read oddly (the steps were renumbered) — abandon and retake it.
+
+- `130a` [ ] - **Take the trial**: after the first talk, ONE step lists all five piles (counter 0/63); the quest window's
+  gather list shows each pile. Holding all five moves it on to "bring the materials back". ->
+- `130b` [ ] - **Fail a hammer while holding a second set** (2 heads, 40+ of each mat, a spare recipe): the trial STAYS on
+  the craft step ("you have the materials for another attempt") and you craft again at once. ->
+- `130c` [ ] - **Fail with nothing spare**: back to the gather step, which now asks only ONE hammer recipe (you know it
+  already). ->
+
+## 0.222.1: Over the Limit no longer takes one of the 20 buff slots (2026-10-02)
+- [ ] - **Over the Limit no longer takes one of the 20 buff slots**
 
 ## §129 — 0.222.0: `/who <name>` (2026-10-02)
 
