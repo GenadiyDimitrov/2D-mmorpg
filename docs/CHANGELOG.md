@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.227.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.227.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,21 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-03 (latest) — 0.227.0: weapon lines drop in pairs; recipes, buff/dash potions and attribute scrolls cut
+## 2026-10-03 (latest) — 0.227.1: buffer Mana Vampirism 3/6/9%, the elf stops at 6%, and bows finally drain
+
+**Server restart + APK** (a class-skill-table change: the client builds its Learn tab locally). No `game.db` delete.
+
+- **His ask:** *"Increase mana vamp (buffers) - because is basic attack only 3% is very low number .. I would like max
+  lvl to match the 9% normal vamp ... From 1/1.5/2% to 3/6/9 and elf to lvl it to lvl 2 only for the bow to be at 6%"*.
+- **`mana_vampirism` 1/1.5/2% → 3/6/9%** (blunt and bow alike). `buffer 3rd.csv` moved with it.
+- **Rung 3 (9%, @70) is Human + Demon only** (`RACE = Demon;Human` on the row). The elf tops out at rung 2, 6%.
+  `--reprice-sp` re-solved the elf curve without that 148k rung: its other late rungs (armour/weapon/bow mastery 68-74,
+  Sound Burst 74) rose ~1%.
+- 🔴 **Bug fixed — a bow drained NOTHING.** The mastery has granted mana vamp on blunt OR bow since 0.101.3, but the
+  on-hit line in `GameLoopService` still skipped `WeaponType.Bow`, so the elf buffer's whole line was dead. The weapon
+  gate now lives only in the mastery profile.
+
+## 2026-10-03 — 0.227.0: weapon lines drop in pairs; recipes, buff/dash potions and attribute scrolls cut
 
 **Server restart.** No `game.db` delete. No APK needed for the drops (the server rolls them); the client's local
 "droppable" marker still lists the four merchant-only HP/MP recipes until the next APK.

@@ -16168,9 +16168,10 @@ public class GameLoopService : BackgroundService
             if (damage > 0) TryChargeOnBasic(attacker, outcome == CombatOutcome.Crit);
             // MANA vampirism (Warchanter Mana Vampirism) — the same trigger, a different bar. His row
             // says "physical basic atack only", which is exactly where this sits: a skill never drains.
-            // Bows are excluded for the same reason melee vamp excludes them, and the mastery that
-            // grants it is blunt-gated anyway.
-            if (attacker.ManaVamp > 0f && damage > 0 && attacker.WeaponType != WeaponType.Bow)
+            // 🔴 BOWS COUNT (2026-10-03): the mastery has granted it blunt-OR-bow since 2026-08-29, but
+            // this line still skipped bows, so the elf's bow drained nothing. The weapon gate lives
+            // in the mastery profile; nothing here second-guesses it.
+            if (attacker.ManaVamp > 0f && damage > 0)
             {
                 int mana = (int)(damage * attacker.ManaVamp);
                 if (mana > 0 && attacker.Mp < attacker.MaxMp)

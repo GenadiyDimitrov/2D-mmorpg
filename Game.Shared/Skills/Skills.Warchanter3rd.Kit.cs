@@ -140,6 +140,10 @@ public static partial class SkillCatalog
         //      is the wrong place for variance. You want to know whether you can keep buffing, not
         //      roll for it. The proc version is one ProcChance field away if he wants the spike. ----
         //
+        //      RAISED 2026-10-03 to 3/6/9%: *"because is basic attack only 3% is very low number .. I
+        //      would like max lvl to match the 9% normal vamp"*. The ELF stops at rung 2 (6%) — *"elf
+        //      to lvl it to lvl 2 only for the bow to be at 6%"* — see ClassSkillTables.Third.cs.
+        //
         // 🔴 BLUNT **OR BOW** — fixed 2026-08-29, his correction: *"the mana vamp works on basic attack
         //    with required weapon blunt or bow ... not only blunt"*. His CSV row has always said
         //    `Require: Bow/Blunt`; only the code said blunt. Same shape as the Combo Mastery bug found
@@ -157,12 +161,12 @@ public static partial class SkillCatalog
             },
             WeaponMasteryLevels: new[]
             {
-                new WeaponMasteryProfile(Blunt: new PassiveEffect(ManaVamp: 0.010f),
-                                         Bow:   new PassiveEffect(ManaVamp: 0.010f)),
-                new WeaponMasteryProfile(Blunt: new PassiveEffect(ManaVamp: 0.015f),
-                                         Bow:   new PassiveEffect(ManaVamp: 0.015f)),
-                new WeaponMasteryProfile(Blunt: new PassiveEffect(ManaVamp: 0.020f),
-                                         Bow:   new PassiveEffect(ManaVamp: 0.020f)),
+                new WeaponMasteryProfile(Blunt: new PassiveEffect(ManaVamp: 0.03f),
+                                         Bow:   new PassiveEffect(ManaVamp: 0.03f)),
+                new WeaponMasteryProfile(Blunt: new PassiveEffect(ManaVamp: 0.06f),
+                                         Bow:   new PassiveEffect(ManaVamp: 0.06f)),
+                new WeaponMasteryProfile(Blunt: new PassiveEffect(ManaVamp: 0.09f),
+                                         Bow:   new PassiveEffect(ManaVamp: 0.09f)),
             }));
 
         // ---- Combo Mastery — 3 rungs @52/64/74, and THE FIRST ON-HIT PROC IN THE GAME.

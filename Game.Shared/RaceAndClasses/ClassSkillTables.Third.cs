@@ -486,14 +486,17 @@ public static partial class ClassSkillTables
         //    at all — so the mana comes back through the weapon or the buffer stops buffing. The elf
         //    was the one race that could not do that. ⚠ His CSV row has always had a BLANK race
         //    column, i.e. all three; the code was the odd one out.
-        kit2.AddRange(Ladder(ManaVampirism, new[] { 40, 60, 70 }));
+        // 🔑 3/6/9% since 2026-10-03, and the ELF STOPS AT RUNG 2 (6%) — his ruling: *"elf to lvl it to
+        //    lvl 2 only for the bow to be at 6%"*. Rung 3 (9%, @70) is Human + Demon, added below.
+        kit2.AddRange(Ladder(ManaVampirism, new[] { 40, 60 }));
+        var manaVamp3 = new ClassSkill(ManaVampirism, 70, SkillLevel: 3);
 
         // ---- HUMAN: the shield tank. Blunt + shield, ONE damage skill. ---------------------------
         // 🔑 MONSTER KNOWLEDGE — HUMAN + DEMON (owner, 2026-10-01, his `buffer 3rd.csv` rows). Rungs 2-4,
         //    continuing the cleric's rung 1 at 35; the elf levels on its own Frost Spikes instead.
         var mk = Ladder(MonsterKnowledgeActive, new[] { 40, 48, 52 }, startRung: 2).ToArray();
 
-        var human = new List<ClassSkill>(kit2);
+        var human = new List<ClassSkill>(kit2) { manaVamp3 };
         human.AddRange(mk);
         human.AddRange(Ladder(SoundSmash, band13));
         // The Human's own weapon line, authored 2026-09-02 — the same eight-rung band the Elf's bow
@@ -508,7 +511,7 @@ public static partial class ClassSkillTables
         // ---- DEMON: the melee fighter. Heavy armour, blunt, and TWO damage skills — his ruling,
         //      2026-08-21: *"ork is mele fighter so need more than 1dmg skill"*. Acoustic Shock is
         //      Sound Smash's twin with a stun, and it exists for exactly that reason. -------------
-        var demon = new List<ClassSkill>(kit2);
+        var demon = new List<ClassSkill>(kit2) { manaVamp3 };
         demon.AddRange(mk);
         demon.AddRange(Ladder(SoundSmash, band13));
         demon.AddRange(Ladder(AcousticShock, band13));
