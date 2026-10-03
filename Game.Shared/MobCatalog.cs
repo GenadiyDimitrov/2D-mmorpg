@@ -964,6 +964,12 @@ public static class MobCatalog
     // Internal for the recipe givers' pools (`BL-274` part 3: weapons 8, armour = bodies + smalls 7, jewels 3), so
     // a quest's pool and the drop tables read the same kinds.
     internal static string[] WeaponKeys => new[] { "sword1h", "sword2h", "blunt1h", "blunt2h", "duals", "bow", "wand", "staff" };
+    /// <summary>The weapon lines a carrier always drops TOGETHER: Blade + Greatsword, Mace + Maul, Bow + Fangs,
+    /// Wand + Staff (owner, 2026-10-03).</summary>
+    private static string[][] WeaponPairs => new[]
+    {
+        new[] { "sword1h", "sword2h" }, new[] { "blunt1h", "blunt2h" }, new[] { "bow", "duals" }, new[] { "wand", "staff" },
+    };
     private static string[] BodyKeys => new[] { "heavy", "light", "robe" };
     private static string[] SmallKeys => new[] { "helm", "gloves", "boots", "shield" };
     internal static string[] ArmourKeys => BodyKeys.Concat(SmallKeys).ToArray();
@@ -1060,18 +1066,27 @@ public static class MobCatalog
             foreach (var m in Take(MobSpecialty.Body, nB)) profiles[m.Id] = new(MobSpecialty.Body, BodyKeys);
             foreach (var m in left) profiles[m.Id] = new(MobSpecialty.SmallArmour, SmallKeys);
 
-            // The eight weapon lines: each carrier first takes the line it HOLDS (if nobody has it yet), then
-            // the rest go one at a time to whoever holds the fewest, in a stable shuffled order.
+            // The weapon lines are dealt in PAIRS (owner, 2026-10-03: *"if some mob drops mace to drop a maul as
+            // well. If some1 drops blade to drop greatsword .. Bow and fang"*) — a 2H line rode on ONE carrier in
+            // a band, sometimes an elite-only one, while the bow had several. Each carrier first takes the pair
+            // of the line it HOLDS (if nobody has it yet), then the rest go one at a time to whoever holds the
+            // fewest, in a stable shuffled order; a carrier left empty doubles up on the pair FEWEST carriers hold —
+            // never its own held pair, since archers are common and that is how bows came to drop everywhere.
             var lines = weapons.ToDictionary(m => m.Id, _ => new List<string>());
-            var undealt = new List<string>(WeaponKeys);
+            var undealt = WeaponPairs.ToList();
             var order = weapons.OrderBy(m => StableHash(m.Id + "/lines")).ToList();
             foreach (var m in order)
-                if (HeldWeaponKey(m) is { } held && undealt.Remove(held))
-                    lines[m.Id].Add(held);
-            foreach (var key in undealt)
-                lines[order.OrderBy(m => lines[m.Id].Count).First().Id].Add(key);
-            foreach (var m in order.Where(m => lines[m.Id].Count == 0))
-                lines[m.Id].Add(WeaponKeys[StableHash(m.Id + "/extra") % 8]);
+                if (HeldWeaponKey(m) is { } held && undealt.FirstOrDefault(p => p.Contains(held)) is { } pair)
+                {
+                    undealt.Remove(pair);
+                    lines[m.Id].AddRange(pair);
+                }
+            foreach (var pair in undealt)
+                lines[order.OrderBy(m => lines[m.Id].Count).First().Id].AddRange(pair);
+            foreach (var m in order.Where(m => lines[m.Id].Count == 0).ToList())
+                lines[m.Id].AddRange(WeaponPairs
+                    .OrderBy(p => lines.Values.Count(l => l.Contains(p[0])))
+                    .ThenBy(p => StableHash(m.Id + "/extra/" + p[0])).First());
             foreach (var m in weapons)
                 profiles[m.Id] = new(MobSpecialty.Weapons, WeaponKeys.Where(lines[m.Id].Contains).ToArray());
 
@@ -1185,7 +1200,7 @@ public static class MobCatalog
         int c = RecipeColumn(key);
         int[] t76Elite = { 500, 500, 400, 300, 300, 200, 200, 300, 250, 150 };     // RULED (40%)
         int[] t80Elite = { 1000, 1000, 800, 600, 600, 400, 400, 600, 500, 300 };   // RULED (for 20%; 40% since 0.203.0)
-        return tier switch
+        (int Pct, double Chance)? r = tier switch
         {
             40 => elite ? (100, 1 / 50.0) : (100, 1 / 100.0),
             52 => elite ? (100, 1 / 88.0) : (100, 1 / 175.0),
@@ -1194,7 +1209,13 @@ public static class MobCatalog
             80 => elite ? (40, 1.0 / t80Elite[c]) : null,
             _ => null,
         };
+        return r is { } v ? (v.Pct, v.Chance / MobRecipeCut) : null;
     }
+
+    /// <summary>Every recipe a NORMAL or ELITE creature drops (gear and generic) is divided by this (owner,
+    /// 2026-10-03: *"Decrease the drop chance of recipes as well for now only 2~3 times"*). Bosses are untouched:
+    /// they read <see cref="BossDrops"/>, not this.</summary>
+    public const double MobRecipeCut = 2.5;
 
     /// <summary>A per-kill RATE as a drop entry with the same mean: below 1 a chance at one, above it a
     /// quantity band around the rate whose chance is corrected so chance × mean quantity == rate exactly.</summary>
@@ -1275,13 +1296,17 @@ public static class MobCatalog
 
         // `BL-305`: the GENERIC recipes of this tier (Crafting.GenericDropsAtTier), whatever the specialty, split
         // evenly inside the band. One group with the gear books, so the recipe rate knob moves both.
+        // ⚠ The Common/Uncommon HP and MP lines (L0, L2) are BUY-ONLY from the Master (owner, 2026-10-03: *"Remove the
+        // common/uncommon mp/hp potion rcps from mobs"*). They still count in the split, so removing them took their
+        // share out of the world instead of handing it to the lines left.
         if (ti >= 0)
         {
             var band = Crafting.GenericLadder().Where(g => Crafting.GenericDropsAtTier(g.Level, tier)).ToList();
-            double each = GenericRecipePerKill * (elite ? CommonGearEliteMul : 1f) / Math.Max(1, band.Count);
+            double each = GenericRecipePerKill * (elite ? CommonGearEliteMul : 1f) / Math.Max(1, band.Count) / MobRecipeCut;
             foreach (var (outputId, glevel) in band)
-                list.Add(new DropEntry(ItemCatalog.RecipeBookId($"craft_{outputId}", 100),
-                    (float)(each * GenericRecipeDropMul(glevel)), GroupId: GroupRecipe));
+                if (!Crafting.MasterSellsGeneric(outputId))
+                    list.Add(new DropEntry(ItemCatalog.RecipeBookId($"craft_{outputId}", 100),
+                        (float)(each * GenericRecipeDropMul(glevel)), GroupId: GroupRecipe));
         }
 
         if (tier >= 76)
@@ -1395,6 +1420,14 @@ public static class MobCatalog
             rows.AddRange(EnchantScrollDrops(level, rank));
             rows.AddRange(UtilityScrollDrops(level, rank));
         }
+        // The template bakes the CUT consumable rows (2026-10-03); a boss swaps in the uncut ones, at the template's
+        // own level exactly as they were baked before, so "bosses drop unaffected" holds on every template.
+        if (rank == MobRank.Boss)
+        {
+            rows.RemoveAll(r => IsBossKeptConsumable(r.ItemId));
+            rows.AddRange(StandardDrops(type.Level, type.Category, type.Id, boss: true)
+                .Where(r => IsBossKeptConsumable(r.ItemId)));
+        }
         // `BL-280`: a creature's REWARD SHARE scales every row it rolls — here, once, so the kill roll, the
         // inspect list and the drop index all read the halved number.
         float reward = type.Mod?.Reward ?? 1f;
@@ -1445,7 +1478,15 @@ public static class MobCatalog
         _ => (MaterialType.Gem, MaterialType.Wood),   // MagicCreature / Angel
     };
 
-    private static DropEntry[] StandardDrops(int level, MobCategory cat, string id)
+    /// <summary>The StandardDrops rows a BOSS rolls at their pre-2026-10-03 rate while every other rank rolls them
+    /// cut: the six buff potions, the two Dash rungs and the Common/Uncommon attribute scrolls.</summary>
+    private static bool IsBossKeptConsumable(string itemId) =>
+        itemId == ItemCatalog.SpeedPotionC || itemId == ItemCatalog.CastPotionC || itemId == ItemCatalog.AtkPotionC
+        || itemId == ItemCatalog.SpeedPotionU || itemId == ItemCatalog.CastPotionU || itemId == ItemCatalog.AtkPotionU
+        || itemId == ItemCatalog.DashPotionC || itemId == ItemCatalog.DashPotionU
+        || itemId == ItemCatalog.AttrScrollCommon || itemId == ItemCatalog.AttrScrollUncommon;
+
+    private static DropEntry[] StandardDrops(int level, MobCategory cat, string id, bool boss = false)
     {
         // ⚠ NO MATS AND NO GEAR HERE since `BL-274` part 1 (0.206.0). Everything a creature drops BECAUSE
         // OF WHAT IT IS (base mats by category, and the gear half by its dealt specialty) is built by
@@ -1556,11 +1597,18 @@ public static class MobCatalog
         // at L4. So closing the faucet at 61 moves an endgame consumable from loot to the economy,
         // which is the same trade playtest 28 made when the six stat potions left the tables. It does
         // NOT make anything unobtainable — check that again before narrowing any other faucet.
-        if (level <= 51)
-            BuffRung(0.0105f,
+        //
+        // 🔴 CUT ×5 AND ONTO A THIRD OF THE CREATURES (owner, 2026-10-03: *"Decrease the drops of buff potions about
+        // 5 times and decrease the mobs they drop from as well"*). Which third is a stable hash of the id, so it
+        // never moves between runs. A BOSS keeps the old rate on every template (*"Bosses drop unaffected"*) — see
+        // KillTable, which swaps the boss rows in.
+        bool buffCarrier = boss || StableHash(id + "/buffpot") % 3 == 0;
+        float buffCut = boss ? 1f : 1 / 5f;
+        if (buffCarrier && level <= 51)
+            BuffRung(0.0105f * buffCut,
                 new[] { ItemCatalog.SpeedPotionC, ItemCatalog.CastPotionC, ItemCatalog.AtkPotionC });
-        if (level is >= 40 and <= 60)
-            BuffRung(0.0053f,
+        if (buffCarrier && level is >= 40 and <= 60)
+            BuffRung(0.0053f * buffCut,
                 new[] { ItemCatalog.SpeedPotionU, ItemCatalog.CastPotionU, ItemCatalog.AtkPotionU });
 
         // ---- DASH IS BANDED, and it is the ONLY one of the four that is (owner, 2026-09-03) --------
@@ -1588,10 +1636,12 @@ public static class MobCatalog
         // The per-item weights are the ones the two rungs already carried, so where a rung is live the
         // faucet is exactly what it was; what changed is only WHERE each is live. (It nets out slightly
         // narrower: a mob under 52 no longer pays the plain rung at all.)
+        // 🔴 CUT ×3 off non-boss creatures (owner, 2026-10-03: *"decrease the dash potion drop as well 3 time"*).
+        float dashCut = boss ? 1f : 1 / 3f;
         if (level <= 60)
-            drops.Add(new(ItemCatalog.DashPotionC, 0.0105f, GroupId: GroupScrolls));
+            drops.Add(new(ItemCatalog.DashPotionC, 0.0105f * dashCut, GroupId: GroupScrolls));
         if (level >= 52)
-            drops.Add(new(ItemCatalog.DashPotionU, 0.0053f, GroupId: GroupScrolls));
+            drops.Add(new(ItemCatalog.DashPotionU, 0.0053f * dashCut, GroupId: GroupScrolls));
         // 🔑 `BL-152` — DASH NOW STOPS AT UNCOMMON, like every other potion line (owner, 2026-09-03:
         // *"dash pots to drop to uncommon ... all else from crafters"*). Greater, Superior and Grand
         // left the faucet; Supreme was already craft-only. So the two rungs above are gone and rungs
@@ -1692,8 +1742,10 @@ public static class MobCatalog
         //      on, not a decision. Cut ~5× and the three rungs spread out over the band they serve
         //      (owner, playtest-18 V2b: "lower the chances + move them in the lvls a bit"), so the
         //      top-half re-roll is not handed out the moment the band opens.
-        if (level >= 40) drops.Add(new(ItemCatalog.AttrScrollCommon, 0.012f));
-        if (level >= 52) drops.Add(new(ItemCatalog.AttrScrollUncommon, 0.006f));
+        // 🔴 Common ÷5 and Uncommon ÷2 off non-boss creatures, the rest untouched (owner, 2026-10-03: *"decrease the
+        // common attribute scrolls with 5 times and uncommon with 2. The other unaffected"*).
+        if (level >= 40) drops.Add(new(ItemCatalog.AttrScrollCommon, boss ? 0.012f : 0.012f / 5));
+        if (level >= 52) drops.Add(new(ItemCatalog.AttrScrollUncommon, boss ? 0.006f : 0.006f / 2));
         if (level >= 61) drops.Add(new(ItemCatalog.AttrScrollRare, 0.002f));
         if (level >= 76) drops.Add(new(ItemCatalog.AttrScrollEpic, 0.008f));
         if (level >= 80) drops.Add(new(ItemCatalog.AttrScrollLegendary, 0.003f));

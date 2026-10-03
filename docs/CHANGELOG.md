@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.226.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.227.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,30 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-02 (latest) — 0.226.1: a replacement is transitive — the next skill retires what its predecessor retired
+## 2026-10-03 (latest) — 0.227.0: weapon lines drop in pairs; recipes, buff/dash potions and attribute scrolls cut
+
+**Server restart.** No `game.db` delete. No APK needed for the drops (the server rolls them); the client's local
+"droppable" marker still lists the four merchant-only HP/MP recipes until the next APK.
+
+- **His ask:** *"Can we make drops a bit equal .. Now searching bloodsteel maul and it only drops from a elite monster
+  and bows drop from many mobs"* — plus five rate cuts. **Bosses drop unaffected.**
+- **Weapon lines are dealt in PAIRS** (`MobCatalog.WeaponPairs`): Blade + Greatsword, Mace + Maul, Bow + Fangs,
+  Wand + Staff. A weapon carrier drops both lines of its pair (Commons, rare piece, recipe, part). A carrier left
+  empty after the deal takes the pair FEWEST carriers hold, never its own held pair (archers are common, which is how
+  bows ended up everywhere). T61 Bloodsteel Maul: 1 normal carrier → 4 (+3 elite + the boss).
+  `docs/data/mobs/mob_drops.csv` regenerated.
+- **Recipes ÷2.5** off normal and elite creatures (`MobCatalog.MobRecipeCut`), gear and generic alike. The
+  Common/Uncommon HP and MP recipes (Apothecary L0/L2) **no longer drop at all** — Master Crafter only. Their share
+  left the world rather than moving to the other generic lines.
+- **Buff potions (Swift/Alacrity/Fury, C + U) ÷5, and on a THIRD of the creatures** (stable hash of the id): T1-51
+  Common 1.05% → 0.21% per carrier, 113 normal/elite sources → 57.
+- **Dash ÷3** (Lesser 1.05% → 0.35%). **Attribute scrolls: Common ÷5** (3.6% → 0.72% after the global rate),
+  **Uncommon ÷2** (1.8% → 0.9%); Rare/Epic/Legendary/Mythic untouched.
+- **Bosses:** the template bakes the cut rows; `KillTable` swaps in the uncut ones at Boss rank
+  (`IsBossKeptConsumable`), so a boss pays exactly what it did on every template. Boss recipes read `BossDrops`, which
+  was not touched. Verified with `BalanceMatrix --drops`: boss rows identical before and after.
+
+## 2026-10-02 — 0.226.1: a replacement is transitive — the next skill retires what its predecessor retired
 
 **New APK + server restart.** No `game.db` delete: the login pass applies the new rule to every saved character.
 

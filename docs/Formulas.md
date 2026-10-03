@@ -1103,8 +1103,9 @@ A Common has the Mythic piece's stats, **no set, no attribute, no enchant**, and
 deal, per band 1-19 / 20-39 / 40-51 / 52-60 / 61-75 / 76-79 / 80+
                     jewellery max(1, round(n/7)) · weapons max(3, round(0.4n))
                                                      (≥1 body and ≥1 small kept) · rest body / small
-who takes what      category affinity first, then FNV hash of id; a weapon carrier takes the line it holds
-weapons             1-3 of the 8 lines (four each in the 5-creature 76-79 band); boot fails on an unsourced kind
+who takes what      category affinity first, then FNV hash of id; a weapon carrier takes the PAIR it holds
+weapons             PAIRS (0.227.0): blade+greatsword · mace+maul · bow+fangs · wand+staff; a spare carrier
+                    takes the pair fewest carriers hold; boot fails on an unsourced kind
 kinds               weapons: its lines · body: heavy/light/robe · small: helm/gloves/boots/shield
                     · jewellery: necklace/ring/earring
 ```
@@ -1115,7 +1116,7 @@ Per kill, what `MobCatalog.CreatureDrops(type, level, rank)` gives (normal; elit
 Common (F-T61)      the slot % above, only its kinds; weapon % ÷ ITS lines, body % ÷ 3       | ×2   group common
 rare full item      F 1/1,000 · E 1/3,000 · T40-T61 1/10,000 a kill, split over its kinds     | ×2   group rare
                     (MobCatalog.RareGearChance). Below 40 only these two rows: no recipe, part or Nightsilver
-recipe, per kind    T40 100% 1/100 · T52 100% 1/175 · T61 60% 1/250 · T76 20% slot table B
+recipe, per kind    ALL ÷2.5 (MobRecipeCut, 0.227.0) of: T40 100% 1/100 · T52 100% 1/175 · T61 60% 1/250 · T76 20% table B
                     | T40 1/50 · T52 1/88 · T61 100% 1/250 · T76 40% table A · T80 40% table B  group recipe
                     table A (2H,1H,body,helm,shield,gloves,boots,neck,earring,ring) 1/500,500,400,300,300,200,200,300,250,150
                     table B                                                 1/1000,1000,800,600,600,400,400,600,500,300
@@ -1293,7 +1294,8 @@ recipe price     round(piece price / 30 × pct/100): 100% → 3.3%, 60% → 2%, 
                  nothing is TAUGHT for gold any more; vendor pays half
 recipe drops     by specialty (see "Per-mob drop tables"); bosses: 2.5 (T40) … 0.8 (T80) a kill (BL-308), 100% books (T40-T61), 60% (T76/T80)
 generic recipes  items, 100%, one per Apothecary line (BL-305, 0.214.22), valued at the old teaching price; normal
-                 creatures of the line's tier drop 1/100 a kill for the whole band (elite ×2, split evenly; the War / Spell Rune lines
+                 creatures of the line's tier drop 1/100 ÷2.5 a kill for the whole band (L0 + L2 = Common/Uncommon HP/MP are
+                 Master-only since 0.227.0 and drop nowhere, their share removed) (elite ×2, split evenly; the War / Spell Rune lines
                  L4 + L8 at ×0.1, so 1/1000 — GenericRecipeDropMul, 0.214.30): T40 L0+L1 ·
                  T52 L1+L2 · T61 L4 · T76 L6 · T80 L8; L10 only from 85+ bosses, 0.2 a kill (both ⚠ placeholders)
 recipe quests    T76/T80 only (0.208.0): 3 Frostmere givers (weapon/armour/jewel), each a T76 (75-85) + T80 (80+) daily
