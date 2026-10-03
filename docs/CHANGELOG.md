@@ -24,7 +24,27 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-03 (latest) — 0.227.2: a toggle on auto stays on
+## 2026-10-03 (latest) — 0.228.0: runes stack, up to 12 hours
+
+**Server restart.** No APK, no `game.db` delete.
+
+- **His ruling** (the discussion: stack vs. turn runes into consumables): *"Option A sounds better because it wouldnt make
+  1d/30d Runes infinite and ppls still will need to think before they buy/open rune boxes ... They are server timed not
+  player ... we can limit the max stacking to 12h .. So still admin 1d 30d Runes are useful and cannot be player made"*.
+  Runes stay on the SERVER clock (they tick offline, as before). IG-style graded shots were raised and set aside by him
+  (too much work) — and they are the per-hit consumable this project already dropped.
+- **Opening a rune box while you hold the same rune ADDS its time to that rune** — one item, one clock. Before, the second
+  rune ticked beside the first and only the longer one counted, so the overlap was thrown away.
+- **The cap: `GameConstants.RuneStackCapHours = 12`.** A 1h/2h box that would take the rune past 12h stays SEALED with
+  *"War Rune already has 11h 59m left — runes stack to 12h. The box stays sealed."* — never half-wasted.
+- **The admin 24h / 30d boxes add their whole time**, uncapped: they are what the cap keeps out of a player's reach.
+- **A GRANTED rune adds onto the held one too** (the subclass gift, the Wayfarer runes — `AddItem`), uncapped: refusing a
+  grant would only lose it. `/give` still spawns a separate row (an admin's explicit `timed` wins).
+- Only the SAME item stacks: War onto War, Spell onto Spell, a Rune of Experience (50%) onto the 50% one. The Grand Rune
+  still supersedes the two singles while it runs, and they keep ticking under it, as before.
+- Measured headless: 6 × 2h boxes → one War Rune at 11h 59m; the 7th refused and kept; a 1d box on top → 1d 11h.
+
+## 2026-10-03 — 0.227.2: a toggle on auto stays on
 
 **Server restart.** No APK, no `game.db` delete.
 

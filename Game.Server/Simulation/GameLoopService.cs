@@ -18536,10 +18536,30 @@ public class GameLoopService : BackgroundService
 
     /// <summary>Add an item to inventory, stacking consumables/scrolls.
     /// Returns false if there was no room for a new stack.</summary>
+    /// <summary>The unexpired rune of this item id in the MAIN bag (a warehoused rune grants nothing, so it is not one
+    /// to stack onto) — what a newly opened or granted rune of the same id adds its time to.</summary>
+    private static InventoryItem? HeldRune(Entity player, string runeDefId)
+    {
+        var now = DateTime.UtcNow;
+        return player.Inventory.FirstOrDefault(i => i.DefId == runeDefId && i.ExpiresAtUtc is DateTime e && e > now);
+    }
+
+    private static string FormatRuneLeft(TimeSpan left) =>
+        left.TotalDays >= 1 ? $"{(int)left.TotalDays}d {left.Hours}h" : $"{(int)left.TotalHours}h {left.Minutes:00}m";
+
     private bool AddItem(Entity player, string defId, int quantity = 1, bool rollAttributes = true)
     {
         if (ItemCatalog.Get(defId) is not ItemDef def)
             return false;
+
+        // A RUNE ADDS ITS TIME to the same rune already held (0.228.0) — one item, one clock, rather than two
+        // clocks ticking side by side with only the longer one counting. A GRANT is never capped (refusing it would
+        // only lose it); the 12h cap is for boxes the player chooses to open (OpenBox).
+        if (def.IsRune && def.GrantsRuneSeconds > 0 && HeldRune(player, defId) is InventoryItem held)
+        {
+            held.ExpiresAtUtc = held.ExpiresAtUtc!.Value.AddSeconds((double)def.GrantsRuneSeconds * Math.Max(1, quantity));
+            return true;
+        }
 
         bool stackable = def.IsStackable;
         if (!stackable) quantity = 1;
@@ -19568,6 +19588,29 @@ public class GameLoopService : BackgroundService
         if (def.GrantsRuneSeconds > 0 && box.Entries.Length >= 1
             && ItemCatalog.Get(box.Entries[0].ItemId) is { IsRune: true } runeDef)
         {
+            // 🔑 STACKING (0.228.0): the same rune already in the bag takes the box's time onto ITS clock. A 1h/2h box
+            // may only stack to RuneStackCapHours — past that it stays SEALED, so a box is never half-wasted; the admin
+            // 24h/30d boxes add their whole time (they are what the cap keeps out of a player's reach).
+            if (HeldRune(player, runeDef.Id) is InventoryItem held)
+            {
+                var now = DateTime.UtcNow;
+                var until = held.ExpiresAtUtc!.Value.AddSeconds(def.GrantsRuneSeconds);
+                const int capSeconds = GameConstants.RuneStackCapHours * 3600;
+                if (def.GrantsRuneSeconds <= capSeconds && (until - now).TotalSeconds > capSeconds)
+                {
+                    SendSystemToEntity(player, $"{runeDef.Name} already has {FormatRuneLeft(held.ExpiresAtUtc.Value - now)} left — "
+                        + $"runes stack to {GameConstants.RuneStackCapHours}h. The box stays sealed.");
+                    return;   // box NOT consumed
+                }
+                held.ExpiresAtUtc = until;
+                if (item.Quantity > 1) item.Quantity--; else player.Inventory.Remove(item);
+                ReconcileTimedItems(player);   // drive the buff's remaining from the new expiry
+                SendInventory(player);
+                SaveEntity(player);
+                SendSystemToEntity(player, $"{def.Name} opened — {runeDef.Name} extended, {FormatRuneLeft(until - now)} left.");
+                return;
+            }
+
             var before = player.Inventory.Where(i => i.DefId == runeDef.Id).Select(i => i.InstanceId).ToHashSet();
             if (!AddItem(player, runeDef.Id, 1, rollAttributes: false))   // AddItem stamps the rune's DEFAULT expiry
             {

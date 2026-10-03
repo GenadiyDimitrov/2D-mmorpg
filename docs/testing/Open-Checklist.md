@@ -25,6 +25,18 @@
 
 ---
 
+## §140 — 0.228.0: runes stack, up to 12 hours (2026-10-03)
+
+⚠ **Server restart.** No APK, no `game.db` delete.
+
+- `140a` [ ] - Open a War Rune box (2h), then another: ONE War Rune in the bag, about 4h left, chat says "extended". ->
+- `140b` [ ] - Keep opening 2h boxes: at ~10h the next one opens (→ ~12h), the one after stays SEALED with "runes stack
+  to 12h". A 1h box at 11h+ is refused the same way. ->
+- `140c` [ ] - A 1d (admin) box on top of a 12h rune still opens and adds the full day. ->
+- `140d` [ ] - War and Spell runes stack separately; the Grand Rune still hides both while it runs. ->
+
+---
+
 ## §139 — 0.227.2: a toggle on auto stays on (2026-10-03)
 
 ⚠ **Server restart.** No APK, no `game.db` delete.
