@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.227.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.229.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,20 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-03 (latest) — 0.228.1: `/bag` and `/give <name>` open their windows again
+## 2026-10-03 (latest) — 0.229.0: fighters carry ~1200 MP at 75
+
+**Server restart.** No APK, no `game.db` delete.
+
+- **His ruling:** *"make it ~1200 at 75 before spt .. mages have more spirit anyway so about 0.4?"*
+- **The fighter MP `classMod` 0.17 → 0.40** (`StatCalculator.MpClassLevelModifier`) for Tank, Warrior, Rogue, Archer
+  AND a Fighter before 2nd class. Raw pool at L75 = 0.40 × 2925 + 15 = **1185** (was ~510). Every mage number is
+  untouched (Healer/Warchanter 0.68, Nuker 0.53, Mage pre-2nd 0.50).
+- After Spirit (fighters ~26 SPT → ×1.28, mages ~37 → ×1.44): a naked L75 fighter ≈ 1500 against a Magus ≈ 2290, so
+  the mage keeps the deeper pool. Regen is unchanged — a fighter holds more but refills at the same rate.
+- Side effects by construction: mana drain (a share of the target's Max MP) takes more off a fighter, and %-of-pool MP
+  regen buffs pay a fighter more. The stale "Buffer 1100" comment went with it (the Warchanter has always read 0.68).
+
+## 2026-10-03 — 0.228.1: `/bag` and `/give <name>` open their windows again
 
 **APK only.** No server change, no `game.db` delete.
 

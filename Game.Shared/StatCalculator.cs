@@ -215,14 +215,15 @@ public static class StatCalculator
     // ----- Max MP (authentic IG: Base_MP tier curve × Spirit, like HP) --------
     //  MaxMP = (MpClassLevelMod·(L²+3L)/2 + Level1BaseMp) × SpiritModifier
     //  MP scales with SPIRIT (not WIT). Tiers tuned to the L75 raw tracks:
-    //  Healer 2000 · Wizard/Nuker 1550 · Buffer 1100 · Fighter/Tank 500.
+    //  Healer + Warchanter 2000 · Nuker 1550 · Fighter 1200 (0.229.0, owner: was 500 —
+    //  fighters lean on the lower Spirit to stay below the mages after the modifier).
 
     public static float MpClassLevelModifier(BaseClass cls, Archetype? arch) => arch switch
     {
         Archetype.Healer => 0.68f,   // ~2000 @L75 raw
         Archetype.Nuker  => 0.53f,   // ~1550
-        Archetype.Tank or Archetype.Warrior or Archetype.Rogue or Archetype.Archer => 0.17f,  // ~500
-        _ => cls == BaseClass.Mage ? 0.50f : 0.17f   // base class, pre-2nd
+        Archetype.Tank or Archetype.Warrior or Archetype.Rogue or Archetype.Archer => 0.40f,  // ~1200
+        _ => cls == BaseClass.Mage ? 0.50f : 0.40f   // base class, pre-2nd
     };
 
     public static int Level1BaseMp(BaseClass cls) => cls == BaseClass.Mage ? 40 : 15;

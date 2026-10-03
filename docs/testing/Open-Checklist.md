@@ -25,6 +25,15 @@
 
 ---
 
+## §141 — 0.229.0: fighters carry ~1200 MP at 75 (2026-10-03)
+
+⚠ **Server restart.** No APK, no `game.db` delete (Max MP is recomputed at login).
+
+- `141a` [ ] - A level-75 fighter (any of the four) shows roughly 1400-1600 Max MP naked, about 2.3× what it had; a
+  mage's Max MP is unchanged. ->
+
+---
+
 ## §140 — 0.228.0: runes stack, up to 12 hours (2026-10-03)
 
 ⚠ **Server restart.** No APK, no `game.db` delete.

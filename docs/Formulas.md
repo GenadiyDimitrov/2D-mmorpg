@@ -652,6 +652,9 @@ IG's band and mages 6-13% above it.
   its face value and nothing more. IG puts them inside; the owner's ruling (2026-08-27) is that we
   keep our order and **he doubles the authored number** when writing the CSV rung.
 - `sptModifier` is **gentle** (1.16 @20 → 1.65 @50) — MP was not touched by this pass.
+- **MP `classMod` / `level1Base`** (`MpClassLevelModifier` / `Level1BaseMp`): Healer archetype (Lightbringer +
+  Warchanter) 0.68 · Nuker 0.53 · Mage pre-2nd 0.50 · **every fighter, pre-2nd included, 0.40** (0.229.0; was 0.17) ·
+  level1Base mage 40 / fighter 15. Raw at L75: ~2030 / ~1590 / ~1500 / ~1185 — Spirit widens the gap after.
 - 🔑 **MP regen has its OWN stat curve.** `sptModifier` still drives Max MP and M.Def, but regen left
   it on 2026-08-26 (`BL-92`) for the wider linear `sptRegenModifier` — so Spirit buys visible sustain
   (every fighter sits at the 0.70 floor; the demon mage reaches 1.10).
