@@ -25,6 +25,17 @@
 
 ---
 
+## §139 — 0.227.2: a toggle on auto stays on (2026-10-03)
+
+⚠ **Server restart.** No APK, no `game.db` delete.
+
+- `139a` [ ] - **Your find:** Sharpening (and Reinforcement) armed on the auto bar, auto-hunt on — it lights ONCE
+  ("Sharpening activated.") and stays up; no on/off flicker. ->
+- `139b` [ ] - Run your MP dry with it armed: it ends ("not enough MP to hold it") and the autopilot leaves it off for
+  ~10 s, then re-lights it once you have 10 s of upkeep. ->
+
+---
+
 ## §138 — 0.226.1: a replacement is transitive (2026-10-02)
 
 ⚠ **New APK + server restart.** No `game.db` delete.

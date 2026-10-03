@@ -24,7 +24,22 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-03 (latest) — 0.227.1: buffer Mana Vampirism 3/6/9%, the elf stops at 6%, and bows finally drain
+## 2026-10-03 (latest) — 0.227.2: a toggle on auto stays on
+
+**Server restart.** No APK, no `game.db` delete.
+
+- **His find:** *"I again made toggle "sharpening" as auto on and again it begun to cycle it on<>off very fast"*.
+- 🔴 **The real cause, measured** (a headless client arming Sharpening on the admin): on/off every ~0.15 s, ~3 Hz, with
+  no "activated" line. The autopilot does not press a skill — it QUEUES it — and the queued-cast pipeline
+  (`UpdateQueuedSkill`) never asked whether the skill was a toggle. It landed the stance through `ApplyBuff` without
+  `toggle`, i.e. a 0-tick buff that expired the next tick, and the chain re-lit it. A tap was always fine: it reaches
+  `HandleToggle` from `BeginSkill`.
+- **Fix:** a queued toggle is now handed to `HandleToggle`, the same flip a tap does. Re-measured: Sharpening stays
+  up, one buff push a second (the upkeep). Every toggle on the auto bar benefits (Reinforcement, the Marks, Prowl…).
+- ⚠ 0.102.5's "stances stop flickering" fix (10 s starvation lockout + 10 s of upkeep before arming) diagnosed a
+  real but SECOND cause; it stays. It could never have stopped this one.
+
+## 2026-10-03 — 0.227.1: buffer Mana Vampirism 3/6/9%, the elf stops at 6%, and bows finally drain
 
 **Server restart + APK** (a class-skill-table change: the client builds its Learn tab locally). No `game.db` delete.
 

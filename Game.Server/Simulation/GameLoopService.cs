@@ -12791,6 +12791,18 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // 🔴 A QUEUED TOGGLE IS FLIPPED, NEVER CAST (2026-10-03). Him: *"I again made toggle sharpening as auto
+        //    on and again it begun to cycle it on<>off very fast"*. A tap reaches HandleToggle from BeginSkill,
+        //    but the autopilot QUEUES — and this pipeline lands its buff through ApplyBuff with no `toggle`,
+        //    i.e. a 0-tick buff that expired on the next tick, so the chain re-lit it: ~3 Hz, measured. The
+        //    0.102.5 starvation lockout was a real second cause and stays, but it was never this one.
+        if (def.Toggle)
+        {
+            caster.QueuedSkillId = null;
+            HandleToggle(caster, def);
+            return;
+        }
+
         float range = SkillMath.EffectiveRange(def, caster.Archetype, caster.BasicAttackRange, caster.Level, caster.SkillLevelOf(def.Id));
 
         if (!selfTargeted && DistanceSq(caster, target) > range * range)
