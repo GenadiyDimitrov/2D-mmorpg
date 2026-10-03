@@ -67,6 +67,10 @@ namespace Game.Client
         public event Action<PvpState> PvpStateReceived;
         /// <summary>`/who` (0.222.0): another player's character sheet, for an admin.</summary>
         public event Action<AdminWhoDto> AdminWhoReceived;
+        /// <summary>`/bag <name>`: another player's inventory, for an admin to remove items from.</summary>
+        public event Action<AdminBagDto> AdminBagReceived;
+        /// <summary>`/give <name>`: who to give to (the Items are the admin's own bag at that moment).</summary>
+        public event Action<AdminBagDto> AdminGivePickerReceived;
         /// <summary>Your OWN otherwise-undrawable state (`BL-82`): the staff flags (role, god mode,
         /// forced speeds) and which of the three kinds of invisibility you are in. Pushed on change,
         /// including once on entering the world, so nothing here has to be inferred from a chat line
@@ -196,6 +200,8 @@ namespace Game.Client
             _connection.On<DropLookupResult>("DropLookupResult", d => DropLookupReceived?.Invoke(d));
             _connection.On<PvpState>("PvpState", p => PvpStateReceived?.Invoke(p));
             _connection.On<AdminWhoDto>("AdminWho", w => AdminWhoReceived?.Invoke(w));
+            _connection.On<AdminBagDto>("AdminBag", b => AdminBagReceived?.Invoke(b));
+            _connection.On<AdminBagDto>("AdminGivePicker", b => AdminGivePickerReceived?.Invoke(b));
             _connection.On<SelfStateDto>("SelfState", s => SelfStateReceived?.Invoke(s));
             _connection.On<TitlesDto>("Titles", t => TitlesReceived?.Invoke(t));
             _connection.On<ResurrectOffer>("ResurrectOffer", o => ResurrectOfferReceived?.Invoke(o));
@@ -471,6 +477,12 @@ namespace Game.Client
             _connection.SendAsync("RemoveItem", instanceId, all, quantity);
 
         public Task RestoreItemAsync(int index) => _connection.SendAsync("RestoreItem", index);
+
+        public Task AdminRemoveItemAsync(string targetName, Guid instanceId) =>
+            _connection.SendAsync("AdminRemoveItem", targetName, instanceId);
+
+        public Task AdminGiveItemAsync(string targetName, Guid instanceId, int quantity) =>
+            _connection.SendAsync("AdminGiveItem", targetName, instanceId, quantity);
 
         // ----- crafting ---------------------------------------------------------------------------
         /// <summary>Craft one unit of a recipe. The server re-checks profession, level, blueprint and

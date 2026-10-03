@@ -24,7 +24,18 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-03 (latest) — 0.228.0: runes stack, up to 12 hours
+## 2026-10-03 (latest) — 0.228.1: `/bag` and `/give <name>` open their windows again
+
+**APK only.** No server change, no `game.db` delete.
+
+- **His report:** *"/bag <name> don't work ..does nothing"*. The server answered it all along (`AdminBag`); the phone never
+  listened. Both admin item windows lived only in the WPF harness and were not ported when it was deleted (0.42.8) — the
+  one-argument `/give <name>` picker (`AdminGivePicker`) had gone silent the same way.
+- **One new window, two modes** (`GameUi.Admin.cs`): `/bag <name>` lists that player's bag + gold, tap a row → *"Remove X
+  from Y?"* → destroyed (the server re-sends the bag, so the list stays current). `/give <name>` lists YOUR bag, tap a row
+  → confirm, or the numpad for a stack → handed over; it reads your live inventory, since the server does not re-send it.
+
+## 2026-10-03 — 0.228.0: runes stack, up to 12 hours
 
 **Server restart.** No APK, no `game.db` delete.
 

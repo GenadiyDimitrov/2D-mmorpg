@@ -364,6 +364,7 @@ namespace Game.Client
             BuildWarehouseWindow();
             BuildBuyBackWindow();
             BuildRestoreWindow();
+            BuildAdminBagWindow();
             BuildRankWindow();
             BuildRegionUi();
             BuildSlotMenu();
@@ -1484,6 +1485,7 @@ namespace Game.Client
             RefreshWarehouseWindow();
             RefreshBuyBackWindow();
             RefreshRestoreWindow();
+            RefreshAdminBagWindow();
             RefreshEquipmentWindow();
             RefreshRegionUi();
             RefreshFarmRing();

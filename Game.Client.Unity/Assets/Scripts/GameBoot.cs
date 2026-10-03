@@ -950,6 +950,22 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("Restore: " + ex.Message); }
         }
 
+        /// <summary>Admin `/bag`: destroy an item in another player's bag. The server re-sends the bag.</summary>
+        public async void AdminRemoveItem(string targetName, Guid instanceId)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.AdminRemoveItemAsync(targetName, instanceId); }
+            catch (Exception ex) { ClientLog.Warn("AdminRemoveItem: " + ex.Message); }
+        }
+
+        /// <summary>Admin `/give <name>`: hand one of your own items (or part of a stack) to that player.</summary>
+        public async void AdminGiveItem(string targetName, Guid instanceId, int quantity)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.AdminGiveItemAsync(targetName, instanceId, quantity); }
+            catch (Exception ex) { ClientLog.Warn("AdminGiveItem: " + ex.Message); }
+        }
+
         public async void OpenWarehouse()
         {
             if (Phase != ClientPhase.InWorld) return;
@@ -1405,6 +1421,8 @@ namespace Game.Client
             _net.TargetDetailsReceived += d => Main(() => Details = d);
             _net.DropLookupReceived += d => Main(() => { DropLookup = d; DropLookupRevision++; });
             _net.AdminWhoReceived += w => Main(() => { if (w != null) Ui?.ShowWhoSheet(w); });   // `/who`, 0.222.0
+            _net.AdminBagReceived += b => Main(() => { if (b != null) Ui?.ShowAdminBag(b, give: false); });
+            _net.AdminGivePickerReceived += b => Main(() => { if (b != null) Ui?.ShowAdminBag(b, give: true); });
             _net.PvpStateReceived += p => Main(() =>
             {
                 if (p == null) return;
