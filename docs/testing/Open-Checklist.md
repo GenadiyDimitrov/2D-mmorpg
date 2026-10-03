@@ -25,6 +25,15 @@
 
 ---
 
+## §142 — 0.229.1: Common jewels give no MP (2026-10-04)
+
+⚠ **Server restart + APK.** No `game.db` delete.
+
+- `142a` [ ] - A Common T61 necklace/earring/ring shows M.Def but no MP line, and equipping it leaves Max MP unchanged;
+  the plain (Mythic) piece still gives its MP. ->
+
+---
+
 ## §141 — 0.229.0: fighters carry ~1200 MP at 75 (2026-10-03)
 
 ⚠ **Server restart.** No APK, no `game.db` delete (Max MP is recomputed at login).

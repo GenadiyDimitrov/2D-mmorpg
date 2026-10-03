@@ -24,7 +24,17 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-03 (latest) — 0.229.0: fighters carry ~1200 MP at 75
+## 2026-10-04 (latest) — 0.229.1: Common jewels give no MP
+
+**Server restart + APK** (the item card reads the compiled catalog). No `game.db` delete.
+
+- **His ruling:** *"Make common jewels give no mp - as armor can't have the set bonus the jewels should not give the
+  mp bonus."*
+- `ItemCatalog.CommonCopies` now zeroes `MpBonus` on a Common JEWEL; its M.Def is untouched, and a Common armour/robe
+  keeps its own +MP. In practice this only bites at T61, the one Common jewel tier that carried MP
+  (necklace 33 / earring 25 / ring 17 on the Mythic piece). A Common cannot be enchanted, so no enchant MP either.
+
+## 2026-10-03 — 0.229.0: fighters carry ~1200 MP at 75
 
 **Server restart.** No APK, no `game.db` delete.
 

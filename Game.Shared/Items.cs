@@ -2287,7 +2287,7 @@ public static class ItemCatalog
     // up) is GONE. His ruling: *"equipment will have common equip items and normal (current mythic)
     // items -> no longer in between"*. What is left:
     //   * MYTHIC: the authored piece, bare id. Shown to the player as a PLAIN item (no rarity word).
-    //   * COMMON: `{id}_common`, T40-T61 only, the SAME stats as the Mythic piece, and UNMODIFIABLE:
+    //   * COMMON: `{id}_common`, T40-T61 only, the SAME stats as the Mythic piece (less a jewel's +MP), and UNMODIFIABLE:
     //     *"u cannot add attribute to weapons nor have set bonus nor can enchant -> its just flat
     //     defense"*. A fresh Mythic is ahead from day one through its set and its attribute slot.
     // Consumables and materials keep all six rarities; this is about equipment only.
@@ -2553,7 +2553,7 @@ public static class ItemCatalog
     }
 
     /// <summary>The COMMON copy of every T40-T61 base-tier piece (`BL-272`). Same stats as the authored
-    /// Mythic piece; the difference is what you can DO to it: no set id, no attribute, no enchant (the
+    /// Mythic piece except a jewel's +MP, which a Common drops; the difference is what you can DO to it: no set id, no attribute, no enchant (the
     /// enchant gate reads <see cref="IsCommonGear"/>). Only plain base-tier ids get one; the alternate
     /// body VARIANTS (e.g. "heavy_t52_dmg") stay Mythic-only. Id: "{baseid}_common".</summary>
     private static IEnumerable<ItemDef> CommonCopies(IEnumerable<ItemDef> tiered)
@@ -2571,6 +2571,9 @@ public static class ItemCatalog
                 Rarity = ItemRarity.Common,
                 SetId = "",
                 NoAttributes = true,
+                // A Common JEWEL carries no +MP (owner, 2026-10-04): a Common armour piece cannot complete
+                // a set, so the jewel's mana bonus goes the same way. M.Def stays.
+                MpBonus = d.Slot == EquipSlot.Jewel ? 0 : d.MpBonus,
                 Value = 0,             // filled from DefaultValue (the Common price multiplier)
             };
         }
