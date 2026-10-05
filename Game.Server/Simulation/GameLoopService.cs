@@ -6275,6 +6275,14 @@ public class GameLoopService : BackgroundService
         // that were being self-cast by mistake.
         if ((e & SkillEffect.ContestCc) != 0 || def.DebuffSchool != DebuffSchool.None) return AutoSkillKind.Debuff;
         if (def.Category == SkillCategory.Buff || (e & SkillEffect.AnyBuff) != 0) return AutoSkillKind.Buff;
+        // 🔴 PROWL'S PAYLOAD IS A FIELD (2026-10-05, him: *"Prowl don't auto reactivate when in auto
+        // farm"*). It is `SkillEffect.None` + `Category.Physical`, so neither test above saw it and it
+        // fell into `Other`, the never-cast bucket — the same lesson as the whisp summon: half of all
+        // buff payloads are FIELDS. Its stance is self-only and never breaks on acting, so the Buff
+        // chain is right: AutoBuffUpToDate reads a running toggle as covered, the sustain reserve and
+        // the starve lockout keep it from flickering. Vanish (`GrantsHide`) stays manual — it ends on
+        // the first swing, so an autopilot would burn its 2-minute reuse for nothing.
+        if (def.GrantsMobStealth) return AutoSkillKind.Buff;
         return AutoSkillKind.Other;
     }
 

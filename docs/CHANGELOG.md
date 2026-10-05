@@ -24,7 +24,18 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-04 (latest) — 0.229.1: Common jewels give no MP
+## 2026-10-05 (latest) — 0.229.2: Prowl re-arms itself in auto-farm
+
+**Server restart only.** No APK, no `game.db` delete.
+
+- **His find:** *"Prowl don't auto reactivate when in auto farm"*.
+- Prowl is `SkillEffect.None` + `Category.Physical` — its stealth is the `GrantsMobStealth` FIELD — so
+  `GameLoopService.ClassifyAuto` saw no buff and filed it under `Other`, the never-auto bucket. A `GrantsMobStealth`
+  skill now classifies as a Buff: the autopilot puts it up when it is off (after MP starvation or death) and leaves
+  it alone while it runs. The existing 10s-of-upkeep reserve and 10s starve lockout stop any on/off flicker.
+  Vanish stays manual (it ends on the first swing).
+
+## 2026-10-04 — 0.229.1: Common jewels give no MP
 
 **Server restart + APK** (the item card reads the compiled catalog). No `game.db` delete.
 
