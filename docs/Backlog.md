@@ -284,7 +284,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-331` | 🔵   | **Skill icons** — game-icons.net tinted per school, `docs/data/skill_icons.csv` + `tools/SkillIcons`; bar, buff bar, Skills window (Known / Learn / Actions) BUILT 0.219.0-0.219.1, your review passed; NPC buffs, potions, scrolls, runes, paving 0.226.0; owed: the cast bar, the tree page; your own redraw "a lot later"                                                                                                                                                                                     | ui           |
 | `BL-332` | ❓   | **Notifications** — low HP / low potions / farm time over / died: in-game alerts, scheduled phone notifications, server push; my pick + four questions                                                                                                                                                                                                                                                                                                         | ui           |
 | `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
-| `BL-335` | 🔵 | **Magic-melee buffers** — all three Warchanters hit through MAGIC: a passive turns the basic attack into a magic hit; demon staff+robe, human wand+shield+robe, elf FANGS+light; Reinforcement = the armour toggle; fixed-fail Magic Stab; design only, 5 questions | classes |
+| `BL-335` | 🔵 | **Magic-melee buffers** — all three Warchanters hit through MAGIC: a passive turns the basic attack into a magic hit; demon staff, human wand+shield, elf FANGS, all ROBE; Reinforcement = a per-race armour toggle; Sound Burst = fixed-fail Magic Stab; design only, 3 questions left | classes |
 
 ---
 
@@ -2375,11 +2375,11 @@ all. Prices above are his, for when it does. Pets/summons themselves are `BL-38`
 Your idea (2026-10-04/05): *"we have warriors and tanks and I want to give them something unique"*. All three
 Warchanters move to the magic channel: a **passive turns the basic attack into a magic hit** (attack speed times
 it; no cast, so nothing to interrupt), Sound Smash / Acoustic Shock / Sound Burst become magic skills,
-Reinforcement becomes the armour toggle (robe for demon/human, light for elf) that replaces the armour masteries,
-and the elf moves from the bow to **fangs** (Fang Proficiency replaces Harmonist Bow Proficiency) with a
+Reinforcement becomes a per-race armour toggle gated to robe that replaces the armour masteries,
+and the elf moves from the bow to **fangs** (Fang Proficiency replaces Harmonist Bow Proficiency) and Sound Burst becomes a
 **fixed-fail Magic Stab**. *"Just design for now."*
 
 The whole design, what each race loses and keeps, and why no magic-weapon gate is needed:
 [design/MagicMeleeBuffers.md](design/MagicMeleeBuffers.md).
 
-🔵 **Waits on you**: the five questions at the bottom of that page, then your `buffer 3rd.csv` / `buffer 4th.csv` edits.
+🔵 **Waits on you**: the three questions still open at the bottom of that page (five answered 2026-10-05), then your `buffer 3rd.csv` / `buffer 4th.csv` edits.
