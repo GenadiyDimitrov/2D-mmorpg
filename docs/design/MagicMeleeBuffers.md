@@ -284,6 +284,13 @@ elf keeps it, §2).
 **0.230.4 (his):** the 20-39 Cleric (`cleric 2nd.csv`, shared with the Lightbringer) lost Light Armor Mastery, Light
 Caster Mastery (`clerics_light_armor_mastery`, now learned by nobody) and Light armor Evasion: *"Nothing for a light or
 heavy armors"*. The robe is the only armour a Cleric masters at 20-39.
+**0.230.5 (his fast test):** Human Smash and Elf Stab power ÷3, Demon Smash ×1.5 (Acoustic Shock with it, to stay
+0.9×): *"A 76 elf with a magic stab critical one shots a 75 lvl"*, a failed stab or smash still hit like a nuke, and
+*"Demon with all the buffs does 3 times lower than human"*. The Human Smash also retires Vampiric Bolt and the Elf Stab
+Frost Spikes, the mage-1st ranged nukes a buffer kept to 80. 🔴 The unbuffed `--magicmelee` rig disagrees with what he
+saw: before this pass it put all three races at ×0.96-1.04 of the healer, after it Human/Elf sit at ×0.5 and Demon at
+×1.4. The 3× and 9× gaps he reported are not in the rig, so something the rig leaves out (his gear, the full buff shelf)
+moves the Human and Elf far more than the Demon. Not chased yet.
 
 **The numbers that are MINE, not yours.** Change any of them in the CSV and the code follows:
 

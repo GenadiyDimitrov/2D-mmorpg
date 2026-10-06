@@ -157,69 +157,69 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 79,Harmony Mark,harmony_mark,Magic/Heal,,,900,800,party/aoe,5,120,300,"Increases: Atk with 10%; Acc +3; Atk/Cast.Speed, Def, Crit.Rate, Crit.Dmg, M.Crit.Dmg, Max HP/MP and regen with 20%; Decrease movement speed with 10%; Consumes 10 skill stones; Do not Stack with Other 'Mark' skills",300,78.6kk,1kk,,,,Same Principle as Great Might/Bulwark
 83,Harmony Mark,harmony_mark,Magic/Heal,,,900,800,party/aoe,5,120,300,"Increases: Atk with 10%; Acc +3; Atk/Cast.Speed, Def, Crit.Rate, Crit.Dmg, M.Crit.Dmg, Max HP/MP and regen with 20%; Critical.Rate.Received -10%; P.Critical.Dmg.Received -30%; Decrease movement speed with 10%; Consumes 15 skill stones; Do not Stack with Other 'Mark' skills",300,0,15kk,,,,both Phisical and magical crit raates have same buffs to increase it 100% + 30% + 20% .. so both cirt rates can be decreased a bit .. (roges have more decreases of crit rates); but crit dmg we have 35% + 35% + 20% for phisical and 30+20% for magical .. thats why the decrease is only the physical (tanks have more decrease of crit dmg) 
 ,,,,,,,,,,,,,,,,,,,----------------------------Magic Stab----------------------------
-76,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +337 (high fail chance: +59 fail points), Require: Duals;",123,10.5kk,1,,,Elf
-77,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +342 (high fail chance: +59 fail points), Require: Duals;",126,16.2kk,1k,,,Elf
-78,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +346 (high fail chance: +59 fail points), Require: Duals;",129,24.2kk,1k,,,Elf
-79,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +351 (high fail chance: +59 fail points), Require: Duals;",132,118kk,1k,,,Elf
-80,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +355 (high fail chance: +59 fail points), Require: Duals;",135,0,5kk,,,Elf
-81,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +360 (high fail chance: +59 fail points), Require: Duals;",138,0,7.5kk,,,Elf
-82,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +364 (high fail chance: +59 fail points), Require: Duals;",141,0,10kk,,,Elf
-83,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +369 (high fail chance: +59 fail points), Require: Duals;",144,0,15kk,,,Elf
-84,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +374 (high fail chance: +59 fail points), Require: Duals;",147,0,30kk,,,Elf
-85,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +378 (high fail chance: +59 fail points), Require: Duals;",150,0,50kk,,,Elf
-86,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +383 (high fail chance: +59 fail points), Require: Duals;",159,0,75kk,,,Elf
-87,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +387 (high fail chance: +59 fail points), Require: Duals;",168,0,100kk,,,Elf
-88,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +392 (high fail chance: +59 fail points), Require: Duals;",177,0,100kk,,,Elf
-89,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +396 (high fail chance: +59 fail points), Require: Duals;",186,0,100kk,,,Elf
-90,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +401 (high fail chance: +59 fail points), Require: Duals;",195,0,100kk,,,Elf
+76,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +112 (high fail chance: +59 fail points), Require: Duals;",123,10.5kk,1,,,Elf
+77,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +114 (high fail chance: +59 fail points), Require: Duals;",126,16.2kk,1k,,,Elf
+78,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +115 (high fail chance: +59 fail points), Require: Duals;",129,24.2kk,1k,,,Elf
+79,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +117 (high fail chance: +59 fail points), Require: Duals;",132,118kk,1k,,,Elf
+80,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +118 (high fail chance: +59 fail points), Require: Duals;",135,0,5kk,,,Elf
+81,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +120 (high fail chance: +59 fail points), Require: Duals;",138,0,7.5kk,,,Elf
+82,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +121 (high fail chance: +59 fail points), Require: Duals;",141,0,10kk,,,Elf
+83,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +123 (high fail chance: +59 fail points), Require: Duals;",144,0,15kk,,,Elf
+84,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +125 (high fail chance: +59 fail points), Require: Duals;",147,0,30kk,,,Elf
+85,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +126 (high fail chance: +59 fail points), Require: Duals;",150,0,50kk,,,Elf
+86,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +128 (high fail chance: +59 fail points), Require: Duals;",159,0,75kk,,,Elf
+87,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +129 (high fail chance: +59 fail points), Require: Duals;",168,0,100kk,,,Elf
+88,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +131 (high fail chance: +59 fail points), Require: Duals;",177,0,100kk,,,Elf
+89,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +132 (high fail chance: +59 fail points), Require: Duals;",186,0,100kk,,,Elf
+90,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +134 (high fail chance: +59 fail points), Require: Duals;",195,0,100kk,,,Elf
 ,,,,,,,,,,,,,,,,,,,----------------------------Sound Smash (Human)----------------------------
-76,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +98, Require: Blunt;",80,10.5kk,1,,,Human
-77,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +99, Require: Blunt;",82,16.2kk,1k,,,Human
-78,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +100, Require: Blunt;",84,24.2kk,1k,,,Human
-79,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +101, Require: Blunt;",86,118kk,1k,,,Human
-80,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +102, Require: Blunt;",88,0,5kk,,,Human
-81,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +103, Require: Blunt;",90,0,7.5kk,,,Human
-82,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +104, Require: Blunt;",92,0,10kk,,,Human
-83,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +105, Require: Blunt;",95,0,15kk,,,Human
-84,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +106, Require: Blunt;",98,0,30kk,,,Human
-85,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +107, Require: Blunt;",100,0,50kk,,,Human
-86,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +108, Require: Blunt;",102,0,75kk,,,Human
-87,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +109, Require: Blunt;",104,0,100kk,,,Human
-88,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +110, Require: Blunt;",106,0,100kk,,,Human
-89,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +111, Require: Blunt;",108,0,100kk,,,Human
-90,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +112, Require: Blunt;",110,0,100kk,,,Human
+76,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +33, Require: Blunt;",80,10.5kk,1,,,Human
+77,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +33, Require: Blunt;",82,16.2kk,1k,,,Human
+78,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +33, Require: Blunt;",84,24.2kk,1k,,,Human
+79,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +34, Require: Blunt;",86,118kk,1k,,,Human
+80,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +34, Require: Blunt;",88,0,5kk,,,Human
+81,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +34, Require: Blunt;",90,0,7.5kk,,,Human
+82,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +35, Require: Blunt;",92,0,10kk,,,Human
+83,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +35, Require: Blunt;",95,0,15kk,,,Human
+84,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +35, Require: Blunt;",98,0,30kk,,,Human
+85,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +36, Require: Blunt;",100,0,50kk,,,Human
+86,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +36, Require: Blunt;",102,0,75kk,,,Human
+87,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +36, Require: Blunt;",104,0,100kk,,,Human
+88,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +37, Require: Blunt;",106,0,100kk,,,Human
+89,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +37, Require: Blunt;",108,0,100kk,,,Human
+90,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +37, Require: Blunt;",110,0,100kk,,,Human
 ,,,,,,,,,,,,,,,,,,,----------------------------Sound Smash (Demon)----------------------------
-76,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +53, Require: Blunt;",80,10.5kk,1,,,Demon
-77,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +54, Require: Blunt;",82,16.2kk,1k,,,Demon
-78,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +55, Require: Blunt;",84,24.2kk,1k,,,Demon
-79,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +56, Require: Blunt;",86,118kk,1k,,,Demon
-80,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +57, Require: Blunt;",88,0,5kk,,,Demon
-81,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +58, Require: Blunt;",90,0,7.5kk,,,Demon
-82,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +59, Require: Blunt;",92,0,10kk,,,Demon
-83,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +60, Require: Blunt;",95,0,15kk,,,Demon
-84,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +61, Require: Blunt;",98,0,30kk,,,Demon
-85,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +62, Require: Blunt;",100,0,50kk,,,Demon
-86,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +63, Require: Blunt;",102,0,75kk,,,Demon
-87,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +64, Require: Blunt;",104,0,100kk,,,Demon
-88,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +65, Require: Blunt;",106,0,100kk,,,Demon
-89,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +66, Require: Blunt;",108,0,100kk,,,Demon
-90,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +67, Require: Blunt;",110,0,100kk,,,Demon
+76,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +80, Require: Blunt;",80,10.5kk,1,,,Demon
+77,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +81, Require: Blunt;",82,16.2kk,1k,,,Demon
+78,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +83, Require: Blunt;",84,24.2kk,1k,,,Demon
+79,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +84, Require: Blunt;",86,118kk,1k,,,Demon
+80,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +86, Require: Blunt;",88,0,5kk,,,Demon
+81,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +87, Require: Blunt;",90,0,7.5kk,,,Demon
+82,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +89, Require: Blunt;",92,0,10kk,,,Demon
+83,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +90, Require: Blunt;",95,0,15kk,,,Demon
+84,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +92, Require: Blunt;",98,0,30kk,,,Demon
+85,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +93, Require: Blunt;",100,0,50kk,,,Demon
+86,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +95, Require: Blunt;",102,0,75kk,,,Demon
+87,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +96, Require: Blunt;",104,0,100kk,,,Demon
+88,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +98, Require: Blunt;",106,0,100kk,,,Demon
+89,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +99, Require: Blunt;",108,0,100kk,,,Demon
+90,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +101, Require: Blunt;",110,0,100kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Acoustic Shock----------------------------
-76,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +47 and Stuns for 5s, Require: Blunt;",80,10.5kk,1,,,Demon
-77,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +48 and Stuns for 5s, Require: Blunt;",82,16.2kk,1k,,,Demon
-78,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +49 and Stuns for 5s, Require: Blunt;",84,24.2kk,1k,,,Demon
-79,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +50 and Stuns for 5s, Require: Blunt;",86,118kk,1k,,,Demon
-80,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +51 and Stuns for 5s, Require: Blunt;",88,0,5kk,,,Demon
-81,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +52 and Stuns for 5s, Require: Blunt;",90,0,7.5kk,,,Demon
-82,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +53 and Stuns for 5s, Require: Blunt;",92,0,10kk,,,Demon
-83,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +54 and Stuns for 5s, Require: Blunt;",95,0,15kk,,,Demon
-84,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +55 and Stuns for 5s, Require: Blunt;",98,0,30kk,,,Demon
-85,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +56 and Stuns for 5s, Require: Blunt;",100,0,50kk,,,Demon
-86,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +57 and Stuns for 5s, Require: Blunt;",102,0,75kk,,,Demon
-87,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +58 and Stuns for 5s, Require: Blunt;",104,0,100kk,,,Demon
-88,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +59 and Stuns for 5s, Require: Blunt;",106,0,100kk,,,Demon
-89,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +60 and Stuns for 5s, Require: Blunt;",108,0,100kk,,,Demon
-90,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +61 and Stuns for 5s, Require: Blunt;",110,0,100kk,,,Demon
+76,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +71 and Stuns for 5s, Require: Blunt;",80,10.5kk,1,,,Demon
+77,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +72 and Stuns for 5s, Require: Blunt;",82,16.2kk,1k,,,Demon
+78,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +74 and Stuns for 5s, Require: Blunt;",84,24.2kk,1k,,,Demon
+79,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +75 and Stuns for 5s, Require: Blunt;",86,118kk,1k,,,Demon
+80,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +77 and Stuns for 5s, Require: Blunt;",88,0,5kk,,,Demon
+81,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +78 and Stuns for 5s, Require: Blunt;",90,0,7.5kk,,,Demon
+82,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +80 and Stuns for 5s, Require: Blunt;",92,0,10kk,,,Demon
+83,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +81 and Stuns for 5s, Require: Blunt;",95,0,15kk,,,Demon
+84,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +83 and Stuns for 5s, Require: Blunt;",98,0,30kk,,,Demon
+85,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +84 and Stuns for 5s, Require: Blunt;",100,0,50kk,,,Demon
+86,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +86 and Stuns for 5s, Require: Blunt;",102,0,75kk,,,Demon
+87,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +87 and Stuns for 5s, Require: Blunt;",104,0,100kk,,,Demon
+88,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +89 and Stuns for 5s, Require: Blunt;",106,0,100kk,,,Demon
+89,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +90 and Stuns for 5s, Require: Blunt;",108,0,100kk,,,Demon
+90,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +92 and Stuns for 5s, Require: Blunt;",110,0,100kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Reinforcement (Human)----------------------------
 76,Reinforcement,reinforcement,Toggle,,,0,0,self/single,0,0,0,"P.Def +36%, P.Crit Damage Resist 15%, Bow Resistance 16%; MP Consumption +15%",8,6.99kk,1kk,,,Human
 78,Reinforcement,reinforcement,Toggle,,,0,0,self/single,0,0,0,"P.Def +36.5%, P.Crit Damage Resist 15%, Bow Resistance 16%; MP Consumption +15%",8,16.1kk,1kk,,,Human

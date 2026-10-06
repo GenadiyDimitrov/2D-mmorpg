@@ -91,18 +91,21 @@ public static partial class SkillCatalog
 
     // Priced to a HEALER's rotation (his *"on par as healers not as nukers/warriors"*), the UNBUFFED
     // column (his answer 3). Acoustic Shock is held at ~0.9× the Demon's Smash.
+    // His fast test (2026-10-06): Human Smash and Elf Stab ÷3 (a 76 Elf's stab crit one-shot a 75 mob, and a
+    // FAILED one still hit like a nuke), Demon Smash ×1.5 (fully buffed it did a third of the Human's).
+    // Acoustic Shock moved with the Demon's Smash to keep its 0.9×.
     private static readonly int[] SmashHuman =
-        { 23, 33, 36, 40, 43, 45, 55, 58, 61, 63, 66, 68, 71,
-          98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112 };
+        { 8, 11, 12, 13, 14, 15, 18, 19, 20, 21, 22, 23, 24,
+          33, 33, 33, 34, 34, 34, 35, 35, 35, 36, 36, 36, 37, 37, 37 };
     private static readonly int[] SmashDemon =
-        { 15, 20, 23, 26, 28, 29, 31, 33, 35, 36, 37, 38, 40,
-          53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67 };
+        { 23, 30, 35, 39, 42, 44, 47, 50, 53, 54, 56, 57, 60,
+          80, 81, 83, 84, 86, 87, 89, 90, 92, 93, 95, 96, 98, 99, 101 };
     private static readonly int[] ShockDemon =
-        { 13, 18, 20, 23, 25, 26, 27, 29, 31, 32, 33, 34, 36,
-          47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61 };
+        { 20, 27, 30, 35, 38, 39, 41, 44, 47, 48, 50, 51, 54,
+          71, 72, 74, 75, 77, 78, 80, 81, 83, 84, 86, 87, 89, 90, 92 };
     private static readonly int[] StabElf =
-        { 93, 125, 141, 158, 168, 176, 199, 207, 218, 225, 233, 241, 248,
-          337, 342, 346, 351, 355, 360, 364, 369, 374, 378, 383, 387, 392, 396, 401 };
+        { 31, 42, 47, 53, 56, 59, 66, 69, 73, 75, 78, 80, 83,
+          112, 114, 115, 117, 118, 120, 121, 123, 125, 126, 128, 129, 131, 132, 134 };
 
     /// <summary>The melee pair's MP (his 2026-10-02 edit), 3rd then 4th tier — unchanged by `BL-335`.</summary>
     private static readonly int[] SoundMeleeMp =
@@ -261,7 +264,7 @@ public static partial class SkillCatalog
         list.Add(SoundSpell(MagicStab, "Magic Stab", WeaponType.Dual, range: 40, castTicks: 30,
             cooldownTicks: 50, stunTicks: 0, StabElf, MagicStabMp,
             desc: "A thrust of focused sound — devastating when it holds, and it often does not.",
-            failPoints: MagicStabFailPoints));
+            failPoints: MagicStabFailPoints, alsoReplaces: new[] { FrostSpikes }));
 
         // ===== TOGGLES ===========================================================================
         // Two per race: Reinforcement (defence) and Sharpening (the race's other half). Instant on and
@@ -438,10 +441,12 @@ public static partial class SkillCatalog
 
     /// <summary>One of the Warchanter's MAGIC damage spells: one hit, 28 rungs (13 on the 40-74 band, 15 on
     /// 76-90), weapon-gated, and (Acoustic Shock) a contested magic stun. Every one retires Holy Bolt and
-    /// Holy Spike (playtest 28: *"holy bolt should be replaced from sound smash/burst"*).</summary>
+    /// Holy Spike (playtest 28: *"holy bolt should be replaced from sound smash/burst"*). The Human Smash also
+    /// retires Vampiric Bolt and the Elf Stab Frost Spikes — the mage-1st ranged nukes a buffer must not keep
+    /// (2026-10-06: *"Human and elf have ranged spell that they must not have"*).</summary>
     private static SkillDef SoundSpell(string id, string name, WeaponType weapon, float range, int castTicks,
         int cooldownTicks, int stunTicks, int[] power, int[] mp, string desc, float failPoints = 0f,
-        WeaponHands hands = WeaponHands.Any)
+        WeaponHands hands = WeaponHands.Any, string[]? alsoReplaces = null)
     {
         var effect = SkillEffect.MagicDamage | (stunTicks > 0 ? SkillEffect.Stun : SkillEffect.None);
         SkillLevel Rung(int i)
@@ -458,7 +463,7 @@ public static partial class SkillCatalog
         return new SkillDef(id, name, BaseClass.Mage, effect,
             MpCost: mp[0], CastTicks: castTicks, CooldownTicks: cooldownTicks, Range: range, Power: power[0],
             Category: SkillCategory.Magic, BuffKey: id,   // two "Sound Smash" ids (Human, Demon) must not share the name key
-            Replaces: new[] { HolyBolt, HolySpike },
+            Replaces: new[] { HolyBolt, HolySpike }.Concat(alsoReplaces ?? Array.Empty<string>()).ToArray(),
             RequiredWeapon: weapon, RequiredHands: hands,
             DurationTicks: stunTicks,
             DebuffSchool: stunTicks > 0 ? DebuffSchool.Magical : DebuffSchool.None,

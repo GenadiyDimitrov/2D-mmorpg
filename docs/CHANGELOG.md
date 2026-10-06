@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.230.4**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.230.5**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,27 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-06 (latest) — 0.230.4: the Cleric (20-39) masters no light armour
+## 2026-10-06 (latest) — 0.230.5: the buffers' strikes retuned, and no ranged nuke left
+
+**APK** (the Learn tab is built from the compiled class tables and skill defs) + server restart. No `game.db` delete of
+its own: a character who already holds Vampiric Bolt / Frost Spikes loses them on the next login if he owns the
+replacing strike (`PersistenceService` drops a retired id on load).
+
+- **His fast test:** *"A 76 elf with a magic stab critical one shots a 75 lvl"*; a FAILED Human Smash or Elf Stab still
+  hit like a nuker's nuke; *"Demon with all the buffs does 3 times lower than human"*.
+- **Power, every rung of both tiers** (`buffer 3rd.csv` / `buffer 4th.csv` DESCR + `Skills.Warchanter3rd.Kit.cs`):
+  Human Sound Smash ÷3 (71 → 24 at 74, 112 → 37 at 90), Elf Magic Stab ÷3 (248 → 83, 401 → 134), Demon Sound Smash ×1.5
+  (40 → 60, 67 → 101). Acoustic Shock ×1.5 with it (36 → 54, 61 → 92), keeping its 0.9× of the Demon Smash; that one is
+  mine, not his. ⚠ The Human's 4th-tier Smash was +1 a level, so a third of it repeats rungs (33, 33, 33, 34 …): power is
+  an integer. The level term still makes each rung hit harder.
+- **No ranged spell for the Human or Elf buffer:** `mage 1st.csv`'s `human_vampiric_bolt` (Human) and `frost_spikes`
+  (Elf) run to 80, and the buffer only retired Holy Bolt / Holy Spike. Sound Smash now also retires Vampiric Bolt, Magic
+  Stab Frost Spikes (their `REPLACES` cells, and `SoundSpell`'s `alsoReplaces`). The Demon had no such spell.
+- 🔴 **The rig does not see what he saw.** `BalanceMatrix --magicmelee` (unbuffed) had all three races at ×0.96-1.04 of the
+  healer before this; now Human/Elf ×0.5, Demon ×1.4. His 3× (Elf/Human vs a nuke) and 9× (Human vs Demon) gaps live
+  in something the rig leaves out: his gear or the full buff shelf. `MagicMeleeBuffers.md` notes it; not chased yet.
+
+## 2026-10-06 — 0.230.4: the Cleric (20-39) masters no light armour
 
 **APK** (the Learn tab is built from the compiled class tables) + server restart. No `game.db` delete of its own; a
 character that already learned the dropped skills keeps them until 0.230.0's owed delete.
