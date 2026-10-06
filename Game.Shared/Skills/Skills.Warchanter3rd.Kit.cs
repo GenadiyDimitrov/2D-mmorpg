@@ -89,9 +89,9 @@ public static partial class SkillCatalog
     internal static readonly int[] MagicSwingPower =
         { 10, 12, 13, 14, 15, 16, 17, 18, 20, 21, 23, 24, 25, 26 };
 
-    // His second pass (2026-10-06): Smash, Acoustic Shock and the Human's Acoustic Bash hit at HOLY RAY's power
-    // (the healer's nuke, rung for rung), Magic Stab at Holy Ray x1.5 (*"so at 90 about 160ish"*). All four are
-    // half power in PvP: *"Buffers can farm but not stronger in pvp. They are annoying but not strong."*
+    // His second pass (2026-10-06): Smash and Acoustic Shock hit at HOLY RAY's power (the healer's nuke, rung for
+    // rung), Magic Stab at Holy Ray x1.5 (*"so at 90 about 160ish"*). All three are half power in PvP: *"Buffers
+    // can farm but not stronger in pvp. They are annoying but not strong."* (Acoustic Bash does no damage.)
     // (The first pass, the same day, was Smash/Stab /3 and the Demon's Smash x1.5.)
     private static readonly int[] HolyRayPower =
         { 42, 52, 57, 63, 66, 68, 71, 74, 77, 79, 82, 84, 87,
@@ -256,14 +256,24 @@ public static partial class SkillCatalog
         list.Add(SoundSpell(AcousticShock, "Acoustic Shock", WeaponType.Blunt, range: 40, castTicks: 10,
             cooldownTicks: 100, stunTicks: 50, HolyRayPower, SoundMeleeMp,
             desc: "A blow pitched to shatter the senses: magic damage, and the target reels.", hands: WeaponHands.Two));
-        // Acoustic Bash (HUMAN ONLY, shield) — Acoustic Shock's twin for the shield hand, plus AGGRO: half the
-        // tank's Taunt at the same level, paid whether or not the stun lands (his: *"if fail the stun the taunt
-        // value is applied anyway"*). Threat only, no target lock: GameLoopService pays a non-taunt skill's
-        // TauntPower through the charm's unconditional AddThreat. A threat skill is never auto-cast.
-        list.Add(SoundSpell(AcousticBash, "Acoustic Bash", WeaponType.None, range: 40, castTicks: 10,
-            cooldownTicks: 100, stunTicks: 50, HolyRayPower, SoundMeleeMp,
-            desc: "A ringing blow off the shield: magic damage, the target reels, and it turns on you.",
-            shield: ShieldGate.Required, taunt: BashTaunt));
+        // Acoustic Bash (HUMAN ONLY, shield) — NO DAMAGE (owner, 2026-10-07: *"no dmg .. Only stun+taunt"*): a
+        // contested 5s magic STUN plus AGGRO, half the tank's Taunt at the same level, paid whether or not the
+        // stun lands (*"if fail the stun the taunt value is applied anyway"*). Threat only, no target lock:
+        // GameLoopService pays a non-taunt skill's TauntPower through the charm's unconditional AddThreat.
+        // A threat skill is never auto-cast.
+        list.Add(new SkillDef(AcousticBash, "Acoustic Bash", BaseClass.Mage, SkillEffect.Stun,
+            MpCost: SoundMeleeMp[0], CastTicks: 10, CooldownTicks: 100, Range: 40, Power: 0,
+            DurationTicks: 50, BuffKey: AcousticBash,
+            Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Magical,
+            RequiredShield: ShieldGate.Required, TauntPower: BashTaunt[0],
+            Description: "A ringing blow off the shield: the target reels, and it turns on you. Requires a shield.",
+            Levels: Enumerable.Range(0, BashTaunt.Length).Select(i =>
+            {
+                var (sp, gold) = i < 13 ? (BandSp13[i], 0) : F4(i - 13, 1);
+                return new SkillLevel(MpCost: SoundMeleeMp[i], SpCost: sp, GoldCost: gold, TauntPower: BashTaunt[i],
+                    Magnitudes: new EffectMagnitude[] { new(SkillEffect.Stun, 1f, ModifierMode.Flat) },
+                    Description: $"Stuns for 5s and adds {BashTaunt[i]:N0} aggro, even if the stun fails.");
+            }).ToArray()));
         // Magic Stab (ELF) — Sound Burst's successor: melee, ONE hit, its old 3s cast / 5s reuse, and a big
         // fizzle of its own (+59 points) that Sharpening's +20 M.Accuracy cuts (his: *"high chance to fail
         // ... the toggle just to give less fail chance"*).
@@ -451,15 +461,13 @@ public static partial class SkillCatalog
     /// (2026-10-06: *"Human and elf have ranged spell that they must not have"*).</summary>
     private static SkillDef SoundSpell(string id, string name, WeaponType weapon, float range, int castTicks,
         int cooldownTicks, int stunTicks, int[] power, int[] mp, string desc, float failPoints = 0f,
-        WeaponHands hands = WeaponHands.Any, string[]? alsoReplaces = null,
-        ShieldGate shield = ShieldGate.Any, int[]? taunt = null)
+        WeaponHands hands = WeaponHands.Any, string[]? alsoReplaces = null)
     {
         var effect = SkillEffect.MagicDamage | (stunTicks > 0 ? SkillEffect.Stun : SkillEffect.None);
         SkillLevel Rung(int i)
         {
             var (sp, gold) = i < 13 ? (BandSp13[i], 0) : F4(i - 13, 1);
             return new SkillLevel(Power: power[i], MpCost: mp[i], SpCost: sp, GoldCost: gold,
-                TauntPower: taunt?[i] ?? 0,
                 Magnitudes: stunTicks > 0
                     ? new EffectMagnitude[] { new(SkillEffect.Stun, 1f, ModifierMode.Flat) }
                     : null,
@@ -471,9 +479,8 @@ public static partial class SkillCatalog
             MpCost: mp[0], CastTicks: castTicks, CooldownTicks: cooldownTicks, Range: range, Power: power[0],
             Category: SkillCategory.Magic, BuffKey: id,
             Replaces: new[] { HolyBolt, HolySpike }.Concat(alsoReplaces ?? Array.Empty<string>()).ToArray(),
-            RequiredWeapon: weapon, RequiredHands: hands, RequiredShield: shield,
+            RequiredWeapon: weapon, RequiredHands: hands,
             PvpDamageMult: WarchanterPvp,
-            TauntPower: taunt?[0] ?? 0,
             DurationTicks: stunTicks,
             DebuffSchool: stunTicks > 0 ? DebuffSchool.Magical : DebuffSchool.None,
             MagicFailPoints: failPoints,

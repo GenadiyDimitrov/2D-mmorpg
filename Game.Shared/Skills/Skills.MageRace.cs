@@ -169,8 +169,8 @@ public static partial class SkillCatalog
         };
         list.Add(new SkillDef(HumanVampiricBolt, "Vampiric Bolt", BaseClass.Mage,
             SkillEffect.MagicDamage,
-            MpCost: vampMp[0], CastTicks: 40, CooldownTicks: 10, Range: 600, Power: vampPower[0],
-            FixedCooldown: true,   // owner, 2026-10-06: reuse buffs do not shorten it
+            MpCost: vampMp[0], CastTicks: 40, CooldownTicks: 60, Range: 600, Power: vampPower[0],
+            FixedCooldown: true,   // owner, 2026-10-07: 6s FIXED: *"higher dmg + vamp == longer cd"*, useful but not spammable
             Category: SkillCategory.Magic, SpCost: vampSp[0], Lifesteal: 0.40f,
             // ⚠ PVP POWER ×0.5 (owner, 2026-10-06): *"its a helping in farm not in pvp .. one race/class can be
             // stronger in pve than other .. but the pvp should be balanced"*. The race bolt every human mage keeps;

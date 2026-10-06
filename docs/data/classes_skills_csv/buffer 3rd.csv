@@ -201,19 +201,19 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 72,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,10,5,"Deals magic damage with power +84 and Stuns for 5s, Require: Blunt; Power in PVP x0.5;",75,1010k,[],Demon,,
 74,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,10,5,"Deals magic damage with power +87 and Stuns for 5s, Require: Blunt; Power in PVP x0.5;",78,1470k,[],Demon,,
 ,,,,,,,,,,,,,,,,,----------------------------Acoustic Bash----------------------------
-40,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +42 and Stuns for 5s; aggro 3250 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",36,34.4k,[],Human,,A ringing blow off your shield for magic power @: it stuns for @{duration} and turns the target on you.
-48,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +52 and Stuns for 5s; aggro 3750 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",43,50.3k,[],Human,,
-52,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +57 and Stuns for 5s; aggro 4250 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",47,69.1k,[],Human,,
-56,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +63 and Stuns for 5s; aggro 4500 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",50,83k,[],Human,,
-58,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +66 and Stuns for 5s; aggro 4750 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",55,102k,[],Human,,
-60,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +68 and Stuns for 5s; aggro 5000 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",56,189k,[],Human,,
-62,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +71 and Stuns for 5s; aggro 5250 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",58,231k,[],Human,,
-64,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +74 and Stuns for 5s; aggro 5500 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",62,282k,[],Human,,
-66,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +77 and Stuns for 5s; aggro 5600 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",65,457k,[],Human,,
-68,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +79 and Stuns for 5s; aggro 5700 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",68,554k,[],Human,,
-70,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +82 and Stuns for 5s; aggro 5800 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",70,611k,[],Human,,
-72,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +84 and Stuns for 5s; aggro 5900 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",75,1010k,[],Human,,
-74,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +87 and Stuns for 5s; aggro 6000 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",78,1480k,[],Human,,
+40,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 3250 (paid even if the stun fails), Require: Shield;",36,34.4k,[],Human,,A ringing blow off your shield: it stuns for @{duration} and turns the target on you.
+48,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 3750 (paid even if the stun fails), Require: Shield;",43,50.3k,[],Human,,
+52,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 4250 (paid even if the stun fails), Require: Shield;",47,69.1k,[],Human,,
+56,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 4500 (paid even if the stun fails), Require: Shield;",50,83k,[],Human,,
+58,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 4750 (paid even if the stun fails), Require: Shield;",55,102k,[],Human,,
+60,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 5000 (paid even if the stun fails), Require: Shield;",56,189k,[],Human,,
+62,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 5250 (paid even if the stun fails), Require: Shield;",58,231k,[],Human,,
+64,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 5500 (paid even if the stun fails), Require: Shield;",62,282k,[],Human,,
+66,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 5600 (paid even if the stun fails), Require: Shield;",65,457k,[],Human,,
+68,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 5700 (paid even if the stun fails), Require: Shield;",68,554k,[],Human,,
+70,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 5800 (paid even if the stun fails), Require: Shield;",70,611k,[],Human,,
+72,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 5900 (paid even if the stun fails), Require: Shield;",75,1010k,[],Human,,
+74,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 6000 (paid even if the stun fails), Require: Shield;",78,1480k,[],Human,,
 ,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------ACTIVE PHYSICAL-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------ACTIVE TOGGLE-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,,,,,----------------------------Reinforcement (Human)----------------------------

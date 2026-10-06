@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.231.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.231.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,21 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-06 (latest) — 0.231.0: buffers hit like healers, one Sound Smash, Acoustic Bash, 20-minute stealth
+## 2026-10-07 (latest) — 0.231.1: Acoustic Bash does no damage, the race bolts get real cooldowns
+
+**APK** + server restart. No `game.db` delete of its own.
+
+- **Acoustic Bash: stun + taunt only** (*"no dmg .. Only stun+taunt.. That's why I dint say dmg"*). Power 0, a
+  contested 5s magic stun, the same aggro ladder (half the tank's Taunt, paid even if the stun fails), shield-gated,
+  10s reuse. Its rows are `Magic/Debuff` now; `debuff_landmods.csv` reads it as `DEBUFF ONLY (1)`, still at the
+  default `x1`. 0.231.0 gave it Acoustic Shock's damage on my own call; that was wrong.
+- **Vampiric Bolt 6s, Frost Spikes 4s, both FIXED** (*"higher dmg + vamp == longer cd ... lower dmg no vamp ==
+  shorter cd ... now no Spammable still useful"*): every rung, code and the `mage 1st.csv` CD column. Every class that
+  carries them gets the new reuse, the nukers and healers included.
+- **Conceal** carries only the move-speed price. The "+50% mana consumption" text was already gone from its row
+  in 0.231.0 (the code never charged it); 0.231.0's note claiming it had been left was wrong.
+
+## 2026-10-06 — 0.231.0: buffers hit like healers, one Sound Smash, Acoustic Bash, 20-minute stealth
 
 **APK** (class tables + skill defs) + server restart. 🔴 **`game.db` delete advised**: `sound_smash_demon` is retired, so
 a Demon who learned it loses it on load and must buy `sound_smash` again (pre-release, the delete is the migration).

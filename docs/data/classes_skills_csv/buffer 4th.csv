@@ -205,21 +205,21 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,10,5,"Deals magic damage with power +108 and Stuns for 5s, Require: Blunt; Power in PVP x0.5;",108,0,100kk,,,Demon
 90,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,10,5,"Deals magic damage with power +109 and Stuns for 5s, Require: Blunt; Power in PVP x0.5;",110,0,100kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Acoustic Bash----------------------------
-76,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +88 and Stuns for 5s; aggro 6200 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",80,10.5kk,1,,,Human
-77,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +90 and Stuns for 5s; aggro 6400 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",82,16.2kk,1k,,,Human
-78,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +91 and Stuns for 5s; aggro 6600 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",84,24.2kk,1k,,,Human
-79,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +93 and Stuns for 5s; aggro 6800 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",86,118kk,1k,,,Human
-80,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +94 and Stuns for 5s; aggro 7000 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",88,0,5kk,,,Human
-81,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +96 and Stuns for 5s; aggro 7200 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",90,0,7.5kk,,,Human
-82,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +99 and Stuns for 5s; aggro 7400 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",92,0,10kk,,,Human
-83,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +100 and Stuns for 5s; aggro 7600 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",95,0,15kk,,,Human
-84,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +101 and Stuns for 5s; aggro 7800 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",98,0,30kk,,,Human
-85,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +102 and Stuns for 5s; aggro 8000 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",100,0,50kk,,,Human
-86,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +103 and Stuns for 5s; aggro 8200 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",102,0,75kk,,,Human
-87,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +105 and Stuns for 5s; aggro 8400 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",104,0,100kk,,,Human
-88,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +106 and Stuns for 5s; aggro 8600 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",106,0,100kk,,,Human
-89,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +108 and Stuns for 5s; aggro 8800 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",108,0,100kk,,,Human
-90,Acoustic Bash,acoustic_bash,Magic/Dmg,,/shield,40,0,enemy/single,1,10,5,"Deals magic damage with power +109 and Stuns for 5s; aggro 9000 (paid even if the stun fails), Require: Shield; Power in PVP x0.5;",110,0,100kk,,,Human
+76,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 6200 (paid even if the stun fails), Require: Shield;",80,10.5kk,1,,,Human
+77,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 6400 (paid even if the stun fails), Require: Shield;",82,16.2kk,1k,,,Human
+78,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 6600 (paid even if the stun fails), Require: Shield;",84,24.2kk,1k,,,Human
+79,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 6800 (paid even if the stun fails), Require: Shield;",86,118kk,1k,,,Human
+80,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 7000 (paid even if the stun fails), Require: Shield;",88,0,5kk,,,Human
+81,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 7200 (paid even if the stun fails), Require: Shield;",90,0,7.5kk,,,Human
+82,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 7400 (paid even if the stun fails), Require: Shield;",92,0,10kk,,,Human
+83,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 7600 (paid even if the stun fails), Require: Shield;",95,0,15kk,,,Human
+84,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 7800 (paid even if the stun fails), Require: Shield;",98,0,30kk,,,Human
+85,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 8000 (paid even if the stun fails), Require: Shield;",100,0,50kk,,,Human
+86,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 8200 (paid even if the stun fails), Require: Shield;",102,0,75kk,,,Human
+87,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 8400 (paid even if the stun fails), Require: Shield;",104,0,100kk,,,Human
+88,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 8600 (paid even if the stun fails), Require: Shield;",106,0,100kk,,,Human
+89,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 8800 (paid even if the stun fails), Require: Shield;",108,0,100kk,,,Human
+90,Acoustic Bash,acoustic_bash,Magic/Debuff,,/shield,40,0,enemy/single,1,10,5,"Stuns for 5s; aggro 9000 (paid even if the stun fails), Require: Shield;",110,0,100kk,,,Human
 ,,,,,,,,,,,,,,,,,,,----------------------------Reinforcement (Human)----------------------------
 76,Reinforcement,reinforcement,Toggle,,,0,0,self/single,0,0,0,"P.Def +36%, P.Crit Damage Resist 15%, Bow Resistance 16%; MP Consumption +15%",8,6.99kk,1kk,,,Human
 78,Reinforcement,reinforcement,Toggle,,,0,0,self/single,0,0,0,"P.Def +36.5%, P.Crit Damage Resist 15%, Bow Resistance 16%; MP Consumption +15%",8,16.1kk,1kk,,,Human

@@ -294,7 +294,7 @@ moves the Human and Elf far more than the Demon. Not chased yet.
 **0.231.0 (his second pass) SUPERSEDES the numbers above.** The rig gap was mostly power: magic damage is
 `power × √M.Atk`, and Stab's 337 at 76 was 2.4× the nuker's 143, so the weapon hardly mattered. Now every buffer
 strike is pegged to the HEALER's nuke: Sound Smash (ONE id again, Human + Demon) and Acoustic Shock = Holy Ray power
-on a 10s reuse, Magic Stab = Holy Ray ×1.5, the Human gets **Acoustic Bash** (shield, 5s stun, half the tank's
+on a 10s reuse, Magic Stab = Holy Ray ×1.5, the Human gets **Acoustic Bash** (shield, NO damage since 0.231.1, 5s stun, half the tank's
 Taunt as aggro even when the stun fails), all four at ×0.5 in PvP, and the Demon's Sharpening lost its M.Atk %. His
 aim: *"the buffers won't go far from healers in dmg and are more party oriented to farm now"*. Measured: Human/Demon
 ×0.8 of the healer at 76-90, Elf ×0.6 (Stab's own fail points).

@@ -242,8 +242,8 @@ public static partial class SkillCatalog
         //   reaches 1.00. 📐 `--slowstack` prints the resulting speed.
 
         new(FrostSpikes, "Frost Spikes", BaseClass.Mage, SkillEffect.MagicDamage | SkillEffect.Slow,
-            MpCost: 28, CastTicks: 25, CooldownTicks: 10, Range: 600,
-            FixedCooldown: true,   // owner, 2026-10-06: reuse buffs do not shorten it
+            MpCost: 28, CastTicks: 25, CooldownTicks: 40, Range: 600,
+            FixedCooldown: true,   // owner, 2026-10-07: 4s FIXED: *"lower dmg no vamp == shorter cd"*, useful but not spammable
             Power: 15,
             DurationTicks: 300, BuffKey: "slow", Rank: 1,
             DebuffSchool: DebuffSchool.Magical, Category: SkillCategory.Magic, SpCost: 2000,
