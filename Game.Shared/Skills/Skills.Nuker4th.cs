@@ -133,7 +133,7 @@ public static partial class SkillCatalog
     internal static SkillLevel[] NukerFourthVampiricRungs() => F4Rungs(15, 1, (i, sp, gold) =>
         new SkillLevel(Power: NukerBlastPower4[i], MpCost: NukerHeavyMp4[i], SpCost: sp, GoldCost: gold,
             Range: 750f,
-            Description: $"Drain power {NukerBlastPower4[i]}; heals 40% of damage."));
+            Description: $"Drain power {NukerBlastPower4[i]}; heals 40% of damage. Half power in PvP."));
 
     /// <summary>Frost Spikes rungs 1-5 (ELF, every mystic, 14/20/25/30/35) — his `mage 1st.csv` rows of
     /// 2026-09-29. The power/MP/SP are the Human drain's first five rungs; the slow is a flat 15%.</summary>
@@ -145,7 +145,7 @@ public static partial class SkillCatalog
         return Enumerable.Range(0, 5).Select(i => new SkillLevel(Power: power[i], MpCost: mp[i], SpCost: sp[i],
             Range: i == 0 ? 600f : 750f,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.Slow, 0.15f) },
-            Description: $"Power {power[i]}, and a chance to slow by 15% for 30s."));
+            Description: $"Power {power[i]}, and a chance to slow by 15% for 30s. Half power in PvP."));
     }
 
     /// <summary>Frost Spikes rungs 15-29 (ELF). The slow steps 40 → 42 → 45% on his 4/5/6 grouping;
@@ -156,7 +156,7 @@ public static partial class SkillCatalog
                          .45f, .45f, .45f, .45f, .45f, .45f };
         return new SkillLevel(Power: NukerWavePower4[i], MpCost: NukerBoltMp4[i], SpCost: sp, GoldCost: gold,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.Slow, slow[i]) },
-            Description: $"Power {NukerWavePower4[i]}, and a chance to slow by {slow[i] * 100:0}% for 30s.");
+            Description: $"Power {NukerWavePower4[i]}, and a chance to slow by {slow[i] * 100:0}% for 30s. Half power in PvP.");
     });
 
     /// <summary>Frost Pierce rungs 15-29 (ELF). ⚠ The bleed RANK IS 10 ON EVERY ROW — the 3rd tier

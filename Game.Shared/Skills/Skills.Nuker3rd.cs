@@ -249,9 +249,12 @@ public static partial class SkillCatalog
             // 🔑 0.70 → 0.85 (owner, 2026-09-13). See the RAISED-SUCCESS note above the elf pair.
             DebuffLandMod: 0.85f,  // his CSV: "(success chance x0.85)"
             InterruptMult: 2f,     // his CSV: "(interrupt chance x2)"
+            // ⚠ PVP POWER ×0.5 (owner, 2026-10-06) — the elf's race bolt, same ruling as Vampiric Bolt. The DAMAGE
+            // only: the slow and the interrupt are untouched.
+            PvpDamageMult: 0.5f,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.Slow, 0.15f) },
             Description: "Shards of ice: damage, a chance to slow for 30s, and twice the usual chance "
-                       + "to break the target's cast.",
+                       + "to break the target's cast. Half power against players.",
             // 🔑 THE SLOW PLATEAUS AT 40% FROM 74 only because that is where his ladder ends; every rung
             // below it climbs. Read the ladder, not this comment, if it is ever extended.
             // 🔑 2026-09-29: FIVE RUNGS IN FRONT (14/20/25/30/35) now that every Elf mystic learns it —
@@ -262,7 +265,7 @@ public static partial class SkillCatalog
                 float[] slow = { .15f, .20f, .20f, .25f, .25f, .28f, .28f, .31f, .31f, .34f, .34f, .37f, .37f, .40f };
                 return new SkillLevel(Power: NukerWavePower[i], MpCost: NukerBoltMp[i], SpCost: sp,
                     Magnitudes: new EffectMagnitude[] { new(SkillEffect.Slow, slow[i]) },
-                    Description: $"Power {NukerWavePower[i]}, and a chance to slow by {slow[i] * 100:0}% for 30s.");
+                    Description: $"Power {NukerWavePower[i]}, and a chance to slow by {slow[i] * 100:0}% for 30s. Half power in PvP.");
             })).Concat(NukerFourthFrostSpikesRungs())
                 .Select(l => l.Range > 0 ? l : l with { Range = 750f }).ToArray()),
 

@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.229.3";
+    public const string GameVersion = "0.229.4";
 
     /// <summary>RUNES STACK, UP TO A CAP (owner, 2026-10-03): opening a rune box while you hold the same rune ADDS its
     /// time to that rune instead of starting a second clock beside it. A box of this length or shorter (1h/2h) may only

@@ -24,7 +24,20 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-06 (latest) — 0.229.3: Holy Bolt and Holy Ray deal half damage to players
+## 2026-10-06 (latest) — 0.229.4: the race bolts deal half damage to players too
+
+**Server restart** for the damage; **APK** for the skill text. No `game.db` delete.
+
+- **His ruling:** *"let vampiric bolt and frost spike also get the pvp cut .. its a helping in farm not in pvp .. one
+  race/class can be stronger in pve than other .. but the pvp should be balanced"*.
+- Why it was needed: after 0.229.3 a human healer simply cast `human_vampiric_bolt` (power 108 at 90, Holy Ray 109)
+  and an elf healer Frost Spikes, both at full power. They are race ladders every mage of that race keeps, so the cut
+  reaches nukers and buffers of those races too, which is the ruling.
+- `human_vampiric_bolt` and `frost_spikes` carry `PvpDamageMult: 0.5f`. **Damage only**: Frost Spikes' slow and its ×2
+  interrupt are untouched, and Vampiric Bolt's 40% heal follows the halved damage. 68 rows in `mage 1st.csv` say
+  `Power in PVP x0.5`; texts say "Half power in PvP"; `--gen-faces` re-run, `--check` clean.
+
+## 2026-10-06 — 0.229.3: Holy Bolt and Holy Ray deal half damage to players
 
 **Server restart** for the damage; **APK** for the new skill text (the faces are compiled into the client). No `game.db` delete.
 
@@ -35,7 +48,7 @@ docs/changelogs/`.
   descriptions say "Half power in PvP", `--gen-faces` re-run, `--check` clean.
 - ⚠ **The healer keeps the race bolt at full power.** A human healer also knows `human_vampiric_bolt` (the human mage
   race ladder, power 108 at 90 vs Holy Ray 109), and an elf healer knows Frost Spikes, so those two can still
-  duel at full power. The demon's race skill is a buff (Over the Limit). That question is open on `BL-335`'s page.
+  duel at full power. The demon's race skill is a buff (Over the Limit). → Closed by 0.229.4.
 
 ## 2026-10-05 — 0.229.2: Prowl re-arms itself in auto-farm
 

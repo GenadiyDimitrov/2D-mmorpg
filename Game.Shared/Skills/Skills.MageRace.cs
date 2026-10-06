@@ -169,11 +169,15 @@ public static partial class SkillCatalog
             SkillEffect.MagicDamage,
             MpCost: vampMp[0], CastTicks: 40, CooldownTicks: 10, Range: 600, Power: vampPower[0],
             Category: SkillCategory.Magic, SpCost: vampSp[0], Lifesteal: 0.40f,
-            Description: "A draining bolt that heals you for 40% of the damage dealt.",
+            // ⚠ PVP POWER ×0.5 (owner, 2026-10-06): *"its a helping in farm not in pvp .. one race/class can be
+            // stronger in pve than other .. but the pvp should be balanced"*. The race bolt every human mage keeps;
+            // without the cut a healer simply swapped to it once Holy Ray was halved (0.229.3).
+            PvpDamageMult: 0.5f,
+            Description: "A draining bolt that heals you for 40% of the damage dealt. Half power against players.",
             Levels: Enumerable.Range(0, vampPower.Length).Select(i => new SkillLevel(
                 Power: vampPower[i], MpCost: vampMp[i], SpCost: vampSp[i],
                 Range: HumanVampiricLevels[i] >= 20 ? 750f : 600f,
-                Description: $"Drain power {vampPower[i]}; heals 40% of damage."))
+                Description: $"Drain power {vampPower[i]}; heals 40% of damage. Half power in PvP."))
                 // Rungs 20-34 are the 4th-tier ladder the nuker already had — same fifteen rows,
                 // same prices, same gold. Shared rather than re-typed: `NukerFourthVampiricRungs`
                 // reads the same `NukerBlastPower4` / `NukerHeavyMp4` arrays its neighbours do.
