@@ -489,8 +489,6 @@ public static partial class ClassSkillTables
         // ---- THE CONTINUING LADDERS, every level ----
         shared.AddRange(Ladder(HarmonyOfRestoration,  all, 15));
         // ---- …and every other level ----
-        shared.AddRange(Ladder(Reinforcement,       even, 14));
-        shared.AddRange(Ladder(Sharpening,          even, 14));
         shared.AddRange(Ladder(WcSoulReinforce,       even, 2));
         shared.AddRange(Ladder(WcArcaneFeralProt,     even, 2));
 
@@ -513,20 +511,47 @@ public static partial class ClassSkillTables
         // Harmony Mark: 79, then its second rung at 83 — the only two it has.
         shared.AddRange(At(HarmonyMark, (79, 1), (83, 2)));
 
-        // ---- HUMAN: the shield buffer. His own blunt line, and the robe+shield passive nobody else
-        //      can satisfy — the elf holds a bow and the demon a two-handed maul. ----
+        // ---- `BL-335` — PER RACE from here: the magic swing, the damage spells and the two toggles carry
+        //      different numbers per race, so different ids (see Skills.Warchanter3rd.Kit.cs). The swing's
+        //      4th-tier rows price like the shared passives at the same level (Spellcaster Mastery's SP/gold).
+        static (int Sp, int Gold) SwingPrice(int lvl) => lvl switch
+        {
+            76 => (2_310_000, 500_000), 77 => (3_560_000, 500_000), 78 => (5_320_000, 500_000),
+            79 => (25_900_000, 500_000), 80 => (0, 2_500_000), 81 => (0, 3_800_000), 82 => (0, 5_000_000),
+            83 => (0, 7_500_000), 84 => (0, 15_000_000), 85 => (0, 25_000_000), 86 => (0, 37_500_000),
+            _ => (0, 50_000_000),
+        };
+        static IEnumerable<ClassSkill> Swing(params (int Level, int Power)[] rows) =>
+            rows.Select(r =>
+            {
+                var (sp, gold) = SwingPrice(r.Level);
+                return new ClassSkill(MagicSwing, r.Level,
+                    SkillLevel: System.Array.IndexOf(SkillCatalog.MagicSwingPower, r.Power) + 1,
+                    SpCost: sp, GoldCost: gold);
+            });
+
+        // ---- HUMAN: wand + shield. The robe+shield passive is his alone. ----
         var human = new List<ClassSkill>(shared);
         human.Add(new ClassSkill(BufferShieldMastery, 76));
+        human.AddRange(Swing((76, 15), (80, 20), (83, 23), (90, 24)));
         human.AddRange(Ladder(SoundSmash,       all,  14));
+        human.AddRange(Ladder(Reinforcement,    even, 14));
+        human.AddRange(Ladder(Sharpening,       even, 14));
 
-        // ---- ELF: the archer. ----
+        // ---- ELF: fangs. ----
         var elf = new List<ClassSkill>(shared);
-        elf.AddRange(Ladder(SoundBurst,       all,  14));
+        elf.AddRange(Swing((76, 15), (80, 21), (83, 23)));
+        elf.AddRange(Ladder(MagicStab,          all,  14));
+        elf.AddRange(Ladder(ReinforcementElf,   even, 14));
+        elf.AddRange(Ladder(SharpeningElf,      even, 14));
 
-        // ---- DEMON: the melee fighter, two damage skills as always. ----
+        // ---- DEMON: battlestaff, two damage spells as always. ----
         var demon = new List<ClassSkill>(shared);
-        demon.AddRange(Ladder(SoundSmash,     all,  14));
-        demon.AddRange(Ladder(AcousticShock,  all,  14));
+        demon.AddRange(Swing((76, 18), (80, 24), (82, 25), (84, 26)));
+        demon.AddRange(Ladder(SoundSmashDemon,    all,  14));
+        demon.AddRange(Ladder(AcousticShock,      all,  14));
+        demon.AddRange(Ladder(ReinforcementDemon, even, 14));
+        demon.AddRange(Ladder(SharpeningDemon,    even, 14));
 
         ClassSkills.RegisterFourth(Race.Human, Discipline.Warchanter, human.ToArray());
         ClassSkills.RegisterFourth(Race.Elf,   Discipline.Warchanter, elf.ToArray());

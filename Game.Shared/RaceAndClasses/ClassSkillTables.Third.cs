@@ -475,64 +475,53 @@ public static partial class ClassSkillTables
         // and the extra three rungs are the Lightbringer's alone.
         kit2.AddRange(Ladder(GreatHeal, new[] { 40, 44, 48, 52, 56, 58, 60, 62, 64, 66, 68 }));
         kit2.AddRange(Ladder(HarmonyOfRestoration, band14));
-        kit2.AddRange(Ladder(Reinforcement, band13));
-        kit2.AddRange(Ladder(Sharpening, band13));
-        kit2.AddRange(Ladder(ComboMastery, new[] { 52, 64, 74 }));
-        // 🔑 MANA VAMPIRISM IS ALL THREE RACES since 2026-08-29 — it was Human+Demon, which is why the
-        //    elf's half of its blunt-OR-BOW gate looked pointless. His reason is the class's whole
-        //    economy, not a bonus: *"it's their way of rebuffing every 5 mins with 500mp buffs (mp
-        //    pots now help but not in pvp)"*. A full re-buff costs more than the pool holds, the
-        //    potions are on a cooldown the pull does not wait for, and in PvP they are not an option
-        //    at all — so the mana comes back through the weapon or the buffer stops buffing. The elf
-        //    was the one race that could not do that. ⚠ His CSV row has always had a BLANK race
-        //    column, i.e. all three; the code was the odd one out.
-        // 🔑 3/6/9% since 2026-10-03, and the ELF STOPS AT RUNG 2 (6%) — his ruling: *"elf to lvl it to
-        //    lvl 2 only for the bow to be at 6%"*. Rung 3 (9%, @70) is Human + Demon, added below.
-        kit2.AddRange(Ladder(ManaVampirism, new[] { 40, 60 }));
-        var manaVamp3 = new ClassSkill(ManaVampirism, 70, SkillLevel: 3);
+        // 🔑 MANA VAMPIRISM — ALL THREE RACES, 3/6/9% @40/60/70. The elf stopped at rung 2 while it held a
+        //    bow; since `BL-335` it holds fangs and climbs to 9% like the others (his point 4).
+        kit2.AddRange(Ladder(ManaVampirism, new[] { 40, 60, 70 }));
+        // 🔑 MONSTER KNOWLEDGE — rungs 2-4 @40/48/52, continuing the cleric's rung 1 at 35. The ELF joined
+        //    with `BL-335` (his answer: *"the elf learns it too"*); it skips rung 1, which the shelf allows.
+        kit2.AddRange(Ladder(MonsterKnowledgeActive, new[] { 40, 48, 52 }, startRung: 2));
 
-        // ---- HUMAN: the shield tank. Blunt + shield, ONE damage skill. ---------------------------
-        // 🔑 MONSTER KNOWLEDGE — HUMAN + DEMON (owner, 2026-10-01, his `buffer 3rd.csv` rows). Rungs 2-4,
-        //    continuing the cleric's rung 1 at 35; the elf levels on its own Frost Spikes instead.
-        var mk = Ladder(MonsterKnowledgeActive, new[] { 40, 48, 52 }, startRung: 2).ToArray();
+        // ═══ `BL-335` — THE MAGIC-MELEE KIT. Robe for all three; the swing, the damage spells and the two
+        //     toggles are PER RACE (different numbers = different ids, `BL-327`). The masteries each race
+        //     dropped (heavy/light/weapon/bow/shield/crit resist/accuracy) left the CSV and so the generated
+        //     tables; Shield Mastery and Bow Expertise were hand-registered and left from here. ═══
 
-        var human = new List<ClassSkill>(kit2) { manaVamp3 };
-        human.AddRange(mk);
+        // The magic swing: ONE ladder, each race learning the rung its own measured power reaches.
+        static IEnumerable<ClassSkill> Swing(params (int Level, int Power)[] rows) =>
+            rows.Select(r => new ClassSkill(MagicSwing, r.Level,
+                SkillLevel: System.Array.IndexOf(SkillCatalog.MagicSwingPower, r.Power) + 1));
+
+        // ---- HUMAN: wand + shield, Sound Smash. --------------------------------------------------
+        var human = new List<ClassSkill>(kit2);
+        human.AddRange(Swing((40, 12), (52, 13), (58, 14)));
         human.AddRange(Ladder(SoundSmash, band13));
-        // The Human's own weapon line, authored 2026-09-02 — the same eight-rung band the Elf's bow
-        // and the Demon's maul run on, so all three buffers finally have one.
+        human.AddRange(Ladder(Reinforcement, band13));
+        human.AddRange(Ladder(Sharpening, band13));
+        human.AddRange(Ladder(ComboMastery, new[] { 52, 64, 74 }));
 
-        // ---- ELF: the archer. Light armour, bow, ranged damage, no shield and no blunt line. ------
+        // ---- ELF: fangs, Magic Stab. ----------------------------------------------------------------
         var elf = new List<ClassSkill>(kit2);
-        elf.AddRange(Ladder(HarmonistBowProficiency, new[] { 40 }));
-        elf.Add(new ClassSkill(BowExpertise, 56, SkillLevel: 2));   // the archer's rung 2 (+12%), not rung 1
-        elf.AddRange(Ladder(SoundBurst, band13));
+        elf.AddRange(Ladder(HarmonistDualProficiency, new[] { 40 }));
+        elf.AddRange(Swing((40, 10), (52, 12)));
+        elf.AddRange(Ladder(MagicStab, band13));
+        elf.AddRange(Ladder(ReinforcementElf, band13));
+        elf.AddRange(Ladder(SharpeningElf, band13));
+        elf.AddRange(Ladder(ComboMasteryElf, new[] { 52, 64, 74 }));
 
-        // ---- DEMON: the melee fighter. Heavy armour, blunt, and TWO damage skills — his ruling,
-        //      2026-08-21: *"ork is mele fighter so need more than 1dmg skill"*. Acoustic Shock is
-        //      Sound Smash's twin with a stun, and it exists for exactly that reason. -------------
-        var demon = new List<ClassSkill>(kit2) { manaVamp3 };
-        demon.AddRange(mk);
-        demon.AddRange(Ladder(SoundSmash, band13));
+        // ---- DEMON: battlestaff, TWO damage spells (*"demon is mele fighter so need more than 1dmg
+        //      skill"*): Sound Smash and the stunning Acoustic Shock. -----------------------------------
+        var demon = new List<ClassSkill>(kit2);
+        demon.AddRange(Swing((40, 13), (52, 15), (60, 16), (64, 17)));
+        demon.AddRange(Ladder(SoundSmashDemon, band13));
         demon.AddRange(Ladder(AcousticShock, band13));
+        demon.AddRange(Ladder(ReinforcementDemon, band13));
+        demon.AddRange(Ladder(SharpeningDemon, band13));
+        demon.AddRange(Ladder(ComboMasteryDemon, new[] { 52, 64, 74 }));
 
         ClassSkills.RegisterThird(Race.Human, Discipline.Warchanter, human.ToArray());
         ClassSkills.RegisterThird(Race.Elf,   Discipline.Warchanter, elf.ToArray());
-        ClassSkills.RegisterThird(Race.Demon,   Discipline.Warchanter, demon.ToArray());
-
-        // ---- SHIELD MASTERY — HUMAN ONLY, and the same skill the tank learns. ------------------
-        // His `buffer 3rd.csv` rows (RACE column = Human): 40 / 60 / 70, rungs 1-3, and he gives the
-        // Human Warchanter NO rung 4 — the tank's 52 is the only place that one exists. The SP is the
-        // buffer's own band price (36k / 120k / 390k, the same numbers every other 40/60/70 row in his
-        // file carries), which is why ClassSkill carries an SpCost override: the ability is shared, the
-        // price is a property of the level you buy it at.
-        //
-        // 🔑 It is NOT in `kit` above because `kit` is registered for all three races — the Elf gets
-        // the bow line and the Demon the blunt line in its place.
-        ClassSkills.RegisterThird(Race.Human, Discipline.Warchanter,
-            new ClassSkill(TankShieldMastery, 40, SkillLevel: 1, SpCost: 36_000),
-            new ClassSkill(TankShieldMastery, 60, SkillLevel: 2, SpCost: 120_000),
-            new ClassSkill(TankShieldMastery, 70, SkillLevel: 3, SpCost: 390_000));
+        ClassSkills.RegisterThird(Race.Demon, Discipline.Warchanter, demon.ToArray());
     }
 
     /// <summary>Shield Mastery's TOP rung, at 52 — the row that in 2026-08-21 was the only authored

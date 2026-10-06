@@ -104,45 +104,6 @@ public static partial class SkillCatalog
             },
             Description: $"Restores {Wc4HotHp[i]} HP and {Wc4HotMp[i]} MP per second to the party for 30s."));
 
-    /// <summary>The two TOGGLES, rungs 14-21. Note the MP/s stops climbing: 30 and 15 flat across the
-    /// whole tier where the 3rd tier's rose with every rung. His column, and it is the thing that makes
-    /// the stance affordable to hold at 90.</summary>
-    private static readonly int[] Wc4ReinforceDef = { 620, 640, 660, 680, 700, 725, 750, 800 };
-    private static readonly int[] Wc4SharpenAtk   = { 310, 320, 330, 340, 350, 360, 380, 400 };
-
-    internal static SkillLevel[] BufferFourthStanceRungs(SkillEffect effect, int[] amounts, int mpPerSec) =>
-        F4Rungs(8, 2, (i, sp, gold) => new SkillLevel(
-            MpCost: mpPerSec, MpPerSecond: mpPerSec, SpCost: sp, GoldCost: gold,
-            Magnitudes: new EffectMagnitude[] { new(effect, amounts[i], ModifierMode.Flat) },
-            Description: $"+{amounts[i]} while active, {mpPerSec} MP per second."));
-
-    internal static SkillLevel[] BufferFourthReinforcementRungs() =>
-        BufferFourthStanceRungs(SkillEffect.BuffDef, Wc4ReinforceDef, 30);
-    internal static SkillLevel[] BufferFourthSharpeningRungs() =>
-        BufferFourthStanceRungs(SkillEffect.BuffPhysAtk, Wc4SharpenAtk, 15);
-
-    /// <summary>The three SOUND skills, rungs 14-28. One power column and one MP column for all three,
-    /// exactly as at the 3rd tier — 4100 → 6500 and 123 → 195, continuing 4000/120 without a step.</summary>
-    private static readonly int[] Wc4SoundPower =
-        { 4100, 4200, 4300, 4400, 4500, 4600, 4700, 4800, 4900, 5000, 5300, 5600, 5900, 6200, 6500 };
-    private static readonly int[] Wc4SoundMp =
-        { 123, 126, 129, 132, 135, 138, 141, 144, 147, 150, 159, 168, 177, 186, 195 };
-    /// <summary>The melee pair's 4th-tier MP (his `buffer 4th.csv`, 2026-10-02) — 80 → 110, continuing the 3rd tier's 78.</summary>
-    private static readonly int[] Wc4SoundMeleeMp =
-        { 80, 82, 84, 86, 88, 90, 92, 95, 98, 100, 102, 104, 106, 108, 110 };
-
-    internal static SkillLevel[] BufferFourthSoundRungs(int hits, int stunTicks, int[] mp) =>
-        F4Rungs(15, 1, (i, sp, gold) => new SkillLevel(
-            Power: Wc4SoundPower[i], MpCost: mp[i], SpCost: sp, GoldCost: gold,
-            Magnitudes: stunTicks > 0
-                ? new EffectMagnitude[] { new(SkillEffect.Stun, 1f, ModifierMode.Flat) }
-                : null,
-            Description: stunTicks > 0
-                ? $"Strikes for power {Wc4SoundPower[i]} and stuns for {stunTicks / 10f:0.#}s."
-                : hits > 1
-                    ? $"Strikes {hits} times for power {Wc4SoundPower[i]} each."
-                    : $"Strikes for power {Wc4SoundPower[i]}."));
-
     /// <summary>Harmony of Protection's SIXTH rung, at 76 — everything rung 5 carries plus 10% bow
     /// resistance, which is the only thing his 76 row adds.</summary>
     internal static SkillLevel[] BufferFourthProtectionRungs()

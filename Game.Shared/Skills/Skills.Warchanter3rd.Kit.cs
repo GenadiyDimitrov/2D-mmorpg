@@ -1,55 +1,65 @@
 namespace Game.Shared;
 
 /// <summary>
-/// THE WARCHANTER'S NON-BUFF HALF, 40-74 — every row of
-/// <c>docs/data/classes_skills_csv/buffer 3rd.csv</c> that is not a buff, a harmony or a group.
-/// Built 2026-08-21 when he finished authoring the file and removed its <c>NOT DONE</c> banner
-/// (*"Ok i finished the buffer"*). The buff layer lives in Skills.Warchanter3rd.cs; the singles and
-/// harmonies it draws on are in Skills.BuffLadders.cs.
+/// THE WARCHANTER'S NON-BUFF HALF, 40-90 — every row of
+/// <c>docs/data/classes_skills_csv/buffer 3rd.csv</c> / <c>buffer 4th.csv</c> that is not a buff, a harmony
+/// or a group. The buff layer lives in Skills.Warchanter3rd.cs; the singles and harmonies it draws on are
+/// in Skills.BuffLadders.cs.
 ///
-/// <para>🔑 <b>THE RACE SPLIT IS THE WHOLE DESIGN HERE</b>, and it is his: *"human is tank - 1dmg
-/// skill and higher Def, elf is archer - range/evasion 1dmg skill, demon is mele fighter so need more
-/// than 1dmg skill"*. So one buffer class wears three different combat kits:</para>
+/// <para>🔑 <b>THE WARCHANTER HITS WITH MAGIC</b> (`BL-335`, built 2026-10-06; design and measurements in
+/// <c>docs/design/MagicMeleeBuffers.md</c>). His reason: *"we have warriors and tanks and I want to give
+/// them something unique"*. All three races wear a ROBE, swing a magic weapon, and every hit they deal is
+/// MAGIC:</para>
 /// <list type="bullet">
-///   <item>HUMAN — heavy armour, blunt + SHIELD (Shield Mastery, Skills.Fighter.cs), one melee
-///         damage skill (Sound Smash).</item>
-///   <item>ELF — light armour, BOW: the penalty-cancelling Bow Proficiency, a Bow Mastery ladder,
-///         Bow Expertise, and a ranged two-hit damage skill (Sound Burst).</item>
-///   <item>DEMON — heavy armour, blunt, no shield: TWO melee damage skills, Sound Smash and the
-///         stunning Acoustic Shock, plus the Warlock Weapon Mastery ladder.</item>
+///   <item>HUMAN — wand + shield. Sound Smash. Sharpening needs the shield.</item>
+///   <item>DEMON — battlestaff (two-handed blunt). Sound Smash + the stunning Acoustic Shock.</item>
+///   <item>ELF — fangs (duals). Magic Stab, a melee spell with a high fail chance.</item>
 /// </list>
+/// <para>The BASIC ATTACK becomes a magic hit through <see cref="MagicSwing"/> (no cast, nothing to
+/// interrupt, attack speed paces it). Two TOGGLES per race buy back what the robe gave up — Reinforcement
+/// (defence) and Sharpening (the race's other half) — each for +15% skill MP and an MP-per-second upkeep.</para>
 ///
-/// <para>⚠ Four things his file names are NOT defined here because they already exist and are simply
-/// re-learned by this class at new levels: <c>Anti magic</c>, <c>Resurrection</c>, <c>Great Heal</c>
-/// (Skills.Lightbringer.cs) and the two ladders extended in Skills.Healer.cs — <c>Armor Mastery</c>
-/// and <c>Spell Mastery</c>, whose rungs 5-14 are the Warchanter's alone.</para>
+/// <para>🔑 <b>DIFFERENT NUMBERS PER RACE = DIFFERENT IDS</b> (`BL-327`: a face never changes a number). So the
+/// Human keeps the original ids (`sound_smash`, `reinforcement`, `sharpening`, `combo_mastery`) and the
+/// Demon and Elf have their own. A character holds one race, so no two of a set can ever meet.</para>
+///
+/// <para>⚠ <b>THE NUMBERS ARE MEASURED, NOT HIS YET.</b> Powers and the swing ladder come from
+/// `BalanceMatrix --magicmelee` at every learn level (2026-10-06); the toggles' P.Def % from its §C gap,
+/// held to a rising line. Monotonic smoothing was applied where gear tiers made the measurement dip. He tunes
+/// them in the CSV after the playtest.</para>
 /// </summary>
 public static partial class SkillCatalog
 {
     // ---- PASSIVES ----
-    public const string ComboMastery       = "combo_mastery";
+    /// <summary>`BL-335` — Resonant Strikes: the basic attack resolves as MAGIC at this rung's power. ONE id;
+    /// each race climbs it on its own schedule (ClassSkillTables), which is why its ladder skips.</summary>
+    public const string MagicSwing         = "magic_swing";
+    public const string ComboMastery       = "combo_mastery";        // Human, 1H blunt, 3%
+    public const string ComboMasteryDemon  = "combo_mastery_demon";  // Demon, 2H blunt, 3.5%
+    public const string ComboMasteryElf    = "combo_mastery_elf";    // Elf, duals, 2.6%
     /// <summary>Combo Rush — the proc's buff, ONE family of SIX rungs sharing the key `wc_combo`.
-    /// Hidden: never taught, never on a bar, only ever applied by Combo Mastery's proc.
+    /// Hidden: never taught, never on a bar, only ever applied by a Combo Mastery proc.
     /// Rungs 1-3 are what your PARTY gets, rungs 4-6 what YOU get; see <see cref="ComboRushRungs"/>.</summary>
     public static readonly string[] WcComboRush =
         { "wc_combo_rush_1", "wc_combo_rush_2", "wc_combo_rush_3",
           "wc_combo_rush_4", "wc_combo_rush_5", "wc_combo_rush_6" };
     public const string ManaVampirism      = "mana_vampirism";
-    // ⚠ THE ID STRINGS BELOW ARE FROZEN AND NO LONGER MATCH THEIR NAMES, ON PURPOSE. Both skills were
-    // renamed 2026-08-29 when the class names caught up with the Ork→Demon change (`BL-101`), and a
-    // skill id is APPEND-ONLY: characters persist their learned ids, so `wc_chanter_heavy_mastery` and
-    // `warlock_weapon_mastery` can never move without orphaning every save that holds them. The
-    // C# const identifiers were renamed to match the new names — those are compile-checked and cost
-    // nothing — and the id strings stayed. Read the string as a serial number, not as a name.
-    public const string HarmonistBowProficiency   = "harmonist_bow_proficiency";  // Elf
+    /// <summary>Elf. Cancels the untrained-weapon caster penalty on DUALS. It replaced
+    /// `harmonist_bow_proficiency` when the elf put the bow down (`BL-335`).</summary>
+    public const string HarmonistDualProficiency = "harmonist_dual_proficiency";
     // ---- ACTIVES ----
     public const string HarmonyOfRestoration = "harmony_of_restoration";
-    public const string SoundBurst         = "sound_burst";        // Elf, bow, hits twice
-    public const string SoundSmash         = "sound_smash";        // Demon;Human, blunt
-    public const string AcousticShock      = "acoustic_shock";     // Demon only, blunt + STUN
+    public const string SoundSmash         = "sound_smash";          // Human, blunt
+    public const string SoundSmashDemon    = "sound_smash_demon";    // Demon, blunt
+    public const string AcousticShock      = "acoustic_shock";       // Demon only, blunt + STUN
+    public const string MagicStab          = "magic_stab";           // Elf, duals, high fail
     // ---- TOGGLES ----
-    public const string Reinforcement      = "reinforcement";
-    public const string Sharpening         = "sharpening";
+    public const string Reinforcement      = "reinforcement";        // Human
+    public const string ReinforcementDemon = "reinforcement_demon";
+    public const string ReinforcementElf   = "reinforcement_elf";
+    public const string Sharpening         = "sharpening";           // Human, shield
+    public const string SharpeningDemon    = "sharpening_demon";     // 2H blunt
+    public const string SharpeningElf      = "sharpening_elf";       // duals
 
     /// <summary>His SP column for the 40-74 band, in file order. Every 14-rung ladder in
     /// `buffer 3rd.csv` carries exactly these numbers, so they are written once.</summary>
@@ -58,22 +68,87 @@ public static partial class SkillCatalog
           190_000, 280_000, 320_000, 390_000, 650_000, 880_000 };
 
     /// <summary>The same column for the ladders that skip 44 and run 40/48/52/56/58/60/62/64/66/68/
-    /// 70/72/74 — Sound Burst, Sound Smash, Acoustic Shock, Reinforcement, Sharpening.</summary>
+    /// 70/72/74. ⚠ The class prices come from the CSV (`ClassSkillTables.SpPrices`); this is the fallback.</summary>
     private static readonly int[] BandSp13 =
         { 36_000, 64_000, 74_000, 81_000, 88_000, 120_000, 170_000,
           190_000, 280_000, 320_000, 390_000, 650_000, 880_000 };
 
-    /// <summary>A Warchanter damage rung: his power ladder is shared verbatim between Sound Burst,
-    /// Sound Smash and Acoustic Shock (1000 to 4000 over thirteen rungs), and so is the MP column.</summary>
+    /// <summary>The old physical "Sound" power ladder. No Warchanter skill reads it any more; the Warrior's
+    /// Sundering Blow and the retired archer kit still do.</summary>
     private static readonly int[] SoundPower =
         { 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400, 2700, 3000, 3300, 3700, 4000 };
     private static readonly int[] SoundMp =
         { 62, 76, 83, 90, 95, 98, 100, 105, 108, 112, 114, 117, 120 };
-    /// <summary>The MELEE pair's own MP column (Sound Smash, Acoustic Shock), lowered by his `buffer 3rd.csv`
-    /// edit of 2026-10-02: *"Decreased the MP cost for physical skills of buffer (archer the same - more dmg
-    /// more mp ..)"*. Sound Burst (two hits, bow) and the Warrior's Sundering Blow keep <see cref="SoundMp"/>.</summary>
+
+    // ═══ THE NUMBERS (`BL-335`, measured 2026-10-06) ═════════════════════════════════════════════════
+    // 3rd tier = 13 rungs @40 48 52 56 58 60 62 64 66 68 70 72 74; 4th = 15 rungs @76…90 (damage) or
+    // 8 rungs @76 78 … 90 (toggles).
+
+    /// <summary>The magic swing's power ladder: the union of the three races' measured values. Each race
+    /// learns only the rungs its own measurement reaches (see ClassSkillTables).</summary>
+    internal static readonly int[] MagicSwingPower =
+        { 10, 12, 13, 14, 15, 16, 17, 18, 20, 21, 23, 24, 25, 26 };
+
+    // Priced to a HEALER's rotation (his *"on par as healers not as nukers/warriors"*), the UNBUFFED
+    // column (his answer 3). Acoustic Shock is held at ~0.9× the Demon's Smash.
+    private static readonly int[] SmashHuman =
+        { 23, 33, 36, 40, 43, 45, 55, 58, 61, 63, 66, 68, 71,
+          98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112 };
+    private static readonly int[] SmashDemon =
+        { 15, 20, 23, 26, 28, 29, 31, 33, 35, 36, 37, 38, 40,
+          53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67 };
+    private static readonly int[] ShockDemon =
+        { 13, 18, 20, 23, 25, 26, 27, 29, 31, 32, 33, 34, 36,
+          47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61 };
+    private static readonly int[] StabElf =
+        { 93, 125, 141, 158, 168, 176, 199, 207, 218, 225, 233, 241, 248,
+          337, 342, 346, 351, 355, 360, 364, 369, 374, 378, 383, 387, 392, 396, 401 };
+
+    /// <summary>The melee pair's MP (his 2026-10-02 edit), 3rd then 4th tier — unchanged by `BL-335`.</summary>
     private static readonly int[] SoundMeleeMp =
-        { 36, 43, 47, 50, 55, 56, 58, 62, 65, 68, 70, 75, 78 };
+        { 36, 43, 47, 50, 55, 56, 58, 62, 65, 68, 70, 75, 78,
+          80, 82, 84, 86, 88, 90, 92, 95, 98, 100, 102, 104, 106, 108, 110 };
+    /// <summary>Magic Stab keeps Sound Burst's MP column.</summary>
+    private static readonly int[] MagicStabMp =
+        { 62, 76, 83, 90, 95, 98, 100, 105, 108, 112, 114, 117, 120,
+          123, 126, 129, 132, 135, 138, 141, 144, 147, 150, 159, 168, 177, 186, 195 };
+
+    /// <summary>Magic Stab's own fizzle, in points on top of the ordinary curve (~60% at parity; §8 D).</summary>
+    internal const float MagicStabFailPoints = 59f;
+
+    // ---- THE TOGGLES: 13 rungs 40-74, then 8 rungs 76-90 --------------------------------------------
+    /// <summary>MP per second: HALF of the old Sharpening's (his answer: *"half of today's Sharpening"* each,
+    /// so both lit = the old one).</summary>
+    private static readonly int[] StanceMpPerSec =
+        { 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8,   8, 8, 8, 8, 8, 8, 8, 8 };
+    /// <summary>+15% skill MP per toggle (his *"+15% MP cost each"*); MP-cost modifiers ADD, so both = +30%.</summary>
+    internal const float StanceMpSurcharge = 0.15f;
+
+    /// <summary>Reinforcement's P.Def — a PERCENT, so it follows the NPC shelf as heavy armour does
+    /// (§8 C: a flat cannot). Human/Demon close the heavy gap, the elf the light-mastery gap.</summary>
+    private static readonly float[] ReinforceHuman =
+        { .22f, .225f, .23f, .235f, .24f, .245f, .25f, .255f, .26f, .265f, .27f, .275f, .28f,
+          .36f, .365f, .37f, .375f, .38f, .385f, .39f, .40f };
+    private static readonly float[] ReinforceDemon =
+        { .22f, .225f, .23f, .235f, .24f, .245f, .25f, .255f, .26f, .265f, .27f, .275f, .28f,
+          .29f, .30f, .305f, .31f, .315f, .32f, .325f, .33f };
+    private static readonly float[] ReinforceElf =
+        { .09f, .0925f, .095f, .0975f, .10f, .1025f, .105f, .1075f, .11f, .1125f, .115f, .1175f, .12f,
+          .15f, .155f, .16f, .165f, .17f, .175f, .18f, .185f };
+    /// <summary>The Demon's Sharpening: M.Atk % and accuracy (Hit Rate Mastery's +3/+4/+5 moved in).</summary>
+    private static readonly float[] SharpenDemonMAtk =
+        { .10f, .105f, .11f, .115f, .12f, .125f, .13f, .135f, .14f, .145f, .15f, .155f, .16f,
+          .165f, .17f, .175f, .18f, .185f, .19f, .195f, .20f };
+    private static readonly int[] SharpenDemonAcc =
+        { 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,   4, 4, 4, 4, 4, 5, 5, 5 };
+    /// <summary>The Elf's Sharpening: evasion (light armour's, §8 C) and spell damage, plus a flat
+    /// +20 M.Accuracy that cuts Magic Stab's fail 60% → 40%.</summary>
+    private static readonly int[] SharpenElfEva =
+        { 6, 6, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9,   9, 10, 11, 11, 11, 11, 11, 12 };
+    private static readonly float[] SharpenElfSpell =
+        { .05f, .0525f, .055f, .0575f, .06f, .0625f, .065f, .0675f, .07f, .0725f, .075f, .0775f, .08f,
+          .085f, .09f, .095f, .10f, .105f, .11f, .115f, .12f };
+    private const float SharpenElfMAcc = 20f;
 
     private static SkillDef[] WarchanterKitSkills()
     {
@@ -81,146 +156,63 @@ public static partial class SkillCatalog
 
         // ===== PASSIVES ==========================================================================
 
+        // ---- Resonant Strikes — THE MAGIC SWING (his 2026-10-05 call: *"make the 0mp spell a passive
+        //      that swaps the basic attack action to a magic dmg one ... then no need for cast speed and
+        //      reuse because attack speed will measure them"*). The power per rung is the number the
+        //      swing resolves at in GameLoopService.ResolveBasicSwing; Entity.MagicSwingPower reads it. ----
+        list.Add(new SkillDef(MagicSwing, "Resonant Strikes", BaseClass.Mage, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: MagicSwingPower[0],
+            Category: SkillCategory.Passive,
+            Description: "Passive. Your basic attacks ring with sound instead of steel: they deal MAGIC "
+                       + "damage, crit as spells do, and can never be blocked.",
+            Levels: MagicSwingPower.Select(p => new SkillLevel(Power: p, SpCost: 36_000,
+                Description: $"Your basic attack deals magic damage with power {p}.")).ToArray()));
 
-
-        // ---- Harmonist Bow Proficiency (Elf) — *"Bow: Removed Penalty [cast(x2), mAtk(x2),
-        //      mAcc(x0.04)]"*. THE FIRST SKILL THAT UNDOES THE UNTRAINED-WEAPON RULE rather than
-        //      working around it. All three numbers are exact inverses of what Spellcaster Mastery
-        //      charges a bow (x0.5 cast, x0.5 M.Atk, x25 fizzle), so an Elf Warchanter with a bow is
-        //      a full caster — which is the entire reason his elf can be an archer AND a buffer. ----
-        list.Add(new SkillDef(HarmonistBowProficiency, "Harmonist Bow Proficiency", BaseClass.Mage, SkillEffect.None,
+        // ---- Harmonist Dual Proficiency (Elf) — the same cancellation the bow one did (×2 cast, ×2 M.Atk,
+        //      ×0.04 fizzle = the exact inverse of Spellcaster Mastery's untrained-weapon charge), on DUALS. ----
+        list.Add(new SkillDef(HarmonistDualProficiency, "Harmonist Dual Proficiency", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
-            Description: "Passive. A bow is no longer an untrained weapon for you: it costs you no "
+            Description: "Passive. Duals are no longer an untrained weapon for you: they cost you no "
                        + "casting speed, no magic attack, and no extra chance for spells to fizzle.",
             Levels: new[] { new SkillLevel(SpCost: 36_000) },
             WeaponMasteryLevels: new[]
             {
-                new WeaponMasteryProfile(Bow: new PassiveEffect(
+                new WeaponMasteryProfile(Dual: new PassiveEffect(
                     CastPenaltyMult: 2f, MagicPenaltyMult: 2f, MagicFailSelfMult: 0.04f)),
             }));
 
-        // ---- Harmonist Bow Mastery (Elf) — 8 rungs. Range +400 flat at EVERY rung (it does not
-        //      ladder; only the P.Atk does), and the P.Atk climbs 100 to 600. ----
-        int[] bowMastAtk = { 100, 200, 300, 400, 500, 540, 560, 600 };
-        int[] raceMastSp = { 36_000, 64_000, 81_000, 120_000, 190_000, 320_000, 390_000, 880_000 };
-
-        // ---- Warlock Weapon Mastery (Demon) — 8 rungs, the demon's answer to the elf's bow line.
-        //      Flat P.Atk 30 to 100 and a constant +3 accuracy. ----
-        //
-        // ⚠ RENAMED 2026-08-29. It was "Bloodhanter", which he points out was a TYPO for Bloodchanter —
-        //   and rather than fix the typo he retired the word: *"as we changed the orks to demons and
-        //   changed the classes names -> so rename it to 'warlock weapon mastery' the 4th classes
-        //   name"*. Warlock is the Demon buffer's 4th class (`Classes.Names.cs`). 🔑 The IP test passes
-        //   on his own rule — word + SAME RACE + SAME ROLE: ours is a BUFFER, IG's is a summoner.
-        //   ⚠ "Blunt" left the name too, because the requirement now lives in the WEAPON column
-        //   (`blunt/2`), not in prose.
-        //
-        // 🔑 TWO-HANDED ONLY since 2026-08-29 (owner: *"for demon buffer it's maul/staff (2h blunt)"*).
-        //    His own CSV section header has said "Bloodhanter TWO HAND Mastery" since the file landed;
-        //    the rows read "Blunt:" only because a bare type means any hands and there was no way to
-        //    write the other half. The three buffers now read: Human 1H blunt (mace/wand, and his own
-        //    Shield Mastery is what pushes him there), Elf bow, Demon 2H blunt (maul/staff).
-        // ⚠ The SHARED Spell Mastery stays hands-agnostic blunt-or-bow on purpose — his ruling:
-        //    *"the spell mastery ... they share one so we gate only the type, and their additional
-        //    passives are hands gated"*. Do not push hands up into BufferMastery.
-        int[] bluntAtk = { 30, 40, 50, 60, 70, 80, 90, 100 };
-
-
-        // ---- Mana Vampirism — 3 rungs @40/60/70. His only mana-return line, and the reason the
-        //      blunt buffer can keep buffing: a slice of a BASIC attack.s damage back as MP.
-        //      ⚠ ManaVamp is its own field, not MeleeVamp — see PassiveEffect.
-        //
-        //      RETUNED 2026-08-23, playtest 27: *"Should lower the buffers mana vamp - to op - same
-        //      levels just 1,1.5,2% or 10% on 10/15/20% chance"*. It was 3/7/10% of EVERY blunt hit,
-        //      unconditionally, which on a buffer who attacks all day is a second mana bar.
-        //
-        //      🔑 His two options are the SAME EXPECTED VALUE — 10% x 10/15/20% chance is 1/1.5/2%
-        //      — so this is a feel question, not a numbers one, and the FLAT one won: a sustain line
-        //      is the wrong place for variance. You want to know whether you can keep buffing, not
-        //      roll for it. The proc version is one ProcChance field away if he wants the spike. ----
-        //
-        //      RAISED 2026-10-03 to 3/6/9%: *"because is basic attack only 3% is very low number .. I
-        //      would like max lvl to match the 9% normal vamp"*. The ELF stops at rung 2 (6%) — *"elf
-        //      to lvl it to lvl 2 only for the bow to be at 6%"* — see ClassSkillTables.Third.cs.
-        //
-        // 🔴 BLUNT **OR BOW** — fixed 2026-08-29, his correction: *"the mana vamp works on basic attack
-        //    with required weapon blunt or bow ... not only blunt"*. His CSV row has always said
-        //    `Require: Bow/Blunt`; only the code said blunt. Same shape as the Combo Mastery bug found
-        //    the same day, and the reason the WEAPON column now exists: a requirement written in prose
-        //    cannot be compared to the one the engine enforces.
+        // ---- Mana Vampirism — 3/6/9% of a landed BASIC attack back as MP, 3 rungs @40/60/70. ⚠ ManaVamp is
+        //      its own field, not MeleeVamp. Since `BL-335` the gate is BLUNT OR DUALS (the elf holds fangs)
+        //      and all three races reach 9%: the elf stopped at 6% only because of the bow. It is paid in
+        //      ResolveBasicSwing, so the magic swing drains and the skills never do. ----
+        float[] manaVamp = { 0.03f, 0.06f, 0.09f };
         list.Add(new SkillDef(ManaVampirism, "Mana Vampirism", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
-            Description: "Passive. Your basic attacks with a blunt weapon or a bow drain mana back to you.",
+            Description: "Passive. Your basic attacks with a blunt weapon or duals drain mana back to you.",
             Levels: new[]
             {
                 new SkillLevel(SpCost: 36_000),
                 new SkillLevel(SpCost: 120_000),
                 new SkillLevel(SpCost: 390_000),
             },
-            WeaponMasteryLevels: new[]
-            {
-                new WeaponMasteryProfile(Blunt: new PassiveEffect(ManaVamp: 0.03f),
-                                         Bow:   new PassiveEffect(ManaVamp: 0.03f)),
-                new WeaponMasteryProfile(Blunt: new PassiveEffect(ManaVamp: 0.06f),
-                                         Bow:   new PassiveEffect(ManaVamp: 0.06f)),
-                new WeaponMasteryProfile(Blunt: new PassiveEffect(ManaVamp: 0.09f),
-                                         Bow:   new PassiveEffect(ManaVamp: 0.09f)),
-            }));
+            WeaponMasteryLevels: manaVamp.Select(v => new WeaponMasteryProfile(
+                Blunt: new PassiveEffect(ManaVamp: v), Dual: new PassiveEffect(ManaVamp: v))).ToArray()));
 
-        // ---- Combo Mastery — 3 rungs @52/64/74, and THE FIRST ON-HIT PROC IN THE GAME.
-        //      *"Doing Damage Increases Attack/Cast Speed ... With 3% Chance"*, 30s, 60s internal
-        //      cooldown. See ComboRushRungs below for the buff it hands out and why the
-        //      caster and the party take different rungs of ONE family. ----
-        //
-        // 🔴 BLUNT **OR BOW** — fixed 2026-08-29. His CSV row says *"Require: Box/Blunt"* (Bow/Blunt)
-        //    and this skill is in the SHARED kit, taught to all three races — but it was gated `Blunt`
-        //    alone, so the ELF Warchanter, whose whole identity is the bow, could never once proc a
-        //    passive he had paid 74k-880k SP for. Nothing in the game said so: a proc that never fires
-        //    looks exactly like a 3% roll that keeps missing. It is the same blunt-or-bow pair the
-        //    shared Spell Mastery uses, and hands-agnostic for the same reason.
-        int[] comboSp = { 74_000, 190_000, 880_000 };
-        list.Add(new SkillDef(ComboMastery, "Combo Mastery", BaseClass.Mage, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 600, Range: 0, Power: 0,
-            DurationTicks: 300,
-            Category: SkillCategory.Passive,
-            RequiredWeapon: WeaponType.AnyBlunt | WeaponType.Bow,
-            // 🔑 TWO CHANCES, ONE PROC (`BL-120`, owner 2026-09-02): *"3% chance with blunt/1 and 3.45%
-            //    chance with bow|blunt/2"*, because *"2h weapons are slower by ~12/18%, so increasing
-            //    the chance balances the slower attack speed (bow is faster than 2h blunt as harmonist
-            //    have bow expertise)"*. The proc is rolled per LANDED HIT, so the slower weapon rolls
-            //    it less often; 3.45/3.00 = ×1.15 is the middle of his own 12-18%. The gate is
-            //    unchanged — blunt or bow, any hands — this only splits the number once you are past it.
-            ProcChance: 0.03f, ProcChanceTwoHanded: 0.0345f, ProcCooldownTicks: 600,
-            // Level 1 hands the caster rung 4 and the party rung 1; level 2, rungs 5 and 2; level 3,
-            // rungs 6 and 3. His mapping, verbatim: *"u get 4,5,6 while party gets 1,2,3"*.
-            ProcSelfRungs:  new[] { WcComboRush[3], WcComboRush[4], WcComboRush[5] },
-            ProcPartyRungs: new[] { WcComboRush[0], WcComboRush[1], WcComboRush[2] },
-            Description: "Passive. Landing a blow with a blunt weapon or a bow can send a surge "
-                       + "through you and your party — faster attacks and faster casting for 30s. "
-                       + "A two-handed weapon or a bow procs it slightly more often, to pay for its "
-                       + "slower swing.",
-            Levels: comboSp.Select((sp, i) => new SkillLevel(SpCost: sp,
-                Description: $"3% chance on hit (3.45% with a bow or a two-handed blunt): "
-                           + $"+{ComboAs[i + 3] * 100:0.#}% attack and "
-                           + $"+{ComboCast[i + 3] * 100:0.#}% cast speed for you, "
-                           + $"+{ComboAs[i] * 100:0.#}%/+{ComboCast[i] * 100:0.#}% for the party, 30s."))
-                .ToArray()));
-
+        // ---- Combo Mastery — 3 rungs @52/64/74, the on-hit proc. ONE ID PER RACE since `BL-335` (his
+        //      answer: *"one chance field, one id per race"*), each gated to that race's weapon: Human 3%
+        //      with a one-handed blunt, Demon 3.5% with a two-handed one (the slower swing rolls less often),
+        //      Elf 2.6% with duals (the faster swing rolls more). ----
+        list.Add(ComboMasteryDef(ComboMastery, WeaponType.Blunt, WeaponHands.One, 0.03f, "a one-handed blunt"));
+        list.Add(ComboMasteryDef(ComboMasteryDemon, WeaponType.Blunt, WeaponHands.Two, 0.035f, "a two-handed blunt"));
+        list.Add(ComboMasteryDef(ComboMasteryElf, WeaponType.Dual, WeaponHands.Any, 0.026f, "duals"));
         list.AddRange(ComboRushRungs());
 
         // ===== ACTIVES ===========================================================================
 
         // ---- Harmony of Restoration — the party heal-over-time, 14 rungs, replacing PARTY HEAL.
-        //      ⚠ His CSV column said `[Quick Heal]` and he corrected it himself on 2026-08-21:
-        //      *"harmony of restoration (my bad that I have forgot) but need to replace party heal"*.
-        //      It is the right way round — this is the party heal, so it supersedes the party heal;
-        //      Great Heal already takes Heal, and Quick Heal survives as the fast single-target one
-        //      the Warchanter still needs. The CSV rows moved with this.
-        //      +30 to +100 HP/s for 30s, and from rung 9 (@64) it also carries MP/s. The MP half
-        //      rides RestoreMp's Flat magnitude on a lasting buff — see TickHealOverTime; there were
-        //      no SkillEffect bits left for an "MP over time" of its own. ----
+        //      +30 to +100 HP/s for 30s, and from rung 9 (@64) it also carries MP/s. ----
         int[] hotHp   = { 30, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100 };
         int[] hotMp   = { 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 5, 5, 5, 10 };
         int[] hotCost = { 238, 272, 304, 352, 360, 380, 392, 400, 420, 432, 448, 452, 458, 464 };
@@ -245,62 +237,132 @@ public static partial class SkillCatalog
                     : $"Restores {hotHp[i]} HP per second to the party for 30s."))
                 .Concat(BufferFourthRestorationRungs()).ToArray()));
 
-        // ---- Sound Burst (Elf) — 900 range, BOW, and it hits TWICE. Two independent resolutions of
-        //      the same power, not one hit at double power: see SkillDef.HitCount. ----
-        // ⚠ ITS REUSE IS 5s, NOT the 3s `SoundSkill` gives the other two. His `buffer 3rd.csv` and
-        //   `buffer 4th.csv` both say 5 on all 28 rungs while Sound Smash and Acoustic Shock say 3 —
-        //   the ranged one, which also hits TWICE, is deliberately slower. `--check` reported all 28
-        //   rows and the code was the stale side (owner, 2026-09-09: *"Make it 5s reuse - if csv is
-        //   authored after the code"*, and it was).
-        list.Add(SoundSkill(SoundBurst, "Sound Burst", WeaponType.Bow, range: 900, castTicks: 30,
-            hits: 2, stunTicks: 0, cooldownTicks: 50,
-            desc: "Looses two arrows on one breath — each resolves on its own."));
-
-        // ---- Sound Smash (Demon + Human) — the melee twin: 40 range, blunt, one hit, faster cast. ----
-        list.Add(SoundSkill(SoundSmash, "Sound Smash", WeaponType.Blunt, range: 40, castTicks: 10,
-            hits: 1, stunTicks: 0, melee: true,
-            desc: "A concussive blow that rings through armour."));
-
-        // ---- Acoustic Shock (DEMON ONLY) — HIS ADDITION, 2026-08-21: *"Add another skill to the ork
-        //      buffer same as sound smash (name it Acoustic Shock) just with a stun effect ... demon is
-        //      mele fighter so need more than 1dmg skill"*. Identical ladder to Sound Smash — same
-        //      power, MP, SP, range, cast and reuse — with a contested 5s STUN on top. That is the
-        //      demon's second damage skill, and the reason it is worth pressing over Sound Smash.
-        //      ⚠ Stun is CONTESTED (ATK vs CON, DebuffSchool.Physical) like every other CC in the
-        //      game, so it is not a guaranteed lock and bosses are immune. ----
-        list.Add(SoundSkill(AcousticShock, "Acoustic Shock", WeaponType.Blunt, range: 40, castTicks: 10,
-            hits: 1, stunTicks: 50, melee: true,
-            desc: "A blow pitched to shatter the senses: damage, and the target reels."));
-
-        // (Bow Expertise, Elf, is the archer's two-rung `bow_expertise` at rung 2 — Skills.Fighter.cs.
-        //  `wc_bow_expertise` was deleted 2026-09-26: a second id left the archer holding both.)
+        // ---- THE DAMAGE SKILLS — all single-hit MAGIC since `BL-335` (his point 8). They keep their old
+        //      cast and reuse and become SPELLS: paced by cast speed, fizzle-able, interruptible. ----
+        list.Add(SoundSpell(SoundSmash, "Sound Smash", WeaponType.Blunt, range: 40, castTicks: 10,
+            cooldownTicks: 30, stunTicks: 0, SmashHuman, SoundMeleeMp,
+            desc: "A concussive blow of pure sound that rings through armour."));
+        list.Add(SoundSpell(SoundSmashDemon, "Sound Smash", WeaponType.Blunt, range: 40, castTicks: 10,
+            cooldownTicks: 30, stunTicks: 0, SmashDemon, SoundMeleeMp,
+            desc: "A concussive blow of pure sound that rings through armour."));
+        // Acoustic Shock (DEMON ONLY) — Sound Smash with a contested 5s STUN, now a MAGIC debuff (WIT-side
+        // vs SPT). ⚠ A re-landed stun still REFRESHES: the IG no-refresh rule is `BL-336`, deferred by him
+        // (2026-10-06: *"i have always played with resetting stuns no difference for now"*).
+        list.Add(SoundSpell(AcousticShock, "Acoustic Shock", WeaponType.Blunt, range: 40, castTicks: 10,
+            cooldownTicks: 30, stunTicks: 50, ShockDemon, SoundMeleeMp,
+            desc: "A blow pitched to shatter the senses: magic damage, and the target reels."));
+        // Magic Stab (ELF) — Sound Burst's successor: melee, ONE hit, its old 3s cast / 5s reuse, and a big
+        // fizzle of its own (+59 points) that Sharpening's +20 M.Accuracy cuts (his: *"high chance to fail
+        // ... the toggle just to give less fail chance"*).
+        list.Add(SoundSpell(MagicStab, "Magic Stab", WeaponType.Dual, range: 40, castTicks: 30,
+            cooldownTicks: 50, stunTicks: 0, StabElf, MagicStabMp,
+            desc: "A thrust of focused sound — devastating when it holds, and it often does not.",
+            failPoints: MagicStabFailPoints));
 
         // ===== TOGGLES ===========================================================================
-        // Both are stances: instant on, instant off, and they burn MP every second while lit
-        // (SkillDef.MpPerSecond, drained by the tick loop). His "(Consumes: N/s)" IS that number, and
-        // his MP column carries the same N — a toggle's "cost" is its per-second burn, not a one-off.
+        // Two per race: Reinforcement (defence) and Sharpening (the race's other half). Instant on and
+        // off; each burns MP every second (SkillDef.MpPerSecond, TickToggleUpkeep) and makes every skill
+        // 15% dearer. Sharpening is WEAPON-GATED (shield / 2H blunt / duals): Entity.RefreshBuffSuppression
+        // switches it dark the moment the weapon no longer fits.
 
-        int[] reinforceDef = { 240, 260, 280, 300, 320, 340, 380, 400, 440, 480, 520, 560, 600 };
-        int[] reinforceMp  = { 12, 13, 14, 15, 16, 17, 19, 20, 22, 24, 26, 28, 30 };
-        list.Add(BuildStance(Reinforcement, "Reinforcement", SkillEffect.BuffDef, "reinforcement",
-            reinforceDef, reinforceMp,
-            "Brace yourself: greater physical defence for as long as you can pay for it.",
-            BufferFourthReinforcementRungs()));
+        // HUMAN — Reinforcement: heavy armour's P.Def (+its mastery), Critical Damage Resist's 15%, and
+        // Shield Mastery's bow resistance (16% from 60). Sharpening: Shield Mastery's shield numbers and,
+        // from 70, its +10% P.Def.
+        list.Add(Stance(Reinforcement, "Reinforcement", "reinforcement", WeaponType.None, WeaponHands.Any, false,
+            i => new List<EffectMagnitude>
+            {
+                new(SkillEffect.BuffDef, ReinforceHuman[i], ModifierMode.Percent),
+                new(SkillEffect.BuffCritDmgResist, 0.15f, ModifierMode.Percent),
+            }.Concat(i >= 5 ? new[] { new EffectMagnitude(SkillEffect.BuffBowResist, 0.16f, ModifierMode.Percent) }
+                            : Array.Empty<EffectMagnitude>()).ToArray(),
+            i => $"+{ReinforceHuman[i] * 100:0.#}% P.Def, -15% critical damage taken"
+               + (i >= 5 ? ", +16% bow resistance" : ""),
+            "Brace yourself: the defence of plate, for as long as you can pay for it."));
+        list.Add(Stance(Sharpening, "Sharpening", "sharpening", WeaponType.None, WeaponHands.Any, true,
+            i =>
+            {
+                var (red, rate) = i < 5 ? (0.15f, 0.50f) : i < 10 ? (0.20f, 0.70f) : (0.25f, 0.85f);
+                var m = new List<EffectMagnitude>
+                {
+                    new(SkillEffect.BuffShieldDef, red, ModifierMode.Percent),
+                    new(SkillEffect.BuffBlockChance, rate, ModifierMode.Percent),
+                };
+                if (i >= 10) m.Add(new(SkillEffect.BuffDef, 0.10f, ModifierMode.Percent));
+                return m.ToArray();
+            },
+            i => i < 5 ? "+15% shield damage reduction, +50% shield rate"
+               : i < 10 ? "+20% shield damage reduction, +70% shield rate"
+               : "+25% shield damage reduction, +85% shield rate, +10% P.Def",
+            "Set your shield: it blocks more often and turns more of the blow. Requires a shield."));
 
-        int[] sharpenAtk = { 60, 80, 100, 120, 140, 160, 180, 200, 220, 240, 260, 280, 300 };
-        int[] sharpenMp  = { 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
-        list.Add(BuildStance(Sharpening, "Sharpening", SkillEffect.BuffPhysAtk, "sharpening",
-            sharpenAtk, sharpenMp,
-            "Hone your weapon: greater physical attack for as long as you can pay for it.",
-            BufferFourthSharpeningRungs()));
+        // DEMON — Reinforcement: heavy armour's P.Def, crit rate AND crit damage resistance. Sharpening
+        // (two-handed blunt): M.Atk % and accuracy.
+        list.Add(Stance(ReinforcementDemon, "Reinforcement", "reinforcement_demon", WeaponType.None, WeaponHands.Any, false,
+            i => new EffectMagnitude[]
+            {
+                new(SkillEffect.BuffDef, ReinforceDemon[i], ModifierMode.Percent),
+                new(SkillEffect.BuffCritRateResist, 0.15f, ModifierMode.Percent),
+                new(SkillEffect.BuffCritDmgResist, 0.15f, ModifierMode.Percent),
+            },
+            i => $"+{ReinforceDemon[i] * 100:0.#}% P.Def, -15% critical rate and critical damage taken",
+            "Brace yourself: the defence of plate, for as long as you can pay for it."));
+        list.Add(Stance(SharpeningDemon, "Sharpening", "sharpening_demon", WeaponType.Blunt, WeaponHands.Two, false,
+            i => new EffectMagnitude[]
+            {
+                new(SkillEffect.BuffMagAtk, SharpenDemonMAtk[i], ModifierMode.Percent),
+                new(SkillEffect.BuffAccuracy, SharpenDemonAcc[i], ModifierMode.Flat),
+            },
+            i => $"+{SharpenDemonMAtk[i] * 100:0.#}% M.Atk, +{SharpenDemonAcc[i]} accuracy",
+            "Tune the staff: harder and surer blows. Requires a two-handed blunt."));
+
+        // ELF — Reinforcement: Light Armor Mastery's P.Def and Critical Resist's crit-rate resistance.
+        // Sharpening (duals): evasion, spell damage and +20 M.Accuracy.
+        list.Add(Stance(ReinforcementElf, "Reinforcement", "reinforcement_elf", WeaponType.None, WeaponHands.Any, false,
+            i => new EffectMagnitude[]
+            {
+                new(SkillEffect.BuffDef, ReinforceElf[i], ModifierMode.Percent),
+                new(SkillEffect.BuffCritRateResist, 0.15f, ModifierMode.Percent),
+            },
+            i => $"+{ReinforceElf[i] * 100:0.##}% P.Def, -15% critical rate taken",
+            "Brace yourself: the defence of leather, for as long as you can pay for it."));
+        list.Add(Stance(SharpeningElf, "Sharpening", "sharpening_elf", WeaponType.Dual, WeaponHands.Any, false,
+            i => new EffectMagnitude[]
+            {
+                new(SkillEffect.BuffEvasion, SharpenElfEva[i], ModifierMode.Flat),
+                new(SkillEffect.BuffPveMagicDamage, SharpenElfSpell[i], ModifierMode.Percent),
+                new(SkillEffect.BuffPvpMagicDamage, SharpenElfSpell[i], ModifierMode.Percent),
+            },
+            i => $"+{SharpenElfEva[i]} evasion, +{SharpenElfSpell[i] * 100:0.##}% spell damage, +{SharpenElfMAcc:0} M.Accuracy",
+            "Quicken the fangs: harder to hit, and your spells find their mark. Requires duals.",
+            magicAccuracy: SharpenElfMAcc));
 
         return list.ToArray();
     }
+
+    /// <summary>One race's Combo Mastery: 3 rungs, its own chance and weapon gate, the shared Combo Rush
+    /// payload (caster rungs 4-6, party rungs 1-3 — his *"u get 4,5,6 while party gets 1,2,3"*).</summary>
+    private static SkillDef ComboMasteryDef(string id, WeaponType weapon, WeaponHands hands, float chance, string with)
+    {
+        int[] comboSp = { 74_000, 190_000, 880_000 };
+        return new SkillDef(id, "Combo Mastery", BaseClass.Mage, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 600, Range: 0, Power: 0,
+            DurationTicks: 300,
+            Category: SkillCategory.Passive,
+            RequiredWeapon: weapon, RequiredHands: hands,
+            ProcChance: chance, ProcCooldownTicks: 600,
+            ProcSelfRungs:  new[] { WcComboRush[3], WcComboRush[4], WcComboRush[5] },
+            ProcPartyRungs: new[] { WcComboRush[0], WcComboRush[1], WcComboRush[2] },
+            Description: $"Passive. Landing a blow with {with} can send a surge through you and your "
+                       + "party — faster attacks and faster casting for 30s.",
+            Levels: comboSp.Select((sp, i) => new SkillLevel(SpCost: sp,
+                Description: $"{chance * 100:0.#}% chance on hit: "
+                           + $"+{ComboAs[i + 3] * 100:0.#}% attack and "
+                           + $"+{ComboCast[i + 3] * 100:0.#}% cast speed for you, "
+                           + $"+{ComboAs[i] * 100:0.#}%/+{ComboCast[i] * 100:0.#}% for the party, 30s."))
+                .ToArray());
+    }
+
     // ===== COMBO RUSH — the proc's buff, and the one ladder in the game that is NOT monotonic =====
-    //
-    // His design, 2026-08-21: *"Cast speed goes 5->10->15%, atack speed goes 10->15->20% and half of
-    // both goes to the party as buff (u get the 20% and party 10%) -> so something like 6 levels of
-    // that passives proc-buff and u get 4,5,6 while party gets 1,2,3"*.
     //
     //   rung | atk spd | cast | who gets it
     //   -----+---------+------+-------------------------------------------
@@ -311,25 +373,15 @@ public static partial class SkillCatalog
     //     5  |   15%   |  10% | YOU, at L2
     //     6  |   20%   |  15% | YOU, at L3
     //
-    // 🔑 ONE FAMILY IS THE WHOLE MECHANISM. All six share the key `wc_combo`, so the ordinary
-    // ApplyBuff rule (same family -> higher Rank wins, weaker is ignored entirely) does everything:
-    // your own rung 4-6 simply outranks any rung 1-3 a party-mate's proc throws at you. Nothing is
-    // special-cased, and two buffers in one party never fight over a bar square.
-    //
-    // ⚠⚠ RUNG 3 -> RUNG 4 GOES BACKWARDS ON CAST SPEED (7.5% -> 5%) AND THAT IS DELIBERATE. A ladder
-    // that moves backwards normally means a typo — see the monotonic rule — but here it falls out of
-    // ranking "half of a strong buffer's" above "all of a weak buffer's", and HE CALLED IT in the same
-    // breath as the design: *"even if some other buffer procs lvl 3 buff u still get your effect over
-    // (loosing only 2% cast in the process)"*. That IS this row: an L1 buffer standing next to an L3
-    // buffer keeps his own rung 4 and forgoes the 2.5% extra cast speed rung 3 would have handed him.
-    // Do NOT straighten it into a rising line.
+    // 🔑 ONE FAMILY IS THE WHOLE MECHANISM: all six share the key `wc_combo`, so ApplyBuff's same-family
+    // rule (higher Rank wins) does everything. ⚠⚠ RUNG 3 -> 4 GOES BACKWARDS ON CAST SPEED ON PURPOSE — he
+    // called it: *"even if some other buffer procs lvl 3 buff u still get your effect over (loosing only 2%
+    // cast in the process)"*. Do NOT straighten it into a rising line.
     private static readonly float[] ComboAs   = { 0.05f, 0.075f, 0.10f, 0.10f, 0.15f, 0.20f };
     private static readonly float[] ComboCast = { 0.025f, 0.05f, 0.075f, 0.05f, 0.10f, 0.15f };
 
-    /// <summary>The six Combo Rush rungs. HIDDEN — never taught, never on a bar, no SP and no learn row
-    /// anywhere; the only thing that ever applies one is Combo Mastery's proc. Rungs 1-3 are cast on the
-    /// PARTY (hence the radius) and 4-6 on the caster, but every rung carries the same BuffKey and its
-    /// index as Rank, which is what makes them compete instead of stacking.</summary>
+    /// <summary>The six Combo Rush rungs. HIDDEN — never taught, never on a bar; only a Combo Mastery proc
+    /// applies one. Every rung carries the same BuffKey and its index as Rank, so they compete.</summary>
     private static IEnumerable<SkillDef> ComboRushRungs() =>
         Enumerable.Range(0, 6).Select(i => new SkillDef(
             WcComboRush[i], "Combo Rush", BaseClass.Mage,
@@ -347,71 +399,66 @@ public static partial class SkillCatalog
             Description: $"A surge of momentum: +{ComboAs[i] * 100:0.#}% attack speed and "
                        + $"+{ComboCast[i] * 100:0.#}% cast speed for 30s."));
 
-    /// <summary>A Warchanter MP-per-second stance (Reinforcement / Sharpening). Thirteen rungs on the
-    /// 40/48/52...74 band, one flat stat each, and a per-second MP burn that IS his "(Consumes: N/s)".</summary>
-    /// <param name="fourth">The 76-90 rungs from `buffer 4th.csv` (`BL-108`), appended. Null before
-    /// that file was built; both stances have eight of them.</param>
-    private static SkillDef BuildStance(string id, string name, SkillEffect effect, string buffKey,
-        int[] amounts, int[] mpPerSec, string desc, SkillLevel[]? fourth = null) =>
-        new(id, name, BaseClass.Mage, effect,
-            MpCost: mpPerSec[0], CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+    /// <summary>A Warchanter stance: 21 rungs (13 on the 40-74 band, 8 on 76/78…90), its magnitudes per
+    /// rung, the shared MP/s upkeep and the +15% skill-MP surcharge on BOTH channels (NEGATIVE = dearer).
+    /// The 4th-tier rungs price on the tier's every-other-level ladder (<c>F4(i, 2)</c>).</summary>
+    private static SkillDef Stance(string id, string name, string buffKey, WeaponType weapon, WeaponHands hands,
+        bool shield, Func<int, EffectMagnitude[]> mags, Func<int, string> text, string desc,
+        float magicAccuracy = 0f)
+    {
+        SkillLevel Rung(int i)
+        {
+            var (sp, gold) = i < 13 ? (BandSp13[i], 0) : F4(i - 13, 2);
+            int mps = StanceMpPerSec[i];
+            return new SkillLevel(MpCost: mps, MpPerSecond: mps, SpCost: sp, GoldCost: gold,
+                MagicMpCostPct: -StanceMpSurcharge, PhysMpCostPct: -StanceMpSurcharge,
+                MagicAccuracy: magicAccuracy,
+                Magnitudes: mags(i),
+                Description: $"{text(i)}; skills cost 15% more MP; {mps} MP per second.");
+        }
+        var first = mags(0);
+        var mask = Enumerable.Range(0, StanceMpPerSec.Length).SelectMany(mags)
+            .Aggregate(SkillEffect.None, (e, m) => e | m.Effect);
+        return new SkillDef(id, name, BaseClass.Mage, mask,
+            MpCost: StanceMpPerSec[0], CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             DurationTicks: 0, BuffKey: buffKey, Rank: 1,
             Category: SkillCategory.Buff, Toggle: true, TargetMode: TargetMode.SelfOnly,
-            MpPerSecond: mpPerSec[0],
-            Magnitudes: new EffectMagnitude[] { new(effect, amounts[0], ModifierMode.Flat) },
+            MpPerSecond: StanceMpPerSec[0],
+            RequiredWeapon: weapon, RequiredHands: hands, RequiredShield: shield ? ShieldGate.Required : ShieldGate.Any,
+            MagicMpCostPct: -StanceMpSurcharge, PhysMpCostPct: -StanceMpSurcharge,
+            BuffMagicAccuracy: magicAccuracy,
+            Magnitudes: first,
             Description: "Toggle. " + desc,
-            Levels: Enumerable.Range(0, amounts.Length).Select(i => new SkillLevel(
-                MpCost: mpPerSec[i], MpPerSecond: mpPerSec[i], SpCost: BandSp13[i],
-                Magnitudes: new EffectMagnitude[] { new(effect, amounts[i], ModifierMode.Flat) },
-                Description: $"{name} — +{amounts[i]} while active, {mpPerSec[i]} MP per second."))
-                .Concat(fourth ?? Enumerable.Empty<SkillLevel>()).ToArray());
+            Levels: Enumerable.Range(0, StanceMpPerSec.Length).Select(Rung).ToArray());
+    }
 
-    /// <summary>One of the three "Sound" damage skills. They share his power ladder, his MP column and
-    /// his SP column verbatim; what differs is the weapon, the range, the cast, how many times a cast
-    /// resolves, and (Acoustic Shock only) a contested stun.</summary>
-    private static SkillDef SoundSkill(string id, string name, WeaponType weapon, float range,
-        int castTicks, int hits, int stunTicks, string desc, int cooldownTicks = 30, bool melee = false)
+    /// <summary>One of the Warchanter's MAGIC damage spells: one hit, 28 rungs (13 on the 40-74 band, 15 on
+    /// 76-90), weapon-gated, and (Acoustic Shock) a contested magic stun. Every one retires Holy Bolt and
+    /// Holy Spike (playtest 28: *"holy bolt should be replaced from sound smash/burst"*).</summary>
+    private static SkillDef SoundSpell(string id, string name, WeaponType weapon, float range, int castTicks,
+        int cooldownTicks, int stunTicks, int[] power, int[] mp, string desc, float failPoints = 0f)
     {
-        var effect = SkillEffect.PhysicalDamage | (stunTicks > 0 ? SkillEffect.Stun : SkillEffect.None);
-        var mp = melee ? SoundMeleeMp : SoundMp;
-        var mp4 = melee ? Wc4SoundMeleeMp : Wc4SoundMp;
-        return new SkillDef(id, name, BaseClass.Mage, effect,
-            MpCost: mp[0], CastTicks: castTicks, CooldownTicks: cooldownTicks, Range: range, Power: SoundPower[0],
-            Category: SkillCategory.Physical,
-            // 🔑 A SOUND SKILL RETIRES HOLY BOLT (owner, playtest 28: *"holy bolt should be replaced from
-            // sound smash/burst — [they] are the attack skills of buffers; healers replace [it] with a
-            // stronger one, same should be valit for the buffers"*). He is describing something the
-            // healer already does and the buffer did not: Holy Ray carries `Replaces: [HolyBolt]`, so a
-            // Lightbringer's Learn tab and bar lose the obsolete bolt the moment the real spell arrives.
-            // The Warchanter inherited Holy Bolt from the cleric tier and kept it forever beside a kit
-            // that was supposed to have superseded it.
-            //
-            // ⚠ ALL THREE carry it, not just the first one a race learns. Sound Smash and Acoustic Shock
-            // are both learnable at 40 by an demon, in whichever order he buys them — putting the clause on
-            // one of them would make the retirement depend on the shopping order.
-            //
-            // ⚠ THE TRADE IS REAL AND IT IS HIS TO ACCEPT: Holy Bolt is a SPELL with no weapon
-            // requirement, and all three of these are weapon-gated (blunt, blunt, bow). A Warchanter
-            // caught with the wrong weapon in his hands now has no attack skill at all rather than a weak
-            // one. That is consistent with the rest of his 3rd-class design — each race's Warchanter is
-            // built around one weapon — but it is a door closing, not just a door opening.
-            // Holy Spike too (owner, 2026-10-01): the Human/Demon cleric's monster-only nuke retires at
-            // 40 with the bolt — a buffer fights with the weapon, not with spells.
-            Replaces: new[] { HolyBolt, HolySpike },
-            RequiredWeapon: weapon, HitCount: hits,
-            DurationTicks: stunTicks,
-            DebuffSchool: stunTicks > 0 ? DebuffSchool.Physical : DebuffSchool.None,
-            Description: desc,
-            Levels: Enumerable.Range(0, SoundPower.Length).Select(i => new SkillLevel(
-                Power: SoundPower[i], MpCost: mp[i], SpCost: BandSp13[i],
+        var effect = SkillEffect.MagicDamage | (stunTicks > 0 ? SkillEffect.Stun : SkillEffect.None);
+        SkillLevel Rung(int i)
+        {
+            var (sp, gold) = i < 13 ? (BandSp13[i], 0) : F4(i - 13, 1);
+            return new SkillLevel(Power: power[i], MpCost: mp[i], SpCost: sp, GoldCost: gold,
                 Magnitudes: stunTicks > 0
                     ? new EffectMagnitude[] { new(SkillEffect.Stun, 1f, ModifierMode.Flat) }
                     : null,
                 Description: stunTicks > 0
-                    ? $"Strikes for power {SoundPower[i]} and stuns for {stunTicks / 10f:0.#}s."
-                    : hits > 1
-                        ? $"Strikes {hits} times for power {SoundPower[i]} each."
-                        : $"Strikes for power {SoundPower[i]}."))
-                .Concat(BufferFourthSoundRungs(hits, stunTicks, mp4)).ToArray());
+                    ? $"Magic damage, power {power[i]}, and stuns for {stunTicks / 10f:0.#}s."
+                    : $"Magic damage, power {power[i]}.");
+        }
+        return new SkillDef(id, name, BaseClass.Mage, effect,
+            MpCost: mp[0], CastTicks: castTicks, CooldownTicks: cooldownTicks, Range: range, Power: power[0],
+            Category: SkillCategory.Magic, BuffKey: id,   // two "Sound Smash" ids (Human, Demon) must not share the name key
+            Replaces: new[] { HolyBolt, HolySpike },
+            RequiredWeapon: weapon,
+            DurationTicks: stunTicks,
+            DebuffSchool: stunTicks > 0 ? DebuffSchool.Magical : DebuffSchool.None,
+            MagicFailPoints: failPoints,
+            Description: desc,
+            Levels: Enumerable.Range(0, power.Length).Select(Rung).ToArray());
     }
 }

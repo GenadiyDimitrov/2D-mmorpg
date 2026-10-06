@@ -11059,7 +11059,7 @@ public class GameLoopService : BackgroundService
                               : victim.Immune ? 1f
                               : StatCalculator.MagicFailChance(RungLevel(attacker, def, lvl), victim.Level,
                                     victim.MagicFailMod, attacker.MagicFailSelfMult,
-                                    victim.MagicFailBonus, attacker.MagicAccuracy);
+                                    victim.MagicFailBonus + def.MagicFailPoints, attacker.MagicAccuracy);
                 if (_rng.NextDouble() < aoeFail)
                 {
                     dmg = Math.Max(1, dmg / 3);
@@ -13578,7 +13578,7 @@ public class GameLoopService : BackgroundService
                        : StatCalculator.MagicFailChance(RungLevel(caster, def, lvl), target.Level,
                              target.MagicFailMod,
                              caster.MagicFailSelfMult,
-                             target.MagicFailBonus, caster.MagicAccuracy);
+                             target.MagicFailBonus + def.MagicFailPoints, caster.MagicAccuracy);
             // MANA RAY: the identical number, taken off MP instead of HP. Nothing above this line
             // knows or cares — same formula, same M.Def divisor, same mRes, same fizzle, same crit,
             // and the "half vs monsters" is the skill's own PveDamageMult, already applied by
@@ -13818,7 +13818,7 @@ public class GameLoopService : BackgroundService
                            : StatCalculator.MagicFailChance(RungLevel(caster, def, lvl), target.Level,
                                  target.MagicFailMod,
                                  caster.MagicFailSelfMult,
-                                 target.MagicFailBonus, caster.MagicAccuracy);
+                                 target.MagicFailBonus + def.MagicFailPoints, caster.MagicAccuracy);
                 // BL-90: the per-skill tier, expressed on the SAME quantity it means on the contested
                 // path — the probability the debuff STICKS. `1 − fail` is that probability here, so
                 // scaling it and inverting keeps one number meaning one thing on both paths. A ×1
@@ -16161,20 +16161,45 @@ public class GameLoopService : BackgroundService
         }
         else
         {
-            int damage = StatCalculator.PhysicalDamage(
-                (int)attacker.EffectiveBasicAttack, 0,
-                (int)target.EffectiveDefence, attacker.Level,
-                StatCalculator.WeaponDefenceCoef(attacker.WeaponType, target.PierceDefCoef, target.BluntDefCoef, target.BowDefCoef, target.PhysicalDefCoef));
-            damage = (int)(damage * StatCalculator.WeaponVariance(attacker.WeaponType, _rng));
-            damage = FinalizeDamage(attacker, target, damage, DamageKind.Basic, null);
+            int damage;
+            CombatOutcome outcome;
+            // 🔑 `BL-335` — THE MAGIC SWING (the Warchanter's Resonant Strikes, `magic_swing`). A swing is
+            //    still a swing: the miss roll above is unchanged, there is no cast and nothing to
+            //    interrupt, and attack speed paces it. What changes is the damage: the magic formula at
+            //    the passive's per-rung power, the MAGIC crit (WIT rate, magic crit damage), no block —
+            //    magic is never blocked — and the Spell Rune. It stays in the BASIC damage bucket.
+            int swingPower = attacker.MagicSwingPower;
+            bool magicSwing = swingPower > 0;
+            if (magicSwing)
+            {
+                damage = StatCalculator.MagicDamageFM(
+                    (int)attacker.EffectiveMagicAttack, 0, swingPower,
+                    (int)target.EffectiveMagicDefence, target.MagicDefCoef);
+                damage = (int)(damage * StatCalculator.WeaponVariance(attacker.WeaponType, _rng));
+                damage = FinalizeDamage(attacker, target, damage, DamageKind.Basic, null, magicSwing: true);
+                outcome = CombatOutcome.Hit;
+                if (_rng.NextDouble() < attacker.MagicCritChance * (1f - target.MagicCritRateResist))
+                {
+                    damage = (int)(damage * attacker.EffectiveMagicCritDamage);
+                    outcome = CombatOutcome.Crit;
+                }
+            }
+            else
+            {
+                damage = StatCalculator.PhysicalDamage(
+                    (int)attacker.EffectiveBasicAttack, 0,
+                    (int)target.EffectiveDefence, attacker.Level,
+                    StatCalculator.WeaponDefenceCoef(attacker.WeaponType, target.PierceDefCoef, target.BluntDefCoef, target.BowDefCoef, target.PhysicalDefCoef));
+                damage = (int)(damage * StatCalculator.WeaponVariance(attacker.WeaponType, _rng));
+                damage = FinalizeDamage(attacker, target, damage, DamageKind.Basic, null);
 
-            // A basic attack is K·pAtk/def, so the flat crit-damage add is simply (pAtk+flat)/pAtk.
-            var (finalDmg, outcome) = ResolvePhysicalCritAndBlock(
-                attacker, target, damage, attacker.CritChance, 0f,
-                StatCalculator.CritFlatFactor(attacker.EffectiveBasicAttack, attacker.CritDamageFlat));
-            damage = finalDmg;
+                // A basic attack is K·pAtk/def, so the flat crit-damage add is simply (pAtk+flat)/pAtk.
+                (damage, outcome) = ResolvePhysicalCritAndBlock(
+                    attacker, target, damage, attacker.CritChance, 0f,
+                    StatCalculator.CritFlatFactor(attacker.EffectiveBasicAttack, attacker.CritDamageFlat));
+            }
             BroadcastCombat(attacker, target, damage, outcome, castName);
-            ApplyDamage(target, damage, attacker);
+            ApplyDamage(target, damage, attacker, magicHit: magicSwing);
             // Melee basic-attack vampirism (Might lvl 4 etc.) — bow attacks don't leech.
             if (attacker.MeleeVamp > 0f && damage > 0 && attacker.WeaponType != WeaponType.Bow)
             {
@@ -20450,7 +20475,8 @@ public class GameLoopService : BackgroundService
     /// / magic-skill / basic), the PvP/PvE context bonus (target a player vs a mob), and a
     /// skill's per-context multiplier. All factors default neutral, so this is a no-op until
     /// effects/skills set them — the base layout for the future PvP/PvE damage system.</summary>
-    private int FinalizeDamage(Entity attacker, Entity target, int dmg, DamageKind kind, SkillDef? skill)
+    private int FinalizeDamage(Entity attacker, Entity target, int dmg, DamageKind kind, SkillDef? skill,
+        bool magicSwing = false)
     {
         bool pvp = attacker.Kind == EntityKind.Player && target.Kind == EntityKind.Player;
         // Pick the single matrix cell for this context × source.
@@ -20483,7 +20509,9 @@ public class GameLoopService : BackgroundService
         // the owner's 2026-09-09 ruling: a shot is not a stat buff, it is the mirror of `MagicResist`,
         // which cuts damage without touching M.Def. Basic attacks take the PHYSICAL rune too — a shot
         // in IG is spent on the swing as much as on the skill.
-        float runeMult = kind == DamageKind.SkillMagic
+        // 🔑 `BL-335` — the Warchanter's MAGIC swing stays in the BASIC bucket above (so a spell-damage
+        //    buff never raises it) but spends the SPELL rune: the shot follows the damage, not the button.
+        float runeMult = kind == DamageKind.SkillMagic || magicSwing
             ? attacker.MagicDamageDealtMult
             : attacker.PhysDamageDealtMult;
         // 🔴 `BL-212` — THE CREATURE DAMAGE CURVE, 2026-09-12: *"mobs should get x2 power ... (not

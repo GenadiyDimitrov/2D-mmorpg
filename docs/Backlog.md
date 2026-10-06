@@ -284,7 +284,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-331` | 🔵   | **Skill icons** — game-icons.net tinted per school, `docs/data/skill_icons.csv` + `tools/SkillIcons`; bar, buff bar, Skills window (Known / Learn / Actions) BUILT 0.219.0-0.219.1, your review passed; NPC buffs, potions, scrolls, runes, paving 0.226.0; owed: the cast bar, the tree page; your own redraw "a lot later"                                                                                                                                                                                     | ui           |
 | `BL-332` | ❓   | **Notifications** — low HP / low potions / farm time over / died: in-game alerts, scheduled phone notifications, server push; my pick + four questions                                                                                                                                                                                                                                                                                                         | ui           |
 | `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
-| `BL-335` | 🔵 | **Magic-melee buffers** — all three Warchanters hit through MAGIC: a passive turns the basic attack into a magic hit; demon battlestaff, human wand+shield, elf duals, all ROBE; two weapon-gated toggles per race (Reinforcement = defence, Sharpening = offence, +15% MP cost each); all damage skills single-hit magic; Sound Burst = Magic Stab (curve + high fail); swing, skills, toggle MEASURED (`--magicmelee`); design only, no questions left — waits on his CSV rows | classes |
 | `BL-336` | 🔵 | **No-refresh debuffs (IG rule)** — a debuff of the same type cannot be re-landed until the old one wears off (no perma-hold); a re-stun attempt may BREAK the stun instead of resetting it; boss-allowed stacking types excepted; design owed | combat |
 
 ---
@@ -2370,28 +2369,6 @@ on the Apothecary shelf) shipped in 0.223.0.
 
 ⏸ **Waits on him**: whether a pet gets stronger base stats or a rune effect of its own decides whether this item exists at
 all. Prices above are his, for when it does. Pets/summons themselves are `BL-38`.
-
-## `BL-335` 🔵 MAGIC-MELEE BUFFERS — the Warchanter hits with MAGIC (design, 2026-10-05)
-
-Your idea (2026-10-04/05): *"we have warriors and tanks and I want to give them something unique"*. All three
-Warchanters move to the magic channel: a **passive turns the basic attack into a magic hit** (attack speed times
-it; no cast, so nothing to interrupt), Sound Smash / Acoustic Shock / Sound Burst become magic skills,
-Reinforcement becomes a per-race armour toggle gated to robe that replaces the armour masteries,
-and the elf moves from the bow to **fangs** (Fang Proficiency replaces Harmonist Bow Proficiency) and Sound Burst becomes a
-**fixed-fail Magic Stab**. *"Just design for now."*
-
-The whole design, what each race loses and keeps, and why no magic-weapon gate is needed:
-[design/MagicMeleeBuffers.md](design/MagicMeleeBuffers.md).
-
-Your eight-point answer sheet and your follow-up (2026-10-06) are folded in, and the numbers are MEASURED: `dotnet run --project tools/BalanceMatrix -- --magicmelee [--buffed]` prints the swing power per rung (magic swing = today's physical swing, same weapon kind), the skill power that puts each race on the HEALER's rotation DPS, Reinforcement's P.Def gap (best authored as a % of robe P.Def: Human +54%, Demon +33%, Elf +17% at 85-90), and Magic Stab's fail curve. Tables in §8 of the design page.
-
-The Acoustic Shock lock is answered by IG's no-refresh rule, filed as `BL-336`; until that is built the lock stays live in PvP.
-
-Your answers of the same day settled the toggles (two per race, contents on the page), the swing (one id, per-race rung schedule), skill power (unbuffed, lower) and the elf's Reinforcement (only the light mastery).
-
-0.229.3 + 0.229.4 put Holy Bolt, Holy Ray, Vampiric Bolt and Frost Spikes at half damage against players. The last answers (elf toggles, names stay) closed every question.
-
-🔵 **Waits on you**: your `buffer 3rd.csv` / `buffer 4th.csv` edits, starting from the measured numbers in §8 of the page.
 
 ## `BL-336` 🔵 NO-REFRESH DEBUFFS — IG's rule against the permanent lock (2026-10-06)
 

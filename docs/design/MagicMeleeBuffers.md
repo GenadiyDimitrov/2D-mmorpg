@@ -1,8 +1,9 @@
 # Magic-melee buffers — the Warchanter hits with MAGIC
 
-**Status: 🔵 DESIGN ONLY, `BL-335`.** Nothing is built; the numbers are MEASURED (§8). Your words: *"Just design for now."*
-This page includes your answers of 2026-10-05 and your full answer sheet of 2026-10-06 (eight points). The questions
-still open are at the bottom, each with my pick.
+**Status: 🟢 BUILT in 0.230.0 (2026-10-06), `BL-335`.** Your go: *"start to build .. change the csvs with what we
+talked .. then interpolate the numbers in between"*. **§9 lists what the build did and every number that is mine,
+not yours**: they are your CSV cells now, so tune them there after the playtest. §1-§8 are the design as agreed and
+the measurement that priced it.
 
 The problem it solves, in your words: *"we have warriors and tanks and I want to give them something unique"*. Today
 every Warchanter is a physical fighter (demon maul + heavy, human mace + shield + heavy, elf bow + light): a
@@ -259,7 +260,67 @@ vs 136 today, so the toggle needs **+11 evasion** to close that.
 - 2026-10-06 (third): the race bolts get the PvP cut too (built as 0.229.4); the elf's crit-rate resist → Reinforcement,
   evasion + spell accuracy → Sharpening; the names stay.
 
+## 9. BUILT — 0.230.0 (2026-10-06)
+
+Both CSVs were rewritten to the design above, and the code was rewritten to the CSVs. `--check` is clean, every SP
+ladder rises, and `BalanceMatrix --magicmelee` now reads the BUILT class back.
+
+**The ids.** Different numbers per race need different ids (`BL-327`), so the Human keeps the old ones:
+
+| | Human | Demon | Elf |
+|---|---|---|---|
+| swing | `magic_swing` (Resonant Strikes): ONE id, each race learns its own rungs | ← | ← |
+| damage | `sound_smash` | `sound_smash_demon` + `acoustic_shock` | `magic_stab` (new; `sound_burst` is gone) |
+| Reinforcement | `reinforcement` | `reinforcement_demon` | `reinforcement_elf` |
+| Sharpening | `sharpening` (shield) | `sharpening_demon` (2H blunt) | `sharpening_elf` (duals) |
+| Combo Mastery | `combo_mastery` 3% (1H blunt) | `combo_mastery_demon` 3.5% (2H blunt) | `combo_mastery_elf` 2.6% (duals) |
+| other | | | `harmonist_dual_proficiency` (new; `harmonist_bow_proficiency` is gone) |
+
+**Dropped rows** (and so dropped from the class): Heavy Armor Mastery, Heavy Caster Mastery, Critical Damage Resist,
+Weapon Mastery (all races), Hit Rate Mastery, Shield Mastery, Light Armor Mastery, Light armor Evasion, Critical
+Resist, Bow Mastery, Bow Proficiency, Bow Expertise. **Changed:** Mana Vampirism is gated to blunt or duals and every
+race reaches 9%. Monster Knowledge is all three races. Spellcaster Weapon Mastery's weapon cell gained `duals` (the
+elf keeps it, §2).
+
+**The numbers that are MINE, not yours.** Change any of them in the CSV and the code follows:
+
+- **The swing ladder** is measured (§8 A, re-run at every learn level), held so it only rises:
+  Human 12/13/14 @40/52/58, then 15/20/23/24 @76/80/83/90. Demon 13/15/16/17 @40/52/60/64, then 18/24/25/26
+  @76/80/82/84. Elf 10/12 @40/52, then 15/21/23 @76/80/83.
+- 🔴 **The ELF's powers are LOWER than §8 said, on purpose.** The §8 rig never let Spellcaster Weapon Mastery count
+  on duals, but the design keeps it for the elf (§2). The built elf therefore has ~30% more M.Atk and read ×1.25-1.40
+  of the healer line. I re-solved its swing and Magic Stab against the same targets: Stab is 93 → 248 at the 3rd
+  tier and 337 → 401 at the 4th, instead of 108 → 352 and 450 → 501.
+- **Skill power** is the unbuffed column of §8 B at every rung. The 4th tier is a straight +1 a level (Human 98 →
+  112, Demon Smash 53 → 67, Shock 47 → 61), because the measurement dips at 80 and 83 where the gear tier changes.
+  Acoustic Shock is ~0.9× the Demon's Smash.
+- **Toggle P.Def is a %, on a rising line.** The measured gap FALLS from 40 to 74 (a robe's mastery grows faster than
+  the heavy gap), and a ladder may not fall, so it rises gently across the average. Human/Demon get +22% → +28%
+  (40-74). At 76-90 the Human gets +36% → +40% and the Demon +29% → +33%. The Elf gets +9% → +12%, then +15% →
+  +18.5%. The Human's Sharpening adds Shield Mastery's +10% P.Def from 70.
+- **Crit resists:** Human −15% crit damage (Critical Damage Resist's). Demon −15% crit rate and −15% crit damage. The
+  Demon's crit-RATE number is mine, copied from the elf's. Elf −15% crit rate (Critical Resist's). Human bow
+  resistance 16% from 60, as Shield Mastery had it.
+- **Demon Sharpening:** M.Atk +10% → +20% (**mine**) and accuracy +3/+4/+5 (Hit Rate Mastery's levels).
+- **Elf Sharpening:** evasion +6 → +12 (light-armour evasion, §8 C), +20 M.Accuracy (yours), and spell damage +5%
+  → +12% (**mine**).
+- **Upkeep:** each toggle costs 2 → 8 MP/s (half the old Sharpening, rounded up). Both lit = +30% skill MP.
+- **4th-tier SP and gold** for every rewritten row were copied from the row it replaced. The swing's 4th-tier rows
+  price like Spellcaster Weapon Mastery at the same level.
+
+**Measured after the build** (`--magicmelee`, unbuffed): every race's rotation is ×0.96-1.04 of the healer's at
+40-90. Reinforcement takes a robe from 1193 to 1670 (Human), 1587 (Demon) and 1414 (Elf) P.Def at 90; today's heavy
+Human read 1838 with shield mastery, which Sharpening's +10% brings back to 1790. Magic Stab fails 60% at parity
+with Sharpening off and 40% with it on.
+
+**Side effects to know:**
+- **Acoustic Shock's stun is a MAGIC debuff now**, so it is resisted with SPT and not CON (`debuff_landmods.csv`
+  moved). The shape (`dmg+1 debuff`) and `SUCCESS` x1 are unchanged.
+- The damage skills are SPELLS now: cast speed paces them, they can fizzle, and they can be interrupted.
+- A Warchanter saved before 0.230.0 still holds the masteries this removed. Delete `game.db` or make a new character.
+
 ## ❓ Still open
 
-Nothing. 🔵 **Next is yours: the `buffer 3rd.csv` / `buffer 4th.csv` edits**, starting from the numbers in §8. When
-the rows land, I build to them and re-run `--magicmelee` against the build.
+- **`BL-336`** (stuns cannot be refreshed, and a re-stun can break one) is **deferred by you**: *"i have always
+  played with restetting stuns no difference for now"*.
+- Everything in §9 marked **mine** is waiting on your playtest.

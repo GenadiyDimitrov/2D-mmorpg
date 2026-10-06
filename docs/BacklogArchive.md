@@ -8365,3 +8365,33 @@ class won't move from its x"* — the curve is now solved on every run, `sp_curv
 expensive for one and 50% less expensive for the other ... putting unique skills number inside ... the formula will
 balance"* — each race's own skills now carry a solved multiplier (×0.5-×2), so every race hits the target, not the
 three-race average.
+
+## `BL-335` ✅ BUILT in 0.230.0 — the magic-melee Warchanter (2026-10-06)
+
+His go: *"start to build .. change the csvs with what we talked .. then interpolate the numbers in between and the
+bl-336 can wait"*. Both buffer CSVs were rewritten to the design and the code to the CSVs; what was built, and every
+number that is mine and waits on his playtest, is §9 of `docs/design/MagicMeleeBuffers.md`. `BL-336` stays open.
+The entry as it stood when built:
+
+## `BL-335` 🔵 MAGIC-MELEE BUFFERS — the Warchanter hits with MAGIC (design, 2026-10-05)
+
+Your idea (2026-10-04/05): *"we have warriors and tanks and I want to give them something unique"*. All three
+Warchanters move to the magic channel: a **passive turns the basic attack into a magic hit** (attack speed times
+it; no cast, so nothing to interrupt), Sound Smash / Acoustic Shock / Sound Burst become magic skills,
+Reinforcement becomes a per-race armour toggle gated to robe that replaces the armour masteries,
+and the elf moves from the bow to **fangs** (Fang Proficiency replaces Harmonist Bow Proficiency) and Sound Burst becomes a
+**fixed-fail Magic Stab**. *"Just design for now."*
+
+The whole design, what each race loses and keeps, and why no magic-weapon gate is needed:
+[design/MagicMeleeBuffers.md](design/MagicMeleeBuffers.md).
+
+Your eight-point answer sheet and your follow-up (2026-10-06) are folded in, and the numbers are MEASURED: `dotnet run --project tools/BalanceMatrix -- --magicmelee [--buffed]` prints the swing power per rung (magic swing = today's physical swing, same weapon kind), the skill power that puts each race on the HEALER's rotation DPS, Reinforcement's P.Def gap (best authored as a % of robe P.Def: Human +54%, Demon +33%, Elf +17% at 85-90), and Magic Stab's fail curve. Tables in §8 of the design page.
+
+The Acoustic Shock lock is answered by IG's no-refresh rule, filed as `BL-336`; until that is built the lock stays live in PvP.
+
+Your answers of the same day settled the toggles (two per race, contents on the page), the swing (one id, per-race rung schedule), skill power (unbuffed, lower) and the elf's Reinforcement (only the light mastery).
+
+0.229.3 + 0.229.4 put Holy Bolt, Holy Ray, Vampiric Bolt and Frost Spikes at half damage against players. The last answers (elf toggles, names stay) closed every question.
+
+🔵 **Waits on you**: your `buffer 3rd.csv` / `buffer 4th.csv` edits, starting from the measured numbers in §8 of the page.
+

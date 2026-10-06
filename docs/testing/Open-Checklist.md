@@ -25,6 +25,26 @@
 
 ---
 
+## §143 — 0.230.0: the Warchanter hits with MAGIC (`BL-335`, 2026-10-06)
+
+⚠ **Server restart + APK + `game.db` delete** (or a new Warchanter). Numbers marked "mine" in §9 of
+`docs/design/MagicMeleeBuffers.md` are first passes, so tune them in the CSV.
+
+- `143a` [ ] - All three races in a robe: a basic swing shows MAGIC damage (it crits big and rarely, like a spell),
+  can still MISS, is never blocked, and restores MP with Mana Vampirism. ->
+- `143b` [ ] - Human (wand + shield) Sound Smash / Demon (battlestaff) Sound Smash + Acoustic Shock / Elf (duals) Magic
+  Stab: each is a spell now. It can fizzle, cast speed shortens it, and a hit can interrupt it. Holy Bolt is gone from
+  the bar. ->
+- `143c` [ ] - Magic Stab fizzles often (~60% on an even-level mob), and ~40% with the Elf's Sharpening lit. ->
+- `143d` [ ] - Reinforcement raises P.Def by a % and Sharpening adds its race's half. Each makes skills cost 15% more
+  (both = 30%) and drains MP every second. Sharpening goes dark when you take off the shield (Human), the 2H blunt
+  (Demon) or the duals (Elf). ->
+- `143e` [ ] - Feel: does a Warchanter's damage feel like a HEALER's (the target), not a nuker's or a warrior's? ->
+- `143f` [ ] - The Learn tab: no heavy/light/weapon/bow masteries, no Shield Mastery and no Bow Expertise. The Elf gets
+  Monster Knowledge and Mana Vampirism to 9%; Combo Mastery procs with your race's weapon only. ->
+
+---
+
 ## §142 — 0.229.1: Common jewels give no MP (2026-10-04)
 
 ⚠ **Server restart + APK.** No `game.db` delete.

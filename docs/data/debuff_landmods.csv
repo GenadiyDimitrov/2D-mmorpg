@@ -1,5 +1,5 @@
 SKILL,SKILL_ID,CLASS,DESCR,SAVE,SUCCESS,SHAPE,IN_CODE
-Acoustic Shock,acoustic_shock,Warchanter(Demon),Stun +100%,CON,1,dmg+1 debuff,1
+Acoustic Shock,acoustic_shock,Warchanter(Demon),Stun +100%,SPT,1,dmg+1 debuff,1
 Arcane Burst,arcane_burst,Magus(Human),SPT resist -40%,SPT,1.5,dmg+1 debuff,1.5
 Arcane Void,arcane_void,Magus(Human),cancels 2 buff(s),SPT,0.3,DEBUFF ONLY (1),0.3
 Armor Break,armor_break,Lightbringer(Demon),M.Def -20%; P.Def -40%,SPT,1.5,DEBUFF ONLY (2),1.5

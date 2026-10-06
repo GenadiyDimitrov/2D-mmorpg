@@ -354,78 +354,53 @@ if (args.Length > 0 && args[0] == "--warchanter")
 //       FINAL P.Def, and what a flat authored P.Def has to read to close it.
 //    D. MAGIC STAB — a high fail chance that still follows the level curve, and the toggle's cut.
 //
-//  ⚠ NOTHING HERE IS BUILT. The proposed character is a RIG: today's Warchanter with his ruling's
-//    drop list removed and the new weapons equipped. The elf's `harmonist_dual_proficiency` does not
-//    exist yet, so its effect (the untrained-weapon penalty cancelled) is patched in after recompute.
+//  🔑 BUILT 0.230.0 — the numbers above priced the CSV (§8 of the design doc); the probe now reads the
+//    BUILT class back, so a later retune can be checked against the healer line it was priced to.
 if (args.Length > 0 && args[0] == "--magicmelee")
 {
+    // 🔑 SINCE 0.230.0 THIS MEASURES THE BUILT CLASS, not a rig. The 2026-10-06 rig that priced the CSV
+    //    (today's physical Warchanter with the drop list removed) is gone with the kit it was built from;
+    //    its numbers are §8 of docs/design/MagicMeleeBuffers.md. What is left to ask is whether the build
+    //    lands where §8 said: the swing's DPS, the rotation against the HEALER, the toggles, the stab.
     bool mmBuffed = args.Contains("--buffed");
     var mmLevels = args.Skip(1).Where(a => !a.StartsWith("--")).Select(int.Parse).ToArray();
     if (mmLevels.Length == 0) mmLevels = new[] { 40, 52, 61, 76, 85, 90 };
 
-    // His keep/drop lists (2026-10-06), all races in one set: a race that never had an id loses nothing.
-    var dropped = new HashSet<string>
+    // A toggle lit the way HandleToggle lights it, with its FIELD channels (MP surcharge, M.Accuracy).
+    static void ToggleOn(Entity e, string id)
     {
-        "weapon_mastery", "sharpening",
-        "heavy_armor_mastery", "cleric_heavy_armor_mastery", "tank_crit_resist", "tank_shield_mastery",
-        "fighter_accuracy",
-        "bow_mastery", "bow_expertise", "light_armor_mastery", "rogue_evasion", "rogue_crit_resist",
-        "rogue_bow_proficiency", "harmonist_bow_proficiency",
-    };
-
-    static void AddRune(Entity e, string id)
-    {
-        if (SkillCatalog.Get(id) is not { } r) return;
-        e.Buffs.RemoveAll(b => b.Key == r.BuffKey);
+        if (SkillCatalog.Get(id) is not { } d) return;
+        int lvl = e.SkillLevelOf(id);
+        if (lvl <= 0) return;
         e.Buffs.Add(new Game.Server.Simulation.BuffInstance
         {
-            Effect = r.Effect, Magnitudes = r.Magnitudes,
-            PhysDamageMult = r.PhysDamageMult, MagicDamageMult = r.MagicDamageMult,
-            TicksRemaining = int.MaxValue, Name = r.Name, Key = r.BuffKey,
+            Effect = d.Effect, Magnitudes = d.MagnitudesAt(lvl) ?? Array.Empty<EffectMagnitude>(),
+            PhysMpCostPct = d.PhysMpCostPctAt(lvl), MagicMpCostPct = d.MagicMpCostPctAt(lvl),
+            MagicAccuracy = d.MagicAccuracyAt(lvl),
+            SkillId = id, Toggle = true,
+            TicksRemaining = int.MaxValue, Name = d.Name, Key = d.BuffKey, Level = lvl,
         });
     }
-    static void Regear(Entity e, params string[] ids)
+    static (string R, string S) Toggles(Race race) => race switch
     {
-        e.Inventory.RemoveAll(i => i.Equipped && (ItemCatalog.Get(i.DefId) is { Slot: EquipSlot.Weapon or EquipSlot.Shield }
-            || i.DefId.StartsWith("robe_") || i.DefId.StartsWith("heavy_") || i.DefId.StartsWith("light_")));
-        foreach (var id in ids) Equip(e, id);
-    }
-    // The untrained-weapon penalty on fangs, cancelled as the bow passive cancels it on a bow today.
-    // ⚠ After every recompute: these three are rebuilt by RecomputeDerived and read live by the getters.
-    static void DualProficiency(Entity e)
+        Race.Human => (SkillCatalog.Reinforcement, SkillCatalog.Sharpening),
+        Race.Demon => (SkillCatalog.ReinforcementDemon, SkillCatalog.SharpeningDemon),
+        _          => (SkillCatalog.ReinforcementElf, SkillCatalog.SharpeningElf),
+    };
+    static string[] Kit(Race race) => race switch
     {
-        if (e.WeaponType != WeaponType.Dual || !e.UntrainedCasterWeapon) return;
-        e.CastSpeedPenaltyMult = 1f; e.MagicWeaponPenaltyMult = 1f;
-        e.MagicFailSelfMult /= StatCaps.UntrainedWeaponMagicFailMod;
-    }
-
-    // TODAY's Warchanter, swinging the PHYSICAL twin, War Rune held (the swing reference).
-    Entity PhysRef(Race race, int L)
+        Race.Human => new[] { SkillCatalog.SoundSmash },
+        Race.Demon => new[] { SkillCatalog.SoundSmashDemon, SkillCatalog.AcousticShock },
+        _          => new[] { SkillCatalog.MagicStab },
+    };
+    Entity Built(Race race, int L, bool reinforce = false, bool sharpen = false)
     {
         var e = BuildWarchanter(race, L, fourth: L >= 76);
-        int t = GearTier(L);
-        if (race == Race.Elf) Regear(e, $"duals_t{t}", $"light_t{t}");
-        AddRune(e, SkillCatalog.WarRuneBuff);
+        var (r, s) = Toggles(race);
+        if (reinforce) ToggleOn(e, r);
+        if (sharpen) ToggleOn(e, s);
         e.RecomputeDerived();
         if (mmBuffed) ApplyNpcBuffs(e, fullShelf: true);
-        return e;
-    }
-    // The PROPOSED one: robe, magic weapon (fangs for the elf), the drop list gone, Spell Rune held.
-    Entity Proposed(Race race, int L, string? armour = null)
-    {
-        var e = BuildWarchanter(race, L, fourth: L >= 76);
-        foreach (var id in dropped) e.LearnedSkills.Remove(id);
-        int t = GearTier(L);
-        string arm = armour ?? $"robe_t{t}";
-        switch (race)
-        {
-            case Race.Human: Regear(e, $"wand_t{t}", $"shield_t{t}", arm); break;
-            case Race.Demon: Regear(e, $"staff_t{t}", arm); break;
-            default:         Regear(e, $"duals_t{t}", arm); break;
-        }
-        e.RecomputeDerived();
-        if (mmBuffed) ApplyNpcBuffs(e, fullShelf: true);
-        DualProficiency(e);
         return e;
     }
 
@@ -440,8 +415,7 @@ if (args.Length > 0 && args[0] == "--magicmelee")
                                 cff * StatCalculator.PhysicalCritMult(a.CritDamageBonus));
         return hit * crit * (1f - Miss(a, mob)) / AutoAttackSeconds(a);
     }
-    // Magic damage per ONE point of power, expected over crit (no variance). Float, not the int path:
-    // at power 1 the int truncation would eat the whole answer.
+    // Magic damage per ONE point of power, expected over crit (float: at power 1 the int path eats it).
     float MagicPerPower(Entity a, Entity mob)
     {
         float def = Math.Max(1f, mob.EffectiveMagicDefence * mob.MagicDefCoef);
@@ -449,13 +423,16 @@ if (args.Length > 0 && args[0] == "--magicmelee")
                   * a.MagicDamageDealtMult;
         return raw * CritFactor(a.MagicCritChance * (1f - mob.MagicCritRateResist), a.EffectiveMagicCritDamage);
     }
-    float MagicSwingDpsPerPower(Entity a, Entity mob) =>
-        MagicPerPower(a, mob) * (1f - Miss(a, mob)) / AutoAttackSeconds(a);
-    // A spell's fizzle at parity: lands for 1/3 when it fails.
-    float FizzleKeep(Entity a, Entity mob, float extraPoints = 0f)
+    // The magic swing: the engine's ResolveBasicSwing magic branch, in expectation.
+    float MagicSwingDps(Entity a, Entity mob) =>
+        a.MagicSwingPower * MagicPerPower(a, mob) * (1f - Miss(a, mob)) / AutoAttackSeconds(a);
+    // A spell's fizzle (with the skill's own points): lands for 1/3 when it fails.
+    float FizzleChance(Entity a, Entity mob, float points = 0f) =>
+        StatCalculator.MagicFailChance(mob.Level, mob.Level, mob.MagicFailMod,
+            a.MagicFailSelfMult, mob.MagicFailBonus + points, a.MagicAccuracy);
+    float FizzleKeep(Entity a, Entity mob, float points = 0f)
     {
-        float f = Math.Clamp(StatCalculator.MagicFailChance(mob.Level, mob.Level, mob.MagicFailMod,
-                      a.MagicFailSelfMult, mob.MagicFailBonus, a.MagicAccuracy) + extraPoints, 0f, StatCaps.MagicFailMax);
+        float f = FizzleChance(a, mob, points);
         return (1f - f) + f / 3f;
     }
     (float Cast, float Reuse) Timing(Entity e, SkillDef d, int lvl, bool magic)
@@ -468,7 +445,6 @@ if (args.Length > 0 && args[0] == "--magicmelee")
         if (cd > 0 && !d.FixedCooldown) cd = Math.Max(1, (int)(cd * (1f - cdr)));
         return (cast * GameConstants.TickSeconds, cd * GameConstants.TickSeconds);
     }
-    // The best REPEATABLE damage skill (same filter as --dmgmatrix's BestSkill) + the weapon gate.
     (SkillDef? Def, int Lvl) Best(Entity e, bool magic)
     {
         SkillDef? best = null; int bl = 0, bp = 0;
@@ -484,173 +460,90 @@ if (args.Length > 0 && args[0] == "--magicmelee")
         }
         return (best, bl);
     }
-    // ROTATION DPS of an existing class: its best skill, its own swing filling the reuse.
-    (float Dps, string Note) Rotation(Entity e, Entity mob, bool magic)
+    // ROTATION DPS of an existing class (the healer target): its best spell, its swing in the reuse gap.
+    float HealerRotation(Entity e, Entity mob)
     {
         float swing = PhysSwingDps(e, mob);
-        var (d, lvl) = Best(e, magic);
-        if (d is null) return (swing, "swing only");
-        float hit;
-        if (magic)
+        var (d, lvl) = Best(e, true);
+        if (d is null) return swing;
+        var (f, m) = d.MagicDamageAt(lvl);
+        float hit = Shot(e, true, StatCalculator.MagicDamageFM((int)e.EffectiveMagicAttack, f, m,
+                        (int)mob.EffectiveMagicDefence, mob.MagicDefCoef))
+                  * CritFactor(e.MagicCritChance, e.EffectiveMagicCritDamage) * FizzleKeep(e, mob);
+        var (c, r) = Timing(e, d, lvl, true);
+        return (hit + swing * r) / (c + r);
+    }
+    // The BUILT Warchanter's rotation: every damage spell of its race once per cycle, the magic swing
+    // filling what is left of the longest reuse.
+    (float Dps, string Note) WarchanterRotation(Entity p, Race race, Entity mob)
+    {
+        float swing = MagicSwingDps(p, mob);
+        float hits = 0f, castSum = 0f, reuse = 0f;
+        var notes = new List<string>();
+        foreach (var id in Kit(race))
         {
-            var (f, m) = d.MagicDamageAt(lvl);
-            hit = Shot(e, true, StatCalculator.MagicDamageFM((int)e.EffectiveMagicAttack, f, m,
-                      (int)mob.EffectiveMagicDefence, mob.MagicDefCoef))
-                * CritFactor(e.MagicCritChance, e.EffectiveMagicCritDamage) * FizzleKeep(e, mob);
+            if (SkillCatalog.Get(id) is not { } d) continue;
+            int lvl = p.SkillLevelOf(id);
+            if (lvl <= 0) continue;
+            var (c, r) = Timing(p, d, lvl, magic: true);
+            castSum += c; reuse = Math.Max(reuse, r);
+            hits += d.PowerAt(lvl) * MagicPerPower(p, mob) * FizzleKeep(p, mob, d.MagicFailPoints);
+            notes.Add($"{d.Name} p{d.PowerAt(lvl)} {c:0.00}s+{r:0.0}s");
         }
-        else
-        {
-            var (f, m) = d.PhysDamageAt(lvl);
-            int pAtk = (int)e.EffectiveAttack;
-            float coef = StatCalculator.WeaponDefenceCoef(e.WeaponType, mob.PierceDefCoef, mob.BluntDefCoef, mob.BowDefCoef);
-            hit = Shot(e, false, StatCalculator.PhysicalDamageFM(pAtk, f, m, (int)mob.EffectiveDefence, coef))
-                * CritFactor(e.CritChance, StatCalculator.CritFlatFactor(pAtk, e.CritDamageFlat, f, m)
-                                           * StatCalculator.PhysicalCritMult(e.CritDamageBonus))
-                * (1f - Miss(e, mob));
-        }
-        hit *= Math.Max(1, d.HitCount);
-        var (c, r) = Timing(e, d, lvl, magic);
-        return ((hit + swing * r) / (c + r), $"{d.Name} L{lvl} {c:0.0}s+{r:0.0}s");
+        float cycle = Math.Max(castSum / Math.Max(1, notes.Count) + reuse, castSum);
+        return ((hits + swing * (cycle - castSum)) / cycle, string.Join(", ", notes));
     }
 
     Console.WriteLine();
-    Console.WriteLine($"=== BL-335 MAGIC-MELEE WARCHANTER — {(mmBuffed ? "NPC-BUFFED (full shelf)" : "unbuffed")}, default mob (Animal) of the same level ===");
-    Console.WriteLine("  Proposed rig: robe + wand/shield (Human), battlestaff (Demon), fangs (Elf); his drop list removed;");
-    Console.WriteLine("  Spell Rune. The elf's dual proficiency is simulated (penalty cancelled). Expected values: crit, miss");
-    Console.WriteLine("  and fizzle folded in; no variance.");
+    Console.WriteLine($"=== BL-335 THE MAGIC-MELEE WARCHANTER, AS BUILT — {(mmBuffed ? "NPC-BUFFED (full shelf)" : "unbuffed")}, default mob of the same level ===");
+    Console.WriteLine("  Robe + wand/shield (Human), battlestaff (Demon), fangs (Elf); Spell Rune. Expected values:");
+    Console.WriteLine("  crit, miss and fizzle folded in; no variance. Toggles OFF unless a column says otherwise.");
 
-    // ── A. THE SWING ─────────────────────────────────────────────────────────────────────────
     Console.WriteLine();
-    Console.WriteLine("── A. THE SWING POWER — magic swing DPS = today's physical swing DPS, same weapon kind ──");
-    Console.WriteLine($"   {"lvl",3} {"race",-6} | {"phys ref",-14} {"P.Atk",6} {"spd s",5} {"DPS",7} | {"M.Atk",6} {"m.crit",6} {"spd s",5} {"DPS/pow",8} | {"POWER",6}");
-    var swingPower = new Dictionary<(Race, int), float>();
+    Console.WriteLine("── A. THE SWING (Resonant Strikes) and B. THE ROTATION against the HEALER (Lightbringer) ──");
+    Console.WriteLine($"   {"lvl",3} {"race",-6} | {"power",5} {"M.Atk",6} {"m.crit",6} {"spd s",5} {"swing",6} | {"rotation",8} {"healer",7} {"ratio",6} | skills");
     foreach (int L in mmLevels)
     {
         var mob = BuildMobEntity(L);
-        foreach (var race in new[] { Race.Human, Race.Demon, Race.Elf })
-        {
-            var r = PhysRef(race, L);
-            var p = Proposed(race, L);
-            float refDps = PhysSwingDps(r, mob);
-            float per = MagicSwingDpsPerPower(p, mob);
-            float pow = refDps / Math.Max(1e-6f, per);
-            swingPower[(race, L)] = pow;
-            string wpn = race switch { Race.Human => "mace", Race.Demon => "maul", _ => "fangs" };
-            Console.WriteLine($"   {L,3} {race,-6} | {wpn,-14} {(int)r.EffectiveAttack,6} {AutoAttackSeconds(r),5:0.00} {refDps,7:0}"
-                            + $" | {(int)p.EffectiveMagicAttack,6} {p.MagicCritChance,6:P0} {AutoAttackSeconds(p),5:0.00} {per,8:0.00}"
-                            + $" | {pow,6:0}");
-        }
-    }
-
-    // ── B. THE SKILLS, PRICED TO A HEALER'S ROTATION ───────────────────────────────────────────
-    Console.WriteLine();
-    Console.WriteLine("── B. ROTATION DPS — the target is the HEALER (Lightbringer); nuker/warrior shown for scale ──");
-    Console.WriteLine("   rotation = best repeatable skill + the class's own swing in the reuse gap.");
-    Console.WriteLine("   Proposed skills keep TODAY's authored cast/reuse, now on CAST speed (they become spells);");
-    Console.WriteLine("   Acoustic Shock is held at 0.9× Smash (today's 1800/2000); Magic Stab at 40% success (×0.60).");
-    foreach (int L in mmLevels)
-    {
-        var mob = BuildMobEntity(L);
-        bool f4 = L >= 76;
         var healer = BuildPlayer(Race.Human, BaseClass.Mage, L, healer: true, discipline: Discipline.Lightbringer,
-                                 fourth: f4, npcBuffed: mmBuffed);
-        var nuker = BuildPlayer(Race.Human, BaseClass.Mage, L, discipline: Discipline.Magus, fourth: f4, npcBuffed: mmBuffed);
-        var warrior = BuildPlayer(Race.Human, BaseClass.Fighter, L, warrior: true, discipline: Discipline.Ravager,
-                                  secondClass: 14, fourth: f4, npcBuffed: mmBuffed);
-        var (hD, hN) = Rotation(healer, mob, true);
-        var (nD, nN) = Rotation(nuker, mob, true);
-        var (wD, wN) = Rotation(warrior, mob, false);
-        Console.WriteLine();
-        Console.WriteLine($"   -- level {L}   mob HP {mob.MaxHp}   (cast mult: healer ×{healer.EffectiveCastSpeedMultiplier:0.00}, nuker ×{nuker.EffectiveCastSpeedMultiplier:0.00})");
-        Console.WriteLine($"      HEALER  {hD,6:0} DPS  [{hN}]   ← TARGET");
-        Console.WriteLine($"      nuker   {nD,6:0} DPS  [{nN}]");
-        Console.WriteLine($"      warrior {wD,6:0} DPS  [{wN}]");
+                                 fourth: L >= 76, npcBuffed: mmBuffed);
+        float hD = HealerRotation(healer, mob);
         foreach (var race in new[] { Race.Human, Race.Demon, Race.Elf })
         {
-            var today = BuildWarchanter(race, L, fourth: L >= 76);
-            AddRune(today, SkillCatalog.WarRuneBuff); today.RecomputeDerived();
-            if (mmBuffed) ApplyNpcBuffs(today, fullShelf: true);
-            var (tD, tN) = Rotation(today, mob, false);
-
-            var p = Proposed(race, L);
-            float swing = swingPower[(race, L)] * MagicSwingDpsPerPower(p, mob);
-            // This race's skills, at the rung it holds at this level, weighted by his ratio.
-            var kit = race switch
-            {
-                Race.Human => new[] { (SkillCatalog.SoundSmash, 1f) },
-                Race.Demon => new[] { (SkillCatalog.SoundSmash, 1f), (SkillCatalog.AcousticShock, 0.9f) },
-                _          => new[] { (SkillCatalog.SoundBurst, 1f) },
-            };
-            float unit = 0f, castSum = 0f, reuse = 0f;
-            var timing = new List<string>();
-            foreach (var (id, w) in kit)
-            {
-                if (SkillCatalog.Get(id) is not { } d) continue;
-                int lvl = Math.Max(1, p.SkillLevelOf(id));
-                var (c, r) = Timing(p, d, lvl, magic: true);
-                castSum += c; reuse = Math.Max(reuse, r);
-                float keep = id == SkillCatalog.SoundBurst ? 0.60f : FizzleKeep(p, mob);
-                unit += w * MagicPerPower(p, mob) * keep;
-                timing.Add($"{d.Name} {c:0.00}s+{r:0.0}s");
-            }
-            float c0 = castSum / kit.Length;
-            float cycle = Math.Max(c0 + reuse, castSum);
-            float swingTime = cycle - castSum;
-            float need = (hD * cycle - swing * swingTime) / Math.Max(1e-6f, unit);
-            string verdict = need <= 0 ? "SWING ALONE ≥ HEALER — no room for skill damage" : $"skill POWER {need,6:0}";
-            Console.WriteLine($"      {race,-6} today {tD,6:0} DPS [{tN}]");
-            Console.WriteLine($"             proposed: swing {swing,6:0} DPS, cast ×{p.EffectiveCastSpeedMultiplier:0.00}, cycle {cycle:0.00}s"
-                            + $" ({string.Join(", ", timing)})  →  {verdict}");
+            var p = Built(race, L);
+            var (rot, note) = WarchanterRotation(p, race, mob);
+            Console.WriteLine($"   {L,3} {race,-6} | {p.MagicSwingPower,5} {(int)p.EffectiveMagicAttack,6} {p.MagicCritChance,6:P0}"
+                            + $" {AutoAttackSeconds(p),5:0.00} {MagicSwingDps(p, mob),6:0} | {rot,8:0} {hD,7:0} {rot / Math.Max(1f, hD),6:0.00} | {note}");
         }
     }
 
-    // ── C. THE TOGGLE'S P.DEF ──────────────────────────────────────────────────────────────────
     Console.WriteLine();
-    Console.WriteLine("── C. TOGGLE P.DEF — robe vs the same character in heavy (light for the elf), and vs TODAY ──");
-    Console.WriteLine("   gap = final P.Def to restore. 'authored' = the flat P.Def a toggle rung must carry to close it");
-    Console.WriteLine("   (flats sit before the % passives, so one authored point is worth more than one final point).");
-    Console.WriteLine($"   {"lvl",3} {"race",-6} | {"robe",6} {"in heavy/light",14} {"today",6} | {"gap(items)",10} {"gap(today)",10} | {"1 pt =",6} {"authored",8} | {"eva robe",8} {"eva today",9}");
+    Console.WriteLine("── C. THE TOGGLES — P.Def / evasion / M.Atk with Reinforcement (R) and Sharpening (S) lit ──");
+    Console.WriteLine($"   {"lvl",3} {"race",-6} | {"P.Def",6} {"+R",6} {"+R+S",6} | {"eva",4} {"+S",4} | {"M.Atk",6} {"+S",6} | {"acc",4} {"+S",4} | {"MP cost x",9}");
+    foreach (int L in mmLevels)
+        foreach (var race in new[] { Race.Human, Race.Demon, Race.Elf })
+        {
+            var off = Built(race, L);
+            var r = Built(race, L, reinforce: true);
+            var rs = Built(race, L, reinforce: true, sharpen: true);
+            var s = Built(race, L, sharpen: true);
+            // GameLoopService.MpCostFactor for a magic skill: 1 − the MAGIC MP-cost reduction.
+            float mpOff = 1f - off.MagicMpCostReduction, mpOn = 1f - rs.MagicMpCostReduction;
+            Console.WriteLine($"   {L,3} {race,-6} | {off.EffectiveDefence,6:0} {r.EffectiveDefence,6:0} {rs.EffectiveDefence,6:0}"
+                            + $" | {off.EffectiveEvasion,4:0} {s.EffectiveEvasion,4:0} | {(int)off.EffectiveMagicAttack,6} {(int)s.EffectiveMagicAttack,6}"
+                            + $" | {off.EffectiveAccuracy,4:0} {s.EffectiveAccuracy,4:0} | {mpOn / mpOff,9:0.00}");
+        }
+
+    Console.WriteLine();
+    Console.WriteLine("── D. MAGIC STAB — fail at parity, the real entity, Sharpening off / on ──");
     foreach (int L in mmLevels)
     {
-        int t = GearTier(L);
-        foreach (var race in new[] { Race.Human, Race.Demon, Race.Elf })
-        {
-            var robe = Proposed(race, L);
-            var armoured = Proposed(race, L, race == Race.Elf ? $"light_t{t}" : $"heavy_t{t}");
-            var today = BuildWarchanter(race, L, fourth: L >= 76);
-            if (mmBuffed) ApplyNpcBuffs(today, fullShelf: true);
-            // What ONE authored flat point buys in final P.Def, measured with a probe buff of +100.
-            var probe = Proposed(race, L);
-            probe.Buffs.Add(new Game.Server.Simulation.BuffInstance
-            {
-                Effect = SkillEffect.BuffDef,
-                Magnitudes = new[] { new EffectMagnitude(SkillEffect.BuffDef, 100f, ModifierMode.Flat) },
-                TicksRemaining = int.MaxValue, Name = "probe", Key = "probe_pdef",
-            });
-            probe.RecomputeDerived(); DualProficiency(probe);
-            float perPt = (probe.EffectiveDefence - robe.EffectiveDefence) / 100f;
-            float gapItems = armoured.EffectiveDefence - robe.EffectiveDefence;
-            float gapToday = today.EffectiveDefence - robe.EffectiveDefence;
-            Console.WriteLine($"   {L,3} {race,-6} | {robe.EffectiveDefence,6:0} {armoured.EffectiveDefence,14:0} {today.EffectiveDefence,6:0}"
-                            + $" | {gapItems,10:0} {gapToday,10:0} | {perPt,6:0.00} {gapItems / Math.Max(1e-6f, perPt),8:0}"
-                            + $" | {robe.EffectiveEvasion,8:0} {today.EffectiveEvasion,9:0}");
-        }
-    }
-
-    // ── D. MAGIC STAB'S FAIL ───────────────────────────────────────────────────────────────────
-    Console.WriteLine();
-    Console.WriteLine("── D. MAGIC STAB — fail = the normal curve + the skill's own POINTS; the toggle grants M.Accuracy ──");
-    Console.WriteLine("   ADDED points keep the level curve (it still varies) without exploding: a ×60 MULTIPLIER on the");
-    Console.WriteLine("   1-point parity would read 60% at parity and hit the 95% cap two levels up (shown for contrast).");
-    Console.WriteLine("   avg = (1-fail) + fail/3, the share of the power an average cast lands.");
-    Console.WriteLine($"   {"Δlvl",4} | {"normal",6} | {"+59 pts",7} {"avg",5} | {"toggle −20",10} {"avg",5} | {"×60 mult",8}");
-    for (int dl = -3; dl <= 8; dl++)
-    {
-        float baseF = StatCalculator.MagicFailChance(80, 80 + dl);
-        float off = Math.Clamp(baseF + 0.59f, 0f, StatCaps.MagicFailMax);
-        float on = Math.Clamp(baseF + 0.59f - 0.20f, 0f, StatCaps.MagicFailMax);
-        float mult = StatCalculator.MagicFailChance(80, 80 + dl, weaponMod: 60f);
-        Console.WriteLine($"   {dl,4:+0;-0;0} | {baseF,6:P0} | {off,7:P0} {(1 - off) + off / 3,5:0.00} | {on,10:P0} {(1 - on) + on / 3,5:0.00} | {mult,8:P0}");
+        var mob = BuildMobEntity(L);
+        var off = Built(Race.Elf, L);
+        var on = Built(Race.Elf, L, sharpen: true);
+        float pts = SkillCatalog.Get(SkillCatalog.MagicStab)!.MagicFailPoints;
+        Console.WriteLine($"   {L,3}  fail off {FizzleChance(off, mob, pts),5:P0} (avg {FizzleKeep(off, mob, pts):0.00})"
+                        + $"   on {FizzleChance(on, mob, pts),5:P0} (avg {FizzleKeep(on, mob, pts):0.00})");
     }
     return;
 }
@@ -8679,9 +8572,10 @@ static Entity BuildWarchanter(Race race, int level, int? atkOverride = null,
     if (disc != Discipline.Warchanter) { Equip(e, $"staff_t{t}"); Equip(e, $"robe_t{t}"); }
     else switch (race)
     {
-        case Race.Human: Equip(e, $"blunt1h_t{t}"); Equip(e, $"shield_t{t}"); Equip(e, $"heavy_t{t}"); break;
-        case Race.Demon:   Equip(e, $"blunt2h_t{t}"); Equip(e, $"heavy_t{t}"); break;
-        default:         Equip(e, $"bow_t{t}");     Equip(e, $"light_t{t}"); break;
+        // `BL-335` (0.230.0): every Warchanter wears a ROBE and holds a magic weapon.
+        case Race.Human: Equip(e, $"wand_t{t}");  Equip(e, $"shield_t{t}"); Equip(e, $"robe_t{t}"); break;
+        case Race.Demon: Equip(e, $"staff_t{t}"); Equip(e, $"robe_t{t}"); break;
+        default:         Equip(e, $"duals_t{t}"); Equip(e, $"robe_t{t}"); break;
     }
     foreach (var acc in new[] { "helm", "gloves", "boots" }) Equip(e, $"{acc}_t{t}");
     Equip(e, $"necklace_t{t}");

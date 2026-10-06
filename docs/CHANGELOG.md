@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.229.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.230.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,36 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-06 (latest) — 0.229.4: the race bolts deal half damage to players too
+## 2026-10-06 (latest) — 0.230.0: the Warchanter hits with MAGIC (`BL-335`)
+
+**Server restart + APK** (the Learn tab is built from the compiled class tables). **Delete `game.db`** or make a new
+Warchanter: an old one still holds the masteries this removed.
+
+- **His go:** *"start to build .. change the csvs with what we talked .. then interpolate the numbers in between and the
+  bl-336 can wait"*. The design is `docs/design/MagicMeleeBuffers.md`; **§9 lists every number that is mine**.
+- **All three wear a ROBE and hit through magic.** Human: wand + shield, Sound Smash. Demon: battlestaff, Sound Smash +
+  Acoustic Shock. Elf: duals, **Magic Stab** (replaces Sound Burst: melee, one hit, +59 fail points ≈ 60% fizzle at
+  parity).
+- **Resonant Strikes (`magic_swing`)** turns the BASIC ATTACK into a magic hit. It keeps the miss roll, uses magic crit,
+  is never blocked, spends the Spell Rune, stays in the basic damage bucket and still drains with both vampirisms.
+  One id: each race climbs its own rungs (power 10-26).
+- The damage skills are **single-hit magic spells**, priced so each race's rotation sits on the HEALER's
+  (`--magicmelee`: ×0.96-1.04 at 40-90). Acoustic Shock's stun is a magic debuff now (resisted with SPT).
+- **Two toggles per race**, each +15% skill MP and 2 → 8 MP/s. **Reinforcement** is P.Def as a PERCENT plus the lost
+  crit/bow resists. **Sharpening** is gated to the weapon: the Human's shield numbers (and it goes dark without the
+  shield), the Demon's M.Atk + accuracy, the Elf's evasion + spell damage + 20 M.Accuracy.
+- **Removed from the class:** heavy/light/weapon/bow masteries, Heavy Caster Mastery, the crit resists, Hit Rate
+  Mastery, Shield Mastery, Bow Proficiency, Bow Expertise. **Mana Vampirism** is gated to blunt|duals and reaches 9% for
+  every race. **Combo Mastery** is one id per race (3% / 3.5% / 2.6%). **Monster Knowledge** goes to the elf too.
+  **Harmonist Dual Proficiency** replaces the bow one.
+- New ids: `magic_swing`, `magic_stab`, `sound_smash_demon`, `harmonist_dual_proficiency`, `reinforcement_demon/_elf`,
+  `sharpening_demon/_elf`, `combo_mastery_demon/_elf`. Gone: `sound_burst`, `harmonist_bow_proficiency`.
+- Engine: `SkillDef.MagicFailPoints` (a skill's own fizzle points), `Entity.MagicSwingPower`, the magic branch in
+  `ResolveBasicSwing`. A shield-gated buff is now suppressed without a shield. `docs/Formulas.md` updated.
+- `--check` clean; SP repriced (`--reprice-sp`); `--gen-faces`; `debuff_landmods.csv` regenerated; skill icons for the
+  new ids. `BL-335` → archive. `BL-336` (no-refresh stuns) stays open, deferred by him.
+
+## 2026-10-06 — 0.229.4: the race bolts deal half damage to players too
 
 **Server restart** for the damage; **APK** for the skill text. No `game.db` delete.
 

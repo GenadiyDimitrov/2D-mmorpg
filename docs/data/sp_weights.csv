@@ -72,9 +72,10 @@ champion_presence,Champion Presence,buff,1,default
 charge_n_shock,Charge n Shock,debuff,1.5,default
 charm,Charm,debuff,1.5,default
 charming_whisp,Charming Whisp,buff,1,default
-cleric_heavy_armor_mastery,Heavy Caster Mastery,passive,0.33,default
 clerics_light_armor_mastery,Light Caster Mastery,passive,0.33,default
 combo_mastery,Combo Mastery,passive,0.33,default
+combo_mastery_demon,Combo Mastery,passive,0.33,default
+combo_mastery_elf,Combo Mastery,passive,0.33,default
 conceal,Conceal,buff,1,default
 cooldown_mastery,Cooldown Mastery,passive,0.33,default
 crippling_shout,Crippling Shout,debuff,1.5,default
@@ -124,7 +125,7 @@ gravity,Gravity,debuff,1.5,default
 great_bulwark,Great Bulwark,buff,1,default
 great_heal,Great Heal,heal,1.5,default
 great_might,Great Might,buff,1,default
-harmonist_bow_proficiency,Harmonist Bow Proficiency,passive,0.33,default
+harmonist_dual_proficiency,Harmonist Dual Proficiency,passive,0.33,default
 harmony_mark,Harmony Mark,buff,1,default
 harmony_of_madness,Harmony of Madness,buff,1,default
 harmony_of_restoration,Harmony of Restoration,heal,1.5,default
@@ -180,6 +181,8 @@ mage_shield_mastery,Mage Shield Mastery,passive,0.33,default
 magic_bolt,Magic Bolt,magic,1.5,default
 magic_protection,Magic Protection,passive,0.33,default
 magic_resistance,Magic Resistance,passive,0.33,default
+magic_stab,Magic Stab,magic,1.5,default
+magic_swing,Resonant Strikes,passive,0.33,default
 magic_wall,Magic Wall,buff,1,default
 magical_armor,Magical Armor,buff,1,default
 mana_barrier,Mana Barrier,buff,1,default
@@ -222,6 +225,8 @@ quick_bolt,Quick Bolt,magic,1.5,default
 quick_great_heal,Quick Great Heal,heal,1.5,default
 quick_heal,Quick Heal,heal,1.5,default
 reinforcement,Reinforcement,buff,1,default
+reinforcement_demon,Reinforcement,buff,1,default
+reinforcement_elf,Reinforcement,buff,1,default
 restore_mana,Restore Mana,heal,1.5,default
 restore_spirit,Restore Spirit,heal,1.5,default
 resurrection,Resurrection,heal,1.5,default
@@ -240,6 +245,8 @@ rouge_huamn_pahantom_jump,Phantom Jump,debuff,1.5,default
 saints_blessing,Saints Blessing,buff,1,default
 saints_presence,Saints Presence,buff,1,default
 sharpening,Sharpening,buff,1,default
+sharpening_demon,Sharpening,buff,1,default
+sharpening_elf,Sharpening,buff,1,default
 shattering_shout,Shattaring Shout,debuff,1.5,default
 shield_shock,Shield Shock,debuff,1.5,default
 shield_smash_power,Shield Smash - Power,physical,1.5,default
@@ -252,8 +259,8 @@ signal_flare,Signal Flare,physical,1,owner
 silencing_shock,Silencing Shock,debuff,1.5,default
 single_mark,Single Mark,buff,1,default
 smash,Smash,physical,1.5,default
-sound_burst,Sound Burst,physical,1.5,default
 sound_smash,Sound Smash,physical,1.5,default
+sound_smash_demon,Sound Smash,magic,1.5,default
 spellcaster_mastery,Spellcaster Mastery,passive,0.33,default
 spellcaster_weapon_mastery,Spellcaster Weapon Mastery,passive,0.33,default
 spirit_restoration,Spirit Restoration,heal,1.5,default

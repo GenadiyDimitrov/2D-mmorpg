@@ -16,8 +16,16 @@ Not here on purpose: the *reasoning* behind each choice (that is in the code com
 PhysicalDamage = 77 * (pAtk + power) / pDef                  min 1
 MagicDamage    = 91 * power * sqrt(mAtk) / mDef              min 1
 BasicAttack    = PhysicalDamage with power = 0
+MagicSwing     = MagicDamage with power = the Resonant Strikes rung   (Warchanter, `BL-335`)
 ManaDrain      = targetMaxMp * power / 1000                  power is PER MILLE
 ```
+
+- 🔑 **THE WARCHANTER'S BASIC ATTACK IS MAGIC** (`BL-335`, 0.230.0). Holding `magic_swing` (Resonant Strikes),
+  the swing keeps the ordinary accuracy-vs-evasion MISS roll, but its damage is `MagicDamage` at the rung's power
+  (10-26), its crit is the MAGIC one (`MagicCritChance`, `EffectiveMagicCritDamage`), it is **never blocked**, it
+  spends the **Spell Rune**, and it stays in the **BASIC** damage-out bucket (a spell-damage buff does not raise it).
+  Vampirism and Mana Vampirism pay off it exactly as off a physical swing. `GameLoopService.ResolveBasicSwing`,
+  `Entity.MagicSwingPower`.
 
 - **Defence is a DIVISOR, never a subtraction** — diminishing returns, and it can never zero a hit.
 - `pDef` / `mDef` are multiplied by a resistance coefficient first, then floored at 1:
@@ -322,6 +330,7 @@ which drove buff/debuff duration doubling off the *damage* number.
 ```
 failPoints = round( 1.0 * 1.3^(targetLevel - RUNG'sLearnLevel) * defenderMod * weaponMod )
            + defenderMagicEvasion            flat percentage POINTS
+           + skill.MagicFailPoints           flat percentage POINTS (Magic Stab: 59)
            - casterMagicAccuracy             flat percentage POINTS
 failChance = clamp(failPoints / 100, 0, 0.95)
 ```
@@ -331,6 +340,9 @@ failChance = clamp(failPoints / 100, 0, 0.95)
   authored at 40 fizzles like a 40. That is what makes a skill ladder matter.
 - **A fizzle is not a miss**: it still lands `damage / 3`.
 - `SureHit` skips this entirely (the three level-74 nuker bursts).
+- **A skill's own fail points** (`SkillDef.MagicFailPoints`, `BL-335`) add to the roll like M.Evasion does. Only the
+  elf Warchanter's Magic Stab carries them: 59 → 60% at parity, still following the level curve; its Sharpening's
+  +20 M.Acc takes it to 40%.
 - ⚠ M.Acc / M.Evasion are FLAT POINTS, not levels — 4 points is worth ~6 levels near parity and
   ~0.2 levels at the top of the curve, because the curve is exponential and the points are not.
 

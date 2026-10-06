@@ -1045,7 +1045,12 @@ public record SkillDef(
     /// the passive walks down to rung 1 and pays that. Entity.RecomputeDerived reads it; nothing else needs to.
     /// ⚠ It walks down through every rung below the one owned, which is only right because every class that climbs
     /// this ladder climbs it from rung 1. Keep it off a ladder whose lower rungs are other classes' own.</summary>
-    bool PayHighestGatedRung = false)
+    bool PayHighestGatedRung = false,
+    /// <summary>`BL-335` — the skill's OWN fizzle, in percentage POINTS, added to the ordinary
+    /// <see cref="StatCalculator.MagicFailChance"/> roll (the same slot the defender's M.Evasion uses). The
+    /// elf Warchanter's Magic Stab is the only author: +59 reads ~60% at parity and still follows the level
+    /// curve, which a multiplier would not (×60 hits the 95% cap two levels up). M.Accuracy takes it back.</summary>
+    float MagicFailPoints = 0f)
 {
     /// <summary>Hash on the ID alone — and this override MUST stay.
     ///

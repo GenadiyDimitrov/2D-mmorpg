@@ -633,6 +633,13 @@ public class Entity
     /// <summary>The learned level of a skill, or 0 if not known.</summary>
     public int SkillLevelOf(string id) => LearnedSkills.GetValueOrDefault(id);
 
+    /// <summary>`BL-335` — the POWER the basic attack resolves at as a MAGIC hit, from the Warchanter's
+    /// <see cref="SkillCatalog.MagicSwing"/> rung; 0 = an ordinary physical swing. Ungated on purpose: a
+    /// mace still swings magic, it simply has less M.Atk to do it with.</summary>
+    public int MagicSwingPower =>
+        SkillLevelOf(SkillCatalog.MagicSwing) is int l && l > 0 && SkillCatalog.Get(SkillCatalog.MagicSwing) is { } d
+            ? d.PowerAt(l) : 0;
+
     /// <summary>`BL-314` — the highest rung at or below <paramref name="owned"/> whose weapon gate the equipped weapon
     /// meets, or 0 when none does. See <see cref="SkillDef.PayHighestGatedRung"/>.</summary>
     private int HighestGatedRung(SkillDef def, int owned)
@@ -3044,12 +3051,16 @@ public class Entity
             //    victim, a bow-gated Root on a mob without a bow was suppressed the tick it landed.
             if (string.IsNullOrEmpty(b.SkillId) || b.IsDebuff) { b.Suppressed = false; continue; }
             var def = SkillCatalog.Get(b.SkillId);
-            if (def is null || (def.RequiredWeapon == WeaponType.None && def.RequiredHands == WeaponHands.Any))
+            // `BL-335` — …and a SHIELD-gated one (the Human Warchanter's Sharpening) goes dark without
+            // the shield, exactly as a weapon-gated one does without its weapon.
+            bool needsShield = def?.RequiredShield == ShieldGate.Required;
+            if (def is null || (def.RequiredWeapon == WeaponType.None && def.RequiredHands == WeaponHands.Any && !needsShield))
             {
                 b.Suppressed = false;
                 continue;
             }
-            b.Suppressed = !WeaponType.Satisfies(def.RequiredWeapon, def.RequiredHands);
+            b.Suppressed = !WeaponType.Satisfies(def.RequiredWeapon, def.RequiredHands)
+                        || (needsShield && !HasShield);
         }
     }
 
