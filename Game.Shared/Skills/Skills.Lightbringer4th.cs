@@ -77,6 +77,18 @@ public static partial class SkillCatalog
         return (HealerFourthSp[b], HealerFourthGold[b]);
     }
 
+    /// <summary>The STEALTH HYMNS' rungs 2-16, one a level at 76…90 (owner, 2026-10-06): the move-speed price eases 2%
+    /// a level from the 3rd tier's 50%, to 20% at 90, and they cost HALF a normal skill's SP and gold (*"sp cost/gold
+    /// cost half of a normal skill"*). Shrouding Hymn (the party's) and Conceal (the healer's, self only) share it.</summary>
+    internal static SkillLevel[] StealthFourthRungs(int mp, string promise) =>
+        Enumerable.Range(0, 15).Select(i =>
+        {
+            var (sp, gold) = F4(i, 1);
+            float cut = 0.48f - 0.02f * i;
+            return new SkillLevel(MpCost: mp, SpCost: sp / 2, GoldCost: gold / 2, MoveSpeedPenaltyPct: cut,
+                Description: $"For 20 minutes, {promise} Move speed -{cut * 100:0}%.");
+        }).ToArray();
+
     /// <summary>The same, for a skill first LEARNED at <paramref name="level"/>.</summary>
     private static (int Sp, int Gold) F4New(int level)
     {

@@ -576,7 +576,7 @@ internal static class Descr
             // four Mark rows. Another FIELD (SkillDef.MoveSpeedPenaltyPct), so without this line the
             // number he authored reads as UNCHECKED forever. Offered POSITIVE under the `ms` key: his
             // cell says "Decrease … with 10%", i.e. the sign is in the word, not in the number.
-            Add("ms", true, def.MoveSpeedPenaltyPct);
+            Add("ms", true, def.MoveSpeedPenaltyPctAt(level));
             // MAGIC crit rate RECEIVED — pooled with the physical one; see the `critrateres` aliases.
             Add("critrateres", true, def.MagicCritRateDebuffAt(level));
             // `BL-210` — MAGIC crit DAMAGE, a FIELD for the usual reason (SkillEffect has had no bits

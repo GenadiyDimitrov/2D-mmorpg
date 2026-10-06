@@ -389,8 +389,8 @@ if (args.Length > 0 && args[0] == "--magicmelee")
     };
     static string[] Kit(Race race) => race switch
     {
-        Race.Human => new[] { SkillCatalog.SoundSmash },
-        Race.Demon => new[] { SkillCatalog.SoundSmashDemon, SkillCatalog.AcousticShock },
+        Race.Human => new[] { SkillCatalog.SoundSmash, SkillCatalog.AcousticBash },
+        Race.Demon => new[] { SkillCatalog.SoundSmash, SkillCatalog.AcousticShock },
         _          => new[] { SkillCatalog.MagicStab },
     };
     Entity Built(Race race, int L, bool reinforce = false, bool sharpen = false)

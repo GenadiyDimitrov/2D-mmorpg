@@ -34,6 +34,10 @@ internal static class Check
     private static readonly System.Text.RegularExpressions.Regex CostIncrease =
         new(@"increas\w*[^.;]{0,40}(mp|mana)\s*consumption",
             System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    /// <summary>"Decrease movement speed with N%" — a move-speed PRICE, so a falling number is the rung doing its job.</summary>
+    private static readonly System.Text.RegularExpressions.Regex SpeedDecrease =
+        new(@"decreas\w*\s+(movement|move)\s*speed",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
     private static string Num(float v, bool pct) =>
         pct ? (v * 100f).ToString("0.##", CultureInfo.InvariantCulture) + "%"
@@ -840,6 +844,11 @@ internal static class Check
                     // reports.
                     if (parts[0] == "mpcost"
                         && CostIncrease.IsMatch(a[p].Descr) && CostIncrease.IsMatch(a[i].Descr))
+                        continue;
+                    // …and the MOVE-SPEED twin (2026-10-06): the stealth hymns' price eases 50% → 20% across the
+                    // 4th tier, written "Decrease movement speed with N%" on every rung. Same gate on both rungs.
+                    if (parts[0] == "ms"
+                        && SpeedDecrease.IsMatch(a[p].Descr) && SpeedDecrease.IsMatch(a[i].Descr))
                         continue;
                     string scope = parts[2].Length == 0 ? "" : $" [{parts[2]}]";
                     Console.WriteLine($"  🔵 LADDER DIP      {label}{scope} {parts[0]}: " +

@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.230.5**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.231.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,46 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-06 (latest) — 0.230.5: the buffers' strikes retuned, and no ranged nuke left
+## 2026-10-06 (latest) — 0.231.0: buffers hit like healers, one Sound Smash, Acoustic Bash, 20-minute stealth
+
+**APK** (class tables + skill defs) + server restart. 🔴 **`game.db` delete advised**: `sound_smash_demon` is retired, so
+a Demon who learned it loses it on load and must buy `sound_smash` again (pre-release, the delete is the migration).
+
+- **His second pass:** *"Buffers can farm but not stronger in pvp. They are annoying but not strong."* and *"With
+  those changes the buffers won't go far from healers in dmg and are more party oriented to farm now."*
+- **ONE Sound Smash** (*"no point in two different skills ... Same cd and power"*): Human and Demon both learn
+  `sound_smash`, any blunt, either hand. `sound_smash_demon` is gone (code, both buffer CSVs, `sp_weights.csv`,
+  `skill_icons.csv`).
+- **Power = Holy Ray, rung for rung** (42 at 40 → 109 at 90) for Sound Smash and Acoustic Shock, both on a **10s**
+  reuse (was 3s). **Magic Stab = Holy Ray ×1.5** (63 → 164; *"at 90 about 160ish"*), reuse unchanged at 5s.
+- **Half power in PvP** on Smash, Shock, Stab and the new Bash (`PvpDamageMult` 0.5, "Power in PVP x0.5" on the rows).
+- **NEW: Acoustic Bash** (`acoustic_bash`, Human only, shield-gated): Holy Ray power, 5s magic stun, 10s reuse, and
+  **aggro = half the tank's Taunt at the same level** (3,250 at 40 → 9,000 at 90; odd 4th-tier levels take the midpoint),
+  paid whether or not the stun lands. Threat only, no target lock: a non-taunt skill with `TauntPower` now pays it
+  through the charm's unconditional `AddThreat` (`GameLoopService`). Like every threat skill it is never auto-cast.
+  Default `x1` debuff modifier in `debuff_landmods.csv`, waiting on your number. ⚠ Its damage is mine: you named the
+  stun, shield and aggro; I gave it Acoustic Shock's power so the Human has two strikes like the Demon.
+- **Demon Sharpening lost its M.Atk %** (*"Demon basic attacks do alot of dmg"*): accuracy only now.
+- **Fixed reuse** on Frost Spikes, Vampiric Bolt and Over the Limit (`FixedCooldown`; "Reuse is fixed" on the
+  `mage 1st.csv` rows): reuse buffs no longer shorten them. ⚠ The two bolts' reuse is 1s, so for them this changes
+  almost nothing; their spam comes from cast speed.
+- 🔴 **The Vampiric Bolt bug:** 0.230.5 said Sound Smash retired Vampiric Bolt, and it did not. The file was restored
+  mid-edit and the re-applied Smash line silently failed to match; `--check` does not compare REPLACES, so nothing
+  caught it. Now verified in the catalog: Smash retires `human_vampiric_bolt`, Stab `frost_spikes`, and "give all
+  skills" removes both (it applies every replace chain).
+- **Admin full buff gives no self buffs** (*"Like over the limit and monster knowledge and bow whatever"*):
+  `AdminBuffSet` drops every `SelfOnly` buff, so the Full Buffs button and `/buff` both lose them. They stay in the
+  per-buff drawers for testing.
+- **Shrouding Hymn and Conceal: 20 minutes, in the buff limit, −50% move speed** easing 2% a level across 76-90 to
+  −20% at 90, at **half** a normal skill's SP (weight 0.5) and gold. Conceal (healer, self only) is the same deal, a
+  new 15-rung 4th tier in `healer 4th.csv`; Shrouding Hymn's is in `buffer 4th.csv`. The penalty is now PER RUNG
+  (`SkillLevel.MoveSpeedPenaltyPct`, `SkillDef.MoveSpeedPenaltyPctAt`), and `--check` reads a falling
+  "Decrease movement speed" as a price easing, not a dip. ⚠ Conceal's row still says "Increase mana consumption by
+  50%"; the code has never charged that. Left as you wrote it.
+- **Measured** (`--magicmelee`, unbuffed, vs the Lightbringer): Human and Demon ×1.2 at 40 falling to ×0.8 at 76-90;
+  the Elf ×0.8 → ×0.6, because Stab's own +59 fail points eat most of its ×1.5.
+
+## 2026-10-06 — 0.230.5: the buffers' strikes retuned, and no ranged nuke left
 
 **APK** (the Learn tab is built from the compiled class tables and skill defs) + server restart. No `game.db` delete of
 its own: a character who already holds Vampiric Bolt / Frost Spikes loses them on the next login if he owns the

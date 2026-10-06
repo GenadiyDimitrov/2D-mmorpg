@@ -375,9 +375,13 @@ public static partial class SkillCatalog
 
         // Keep only what is actually a TIMED BUFF. One test drops his attack skills, his heals, his
         // totems and every passive — and it is the test that keeps this honest as the kit grows.
+        // 🔑 NO SELF BUFFS (owner, 2026-10-06: *"Admin's fullbuff should not give any slef buff ... Like over the
+        //    limit and monster knowledge and bow whatever"*). A full buff is what a buffer gives SOMEONE ELSE;
+        //    a self-only buff is the caster's own button, so it never belongs on another character's bar.
         bool IsGrantableBuff(string id) =>
             !AdminBuffSkip.Contains(id)
-            && Get(id) is { Category: SkillCategory.Buff, DurationTicks: > 0 };
+            && Get(id) is { Category: SkillCategory.Buff, DurationTicks: > 0 } d
+            && d.TargetMode != TargetMode.SelfOnly;
 
         bool IsGroup(string id) =>
             Get(id) is SkillDef d && d.ChildBuffsAt(d.MaxLevel) is { Length: > 1 };

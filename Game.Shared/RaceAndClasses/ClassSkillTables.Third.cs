@@ -496,6 +496,7 @@ public static partial class ClassSkillTables
         var human = new List<ClassSkill>(kit2);
         human.AddRange(Swing((40, 12), (52, 13), (58, 14)));
         human.AddRange(Ladder(SoundSmash, band13));
+        human.AddRange(Ladder(AcousticBash, band13));
         human.AddRange(Ladder(Reinforcement, band13));
         human.AddRange(Ladder(Sharpening, band13));
         human.AddRange(Ladder(ComboMastery, new[] { 52, 64, 74 }));
@@ -513,7 +514,7 @@ public static partial class ClassSkillTables
         //      skill"*): Sound Smash and the stunning Acoustic Shock. -----------------------------------
         var demon = new List<ClassSkill>(kit2);
         demon.AddRange(Swing((40, 13), (52, 15), (60, 16), (64, 17)));
-        demon.AddRange(Ladder(SoundSmashDemon, band13));
+        demon.AddRange(Ladder(SoundSmash, band13));
         demon.AddRange(Ladder(AcousticShock, band13));
         demon.AddRange(Ladder(ReinforcementDemon, band13));
         demon.AddRange(Ladder(SharpeningDemon, band13));

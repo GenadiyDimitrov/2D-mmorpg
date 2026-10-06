@@ -13912,7 +13912,11 @@ public class GameLoopService : BackgroundService
         //      crucially, it retargets ONLY by the ordinary threat rules. A charm must not force a
         //      target change (*"dont change target like taunt"*); it just puts points on the table
         //      and lets them speak. A taunt LOCK already in force still wins, as it should.
-        if (def.Charms && target.Kind == EntityKind.Mob && !target.TrainingDummy)
+        //      🔑 THE SAME UNCONDITIONAL PAYMENT for any NON-taunt skill that carries TauntPower — the Human
+        //      Warchanter's Acoustic Bash (owner, 2026-10-06: *"if fail the stun the taunt value is applied
+        //      anyway"*). Threat only: no lock, which stays the Taunt flag's business.
+        bool threatOnHit = !effect.HasFlag(SkillEffect.Taunt) && def.TauntPowerAt(lvl) > 0;
+        if ((def.Charms || threatOnHit) && target.Kind == EntityKind.Mob && !target.TrainingDummy)
         {
             offensive = true;
             int charmThreat = def.TauntPowerAt(lvl);
@@ -14483,10 +14487,9 @@ public class GameLoopService : BackgroundService
             // race buffs climb 10 → 15 → 20% across three rungs, and reading the def's own field
             // would hand rung 1's number to all three.
             BlowRatePct = def.BlowRatePctAt(level),
-            // `BL-238` — the buff's own MOVE-SPEED PRICE (the Marks' −10%). Read off the def rather
-            // than per rung: every Mark charges the same 10% at both its rungs, and a per-rung version
-            // would be a ladder nobody authored.
-            MoveSpeedPenaltyPct = def.MoveSpeedPenaltyPct,
+            // `BL-238` — the buff's own MOVE-SPEED PRICE (the Marks' −10%, flat across rungs). PER RUNG since
+            // the stealth hymns, whose −50% eases to −20% across the 4th tier.
+            MoveSpeedPenaltyPct = def.MoveSpeedPenaltyPctAt(level),   // per rung since the stealth hymns (2026-10-06)
             // Taunting Shout's *"more dmg from blunts"* — PER RUNG, because its two rungs are 10% and
             // 20% and reading the def's own field would hand rung 1's number to both.
             VulnerableToWeapon = def.VulnerableToWeapon,

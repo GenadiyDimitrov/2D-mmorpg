@@ -133,6 +133,8 @@ public static partial class SkillCatalog
             SkillEffect.BuffPhysAtk | SkillEffect.BuffMagAtk | SkillEffect.BuffCritRate
                 | SkillEffect.BuffMagicCritRate | SkillEffect.BuffAtkSpeed | SkillEffect.BuffCastSpeed,
             MpCost: overMp[0], CastTicks: 0, CooldownTicks: 600, Range: 0, Power: 0,
+            // FIXED reuse (owner, 2026-10-06): fully buffed, reuse cuts had it up 10s of every 25s.
+            FixedCooldown: true,
             DurationTicks: 100, BuffKey: "demon_over_limit",
             // 2026-10-02, owner: *"over the limit should not go towards the buff limit ... its a 10s buff"*.
             // It is on a shelf, which puts it in BuffLimitIds; this is the authored veto.
@@ -168,6 +170,7 @@ public static partial class SkillCatalog
         list.Add(new SkillDef(HumanVampiricBolt, "Vampiric Bolt", BaseClass.Mage,
             SkillEffect.MagicDamage,
             MpCost: vampMp[0], CastTicks: 40, CooldownTicks: 10, Range: 600, Power: vampPower[0],
+            FixedCooldown: true,   // owner, 2026-10-06: reuse buffs do not shorten it
             Category: SkillCategory.Magic, SpCost: vampSp[0], Lifesteal: 0.40f,
             // ⚠ PVP POWER ×0.5 (owner, 2026-10-06): *"its a helping in farm not in pvp .. one race/class can be
             // stronger in pve than other .. but the pvp should be balanced"*. The race bolt every human mage keeps;

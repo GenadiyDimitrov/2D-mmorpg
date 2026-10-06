@@ -380,6 +380,8 @@ public static partial class ClassSkillTables
         shared.AddRange(Ladder(GreatHeal,                 HealerFourthBands, 15));
         shared.AddRange(Ladder(PartyGreatHeal,            HealerFourthBands, 15));
         shared.AddRange(Ladder(UltimateHeal,              HealerFourthEven,  10));
+        // Conceal continues every level (owner, 2026-10-06): its move-speed price eases from 50% to 20% at 90.
+        shared.AddRange(Ladder(Conceal,                   HealerFourthBands, 2));
         shared.AddRange(Ladder(UltimatePartyHeal,         HealerFourthEven,  10));
         shared.AddRange(Ladder(ManaRay,                   HealerFourthEven,  11));
         shared.AddRange(Ladder(ManaStrain,                HealerFourthEven,  12));
@@ -491,6 +493,8 @@ public static partial class ClassSkillTables
         // ---- …and every other level ----
         shared.AddRange(Ladder(WcSoulReinforce,       even, 2));
         shared.AddRange(Ladder(WcArcaneFeralProt,     even, 2));
+        // Shrouding Hymn continues every level (owner, 2026-10-06): its move-speed price eases from 50% to 20% at 90.
+        shared.AddRange(Ladder(ShroudingHymn,         all,  2));
 
         // ---- THE HARMONIES. Protection gains a sixth rung; the Wizard's three continue a ladder his
         //      3rd-class file deliberately stopped at 52; Soul and Madness are new skills. ----
@@ -535,6 +539,7 @@ public static partial class ClassSkillTables
         human.Add(new ClassSkill(BufferShieldMastery, 76));
         human.AddRange(Swing((76, 15), (80, 20), (83, 23), (90, 24)));
         human.AddRange(Ladder(SoundSmash,       all,  14));
+        human.AddRange(Ladder(AcousticBash,     all,  14));
         human.AddRange(Ladder(Reinforcement,    even, 14));
         human.AddRange(Ladder(Sharpening,       even, 14));
 
@@ -548,7 +553,7 @@ public static partial class ClassSkillTables
         // ---- DEMON: battlestaff, two damage spells as always. ----
         var demon = new List<ClassSkill>(shared);
         demon.AddRange(Swing((76, 18), (80, 24), (82, 25), (84, 26)));
-        demon.AddRange(Ladder(SoundSmashDemon,    all,  14));
+        demon.AddRange(Ladder(SoundSmash,        all,  14));
         demon.AddRange(Ladder(AcousticShock,      all,  14));
         demon.AddRange(Ladder(ReinforcementDemon, even, 14));
         demon.AddRange(Ladder(SharpeningDemon,    even, 14));

@@ -78,14 +78,24 @@ public static partial class SkillCatalog
         //
         // 1 minute / 30s reuse / 300 MP are his numbers, and the price is the point — 300 MP at the
         // level a cleric learns it is most of the bar, so this is a journey, not a rotation.
+        //
+        // 🔑 2026-10-06 (owner): 20 MINUTES, in the buff limit, and the price is MOVE SPEED, not time — −50% at
+        // 74, easing 2% a level across the 4th tier to −20% at 90 (Skills.Lightbringer4th.StealthFourthRungs),
+        // at half a normal skill's SP and gold. Conceal is the same deal for the healer alone.
         new(ShroudingHymn, "Shrouding Hymn", BaseClass.Mage, SkillEffect.None,
             MpCost: 300, CastTicks: 20, CooldownTicks: 300, Range: 600, Power: 0,
-            DurationTicks: 600, BuffKey: "shrouding_hymn", Rank: 1, CountsTowardBuffLimit: false,  
-            Category: SkillCategory.Buff, SpCost: 880000,
+            DurationTicks: 12000, BuffKey: "shrouding_hymn", Rank: 1,
+            Category: SkillCategory.Buff, SpCost: 440000,
             TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
-            GrantsMobStealth: true,
-            Description: "For 1 minute, monsters that haven't already noticed you and your nearby " +
-                         "allies leave you alone. Anything already chasing keeps chasing."),
+            GrantsMobStealth: true, MoveSpeedPenaltyPct: 0.50f,
+            Description: "For 20 minutes, monsters that haven't already noticed you and your nearby " +
+                         "allies leave you alone. Anything already chasing keeps chasing. Move speed -50%.",
+            Levels: new[]
+            {
+                new SkillLevel(MpCost: 300, SpCost: 440000, Description: "For 20 minutes, monsters that haven't " +
+                    "already noticed you and your nearby allies leave you alone. Move speed -50%."),
+            }.Concat(StealthFourthRungs(300,
+                "monsters that haven't already noticed you and your nearby allies leave you alone.")).ToArray()),
 
         // Party Heal — AoE heal to nearby allies (lower power than single-target).
         // ⚠ RANGE 0 IS THE MECHANIC, NOT A TIDY-UP (owner, 2026-08-28): *"The party heals (party heal,

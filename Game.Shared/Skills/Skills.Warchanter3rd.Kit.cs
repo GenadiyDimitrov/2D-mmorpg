@@ -49,8 +49,8 @@ public static partial class SkillCatalog
     public const string HarmonistDualProficiency = "harmonist_dual_proficiency";
     // ---- ACTIVES ----
     public const string HarmonyOfRestoration = "harmony_of_restoration";
-    public const string SoundSmash         = "sound_smash";          // Human, blunt
-    public const string SoundSmashDemon    = "sound_smash_demon";    // Demon, blunt
+    public const string SoundSmash         = "sound_smash";          // Human + Demon, any blunt
+    public const string AcousticBash       = "acoustic_bash";        // Human only, shield + STUN + aggro
     public const string AcousticShock      = "acoustic_shock";       // Demon only, blunt + STUN
     public const string MagicStab          = "magic_stab";           // Elf, duals, high fail
     // ---- TOGGLES ----
@@ -89,23 +89,23 @@ public static partial class SkillCatalog
     internal static readonly int[] MagicSwingPower =
         { 10, 12, 13, 14, 15, 16, 17, 18, 20, 21, 23, 24, 25, 26 };
 
-    // Priced to a HEALER's rotation (his *"on par as healers not as nukers/warriors"*), the UNBUFFED
-    // column (his answer 3). Acoustic Shock is held at ~0.9× the Demon's Smash.
-    // His fast test (2026-10-06): Human Smash and Elf Stab ÷3 (a 76 Elf's stab crit one-shot a 75 mob, and a
-    // FAILED one still hit like a nuke), Demon Smash ×1.5 (fully buffed it did a third of the Human's).
-    // Acoustic Shock moved with the Demon's Smash to keep its 0.9×.
-    private static readonly int[] SmashHuman =
-        { 8, 11, 12, 13, 14, 15, 18, 19, 20, 21, 22, 23, 24,
-          33, 33, 33, 34, 34, 34, 35, 35, 35, 36, 36, 36, 37, 37, 37 };
-    private static readonly int[] SmashDemon =
-        { 23, 30, 35, 39, 42, 44, 47, 50, 53, 54, 56, 57, 60,
-          80, 81, 83, 84, 86, 87, 89, 90, 92, 93, 95, 96, 98, 99, 101 };
-    private static readonly int[] ShockDemon =
-        { 20, 27, 30, 35, 38, 39, 41, 44, 47, 48, 50, 51, 54,
-          71, 72, 74, 75, 77, 78, 80, 81, 83, 84, 86, 87, 89, 90, 92 };
+    // His second pass (2026-10-06): Smash, Acoustic Shock and the Human's Acoustic Bash hit at HOLY RAY's power
+    // (the healer's nuke, rung for rung), Magic Stab at Holy Ray x1.5 (*"so at 90 about 160ish"*). All four are
+    // half power in PvP: *"Buffers can farm but not stronger in pvp. They are annoying but not strong."*
+    // (The first pass, the same day, was Smash/Stab /3 and the Demon's Smash x1.5.)
+    private static readonly int[] HolyRayPower =
+        { 42, 52, 57, 63, 66, 68, 71, 74, 77, 79, 82, 84, 87,
+          88, 90, 91, 93, 94, 96, 99, 100, 101, 102, 103, 105, 106, 108, 109 };
     private static readonly int[] StabElf =
-        { 31, 42, 47, 53, 56, 59, 66, 69, 73, 75, 78, 80, 83,
-          112, 114, 115, 117, 118, 120, 121, 123, 125, 126, 128, 129, 131, 132, 134 };
+        { 63, 78, 86, 95, 99, 102, 107, 111, 116, 119, 123, 126, 131,
+          132, 135, 137, 140, 141, 144, 149, 150, 152, 153, 155, 158, 159, 162, 164 };
+    /// <summary>Acoustic Bash's aggro: HALF the tank's Taunt (`provoke`) at the same level (his rule). The tank's
+    /// 4th tier climbs every other level, so the odd levels take the midpoint.</summary>
+    private static readonly int[] BashTaunt =
+        { 3250, 3750, 4250, 4500, 4750, 5000, 5250, 5500, 5600, 5700, 5800, 5900, 6000,
+          6200, 6400, 6600, 6800, 7000, 7200, 7400, 7600, 7800, 8000, 8200, 8400, 8600, 8800, 9000 };
+    /// <summary>The PvP factor on every Warchanter damage spell.</summary>
+    private const float WarchanterPvp = 0.5f;
 
     /// <summary>The melee pair's MP (his 2026-10-02 edit), 3rd then 4th tier — unchanged by `BL-335`.</summary>
     private static readonly int[] SoundMeleeMp =
@@ -138,10 +138,8 @@ public static partial class SkillCatalog
     private static readonly float[] ReinforceElf =
         { .09f, .0925f, .095f, .0975f, .10f, .1025f, .105f, .1075f, .11f, .1125f, .115f, .1175f, .12f,
           .15f, .155f, .16f, .165f, .17f, .175f, .18f, .185f };
-    /// <summary>The Demon's Sharpening: M.Atk % and accuracy (Hit Rate Mastery's +3/+4/+5 moved in).</summary>
-    private static readonly float[] SharpenDemonMAtk =
-        { .10f, .105f, .11f, .115f, .12f, .125f, .13f, .135f, .14f, .145f, .15f, .155f, .16f,
-          .165f, .17f, .175f, .18f, .185f, .19f, .195f, .20f };
+    /// <summary>The Demon's Sharpening: accuracy only (Hit Rate Mastery's +3/+4/+5 moved in). Its M.Atk % left
+    /// 2026-10-06: *"Demon basic attacks do alot of dmg so remove the matk increase form sharpening"*.</summary>
     private static readonly int[] SharpenDemonAcc =
         { 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,   4, 4, 4, 4, 4, 5, 5, 5 };
     /// <summary>The Elf's Sharpening: evasion (light armour's, §8 C) and spell damage, plus a flat
@@ -244,20 +242,28 @@ public static partial class SkillCatalog
 
         // ---- THE DAMAGE SKILLS — all single-hit MAGIC since `BL-335` (his point 8). They keep their old
         //      cast and reuse and become SPELLS: paced by cast speed, fizzle-able, interruptible. ----
-        //      The two Sound Smashes are separate ids, so each holds its race's hands (owner, 2026-10-06): the
-        //      Human's is ONE-handed blunt (wand), the Demon's and Acoustic Shock TWO-handed (battlestaff).
+        //      🔑 SOUND SMASH IS ONE SKILL AGAIN (owner, 2026-10-06: *"The two smashes will be the same skill no
+        //      point in two different skills ... Same cd and power"*): Human (wand) and Demon (battlestaff) both
+        //      learn `sound_smash`, any blunt, either hand. `sound_smash_demon` is retired.
+        //      It retires Vampiric Bolt too: the Human's mage-1st ranged nuke runs to 80 otherwise.
         list.Add(SoundSpell(SoundSmash, "Sound Smash", WeaponType.Blunt, range: 40, castTicks: 10,
-            cooldownTicks: 30, stunTicks: 0, SmashHuman, SoundMeleeMp,
-            desc: "A concussive blow of pure sound that rings through armour.", hands: WeaponHands.One));
-        list.Add(SoundSpell(SoundSmashDemon, "Sound Smash", WeaponType.Blunt, range: 40, castTicks: 10,
-            cooldownTicks: 30, stunTicks: 0, SmashDemon, SoundMeleeMp,
-            desc: "A concussive blow of pure sound that rings through armour.", hands: WeaponHands.Two));
+            cooldownTicks: 100, stunTicks: 0, HolyRayPower, SoundMeleeMp,
+            desc: "A concussive blow of pure sound that rings through armour.",
+            alsoReplaces: new[] { HumanVampiricBolt }));
         // Acoustic Shock (DEMON ONLY) — Sound Smash with a contested 5s STUN, now a MAGIC debuff (WIT-side
         // vs SPT). ⚠ A re-landed stun still REFRESHES: the IG no-refresh rule is `BL-336`, deferred by him
         // (2026-10-06: *"i have always played with resetting stuns no difference for now"*).
         list.Add(SoundSpell(AcousticShock, "Acoustic Shock", WeaponType.Blunt, range: 40, castTicks: 10,
-            cooldownTicks: 30, stunTicks: 50, ShockDemon, SoundMeleeMp,
+            cooldownTicks: 100, stunTicks: 50, HolyRayPower, SoundMeleeMp,
             desc: "A blow pitched to shatter the senses: magic damage, and the target reels.", hands: WeaponHands.Two));
+        // Acoustic Bash (HUMAN ONLY, shield) — Acoustic Shock's twin for the shield hand, plus AGGRO: half the
+        // tank's Taunt at the same level, paid whether or not the stun lands (his: *"if fail the stun the taunt
+        // value is applied anyway"*). Threat only, no target lock: GameLoopService pays a non-taunt skill's
+        // TauntPower through the charm's unconditional AddThreat. A threat skill is never auto-cast.
+        list.Add(SoundSpell(AcousticBash, "Acoustic Bash", WeaponType.None, range: 40, castTicks: 10,
+            cooldownTicks: 100, stunTicks: 50, HolyRayPower, SoundMeleeMp,
+            desc: "A ringing blow off the shield: magic damage, the target reels, and it turns on you.",
+            shield: ShieldGate.Required, taunt: BashTaunt));
         // Magic Stab (ELF) — Sound Burst's successor: melee, ONE hit, its old 3s cast / 5s reuse, and a big
         // fizzle of its own (+59 points) that Sharpening's +20 M.Accuracy cuts (his: *"high chance to fail
         // ... the toggle just to give less fail chance"*).
@@ -303,7 +309,7 @@ public static partial class SkillCatalog
             "Set your shield: it blocks more often and turns more of the blow. Requires a shield."));
 
         // DEMON — Reinforcement: heavy armour's P.Def, crit rate AND crit damage resistance. Sharpening
-        // (two-handed blunt): M.Atk % and accuracy.
+        // (two-handed blunt): accuracy.
         list.Add(Stance(ReinforcementDemon, "Reinforcement", "reinforcement_demon", WeaponType.None, WeaponHands.Any, false,
             i => new EffectMagnitude[]
             {
@@ -316,11 +322,10 @@ public static partial class SkillCatalog
         list.Add(Stance(SharpeningDemon, "Sharpening", "sharpening_demon", WeaponType.Blunt, WeaponHands.Two, false,
             i => new EffectMagnitude[]
             {
-                new(SkillEffect.BuffMagAtk, SharpenDemonMAtk[i], ModifierMode.Percent),
                 new(SkillEffect.BuffAccuracy, SharpenDemonAcc[i], ModifierMode.Flat),
             },
-            i => $"M.Atk +{SharpenDemonMAtk[i] * 100:0.#}%, Accuracy +{SharpenDemonAcc[i]}",
-            "Tune the staff: harder and surer blows. Requires a two-handed blunt."));
+            i => $"Accuracy +{SharpenDemonAcc[i]}",
+            "Tune the staff: surer blows. Requires a two-handed blunt."));
 
         // ELF — Reinforcement: Light Armor Mastery's P.Def and Critical Resist's crit-rate resistance.
         // Sharpening (duals): evasion, spell damage and +20 M.Accuracy.
@@ -446,13 +451,15 @@ public static partial class SkillCatalog
     /// (2026-10-06: *"Human and elf have ranged spell that they must not have"*).</summary>
     private static SkillDef SoundSpell(string id, string name, WeaponType weapon, float range, int castTicks,
         int cooldownTicks, int stunTicks, int[] power, int[] mp, string desc, float failPoints = 0f,
-        WeaponHands hands = WeaponHands.Any, string[]? alsoReplaces = null)
+        WeaponHands hands = WeaponHands.Any, string[]? alsoReplaces = null,
+        ShieldGate shield = ShieldGate.Any, int[]? taunt = null)
     {
         var effect = SkillEffect.MagicDamage | (stunTicks > 0 ? SkillEffect.Stun : SkillEffect.None);
         SkillLevel Rung(int i)
         {
             var (sp, gold) = i < 13 ? (BandSp13[i], 0) : F4(i - 13, 1);
             return new SkillLevel(Power: power[i], MpCost: mp[i], SpCost: sp, GoldCost: gold,
+                TauntPower: taunt?[i] ?? 0,
                 Magnitudes: stunTicks > 0
                     ? new EffectMagnitude[] { new(SkillEffect.Stun, 1f, ModifierMode.Flat) }
                     : null,
@@ -462,9 +469,11 @@ public static partial class SkillCatalog
         }
         return new SkillDef(id, name, BaseClass.Mage, effect,
             MpCost: mp[0], CastTicks: castTicks, CooldownTicks: cooldownTicks, Range: range, Power: power[0],
-            Category: SkillCategory.Magic, BuffKey: id,   // two "Sound Smash" ids (Human, Demon) must not share the name key
+            Category: SkillCategory.Magic, BuffKey: id,
             Replaces: new[] { HolyBolt, HolySpike }.Concat(alsoReplaces ?? Array.Empty<string>()).ToArray(),
-            RequiredWeapon: weapon, RequiredHands: hands,
+            RequiredWeapon: weapon, RequiredHands: hands, RequiredShield: shield,
+            PvpDamageMult: WarchanterPvp,
+            TauntPower: taunt?[0] ?? 0,
             DurationTicks: stunTicks,
             DebuffSchool: stunTicks > 0 ? DebuffSchool.Magical : DebuffSchool.None,
             MagicFailPoints: failPoints,

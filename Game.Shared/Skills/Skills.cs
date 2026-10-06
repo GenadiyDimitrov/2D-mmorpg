@@ -1432,6 +1432,13 @@ public record SkillDef(
         return v != 0f ? v : BlowRatePct;
     }
 
+    /// <summary>The buff's own move-speed cut at a LEVEL (a fraction, 0.5 = −50%). Same "0 = inherit" shape.</summary>
+    public float MoveSpeedPenaltyPctAt(int level)
+    {
+        float v = Lvl(level)?.MoveSpeedPenaltyPct ?? 0f;
+        return v != 0f ? v : MoveSpeedPenaltyPct;
+    }
+
     /// <summary>How much softer this RUNG makes its victim to <see cref="VulnerableToWeapon"/> — a
     /// level's 0 inherits the def's. Taunting Shout's two rungs are 10% and 20%.</summary>
     public float WeaponVulnerabilityPctAt(int level)
@@ -1802,7 +1809,11 @@ public record SkillLevel(
     // player cannot refuse, which is the authoring hazard SkillDef.ChildBuffs already warns about for
     // groups. Rung by rung, the trade is exactly even at every level — the harmony's number and the
     // single's number are the same number.
-    string[]? CoveredKeys = null);
+    string[]? CoveredKeys = null,
+    // THE BUFF'S OWN MOVE-SPEED PRICE at THIS level (0 = inherit the SkillDef's MoveSpeedPenaltyPct). The stealth
+    // hymns are the reason (owner, 2026-10-06): Shrouding Hymn and Conceal cost 50% move speed and the 4th tier
+    // eases it 2% a level, to 20% at 90.
+    float MoveSpeedPenaltyPct = 0f);
 
 /// <summary>What a buff does to the four things a MONSTER pays out: experience, skill points, the
 /// gold it drops and the CHANCE its table rolls. The premium rune family (Rune of Experience /

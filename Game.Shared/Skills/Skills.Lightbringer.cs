@@ -379,13 +379,20 @@ public static partial class SkillCatalog
         // ═══ CONCEAL ═════════════════════════════════════════════════════════════════════════════
         // The SELF-only twin of Shrouding Hymn: same promise (only mobs that have not already noticed
         // you), a third of the duration, and no party to carry.
+        // 🔑 2026-10-06 (owner): *"healers conceal the same way (it's just self)"* — 20 minutes, in the buff
+        // limit, −50% move speed easing to −20% across the 4th tier, half price. See Shrouding Hymn.
         new(Conceal, "Conceal", BaseClass.Mage, SkillEffect.None,
             MpCost: 100, CastTicks: 50, CooldownTicks: 100, Range: 0, Power: 0,
-            DurationTicks: 300, BuffKey: "conceal", Rank: 1, CountsTowardBuffLimit: false,
-            Category: SkillCategory.Buff, SpCost: 19000,
-            TargetMode: TargetMode.SelfOnly, GrantsMobStealth: true,
-            Description: "For 30s, monsters that haven't already noticed you leave you alone. " +
-                         "Anything already chasing you keeps chasing."),
+            DurationTicks: 12000, BuffKey: "conceal", Rank: 1,
+            Category: SkillCategory.Buff, SpCost: 9500,
+            TargetMode: TargetMode.SelfOnly, GrantsMobStealth: true, MoveSpeedPenaltyPct: 0.50f,
+            Description: "For 20 minutes, monsters that haven't already noticed you leave you alone. " +
+                         "Anything already chasing you keeps chasing. Move speed -50%.",
+            Levels: new[]
+            {
+                new SkillLevel(MpCost: 100, SpCost: 9500, Description: "For 20 minutes, monsters that haven't " +
+                    "already noticed you leave you alone. Move speed -50%."),
+            }.Concat(StealthFourthRungs(100, "monsters that haven't already noticed you leave you alone.")).ToArray()),
 
         // ═══ HUMAN: single-target throughput + Gravity ═══════════════════════════════════════════
         //

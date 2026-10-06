@@ -1,4 +1,5 @@
 SKILL_ID,NAME,KIND,WEIGHT,SOURCE
+acoustic_bash,Acoustic Bash,magic,1.5,default
 acoustic_shock,Acoustic Shock,physical,1.5,default
 anti_magic,Anti-Magic,passive,0.33,default
 anti_physical,Anti-Physical,passive,0.33,default
@@ -75,7 +76,7 @@ charming_whisp,Charming Whisp,buff,1,default
 combo_mastery,Combo Mastery,passive,0.33,default
 combo_mastery_demon,Combo Mastery,passive,0.33,default
 combo_mastery_elf,Combo Mastery,passive,0.33,default
-conceal,Conceal,buff,1,default
+conceal,Conceal,buff,0.5,default
 cooldown_mastery,Cooldown Mastery,passive,0.33,default
 crippling_shout,Crippling Shout,debuff,1.5,default
 dazzling_arrow,Dazzling Arrow,physical,1.5,default
@@ -253,13 +254,12 @@ shield_smash_rate,Shield Smash - Rate,physical,1.5,default
 shocking_javelin,Shocking Javelin,physical,1.5,default
 shocking_shout,Shocking Shout,physical,1.5,default
 shot,Shot,physical,1.5,default
-shrouding_hymn,Shrouding Hymn,buff,1,default
+shrouding_hymn,Shrouding Hymn,buff,0.5,default
 signal_flare,Signal Flare,physical,1,owner
 silencing_shock,Silencing Shock,debuff,1.5,default
 single_mark,Single Mark,buff,1,default
 smash,Smash,physical,1.5,default
 sound_smash,Sound Smash,physical,1.5,default
-sound_smash_demon,Sound Smash,magic,1.5,default
 spellcaster_mastery,Spellcaster Mastery,passive,0.33,default
 spellcaster_weapon_mastery,Spellcaster Weapon Mastery,passive,0.33,default
 spirit_restoration,Spirit Restoration,heal,1.5,default
