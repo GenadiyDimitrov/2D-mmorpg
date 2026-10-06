@@ -1,6 +1,6 @@
 # Magic-melee buffers — the Warchanter hits with MAGIC
 
-**Status: 🔵 DESIGN ONLY, `BL-335`.** Nothing is built. Your words: *"Just design for now."*
+**Status: 🔵 DESIGN ONLY, `BL-335`.** Nothing is built; the numbers are MEASURED (§8). Your words: *"Just design for now."*
 This page includes your answers of 2026-10-05 and your full answer sheet of 2026-10-06 (eight points). The questions
 still open are at the bottom, each with my pick.
 
@@ -86,60 +86,50 @@ Your point 8. Every number is **measured** before it reaches your CSV, against t
 |---|---|---|
 | **Sound Smash** (Human, Demon) | physical, 40 range, 1s cast, 3s cd | **magic spell**, 40 range. ⚠ Being a spell, its 1s cast CAN be interrupted |
 | **Acoustic Shock** (Demon) | physical + 5s stun, 40 range, **3s cd** | magic + 5s stun. 🔴 see below |
-| **Sound Burst** (Elf) | physical bow, 900 range, **two hits**, 3s cast | **Magic Stab**: melee, ONE hit, fixed fail (below) |
+| **Sound Burst** (Elf) | physical bow, 900 range, **two hits**, 3s cast | **Magic Stab**: melee, ONE hit, high fail (below) |
 
-🔴 **Acoustic Shock already has a 3s cooldown on a 5s stun.** That is the permanent lock §6 warned about, and it is
-in the game TODAY. Nothing shortens a repeated stun: there is no immunity window and no diminishing returns, only the
-defender's CON/SPT trim (×0.70-×1.00, `BL-156`). A demon who lands the contest can stun a player forever, refreshing
-the stun before it expires. Against mobs it hardly matters; in PvP it is the strongest thing a demon owns. **My pick:
-a 12s+ cooldown** (or a 2-3s stun). It is a one-cell change in your CSV.
+**Acoustic Shock's 3s cooldown on a 5s stun** is a permanent lock today, because a re-landed stun REFRESHES (a stun is
+a buff, and at equal rank the incoming one replaces it). Your answer (2026-10-06): IG's rule fixes it at the root.
+The same debuff type cannot be re-landed until the old one wears off, and a re-stun attempt has a chance to BREAK the
+stun instead of resetting it. With that rule the cooldown stops mattering. It is a system of its own, filed as
+**`BL-336`**. ⚠ **Until `BL-336` is built, the lock stays live in PvP.**
 
-**Magic Stab — fixed fail, raised by the elf's toggle** (your point 8.3: *"40~60% chance to not fail"* and point 3:
-*"not always be 60% but 40% and with that toggle on to become 60%"*):
-- A **new per-skill field, a FIXED success chance**: the fizzle roll uses only this number. There is no level term,
-  no M.Accuracy and no defender modifier, so PvE and PvP behave the same.
-- **40% success with the toggle off, 60% with it on**, via a new toggle field that adds to it (+0.20).
-- A failed hit still lands ÷ 3, so the average is `0.4 + 0.6/3 = 0.60` of the power with the toggle off and
-  `0.6 + 0.4/3 = 0.73` with it on: **the toggle is worth +22% on the stab**. The power is set so that the
-  toggle-off average still matches a normal skill.
-- ⚠ History: `FixedLandChance` (`BL-204`) lived one day and was deleted (`BL-207`). That was a debuff's land chance;
-  this is the damage fizzle, a different roll. It is still a new field, so I'm telling you.
+**Magic Stab: the normal curve plus a big fail, and the toggle cuts it** (your 2026-10-06 correction: *"not 60%
+fixed .. high chance to fail ... the toggle just to give less fail chance"*):
+- **The skill carries its own fail POINTS** (new per-skill field), ADDED to the ordinary fizzle curve. Measured (§8 D):
+  **+59 points** reads 60% at parity and still drifts with level (63% at +5, 67% at +8). A ×60 MULTIPLIER on the curve
+  would read 60% at parity and hit the 95% cap two levels up, which is why it is points and not a multiplier.
+- **The toggle gives M.Accuracy +20**, a field that already exists (the Marks grant it). The elf has no other damage
+  spell, so nothing else benefits, as you said. 60% → 40% fail.
+- An average cast lands **0.60** of the power with the toggle off and **0.73** with it on, so the toggle is worth +22% on
+  the stab.
+- That makes **one new field** (the skill's fail points), not two.
 
-## 4. The toggle — one per race, with a price
+## 4. The two toggles — defence and offence, weapon-gated, each with a price
 
-Your point 3: *"i just want to make sure their having that toggle as strategy option .. not always on"*. Off = mage
-stats, on = near-tank stats. It is gated to **robe** (the human's also to the shield).
+Your point 3, plus your 2026-10-06 idea for Sharpening: **keep it as the second toggle, gated to each race's weapon**
+(Human 1H blunt, Demon 2H blunt, Elf duals). 🔑 **I take your version over my single toggle.** It gives four postures
+(off / defence / offence / both), and the gate is what enforces each race's weapon. Reinforcement keeps its name.
 
-| | Human (defence + block) | Demon (attack + accuracy) | Elf (skill damage + evasion) |
+| | Human | Demon | Elf |
 |---|---|---|---|
-| P.Def | = the **heavy** set of the same grade | = the **heavy** set of the same grade | = the **light** set of the same grade |
-| shield | Tank Shield Mastery's numbers (dmg reduction +25%, shield rate +85%, +10% P.Def at its top rung) | — | — |
-| crit | P.Crit **damage** resist 15% | P.Crit damage **and** rate resist ~8% | P.Crit **rate** resist 15% |
-| offence | — | accuracy + a little M.Atk (or swing power) | evasion + magic SKILL damage + Magic Stab 40 → 60% |
+| **Reinforcement** (robe; human robe+shield) | P.Def to TODAY's heavy level, Tank Shield Mastery's shield numbers, P.Crit **damage** resist 15% | P.Def to today's heavy level, P.Crit damage + rate resist ~8% | P.Def to today's light level, evasion, P.Crit **rate** resist 15% |
+| **Sharpening** (1H blunt / 2H blunt / duals) | ❓ your numbers (see below) | accuracy + a little M.Atk | magic SKILL damage + M.Accuracy +20 (Magic Stab 60→40% fail) |
 
-- 🔑 **Three different number sets = three SKILL IDS, not three faces** (`BL-327`: a face changes the name and text,
-  never the numbers). `reinforcement` stays as one race's id; the other two are new.
-- **The P.Def number per rung is measured**, not guessed: BalanceMatrix gives the gap between the heavy (or light)
-  set and the robe set at each grade, and that gap is the rung.
+- **Price (your answer):** each toggle **+15% skill MP cost** and **half the MP/s** of today's Sharpening. ⚠ Small
+  correction: MP-cost buffs **ADD** in this engine (`MagicMpCostReduction +=`), so both on = exactly **+30%**, not 32%.
+  It is your 30% either way. `MagicMpCostPct` already exists, so the price needs no code.
+- 🔑 **Different numbers per race = different ids** (`BL-327`: a face never changes a number). So that is three
+  Reinforcement ids and three Sharpening ids. Your Combo Mastery answer works the same way: **one chance field, one id
+  per race**, and each race's face prints its own number. No third proc field.
+- ❓ **The human's Sharpening has no offence listed.** The human's table above only had a defence half. Does the human
+  get a Sharpening at all, and if so, what's in it?
+- **P.Def as a PERCENT, not a flat** (measured, §8 C). One authored flat point = exactly one final point, so a flat
+  can't follow the NPC shelf. Heavy armour does follow it: the gap to today doubles when buffed (645 → 1032 for a
+  human at 90). As a % of the robe P.Def, the gap is **the same buffed or not**: Human **+54%** at 85-90, Demon
+  **+33%**, Elf **+17%**. Today's Reinforcement is a flat (+300…+700), so this is a change of mode.
 
-**The price.** You offered a lower max MP, a higher MP cost, or slower casts. 🔑 **My pick: higher skill MP cost while
-it is on (×1.3), plus a small MP/s.** Two reasons:
-- It hits **exactly the buffer's economy**. Toggle on = you tank and you buff less, or you pay for it. That is the
-  "strategy" you asked for.
-- It already exists: `MagicMpCostPct` (a negative value raises the cost), which flows through `EffectiveMpCost`, so
-  the cast gate and both charges see it. I'd write no new code for it.
-
-Why not the other two:
-- **Slower casts** mostly hurt the buff round before a pull, which is not when the buffer fights.
-- **Lower max MP** punishes the whole pool every time the buffer turns it on, which is a bigger penalty than you described.
-
-**Sharpening.** You offered keeping it as a SECOND "strategy" toggle with weapon gates. **My pick: drop it and use
-one toggle.** Two toggles mean two drains to price, and both on at once would undo the trade-off. One toggle per race
-carries both halves (defence AND that race's offence, as in the table above).
-
-**Rename** (*"because it gives attacking bonuses as well"*). Each race has its own id, so each can have its own name.
-Suggestions, all generic: **Iron Cadence** (Human), **War Cadence** (Demon), **Wind Cadence** (Elf), or one shared
-**Battle Cadence**. Pick any of these or name it yourself.
+**Names** — parked until last, as you said: *Iron / War / Wind Cadence*, or one shared *Battle Cadence*.
 
 ## 5. Vampirism — no new flag, and all three races reach 9%
 
@@ -151,44 +141,112 @@ Your point 4.
   `blunt|dual`.
 - **HP vamp needs no `SpellVamp`.** `MeleeVamp` is paid in the same place (`GameLoopService.cs:16179`). It is not
   gated by damage type; the only thing it skips is a **bow**, and none of the three holds one any more. Their own
-  Vampiric buff (`cast_vamp`, +7/8/9% melee vampirism) already grants `MeleeVamp`, so it simply keeps working on the
-  magic swing, and the skills still don't drain. ⚠ Don't give them `SpellVamp`: that one IS paid on every damage
-  skill.
+  Vampiric buff (`cast_vamp`, +7/8/9% melee vampirism) already grants `MeleeVamp`, so it keeps working on the magic
+  swing, and the skills still don't drain. ⚠ Don't give them `SpellVamp`: that one IS paid on every damage skill.
 
 ## 6. The small changes
 
-- **Combo Mastery** (your point 5): **3% with blunt/1, 3.5% with blunt/2, 2.6% with duals**, gate `blunt|dual`.
-  The engine has two chances today (`ProcChance` 3%, `ProcChanceTwoHanded` 3.45%), so the dual chance is a third
-  field. Each race holds exactly one weapon kind (wand / staff / fangs), so a **per-race face** shows only that
-  race's % — your "face will show only the needed %" with nothing new in the face system.
-- **Monster Knowledge** (your point 6): **the elf learns it too**, on the same rungs 2-4 at 40/48/52.
+- **Combo Mastery**: one id per race, one chance each — Human 3% (1H blunt), Demon 3.5% (2H blunt), Elf 2.6% (duals).
+- **Monster Knowledge**: the elf learns it too, on rungs 2-4 at 40/48/52.
+- **`rogue_bow_proficiency`** goes with the bow (your answer).
+- **The human's shield skill — SKIPPED** (your answer): *"i dont want a human buffer to swap the real tank"*. A party
+  short of something calls the buffer that covers it, but a party of buffers must never match a real party, and never
+  at a boss. A **shield strike with higher taunt**, to SHARE aggro with an under-geared tank, is an idea for later,
+  not part of this design.
 
 ## 7. What building it costs
 
-- **Your CSV edits** (`buffer 3rd.csv`, `buffer 4th.csv`). Every number is yours; I bring you the measured ones (the
-  swing powers, skill powers, toggle P.Def per rung).
-- Engine: the magic-swing passive, the fixed success field + its toggle bonus, the dual chance on Combo Mastery, the
-  dual proficiency, two new toggle ids.
-- BalanceMatrix before/after (swing DPS vs physical, robe + toggle vs heavy/light, the three skills).
-- `debuff_landmods.csv` row for Acoustic Shock re-checked (its shape stays `dmg+1 debuff`).
+- **Your CSV edits** (`buffer 3rd.csv`, `buffer 4th.csv`). The measured numbers in §8 are your starting points.
+- Engine: the magic-swing passive (per-rung power), the per-skill fail points, Reinforcement P.Def as a %, six
+  toggle ids, three Combo Mastery ids, the dual proficiency.
+- `debuff_landmods.csv`: Acoustic Shock's row re-checked (its shape stays `dmg+1 debuff`).
 - **A new APK**: the client builds its Learn tab from the compiled class tables.
+
+## 8. MEASURED (2026-10-06) — `dotnet run --project tools/BalanceMatrix -- --magicmelee [levels] [--buffed]`
+
+The rig is today's Warchanter with your drop list removed, the new weapons on, the 4th-tier kit at 76+, and the
+dual proficiency simulated. The target is a default mob of the same level. All values are expected values: crit,
+miss and fizzle are folded in.
+
+**A. The swing power per rung** — the magic swing's DPS = today's physical swing with the same weapon kind:
+
+| level | 40 | 52 | 61 | 76 | 85 | 90 |
+|---|---|---|---|---|---|---|
+| Human (wand ↔ mace) | 12 | 13 | 13 | 15 | 23 | 24 |
+| Demon (staff ↔ maul) | 13 | 15 | 16 | 18 | 26 | 26 |
+| Elf (fangs ↔ fangs) | 11 | 15 | 15 | 19 | 28 | 29 |
+
+Buffed (full NPC shelf) the same columns read 11-12 / 11-13 / 13-15 / 14-16 / 21-29 / 21-30, so **the swing power
+barely depends on buffs**: one number per rung holds both. The three races are within ~20% of each other, so either
+one shared ladder (the elf ~10% light at the top) or one per race.
+
+**B. The skills, priced to a HEALER's rotation** (your *"on par as healers not as nukers/warriors"*). Rotation = best
+repeatable damage skill + the class's own swing in the reuse gap; the swing from A fills the buffer's gap. Skills
+keep today's authored cast/reuse and become spells (paced by CAST speed). Shock is held at 0.9× Smash; the stab at
+the 0.60 average.
+
+| level | healer DPS (target) | Human Smash power | Demon Smash power (Shock 0.9×) | Elf Stab power |
+|---|---|---|---|---|
+| 40 | 216 | 23 | 15 | 108 |
+| 52 | 269 | 36 | 23 | 172 |
+| 61 | 325 | 52 | 30 | 240 |
+| 76 | 492 | 99 | 54 | 450 |
+| 85 | 650 | 102 | 61 | 449 |
+| 90 | 656 | 112 | 67 | 501 |
+
+Buffed, the powers come out ~10-50% higher (Human 25 → 170, Demon 18 → 92, Elf 121 → 640), because the healer's
+buffed nuke gains more than the swing does. Authoring between the two columns is a judgement for you; I'd start
+from the unbuffed one and let the playtest move it.
+
+**Cast speed, which you asked about:** in the same buff state the buffer casts at the healer's speed (×0.68 vs ×0.68
+at 90; the elf ×0.59). The party gets the buffer's speed buffs too, so this gives the buffer no edge of its own.
+And **the reuse dominates the cycle**: Sound Smash is 0.6s cast + 2.4s reuse, so even the full buffed speed only
+takes the cycle from 3.0s to 2.7s. **Cast speed cannot turn these skills into a nuker's**; the power can.
+
+⚠ Two things the measurement showed that are worth knowing:
+- **Today's Warchanter already sits on the healer line at 85-90** (Human 650 vs 650 at 85). At 40-61 it is 1.2-1.7×
+  over, and the elf 1.1-2× over everywhere. So this change is a cut at low levels and for the elf.
+- **On this metric the healer is 97% of the nuker** (656 vs 679 at 90; Vampiric Bolt vs Elemental Blast). The nuker's
+  real edge (AoE, the long-reuse nukes this metric skips) isn't counted here, so "on par with the healer" is a
+  generous target. If the buffer ends up feeling like a nuker, aim lower than this table.
+
+**C. Reinforcement's P.Def gap** — robe vs TODAY's heavy (light) Warchanter, unbuffed:
+
+| level | 40 | 52 | 61 | 76 | 85 | 90 |
+|---|---|---|---|---|---|---|
+| Human | 196 (+42%) | 165 (+27%) | 173 (+24%) | 442 (+51%) | 625 (+54%) | 645 (+54%) |
+| Demon | 168 (+36%) | 165 (+27%) | 173 (+24%) | 274 (+31%) | 384 (+33%) | 396 (+33%) |
+| Elf | 89 (+19%) | 69 (+11%) | 63 (+9%) | 137 (+16%) | 193 (+17%) | 199 (+17%) |
+
+The jump at 76 is the 4th-tier heavy masteries. Against the bare heavy/light ITEMS (no mastery) the elf's gap is ~0:
+**a robe with the robe mastery already matches unmastered light armour**. So "light armour of the same grade" has to
+mean today's elf, mastery included, or the elf's toggle gets almost no P.Def. Evasion: the elf in robe is 125 at 90
+vs 136 today, so the toggle needs **+11 evasion** to close that.
+
+**D. Magic Stab's fail** (added points, toggle = M.Accuracy +20):
+
+| Δ level | −3 | 0 | +2 | +5 | +8 |
+|---|---|---|---|---|---|
+| fail, toggle off (+59) | 59% | 60% | 61% | 63% | 67% |
+| fail, toggle on | 39% | 40% | 41% | 43% | 47% |
+| ×60 multiplier instead | 27% | 60% | 95% | 95% | 95% |
 
 ## ✅ Answered
 
 - 2026-10-05: Sound Burst → Magic Stab; robe for all; Mana Vampirism on the magic swing; the swing keeps the
   accuracy-vs-evasion miss.
-- 2026-10-06 (eight points): weapons (§2), swing measured vs physical (§1), the per-race toggle and its stats (§4),
-  vamp on the swing for all three races at 9% (§5), Combo Mastery per weapon (§6), Monster Knowledge for the elf (§6),
-  the keep/drop lists (§2), all damage skills single-hit (§3). The **demon's third stat** (accuracy + crit resist +
-  a little M.Atk) and **Magic Stab one hit** are settled by it.
+- 2026-10-06 (sheet): weapons, swing measured vs physical, per-race toggle stats, vamp at 9% for all three, Combo
+  Mastery per weapon, Monster Knowledge for the elf, keep/drop lists, all damage skills single-hit.
+- 2026-10-06 (follow-up): Combo Mastery = one id per race; Magic Stab = curve + high fail, toggle cuts it; the stun
+  answer is IG's no-refresh rule (`BL-336`); price = 30% MP cost + Sharpening's MP/s, split across TWO weapon-gated
+  toggles; names last; the human shield skill skipped; `rogue_bow_proficiency` dropped; skill power AND cast time
+  measured against the healer.
 
 ## ❓ Still open
 
-1. **Acoustic Shock: 3s cooldown on a 5s stun = a permanent lock, live today** (§3). My pick: 12s+ cooldown.
-2. **The toggle's price** (§4). My pick: ×1.3 skill MP cost while on + a small MP/s.
-3. **One toggle or two** (§4). My pick: one; Sharpening goes.
-4. **The toggle's name(s)** (§4).
-5. **The human's extra shield skill** from 2026-10-05 (§6 of the old page: ~6s lock, no damage). Your answer sheet
-   doesn't mention it, and the human toggle now carries the shield. **Is it dropped?** If it stays, it has the same
-   cooldown problem as #1.
-6. **`rogue_bow_proficiency` for the elf**: dropped with the bow (§2)? My pick: yes.
+1. **The human's Sharpening** — does the human get one, and what's in it (§4)?
+2. **Swing ladder** — one shared ladder or one per race (§8 A)? My pick: one per race. It's the same passive with a
+   different power per race, so it's three ids, the same as the toggles.
+3. **Skill power: the unbuffed or buffed column** (§8 B). My pick: unbuffed, then the playtest.
+4. **The elf's P.Def reference**: today's elf (with mastery, +17%), as measured (§8 C). My pick: yes.
+5. **Names** — last.

@@ -284,7 +284,8 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-331` | 🔵   | **Skill icons** — game-icons.net tinted per school, `docs/data/skill_icons.csv` + `tools/SkillIcons`; bar, buff bar, Skills window (Known / Learn / Actions) BUILT 0.219.0-0.219.1, your review passed; NPC buffs, potions, scrolls, runes, paving 0.226.0; owed: the cast bar, the tree page; your own redraw "a lot later"                                                                                                                                                                                     | ui           |
 | `BL-332` | ❓   | **Notifications** — low HP / low potions / farm time over / died: in-game alerts, scheduled phone notifications, server push; my pick + four questions                                                                                                                                                                                                                                                                                                         | ui           |
 | `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
-| `BL-335` | 🔵 | **Magic-melee buffers** — all three Warchanters hit through MAGIC: a passive turns the basic attack into a magic hit; demon battlestaff, human wand+shield, elf duals, all ROBE; a per-race strategy toggle (off = mage, on = near-tank); all damage skills single-hit magic; Sound Burst = Magic Stab 40%→60%; design only, 6 questions left (🔴 Acoustic Shock 3s cd on a 5s stun is a live perma-lock) | classes |
+| `BL-335` | 🔵 | **Magic-melee buffers** — all three Warchanters hit through MAGIC: a passive turns the basic attack into a magic hit; demon battlestaff, human wand+shield, elf duals, all ROBE; two weapon-gated toggles per race (Reinforcement = defence, Sharpening = offence, +15% MP cost each); all damage skills single-hit magic; Sound Burst = Magic Stab (curve + high fail); swing, skills, toggle MEASURED (`--magicmelee`); design only, 5 questions left | classes |
+| `BL-336` | 🔵 | **No-refresh debuffs (IG rule)** — a debuff of the same type cannot be re-landed until the old one wears off (no perma-hold); a re-stun attempt may BREAK the stun instead of resetting it; boss-allowed stacking types excepted; design owed | combat |
 
 ---
 
@@ -2382,8 +2383,21 @@ and the elf moves from the bow to **fangs** (Fang Proficiency replaces Harmonist
 The whole design, what each race loses and keeps, and why no magic-weapon gate is needed:
 [design/MagicMeleeBuffers.md](design/MagicMeleeBuffers.md).
 
-Your eight-point answer sheet (2026-10-06) is folded in: weapons, the swing measured against a physical swing, the per-race toggle stats, vamp on the swing for all three at 9%, Combo Mastery per weapon, Monster Knowledge for the elf, the keep/drop lists, every damage skill single-hit.
+Your eight-point answer sheet and your follow-up (2026-10-06) are folded in, and the numbers are MEASURED: `dotnet run --project tools/BalanceMatrix -- --magicmelee [--buffed]` prints the swing power per rung (magic swing = today's physical swing, same weapon kind), the skill power that puts each race on the HEALER's rotation DPS, Reinforcement's P.Def gap (best authored as a % of robe P.Def: Human +54%, Demon +33%, Elf +17% at 85-90), and Magic Stab's fail curve. Tables in §8 of the design page.
 
-🔴 **Found on the way: Acoustic Shock is a 5s stun on a 3s cooldown TODAY** — a demon who wins the contest can lock a player permanently. My pick: a 12s+ cooldown, one CSV cell.
+The Acoustic Shock lock is answered by IG's no-refresh rule, filed as `BL-336`; until that is built the lock stays live in PvP.
 
-🔵 **Waits on you**: the six questions at the bottom of that page (the cooldown above, the toggle price, one toggle or two, its name, the human shield skill, the elf bow-range passive), then your `buffer 3rd.csv` / `buffer 4th.csv` edits.
+🔵 **Waits on you**: the five questions at the bottom of that page (the human's Sharpening, one swing ladder or three, buffed or unbuffed skill power, the elf's P.Def reference, names), then your `buffer 3rd.csv` / `buffer 4th.csv` edits.
+
+## `BL-336` 🔵 NO-REFRESH DEBUFFS — IG's rule against the permanent lock (2026-10-06)
+
+Your words: *"in IG the game dont allow same type of debuf (except the boss allowed ones (dots/pdef/mdef/as/ms/cs/patk/matk/etc)) to reset duration .. so if i hold some1 for 30s i cannot rehold him until his 30s worn of (no perma hold) and stuns attacks even have a chance to cancel it when trying to stun again (so stun for 15s .. try stun 10-15% chance to cancel the stunnig effect .. not to reset duration)"*, and *"duration means nothing if that logic is in effect (the stun break chance we need to think of .. longer duration longer chance if the stun succeed and try to reaaply)"*.
+
+**Today** a stun or hold is a buff on the target, and `ApplyBuff`'s equal-rank rule (`BL-263`) lets the incoming one REPLACE it, so every re-land resets the clock. With a short cooldown (Acoustic Shock: 5s stun, 3s reuse) that is a permanent lock.
+
+**The rule to build:**
+1. A **control** debuff (stun, hold, sleep, fear, …) that is already on the target **cannot be re-landed**: the new cast does nothing to its duration.
+2. The **stat** debuffs you listed (DoTs, P.Def, M.Def, attack / move / cast speed, P.Atk, M.Atk, …) keep today's stacking and replacing.
+3. **A re-stun on a stunned target may BREAK the stun** instead. The chance grows with the stun's length (your *"longer duration longer chance"*), around 10-15% for a 15s stun.
+
+❓ **Open:** the exact break curve (a % per second of the stun's duration, or per second REMAINING?); whether rule 1 applies to mobs as well as players; and whether a break also starts a short immunity. Design owed before code.
