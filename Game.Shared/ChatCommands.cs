@@ -93,6 +93,7 @@ public static class ChatCommandCatalog
 
         // ---- Owner ----
         new("role", "/role <name> admin", "make an Admin (only the Owner may)", AccountRole.Owner),
+        new("copy", "/copy <source> <target>", "make <target> an exact copy of <source> (it keeps its name and rank; it must be offline)", AccountRole.Owner),
     };
 
     /// <summary>The commands a STAFF rank below Admin may send to the server's staff switch: its own rank's rows and

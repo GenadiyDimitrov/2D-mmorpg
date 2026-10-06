@@ -7704,6 +7704,44 @@ public class GameLoopService : BackgroundService
                 break;
             }
 
+            case "copy":
+            {
+                // `/copy <source> <target>` — OWNER ONLY (2026-10-06). Overwrites the target with an exact copy of
+                // the source (equipment, bag, warehouse, level, EXP, SP, skills, subclasses…); the target keeps its
+                // name, rank and account. His reason: *"if some1 fells like cheating to copy his current char over
+                // owner one or other to check stats items etc"*. Admin and Owner share the staff gate above, so the
+                // rank check lives here.
+                if (admin.Role < AccountRole.Owner)
+                {
+                    SendSystemToEntity(admin, "/copy is for the Owner only.");
+                    break;
+                }
+                var names = arg.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (names.Length != 2)
+                {
+                    SendSystemToEntity(admin, "Usage: /copy <source> <target> — the target becomes an exact copy of the source.");
+                    break;
+                }
+                string srcName = names[0], dstName = names[1];   // the client already turned @s/@t into names
+                // The TARGET must be offline: the copy is written to its saved row, and a live character would save
+                // its old self over it at the next autosave or logout.
+                if (FindOnlinePlayer(dstName) is not null)
+                {
+                    SendSystemToEntity(admin, $"{dstName} is online — log that character out first, then /copy again.");
+                    break;
+                }
+                // An ONLINE source is saved first (snapshotted here, on the tick thread), so the copy is of what it
+                // is NOW and not of its last autosave.
+                Task saved = FindOnlinePlayer(srcName) is Entity liveSrc ? SaveEntity(liveSrc) : Task.CompletedTask;
+                _ = Task.Run(async () =>
+                {
+                    await saved;
+                    var (from, to, error) = await _db.CopyCharacterAsync(srcName, dstName);
+                    SendSystemToEntity(admin, error ?? $"{to} is now an exact copy of {from} (its name and rank kept). Log in as {to} to see it.");
+                });
+                break;
+            }
+
             case "role":
             {
                 // Grant/revoke a staff role on a CHARACTER (owner: roles are per-character, so an admin

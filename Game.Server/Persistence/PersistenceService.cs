@@ -1827,6 +1827,110 @@ public class PersistenceService
         return character?.Role;
     }
 
+    /// <summary>The fields of a character that stay the TARGET's own when `/copy` overwrites it: who it IS (row,
+    /// account, name, rank), what staff did to it (jail/kick/mute/pending delete), its staff toggles, and its social
+    /// graph and preferences. Everything else on the row is the source's.</summary>
+    private static readonly HashSet<string> CopyKeeps = new(StringComparer.Ordinal)
+    {
+        nameof(CharacterRecord.Id), nameof(CharacterRecord.AccountId), nameof(CharacterRecord.Name),
+        nameof(CharacterRecord.Role), nameof(CharacterRecord.Items), nameof(CharacterRecord.Subclasses),
+        nameof(CharacterRecord.PendingDeleteAt), nameof(CharacterRecord.JailedUntilUtc),
+        nameof(CharacterRecord.KickedUntilUtc), nameof(CharacterRecord.ChatBannedUntilUtc),
+        nameof(CharacterRecord.GodMode), nameof(CharacterRecord.AdminInvisible),
+        nameof(CharacterRecord.FriendsCsv), nameof(CharacterRecord.BlockedCsv), nameof(CharacterRecord.SocialOptions),
+    };
+
+    /// <summary>`/copy` (Owner only, 2026-10-06) — overwrite <paramref name="targetName"/> with an exact copy of
+    /// <paramref name="sourceName"/>: race, classes, level, EXP, SP, stats, skills, subclasses, bag, EQUIPMENT and private
+    /// warehouse, gold, quests, buffs, position. The target keeps its name, rank, account and the fields in
+    /// <see cref="CopyKeeps"/>. His purpose: *"if some1 fells like cheating to copy his current char over owner one or
+    /// other to check stats items etc"*.
+    ///
+    /// <para>🔑 The CALLER guarantees the target is OFFLINE and has saved an online SOURCE first, so this reads the
+    /// source's current state and nothing live can overwrite the result. It runs under the save gate so a concurrent
+    /// autosave of the source cannot interleave with the read.</para>
+    ///
+    /// <para>⚠ Every item gets a FRESH persistent id (two characters must never share one), and the equipment presets,
+    /// which are saved by that id, are re-pointed at the copies. The account warehouse is the ACCOUNT's, not the
+    /// character's, and is not copied.</para></summary>
+    /// <returns>The canonical (source, target) names, or an error to show the Owner.</returns>
+    public async Task<(string? Source, string? Target, string? Error)> CopyCharacterAsync(string sourceName, string targetName)
+    {
+        await _saveGate.WaitAsync();
+        try
+        {
+            await using var db = await _factory.CreateDbContextAsync();
+            async Task<CharacterRecord?> Load(string name)
+            {
+                var lower = name.ToLower();
+                return await db.Characters
+                    .Include(c => c.Items)
+                    .Include(c => c.Subclasses)
+                    .AsSplitQuery()
+                    .FirstOrDefaultAsync(c => c.Name.ToLower() == lower);
+            }
+            var src = await Load(sourceName);
+            if (src is null) return (null, null, $"No character '{sourceName}'.");
+            var dst = await Load(targetName);
+            if (dst is null) return (null, null, $"No character '{targetName}'.");
+            if (src.Id == dst.Id) return (null, null, "Source and target are the same character.");
+
+            // ---- the row: every plain column except the target's own --------------------------------------
+            foreach (var p in typeof(CharacterRecord).GetProperties())
+            {
+                if (!p.CanRead || !p.CanWrite || CopyKeeps.Contains(p.Name)) continue;
+                var t = Nullable.GetUnderlyingType(p.PropertyType) ?? p.PropertyType;
+                if (t.IsPrimitive || t.IsEnum || t == typeof(string) || t == typeof(decimal)
+                    || t == typeof(DateTime) || t == typeof(Guid))
+                    p.SetValue(dst, p.GetValue(src));
+            }
+
+            // ---- the items: inventory, equipment and private warehouse, each with a new persistent id -------
+            db.Items.RemoveRange(dst.Items);
+            dst.Items.Clear();
+            var newIds = new Dictionary<Guid, Guid>();
+            foreach (var i in src.Items)
+            {
+                var copy = new ItemRecord { DefId = i.DefId };
+                foreach (var p in typeof(ItemRecord).GetProperties())
+                    if (p.CanWrite && p.Name is not (nameof(ItemRecord.Id) or nameof(ItemRecord.CharacterId)
+                                                      or nameof(ItemRecord.InstanceId) or nameof(ItemRecord.Attributes)))
+                        p.SetValue(copy, p.GetValue(i));
+                copy.InstanceId = Guid.NewGuid();
+                copy.Attributes = i.Attributes.Select(a => a with { }).ToList();
+                newIds[i.InstanceId] = copy.InstanceId;
+                dst.Items.Add(copy);
+            }
+            if (!string.IsNullOrEmpty(dst.EquipPresetsJson))
+            {
+                try
+                {
+                    var presets = JsonSerializer.Deserialize<Guid[][]>(dst.EquipPresetsJson);
+                    if (presets is not null)
+                        dst.EquipPresetsJson = JsonSerializer.Serialize(presets.Select(set =>
+                            (set ?? Array.Empty<Guid>()).Where(newIds.ContainsKey).Select(g => newIds[g]).ToArray()).ToArray());
+                }
+                catch { dst.EquipPresetsJson = ""; }   // a malformed preset list is dropped, never half-copied
+            }
+
+            // ---- the subclasses (each slot's class, level, skills and bars) ----------------------------------
+            db.Subclasses.RemoveRange(dst.Subclasses);
+            dst.Subclasses.Clear();
+            foreach (var s in src.Subclasses)
+            {
+                var copy = new SubclassRecord();
+                foreach (var p in typeof(SubclassRecord).GetProperties())
+                    if (p.CanWrite && p.Name is not (nameof(SubclassRecord.Id) or nameof(SubclassRecord.CharacterId)))
+                        p.SetValue(copy, p.GetValue(s));
+                dst.Subclasses.Add(copy);
+            }
+
+            await db.SaveChangesAsync();
+            return (src.Name, dst.Name, null);
+        }
+        finally { _saveGate.Release(); }
+    }
+
     /// <summary>The characters currently jailed (name + release time), for the admin's un-jail list.</summary>
     public async Task<List<JailedInfo>> ListJailedAsync()
     {

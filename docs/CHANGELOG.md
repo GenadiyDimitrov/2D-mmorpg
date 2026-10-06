@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.230.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.230.3**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,27 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-06 (latest) — 0.230.2: the Elf's Sharpening says PVE and PVP apart
+## 2026-10-06 (latest) — 0.230.3: `/copy` — the Owner can clone a character onto another
+
+**Server restart.** The APK only matters for `/help` listing the line (the server answers `/help` itself). No `game.db` delete.
+
+- **His ask:** *"owner only command `/copy <name-source> <name-target>` ... it copies everything with equip/sp/exp ->
+  exactly the same only if target is admin stays admin etc ... even if target requires to be offline its ok .. i would
+  like if some1 fells like cheating to copy his current char over owner one or other to check stats items etc"*.
+- **`/copy <source> <target>`, Owner only.** The target becomes an exact copy of the source: race, classes, level,
+  EXP, SP, stats, learned skills, every subclass (with its bars), bag, EQUIPMENT, private warehouse, gold, quests,
+  buffs and position.
+- **The target keeps** its name, rank (an Admin stays an Admin), account, its jail/kick/mute/pending-delete state, its
+  god/invisible toggles, and its friends, block list and social options. The account warehouse is the account's and
+  is not copied.
+- **The target must be offline** (it would save its old self over the copy); the command says so. An **online source**
+  is saved first, so the copy is of what it is now, not of its last autosave.
+- Every copied item gets a fresh persistent id (two characters never share one), and the equipment presets are
+  re-pointed at the copies. `PersistenceService.CopyCharacterAsync`; the command is in `GameLoopService` beside `/role`.
+- Verified headless against a live server: an online target is refused; the copy carries level, race, class and items;
+  the name and rank stay; the source is untouched. SmokeTest re-run (persistence was touched).
+
+## 2026-10-06 — 0.230.2: the Elf's Sharpening says PVE and PVP apart
 
 **APK** for the skill text. No server change of substance, no `game.db` delete beyond 0.230.0's.
 
