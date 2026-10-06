@@ -487,7 +487,7 @@ public static partial class ClassSkillTables
         var shared = new List<ClassSkill>();
 
         // ---- THE CONTINUING LADDERS, every level ----
-        shared.AddRange(Ladder(HarmonyOfRestoration,  all, 15));
+        shared.AddRange(Ladder(HarmonyOfRestoration,  even, 15));   // every OTHER level since 2026-10-06 (his edit)
         // ---- …and every other level ----
         shared.AddRange(Ladder(WcSoulReinforce,       even, 2));
         shared.AddRange(Ladder(WcArcaneFeralProt,     even, 2));

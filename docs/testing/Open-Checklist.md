@@ -42,6 +42,9 @@
 - `143e` [ ] - Feel: does a Warchanter's damage feel like a HEALER's (the target), not a nuker's or a warrior's? ->
 - `143f` [ ] - The Learn tab: no heavy/light/weapon/bow masteries, no Shield Mastery and no Bow Expertise. The Elf gets
   Monster Knowledge and Mana Vampirism to 9%; Combo Mastery procs with your race's weapon only. ->
+- `143g` [ ] - (0.230.1) The Human's Sound Smash refuses a two-handed blunt; the Demon's refuses a one-handed one.
+  Harmony of Restoration, cast every 30s rather than spammed, now leaves you with MORE MP from 64 up (at 74: 280
+  spent, 300 back). At 76+ it is learned every other level. ->
 
 ---
 

@@ -127,21 +127,14 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,,,------------------------------Harmony of Madness------------------------------
 83,Harmony of Madness,harmony_of_madness,Magic/Buff,,,600,800,party/aoe,1,120,300,"−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion.",367,400kk,100kk,,,,,"-10% maximum HP and MP, +8% attack, attack speed and cast speed, +@{ms} move speed, -@{eva} evasion."
 ,,,,,,,,,,,,,,,,,,,---------------------------Harmony of Restoration----------------------------
-76,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +110 HP/s and +11 MP/s for 30s,470,10.5kk,1
-77,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +115 HP/s and +11 MP/s for 30s,476,16.2kk,1k
-78,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +120 HP/s and +12 MP/s for 30s,482,24.2kk,1k
-79,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +125 HP/s and +12 MP/s for 30s,488,118kk,1k
-80,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +130 HP/s and +13 MP/s for 30s,454,0,5kk
-81,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +135 HP/s and +13 MP/s for 30s,460,0,7.5kk
-82,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +140 HP/s and +14 MP/s for 30s,466,0,10kk
-83,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +145 HP/s and +14 MP/s for 30s,472,0,15kk
-84,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +150 HP/s and +15 MP/s for 30s,478,0,30kk
-85,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +155 HP/s and +15 MP/s for 30s,484,0,50kk
-86,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +160 HP/s and +16 MP/s for 30s,490,0,75kk
-87,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +165 HP/s and +16 MP/s for 30s,496,0,100kk
-88,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +170 HP/s and +17 MP/s for 30s,502,0,100kk
-89,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +175 HP/s and +17 MP/s for 30s,508,0,100kk
-90,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +180 HP/s and +18 MP/s for 30s,514,0,100kk
+76,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +110 HP/s and +11 MP/s for 30s,290,10.5kk,1kk
+78,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +120 HP/s and +12 MP/s for 30s,300,24.2kk,1kk
+80,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +130 HP/s and +13 MP/s for 30s,310,0,5kk
+82,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +140 HP/s and +14 MP/s for 30s,320,0,10kk
+84,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +150 HP/s and +15 MP/s for 30s,330,0,30kk
+86,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +160 HP/s and +16 MP/s for 30s,340,0,75kk
+88,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +170 HP/s and +17 MP/s for 30s,350,0,100kk
+90,Harmony of Restoration,harmony_of_restoration,Magic/Heal,,,600,800,party/aoe,2,10,30,Restores +180 HP/s and +18 MP/s for 30s,360,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Soul Reinforcement----------------------------
 76,Soul Reinforcement,wc_soul_reinforcement,Magic/Buff,,,600,800,party/aoe,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 21% and Magic MP Cost by 11%",460,6.99kk,1kk
 78,Soul Reinforcement,wc_soul_reinforcement,Magic/Buff,,,600,800,party/aoe,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 22% and Magic MP Cost by 12%",470,16.1kk,1kk
@@ -180,107 +173,107 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +396 (high fail chance: +59 fail points), Require: Duals;",186,0,100kk,,,Elf
 90,Magic Stab,magic_stab,Magic/Dmg,duals,,40,0,enemy/single,3,5,0,"Deals magic damage with power +401 (high fail chance: +59 fail points), Require: Duals;",195,0,100kk,,,Elf
 ,,,,,,,,,,,,,,,,,,,----------------------------Sound Smash (Human)----------------------------
-76,Sound Smash,sound_smash,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +98, Require: Blunt;",80,10.5kk,1,,,Human
-77,Sound Smash,sound_smash,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +99, Require: Blunt;",82,16.2kk,1k,,,Human
-78,Sound Smash,sound_smash,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +100, Require: Blunt;",84,24.2kk,1k,,,Human
-79,Sound Smash,sound_smash,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +101, Require: Blunt;",86,118kk,1k,,,Human
-80,Sound Smash,sound_smash,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +102, Require: Blunt;",88,0,5kk,,,Human
-81,Sound Smash,sound_smash,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +103, Require: Blunt;",90,0,7.5kk,,,Human
-82,Sound Smash,sound_smash,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +104, Require: Blunt;",92,0,10kk,,,Human
-83,Sound Smash,sound_smash,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +105, Require: Blunt;",95,0,15kk,,,Human
-84,Sound Smash,sound_smash,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +106, Require: Blunt;",98,0,30kk,,,Human
-85,Sound Smash,sound_smash,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +107, Require: Blunt;",100,0,50kk,,,Human
-86,Sound Smash,sound_smash,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +108, Require: Blunt;",102,0,75kk,,,Human
-87,Sound Smash,sound_smash,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +109, Require: Blunt;",104,0,100kk,,,Human
-88,Sound Smash,sound_smash,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +110, Require: Blunt;",106,0,100kk,,,Human
-89,Sound Smash,sound_smash,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +111, Require: Blunt;",108,0,100kk,,,Human
-90,Sound Smash,sound_smash,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +112, Require: Blunt;",110,0,100kk,,,Human
+76,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +98, Require: Blunt;",80,10.5kk,1,,,Human
+77,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +99, Require: Blunt;",82,16.2kk,1k,,,Human
+78,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +100, Require: Blunt;",84,24.2kk,1k,,,Human
+79,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +101, Require: Blunt;",86,118kk,1k,,,Human
+80,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +102, Require: Blunt;",88,0,5kk,,,Human
+81,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +103, Require: Blunt;",90,0,7.5kk,,,Human
+82,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +104, Require: Blunt;",92,0,10kk,,,Human
+83,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +105, Require: Blunt;",95,0,15kk,,,Human
+84,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +106, Require: Blunt;",98,0,30kk,,,Human
+85,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +107, Require: Blunt;",100,0,50kk,,,Human
+86,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +108, Require: Blunt;",102,0,75kk,,,Human
+87,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +109, Require: Blunt;",104,0,100kk,,,Human
+88,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +110, Require: Blunt;",106,0,100kk,,,Human
+89,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +111, Require: Blunt;",108,0,100kk,,,Human
+90,Sound Smash,sound_smash,Magic/Dmg,blunt/1,,40,0,enemy/single,1,3,0,"Deals magic damage with power +112, Require: Blunt;",110,0,100kk,,,Human
 ,,,,,,,,,,,,,,,,,,,----------------------------Sound Smash (Demon)----------------------------
-76,Sound Smash,sound_smash_demon,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +53, Require: Blunt;",80,10.5kk,1,,,Demon
-77,Sound Smash,sound_smash_demon,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +54, Require: Blunt;",82,16.2kk,1k,,,Demon
-78,Sound Smash,sound_smash_demon,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +55, Require: Blunt;",84,24.2kk,1k,,,Demon
-79,Sound Smash,sound_smash_demon,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +56, Require: Blunt;",86,118kk,1k,,,Demon
-80,Sound Smash,sound_smash_demon,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +57, Require: Blunt;",88,0,5kk,,,Demon
-81,Sound Smash,sound_smash_demon,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +58, Require: Blunt;",90,0,7.5kk,,,Demon
-82,Sound Smash,sound_smash_demon,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +59, Require: Blunt;",92,0,10kk,,,Demon
-83,Sound Smash,sound_smash_demon,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +60, Require: Blunt;",95,0,15kk,,,Demon
-84,Sound Smash,sound_smash_demon,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +61, Require: Blunt;",98,0,30kk,,,Demon
-85,Sound Smash,sound_smash_demon,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +62, Require: Blunt;",100,0,50kk,,,Demon
-86,Sound Smash,sound_smash_demon,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +63, Require: Blunt;",102,0,75kk,,,Demon
-87,Sound Smash,sound_smash_demon,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +64, Require: Blunt;",104,0,100kk,,,Demon
-88,Sound Smash,sound_smash_demon,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +65, Require: Blunt;",106,0,100kk,,,Demon
-89,Sound Smash,sound_smash_demon,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +66, Require: Blunt;",108,0,100kk,,,Demon
-90,Sound Smash,sound_smash_demon,Magic/Dmg,blunt,,40,0,enemy/single,1,3,0,"Deals magic damage with power +67, Require: Blunt;",110,0,100kk,,,Demon
+76,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +53, Require: Blunt;",80,10.5kk,1,,,Demon
+77,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +54, Require: Blunt;",82,16.2kk,1k,,,Demon
+78,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +55, Require: Blunt;",84,24.2kk,1k,,,Demon
+79,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +56, Require: Blunt;",86,118kk,1k,,,Demon
+80,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +57, Require: Blunt;",88,0,5kk,,,Demon
+81,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +58, Require: Blunt;",90,0,7.5kk,,,Demon
+82,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +59, Require: Blunt;",92,0,10kk,,,Demon
+83,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +60, Require: Blunt;",95,0,15kk,,,Demon
+84,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +61, Require: Blunt;",98,0,30kk,,,Demon
+85,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +62, Require: Blunt;",100,0,50kk,,,Demon
+86,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +63, Require: Blunt;",102,0,75kk,,,Demon
+87,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +64, Require: Blunt;",104,0,100kk,,,Demon
+88,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +65, Require: Blunt;",106,0,100kk,,,Demon
+89,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +66, Require: Blunt;",108,0,100kk,,,Demon
+90,Sound Smash,sound_smash_demon,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,0,"Deals magic damage with power +67, Require: Blunt;",110,0,100kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Acoustic Shock----------------------------
-76,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt,,40,0,enemy/single,1,3,5,"Deals magic damage with power +47 and Stuns for 5s, Require: Blunt;",80,10.5kk,1,,,Demon
-77,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt,,40,0,enemy/single,1,3,5,"Deals magic damage with power +48 and Stuns for 5s, Require: Blunt;",82,16.2kk,1k,,,Demon
-78,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt,,40,0,enemy/single,1,3,5,"Deals magic damage with power +49 and Stuns for 5s, Require: Blunt;",84,24.2kk,1k,,,Demon
-79,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt,,40,0,enemy/single,1,3,5,"Deals magic damage with power +50 and Stuns for 5s, Require: Blunt;",86,118kk,1k,,,Demon
-80,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt,,40,0,enemy/single,1,3,5,"Deals magic damage with power +51 and Stuns for 5s, Require: Blunt;",88,0,5kk,,,Demon
-81,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt,,40,0,enemy/single,1,3,5,"Deals magic damage with power +52 and Stuns for 5s, Require: Blunt;",90,0,7.5kk,,,Demon
-82,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt,,40,0,enemy/single,1,3,5,"Deals magic damage with power +53 and Stuns for 5s, Require: Blunt;",92,0,10kk,,,Demon
-83,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt,,40,0,enemy/single,1,3,5,"Deals magic damage with power +54 and Stuns for 5s, Require: Blunt;",95,0,15kk,,,Demon
-84,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt,,40,0,enemy/single,1,3,5,"Deals magic damage with power +55 and Stuns for 5s, Require: Blunt;",98,0,30kk,,,Demon
-85,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt,,40,0,enemy/single,1,3,5,"Deals magic damage with power +56 and Stuns for 5s, Require: Blunt;",100,0,50kk,,,Demon
-86,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt,,40,0,enemy/single,1,3,5,"Deals magic damage with power +57 and Stuns for 5s, Require: Blunt;",102,0,75kk,,,Demon
-87,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt,,40,0,enemy/single,1,3,5,"Deals magic damage with power +58 and Stuns for 5s, Require: Blunt;",104,0,100kk,,,Demon
-88,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt,,40,0,enemy/single,1,3,5,"Deals magic damage with power +59 and Stuns for 5s, Require: Blunt;",106,0,100kk,,,Demon
-89,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt,,40,0,enemy/single,1,3,5,"Deals magic damage with power +60 and Stuns for 5s, Require: Blunt;",108,0,100kk,,,Demon
-90,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt,,40,0,enemy/single,1,3,5,"Deals magic damage with power +61 and Stuns for 5s, Require: Blunt;",110,0,100kk,,,Demon
+76,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +47 and Stuns for 5s, Require: Blunt;",80,10.5kk,1,,,Demon
+77,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +48 and Stuns for 5s, Require: Blunt;",82,16.2kk,1k,,,Demon
+78,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +49 and Stuns for 5s, Require: Blunt;",84,24.2kk,1k,,,Demon
+79,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +50 and Stuns for 5s, Require: Blunt;",86,118kk,1k,,,Demon
+80,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +51 and Stuns for 5s, Require: Blunt;",88,0,5kk,,,Demon
+81,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +52 and Stuns for 5s, Require: Blunt;",90,0,7.5kk,,,Demon
+82,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +53 and Stuns for 5s, Require: Blunt;",92,0,10kk,,,Demon
+83,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +54 and Stuns for 5s, Require: Blunt;",95,0,15kk,,,Demon
+84,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +55 and Stuns for 5s, Require: Blunt;",98,0,30kk,,,Demon
+85,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +56 and Stuns for 5s, Require: Blunt;",100,0,50kk,,,Demon
+86,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +57 and Stuns for 5s, Require: Blunt;",102,0,75kk,,,Demon
+87,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +58 and Stuns for 5s, Require: Blunt;",104,0,100kk,,,Demon
+88,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +59 and Stuns for 5s, Require: Blunt;",106,0,100kk,,,Demon
+89,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +60 and Stuns for 5s, Require: Blunt;",108,0,100kk,,,Demon
+90,Acoustic Shock,acoustic_shock,Magic/Dmg,blunt/2,,40,0,enemy/single,1,3,5,"Deals magic damage with power +61 and Stuns for 5s, Require: Blunt;",110,0,100kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Reinforcement (Human)----------------------------
-76,Reinforcement,reinforcement,Toggle,,,0,0,self/single,0,0,0,"p.def +36%, crit dmg resist 15%, bow resistance 16%; mp consumption +15% (Consumes: 8/s)",8,6.99kk,1kk,,,Human
-78,Reinforcement,reinforcement,Toggle,,,0,0,self/single,0,0,0,"p.def +36.5%, crit dmg resist 15%, bow resistance 16%; mp consumption +15% (Consumes: 8/s)",8,16.1kk,1kk,,,Human
-80,Reinforcement,reinforcement,Toggle,,,0,0,self/single,0,0,0,"p.def +37%, crit dmg resist 15%, bow resistance 16%; mp consumption +15% (Consumes: 8/s)",8,0,5kk,,,Human
-82,Reinforcement,reinforcement,Toggle,,,0,0,self/single,0,0,0,"p.def +37.5%, crit dmg resist 15%, bow resistance 16%; mp consumption +15% (Consumes: 8/s)",8,0,10kk,,,Human
-84,Reinforcement,reinforcement,Toggle,,,0,0,self/single,0,0,0,"p.def +38%, crit dmg resist 15%, bow resistance 16%; mp consumption +15% (Consumes: 8/s)",8,0,30kk,,,Human
-86,Reinforcement,reinforcement,Toggle,,,0,0,self/single,0,0,0,"p.def +38.5%, crit dmg resist 15%, bow resistance 16%; mp consumption +15% (Consumes: 8/s)",8,0,75kk,,,Human
-88,Reinforcement,reinforcement,Toggle,,,0,0,self/single,0,0,0,"p.def +39%, crit dmg resist 15%, bow resistance 16%; mp consumption +15% (Consumes: 8/s)",8,0,100kk,,,Human
-90,Reinforcement,reinforcement,Toggle,,,0,0,self/single,0,0,0,"p.def +40%, crit dmg resist 15%, bow resistance 16%; mp consumption +15% (Consumes: 8/s)",8,0,100kk,,,Human
+76,Reinforcement,reinforcement,Toggle,,,0,0,self/single,0,0,0,"P.Def +36%, P.Crit Damage Resist 15%, Bow Resistance 16%; MP Consumption +15%",8,6.99kk,1kk,,,Human
+78,Reinforcement,reinforcement,Toggle,,,0,0,self/single,0,0,0,"P.Def +36.5%, P.Crit Damage Resist 15%, Bow Resistance 16%; MP Consumption +15%",8,16.1kk,1kk,,,Human
+80,Reinforcement,reinforcement,Toggle,,,0,0,self/single,0,0,0,"P.Def +37%, P.Crit Damage Resist 15%, Bow Resistance 16%; MP Consumption +15%",8,0,5kk,,,Human
+82,Reinforcement,reinforcement,Toggle,,,0,0,self/single,0,0,0,"P.Def +37.5%, P.Crit Damage Resist 15%, Bow Resistance 16%; MP Consumption +15%",8,0,10kk,,,Human
+84,Reinforcement,reinforcement,Toggle,,,0,0,self/single,0,0,0,"P.Def +38%, P.Crit Damage Resist 15%, Bow Resistance 16%; MP Consumption +15%",8,0,30kk,,,Human
+86,Reinforcement,reinforcement,Toggle,,,0,0,self/single,0,0,0,"P.Def +38.5%, P.Crit Damage Resist 15%, Bow Resistance 16%; MP Consumption +15%",8,0,75kk,,,Human
+88,Reinforcement,reinforcement,Toggle,,,0,0,self/single,0,0,0,"P.Def +39%, P.Crit Damage Resist 15%, Bow Resistance 16%; MP Consumption +15%",8,0,100kk,,,Human
+90,Reinforcement,reinforcement,Toggle,,,0,0,self/single,0,0,0,"P.Def +40%, P.Crit Damage Resist 15%, Bow Resistance 16%; MP Consumption +15%",8,0,100kk,,,Human
 ,,,,,,,,,,,,,,,,,,,----------------------------Reinforcement (Demon)----------------------------
-76,Reinforcement,reinforcement_demon,Toggle,,,0,0,self/single,0,0,0,"p.def +29%, crit rate resist 15%, crit dmg resist 15%; mp consumption +15% (Consumes: 8/s)",8,6.99kk,1kk,,,Demon
-78,Reinforcement,reinforcement_demon,Toggle,,,0,0,self/single,0,0,0,"p.def +30%, crit rate resist 15%, crit dmg resist 15%; mp consumption +15% (Consumes: 8/s)",8,16.1kk,1kk,,,Demon
-80,Reinforcement,reinforcement_demon,Toggle,,,0,0,self/single,0,0,0,"p.def +30.5%, crit rate resist 15%, crit dmg resist 15%; mp consumption +15% (Consumes: 8/s)",8,0,5kk,,,Demon
-82,Reinforcement,reinforcement_demon,Toggle,,,0,0,self/single,0,0,0,"p.def +31%, crit rate resist 15%, crit dmg resist 15%; mp consumption +15% (Consumes: 8/s)",8,0,10kk,,,Demon
-84,Reinforcement,reinforcement_demon,Toggle,,,0,0,self/single,0,0,0,"p.def +31.5%, crit rate resist 15%, crit dmg resist 15%; mp consumption +15% (Consumes: 8/s)",8,0,30kk,,,Demon
-86,Reinforcement,reinforcement_demon,Toggle,,,0,0,self/single,0,0,0,"p.def +32%, crit rate resist 15%, crit dmg resist 15%; mp consumption +15% (Consumes: 8/s)",8,0,75kk,,,Demon
-88,Reinforcement,reinforcement_demon,Toggle,,,0,0,self/single,0,0,0,"p.def +32.5%, crit rate resist 15%, crit dmg resist 15%; mp consumption +15% (Consumes: 8/s)",8,0,100kk,,,Demon
-90,Reinforcement,reinforcement_demon,Toggle,,,0,0,self/single,0,0,0,"p.def +33%, crit rate resist 15%, crit dmg resist 15%; mp consumption +15% (Consumes: 8/s)",8,0,100kk,,,Demon
+76,Reinforcement,reinforcement_demon,Toggle,,,0,0,self/single,0,0,0,"P.Def +29%, P.Crit Rate Resist 8%, P.Crit Damage Resist 8%; MP Consumption +15%",8,6.99kk,1kk,,,Demon
+78,Reinforcement,reinforcement_demon,Toggle,,,0,0,self/single,0,0,0,"P.Def +30%, P.Crit Rate Resist 8%, P.Crit Damage Resist 8%; MP Consumption +15%",8,16.1kk,1kk,,,Demon
+80,Reinforcement,reinforcement_demon,Toggle,,,0,0,self/single,0,0,0,"P.Def +30.5%, P.Crit Rate Resist 8%, P.Crit Damage Resist 8%; MP Consumption +15%",8,0,5kk,,,Demon
+82,Reinforcement,reinforcement_demon,Toggle,,,0,0,self/single,0,0,0,"P.Def +31%, P.Crit Rate Resist 8%, P.Crit Damage Resist 8%; MP Consumption +15%",8,0,10kk,,,Demon
+84,Reinforcement,reinforcement_demon,Toggle,,,0,0,self/single,0,0,0,"P.Def +31.5%, P.Crit Rate Resist 8%, P.Crit Damage Resist 8%; MP Consumption +15%",8,0,30kk,,,Demon
+86,Reinforcement,reinforcement_demon,Toggle,,,0,0,self/single,0,0,0,"P.Def +32%, P.Crit Rate Resist 8%, P.Crit Damage Resist 8%; MP Consumption +15%",8,0,75kk,,,Demon
+88,Reinforcement,reinforcement_demon,Toggle,,,0,0,self/single,0,0,0,"P.Def +32.5%, P.Crit Rate Resist 8%, P.Crit Damage Resist 8%; MP Consumption +15%",8,0,100kk,,,Demon
+90,Reinforcement,reinforcement_demon,Toggle,,,0,0,self/single,0,0,0,"P.Def +33%, P.Crit Rate Resist 8%, P.Crit Damage Resist 8%; MP Consumption +15%",8,0,100kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Reinforcement (Elf)----------------------------
-76,Reinforcement,reinforcement_elf,Toggle,,,0,0,self/single,0,0,0,"p.def +15%, crit rate resist 15%; mp consumption +15% (Consumes: 8/s)",8,6.99kk,1kk,,,Elf
-78,Reinforcement,reinforcement_elf,Toggle,,,0,0,self/single,0,0,0,"p.def +15.5%, crit rate resist 15%; mp consumption +15% (Consumes: 8/s)",8,16.1kk,1kk,,,Elf
-80,Reinforcement,reinforcement_elf,Toggle,,,0,0,self/single,0,0,0,"p.def +16%, crit rate resist 15%; mp consumption +15% (Consumes: 8/s)",8,0,5kk,,,Elf
-82,Reinforcement,reinforcement_elf,Toggle,,,0,0,self/single,0,0,0,"p.def +16.5%, crit rate resist 15%; mp consumption +15% (Consumes: 8/s)",8,0,10kk,,,Elf
-84,Reinforcement,reinforcement_elf,Toggle,,,0,0,self/single,0,0,0,"p.def +17%, crit rate resist 15%; mp consumption +15% (Consumes: 8/s)",8,0,30kk,,,Elf
-86,Reinforcement,reinforcement_elf,Toggle,,,0,0,self/single,0,0,0,"p.def +17.5%, crit rate resist 15%; mp consumption +15% (Consumes: 8/s)",8,0,75kk,,,Elf
-88,Reinforcement,reinforcement_elf,Toggle,,,0,0,self/single,0,0,0,"p.def +18%, crit rate resist 15%; mp consumption +15% (Consumes: 8/s)",8,0,100kk,,,Elf
-90,Reinforcement,reinforcement_elf,Toggle,,,0,0,self/single,0,0,0,"p.def +18.5%, crit rate resist 15%; mp consumption +15% (Consumes: 8/s)",8,0,100kk,,,Elf
+76,Reinforcement,reinforcement_elf,Toggle,,,0,0,self/single,0,0,0,"P.Def +15%, P.Crit Rate Resist 15%; MP Consumption +15%",8,6.99kk,1kk,,,Elf
+78,Reinforcement,reinforcement_elf,Toggle,,,0,0,self/single,0,0,0,"P.Def +15.5%, P.Crit Rate Resist 15%; MP Consumption +15%",8,16.1kk,1kk,,,Elf
+80,Reinforcement,reinforcement_elf,Toggle,,,0,0,self/single,0,0,0,"P.Def +16%, P.Crit Rate Resist 15%; MP Consumption +15%",8,0,5kk,,,Elf
+82,Reinforcement,reinforcement_elf,Toggle,,,0,0,self/single,0,0,0,"P.Def +16.5%, P.Crit Rate Resist 15%; MP Consumption +15%",8,0,10kk,,,Elf
+84,Reinforcement,reinforcement_elf,Toggle,,,0,0,self/single,0,0,0,"P.Def +17%, P.Crit Rate Resist 15%; MP Consumption +15%",8,0,30kk,,,Elf
+86,Reinforcement,reinforcement_elf,Toggle,,,0,0,self/single,0,0,0,"P.Def +17.5%, P.Crit Rate Resist 15%; MP Consumption +15%",8,0,75kk,,,Elf
+88,Reinforcement,reinforcement_elf,Toggle,,,0,0,self/single,0,0,0,"P.Def +18%, P.Crit Rate Resist 15%; MP Consumption +15%",8,0,100kk,,,Elf
+90,Reinforcement,reinforcement_elf,Toggle,,,0,0,self/single,0,0,0,"P.Def +18.5%, P.Crit Rate Resist 15%; MP Consumption +15%",8,0,100kk,,,Elf
 ,,,,,,,,,,,,,,,,,,,----------------------------Sharpening (Human)----------------------------
-76,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"shield dmg reduction +25%, shield rate +85%, p.def +10%; mp consumption +15% (Consumes: 8/s)",8,6.99kk,1kk,,,Human
-78,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"shield dmg reduction +25%, shield rate +85%, p.def +10%; mp consumption +15% (Consumes: 8/s)",8,16.1kk,1kk,,,Human
-80,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"shield dmg reduction +25%, shield rate +85%, p.def +10%; mp consumption +15% (Consumes: 8/s)",8,0,5kk,,,Human
-82,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"shield dmg reduction +25%, shield rate +85%, p.def +10%; mp consumption +15% (Consumes: 8/s)",8,0,10kk,,,Human
-84,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"shield dmg reduction +25%, shield rate +85%, p.def +10%; mp consumption +15% (Consumes: 8/s)",8,0,30kk,,,Human
-86,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"shield dmg reduction +25%, shield rate +85%, p.def +10%; mp consumption +15% (Consumes: 8/s)",8,0,75kk,,,Human
-88,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"shield dmg reduction +25%, shield rate +85%, p.def +10%; mp consumption +15% (Consumes: 8/s)",8,0,100kk,,,Human
-90,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"shield dmg reduction +25%, shield rate +85%, p.def +10%; mp consumption +15% (Consumes: 8/s)",8,0,100kk,,,Human
+76,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"Shield Reduction +25%, Shield Rate +85%, P.Def +10%; MP Consumption +15%",8,6.99kk,1kk,,,Human
+78,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"Shield Reduction +25%, Shield Rate +85%, P.Def +10%; MP Consumption +15%",8,16.1kk,1kk,,,Human
+80,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"Shield Reduction +25%, Shield Rate +85%, P.Def +10%; MP Consumption +15%",8,0,5kk,,,Human
+82,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"Shield Reduction +25%, Shield Rate +85%, P.Def +10%; MP Consumption +15%",8,0,10kk,,,Human
+84,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"Shield Reduction +25%, Shield Rate +85%, P.Def +10%; MP Consumption +15%",8,0,30kk,,,Human
+86,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"Shield Reduction +25%, Shield Rate +85%, P.Def +10%; MP Consumption +15%",8,0,75kk,,,Human
+88,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"Shield Reduction +25%, Shield Rate +85%, P.Def +10%; MP Consumption +15%",8,0,100kk,,,Human
+90,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"Shield Reduction +25%, Shield Rate +85%, P.Def +10%; MP Consumption +15%",8,0,100kk,,,Human
 ,,,,,,,,,,,,,,,,,,,----------------------------Sharpening (Demon)----------------------------
-76,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"m.Atk +16.5%, accuracy +4; mp consumption +15% (Consumes: 8/s)",8,6.99kk,1kk,,,Demon
-78,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"m.Atk +17%, accuracy +4; mp consumption +15% (Consumes: 8/s)",8,16.1kk,1kk,,,Demon
-80,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"m.Atk +17.5%, accuracy +4; mp consumption +15% (Consumes: 8/s)",8,0,5kk,,,Demon
-82,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"m.Atk +18%, accuracy +4; mp consumption +15% (Consumes: 8/s)",8,0,10kk,,,Demon
-84,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"m.Atk +18.5%, accuracy +4; mp consumption +15% (Consumes: 8/s)",8,0,30kk,,,Demon
-86,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"m.Atk +19%, accuracy +5; mp consumption +15% (Consumes: 8/s)",8,0,75kk,,,Demon
-88,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"m.Atk +19.5%, accuracy +5; mp consumption +15% (Consumes: 8/s)",8,0,100kk,,,Demon
-90,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"m.Atk +20%, accuracy +5; mp consumption +15% (Consumes: 8/s)",8,0,100kk,,,Demon
+76,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"M.Atk +16.5%, Accuracy +4; MP Consumption +15%",8,6.99kk,1kk,,,Demon
+78,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"M.Atk +17%, Accuracy +4; MP Consumption +15%",8,16.1kk,1kk,,,Demon
+80,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"M.Atk +17.5%, Accuracy +4; MP Consumption +15%",8,0,5kk,,,Demon
+82,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"M.Atk +18%, Accuracy +4; MP Consumption +15%",8,0,10kk,,,Demon
+84,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"M.Atk +18.5%, Accuracy +4; MP Consumption +15%",8,0,30kk,,,Demon
+86,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"M.Atk +19%, Accuracy +5; MP Consumption +15%",8,0,75kk,,,Demon
+88,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"M.Atk +19.5%, Accuracy +5; MP Consumption +15%",8,0,100kk,,,Demon
+90,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"M.Atk +20%, Accuracy +5; MP Consumption +15%",8,0,100kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Sharpening (Elf)----------------------------
-76,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"evasion +9, pve dmg +8.5%, pvp dmg +8.5% (spell damage), M.Acc +20; mp consumption +15% (Consumes: 8/s)",8,6.99kk,1kk,,,Elf
-78,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"evasion +10, pve dmg +9%, pvp dmg +9% (spell damage), M.Acc +20; mp consumption +15% (Consumes: 8/s)",8,16.1kk,1kk,,,Elf
-80,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"evasion +11, pve dmg +9.5%, pvp dmg +9.5% (spell damage), M.Acc +20; mp consumption +15% (Consumes: 8/s)",8,0,5kk,,,Elf
-82,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"evasion +11, pve dmg +10%, pvp dmg +10% (spell damage), M.Acc +20; mp consumption +15% (Consumes: 8/s)",8,0,10kk,,,Elf
-84,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"evasion +11, pve dmg +10.5%, pvp dmg +10.5% (spell damage), M.Acc +20; mp consumption +15% (Consumes: 8/s)",8,0,30kk,,,Elf
-86,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"evasion +11, pve dmg +11%, pvp dmg +11% (spell damage), M.Acc +20; mp consumption +15% (Consumes: 8/s)",8,0,75kk,,,Elf
-88,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"evasion +11, pve dmg +11.5%, pvp dmg +11.5% (spell damage), M.Acc +20; mp consumption +15% (Consumes: 8/s)",8,0,100kk,,,Elf
-90,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"evasion +12, pve dmg +12%, pvp dmg +12% (spell damage), M.Acc +20; mp consumption +15% (Consumes: 8/s)",8,0,100kk,,,Elf
+76,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +9, PVE/PVP spell power +8.5%, M.Acc +20; MP Consumption +15%",8,6.99kk,1kk,,,Elf
+78,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +10, PVE/PVP spell power +9%, M.Acc +20; MP Consumption +15%",8,16.1kk,1kk,,,Elf
+80,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +11, PVE/PVP spell power +9.5%, M.Acc +20; MP Consumption +15%",8,0,5kk,,,Elf
+82,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +11, PVE/PVP spell power +10%, M.Acc +20; MP Consumption +15%",8,0,10kk,,,Elf
+84,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +11, PVE/PVP spell power +10.5%, M.Acc +20; MP Consumption +15%",8,0,30kk,,,Elf
+86,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +11, PVE/PVP spell power +11%, M.Acc +20; MP Consumption +15%",8,0,75kk,,,Elf
+88,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +11, PVE/PVP spell power +11.5%, M.Acc +20; MP Consumption +15%",8,0,100kk,,,Elf
+90,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +12, PVE/PVP spell power +12%, M.Acc +20; MP Consumption +15%",8,0,100kk,,,Elf
 ,,,,,,,,,,,,,,,,,,,----------------------------Lasting Enchantment----------------------------
 76,Lasting Enchantment,lasting_enchantment,Passive,,,0,0,self/single,0,0,0,double duration rate 10% - buffs and debuffs you cast have that chance to last TWICE as long - one roll per cast so an area blessing doubles for everyone or no one - scales with ATK,0,2.31kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Urgent Lesser Heal----------------------------

@@ -298,9 +298,11 @@ elf keeps it, §2).
   the heavy gap), and a ladder may not fall, so it rises gently across the average. Human/Demon get +22% → +28%
   (40-74). At 76-90 the Human gets +36% → +40% and the Demon +29% → +33%. The Elf gets +9% → +12%, then +15% →
   +18.5%. The Human's Sharpening adds Shield Mastery's +10% P.Def from 70.
-- **Crit resists:** Human −15% crit damage (Critical Damage Resist's). Demon −15% crit rate and −15% crit damage. The
-  Demon's crit-RATE number is mine, copied from the elf's. Elf −15% crit rate (Critical Resist's). Human bow
-  resistance 16% from 60, as Shield Mastery had it.
+- **Crit resists:** Human −15% crit damage (Critical Damage Resist's). Demon **8%** crit rate and **8%** crit damage
+  (**yours**, 0.230.1; I had 15%). Elf −15% crit rate (Critical Resist's). Human bow resistance 16% from 60, as Shield
+  Mastery had it.
+- **Hands (yours, 0.230.1):** the Human's Sound Smash is `blunt/1`, the Demon's Sound Smash and Acoustic Shock are
+  `blunt/2`.
 - **Demon Sharpening:** M.Atk +10% → +20% (**mine**) and accuracy +3/+4/+5 (Hit Rate Mastery's levels).
 - **Elf Sharpening:** evasion +6 → +12 (light-armour evasion, §8 C), +20 M.Accuracy (yours), and spell damage +5%
   → +12% (**mine**).

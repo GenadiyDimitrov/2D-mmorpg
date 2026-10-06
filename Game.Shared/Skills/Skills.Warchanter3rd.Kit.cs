@@ -214,8 +214,10 @@ public static partial class SkillCatalog
         // ---- Harmony of Restoration — the party heal-over-time, 14 rungs, replacing PARTY HEAL.
         //      +30 to +100 HP/s for 30s, and from rung 9 (@64) it also carries MP/s. ----
         int[] hotHp   = { 30, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100 };
-        int[] hotMp   = { 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 5, 5, 5, 10 };
-        int[] hotCost = { 238, 272, 304, 352, 360, 380, 392, 400, 420, 432, 448, 452, 458, 464 };
+        int[] hotMp   = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 10 };
+        // His 2026-10-06 edit: the cost cut to 65 → 280 and the MP/s ramped 1 → 10 from rung 9 (level 64), *"so it start to restore mp if
+        // not spammed"* (at 74: 10 MP/s × 30s = 300 back for 280 spent).
+        int[] hotCost = { 65, 70, 75, 80, 85, 90, 95, 100, 110, 120, 130, 140, 150, 280 };
         list.Add(new SkillDef(HarmonyOfRestoration, "Harmony of Restoration", BaseClass.Mage,
             SkillEffect.HealOverTime | SkillEffect.RestoreMp,
             MpCost: hotCost[0], CastTicks: 20, CooldownTicks: 100, Range: 600, Power: 0,
@@ -239,18 +241,20 @@ public static partial class SkillCatalog
 
         // ---- THE DAMAGE SKILLS — all single-hit MAGIC since `BL-335` (his point 8). They keep their old
         //      cast and reuse and become SPELLS: paced by cast speed, fizzle-able, interruptible. ----
+        //      The two Sound Smashes are separate ids, so each holds its race's hands (owner, 2026-10-06): the
+        //      Human's is ONE-handed blunt (wand), the Demon's and Acoustic Shock TWO-handed (battlestaff).
         list.Add(SoundSpell(SoundSmash, "Sound Smash", WeaponType.Blunt, range: 40, castTicks: 10,
             cooldownTicks: 30, stunTicks: 0, SmashHuman, SoundMeleeMp,
-            desc: "A concussive blow of pure sound that rings through armour."));
+            desc: "A concussive blow of pure sound that rings through armour.", hands: WeaponHands.One));
         list.Add(SoundSpell(SoundSmashDemon, "Sound Smash", WeaponType.Blunt, range: 40, castTicks: 10,
             cooldownTicks: 30, stunTicks: 0, SmashDemon, SoundMeleeMp,
-            desc: "A concussive blow of pure sound that rings through armour."));
+            desc: "A concussive blow of pure sound that rings through armour.", hands: WeaponHands.Two));
         // Acoustic Shock (DEMON ONLY) — Sound Smash with a contested 5s STUN, now a MAGIC debuff (WIT-side
         // vs SPT). ⚠ A re-landed stun still REFRESHES: the IG no-refresh rule is `BL-336`, deferred by him
         // (2026-10-06: *"i have always played with resetting stuns no difference for now"*).
         list.Add(SoundSpell(AcousticShock, "Acoustic Shock", WeaponType.Blunt, range: 40, castTicks: 10,
             cooldownTicks: 30, stunTicks: 50, ShockDemon, SoundMeleeMp,
-            desc: "A blow pitched to shatter the senses: magic damage, and the target reels."));
+            desc: "A blow pitched to shatter the senses: magic damage, and the target reels.", hands: WeaponHands.Two));
         // Magic Stab (ELF) — Sound Burst's successor: melee, ONE hit, its old 3s cast / 5s reuse, and a big
         // fizzle of its own (+59 points) that Sharpening's +20 M.Accuracy cuts (his: *"high chance to fail
         // ... the toggle just to give less fail chance"*).
@@ -275,8 +279,8 @@ public static partial class SkillCatalog
                 new(SkillEffect.BuffCritDmgResist, 0.15f, ModifierMode.Percent),
             }.Concat(i >= 5 ? new[] { new EffectMagnitude(SkillEffect.BuffBowResist, 0.16f, ModifierMode.Percent) }
                             : Array.Empty<EffectMagnitude>()).ToArray(),
-            i => $"+{ReinforceHuman[i] * 100:0.#}% P.Def, -15% critical damage taken"
-               + (i >= 5 ? ", +16% bow resistance" : ""),
+            i => $"P.Def +{ReinforceHuman[i] * 100:0.#}%, P.Crit Damage Resist 15%"
+               + (i >= 5 ? ", Bow Resistance 16%" : ""),
             "Brace yourself: the defence of plate, for as long as you can pay for it."));
         list.Add(Stance(Sharpening, "Sharpening", "sharpening", WeaponType.None, WeaponHands.Any, true,
             i =>
@@ -290,9 +294,9 @@ public static partial class SkillCatalog
                 if (i >= 10) m.Add(new(SkillEffect.BuffDef, 0.10f, ModifierMode.Percent));
                 return m.ToArray();
             },
-            i => i < 5 ? "+15% shield damage reduction, +50% shield rate"
-               : i < 10 ? "+20% shield damage reduction, +70% shield rate"
-               : "+25% shield damage reduction, +85% shield rate, +10% P.Def",
+            i => i < 5 ? "Shield Reduction +15%, Shield Rate +50%"
+               : i < 10 ? "Shield Reduction +20%, Shield Rate +70%"
+               : "Shield Reduction +25%, Shield Rate +85%, P.Def +10%",
             "Set your shield: it blocks more often and turns more of the blow. Requires a shield."));
 
         // DEMON — Reinforcement: heavy armour's P.Def, crit rate AND crit damage resistance. Sharpening
@@ -301,10 +305,10 @@ public static partial class SkillCatalog
             i => new EffectMagnitude[]
             {
                 new(SkillEffect.BuffDef, ReinforceDemon[i], ModifierMode.Percent),
-                new(SkillEffect.BuffCritRateResist, 0.15f, ModifierMode.Percent),
-                new(SkillEffect.BuffCritDmgResist, 0.15f, ModifierMode.Percent),
+                new(SkillEffect.BuffCritRateResist, 0.08f, ModifierMode.Percent),
+                new(SkillEffect.BuffCritDmgResist, 0.08f, ModifierMode.Percent),
             },
-            i => $"+{ReinforceDemon[i] * 100:0.#}% P.Def, -15% critical rate and critical damage taken",
+            i => $"P.Def +{ReinforceDemon[i] * 100:0.#}%, P.Crit Rate Resist 8%, P.Crit Damage Resist 8%",
             "Brace yourself: the defence of plate, for as long as you can pay for it."));
         list.Add(Stance(SharpeningDemon, "Sharpening", "sharpening_demon", WeaponType.Blunt, WeaponHands.Two, false,
             i => new EffectMagnitude[]
@@ -312,7 +316,7 @@ public static partial class SkillCatalog
                 new(SkillEffect.BuffMagAtk, SharpenDemonMAtk[i], ModifierMode.Percent),
                 new(SkillEffect.BuffAccuracy, SharpenDemonAcc[i], ModifierMode.Flat),
             },
-            i => $"+{SharpenDemonMAtk[i] * 100:0.#}% M.Atk, +{SharpenDemonAcc[i]} accuracy",
+            i => $"M.Atk +{SharpenDemonMAtk[i] * 100:0.#}%, Accuracy +{SharpenDemonAcc[i]}",
             "Tune the staff: harder and surer blows. Requires a two-handed blunt."));
 
         // ELF — Reinforcement: Light Armor Mastery's P.Def and Critical Resist's crit-rate resistance.
@@ -323,7 +327,7 @@ public static partial class SkillCatalog
                 new(SkillEffect.BuffDef, ReinforceElf[i], ModifierMode.Percent),
                 new(SkillEffect.BuffCritRateResist, 0.15f, ModifierMode.Percent),
             },
-            i => $"+{ReinforceElf[i] * 100:0.##}% P.Def, -15% critical rate taken",
+            i => $"P.Def +{ReinforceElf[i] * 100:0.##}%, P.Crit Rate Resist 15%",
             "Brace yourself: the defence of leather, for as long as you can pay for it."));
         list.Add(Stance(SharpeningElf, "Sharpening", "sharpening_elf", WeaponType.Dual, WeaponHands.Any, false,
             i => new EffectMagnitude[]
@@ -332,7 +336,7 @@ public static partial class SkillCatalog
                 new(SkillEffect.BuffPveMagicDamage, SharpenElfSpell[i], ModifierMode.Percent),
                 new(SkillEffect.BuffPvpMagicDamage, SharpenElfSpell[i], ModifierMode.Percent),
             },
-            i => $"+{SharpenElfEva[i]} evasion, +{SharpenElfSpell[i] * 100:0.##}% spell damage, +{SharpenElfMAcc:0} M.Accuracy",
+            i => $"Evasion +{SharpenElfEva[i]}, PVE/PVP spell power +{SharpenElfSpell[i] * 100:0.##}%, M.Acc +{SharpenElfMAcc:0}",
             "Quicken the fangs: harder to hit, and your spells find their mark. Requires duals.",
             magicAccuracy: SharpenElfMAcc));
 
@@ -414,7 +418,7 @@ public static partial class SkillCatalog
                 MagicMpCostPct: -StanceMpSurcharge, PhysMpCostPct: -StanceMpSurcharge,
                 MagicAccuracy: magicAccuracy,
                 Magnitudes: mags(i),
-                Description: $"{text(i)}; skills cost 15% more MP; {mps} MP per second.");
+                Description: $"{text(i)}; MP Consumption +15%; drains {mps} MP per second.");
         }
         var first = mags(0);
         var mask = Enumerable.Range(0, StanceMpPerSec.Length).SelectMany(mags)
@@ -436,7 +440,8 @@ public static partial class SkillCatalog
     /// 76-90), weapon-gated, and (Acoustic Shock) a contested magic stun. Every one retires Holy Bolt and
     /// Holy Spike (playtest 28: *"holy bolt should be replaced from sound smash/burst"*).</summary>
     private static SkillDef SoundSpell(string id, string name, WeaponType weapon, float range, int castTicks,
-        int cooldownTicks, int stunTicks, int[] power, int[] mp, string desc, float failPoints = 0f)
+        int cooldownTicks, int stunTicks, int[] power, int[] mp, string desc, float failPoints = 0f,
+        WeaponHands hands = WeaponHands.Any)
     {
         var effect = SkillEffect.MagicDamage | (stunTicks > 0 ? SkillEffect.Stun : SkillEffect.None);
         SkillLevel Rung(int i)
@@ -454,7 +459,7 @@ public static partial class SkillCatalog
             MpCost: mp[0], CastTicks: castTicks, CooldownTicks: cooldownTicks, Range: range, Power: power[0],
             Category: SkillCategory.Magic, BuffKey: id,   // two "Sound Smash" ids (Human, Demon) must not share the name key
             Replaces: new[] { HolyBolt, HolySpike },
-            RequiredWeapon: weapon,
+            RequiredWeapon: weapon, RequiredHands: hands,
             DurationTicks: stunTicks,
             DebuffSchool: stunTicks > 0 ? DebuffSchool.Magical : DebuffSchool.None,
             MagicFailPoints: failPoints,

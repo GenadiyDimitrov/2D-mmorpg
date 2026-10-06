@@ -39,7 +39,7 @@ multi-part row a number belongs to.
 |---|---|
 | `power` | `power`, `transfers`, `heal for`, `heals for`, `restores`, `damages the mp`, `friendly targets` |
 | `blockrate` | `shield defence rate`, `shield defense rate`, `shield rate`, `block rate`, `block chance` |
-| `blockreduction` | `shield dmg reduction`, `shield damage reduction`, `shield.p.def`, `shiled defence`, `shield defence`, `shield def`, `shield pdef`, `shield p.def` |
+| `blockreduction` | `shield dmg reduction`, `shield damage reduction`, `shield reduction`, `shield.p.def`, `shiled defence`, `shield defence`, `shield def`, `shield pdef`, `shield p.def` |
 | `mdef` | `magic defence`, `magic defense`, `magic def`, `m.def`, `mdef` |
 | `matk` | `magic attack`, `m.atk`, `matk`, `mattack` |
 | `patk` | `physical attack`, `p.atk`, `patk`, `pattack`, `p.attack` |
@@ -89,7 +89,7 @@ multi-part row a number belongs to.
 | `bowresist` | `bow resistance`, `bow resist`, `arrow defence` |
 | `ccresist` | `cc resist`, `ccresist` |
 | `critrateres` | `m.crit.rate.received`, `p.crit.rate.received`, `crit.rate.received`, `critical.rate.received`, `rate.received`, `crit rate resist`, `critical rate resist` |
-| `critdmgres` | `p.critical.dmg.received`, `p.crit.dmg.received`, `crit.dmg.received`, `critical.dmg.received`, `dmg.received`, `crit dmg reduction`, `crit dmg resist`, `crit damage reduction`, `critical damage reduction`, `critical damage resist` |
+| `critdmgres` | `p.critical.dmg.received`, `p.crit.dmg.received`, `crit.dmg.received`, `critical.dmg.received`, `dmg.received`, `crit dmg reduction`, `crit dmg resist`, `crit damage reduction`, `critical damage reduction`, `critical damage resist`, `crit damage resist` |
 | `successchance` | `success chance` |
 | `procchance` | `chance` |
 | `ccresist` | `resist to spt`, `resist to con` |
@@ -97,7 +97,7 @@ multi-part row a number belongs to.
 | `cancelresist` | `removal attacks`, `removal`, `cancel resist`, `buff cancel resist` |
 | `healrecv` | `received hp`, `healing received`, `heal received` |
 | `hpgate` | `less or equal to`, `when hp is below`, `hp is below` |
-| `pvedmg` | `pve dmg`, `pve damage` |
+| `pvedmg` | `pve dmg`, `pve damage`, `pve/pvp spell power` |
 | `aggro` | `aggro`, `threat` |
 | `reagent` | `consumes`, `skill stones`, `skill stone`, `elemental stones`, `elemental stone` |
 | `resexp` | `of lost exp`, `lost exp` |
@@ -111,7 +111,7 @@ multi-part row a number belongs to.
 | `hpprice` | `hp price` |
 | `mpprice` | `mp price` |
 
-73 keys, 220 spellings.
+73 keys, 223 spellings.
 
 ## Words that are read but are not stats
 

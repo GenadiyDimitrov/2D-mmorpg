@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.230.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.230.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,24 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-06 (latest) — 0.230.0: the Warchanter hits with MAGIC (`BL-335`)
+## 2026-10-06 (latest) — 0.230.1: his first pass over the magic Warchanter + a cheaper Harmony of Restoration
+
+**Server restart + APK** (skill text, the Learn tab's 4th-tier Harmony rows). No `game.db` delete beyond 0.230.0's.
+
+- **The two Sound Smashes hold their race's hands** (they are separate ids): the Human's is `blunt/1` (wand), the
+  Demon's and Acoustic Shock `blunt/2` (battlestaff).
+- **The Demon's Reinforcement resists are 8%** crit rate and 8% crit damage (were 15%).
+- **Toggle texts in his wording**, e.g. *"P.Def +28%, P.Crit Damage Resist 15%, Bow Resistance 16%; MP Consumption
+  +15%"*. The upkeep is the MP column, so the `(Consumes: N/s)` is gone from DESCR; the in-game text still says how
+  much it drains.
+- **Harmony of Restoration, his edit:** *"I decreased the harmony_of_restoration mp consumption so it start to restore
+  mp if not spammed"*. 40-74 costs 65 → 280 MP (was 238 → 464), with MP/s 1/2/3/4/5/10 from 64. The 4th tier is
+  **every other level** (76, 78 … 90, 8 rungs, was 15) at 290 → 360 MP, with HP/MP per second unchanged on those rungs.
+- `SkillCsvSeed`: the DESCR reader now really lets the **longest** spelling win a tie (its own docs said so; the code
+  took the first in the table). It learned `shield reduction`, `crit damage resist` and `pve/pvp spell power`, so his
+  new wording stays verified. `--check` clean, and no other file's reading changed.
+
+## 2026-10-06 — 0.230.0: the Warchanter hits with MAGIC (`BL-335`)
 
 **Server restart + APK** (the Learn tab is built from the compiled class tables). **Delete `game.db`** or make a new
 Warchanter: an old one still holds the masteries this removed.

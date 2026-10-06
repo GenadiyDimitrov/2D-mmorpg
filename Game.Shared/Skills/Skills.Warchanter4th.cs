@@ -88,14 +88,14 @@ public static partial class SkillCatalog
     /// clean 110 → 180, so the odd ones are filled in at the halfway step. His MP COLUMN is kept
     /// verbatim, dip and all (it falls 488 → 454 at level 80) — that one only makes the hymn cheaper,
     /// which breaks nothing.</para></summary>
-    private static readonly int[] Wc4HotHp =
-        { 110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160, 165, 170, 175, 180 };
-    private static readonly int[] Wc4HotMp =
-        { 11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17, 18 };
-    private static readonly int[] Wc4HotCost =
-        { 470, 476, 482, 488, 454, 460, 466, 472, 478, 484, 490, 496, 502, 508, 514 };
+    // 🔑 EVERY OTHER LEVEL SINCE 2026-10-06 (his `buffer 4th.csv` edit, with the 3rd tier's MP cut): eight rungs
+    // , 78 … 90, the even rows of the old ladder, and the cost 290 → 360 so the MP it restores (11-18/s × 30s)
+    // is more than it costs when it is not spammed.
+    private static readonly int[] Wc4HotHp   = { 110, 120, 130, 140, 150, 160, 170, 180 };
+    private static readonly int[] Wc4HotMp   = { 11, 12, 13, 14, 15, 16, 17, 18 };
+    private static readonly int[] Wc4HotCost = { 290, 300, 310, 320, 330, 340, 350, 360 };
 
-    internal static SkillLevel[] BufferFourthRestorationRungs() => F4Rungs(15, 1, (i, sp, gold) =>
+    internal static SkillLevel[] BufferFourthRestorationRungs() => F4Rungs(8, 2, (i, sp, gold) =>
         new SkillLevel(MpCost: Wc4HotCost[i], SpCost: sp, GoldCost: gold,
             Magnitudes: new EffectMagnitude[]
             {

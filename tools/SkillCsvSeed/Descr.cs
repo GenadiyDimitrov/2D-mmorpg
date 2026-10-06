@@ -73,7 +73,7 @@ internal static class Descr
         // provide dmg reduction based on actual block"*), so this metric now reads the block-reduction
         // column. The old "shield p.def" spellings are kept as synonyms on purpose: a CSV row that still
         // says it should be MATCHED and reported, not silently skipped as an unknown metric.
-        ("blockreduction", new[] { "shield dmg reduction", "shield damage reduction",
+        ("blockreduction", new[] { "shield dmg reduction", "shield damage reduction", "shield reduction",
                                   "shield.p.def", "shiled defence", "shield defence", "shield def",
                                   "shield pdef", "shield p.def" }),
         ("mdef",          new[] { "magic defence", "magic defense", "magic def", "m.def", "mdef" }),
@@ -209,7 +209,7 @@ internal static class Descr
         ("critdmgres",    new[] { "p.critical.dmg.received", "p.crit.dmg.received", "crit.dmg.received",
                                   "critical.dmg.received", "dmg.received",
                                   "crit dmg reduction", "crit dmg resist", "crit damage reduction",
-                                  "critical damage reduction", "critical damage resist" }),
+                                  "critical damage reduction", "critical damage resist", "crit damage resist" }),
         // A PROC CHANCE. Bare "chance" is safe only because every other use of the word is already
         // claimed by a longer alias above it ("block chance" -> blockrate), and the table is walked
         // longest-first. It exists so Combo Mastery's "With 3% Chance" is VERIFIED rather than UNREAD.
@@ -237,7 +237,7 @@ internal static class Descr
         ("hpgate",        new[] { "less or equal to", "when hp is below", "hp is below" }),
         // `BL-237` — the PvE twin of the `pvpdmg` key above. Monster Knowledge is its only author
         // (*"Increase PVE Dmg with 20%"*) and all three PvE flags carry the one number.
-        ("pvedmg",        new[] { "pve dmg", "pve damage" }),
+        ("pvedmg",        new[] { "pve dmg", "pve damage", "pve/pvp spell power" }),
         ("aggro",         new[] { "aggro", "threat" }),
         // A REAGENT COUNT is checkable data, not noise: his two Ultimate heals read "Consumes 1 skill
         // stone" / "Consumes 4 skill stones" against `ConsumableAmount`. Reading it beats an ignore
@@ -500,7 +500,7 @@ internal static class Descr
     /// when the window holds none.</summary>
     private static (string? Metric, int Dist, int At) Nearest(string window, bool fromEnd, int offset)
     {
-        string? best = null; int bestDist = int.MaxValue, bestAt = -1;
+        string? best = null; int bestDist = int.MaxValue, bestAt = -1, bestLen = 0;
         foreach (var (metric, words) in Aliases)
             foreach (var w in words)
             {
@@ -531,7 +531,10 @@ internal static class Descr
                 }
                 if (i < 0) continue;
                 int dist = fromEnd ? window.Length - (i + w.Length) : i;
-                if (dist < bestDist) { bestDist = dist; best = metric; bestAt = offset + i; }
+                // A tie on distance goes to the LONGER spelling — "the longest match wins" (DESCR-KEYS.md), which is what lets
+                // "pve/pvp spell power" beat its own last word "power" (2026-10-06).
+                if (dist < bestDist || (dist == bestDist && w.Length > bestLen))
+                { bestDist = dist; best = metric; bestAt = offset + i; bestLen = w.Length; }
             }
         return (best, bestDist, bestAt);
     }
