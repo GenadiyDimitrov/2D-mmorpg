@@ -281,6 +281,9 @@ Weapon Mastery (all races), Hit Rate Mastery, Shield Mastery, Light Armor Master
 Resist, Bow Mastery, Bow Proficiency, Bow Expertise. **Changed:** Mana Vampirism is gated to blunt or duals and every
 race reaches 9%. Monster Knowledge is all three races. Spellcaster Weapon Mastery's weapon cell gained `duals` (the
 elf keeps it, §2).
+**0.230.4 (his):** the 20-39 Cleric (`cleric 2nd.csv`, shared with the Lightbringer) lost Light Armor Mastery, Light
+Caster Mastery (`clerics_light_armor_mastery`, now learned by nobody) and Light armor Evasion: *"Nothing for a light or
+heavy armors"*. The robe is the only armour a Cleric masters at 20-39.
 
 **The numbers that are MINE, not yours.** Change any of them in the CSV and the code follows:
 

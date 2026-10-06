@@ -72,7 +72,6 @@ champion_presence,Champion Presence,buff,1,default
 charge_n_shock,Charge n Shock,debuff,1.5,default
 charm,Charm,debuff,1.5,default
 charming_whisp,Charming Whisp,buff,1,default
-clerics_light_armor_mastery,Light Caster Mastery,passive,0.33,default
 combo_mastery,Combo Mastery,passive,0.33,default
 combo_mastery_demon,Combo Mastery,passive,0.33,default
 combo_mastery_elf,Combo Mastery,passive,0.33,default

@@ -11,7 +11,6 @@ public static partial class SkillCatalog
     public const string BluntCleave = "blunt_cleave";
     public const string BowMastery = "bow_mastery";
     public const string CastSpeedMastery = "cast_speed_mastery";
-    public const string ClericsLightArmorMastery = "clerics_light_armor_mastery";
     public const string CooldownMastery = "cooldown_mastery";
     public const string DualWeaponProf = "dual_weapon_prof";
     public const string FighterAccuracy = "fighter_accuracy";
@@ -48,7 +47,6 @@ public static partial class SkillCatalog
         PieceBluntCleave(),
         PieceBowMastery(),
         PieceCastSpeedMastery(),
-        PieceClericsLightArmorMastery(),
         PieceCooldownMastery(),
         PieceFighterAccuracy(),
         PieceFighterCriticalDmgMastery(),
@@ -204,11 +202,6 @@ public static partial class SkillCatalog
         new RungRow(new[] { 0.05f }, 5550, 0, "cast speed x1.05"),
         new RungRow(new[] { 0.07f }, 19100, 0, "cast speed x1.07"),
         new RungRow(new[] { 0.1f }, 37500, 0, "cast speed x1.1"));
-
-    private static SkillDef PieceClericsLightArmorMastery() => ArmorLadder(ClericsLightArmorMastery, "Light Caster Mastery", BaseClass.Mage,
-        "Passive. In LIGHT armour: cast and attack as fast as in a robe, with better MP regeneration.",
-        r => new StatMods(AtkSpeedPct: r.S[0], CastSpeedPct: r.S[1], MpRegenPct: r.S[2]),
-        new RungRow(new[] { 1f, 0.9f, 0.2f }, 1060, 0, "Light: mpReg x1.2, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)", Armor: ArmorWeights.Light));
 
     private static SkillDef PieceCooldownMastery() => PlainLadder(CooldownMastery, "Cooldown Mastery", BaseClass.Mage,
         "Passive. Shorter reuse delays.",
@@ -448,17 +441,15 @@ public static partial class SkillCatalog
         new RungRow(new[] { 16f }, 2060, 0, "light: p.def +16", Armor: ArmorWeights.Light),
         new RungRow(new[] { 18f }, 3650, 0, "light: p.def +18", Armor: ArmorWeights.Light),
         new RungRow(new[] { 19f }, 2140, 0, "light: p.def +19", Armor: ArmorWeights.Light),
-        new RungRow(new[] { 20f }, 1060, 0, "light: p.def +20", Armor: ArmorWeights.Light),
+        new RungRow(new[] { 20f }, 5950, 0, "light: p.def +20", Armor: ArmorWeights.Light),
         new RungRow(new[] { 21f }, 3790, 0, "light: p.def +21", Armor: ArmorWeights.Light),
         new RungRow(new[] { 22f }, 9120, 0, "light: p.def +22", Armor: ArmorWeights.Light),
         new RungRow(new[] { 23f }, 6180, 0, "light: p.def +23", Armor: ArmorWeights.Light),
-        new RungRow(new[] { 25f }, 2130, 0, "light: p.def +25", Armor: ArmorWeights.Light),
+        new RungRow(new[] { 25f }, 13400, 0, "light: p.def +25", Armor: ArmorWeights.Light),
         new RungRow(new[] { 28f }, 9480, 0, "light: p.def +28", Armor: ArmorWeights.Light),
-        new RungRow(new[] { 30f }, 3810, 0, "light: p.def +30", Armor: ArmorWeights.Light),
         new RungRow(new[] { 31f }, 25900, 0, "light: p.def +31", Armor: ArmorWeights.Light),
         new RungRow(new[] { 32f }, 13900, 0, "light: p.def +32", Armor: ArmorWeights.Light),
         new RungRow(new[] { 34f }, 30900, 0, "light: p.def +34", Armor: ArmorWeights.Light),
-        new RungRow(new[] { 35f }, 6260, 0, "light: p.def +35", Armor: ArmorWeights.Light),
         new RungRow(new[] { 37f }, 31300, 0, "light: p.def +37", Armor: ArmorWeights.Light),
         new RungRow(new[] { 40f }, 14100, 0, "light: p.def +40", Armor: ArmorWeights.Light),
         new RungRow(new[] { 43f }, 46200, 0, "light: p.def +43", Armor: ArmorWeights.Light),
@@ -680,7 +671,6 @@ public static partial class SkillCatalog
     private static SkillDef PieceRogueEvasion() => ArmorLadder(RogueEvasion, "Light armor Evasion", BaseClass.Fighter,
         "Passive. Evasion while wearing LIGHT armour.",
         r => new StatMods(Evasion: r.S[0]),
-        new RungRow(new[] { 2f }, 6260, 0, "light: eva +2", Armor: ArmorWeights.Light),
         new RungRow(new[] { 3f }, 1020, 0, "light: eva +3", Armor: ArmorWeights.Light),
         new RungRow(new[] { 6f }, 2140, 0, "light: eva +6", Armor: ArmorWeights.Light),
         new RungRow(new[] { 7f }, 2060, 0, "light: eva +7", Armor: ArmorWeights.Light),

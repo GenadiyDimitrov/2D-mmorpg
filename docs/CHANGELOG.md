@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.230.3**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.230.4**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,25 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-06 (latest) — 0.230.3: `/copy` — the Owner can clone a character onto another
+## 2026-10-06 (latest) — 0.230.4: the Cleric (20-39) masters no light armour
+
+**APK** (the Learn tab is built from the compiled class tables) + server restart. No `game.db` delete of its own; a
+character that already learned the dropped skills keeps them until 0.230.0's owed delete.
+
+- **His call:** *"The 20~39 we no longer need light armor mastery light mastery and rouge evasion.. Nothing for a light
+  or heavy armors. No need (I forgot to remove them)"*.
+- `cleric 2nd.csv` lost **Light Armor Mastery** (`light_armor_mastery`, 4 rungs), **Light Caster Mastery**
+  (`clerics_light_armor_mastery`) and **Light armor Evasion** (`rogue_evasion` @35). The file is the 20-39 tier of BOTH
+  the Warchanter and the Lightbringer, so the healer loses them at 20-39 too; it already dropped Light Caster Mastery at
+  40, and that `REPLACES` cell in `healer 3rd.csv` is now `[]`. The Warchanter never dropped it, so before this it kept
+  the light-armour cast fix for life.
+- `clerics_light_armor_mastery` is now learned by nobody: its `sp_weights.csv` and `skill_icons.csv` rows are gone
+  (the same treatment `cleric_heavy_armor_mastery` got in 0.230.0). The fighters' `light_armor_mastery` /
+  `rogue_evasion` ladders are untouched.
+- `--gen-passives`, `--reprice-sp`, `--gen-faces`, `--check` clean. The reprice lifts the remaining 20-39 Cleric prices
+  ~3.5% (2130 → 2210 at 25, 6260 → 6480 at 35): the band target is the same and there are fewer skills to carry it.
+
+## 2026-10-06 — 0.230.3: `/copy` — the Owner can clone a character onto another
 
 **Server restart.** The APK only matters for `/help` listing the line (the server answers `/help` itself). No `game.db` delete.
 
