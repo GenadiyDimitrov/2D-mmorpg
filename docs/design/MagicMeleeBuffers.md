@@ -114,15 +114,15 @@ one costs +15% skill MP and half of today's Sharpening MP/s.
 |---|---|---|
 | **Human** (Sharpening gated to the **shield**) | P.Def to match heavy + its mastery, P.Crit **damage** resist, **bow resist** (from Tank Shield Mastery) | Tank Shield Mastery's shield numbers: **shield damage reduction, shield (block) rate, % P.Def** |
 | **Demon** (Sharpening gated to the 2H blunt) | P.Def to match heavy + its mastery, P.Crit **rate** resist, P.Crit **damage** resist | more **M.Atk**, **accuracy** |
-| **Elf** (Sharpening gated to duals) | **only Light Armor Mastery's effect**: its P.Def and its **evasion** | **spell accuracy** (M.Accuracy +20 → Magic Stab 60→40% fail) and **spell damage** |
+| **Elf** (Sharpening gated to duals) | **Light Armor Mastery's P.Def** + P.Crit **rate** resist | **evasion** + **spell accuracy** (M.Accuracy +20 → Magic Stab 60→40% fail) + **spell damage** |
 
 - **The human's numbers come from the masteries the human loses:** Heavy Armor Mastery feeds Reinforcement, and Tank Shield
   Mastery splits across both toggles (bow resist → Reinforcement; shield reduction, rate and its % P.Def →
   Sharpening). So the human's §8 C gap (+54%) is shared: the shield mastery's % P.Def moves to Sharpening, and the
   rest is Reinforcement's. The probe splits the two when it's built.
-- **The elf's Reinforcement is only the light mastery** (your answer 4). That's the measured gap to today's elf:
-  ~+17% P.Def and +11 evasion at 85-90. ⚠ Your new list doesn't have the elf's **P.Crit rate resist** (Rogue Crit
-  Resist, dropped in §2). I'm reading that as gone, not moved.
+- **The elf's P.Def is only the light mastery** (your answer 4): the measured gap to today's elf is ~+17% at 85-90.
+  The crit-rate resist (Rogue Crit Resist's) goes into Reinforcement; the evasion (+11 at 85-90 to reach today's
+  elf) goes into Sharpening, beside the spell accuracy and spell damage.
 - **Price:** MP-cost buffs **ADD** in this engine (`MagicMpCostReduction +=`), so both on = exactly **+30%**, your
   number. `MagicMpCostPct` already exists, so the price needs no code.
 - 🔑 **Different numbers per race = different ids** (`BL-327`: a face never changes a number), so three
@@ -139,7 +139,8 @@ power follows its own row in §8 A. One id; the per-race table is only learn lev
 **Skill power: the UNBUFFED column of §8 B, set lower** (your answer 3: *"almost always the buffer is buffed"*). The
 buffed run puts them 10-50% higher, so unbuffed is already on the low side of where they'll sit in play.
 
-**Names** — parked until last, as you said: *Iron / War / Wind Cadence*, or one shared *Battle Cadence*.
+**Names: Reinforcement and Sharpening stay** (your answer, 2026-10-06): both are still toggles, and you'll rename them
+in the CSVs later if you want to.
 
 ## 5. Vampirism — no new flag, and all three races reach 9%
 
@@ -255,14 +256,10 @@ vs 136 today, so the toggle needs **+11 evasion** to close that.
   skill power = the unbuffed column, set lower; the elf's Reinforcement = only the light mastery. And, beside this
   page, **Holy Bolt + Holy Ray at half damage in PvP**, built as 0.229.3.
 
+- 2026-10-06 (third): the race bolts get the PvP cut too (built as 0.229.4); the elf's crit-rate resist → Reinforcement,
+  evasion + spell accuracy → Sharpening; the names stay.
+
 ## ❓ Still open
 
-1. **The race bolts in PvP.** §8 B's "healer = 97% of the nuker" is a **PvE** number (against a mob), and the
-   healer's skill in it was not Holy Ray but **`human_vampiric_bolt`**, the human mage race ladder (power 108 at 90,
-   Holy Ray 109). 0.229.3 halves Holy Bolt and Holy Ray against players, but a human healer still has Vampiric Bolt
-   and an elf healer still has Frost Spikes at full power. So in a duel the healer just swaps spells. Halving the race
-   bolts in PvP as well would hit every mage of that race, including nukers and buffers. **My pick: halve them too.**
-   The nuker's PvP damage is the nuker's own kit (Elemental Blast and up), and a race bolt that out-duels the class spell
-   undoes your ruling.
-2. **The elf's P.Crit rate resist** — gone with Rogue Crit Resist, or does it belong in one of the elf's toggles (§4)?
-3. **Names** — last.
+Nothing. 🔵 **Next is yours: the `buffer 3rd.csv` / `buffer 4th.csv` edits**, starting from the numbers in §8. When
+the rows land, I build to them and re-run `--magicmelee` against the build.
