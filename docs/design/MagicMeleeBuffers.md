@@ -1,14 +1,14 @@
 # Magic-melee buffers — the Warchanter hits with MAGIC
 
-**Status: 🔵 DESIGN ONLY (2026-10-05), `BL-335`.** Nothing built. Your words: *"Just design for now."*
-Your answers of 2026-10-05 are folded in; what is still open is at the bottom.
+**Status: 🔵 DESIGN ONLY, `BL-335`.** Nothing is built. Your words: *"Just design for now."*
+This page includes your answers of 2026-10-05 and your full answer sheet of 2026-10-06 (eight points). The questions
+still open are at the bottom, each with my pick.
 
-The problem it solves, in yours: *"we have warriors and tanks and I want to give them something unique"*. Today
-every Warchanter is a physical fighter (demon maul + heavy, human mace + shield + heavy, elf bow + light), which
-is a warrior/tank/archer with buffs. After this, all three wear a **robe** and deal **magic** damage: their skills
-cannot be blocked or evaded (a spell can **fail** instead, landing damage ÷ 3), and they crit ×3 off WIT rather than
-×10 off DEX. The races keep their current shape (demon heavy hitter, human shield, elf fast and evasive), just
-turned to magic.
+The problem it solves, in your words: *"we have warriors and tanks and I want to give them something unique"*. Today
+every Warchanter is a physical fighter (demon maul + heavy, human mace + shield + heavy, elf bow + light): a
+warrior, tank or archer with buffs. After this change all three wear a **robe** and deal **magic** damage. A
+**toggle** is the strategy choice: off = mage stats; on = near-tank stats, paid for in the mana that pays for
+their buffs.
 
 Nothing here breaks *"a class grants no stats"*: every change is a skill or passive.
 
@@ -19,148 +19,176 @@ Nothing here breaks *"a class grants no stats"*: every change is a skill or pass
 Your call (2026-10-05): *"make the 0mp spell a passive that swaps the basic attack action to a magic dmg one ...
 then no need for cast speed and reuse because attack speed will measure them"*.
 
-Why it is the right shape:
-- **No cast means nothing to interrupt.** A caster standing in melee is hit constantly, and any hit can cancel a
-  cast (`TryInterruptCast`, chance ∝ damage ÷ max HP). A basic swing is not a cast.
-- **No tapping and nothing new for auto-hunt.** The attack action, auto-attack and the autopilot already drive the
-  basic attack; they keep doing so.
-- **The weapon prices itself.** Attack speed comes from the weapon, damage from its M.Atk.
+- **No cast means nothing to interrupt.** A basic swing is not a cast, so `TryInterruptCast` never touches it.
+- **No tapping and nothing new for auto-hunt.** Auto-attack and the autopilot already drive the basic attack.
+- **The weapon prices itself**: attack speed comes from the weapon, damage from its M.Atk.
 
-**What the swing becomes** (`GameLoopService.ResolveBasicSwing` is the one place; it already serves cleave and the
-failed blow):
+**What the swing becomes.** `GameLoopService.ResolveBasicSwing` is the one place it changes.
 
 | part of a basic swing   | today (physical)                 | with the passive (magic)                                    |
 | ----------------------- | -------------------------------- | ----------------------------------------------------------- |
-| formula                 | `77·pAtk / pDef` (power 0)       | `91·power·√mAtk / mDef` — **needs a POWER**, see below       |
-| can it be avoided       | accuracy vs evasion → Miss       | **unchanged: accuracy vs evasion → Miss** (your ruling, below) |
+| formula                 | `77·pAtk / pDef` (power 0)       | `91·power·√mAtk / mDef` — **needs a POWER per rung**         |
+| can it be avoided       | accuracy vs evasion → Miss       | **unchanged: accuracy vs evasion → Miss**, never a fizzle   |
 | crit                    | DEX rate, ×10 cap, flat crit dmg | **magic crit**: WIT rate (cap 20%), ×3                       |
 | block                   | shield block roll                | **none** — magic is never blocked                            |
-| rune (`FinalizeDamage`) | War Rune                         | **Spell Rune**                                              |
-| HP vamp                 | `MeleeVamp`                      | **`MeleeVamp`, unchanged** (§4)                              |
-| MP vamp (Mana Vampirism)| on a landed swing                | **unchanged** — your ruling: it works on the magic swing     |
-| timing                  | attack speed                     | attack speed (unchanged)                                    |
-| Combo Mastery proc, Focus, reflect, cancel power | on a landed swing | unchanged                                 |
+| rune                    | War Rune                         | **Spell Rune**                                              |
+| HP vamp (`MeleeVamp`)   | on a landed swing                | **unchanged** (§5)                                          |
+| MP vamp (`ManaVamp`)    | on a landed swing                | **unchanged** (§5)                                          |
+| Combo Mastery, Focus, reflect | on a landed swing          | unchanged                                                   |
 
-- 🔑 **The magic formula multiplies by `power`, so a basic hit at power 0 does 0.** The passive must carry a power
-  per rung: the same ladder shape every other passive has, and the one number per level you balance with. The three
-  races differ here (demon slow + heavy, human fast + light, elf fastest + lowest).
-- 🔑 **The swing keeps the physical miss roll, not the fizzle** (your answer, 2026-10-05: *"We leave the fail chance
-  as normal attack have acc vs evasion"*). So the swing can be EVADED (a miss deals 0), but it can never fizzle.
-  The magic SKILLS keep the ordinary fizzle.
+🔑 **The magic formula multiplies by `power`, so a swing at power 0 does 0.** The passive carries one power per rung:
+the number you balance with.
 
-## 2. The three races
+**How the power is set** (your point 2: *"the swing need to be measured to match same lvl same weapon physical
+against default mobs"*): BalanceMatrix measures it. For each rung's level, the magic swing's **damage per second**
+against the default mob of that level must equal a physical fighter's swing with the same-grade weapon of the same
+kind: staff vs 2H blunt, wand vs 1H blunt, fangs vs duals. I compare damage per second rather than per hit because
+it includes each channel's own crit (×3 at WIT rate vs ×10 at DEX rate) and the miss roll. The output is the power
+column, which I hand to you for the CSV.
 
-|                      | Demon                                    | Human                                       | Elf                                              |
-| -------------------- | ---------------------------------------- | ------------------------------------------- | ------------------------------------------------ |
-| weapon               | staff (2H magic blunt)                   | wand + shield                               | **fangs** (`Dual`)                               |
-| armour               | robe                                     | robe                                        | **robe**                                         |
-| magic swing (§1)     | slower, heavier                          | faster, lighter                             | fastest, lowest                                  |
-| MP skill             | Sound Smash → melee magic damage         | Sound Smash → melee magic damage            | **Sound Burst → Magic Stab** (§5)                |
-| second skill         | Acoustic Shock → magic damage + contested stun | **new**: shield-gated stun or hold, no damage (§6) | —                                    |
-| toggle (Reinforcement, robe-gated) | P.Def + ❓ (HP / regen?)    | **higher P.Def + crit-DAMAGE resist**       | **evasion + crit-RATE resist + a smaller P.Def** |
+⚠ The damage-out buckets (`Pve/PvpMagicDamagePct` vs `…BasicDamagePct`) must treat the swing as **BASIC**, not
+magic. Otherwise the elf toggle's *magic skill* damage (§4) would also raise the elf's swing.
 
-**Reinforcement becomes each race's armour toggle**, gated to **robe** (your answer, 2026-10-05): it carries what
-that race's armour passives gave, at a **lower MP/s** than today. Your target is *robe + Reinforcement == heavy*. The
-armour gate already exists (`WEIGHT` column), so the gate is data.
-- ⚠ **Three different number sets are three SKILLS, not three faces.** `BL-327`'s rule: a face changes the name and
-  description, never the numbers. So it is `reinforcement` for one race plus two new ids (or three new ids with one
-  shared display name if you want them all to read "Reinforcement").
-- ⚠ The robe mastery's caster bonuses ride ON TOP of the toggle, so the MP/s is the only price; set it with
-  BalanceMatrix, not by hand.
-- ❓ **The demon's third stat.** His old identity bonus was accuracy (Hit Rate Mastery, removed below); you suggested
-  *"maybe just hp+regen or something"*. Open.
+## 2. Weapons and what each race keeps or drops
 
-**Taken away — Human and Demon:** Heavy Armor Mastery, Weapon Mastery, Critical Damage Resist (heavy-gated), Hit Rate
-Mastery (demon), and **Sharpening** (*"would change depending on need - for now dropped for them"*). The human's
-3rd-tier Shield Mastery is gated `heavy/shield`; it moves to `robe/shield`, which the 4th tier's
-`buffer_shield_mastery` already is.
+Your point 1 and point 7:
 
-**Taken away — Elf:** Light Armor Mastery, Light Armor Evasion, Critical Resist (their effects move into his toggle),
-Bow Mastery, Bow Proficiency, Bow Expertise, Harmonist Bow Proficiency.
+|                    | Demon                     | Human                         | Elf                                        |
+| ------------------ | ------------------------- | ----------------------------- | ------------------------------------------ |
+| weapon             | **Battlestaff** (2H magic blunt) | **Wand + shield**      | **fangs / duals** (`Dual`)                 |
+| armour             | robe                      | robe                          | robe                                       |
+| damage skills      | Sound Smash + Acoustic Shock | Sound Smash                | Sound Burst → Magic Stab                   |
 
-**Kept — all three:** Robe Armor Mastery + Spellcaster Weapon Mastery.
+**All three KEEP:** Mage (robe) Armor Mastery, Spellcaster Weapon Mastery. **All three DROP:** Weapon Mastery,
+Sharpening (§4 explains why only one toggle is left).
 
-**Elf weapon notes:**
-- **Fang Proficiency replaces Harmonist Bow Proficiency.** Spellcaster Mastery charges an untrained weapon (bow,
-  fangs, bare) ×0.5 cast, ×0.5 magic, ×25 fizzle (`Entity.cs:3976`); the bow passive cancels it with ×2 / ×2 /
-  ×0.04. The fang one is the same numbers on `Dual`.
-- **Combo Mastery and Mana Vampirism are gated `blunt|bow`** — the bow becomes `duals`.
-- Your bow weapon-conversion idea (*"weapon.m.atk+90 ... weapon.p.atk−400, or % based"*) is not needed on fangs, but
-  it is cheap if it ever is: every weapon already carries a P.Atk and an M.Atk factor applied **before** the stat
-  formula (`Entity.cs:3395-3401`). A toggle multiplying those is exactly your % form. Noted, not proposed.
+| race  | drops                                                                                         |
+| ----- | --------------------------------------------------------------------------------------------- |
+| Human | Heavy Armor Mastery, Cleric Heavy Armor Mastery, Tank Crit Resist, **Tank Shield Mastery** (its stats move into the toggle) |
+| Demon | Heavy Armor Mastery, Cleric Heavy Armor Mastery, Tank Crit Resist, Fighter Accuracy          |
+| Elf   | Bow Mastery, Bow Expertise, Light Armor Mastery, Rogue Evasion, Rogue Crit Resist            |
 
-**No magic-weapon gate is needed.** Once heavy pays nothing and every hit is magic, a maul's extra P.Atk is unused and
-its M.Atk (192 at S) loses plainly to a staff's (281); a mace's 192 loses to a wand's 256. The weapon's own numbers
-do the enforcing, and your 2026-08-20 ruling (*"a mace still works, simply gives less"*) stands.
+- ➕ **Elf also loses `rogue_bow_proficiency`** (*"range +400"*, Elf, @40, `buffer 3rd.csv`). It is not on your list,
+  but it is a bow-only passive, so it does nothing once the elf holds fangs. I'll drop it unless you say otherwise.
+- **`harmonist_bow_proficiency` → `harmonist_dual_proficiency`**, gated to duals: the same cancellation of the
+  untrained-weapon caster penalty (×0.5 cast, ×0.5 magic, ×25 fizzle, `Entity.cs:3976`) that the bow one does today.
+  It is a new id, not a rename: an id is append-only.
+- **The human's 4th-tier `buffer_shield_mastery`** (robe/shield, +10% max HP/MP and regen) **stays**. It is already
+  robe-gated and you didn't list it.
+- **No magic-weapon gate is needed.** With every hit magic, a maul's M.Atk (192 at S) loses plainly to a staff's
+  (281), and a mace's 192 loses to a wand's 256. A mace still works; it just does less.
 
-## 4. Vampirism — the swing drains, the skills do not, with NO new flag
+## 3. Damage skills: all single-hit magic
 
-Your worry (2026-10-05): *"mana vamp should work on magic basic attacks — problem is that the magic dmg spells
-acoustic shock smash etc will vamp as well .. If we can have a cantVamp flag"*.
+Your point 8. Every number is **measured** before it reaches your CSV, against the same reference as §1.
 
-**They will not, and no flag is needed** — the engine already keeps the two apart:
+| skill | today | becomes |
+|---|---|---|
+| **Sound Smash** (Human, Demon) | physical, 40 range, 1s cast, 3s cd | **magic spell**, 40 range. ⚠ Being a spell, its 1s cast CAN be interrupted |
+| **Acoustic Shock** (Demon) | physical + 5s stun, 40 range, **3s cd** | magic + 5s stun. 🔴 see below |
+| **Sound Burst** (Elf) | physical bow, 900 range, **two hits**, 3s cast | **Magic Stab**: melee, ONE hit, fixed fail (below) |
 
-| field         | where it is paid                                     | so…                                                 |
-| ------------- | ---------------------------------------------------- | --------------------------------------------------- |
-| `ManaVamp`    | **only** in `ResolveBasicSwing` (*"a skill never drains"*) | the magic swing drains MP; Sound Smash never does |
-| `MeleeVamp`   | **only** in `ResolveBasicSwing`                      | the magic swing heals HP; skills never do          |
-| `SpellVamp`   | every damage **skill** (`+ def.Lifesteal`)           | ⚠ don't give these classes this one                |
+🔴 **Acoustic Shock already has a 3s cooldown on a 5s stun.** That is the permanent lock §6 warned about, and it is
+in the game TODAY. Nothing shortens a repeated stun: there is no immunity window and no diminishing returns, only the
+defender's CON/SPT trim (×0.70-×1.00, `BL-156`). A demon who lands the contest can stun a player forever, refreshing
+the stun before it expires. Against mobs it hardly matters; in PvP it is the strongest thing a demon owns. **My pick:
+a 12s+ cooldown** (or a 2-3s stun). It is a one-cell change in your CSV.
 
-So the HP vamp you asked for (*"a self buff/passive spell vamp at the lvls of normal buff one"*) is granted as
-**`MeleeVamp`** (basic-attack vamp), not `SpellVamp`. The swing reads it because it is still the basic attack, and
-Sound Smash / Acoustic Shock / Magic Stab get nothing. (⚠ `MeleeVamp` skips a BOW — irrelevant now, none of the three
-holds one.)
+**Magic Stab — fixed fail, raised by the elf's toggle** (your point 8.3: *"40~60% chance to not fail"* and point 3:
+*"not always be 60% but 40% and with that toggle on to become 60%"*):
+- A **new per-skill field, a FIXED success chance**: the fizzle roll uses only this number. There is no level term,
+  no M.Accuracy and no defender modifier, so PvE and PvP behave the same.
+- **40% success with the toggle off, 60% with it on**, via a new toggle field that adds to it (+0.20).
+- A failed hit still lands ÷ 3, so the average is `0.4 + 0.6/3 = 0.60` of the power with the toggle off and
+  `0.6 + 0.4/3 = 0.73` with it on: **the toggle is worth +22% on the stab**. The power is set so that the
+  toggle-off average still matches a normal skill.
+- ⚠ History: `FixedLandChance` (`BL-204`) lived one day and was deleted (`BL-207`). That was a debuff's land chance;
+  this is the damage fizzle, a different roll. It is still a new field, so I'm telling you.
 
-⚠ And never as a `Lifesteal` field on a skill: auto-hunt files any skill with `Lifesteal > 0` as a **heal**
-(`GameLoopService.cs:6253`).
+## 4. The toggle — one per race, with a price
 
-## 5. Magic Stab — the elf's Sound Burst, with an "always" fail
+Your point 3: *"i just want to make sure their having that toggle as strategy option .. not always on"*. Off = mage
+stats, on = near-tank stats. It is gated to **robe** (the human's also to the shield).
 
-*"Sound burst is the new mele spell stab one"* and *"if we can have 'always' fail rate otherwise in pvp is just
-stronger spell"*. Sound Burst stops being a 900-range bow skill and becomes the **melee magic stab**: very high
-damage, failing ~60% of the time.
+| | Human (defence + block) | Demon (attack + accuracy) | Elf (skill damage + evasion) |
+|---|---|---|---|
+| P.Def | = the **heavy** set of the same grade | = the **heavy** set of the same grade | = the **light** set of the same grade |
+| shield | Tank Shield Mastery's numbers (dmg reduction +25%, shield rate +85%, +10% P.Def at its top rung) | — | — |
+| crit | P.Crit **damage** resist 15% | P.Crit damage **and** rate resist ~8% | P.Crit **rate** resist 15% |
+| offence | — | accuracy + a little M.Atk (or swing power) | evasion + magic SKILL damage + Magic Stab 40 → 60% |
 
-Today fail is a curve: `1.3^(targetLevel − rung's learn level)` points × modifiers, capped 95%. A "60%" skill on it
-would be ~60% at one level gap and near the cap three levels up. So:
-- **New per-skill field, a FIXED fail chance**: when set, the fizzle roll uses it and nothing else — no level term,
-  no M.Accuracy, no defender modifier. Same in PvE and PvP.
-- A failed hit still lands ÷ 3 (the fizzle rule), so 60% fail averages `0.4 + 0.6/3 = 0.6` of the power: it must hit
-  ~1.7× harder than a normal skill just to break even. That is the gamble.
-- ❓ **One hit, not two.** Sound Burst hits TWICE today, each hit rolling on its own. Two independent 60% rolls
-  smooth the gamble out (both fail only 36% of the time), which is the opposite of what a stab is for. My pick: one
-  hit at double the power.
-- ⚠ History: `FixedLandChance` (`BL-204`) lived one day and was deleted (`BL-207`). That was a DEBUFF land chance; this
-  is the damage fizzle, a different roll with a different reason — but it is a new field, so you know.
+- 🔑 **Three different number sets = three SKILL IDS, not three faces** (`BL-327`: a face changes the name and text,
+  never the numbers). `reinforcement` stays as one race's id; the other two are new.
+- **The P.Def number per rung is measured**, not guessed: BalanceMatrix gives the gap between the heavy (or light)
+  set and the robe set at each grade, and that gap is the rung.
 
-## 6. The human's shield skill
+**The price.** You offered a lower max MP, a higher MP cost, or slower casts. 🔑 **My pick: higher skill MP cost while
+it is on (×1.3), plus a small MP/s.** Two reasons:
+- It hits **exactly the buffer's economy**. Toggle on = you tank and you buff less, or you pay for it. That is the
+  "strategy" you asked for.
+- It already exists: `MagicMpCostPct` (a negative value raises the cost), which flows through `EffectiveMpCost`, so
+  the cast gate and both charges see it. I'd write no new code for it.
 
-Your sketch (2026-10-05, not decided): *"~6s duration no dmg and mp cost 5~6s cd or something"*. Stun or hold, shield
-required, no damage, contested like every CC, and it ships at `x1` in `debuff_landmods.csv`.
+Why not the other two:
+- **Slower casts** mostly hurt the buff round before a pull, which is not when the buffer fights.
+- **Lower max MP** punishes the whole pool every time the buffer turns it on, which is a bigger penalty than you described.
 
-🔴 **A 5-6s cooldown on a 6s lock is a PERMANENT lock.** The game has **no CC immunity window and no diminishing
-returns** — the only shortening is the defender's CON/SPT (×0.70-×1.00, `BL-156`). The human could re-apply before
-the last one ends, forever, on any target that fails the contest; in PvP that is a player who never moves again.
-Either the cooldown is well above the duration (e.g. 6s lock / 15s+ cooldown), or this skill is the reason to
-build an immunity window. My pick: the longer cooldown — it is data, the window is a system.
+**Sharpening.** You offered keeping it as a SECOND "strategy" toggle with weapon gates. **My pick: drop it and use
+one toggle.** Two toggles mean two drains to price, and both on at once would undo the trade-off. One toggle per race
+carries both halves (defence AND that race's offence, as in the table above).
+
+**Rename** (*"because it gives attacking bonuses as well"*). Each race has its own id, so each can have its own name.
+Suggestions, all generic: **Iron Cadence** (Human), **War Cadence** (Demon), **Wind Cadence** (Elf), or one shared
+**Battle Cadence**. Pick any of these or name it yourself.
+
+## 5. Vampirism — no new flag, and all three races reach 9%
+
+Your point 4.
+
+- **Mana Vampirism** is paid only in `ResolveBasicSwing` (*"a skill never drains"*), so the magic swing drains MP
+  and Sound Smash / Acoustic Shock / Magic Stab never do. **All three races reach rung 3 (9%)**: the elf's stop at
+  rung 2 existed only because of the bow (`ClassSkillTables.Third.cs:489`). The gate `blunt|bow` becomes
+  `blunt|dual`.
+- **HP vamp needs no `SpellVamp`.** `MeleeVamp` is paid in the same place (`GameLoopService.cs:16179`). It is not
+  gated by damage type; the only thing it skips is a **bow**, and none of the three holds one any more. Their own
+  Vampiric buff (`cast_vamp`, +7/8/9% melee vampirism) already grants `MeleeVamp`, so it simply keeps working on the
+  magic swing, and the skills still don't drain. ⚠ Don't give them `SpellVamp`: that one IS paid on every damage
+  skill.
+
+## 6. The small changes
+
+- **Combo Mastery** (your point 5): **3% with blunt/1, 3.5% with blunt/2, 2.6% with duals**, gate `blunt|dual`.
+  The engine has two chances today (`ProcChance` 3%, `ProcChanceTwoHanded` 3.45%), so the dual chance is a third
+  field. Each race holds exactly one weapon kind (wand / staff / fangs), so a **per-race face** shows only that
+  race's % — your "face will show only the needed %" with nothing new in the face system.
+- **Monster Knowledge** (your point 6): **the elf learns it too**, on the same rungs 2-4 at 40/48/52.
 
 ## 7. What building it costs
 
-- **Your CSV edits** (`buffer 3rd.csv`, `buffer 4th.csv`) — the CSVs are authoritative; every number here is yours.
-- Engine: the magic-swing passive (§1), the fixed fail field (§5), the fang proficiency, three Reinforcement ids.
-- BalanceMatrix before/after (robe + toggle vs heavy, the three swing powers).
-- **A new APK** — the client builds its Learn tab from the compiled class tables.
+- **Your CSV edits** (`buffer 3rd.csv`, `buffer 4th.csv`). Every number is yours; I bring you the measured ones (the
+  swing powers, skill powers, toggle P.Def per rung).
+- Engine: the magic-swing passive, the fixed success field + its toggle bonus, the dual chance on Combo Mastery, the
+  dual proficiency, two new toggle ids.
+- BalanceMatrix before/after (swing DPS vs physical, robe + toggle vs heavy/light, the three skills).
+- `debuff_landmods.csv` row for Acoustic Shock re-checked (its shape stays `dmg+1 debuff`).
+- **A new APK**: the client builds its Learn tab from the compiled class tables.
 
-## ✅ Answered (2026-10-05)
+## ✅ Answered
 
-1. Sound Burst → the elf's melee **Magic Stab** (§5).
-2. Elf armour → **robe**, toggle = evasion + crit-rate resist + small P.Def; human = higher P.Def + crit-damage
-   resist; demon = P.Def + something (§2).
-3. Mana Vampirism → **yes** on the magic swing; skills must not drain — already true, no flag (§4).
-4. The swing → **accuracy vs evasion**, no fizzle (§1).
-5. Human shield skill → ~6s, no damage, MP, short cooldown — **not final** (§6).
+- 2026-10-05: Sound Burst → Magic Stab; robe for all; Mana Vampirism on the magic swing; the swing keeps the
+  accuracy-vs-evasion miss.
+- 2026-10-06 (eight points): weapons (§2), swing measured vs physical (§1), the per-race toggle and its stats (§4),
+  vamp on the swing for all three races at 9% (§5), Combo Mastery per weapon (§6), Monster Knowledge for the elf (§6),
+  the keep/drop lists (§2), all damage skills single-hit (§3). The **demon's third stat** (accuracy + crit resist +
+  a little M.Atk) and **Magic Stab one hit** are settled by it.
 
 ## ❓ Still open
 
-1. **Demon toggle's third stat** — HP, regen, or something else (§2)?
-2. **Magic Stab: one hit or two** — my pick one (§5).
-3. **Human shield skill** — stun or hold, and its cooldown against the permanent-lock problem (§6).
+1. **Acoustic Shock: 3s cooldown on a 5s stun = a permanent lock, live today** (§3). My pick: 12s+ cooldown.
+2. **The toggle's price** (§4). My pick: ×1.3 skill MP cost while on + a small MP/s.
+3. **One toggle or two** (§4). My pick: one; Sharpening goes.
+4. **The toggle's name(s)** (§4).
+5. **The human's extra shield skill** from 2026-10-05 (§6 of the old page: ~6s lock, no damage). Your answer sheet
+   doesn't mention it, and the human toggle now carries the shield. **Is it dropped?** If it stays, it has the same
+   cooldown problem as #1.
+6. **`rogue_bow_proficiency` for the elf**: dropped with the bow (§2)? My pick: yes.

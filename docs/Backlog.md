@@ -284,7 +284,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-331` | 🔵   | **Skill icons** — game-icons.net tinted per school, `docs/data/skill_icons.csv` + `tools/SkillIcons`; bar, buff bar, Skills window (Known / Learn / Actions) BUILT 0.219.0-0.219.1, your review passed; NPC buffs, potions, scrolls, runes, paving 0.226.0; owed: the cast bar, the tree page; your own redraw "a lot later"                                                                                                                                                                                     | ui           |
 | `BL-332` | ❓   | **Notifications** — low HP / low potions / farm time over / died: in-game alerts, scheduled phone notifications, server push; my pick + four questions                                                                                                                                                                                                                                                                                                         | ui           |
 | `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
-| `BL-335` | 🔵 | **Magic-melee buffers** — all three Warchanters hit through MAGIC: a passive turns the basic attack into a magic hit; demon staff, human wand+shield, elf FANGS, all ROBE; Reinforcement = a per-race armour toggle; Sound Burst = fixed-fail Magic Stab; design only, 3 questions left | classes |
+| `BL-335` | 🔵 | **Magic-melee buffers** — all three Warchanters hit through MAGIC: a passive turns the basic attack into a magic hit; demon battlestaff, human wand+shield, elf duals, all ROBE; a per-race strategy toggle (off = mage, on = near-tank); all damage skills single-hit magic; Sound Burst = Magic Stab 40%→60%; design only, 6 questions left (🔴 Acoustic Shock 3s cd on a 5s stun is a live perma-lock) | classes |
 
 ---
 
@@ -2382,4 +2382,8 @@ and the elf moves from the bow to **fangs** (Fang Proficiency replaces Harmonist
 The whole design, what each race loses and keeps, and why no magic-weapon gate is needed:
 [design/MagicMeleeBuffers.md](design/MagicMeleeBuffers.md).
 
-🔵 **Waits on you**: the three questions still open at the bottom of that page (five answered 2026-10-05), then your `buffer 3rd.csv` / `buffer 4th.csv` edits.
+Your eight-point answer sheet (2026-10-06) is folded in: weapons, the swing measured against a physical swing, the per-race toggle stats, vamp on the swing for all three at 9%, Combo Mastery per weapon, Monster Knowledge for the elf, the keep/drop lists, every damage skill single-hit.
+
+🔴 **Found on the way: Acoustic Shock is a 5s stun on a 3s cooldown TODAY** — a demon who wins the contest can lock a player permanently. My pick: a 12s+ cooldown, one CSV cell.
+
+🔵 **Waits on you**: the six questions at the bottom of that page (the cooldown above, the toggle price, one toggle or two, its name, the human shield skill, the elf bow-range passive), then your `buffer 3rd.csv` / `buffer 4th.csv` edits.
