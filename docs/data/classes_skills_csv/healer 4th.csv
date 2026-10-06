@@ -259,21 +259,21 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,,,----------------------------Holy Blessing----------------------------
 78,Holy Blessing,holy_blessing,Magic/Heal,,,600,0,party/single,0.8,3,0,"Remove every debuff (burning and venom 11 as well) comsumes 1 holy stones",72,18.3kk,1kk,,,,'Holy Stone' is the same as 'Elemental Stone',"Strips every harmful effect from an ally, and is the only cure that reaches a tier-11 burn or venom. Tier 12 is beyond it. Consumes one Holy Stone."
 ,,,,,,,,,,,,,,,,,,,----------------------------Holy Ray----------------------------
-76,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk  +88,69,8.32kk,1kk
-77,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk  +90,71,15.8kk,1kk
-78,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk  +91,73,18.3kk,1kk
-79,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk  +93,77,115kk,1kk
-80,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk  +94,79,0,5kk
-81,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk  +96,91,0,7.5kk
-82,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk  +99,95,0,10kk
-83,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk +100,97,0,15kk
-84,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk +101,99,0,30kk
-85,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk +102,103,0,50kk
-86,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk +103,105,0,75kk
-87,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk +105,107,0,100kk
-88,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk +106,111,0,100kk
-89,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk +108,113,0,100kk
-90,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk +109,115,0,100kk
+76,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk  +88; Power in PVP x0.5,69,8.32kk,1kk
+77,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk  +90; Power in PVP x0.5,71,15.8kk,1kk
+78,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk  +91; Power in PVP x0.5,73,18.3kk,1kk
+79,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk  +93; Power in PVP x0.5,77,115kk,1kk
+80,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk  +94; Power in PVP x0.5,79,0,5kk
+81,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk  +96; Power in PVP x0.5,91,0,7.5kk
+82,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk  +99; Power in PVP x0.5,95,0,10kk
+83,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk +100; Power in PVP x0.5,97,0,15kk
+84,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk +101; Power in PVP x0.5,99,0,30kk
+85,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk +102; Power in PVP x0.5,103,0,50kk
+86,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk +103; Power in PVP x0.5,105,0,75kk
+87,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk +105; Power in PVP x0.5,107,0,100kk
+88,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk +106; Power in PVP x0.5,111,0,100kk
+89,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk +108; Power in PVP x0.5,113,0,100kk
+90,Holy Ray,holy_ray,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,m.Atk +109; Power in PVP x0.5,115,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Mana Ray----------------------------
 76,Mana Ray,mana_ray,Magic/Active,,,600,0,enemy/single,2,2,0,Damages the MP of an enemy with +145 Power (Half effect on monsters),362,8.32kk,1k
 78,Mana Ray,mana_ray,Magic/Active,,,600,0,enemy/single,2,2,0,Damages the MP of an enemy with +150 Power (Half effect on monsters),370,18.3kk,1kk

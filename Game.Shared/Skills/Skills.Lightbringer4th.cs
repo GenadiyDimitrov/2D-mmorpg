@@ -120,7 +120,7 @@ public static partial class SkillCatalog
         int[] pow = { 88, 90, 91, 93, 94, 96, 99, 100, 101, 102, 103, 105, 106, 108, 109 };
         int[] mp  = { 69, 71, 73, 77, 79, 91, 95,  97,  99, 103, 105, 107, 111, 113, 115 };
         return new SkillLevel(Power: pow[i], MpCost: mp[i], SpCost: sp, GoldCost: gold,
-            Description: $"Magic damage, m.Atk +{pow[i]}.");
+            Description: $"Magic damage, m.Atk +{pow[i]}. Half power in PvP.");
     });
 
     /// <summary>The heal MP ladder every 4th-tier single-target heal shares: 122 → 150, +2 a rung.

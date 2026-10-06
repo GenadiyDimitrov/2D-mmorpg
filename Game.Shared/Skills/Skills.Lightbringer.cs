@@ -99,7 +99,9 @@ public static partial class SkillCatalog
             MpCost: 30, CastTicks: 25, CooldownTicks: 10, Range: 750, Power: 42,
             Category: SkillCategory.Magic,  SpCost: 36000,
             Replaces: new[] { HolyBolt, HolySpike },   // + the Human/Demon monster-only spike (2026-10-01)
-            Description: "The healer's attack spell: faster and stronger than Holy Bolt, at shorter range.",
+            // ⚠ PVP POWER ×0.5 (owner, 2026-10-06) — the healer's damage is for soloing, not for out-dueling a nuker.
+            PvpDamageMult: 0.5f,
+            Description: "The healer's attack spell: faster and stronger than Holy Bolt. Half power against players.",
             // ⚠ The level-52 rung read 52, the SAME as 48. He ruled a duplicate description is the
             // ERROR (2026-08-20), so it is 57 — continuing the +5 stride and smoothing the +11 jump to 63.
             Levels: HealerRungs(0, 14, (i, sp) =>
@@ -107,7 +109,7 @@ public static partial class SkillCatalog
                 int[] pow = { 42, 47, 52, 57, 63, 66, 68, 71, 74, 77, 79, 82, 84, 87 };
                 int[] mp  = { 30, 38, 44, 48, 52, 54, 55, 58, 60, 62, 64, 65, 67, 69 };
                 return new SkillLevel(Power: pow[i], MpCost: mp[i], SpCost: sp,
-                    Description: $"Magic damage, m.Atk +{pow[i]}.");
+                    Description: $"Magic damage, m.Atk +{pow[i]}. Half power in PvP.");
             }).Concat(HealerFourthHolyRayRungs()).ToArray()),
 
         // ═══ THE HEALS ═══════════════════════════════════════════════════════════════════════════

@@ -389,14 +389,17 @@ public static partial class SkillCatalog
             // the race ladder, which no class change takes away (its level-14 rung included — the old
             // one-rung `vampiric_bolt` taster it used to replace was folded into it 2026-09-29).
             Replaces: new[] { MagicBolt },
+            // ⚠ PVP POWER ×0.5 (owner, 2026-10-06): *"healers have dmg skill just to help them solo .. not be best at
+            // pvp ... nuker will lose if healer outheal them"*. Same field and same CSV words as Quick Blast.
+            PvpDamageMult: 0.5f,
             Category: SkillCategory.Magic,  
-            Description: "A bolt of holy power — the Healer's offensive spell (replaces Magic Bolt). Spells fail rather than miss.",
+            Description: "A bolt of holy power — the Healer's offensive spell (replaces Magic Bolt). Spells fail rather than miss. Half power against players.",
             Levels: new[]
             {
-                new SkillLevel(Power: 21, MpCost: 20,  SpCost: 3200,  Description: "Magic damage, power 21."),
-                new SkillLevel(Power: 25, MpCost: 23,  SpCost: 6400,  Description: "Magic damage, power 25."),
-                new SkillLevel(Power: 30, MpCost: 26,  SpCost: 12800, Description: "Magic damage, power 30."),
-                new SkillLevel(Power: 36, MpCost: 31,  SpCost: 25000, Description: "Magic damage, power 36."),
+                new SkillLevel(Power: 21, MpCost: 20,  SpCost: 3200,  Description: "Magic damage, power 21. Half power in PvP."),
+                new SkillLevel(Power: 25, MpCost: 23,  SpCost: 6400,  Description: "Magic damage, power 25. Half power in PvP."),
+                new SkillLevel(Power: 30, MpCost: 26,  SpCost: 12800, Description: "Magic damage, power 30. Half power in PvP."),
+                new SkillLevel(Power: 36, MpCost: 31,  SpCost: 25000, Description: "Magic damage, power 36. Half power in PvP."),
             }),
 
         // Holy Spike — HUMAN + DEMON clerics, 20-35 (owner, 2026-10-01): a cheap fast nuke that only

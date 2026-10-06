@@ -24,7 +24,20 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-05 (latest) — 0.229.2: Prowl re-arms itself in auto-farm
+## 2026-10-06 (latest) — 0.229.3: Holy Bolt and Holy Ray deal half damage to players
+
+**Server restart** for the damage; **APK** for the new skill text (the faces are compiled into the client). No `game.db` delete.
+
+- **His ruling:** *"i want holy_ray/holy_bolt to do 50% in pvp so they are not 97% on par with nukers .. nukers are nukers ..
+  healers have dmg skill just to help them solo .. not be best at pvp ... nuker will lose if healer outheal them"*.
+- `holy_bolt` (cleric 20-35) and `holy_ray` (healer 40-90) carry `PvpDamageMult: 0.5f`, the field Quick Blast already
+  uses. PvE is untouched. Every CSV row says `; Power in PVP x0.5` (33 rows: cleric 2nd, healer 3rd, healer 4th), the
+  descriptions say "Half power in PvP", `--gen-faces` re-run, `--check` clean.
+- ⚠ **The healer keeps the race bolt at full power.** A human healer also knows `human_vampiric_bolt` (the human mage
+  race ladder, power 108 at 90 vs Holy Ray 109), and an elf healer knows Frost Spikes, so those two can still
+  duel at full power. The demon's race skill is a buff (Over the Limit). That question is open on `BL-335`'s page.
+
+## 2026-10-05 — 0.229.2: Prowl re-arms itself in auto-farm
 
 **Server restart only.** No APK, no `game.db` delete.
 

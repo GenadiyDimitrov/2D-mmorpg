@@ -44,10 +44,10 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 ,,,,,,,,,,,,,,,,----------------------------HpRegen----------------------------
 35,HP regeneration,hp_regeneration,Passive,,,0,0,self/single,0,0,0,hpReg +1.1,0,6260,[]
 ,,,,,,,,,,,,,,,,----------------------------Holy Bolt----------------------------
-20,Holy Bolt,holy_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +21,20,4820,[magic_bolt],,"Magic damage, power @."
-25,Holy Bolt,holy_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +25,23,9700,[]
-30,Holy Bolt,holy_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +30,26,17300,[]
-35,Holy Bolt,holy_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +36,31,28500,[]
+20,Holy Bolt,holy_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +21; Power in PVP x0.5,20,4820,[magic_bolt],,"Magic damage, power @. Half power in PvP."
+25,Holy Bolt,holy_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +25; Power in PVP x0.5,23,9700,[]
+30,Holy Bolt,holy_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +30; Power in PVP x0.5,26,17300,[]
+35,Holy Bolt,holy_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +36; Power in PVP x0.5,31,28500,[]
 ,,,,,,,,,,,,,,,,----------------------------Holy Bolt----------------------------
 20,Holy Spike,holy_spike,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,Attack the enemy with m.Atk +18; Can only be used agains monsters;,15,3k,,Demon;Human,"Magic damage, power @."
 25,Holy Spike,holy_spike,Magic/Dmg,,,750,0,enemy/single,2.5,1,0,Attack the enemy with m.Atk +21; Can only be used agains monsters;,18,6k,,Demon;Human
