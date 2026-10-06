@@ -287,19 +287,19 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 72,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"M.Atk +15.5%, Accuracy +3; MP Consumption +15%",7,612k,[],Demon,,
 74,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"M.Atk +16%, Accuracy +3; MP Consumption +15%",8,896k,[],Demon,,
 ,,,,,,,,,,,,,,,,,----------------------------Sharpening (Elf)----------------------------
-40,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +6, PVE/PVP spell power +5%, M.Acc +20; MP Consumption +15%",2,29.1k,[],Elf,,
-48,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +6, PVE/PVP spell power +5.25%, M.Acc +20; MP Consumption +15%",2,43.1k,[],Elf,,
-52,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +7, PVE/PVP spell power +5.5%, M.Acc +20; MP Consumption +15%",3,60.2k,[],Elf,,
-56,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +7, PVE/PVP spell power +5.75%, M.Acc +20; MP Consumption +15%",3,73.6k,[],Elf,,
-58,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +7, PVE/PVP spell power +6%, M.Acc +20; MP Consumption +15%",4,90.2k,[],Elf,,
-60,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +8, PVE/PVP spell power +6.25%, M.Acc +20; MP Consumption +15%",4,165k,[],Elf,,
-62,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +8, PVE/PVP spell power +6.5%, M.Acc +20; MP Consumption +15%",5,201k,[],Elf,,
-64,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +8, PVE/PVP spell power +6.75%, M.Acc +20; MP Consumption +15%",5,244k,[],Elf,,
-66,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +8, PVE/PVP spell power +7%, M.Acc +20; MP Consumption +15%",6,393k,[],Elf,,
-68,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +9, PVE/PVP spell power +7.25%, M.Acc +20; MP Consumption +15%",6,474k,[],Elf,,
-70,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +9, PVE/PVP spell power +7.5%, M.Acc +20; MP Consumption +15%",7,523k,[],Elf,,
-72,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +9, PVE/PVP spell power +7.75%, M.Acc +20; MP Consumption +15%",7,865k,[],Elf,,
-74,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +9, PVE/PVP spell power +8%, M.Acc +20; MP Consumption +15%",8,1270k,[],Elf,,
+40,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +6, PVE spell power +5%, PVP spell power +5%, M.Acc +20; MP Consumption +15%",2,29.1k,[],Elf,,"Evasion +@{eva}, PVE/PVP spell power +@{pvedmg}, M.Acc +20; MP Consumption +15%"
+48,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +6, PVE spell power +5.25%, PVP spell power +5.25%, M.Acc +20; MP Consumption +15%",2,43.1k,[],Elf,,
+52,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +7, PVE spell power +5.5%, PVP spell power +5.5%, M.Acc +20; MP Consumption +15%",3,60.2k,[],Elf,,
+56,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +7, PVE spell power +5.75%, PVP spell power +5.75%, M.Acc +20; MP Consumption +15%",3,73.6k,[],Elf,,
+58,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +7, PVE spell power +6%, PVP spell power +6%, M.Acc +20; MP Consumption +15%",4,90.2k,[],Elf,,
+60,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +8, PVE spell power +6.25%, PVP spell power +6.25%, M.Acc +20; MP Consumption +15%",4,165k,[],Elf,,
+62,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +8, PVE spell power +6.5%, PVP spell power +6.5%, M.Acc +20; MP Consumption +15%",5,201k,[],Elf,,
+64,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +8, PVE spell power +6.75%, PVP spell power +6.75%, M.Acc +20; MP Consumption +15%",5,244k,[],Elf,,
+66,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +8, PVE spell power +7%, PVP spell power +7%, M.Acc +20; MP Consumption +15%",6,393k,[],Elf,,
+68,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +9, PVE spell power +7.25%, PVP spell power +7.25%, M.Acc +20; MP Consumption +15%",6,474k,[],Elf,,
+70,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +9, PVE spell power +7.5%, PVP spell power +7.5%, M.Acc +20; MP Consumption +15%",7,523k,[],Elf,,
+72,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +9, PVE spell power +7.75%, PVP spell power +7.75%, M.Acc +20; MP Consumption +15%",7,865k,[],Elf,,
+74,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +9, PVE spell power +8%, PVP spell power +8%, M.Acc +20; MP Consumption +15%",8,1270k,[],Elf,,
 ,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------BUFFS AND GROUPS-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------Frenzy-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,,,,,------------------------------Frenzy------------------------------

@@ -149,7 +149,7 @@ internal static class Descr
         ("critrate",      new[] { "p.crit.rate", "p.critical.rate" }),
         // `BL-237` — the PvP damage channels. His Champion Presence is the only skill in any file that
         // authors them ("PVP Dmg with 15%"), and all three code flags carry the one number.
-        ("pvpdmg",        new[] { "pvp dmg", "pvp damage" }),
+        ("pvpdmg",        new[] { "pvp dmg", "pvp damage", "pvp spell power" }),
         // `BL-237` — the three REFLECT channels of the Elf Ravager's Saints Blessing, and they are
         // three DIFFERENT stats one word apart, so the two long spellings must out-reach the bare one.
         //   *"Reflect 30% OF normal basic attacks"*      → the FRACTION returned (`BuffReflect`)
@@ -237,7 +237,7 @@ internal static class Descr
         ("hpgate",        new[] { "less or equal to", "when hp is below", "hp is below" }),
         // `BL-237` — the PvE twin of the `pvpdmg` key above. Monster Knowledge is its only author
         // (*"Increase PVE Dmg with 20%"*) and all three PvE flags carry the one number.
-        ("pvedmg",        new[] { "pve dmg", "pve damage", "pve/pvp spell power" }),
+        ("pvedmg",        new[] { "pve dmg", "pve damage", "pve spell power" }),
         ("aggro",         new[] { "aggro", "threat" }),
         // A REAGENT COUNT is checkable data, not noise: his two Ultimate heals read "Consumes 1 skill
         // stone" / "Consumes 4 skill stones" against `ConsumableAmount`. Reading it beats an ignore
@@ -532,7 +532,7 @@ internal static class Descr
                 if (i < 0) continue;
                 int dist = fromEnd ? window.Length - (i + w.Length) : i;
                 // A tie on distance goes to the LONGER spelling — "the longest match wins" (DESCR-KEYS.md), which is what lets
-                // "pve/pvp spell power" beat its own last word "power" (2026-10-06).
+                // "pve spell power" beat its own last word "power" (2026-10-06).
                 if (dist < bestDist || (dist == bestDist && w.Length > bestLen))
                 { bestDist = dist; best = metric; bestAt = offset + i; bestLen = w.Length; }
             }

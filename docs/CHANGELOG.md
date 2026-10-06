@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.230.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.230.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,17 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-06 (latest) — 0.230.1: his first pass over the magic Warchanter + a cheaper Harmony of Restoration
+## 2026-10-06 (latest) — 0.230.2: the Elf's Sharpening says PVE and PVP apart
+
+**APK** for the skill text. No server change of substance, no `game.db` delete beyond 0.230.0's.
+
+- **His call:** *"if its a problem for the checker as pvp/pve separate them in the description as pvp and pve and add a
+  face description .. with PVP/PVE"*. The `DESCR` rows of `sharpening_elf` read `PVE spell power +X%, PVP spell power
+  +X%`, so `--check` verifies BOTH numbers (`pve spell power` / `pvp spell power` are the checker's spellings now).
+  The player still reads one line, from a new `DESCRIPTION` cell: *"Evasion +@{eva}, PVE/PVP spell power +@{pvedmg},
+  M.Acc +20; MP Consumption +15%"*. `--gen-faces`, `--check` clean.
+
+## 2026-10-06 — 0.230.1: his first pass over the magic Warchanter + a cheaper Harmony of Restoration
 
 **Server restart + APK** (skill text, the Learn tab's 4th-tier Harmony rows). No `game.db` delete beyond 0.230.0's.
 

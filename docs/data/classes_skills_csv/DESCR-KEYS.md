@@ -68,7 +68,7 @@ multi-part row a number belongs to.
 | `reusereset` | `reuse reset rate`, `reuse reset`, `cooldown reset` |
 | `critdmg` | `p.crit.dmg`, `p.critical.dmg` |
 | `critrate` | `p.crit.rate`, `p.critical.rate` |
-| `pvpdmg` | `pvp dmg`, `pvp damage` |
+| `pvpdmg` | `pvp dmg`, `pvp damage`, `pvp spell power` |
 | `skillreflect` | `to reflect physical damage skill`, `reflect physical damage skill`, `physical skill reflect` |
 | `debuffreflect` | `to reflect debuff`, `reflect debuff`, `debuff reflect` |
 | `reflect` | `reflect` |
@@ -97,7 +97,7 @@ multi-part row a number belongs to.
 | `cancelresist` | `removal attacks`, `removal`, `cancel resist`, `buff cancel resist` |
 | `healrecv` | `received hp`, `healing received`, `heal received` |
 | `hpgate` | `less or equal to`, `when hp is below`, `hp is below` |
-| `pvedmg` | `pve dmg`, `pve damage`, `pve/pvp spell power` |
+| `pvedmg` | `pve dmg`, `pve damage`, `pve spell power` |
 | `aggro` | `aggro`, `threat` |
 | `reagent` | `consumes`, `skill stones`, `skill stone`, `elemental stones`, `elemental stone` |
 | `resexp` | `of lost exp`, `lost exp` |
@@ -111,7 +111,7 @@ multi-part row a number belongs to.
 | `hpprice` | `hp price` |
 | `mpprice` | `mp price` |
 
-73 keys, 223 spellings.
+73 keys, 224 spellings.
 
 ## Words that are read but are not stats
 
