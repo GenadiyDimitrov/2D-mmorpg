@@ -284,7 +284,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-331` | 🔵   | **Skill icons** — game-icons.net tinted per school, `docs/data/skill_icons.csv` + `tools/SkillIcons`; bar, buff bar, Skills window (Known / Learn / Actions) BUILT 0.219.0-0.219.1, your review passed; NPC buffs, potions, scrolls, runes, paving 0.226.0; owed: the cast bar, the tree page; your own redraw "a lot later"                                                                                                                                                                                     | ui           |
 | `BL-332` | ❓   | **Notifications** — low HP / low potions / farm time over / died: in-game alerts, scheduled phone notifications, server push; my pick + four questions                                                                                                                                                                                                                                                                                                         | ui           |
 | `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
-| `BL-335` | 🔵 | **Magic-melee buffers** — all three Warchanters hit through MAGIC: a passive turns the basic attack into a magic hit; demon battlestaff, human wand+shield, elf duals, all ROBE; two weapon-gated toggles per race (Reinforcement = defence, Sharpening = offence, +15% MP cost each); all damage skills single-hit magic; Sound Burst = Magic Stab (curve + high fail); swing, skills, toggle MEASURED (`--magicmelee`); design only, 5 questions left | classes |
+| `BL-335` | 🔵 | **Magic-melee buffers** — all three Warchanters hit through MAGIC: a passive turns the basic attack into a magic hit; demon battlestaff, human wand+shield, elf duals, all ROBE; two weapon-gated toggles per race (Reinforcement = defence, Sharpening = offence, +15% MP cost each); all damage skills single-hit magic; Sound Burst = Magic Stab (curve + high fail); swing, skills, toggle MEASURED (`--magicmelee`); design only, 3 questions left | classes |
 | `BL-336` | 🔵 | **No-refresh debuffs (IG rule)** — a debuff of the same type cannot be re-landed until the old one wears off (no perma-hold); a re-stun attempt may BREAK the stun instead of resetting it; boss-allowed stacking types excepted; design owed | combat |
 
 ---
@@ -2387,7 +2387,9 @@ Your eight-point answer sheet and your follow-up (2026-10-06) are folded in, and
 
 The Acoustic Shock lock is answered by IG's no-refresh rule, filed as `BL-336`; until that is built the lock stays live in PvP.
 
-🔵 **Waits on you**: the five questions at the bottom of that page (the human's Sharpening, one swing ladder or three, buffed or unbuffed skill power, the elf's P.Def reference, names), then your `buffer 3rd.csv` / `buffer 4th.csv` edits.
+Your answers of the same day settled the toggles (two per race, contents on the page), the swing (one id, per-race rung schedule), skill power (unbuffed, lower) and the elf's Reinforcement (only the light mastery).
+
+🔵 **Waits on you**: three questions at the bottom of that page (🔑 the race bolts — Vampiric Bolt / Frost Spikes — still at full power in PvP after 0.229.3; the elf's crit-rate resist; names), then your `buffer 3rd.csv` / `buffer 4th.csv` edits.
 
 ## `BL-336` 🔵 NO-REFRESH DEBUFFS — IG's rule against the permanent lock (2026-10-06)
 

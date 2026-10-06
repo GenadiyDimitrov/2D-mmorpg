@@ -105,29 +105,39 @@ fixed .. high chance to fail ... the toggle just to give less fail chance"*):
   the stab.
 - That makes **one new field** (the skill's fail points), not two.
 
-## 4. The two toggles — defence and offence, weapon-gated, each with a price
+## 4. The two toggles — defence and offence, each with a price
 
-Your point 3, plus your 2026-10-06 idea for Sharpening: **keep it as the second toggle, gated to each race's weapon**
-(Human 1H blunt, Demon 2H blunt, Elf duals). 🔑 **I take your version over my single toggle.** It gives four postures
-(off / defence / offence / both), and the gate is what enforces each race's weapon. Reinforcement keeps its name.
+Your answers of 2026-10-06. Two toggles per race: Reinforcement (defence) and Sharpening (the race's other half). Each
+one costs +15% skill MP and half of today's Sharpening MP/s.
 
-| | Human | Demon | Elf |
-|---|---|---|---|
-| **Reinforcement** (robe; human robe+shield) | P.Def to TODAY's heavy level, Tank Shield Mastery's shield numbers, P.Crit **damage** resist 15% | P.Def to today's heavy level, P.Crit damage + rate resist ~8% | P.Def to today's light level, evasion, P.Crit **rate** resist 15% |
-| **Sharpening** (1H blunt / 2H blunt / duals) | ❓ your numbers (see below) | accuracy + a little M.Atk | magic SKILL damage + M.Accuracy +20 (Magic Stab 60→40% fail) |
+| | Reinforcement | Sharpening |
+|---|---|---|
+| **Human** (Sharpening gated to the **shield**) | P.Def to match heavy + its mastery, P.Crit **damage** resist, **bow resist** (from Tank Shield Mastery) | Tank Shield Mastery's shield numbers: **shield damage reduction, shield (block) rate, % P.Def** |
+| **Demon** (Sharpening gated to the 2H blunt) | P.Def to match heavy + its mastery, P.Crit **rate** resist, P.Crit **damage** resist | more **M.Atk**, **accuracy** |
+| **Elf** (Sharpening gated to duals) | **only Light Armor Mastery's effect**: its P.Def and its **evasion** | **spell accuracy** (M.Accuracy +20 → Magic Stab 60→40% fail) and **spell damage** |
 
-- **Price (your answer):** each toggle **+15% skill MP cost** and **half the MP/s** of today's Sharpening. ⚠ Small
-  correction: MP-cost buffs **ADD** in this engine (`MagicMpCostReduction +=`), so both on = exactly **+30%**, not 32%.
-  It is your 30% either way. `MagicMpCostPct` already exists, so the price needs no code.
-- 🔑 **Different numbers per race = different ids** (`BL-327`: a face never changes a number). So that is three
-  Reinforcement ids and three Sharpening ids. Your Combo Mastery answer works the same way: **one chance field, one id
-  per race**, and each race's face prints its own number. No third proc field.
-- ❓ **The human's Sharpening has no offence listed.** The human's table above only had a defence half. Does the human
-  get a Sharpening at all, and if so, what's in it?
+- **The human's numbers come from the masteries the human loses:** Heavy Armor Mastery feeds Reinforcement, and Tank Shield
+  Mastery splits across both toggles (bow resist → Reinforcement; shield reduction, rate and its % P.Def →
+  Sharpening). So the human's §8 C gap (+54%) is shared: the shield mastery's % P.Def moves to Sharpening, and the
+  rest is Reinforcement's. The probe splits the two when it's built.
+- **The elf's Reinforcement is only the light mastery** (your answer 4). That's the measured gap to today's elf:
+  ~+17% P.Def and +11 evasion at 85-90. ⚠ Your new list doesn't have the elf's **P.Crit rate resist** (Rogue Crit
+  Resist, dropped in §2). I'm reading that as gone, not moved.
+- **Price:** MP-cost buffs **ADD** in this engine (`MagicMpCostReduction +=`), so both on = exactly **+30%**, your
+  number. `MagicMpCostPct` already exists, so the price needs no code.
+- 🔑 **Different numbers per race = different ids** (`BL-327`: a face never changes a number), so three
+  Reinforcement ids and three Sharpening ids. Combo Mastery works the same way: one chance field, one id per race.
 - **P.Def as a PERCENT, not a flat** (measured, §8 C). One authored flat point = exactly one final point, so a flat
-  can't follow the NPC shelf. Heavy armour does follow it: the gap to today doubles when buffed (645 → 1032 for a
-  human at 90). As a % of the robe P.Def, the gap is **the same buffed or not**: Human **+54%** at 85-90, Demon
-  **+33%**, Elf **+17%**. Today's Reinforcement is a flat (+300…+700), so this is a change of mode.
+  can't follow the NPC shelf, but heavy armour does: the human's gap to today goes from 645 to 1032 when buffed. As a
+  % of the robe P.Def the gap is the same buffed or not. Today's Reinforcement is a flat (+300…+700), so this is a
+  change of mode.
+
+**The swing passive: ONE id, a different rung schedule per race** (your answer 2), like
+`fighter_critical_dmg_mastery`: one power ladder, and each race reaches its rungs at its own levels, so each race's
+power follows its own row in §8 A. One id; the per-race table is only learn levels.
+
+**Skill power: the UNBUFFED column of §8 B, set lower** (your answer 3: *"almost always the buffer is buffed"*). The
+buffed run puts them 10-50% higher, so unbuffed is already on the low side of where they'll sit in play.
 
 **Names** — parked until last, as you said: *Iron / War / Wind Cadence*, or one shared *Battle Cadence*.
 
@@ -241,12 +251,18 @@ vs 136 today, so the toggle needs **+11 evasion** to close that.
   answer is IG's no-refresh rule (`BL-336`); price = 30% MP cost + Sharpening's MP/s, split across TWO weapon-gated
   toggles; names last; the human shield skill skipped; `rogue_bow_proficiency` dropped; skill power AND cast time
   measured against the healer.
+- 2026-10-06 (second follow-up): the two toggles per race as in §4; the swing = one id with per-race rung schedules;
+  skill power = the unbuffed column, set lower; the elf's Reinforcement = only the light mastery. And, beside this
+  page, **Holy Bolt + Holy Ray at half damage in PvP**, built as 0.229.3.
 
 ## ❓ Still open
 
-1. **The human's Sharpening** — does the human get one, and what's in it (§4)?
-2. **Swing ladder** — one shared ladder or one per race (§8 A)? My pick: one per race. It's the same passive with a
-   different power per race, so it's three ids, the same as the toggles.
-3. **Skill power: the unbuffed or buffed column** (§8 B). My pick: unbuffed, then the playtest.
-4. **The elf's P.Def reference**: today's elf (with mastery, +17%), as measured (§8 C). My pick: yes.
-5. **Names** — last.
+1. **The race bolts in PvP.** §8 B's "healer = 97% of the nuker" is a **PvE** number (against a mob), and the
+   healer's skill in it was not Holy Ray but **`human_vampiric_bolt`**, the human mage race ladder (power 108 at 90,
+   Holy Ray 109). 0.229.3 halves Holy Bolt and Holy Ray against players, but a human healer still has Vampiric Bolt
+   and an elf healer still has Frost Spikes at full power. So in a duel the healer just swaps spells. Halving the race
+   bolts in PvP as well would hit every mage of that race, including nukers and buffers. **My pick: halve them too.**
+   The nuker's PvP damage is the nuker's own kit (Elemental Blast and up), and a race bolt that out-duels the class spell
+   undoes your ruling.
+2. **The elf's P.Crit rate resist** — gone with Rogue Crit Resist, or does it belong in one of the elf's toggles (§4)?
+3. **Names** — last.
