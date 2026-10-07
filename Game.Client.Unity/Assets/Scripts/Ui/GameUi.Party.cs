@@ -16,7 +16,7 @@ namespace Game.Client
     /// reason: there is nothing to close, only a party to leave.
     ///
     /// <para>🔑 THE WINDOW HAS NO WINDOW (owner, 2026-10-07): no panel, no border, no background — only
-    /// each member's plate (name + HP + MP) with that member's effects joined under it, and the gaps between
+    /// each member's plate (name + HP + MP) with that member's effects beside it, members stacked one under another, and the gaps between
     /// them are click-through to the world. It grows by one member's height per member, never scrolls. The
     /// plate is the only thing that SELECTS (tap) and the only thing with a menu (hold: Leave on yourself;
     /// Lead / Kick on others when you lead; nothing otherwise). A tap on an effect opens THAT member's buff
@@ -44,12 +44,14 @@ namespace Game.Client
         private bool _partySmall;
         private const string PrefPartyView = "party.view", PrefPartySmall = "party.small";
 
-        // Geometry, at full size. Six effects per row exactly span the plate, so a member's block is one
-        // clean column whatever is up on them.
-        private const float PartyPlateW = 240f, PartyPlateH = 46f, PartyMemberGap = 6f;
+        // Geometry, at full size. Six effects per row to the RIGHT of the plate (owner: "buffs next to each row");
+        // a member grows taller only once a second row is needed (7+ effects), and members stack one under another.
+        private const float PartyPlateW = 220f, PartyPlateH = 46f, PartyMemberGap = 6f;
         private const float PartyHeaderW = 150f, PartyHeaderH = 30f, PartyHeaderGap = 4f;
         private const int PartyFxPerRow = 6;
-        private const float PartyFxStep = PartyPlateW / PartyFxPerRow, PartyFxSize = PartyFxStep - 2f;
+        private const float PartyFxStep = 32f, PartyFxSize = PartyFxStep - 2f, PartyFxLeft = PartyPlateW + 2f;
+        /// <summary>A member block: the plate, then six effects to its right.</summary>
+        private const float PartyRowW = PartyFxLeft + PartyFxPerRow * PartyFxStep;
 
         private static readonly Color PartyClear = new Color(0f, 0f, 0f, 0f);
         private static readonly Color PartyDebuffTint = new Color(0.45f, 0.18f, 0.18f, 0.95f);
@@ -182,9 +184,9 @@ namespace Game.Client
                 row.PlateImage.color = Boot.TargetId == member.Id ? UiKit.TabActive : UiKit.PanelLight;
 
                 int fx = LayoutMemberEffects(row, member);
-                float height = PartyPlateH + (fx > 0 ? 2f + ((fx - 1) / PartyFxPerRow + 1) * PartyFxStep : 0f);
+                float height = Mathf.Max(PartyPlateH, fx > 0 ? ((fx - 1) / PartyFxPerRow + 1) * PartyFxStep : 0f);
                 UiKit.Place(row.Root, new Vector2(0f, 1f), new Vector2(0f, 1f),
-                            new Vector2(0f, -y), new Vector2(PartyPlateW, height));
+                            new Vector2(0f, -y), new Vector2(PartyRowW, height));
                 y += height + PartyMemberGap;
             }
             for (; i < _partyRows.Count; i++)
@@ -195,10 +197,10 @@ namespace Game.Client
 
             float contentH = Mathf.Max(0f, y - PartyMemberGap);
             float scale = _partySmall ? 0.5f : 1f;
-            _partyContent.sizeDelta = new Vector2(PartyPlateW, contentH);
+            _partyContent.sizeDelta = new Vector2(PartyRowW, contentH);
             _partyContent.localScale = new Vector3(scale, scale, 1f);
             // The holder's rect is what DragMove keeps on screen, so it is sized to what is DRAWN.
-            _partyPanel.sizeDelta = new Vector2(Mathf.Max(PartyHeaderW, PartyPlateW * scale),
+            _partyPanel.sizeDelta = new Vector2(Mathf.Max(PartyHeaderW, PartyRowW * scale),
                                                 PartyHeaderH + PartyHeaderGap + contentH * scale);
         }
 
@@ -235,7 +237,7 @@ namespace Game.Client
             return _partyRows[index];
         }
 
-        /// <summary>Lay a member's effects out six per row under their plate, per the view setting, and
+        /// <summary>Lay a member's effects out six per row to the right of their plate, per the view setting, and
         /// return how many are shown. Debuffs first — the same order as your own bar, and the ones a
         /// healer is reading for. Groups collapse exactly as they do on your bar (<see cref="BuildBuffViews"/>).</summary>
         private int LayoutMemberEffects(PartyRow row, PartyMemberDto member)
@@ -268,8 +270,8 @@ namespace Game.Client
         {
             fx.View = view;
             fx.Root.gameObject.SetActive(true);
-            fx.Root.anchoredPosition = new Vector2((index % PartyFxPerRow) * PartyFxStep + 1f,
-                                                   -(PartyPlateH + 2f + (index / PartyFxPerRow) * PartyFxStep));
+            fx.Root.anchoredPosition = new Vector2(PartyFxLeft + (index % PartyFxPerRow) * PartyFxStep + 1f,
+                                                   -((index / PartyFxPerRow) * PartyFxStep + 1f));
 
             bool debuff = view.IsDebuff || view.Row == BuffRow.Debuff;
             fx.Box.color = debuff ? PartyDebuffTint : view.Suppressed ? PartyGatedTint : UiKit.PanelLight;
@@ -310,18 +312,18 @@ namespace Game.Client
                 fx.Icon.preserveAspect = true;
                 fx.Icon.enabled = false;
 
-                fx.Label = UiKit.Label(box.transform, "", 12f, UiKit.Text, TextAlignmentOptions.Center);
+                fx.Label = UiKit.Label(box.transform, "", 10f, UiKit.Text, TextAlignmentOptions.Center);
                 UiKit.Place(UiKit.Rect(fx.Label.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                            new Vector2(0f, -2f), new Vector2(PartyFxSize, 18f));
+                            new Vector2(0f, -1f), new Vector2(PartyFxSize, 14f));
 
                 fx.TimeBack = UiKit.Box(box.transform, "TimeBack", new Color(0f, 0f, 0f, 0.62f), blocksInput: false);
                 UiKit.Place(UiKit.Rect(fx.TimeBack.gameObject), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-                            new Vector2(0f, 2f), new Vector2(PartyFxSize - 4f, 12f));
+                            new Vector2(0f, 1f), new Vector2(PartyFxSize - 2f, 10f));
                 fx.TimeBack.enabled = false;
 
-                fx.Time = UiKit.Label(box.transform, "", 10f, UiKit.TextDim, TextAlignmentOptions.Center);
+                fx.Time = UiKit.Label(box.transform, "", 8f, UiKit.TextDim, TextAlignmentOptions.Center);
                 UiKit.Place(UiKit.Rect(fx.Time.gameObject), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-                            new Vector2(0f, 2f), new Vector2(PartyFxSize, 12f));
+                            new Vector2(0f, 1f), new Vector2(PartyFxSize, 10f));
 
                 row.Fx.Add(fx);
             }
@@ -528,7 +530,7 @@ namespace Game.Client
                 y += rowH + 14f;
             }
 
-            // Which of each member's effects are drawn under their plate.
+            // Which of each member's effects are drawn beside their plate.
             Heading("Member effects");
             Choices(PartyViewNames, _partyView, v =>
             {

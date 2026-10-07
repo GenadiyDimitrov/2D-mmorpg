@@ -25,7 +25,7 @@
 
 ---
 
-## §144 — 0.232.0: the party window has no window (2026-10-07)
+## §144 — 0.232.0-0.232.1: the party window has no window (2026-10-07)
 
 ⚠ **APK + server restart.** Needs a party of two or more.
 
@@ -33,9 +33,9 @@
   beside a plate) reaches the world: it walks you, or selects whatever is behind it. Each member added makes it taller. ->
 - `144b` [ ] - Tap a plate → that member is selected (their plate lights). Hold your own → *Leave party*. Hold someone
   else's as leader → *Make leader* / *Kick*; as a non-leader → nothing. A tap outside the menu closes it. ->
-- `144c` [ ] - Effects: six per row under the plate, with picture + time. Tap one → THEIR buff card (name, Lv, text,
+- `144c` [ ] - (0.232.1) Effects: six per row BESIDE the plate (to its right), members one under another, with picture + time. Tap one → THEIR buff card (name, Lv, text,
   time left, "On <name>."), not yours. ->
-- `144d` [ ] - "Party N options" → Party options: Buffs / Debuffs / All / None changes what is under every plate; Small
+- `144d` [ ] - "Party N options" → Party options: Buffs / Debuffs / All / None changes what is beside every plate; Small
   halves the whole roster while the header stays full size; the leader can propose a loot mode, others only see it. Both
   settings survive a restart of the app. ->
 - `144e` [ ] - Drag the header, a plate or an effect: the whole window moves. A drag never selects anyone or opens the

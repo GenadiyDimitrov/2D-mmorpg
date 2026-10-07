@@ -24,7 +24,15 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-07 (latest) — 0.232.0: the party window has no window
+## 2026-10-07 (latest) — 0.232.1: party effects sit beside the plate
+
+**APK.** Client only.
+
+- *"buffs next to each row .. each player is below the previous -> as it is"*: a member's effects are six per row to
+  the RIGHT of their plate again (30px squares), not under it; members still stack one under another. A member is as
+  tall as the plate until a second row of effects is needed.
+
+## 2026-10-07 — 0.232.0: the party window has no window
 
 **APK** + server restart. No `game.db` delete. Protocol unchanged (the new field and hub method are additions an older
 side ignores).
