@@ -25,6 +25,24 @@
 
 ---
 
+## §144 — 0.232.0: the party window has no window (2026-10-07)
+
+⚠ **APK + server restart.** Needs a party of two or more.
+
+- `144a` [ ] - No frame or background: only the member plates and their effects. A tap in a gap between members (or
+  beside a plate) reaches the world: it walks you, or selects whatever is behind it. Each member added makes it taller. ->
+- `144b` [ ] - Tap a plate → that member is selected (their plate lights). Hold your own → *Leave party*. Hold someone
+  else's as leader → *Make leader* / *Kick*; as a non-leader → nothing. A tap outside the menu closes it. ->
+- `144c` [ ] - Effects: six per row under the plate, with picture + time. Tap one → THEIR buff card (name, Lv, text,
+  time left, "On <name>."), not yours. ->
+- `144d` [ ] - "Party N options" → Party options: Buffs / Debuffs / All / None changes what is under every plate; Small
+  halves the whole roster while the header stays full size; the leader can propose a loot mode, others only see it. Both
+  settings survive a restart of the app. ->
+- `144e` [ ] - Drag the header, a plate or an effect: the whole window moves. A drag never selects anyone or opens the
+  menu. ->
+
+---
+
 ## §143 — 0.230.0: the Warchanter hits with MAGIC (`BL-335`, 2026-10-06)
 
 ⚠ **Server restart + APK + `game.db` delete** (or a new Warchanter). Numbers marked "mine" in §9 of

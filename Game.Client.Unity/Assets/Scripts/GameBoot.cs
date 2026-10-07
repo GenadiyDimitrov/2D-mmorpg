@@ -378,6 +378,14 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("Party: " + ex.Message); }
         }
 
+        /// <summary>Ask for a party member's buff description — the party window shows it on tap; the reply
+        /// arrives as <c>PartyBuffInfo</c>.</summary>
+        public async void RequestPartyBuffInfo(Guid memberId, string key)
+        {
+            try { await _net.PartyBuffInfoAsync(memberId, key); }
+            catch (Exception ex) { ClientLog.Warn("Party: " + ex.Message); }
+        }
+
         public async void PartyChangeLeader(Guid targetId)
         {
             try { await _net.PartyChangeLeaderAsync(targetId); }
@@ -1516,6 +1524,7 @@ namespace Game.Client
                 Party = p?.Members ?? new PartyMemberDto[0];
                 if (p != null) PartyLoot = p.LootMode;
             });
+            _net.PartyBuffInfoReceived += b => Main(() => Ui?.ShowPartyBuffInfo(b));
             _net.PartyInviteReceived += i => Main(() =>
             {
                 PendingInvite = i;

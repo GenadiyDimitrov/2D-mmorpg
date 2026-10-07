@@ -536,6 +536,13 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    /// <summary>The detail card of a party member's buff — the party window tapped it.</summary>
+    public Task PartyBuffInfo(Guid memberId, string key)
+    {
+        _world.Commands.Enqueue(new PartyBuffInfoCmd(Context.ConnectionId, memberId, key ?? ""));
+        return Task.CompletedTask;
+    }
+
     public Task PartySetLootMode(LootMode mode)
     {
         _world.Commands.Enqueue(new PartySetLootModeCmd(Context.ConnectionId, mode));

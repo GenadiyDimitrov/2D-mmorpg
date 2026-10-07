@@ -616,6 +616,7 @@ public record PartyInviteByNameCmd(string ConnectionId, string Name) : IGameComm
 public record PartyRespondCmd(string ConnectionId, bool Accept) : IGameCommand;
 public record PartyLeaveCmd(string ConnectionId) : IGameCommand;
 public record PartyKickCmd(string ConnectionId, Guid TargetId) : IGameCommand;
+public record PartyBuffInfoCmd(string ConnectionId, Guid MemberId, string Key) : IGameCommand;
 public record PartyChangeLeaderCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 // Equipment presets A/B/C (slot 0/1/2): save the worn set, or apply a saved one.
 public record SaveEquipPresetCmd(string ConnectionId, int Slot) : IGameCommand;

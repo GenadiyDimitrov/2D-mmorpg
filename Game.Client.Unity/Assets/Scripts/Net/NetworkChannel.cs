@@ -87,6 +87,7 @@ namespace Game.Client
         /// how the server says you left or were the last one out.</summary>
         public event Action<PartyUpdate> PartyReceived;
         public event Action<PartyInviteDto> PartyInviteReceived;
+        public event Action<PartyBuffInfo> PartyBuffInfoReceived;
         public event Action<LearnedSkills> LearnedReceived;
         /// <summary>The SERVER owns the skill bar and pushes it (always alongside Learned). The client
         /// renders what it is sent and only writes back when the PLAYER edits a slot — see
@@ -207,6 +208,7 @@ namespace Game.Client
             _connection.On<ResurrectOffer>("ResurrectOffer", o => ResurrectOfferReceived?.Invoke(o));
             _connection.On<PartyUpdate>("Party", p => PartyReceived?.Invoke(p));
             _connection.On<PartyInviteDto>("PartyInvite", i => PartyInviteReceived?.Invoke(i));
+            _connection.On<PartyBuffInfo>("PartyBuffInfo", b => PartyBuffInfoReceived?.Invoke(b));
             _connection.On<string>("ForceDisconnect", reason => ForceDisconnected?.Invoke(reason));
             _connection.Closed += ex =>
             {
@@ -412,6 +414,7 @@ namespace Game.Client
         public Task PartyRespondAsync(bool accept) => _connection.SendAsync("PartyRespond", accept);
         public Task PartyLeaveAsync() => _connection.SendAsync("PartyLeave");
         public Task PartyKickAsync(Guid targetId) => _connection.SendAsync("PartyKick", targetId);
+        public Task PartyBuffInfoAsync(Guid memberId, string key) => _connection.SendAsync("PartyBuffInfo", memberId, key);
         public Task PartyChangeLeaderAsync(Guid targetId) => _connection.SendAsync("PartyChangeLeader", targetId);
         public Task SaveEquipPresetAsync(int slot) => _connection.SendAsync("SaveEquipPreset", slot);
         public Task ApplyEquipPresetAsync(int slot) => _connection.SendAsync("ApplyEquipPreset", slot);

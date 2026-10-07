@@ -1169,7 +1169,16 @@ public record PartyMemberDto(Guid Id, string Name, int Level, string ClassName,
     string[]? Debuffs = null,
     // Positive buff NAMES (appended) — so the party window can show who has what up, behind a
     // buffs/debuffs view toggle. Internal counters (DoT stacks) are excluded like Debuffs.
-    string[]? Buffs = null);
+    string[]? Buffs = null,
+    // Every visible effect as a buff-bar row (appended): the party window draws the member's buffs the way
+    // your own bar does and a tap opens its details, timer included. ⚠ Description is "" ON PURPOSE — this
+    // goes to every member every second, and the text is fetched only when tapped (PartyBuffInfo).
+    BuffDto[]? Effects = null);
+
+/// <summary>Server -> Client, the answer to the hub's PartyBuffInfo: one party member's buff, its full description — what the party
+/// window's detail card shows when a member's buff is tapped. Fetched on demand because the roster push
+/// carries no descriptions (see <see cref="PartyMemberDto.Effects"/>).</summary>
+public record PartyBuffInfo(Guid MemberId, string Key, string Description, float SecondsLeft);
 
 /// <summary>Server -> party members: the current roster (empty array = you left/were the last
 /// member, so the client hides the party window). Sent on membership change and refreshed

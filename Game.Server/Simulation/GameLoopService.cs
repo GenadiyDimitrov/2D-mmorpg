@@ -266,6 +266,7 @@ public class GameLoopService : BackgroundService
                 case ApplyEquipPresetCmd c: HandleApplyEquipPreset(c); break;
                 case UnequipAllCmd c: HandleUnequipAll(c); break;
                 case PartyKickCmd c: HandlePartyKick(c); break;
+                case PartyBuffInfoCmd c: HandlePartyBuffInfo(c); break;
                 case PartySetLootModeCmd c: HandlePartySetLootMode(c); break;
                 case PartyLootVoteCmd c: HandlePartyLootVote(c); break;
                 case SetAutoHuntConfigCmd c: HandleSetAutoHuntConfig(c); break;
@@ -6918,6 +6919,36 @@ public class GameLoopService : BackgroundService
         return e.BaseClass.ToString();
     }
 
+    /// <summary>A member's effects as buff-bar rows for the party window — <see cref="PushBuffs"/>'s row,
+    /// minus the DESCRIPTION, which is fetched only when tapped (<see cref="HandlePartyBuffInfo"/>): the
+    /// roster goes to every member every second, and the text is most of a row's weight.</summary>
+    private static BuffDto[]? PartyEffects(Entity m)
+    {
+        var rows = m.Buffs.Where(b => !b.Internal).Select(b => new BuffDto(
+            b.Name, "",
+            b.Toggle ? -1f : b.TicksRemaining * GameConstants.TickSeconds, b.IsDebuff, b.Key, b.Stacks,
+            b.Row, "",
+            IsMultiChildGroup(b.SourceSkillId) ? b.SourceSkillId : "",
+            IsMultiChildGroup(b.SourceSkillId) ? GroupDisplayName(m, b.SourceSkillId) : "",
+            b.ShownLevel, b.Suppressed,
+            CountsAgainstBuffCap(b.SourceRow, b.Toggle, b.CountsTowardBuffLimit, b.IsDebuff, b.Internal),
+            b.SourceSkillId)).ToArray();
+        return rows.Length > 0 ? rows : null;
+    }
+
+    /// <summary>The party window tapped a member's buff: send its description. Only to a member of the
+    /// SAME party — a stranger's buffs are not yours to read.</summary>
+    private void HandlePartyBuffInfo(PartyBuffInfoCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var asker)) return;
+        if (!_world.Parties.TryGetValue(asker.Id, out var party) || !party.Contains(cmd.MemberId)) return;
+        if (!_world.Entities.TryGetValue(cmd.MemberId, out var member)) return;
+        var buff = member.Buffs.FirstOrDefault(b => !b.Internal && b.Key == cmd.Key);
+        if (buff == null) return;
+        SendTo(asker, "PartyBuffInfo", new PartyBuffInfo(member.Id, buff.Key, BuffDescriptionWithSource(buff),
+            buff.Toggle ? -1f : buff.TicksRemaining * GameConstants.TickSeconds));
+    }
+
     private void SendPartyUpdate(Party party)
     {
         var members = new List<PartyMemberDto>(party.Members.Count);
@@ -6940,7 +6971,8 @@ public class GameLoopService : BackgroundService
                         : m.AutoHuntEnabled ? PartyMemberStatus.Auto
                         : PartyMemberStatus.Online,
                     debuffs.Length > 0 ? debuffs : null,
-                    buffs.Length > 0 ? buffs : null));
+                    buffs.Length > 0 ? buffs : null,
+                    PartyEffects(m)));
             }
         var dto = new PartyUpdate(members.ToArray(), party.LootMode);
         foreach (var mid in party.Members)

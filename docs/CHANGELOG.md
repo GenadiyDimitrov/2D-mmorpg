@@ -24,7 +24,27 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-07 (latest) — 0.231.1: Acoustic Bash does no damage, the race bolts get real cooldowns
+## 2026-10-07 (latest) — 0.232.0: the party window has no window
+
+**APK** + server restart. No `game.db` delete. Protocol unchanged (the new field and hub method are additions an older
+side ignores).
+
+- **No frame, no background, no scroll** (his pass on the party window): each member is a plate (name, HP, MP) with
+  their effects joined underneath, and nothing else. The gaps are click-through to the world, and the window grows by one
+  member's height for each member.
+- **Effects are six per row** under the plate, with the skill picture and the time left, like your own buff bar.
+  Groups collapse the same way. **Tap one to see THAT member's buff**: name, level, description, time left. The roster
+  now carries each effect's timer (`PartyMemberDto.Effects`); the description is fetched on the tap (new hub method
+  `PartyBuffInfo`, same-party only), because the roster goes to everyone every second.
+- **Tap a plate = select. Hold a plate = its menu:** yourself → *Leave party*; someone else, if you lead → *Make
+  leader* / *Kick*; someone else, if you don't → nothing. The Leave / Lead / Kick buttons are gone from the rows.
+- **One header button, "Party N options"**, opens **Party options**: the effects view (Buffs / Debuffs / All / None),
+  **Window size** (Normal / *Small* = the whole roster at half size), and the loot rule (the leader proposes any other
+  mode; everyone else sees the current one). The header never shrinks, so it can still be tapped in Small. The view and
+  size are kept on the phone.
+- Still movable: drag the header, a plate or an effect.
+
+## 2026-10-07 — 0.231.1: Acoustic Bash does no damage, the race bolts get real cooldowns
 
 **APK** + server restart. No `game.db` delete of its own.
 

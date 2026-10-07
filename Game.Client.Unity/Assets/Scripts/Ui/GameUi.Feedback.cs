@@ -346,20 +346,28 @@ namespace Game.Client
             HideBuffPopup();
         }
 
-        private void ShowBuffPopup(BuffSquare square)
+        private void ShowBuffPopup(BuffSquare square) =>
+            ShowBuffPopup(square.BuffName, square.Level, square.Stacks, square.Description, square.Seconds,
+                          square.IsDebuff ? "(a debuff — it cannot be dismissed)" : "Press and HOLD the icon to cancel.");
+
+        /// <summary>The detail card, for any buff — your own bar's or a party member's (whose footer names
+        /// who carries it, and who cannot be cancelled from here).</summary>
+        private void ShowBuffPopup(string name, int level, int stacks, string description, float seconds,
+                                   string footer)
         {
             if (_buffPopup == null) return;
+            _partyPopupKey = null;   // a party card re-arms this after the call; anything else disarms it
             // The RUNG belongs in the title, beside the name, spelled the way the Known tab spells it
             // (owner, playtest 27). Only when the buff actually has a ladder — "Frenzy Lv.1" on a
             // one-level buff is noise, not information.
-            _buffPopupTitle.text = square.BuffName
-                + (square.Level > 0 ? "   Lv." + square.Level : "")
-                + (square.Stacks > 1 ? "  x" + square.Stacks : "");
+            _buffPopupTitle.text = name
+                + (level > 0 ? "   Lv." + level : "")
+                + (stacks > 1 ? "  x" + stacks : "");
 
             var t = new System.Text.StringBuilder();
-            if (!string.IsNullOrWhiteSpace(square.Description)) t.AppendLine(square.Description).AppendLine();
-            t.AppendLine(square.Seconds > 0f ? "Remaining: " + ShortTime(square.Seconds) : "Remaining: —");
-            t.Append(square.IsDebuff ? "(a debuff — it cannot be dismissed)" : "Press and HOLD the icon to cancel.");
+            if (!string.IsNullOrWhiteSpace(description)) t.AppendLine(description).AppendLine();
+            t.AppendLine(seconds > 0f ? "Remaining: " + ShortTime(seconds) : "Remaining: —");
+            t.Append(footer);
             _buffPopupBody.text = t.ToString();
 
             // 🔴 THE BOX NOW GROWS TO ITS TEXT (owner, 2026-09-03: *"when bow expertise is inactive and
