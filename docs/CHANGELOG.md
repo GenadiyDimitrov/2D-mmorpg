@@ -24,7 +24,17 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-07 (latest) — 0.232.3: the autopilot healer watches the PARTY's bars
+## 2026-10-07 (latest) — 0.232.4: the autopilot healer walks to a dying member
+
+Server restart only (no APK).
+
+- His find: two party members on auto, each farming their own 1200 ring with assist off — *"when one char is dying the
+  healer just ignores him and not move him in range"*. `AutoHealTarget` and `AutoManaTarget` dropped every member beyond
+  the skill's CAST range, so the far member was never a candidate. They now accept any member within
+  `GameConstants.ViewRange` (3000), the same limit `UpdateQueuedSkill` already honours. The queued cast walks the
+  healer into cast range and casts, and the farm loop takes the healer back to its own ring afterwards.
+
+## 2026-10-07 — 0.232.3: the autopilot healer watches the PARTY's bars
 
 Server restart only (no APK).
 

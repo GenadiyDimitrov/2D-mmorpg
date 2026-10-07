@@ -25,6 +25,15 @@
 
 ---
 
+## §146 — 0.232.4: the autopilot healer walks to a dying member (2026-10-07)
+
+⚠ **Server restart.** Party of two on auto, assist OFF, each farming its own ring.
+
+- `146a` [ ] - A member ~1500-2500 away drops under the healer's heal line: the healer leaves its ring, walks into
+  heal range, heals them, then goes back to farming. Same for the MP restore on the MP line. ->
+
+---
+
 ## §145 — 0.232.3: the autopilot healer watches the party's bars (2026-10-07)
 
 ⚠ **Server restart.** Needs a party: a healer on auto + a member who takes damage.

@@ -6619,7 +6619,7 @@ public class GameLoopService : BackgroundService
         ClassSkills.CanClassLearn(SkillCatalog.RestoreMana, e.Race, e.BaseClass, e.Archetype, e.Discipline);
 
     /// <summary>Who this MP-restore should land on: the emptiest party member (or yourself) under the
-    /// mana threshold and in range. Mirrors AutoHealTarget on the OTHER bar, and honours the same
+    /// mana threshold and within ViewRange (the queued cast walks into cast range). Mirrors AutoHealTarget on the OTHER bar, and honours the same
     /// "not on a mana-restorer" rule the manual cast enforces, so the autopilot never queues a cast
     /// the command handler is going to refuse. The MP line is <see cref="Entity.AutoMpPct"/> (0 =
     /// never), independent of the heal slider — the mage the owner farmed with was at FULL HP and empty
@@ -6644,13 +6644,13 @@ public class GameLoopService : BackgroundService
         if (IsAllyTargetable(def) && def.TargetMode != TargetMode.SelfOnly
             && _world.Parties.TryGetValue(p.Id, out var party))
         {
-            float range = SkillMath.EffectiveRange(def, p.Archetype, p.BasicAttackRange, p.Level, p.SkillLevelOf(def.Id));
             foreach (var id in party.Members)
             {
                 if (id == p.Id) continue;
                 if (!_world.Entities.TryGetValue(id, out var m) || m.Dead || !Wants(m)) continue;
                 if (m.Hidden) continue;   // hidden = not here (BL-69)
-                if (DistanceSq(p, m) > range * range) continue;
+                // Reach, not cast range — the queue walks the rest (see AutoHealTarget).
+                if (DistanceSq(p, m) > GameConstants.ViewRange * GameConstants.ViewRange) continue;
                 float pct = m.Mp * 100f / m.MaxMp;
                 if (pct < bestPct) { bestPct = pct; best = m; }
             }
@@ -6705,13 +6705,17 @@ public class GameLoopService : BackgroundService
 
         if (IsAllyTargetable(def) && _world.Parties.TryGetValue(p.Id, out var party))
         {
-            float range = SkillMath.EffectiveRange(def, p.Archetype, p.BasicAttackRange, p.Level, p.SkillLevelOf(def.Id));
             foreach (var id in party.Members)
             {
                 if (id == p.Id) continue;
                 if (!_world.Entities.TryGetValue(id, out var m) || m.Dead || !Wants(m)) continue;
                 if (m.Hidden) continue;   // hidden = not here, so not a heal target (BL-69)
-                if (DistanceSq(p, m) > range * range) continue;
+                // 🔴 REACH, NOT CAST RANGE (him, 2026-10-07): *"when one char is dying the healer just
+                // ignores him and not move him in range"* — two party members farming their own rings.
+                // This filtered on the heal's cast range, so a member 1500 away was never a candidate.
+                // UpdateQueuedSkill already walks the caster into cast range and drops the cast only past
+                // ViewRange, so that is the one limit to use here.
+                if (DistanceSq(p, m) > GameConstants.ViewRange * GameConstants.ViewRange) continue;
                 float pct = m.Hp * 100f / m.MaxHp;
                 if (pct < bestPct) { bestPct = pct; best = m; }
             }
