@@ -498,7 +498,7 @@ public static partial class ClassSkillTables
         human.AddRange(Ladder(SoundSmash, band13));
         human.AddRange(Ladder(AcousticBash, band13));
         human.AddRange(Ladder(Reinforcement, band13));
-        human.AddRange(Ladder(Sharpening, band13));
+        human.AddRange(Ladder(Sharpening, new[] { 40, 60, 70 }));
         human.AddRange(Ladder(ComboMastery, new[] { 52, 64, 74 }));
 
         // ---- ELF: fangs, Magic Stab. ----------------------------------------------------------------
@@ -507,7 +507,7 @@ public static partial class ClassSkillTables
         elf.AddRange(Swing((40, 10), (52, 12)));
         elf.AddRange(Ladder(MagicStab, band13));
         elf.AddRange(Ladder(ReinforcementElf, band13));
-        elf.AddRange(Ladder(SharpeningElf, band13));
+        elf.AddRange(Ladder(SharpeningElf, new[] { 40, 60, 70 }));
         elf.AddRange(Ladder(ComboMasteryElf, new[] { 52, 64, 74 }));
 
         // ---- DEMON: battlestaff, TWO damage spells (*"demon is mele fighter so need more than 1dmg
@@ -517,7 +517,7 @@ public static partial class ClassSkillTables
         demon.AddRange(Ladder(SoundSmash, band13));
         demon.AddRange(Ladder(AcousticShock, band13));
         demon.AddRange(Ladder(ReinforcementDemon, band13));
-        demon.AddRange(Ladder(SharpeningDemon, band13));
+        demon.AddRange(Ladder(SharpeningDemon, new[] { 40, 60, 70 }));
         demon.AddRange(Ladder(ComboMasteryDemon, new[] { 52, 64, 74 }));
 
         ClassSkills.RegisterThird(Race.Human, Discipline.Warchanter, human.ToArray());

@@ -249,30 +249,18 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 90,Reinforcement,reinforcement_elf,Toggle,,,0,0,self/single,0,0,0,"P.Def +18.5%, P.Crit Rate Resist 15%; MP Consumption +15%",8,0,100kk,,,Elf
 ,,,,,,,,,,,,,,,,,,,----------------------------Sharpening (Human)----------------------------
 76,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"Shield Reduction +25%, Shield Rate +85%, P.Def +10%; MP Consumption +15%",8,6.99kk,1kk,,,Human
-78,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"Shield Reduction +25%, Shield Rate +85%, P.Def +10%; MP Consumption +15%",8,16.1kk,1kk,,,Human
-80,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"Shield Reduction +25%, Shield Rate +85%, P.Def +10%; MP Consumption +15%",8,0,5kk,,,Human
-82,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"Shield Reduction +25%, Shield Rate +85%, P.Def +10%; MP Consumption +15%",8,0,10kk,,,Human
-84,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"Shield Reduction +25%, Shield Rate +85%, P.Def +10%; MP Consumption +15%",8,0,30kk,,,Human
-86,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"Shield Reduction +25%, Shield Rate +85%, P.Def +10%; MP Consumption +15%",8,0,75kk,,,Human
-88,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"Shield Reduction +25%, Shield Rate +85%, P.Def +10%; MP Consumption +15%",8,0,100kk,,,Human
-90,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"Shield Reduction +25%, Shield Rate +85%, P.Def +10%; MP Consumption +15%",8,0,100kk,,,Human
+80,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"Shield Reduction +25%, Shield Rate +85%, P.Def +10%; MP Consumption +10%",8,0,5kk,,,Human
+86,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"Shield Reduction +25%, Shield Rate +85%, P.Def +10%; MP Consumption +5%",8,0,75kk,,,Human
+90,Sharpening,sharpening,Toggle,,/shield,0,0,self/single,0,0,0,"Shield Reduction +25%, Shield Rate +85%, P.Def +10%;",8,0,100kk,,,Human
 ,,,,,,,,,,,,,,,,,,,----------------------------Sharpening (Demon)----------------------------
-76,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"Accuracy +4; MP Consumption +15%",8,6.99kk,1kk,,,Demon
-78,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"Accuracy +4; MP Consumption +15%",8,16.1kk,1kk,,,Demon
-80,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"Accuracy +4; MP Consumption +15%",8,0,5kk,,,Demon
-82,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"Accuracy +4; MP Consumption +15%",8,0,10kk,,,Demon
-84,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"Accuracy +4; MP Consumption +15%",8,0,30kk,,,Demon
-86,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"Accuracy +5; MP Consumption +15%",8,0,75kk,,,Demon
-88,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"Accuracy +5; MP Consumption +15%",8,0,100kk,,,Demon
-90,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"Accuracy +5; MP Consumption +15%",8,0,100kk,,,Demon
+76,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"P.Accuracy +7, M.Accuracy +4, PVE spell power +4%, PVP spell power +4%, P.Def +5%; MP Consumption +15%",8,6.99kk,1kk,,,Demon
+80,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"P.Accuracy +8, M.Accuracy +5, PVE spell power +5%, PVP spell power +5%, P.Def +5%; MP Consumption +15%",8,0,5kk,,,Demon
+86,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"P.Accuracy +9, M.Accuracy +6, PVE spell power +5%, PVP spell power +5%, P.Def +5%; MP Consumption +15%",8,0,75kk,,,Demon
+90,Sharpening,sharpening_demon,Toggle,blunt/2,,0,0,self/single,0,0,0,"P.Accuracy +10, M.Accuracy +7, PVE spell power +6%, PVP spell power +6%, P.Def +5%; MP Consumption +15%",8,0,100kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Sharpening (Elf)----------------------------
-76,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +9, PVE spell power +8.5%, PVP spell power +8.5%, M.Acc +20; MP Consumption +15%",8,6.99kk,1kk,,,Elf
-78,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +10, PVE spell power +9%, PVP spell power +9%, M.Acc +20; MP Consumption +15%",8,16.1kk,1kk,,,Elf
-80,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +11, PVE spell power +9.5%, PVP spell power +9.5%, M.Acc +20; MP Consumption +15%",8,0,5kk,,,Elf
-82,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +11, PVE spell power +10%, PVP spell power +10%, M.Acc +20; MP Consumption +15%",8,0,10kk,,,Elf
-84,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +11, PVE spell power +10.5%, PVP spell power +10.5%, M.Acc +20; MP Consumption +15%",8,0,30kk,,,Elf
+76,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +9, PVE spell power +9%, PVP spell power +9%, M.Acc +20; MP Consumption +15%",8,6.99kk,1kk,,,Elf
+80,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +10, PVE spell power +10%, PVP spell power +10%, M.Acc +20; MP Consumption +15%",8,0,5kk,,,Elf
 86,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +11, PVE spell power +11%, PVP spell power +11%, M.Acc +20; MP Consumption +15%",8,0,75kk,,,Elf
-88,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +11, PVE spell power +11.5%, PVP spell power +11.5%, M.Acc +20; MP Consumption +15%",8,0,100kk,,,Elf
 90,Sharpening,sharpening_elf,Toggle,duals,,0,0,self/single,0,0,0,"Evasion +12, PVE spell power +12%, PVP spell power +12%, M.Acc +20; MP Consumption +15%",8,0,100kk,,,Elf
 ,,,,,,,,,,,,,,,,,,,----------------------------Lasting Enchantment----------------------------
 76,Lasting Enchantment,lasting_enchantment,Passive,,,0,0,self/single,0,0,0,double duration rate 10% - buffs and debuffs you cast have that chance to last TWICE as long - one roll per cast so an area blessing doubles for everyone or no one - scales with ATK,0,2.31kk,1kk

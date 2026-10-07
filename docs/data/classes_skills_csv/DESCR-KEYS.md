@@ -79,6 +79,7 @@ multi-part row a number belongs to.
 | `skilleva` | `skill evasion` |
 | `magiceva` | `magic evasion` |
 | `eva` | `evasion`, `eva` |
+| `macc` | `m.accuracy`, `magic accuracy`, `m.acc` |
 | `acc` | `accuracy`, `acc` |
 | `interruptmult` | `interrupt chance` |
 | `interrupt` | `interrupt resistance`, `interrupt` |
@@ -111,7 +112,7 @@ multi-part row a number belongs to.
 | `hpprice` | `hp price` |
 | `mpprice` | `mp price` |
 
-73 keys, 224 spellings.
+74 keys, 227 spellings.
 
 ## Words that are read but are not stats
 

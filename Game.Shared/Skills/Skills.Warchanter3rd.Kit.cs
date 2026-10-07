@@ -138,17 +138,23 @@ public static partial class SkillCatalog
     private static readonly float[] ReinforceElf =
         { .09f, .0925f, .095f, .0975f, .10f, .1025f, .105f, .1075f, .11f, .1125f, .115f, .1175f, .12f,
           .15f, .155f, .16f, .165f, .17f, .175f, .18f, .185f };
-    /// <summary>The Demon's Sharpening: accuracy only (Hit Rate Mastery's +3/+4/+5 moved in). Its M.Atk % left
-    /// 2026-10-06: *"Demon basic attacks do alot of dmg so remove the matk increase form sharpening"*.</summary>
-    private static readonly int[] SharpenDemonAcc =
-        { 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,   4, 4, 4, 4, 4, 5, 5, 5 };
+    // ---- THE SHARPENINGS: 7 rungs, @40 60 70 then 76 80 86 90 (his 2026-10-07 pass: *"removed lvls from
+    //      them (no point lvling something as its not changing anything)"*). ----
+    /// <summary>Each Sharpening rung's slot on the 21-slot toggle band (upkeep and price).</summary>
+    private static readonly int[] SharpenSlots = { 0, 5, 10,   13, 15, 18, 20 };
+    /// <summary>The Human's skill-MP surcharge, falling to nothing over the 4th tier (his 2026-10-07 edit).</summary>
+    private static readonly float[] SharpenHumanSurcharge = { .15f, .15f, .15f,   .15f, .10f, .05f, 0f };
+    /// <summary>The Demon's Sharpening — HALF of each of the other two, *"a bit from both"* (his 2026-10-07
+    /// rework: *"elf and human gets 3 stats while demon only one"*): P./M.Accuracy, from 60 spell power, and
+    /// from 70 the Human's P.Def at half.</summary>
+    private static readonly int[] SharpenDemonAcc  = { 4, 5, 6,   7, 8, 9, 10 };
+    private static readonly int[] SharpenDemonMAcc = { 1, 2, 3,   4, 5, 6, 7 };
+    private static readonly float[] SharpenDemonSpell = { 0f, .02f, .04f,   .04f, .05f, .05f, .06f };
+    private static readonly float[] SharpenDemonPDef  = { 0f, 0f, .05f,   .05f, .05f, .05f, .05f };
     /// <summary>The Elf's Sharpening: evasion (light armour's, §8 C) and spell damage, plus a flat
     /// +20 M.Accuracy that cuts Magic Stab's fail 60% → 40%.</summary>
-    private static readonly int[] SharpenElfEva =
-        { 6, 6, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9,   9, 10, 11, 11, 11, 11, 11, 12 };
-    private static readonly float[] SharpenElfSpell =
-        { .05f, .0525f, .055f, .0575f, .06f, .0625f, .065f, .0675f, .07f, .0725f, .075f, .0775f, .08f,
-          .085f, .09f, .095f, .10f, .105f, .11f, .115f, .12f };
+    private static readonly int[] SharpenElfEva = { 5, 7, 9,   9, 10, 11, 12 };
+    private static readonly float[] SharpenElfSpell = { .04f, .06f, .08f,   .09f, .10f, .11f, .12f };
     private const float SharpenElfMAcc = 20f;
 
     private static SkillDef[] WarchanterKitSkills()
@@ -304,22 +310,23 @@ public static partial class SkillCatalog
         list.Add(Stance(Sharpening, "Sharpening", "sharpening", WeaponType.None, WeaponHands.Any, true,
             i =>
             {
-                var (red, rate) = i < 5 ? (0.15f, 0.50f) : i < 10 ? (0.20f, 0.70f) : (0.25f, 0.85f);
+                var (red, rate) = i == 0 ? (0.15f, 0.50f) : i == 1 ? (0.20f, 0.70f) : (0.25f, 0.85f);
                 var m = new List<EffectMagnitude>
                 {
                     new(SkillEffect.BuffShieldDef, red, ModifierMode.Percent),
                     new(SkillEffect.BuffBlockChance, rate, ModifierMode.Percent),
                 };
-                if (i >= 10) m.Add(new(SkillEffect.BuffDef, 0.10f, ModifierMode.Percent));
+                if (i >= 2) m.Add(new(SkillEffect.BuffDef, 0.10f, ModifierMode.Percent));
                 return m.ToArray();
             },
-            i => i < 5 ? "Shield Reduction +15%, Shield Rate +50%"
-               : i < 10 ? "Shield Reduction +20%, Shield Rate +70%"
+            i => i == 0 ? "Shield Reduction +15%, Shield Rate +50%"
+               : i == 1 ? "Shield Reduction +20%, Shield Rate +70%"
                : "Shield Reduction +25%, Shield Rate +85%, P.Def +10%",
-            "Set your shield: it blocks more often and turns more of the blow. Requires a shield."));
+            "Set your shield: it blocks more often and turns more of the blow. Requires a shield.",
+            slots: SharpenSlots, surcharge: i => SharpenHumanSurcharge[i]));
 
         // DEMON — Reinforcement: heavy armour's P.Def, crit rate AND crit damage resistance. Sharpening
-        // (two-handed blunt): accuracy.
+        // (two-handed blunt): half of each of the other two — P./M.Accuracy, spell power from 60, P.Def from 70.
         list.Add(Stance(ReinforcementDemon, "Reinforcement", "reinforcement_demon", WeaponType.None, WeaponHands.Any, false,
             i => new EffectMagnitude[]
             {
@@ -330,12 +337,22 @@ public static partial class SkillCatalog
             i => $"P.Def +{ReinforceDemon[i] * 100:0.#}%, P.Crit Rate Resist 8%, P.Crit Damage Resist 8%",
             "Brace yourself: the defence of plate, for as long as you can pay for it."));
         list.Add(Stance(SharpeningDemon, "Sharpening", "sharpening_demon", WeaponType.Blunt, WeaponHands.Two, false,
-            i => new EffectMagnitude[]
+            i =>
             {
-                new(SkillEffect.BuffAccuracy, SharpenDemonAcc[i], ModifierMode.Flat),
+                var m = new List<EffectMagnitude> { new(SkillEffect.BuffAccuracy, SharpenDemonAcc[i], ModifierMode.Flat) };
+                if (SharpenDemonSpell[i] > 0f)
+                {
+                    m.Add(new(SkillEffect.BuffPveMagicDamage, SharpenDemonSpell[i], ModifierMode.Percent));
+                    m.Add(new(SkillEffect.BuffPvpMagicDamage, SharpenDemonSpell[i], ModifierMode.Percent));
+                }
+                if (SharpenDemonPDef[i] > 0f) m.Add(new(SkillEffect.BuffDef, SharpenDemonPDef[i], ModifierMode.Percent));
+                return m.ToArray();
             },
-            i => $"Accuracy +{SharpenDemonAcc[i]}",
-            "Tune the staff: surer blows. Requires a two-handed blunt."));
+            i => $"P.Accuracy +{SharpenDemonAcc[i]}, M.Accuracy +{SharpenDemonMAcc[i]}"
+               + (SharpenDemonSpell[i] > 0f ? $", PVE/PVP spell power +{SharpenDemonSpell[i] * 100:0.##}%" : "")
+               + (SharpenDemonPDef[i] > 0f ? $", P.Def +{SharpenDemonPDef[i] * 100:0.##}%" : ""),
+            "Tune the staff: surer blows, and a little of the shield's and the fangs' craft. Requires a two-handed blunt.",
+            magicAccuracy: i => SharpenDemonMAcc[i], slots: SharpenSlots));
 
         // ELF — Reinforcement: Light Armor Mastery's P.Def and Critical Resist's crit-rate resistance.
         // Sharpening (duals): evasion, spell damage and +20 M.Accuracy.
@@ -356,7 +373,7 @@ public static partial class SkillCatalog
             },
             i => $"Evasion +{SharpenElfEva[i]}, PVE/PVP spell power +{SharpenElfSpell[i] * 100:0.##}%, M.Acc +{SharpenElfMAcc:0}",
             "Quicken the fangs: harder to hit, and your spells find their mark. Requires duals.",
-            magicAccuracy: SharpenElfMAcc));
+            magicAccuracy: _ => SharpenElfMAcc, slots: SharpenSlots));
 
         return list.ToArray();
     }
@@ -421,37 +438,48 @@ public static partial class SkillCatalog
             Description: $"A surge of momentum: +{ComboAs[i] * 100:0.#}% attack speed and "
                        + $"+{ComboCast[i] * 100:0.#}% cast speed for 30s."));
 
-    /// <summary>A Warchanter stance: 21 rungs (13 on the 40-74 band, 8 on 76/78…90), its magnitudes per
-    /// rung, the shared MP/s upkeep and the +15% skill-MP surcharge on BOTH channels (NEGATIVE = dearer).
-    /// The 4th-tier rungs price on the tier's every-other-level ladder (<c>F4(i, 2)</c>).</summary>
+    /// <summary>A Warchanter stance: by default 21 rungs (13 on the 40-74 band, 8 on 76/78…90), its magnitudes
+    /// per rung, the shared MP/s upkeep and the skill-MP surcharge on BOTH channels (NEGATIVE = dearer).
+    /// <paramref name="slots"/> maps each rung onto that 21-slot band (upkeep and price) for a stance that
+    /// skips levels — the Sharpenings since 2026-10-07. The 4th-tier rungs price on the tier's every-other-
+    /// level ladder (<c>F4(i, 2)</c>). A rung whose surcharge is 0 costs nothing extra.</summary>
     private static SkillDef Stance(string id, string name, string buffKey, WeaponType weapon, WeaponHands hands,
         bool shield, Func<int, EffectMagnitude[]> mags, Func<int, string> text, string desc,
-        float magicAccuracy = 0f)
+        Func<int, float>? magicAccuracy = null, int[]? slots = null, Func<int, float>? surcharge = null)
     {
+        slots ??= Enumerable.Range(0, StanceMpPerSec.Length).ToArray();
+        magicAccuracy ??= _ => 0f;
+        surcharge ??= _ => StanceMpSurcharge;
         SkillLevel Rung(int i)
         {
-            var (sp, gold) = i < 13 ? (BandSp13[i], 0) : F4(i - 13, 2);
-            int mps = StanceMpPerSec[i];
+            int s = slots[i];
+            var (sp, gold) = s < 13 ? (BandSp13[s], 0) : F4(s - 13, 2);
+            int mps = StanceMpPerSec[s];
+            float sur = surcharge(i);
             return new SkillLevel(MpCost: mps, MpPerSecond: mps, SpCost: sp, GoldCost: gold,
-                MagicMpCostPct: -StanceMpSurcharge, PhysMpCostPct: -StanceMpSurcharge,
-                MagicAccuracy: magicAccuracy,
+                MagicMpCostPct: -sur, PhysMpCostPct: -sur,
+                MagicAccuracy: magicAccuracy(i),
                 Magnitudes: mags(i),
-                Description: $"{text(i)}; MP Consumption +15%; drains {mps} MP per second.");
+                Description: text(i) + (sur > 0f ? $"; MP Consumption +{sur * 100:0.#}%" : "")
+                           + $"; drains {mps} MP per second.");
         }
         var first = mags(0);
-        var mask = Enumerable.Range(0, StanceMpPerSec.Length).SelectMany(mags)
+        var mask = Enumerable.Range(0, slots.Length).SelectMany(mags)
             .Aggregate(SkillEffect.None, (e, m) => e | m.Effect);
+        // A rung's 0 falls back to the def's value, so a stance whose surcharge reaches 0 (Human Sharpening
+        // at 90) carries none on the def itself; every other rung states its own.
+        float defSur = Enumerable.Range(0, slots.Length).Any(i => surcharge(i) == 0f) ? 0f : surcharge(0);
         return new SkillDef(id, name, BaseClass.Mage, mask,
-            MpCost: StanceMpPerSec[0], CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            MpCost: StanceMpPerSec[slots[0]], CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             DurationTicks: 0, BuffKey: buffKey, Rank: 1,
             Category: SkillCategory.Buff, Toggle: true, TargetMode: TargetMode.SelfOnly,
-            MpPerSecond: StanceMpPerSec[0],
+            MpPerSecond: StanceMpPerSec[slots[0]],
             RequiredWeapon: weapon, RequiredHands: hands, RequiredShield: shield ? ShieldGate.Required : ShieldGate.Any,
-            MagicMpCostPct: -StanceMpSurcharge, PhysMpCostPct: -StanceMpSurcharge,
-            BuffMagicAccuracy: magicAccuracy,
+            MagicMpCostPct: -defSur, PhysMpCostPct: -defSur,
+            BuffMagicAccuracy: magicAccuracy(0),
             Magnitudes: first,
             Description: "Toggle. " + desc,
-            Levels: Enumerable.Range(0, StanceMpPerSec.Length).Select(Rung).ToArray());
+            Levels: Enumerable.Range(0, slots.Length).Select(Rung).ToArray());
     }
 
     /// <summary>One of the Warchanter's MAGIC damage spells: one hit, 28 rungs (13 on the 40-74 band, 15 on

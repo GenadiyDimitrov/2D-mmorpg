@@ -181,6 +181,9 @@ internal static class Descr
         ("skilleva",      new[] { "skill evasion" }),
         ("magiceva",      new[] { "magic evasion" }),
         ("eva",           new[] { "evasion", "eva" }),
+        // MAGIC accuracy (SkillDef.MagicAccuracy, points off the caster's fail roll) ABOVE the bare word,
+        // longest-first: the Sharpenings write "P.Accuracy +4, M.Accuracy +2" and "M.Acc +20" in one family.
+        ("macc",          new[] { "m.accuracy", "magic accuracy", "m.acc" }),
         ("acc",           new[] { "accuracy", "acc" }),
         // His authored INTERRUPT multiplier, written "(interrupt chance x2)" — the twin of
         // "(success chance xN)" above, for `SkillDef.InterruptMult`. ⚠ It must out-reach BOTH the bare
@@ -583,6 +586,8 @@ internal static class Descr
             // since `1L << 62`), so it needs its own line here or it is never read at all. Two skills
             // author it today: Harmony of the Wizard's top rung (+30%) and Harmony Mark (+20%).
             Add("magiccritdmg", true, def.MagicCritDamageAt(level));
+            // MAGIC ACCURACY — a FIELD too, points off the caster's fail roll (the Sharpenings' "M.Acc").
+            Add("macc", false, def.MagicAccuracyAt(level));
 
             // DEBUFF SUCCESS MULTIPLIER (`BL-90`) — his `(success chance x1.5)`.
             // ⚠ TWO THINGS ARE DELIBERATE HERE. (1) It is stored as a PERCENT and as `mod − 1`, because

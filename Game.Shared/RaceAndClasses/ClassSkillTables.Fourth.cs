@@ -541,14 +541,14 @@ public static partial class ClassSkillTables
         human.AddRange(Ladder(SoundSmash,       all,  14));
         human.AddRange(Ladder(AcousticBash,     all,  14));
         human.AddRange(Ladder(Reinforcement,    even, 14));
-        human.AddRange(Ladder(Sharpening,       even, 14));
+        human.AddRange(Ladder(Sharpening,       new[] { 76, 80, 86, 90 }, 4));
 
         // ---- ELF: fangs. ----
         var elf = new List<ClassSkill>(shared);
         elf.AddRange(Swing((76, 15), (80, 21), (83, 23)));
         elf.AddRange(Ladder(MagicStab,          all,  14));
         elf.AddRange(Ladder(ReinforcementElf,   even, 14));
-        elf.AddRange(Ladder(SharpeningElf,      even, 14));
+        elf.AddRange(Ladder(SharpeningElf,      new[] { 76, 80, 86, 90 }, 4));
 
         // ---- DEMON: battlestaff, two damage spells as always. ----
         var demon = new List<ClassSkill>(shared);
@@ -556,7 +556,7 @@ public static partial class ClassSkillTables
         demon.AddRange(Ladder(SoundSmash,        all,  14));
         demon.AddRange(Ladder(AcousticShock,      all,  14));
         demon.AddRange(Ladder(ReinforcementDemon, even, 14));
-        demon.AddRange(Ladder(SharpeningDemon,    even, 14));
+        demon.AddRange(Ladder(SharpeningDemon,    new[] { 76, 80, 86, 90 }, 4));
 
         ClassSkills.RegisterFourth(Race.Human, Discipline.Warchanter, human.ToArray());
         ClassSkills.RegisterFourth(Race.Elf,   Discipline.Warchanter, elf.ToArray());

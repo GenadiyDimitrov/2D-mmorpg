@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.231.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.232.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,28 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-07 (latest) — 0.232.1: party effects sit beside the plate
+## 2026-10-07 (latest) — 0.232.2: three Sharpenings, seven rungs, one weight
+
+Server restart. **APK owed** (the learn tab is built on the phone) — he deferred it. ⚠ The rung numbers moved (rung 4 was
+@56, is now @76), so an existing Warchanter's saved Sharpening rung is wrong — the owed `game.db` delete covers it.
+
+- **His pass on `buffer 3rd.csv` / `buffer 4th.csv`**: *"demon buffer his sharpening_demon seems unfair to him ... elf
+  and human gets 3 stats while demon only one ... so ill keep the half of logic as the reinforcement"* and *"removed
+  lvls from them (no point lvling something as its not changing anything)"*. All three Sharpenings learn at
+  **40 / 60 / 70 / 76 / 80 / 86 / 90** (were 21 rungs).
+- **Demon** (2H blunt) = a bit from both: P.Accuracy 4→10, M.Accuracy 1→7, PVE/PVP spell power from 60 (2%→6%),
+  P.Def +5% from 70.
+- **Human** shield numbers unchanged; its skill-MP surcharge now falls over the 4th tier: 15% → 10% (80) → 5% (86) →
+  none at 90. `--check` reports this as two 🔵 LADDER DIPs — intended, a cost getting cheaper.
+- **Elf** evasion 5/7/9 → 12, spell power 4/6/8% → 12%.
+- `Stance` takes a rung→band slot map, a per-rung surcharge and a per-rung M.Accuracy. A rung with surcharge 0 carries
+  none (the def's fallback is 0 for such a stance).
+- **`SkillCsvSeed`: new DESCR word `macc`** (`M.Accuracy`, `M.Acc`, `magic accuracy`) read against
+  `SkillDef.MagicAccuracyAt` — his `@{macc}` placeholder renders, and the Elf's `M.Acc +20` is verified instead of
+  falling to the bare `acc`. DESCR-KEYS.md regenerated.
+- `--reprice-sp` re-solved the buffer files (fewer rungs → every price shifts a little); faces regenerated.
+
+## 2026-10-07 — 0.232.1: party effects sit beside the plate
 
 **APK.** Client only.
 
