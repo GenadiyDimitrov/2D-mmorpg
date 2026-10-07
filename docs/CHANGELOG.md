@@ -24,7 +24,20 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-07 (latest) — 0.232.2: three Sharpenings, seven rungs, one weight
+## 2026-10-07 (latest) — 0.232.3: the autopilot healer watches the PARTY's bars
+
+Server restart only (no APK).
+
+- His find: *"the healer in party follows his hp do drop bellow treshold to heal the other party member .. not when
+  party members hp get below treshold ... same for mp restore"*. `TryAutoSkill` opened the Heal and MpHeal chains only
+  when the CASTER's own HP/MP was under the line (`AutoHealWanted(p)` / `AutoManaWanted(p)`), so a full-HP healer never
+  reached `AutoHealTarget`'s party scan. Now each chain opens whenever its slider is armed (> 0), and the target pickers
+  — which already test self and every in-range member against the line — decide who, if anyone, gets it.
+- A **lifesteal** heal (Vampiric Bolt) only ever heals the caster, so it alone keeps the caster's-own-HP gate.
+- The MP restore keeps its HP price guard (the caster's HP must stay above `AutoManaMinHpPct`), now inside
+  `AutoManaTarget` only; `AutoManaWanted` is gone.
+
+## 2026-10-07 — 0.232.2: three Sharpenings, seven rungs, one weight
 
 Server restart. **APK owed** (the learn tab is built on the phone) — he deferred it. ⚠ The rung numbers moved (rung 4 was
 @56, is now @76), so an existing Warchanter's saved Sharpening rung is wrong — the owed `game.db` delete covers it.

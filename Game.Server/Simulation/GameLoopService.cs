@@ -6434,17 +6434,25 @@ public class GameLoopService : BackgroundService
         // BL-67: MpHeal is its own rung between Heal and everything else — *"below the Heal as priority
         // but above all other (need mp to cast/buff)"*. Each rung is now armed by its OWN resource, so
         // an HP threshold can no longer decide whether a mana restore is allowed to run.
-        if (AutoHealWanted(p) && TryAutoChain(p, target, AutoSkillKind.Heal)) return true;
-        if (AutoManaWanted(p) && TryAutoChain(p, target, AutoSkillKind.MpHeal)) return true;
+        //
+        // 🔴 ARMED BY THE SLIDER, NOT BY THE CASTER'S OWN BAR (him, 2026-10-07): *"the healer in party
+        // follows his hp do drop bellow treshold to heal the other party member .. not when party
+        // members hp get below treshold ... same for mp restore"*. These two lines used to ask
+        // AutoHealWanted/AutoManaWanted, which read only `p` — so a full-HP healer never opened the
+        // chain and AutoHealTarget's party scan never ran. Who is under the line is the TARGET
+        // pickers' question (they test self and every member); the chain only asks "is it on at all".
+        if (p.AutoHealPct > 0 && TryAutoChain(p, target, AutoSkillKind.Heal)) return true;
+        if (p.AutoMpPct > 0 && TryAutoChain(p, target, AutoSkillKind.MpHeal)) return true;
         if (TryAutoChain(p, target, AutoSkillKind.Buff)) return true;
         if (TryAutoChain(p, target, AutoSkillKind.Debuff)) return true;
         // (BL-83 removed the Taunt rung that sat here. Threat is manual — ClassifyAuto has the why.)
         return TryAutoChain(p, target, AutoSkillKind.Attack);
     }
 
-    /// <summary>Is the heal chain armed? Below the threshold, or at a threshold of 100 — a dedicated
-    /// healer, which the owner's spec makes the ONE piece of auto-support an alt is allowed to give
-    /// ("if the healer sets his threshold to 100% he always heals on cooldown"). 0 = never.</summary>
+    /// <summary>Is the CASTER himself under his heal line? Below the threshold, or at a threshold of
+    /// 100 — a dedicated healer ("if the healer sets his threshold to 100% he always heals on
+    /// cooldown"). 0 = never. ⚠ Only for a heal that can land on nobody but the caster (a lifesteal
+    /// nuke); an ally heal asks AutoHealTarget, which tests every party member against the same line.</summary>
     private static bool AutoHealWanted(Entity p) =>
         p.AutoHealPct > 0 && (p.AutoHealPct >= 100 || (p.MaxHp > 0 && p.Hp * 100f / p.MaxHp < p.AutoHealPct));
 
@@ -6462,14 +6470,6 @@ public class GameLoopService : BackgroundService
     /// heal") must not become "spend all your HP", and 100 ("heal on cooldown") must not become "never
     /// restore mana below full HP", which would lock a healer out of his own mana chain.</para></summary>
     private static int AutoManaMinHpPct(Entity p) => Math.Clamp(p.AutoHealPct, 15, 60);
-
-    /// <summary>Is the MpHeal chain armed? Independent of the heal slider — the mage the owner farmed
-    /// with was at FULL HP and empty MP, which is exactly the state an HP threshold cannot see.
-    /// The MP line is <see cref="Entity.AutoMpPct"/> (0 = never); it was a hardcoded 60 until BL-67.</summary>
-    private static bool AutoManaWanted(Entity p) =>
-        p.AutoMpPct > 0
-        && p.MaxMp > 0 && p.Mp * 100f / p.MaxMp < p.AutoMpPct
-        && p.MaxHp > 0 && p.Hp * 100f / p.MaxHp >= AutoManaMinHpPct(p);
 
     /// <summary>One priority group's turn: walk the auto-skill list from the group's cursor (cyclic) or
     /// from the top (first-available) and queue the first entry that can fire.
@@ -6547,7 +6547,8 @@ public class GameLoopService : BackgroundService
                     // TARGET — and this target is the mob, so it would have healed what it was shooting.
                     if (def.Lifesteal > 0f)
                     {
-                        if (target is null) continue;
+                        // It only ever heals the CASTER, so the caster's own bar arms it.
+                        if (target is null || !AutoHealWanted(p)) continue;
                         tgtId = target.Id; break;
                     }
                     if (AutoHealTarget(p, def) is not Entity ht) continue;
@@ -6620,7 +6621,9 @@ public class GameLoopService : BackgroundService
     /// <summary>Who this MP-restore should land on: the emptiest party member (or yourself) under the
     /// mana threshold and in range. Mirrors AutoHealTarget on the OTHER bar, and honours the same
     /// "not on a mana-restorer" rule the manual cast enforces, so the autopilot never queues a cast
-    /// the command handler is going to refuse.</summary>
+    /// the command handler is going to refuse. The MP line is <see cref="Entity.AutoMpPct"/> (0 =
+    /// never), independent of the heal slider — the mage the owner farmed with was at FULL HP and empty
+    /// MP, which is exactly the state an HP threshold cannot see.</summary>
     private Entity? AutoManaTarget(Entity p, SkillDef def)
     {
         Entity? best = null;

@@ -25,6 +25,17 @@
 
 ---
 
+## §145 — 0.232.3: the autopilot healer watches the party's bars (2026-10-07)
+
+⚠ **Server restart.** Needs a party: a healer on auto + a member who takes damage.
+
+- `145a` [ ] - Healer at FULL HP, heal threshold e.g. 70%: when a party member in range drops below 70%, the healer
+  heals THEM. With nobody under the line, no heal is cast. ->
+- `145b` [ ] - Same for MP: healer at full MP, MP threshold e.g. 50%: a member under 50% MP gets the MP restore (Restore
+  Mana still skips a cleric/other restorer). Vampiric Bolt still fires only when the healer's OWN HP is under the line. ->
+
+---
+
 ## §144 — 0.232.0-0.232.1: the party window has no window (2026-10-07)
 
 ⚠ **APK + server restart.** Needs a party of two or more.
