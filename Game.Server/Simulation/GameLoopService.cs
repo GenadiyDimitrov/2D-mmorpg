@@ -13741,11 +13741,12 @@ public partial class GameLoopService : BackgroundService
                 TryInterruptCast(target, magicInterrupt, damage, caster, def.InterruptMult);
             }
 
-            // Vampiric: heal the caster for a fraction of the magic damage dealt
-            // (the skill's own Lifesteal plus any Spell Vamp buff).
-            // ⚠ NEVER off a mana hit: a Spell Vamp buff worn while casting Mana Ray would otherwise
-            // turn someone else's MP into the caster's HP, which is a second drain nobody authored.
-            float spellVamp = toMp ? 0f : def.Lifesteal + caster.SpellVamp;
+            // Vampiric: heal the caster for a fraction of the magic damage dealt — the skill's OWN
+            // Lifesteal and nothing else (Vampiric Bolt). 🔑 Owner, 2026-10-09: *"We don't have a spell
+            // or physical vamp for skills .. Only skills that do the drain themselfs"* — vampirism
+            // buffs are basic-attack only, so caster.SpellVamp is deliberately NOT read here.
+            // ⚠ NEVER off a mana hit: Mana Ray takes MP, and turning it into HP is a drain nobody authored.
+            float spellVamp = toMp ? 0f : def.Lifesteal;
             if (spellVamp > 0f && damage > 0)
             {
                 int leech = (int)(damage * spellVamp);

@@ -32,6 +32,10 @@ Server restart only (no APK).
   only read `Lifesteal` in the MAGIC damage arm (where Vampiric Bolt lives). The physical arm never did, so the
   Demon's drain hit and healed nothing. It now heals 60% of each landed hit (a flat heal, like the spell's). Crits are
   included: a critical drain heals 60% of the crit. A miss heals nothing. `MeleeVamp` stays basic-attack only.
+- His rule, confirmed the same day: *"Vampiric buff and mana vampirism are mele basic attacks only (normal or magical
+  with magic swing) … We don't have a spell or physical vamp for skills .. Only skills that do the drain themselfs"*.
+  The basic-attack path already matched. The spell arm no longer adds `caster.SpellVamp` on top of a skill's own
+  `Lifesteal` (nothing grants it, so no number changes; it just can't leak into skills if something ever does).
 
 ## 2026-10-09 — 0.236.2: a "reach level N" quest step checks your real level after the auto-farm beat
 
