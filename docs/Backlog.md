@@ -288,6 +288,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-337` | 🔵 | **Grand Rune off the apothecary shelf** — with the Warchanter all-magic (`BL-335`) no class fights with weapon AND spell, so the 1h/2h Grand Rune boxes leave the shop; the items stay for `/give`; build together with `BL-336` | items |
 | `BL-339` | 🔴 | **Mentoring system** — **bond core (0.234.0) + the Aura/Knowledge split (0.235.0) + level-gated shelf-single Mentor Blessings and 5-rung Guidance (0.236.0) BUILT**. Left: the shop (prices open, yours) | systems |
 | `BL-340` | ❓ | **Potion Mastery** — a % passive on every warrior (HP potions) and every nuker (MP potions) from the 2nd class on, boosting the potion HoT only; measured (`--potmp`); waiting on your pick of ladder A or B | classes |
+| `BL-341` | ⏸ | **Skill vampirism + skill reflect** — a buff that vamps from any spell/physical skill (later-chronicle IG), only together with reflect on skill damage; "a lot later if at all" | combat |
 
 ---
 
@@ -2463,3 +2464,23 @@ potion order stays. **The % is not too high.**
 
 Owed after your pick: the HP twin's measurement for the warriors (their need is mob damage, not their own
 spending), the two passives, their CSV rows and SP.
+
+## `BL-341` ⏸ SKILL VAMPIRISM + SKILL REFLECT, AS ONE PAIR (2026-10-09, "a lot later if at all")
+
+Your note: *"Later we can return to that and do a buff that vamp from any spell/phisicsl skill like later
+chronicles of IG but then the reflect dmg should apply to skills as well .... It's alot later if at all"*.
+
+**Today's rule** (your words, the same day): the Vampiric buff and Mana Vampirism heal only off a landed
+**basic attack** (normal or Magic Swing). Skills drain only through their **own** built-in drain (Vampiric Bolt,
+Demonic Drain, 60%). No buff gives skills vampirism (0.236.3).
+
+**If it is ever built, the two go together.** A buff that drains from every spell or physical skill, and reflect
+that also works on skill damage, so vampirism has a counter on the same channel.
+
+**Where it would hook in:**
+- **Drain:** an unused "spell vamp" stat already exists. Nothing in the game grants it, and 0.236.3 stopped spells
+  reading it. It would come back as a drain buff for all skills, read in both the physical and the magic skill code.
+- **Reflect:** physical skills already have a reflect call (`ReflectPhysicalSkill`, `BL-07`), but there is none
+  for spell damage.
+
+Nothing to decide now.
