@@ -25,6 +25,15 @@
 
 ---
 
+## §153 — 0.236.3: Demonic Drain heals you (2026-10-09)
+
+⚠ **Server restart.** A Demon fighter with Demonic Drain.
+
+- `153a` [ ] - Take some damage, then cast Demonic Drain on a mob: your HP rises by about 60% of the damage number
+  shown. A miss heals nothing. ->
+
+---
+
 ## §152 — 0.236.2: a "reach level N" quest step checks your real level (2026-10-09)
 
 ⚠ **Server restart.** Your stuck character, still on "Reach level 18".

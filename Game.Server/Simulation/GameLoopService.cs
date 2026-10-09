@@ -13628,6 +13628,13 @@ public partial class GameLoopService : BackgroundService
                 bankStacks = true;   // `BL-199` — the strike connected, so the pool is banked
                 BroadcastCombat(caster, target, damage, outcome, castName);
                 ApplyDamage(target, damage, caster);
+                // The skill's own LIFESTEAL (Demonic Drain, 60%). It was only ever read in the magic arm,
+                // so a physical drain hit and healed nothing. Per landed hit; MeleeVamp stays basic-only.
+                if (def.Lifesteal > 0f && damage > 0)
+                {
+                    int leech = (int)(damage * def.Lifesteal);
+                    if (leech > 0) HealOne(caster, caster, leech, 0, castName);   // lifesteal = a FLAT heal
+                }
                 ReflectPhysicalSkill(caster, target, damage, castName);   // BL-07
                 TryInterruptCast(target, def.InterruptPower, damage, caster, def.InterruptMult);
                 if (damage > 0) TryOnHitProcs(caster, target);   // the skill path's half of the proc trigger

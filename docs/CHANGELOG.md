@@ -24,7 +24,16 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-09 (latest) — 0.236.2: a "reach level N" quest step checks your real level after the auto-farm beat
+## 2026-10-09 (latest) — 0.236.3: Demonic Drain heals you
+
+Server restart only (no APK).
+
+- His find: *"Demonic drain doesn't vamp it's dmg"*. The skill has always carried `Lifesteal: 0.60`, but the engine
+  only read `Lifesteal` in the MAGIC damage arm (where Vampiric Bolt lives). The physical arm never did, so the
+  Demon's drain hit and healed nothing. It now heals 60% of each landed hit (a flat heal, like the spell's). Crits are
+  included: a critical drain heals 60% of the crit. A miss heals nothing. `MeleeVamp` stays basic-attack only.
+
+## 2026-10-09 — 0.236.2: a "reach level N" quest step checks your real level after the auto-farm beat
 
 Server restart only (no APK).
 
