@@ -1,8 +1,64 @@
 # Mentoring (`BL-339`) — design, NOT BUILT
 
-Status 2026-10-09: his spec (verbatim, bottom), then his answers to my 8 questions + 4 clashes (top). Four items still open: Graduation lump vs 1/3/6, the exp/SP rune, the multibox rule, the T80 price.
+Status 2026-10-09: his spec (verbatim, bottom), then three passes of his answers (newest at the top wins). BUILDABLE; only the exp-rune rung and the shop prices are open.
 
-## His answers (2026-10-09, second pass) — these WIN over everything below
+## His answers, THIRD pass (2026-10-09) — the four left open, now closed. WINS over everything below.
+
+### 1. Mentor pay: Bond Certificates at each level, Graduation Certificates once at 76
+- **Bond Certificates (15/30/55) are paid to the mentor DIRECTLY at level 20/40/76**, as before, to whoever holds the
+  bond at that moment.
+- **The mentor's own currency is now the Graduation Certificate, paid ONCE, at 76: 10 minus every milestone this
+  mentor missed.** Bonded before 20 → **10**. Bonded at 20-39 → **9** (missed the 1). Bonded at 40-75 → **6** (missed
+  1 + 3). So a mentor who picks up a 75 still gets 6, as he wanted, and raising from 1 is worth more.
+- Build note: the bond record keeps "was bonded to THIS mentor on reaching 20 / 40"; graduation reads those two flags.
+- "Mentor Certificate" as a name is RETIRED. The two currencies are **Bond Certificate** and **Graduation Certificate**,
+  both bound, ×9999.
+
+### 2. The 1d exp/SP rune = 50 Bond Certificates — kept
+A **gold vs exp decision**: the mentee can take the T20 set and one 1d rune, and the exp/SP rune is the one rune that
+**cannot be bought anywhere else**, where a 1d War/Spell Rune costs gold (his figure: 280k ×12). It is a `rune_exp`
+rung, so it evicts or loses to the other exp runes by rank, the same way the ladder already works.
+⚠ **Which rung is still open**: the spec said "20%" (= `rune_exp` L3); his stacking example used "+100%". Default at
+build: **L3, 20%**, unless he says otherwise.
+
+### 3. Anti-abuse: a weighted, 10-rung buff, ONE mentee per account, AFK does not count. NO IP/device rule.
+He declined the IP/device rule (*"some1 with IT knowledge can easily workaround that ... I need to test and use this to
+lvl up/buff"*). Instead:
+- **One mentee per account per mentor.** A mentor cannot bond two characters of the same account, so ten alts on one
+  alt account are worth one mentee.
+- **AFK does not count.** An online mentee adds to the buff only if actively playing (combat or exp gained in the last
+  10 min, my proposal; he: *"an online player that is afk refuses you lvls"*).
+- **The buff gets 10 rungs, and a mentee's weight grows with their level.** His targets: 10 mentees at lvl 20 → L2,
+  10 at lvl 40 → L8, 5 at lvl 60 → L10 (= +100%). The curve that hits all three exactly (mine):
+
+  **weight = mentee level² / 1800; buff rung = floor(sum of online, active mentees' weights), cap 10.**
+
+  | mentee level | weight | to reach L10 alone |
+  |---|---|---|
+  | 10 | 0.06 | — (10 of them = L0) |
+  | 20 | 0.22 | — (10 = **L2**) |
+  | 40 | 0.89 | — (10 = **L8**) |
+  | 60 | 2.00 | **5** |
+  | 75 | 3.13 | 4 (3 = L9) |
+
+  So a few high-level mentees max it for a short time (they graduate soon), or many active low-level ones build it up
+  slowly. Both are what he described.
+- **Per rung: +10% exp/SP, +1% drop/gold** → L10 = +100% exp/SP, +10% drop/gold, which keeps his earlier top values.
+  (The per-rung split is mine; he set the totals.)
+- Still the online aura from pass 2: no timer shown, **2-min re-check, 3-min grace** (his "ok" to my pick).
+
+### 4. Graduation Certificate shop: REAL items, not only timed ones
+Graduation Certificates buy **permanent** things at high cost (platinum or other appealing items, real T76/T80 gear;
+his scale: *"100 mentees = helmet"*, i.e. ~1000 certs for one T76/T80 piece). So an active mentor grows stronger
+through items as well as the buff. Passive mentee-farming is possible but slower than boss farming in a party.
+**Prices are the later shop discussion**, not set here. The 1-cert consumable list from the spec stays.
+
+### Still open
+- The exp/SP rune's rung (default L3, 20%).
+- The shop price list, which needs its own pass (he called it "later discussion").
+- Anything else is BUILDABLE.
+
+## His answers (2026-10-09, second pass) — the third pass above wins where they differ
 
 ### Numbers, settled
 1. **Mentor buff: +20% exp/SP and +2% drop/gold per level** → L5 = +100% exp/SP, +10% drop/gold. ("5%" was a slip.)
@@ -40,7 +96,7 @@ Status 2026-10-09: his spec (verbatim, bottom), then his answers to my 8 questio
    holds 10 min" rule, which the enter/leave pump exploited (ten alts relogging = L5 for 10 min). Engine need: a
    buff with no timer that the server renews, drawn with no countdown and no expiry blink.
 
-### Still open after this pass
+### Still open after this pass — CLOSED by the third pass above
 - **Graduation Certificates (10 at 76) or 1/3/6 per milestone?** My pick: **keep 1/3/6.** With a lump sum at 76,
   the late joiner his Q3 welcomes gets all 10 certs, the same as a mentor who raised the character from level 1. That
   removes the reason to bond early. Under 1/3/6 the late joiner gets 6, which is still "free" and still a win-win.
