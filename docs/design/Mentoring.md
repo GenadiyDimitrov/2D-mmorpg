@@ -1,6 +1,6 @@
 # Mentoring (`BL-339`) — design, NOT BUILT
 
-Status 2026-10-09: his spec (verbatim, bottom), then three passes of his answers (newest at the top wins). BUILDABLE; only the exp-rune rung and the shop prices are open.
+Status 2026-10-09: his spec (verbatim, bottom), then three passes of his answers (newest at the top wins). BUILDABLE; only the shop prices are open (exp rune = `rune_expsp` L6, 50%).
 
 ## His answers, THIRD pass (2026-10-09) — the four left open, now closed. WINS over everything below.
 
@@ -18,8 +18,8 @@ Status 2026-10-09: his spec (verbatim, bottom), then three passes of his answers
 A **gold vs exp decision**: the mentee can take the T20 set and one 1d rune, and the exp/SP rune is the one rune that
 **cannot be bought anywhere else**, where a 1d War/Spell Rune costs gold (his figure: 280k ×12). It is a `rune_exp`
 rung, so it evicts or loses to the other exp runes by rank, the same way the ladder already works.
-⚠ **Which rung is still open**: the spec said "20%" (= `rune_exp` L3); his stacking example used "+100%". Default at
-build: **L3, 20%**, unless he says otherwise.
+🔑 **RUNG SETTLED: +50% exp AND SP = `rune_expsp` level 6** (his: 20% is too low and 100% too high against
+~3.4M gold for 12× 2h War/Spell Runes). The rung already exists; no new item is needed.
 
 ### 3. Anti-abuse: a weighted, 10-rung buff, ONE mentee per account, AFK does not count. NO IP/device rule.
 He declined the IP/device rule (*"some1 with IT knowledge can easily workaround that ... I need to test and use this to
@@ -54,7 +54,6 @@ through items as well as the buff. Passive mentee-farming is possible but slower
 **Prices are the later shop discussion**, not set here. The 1-cert consumable list from the spec stays.
 
 ### Still open
-- The exp/SP rune's rung (default L3, 20%).
 - The shop price list, which needs its own pass (he called it "later discussion").
 - Anything else is BUILDABLE.
 

@@ -286,7 +286,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
 | `BL-336` | 🔵 | **No-refresh debuffs (IG rule)** — a debuff of the same type cannot be re-landed until the old one wears off (no perma-hold); a re-stun attempt may BREAK the stun instead of resetting it; boss-allowed stacking types excepted; design owed | combat |
 | `BL-337` | 🔵 | **Grand Rune off the apothecary shelf** — with the Warchanter all-magic (`BL-335`) no class fights with weapon AND spell, so the 1h/2h Grand Rune boxes leave the shop; the items stay for `/give`; build together with `BL-336` | items |
-| `BL-339` | ❓ | **Mentoring system** — spec given 2026-10-09 → `docs/design/Mentoring.md`; answered in 3 passes 2026-10-09; BUILDABLE (open: exp-rune rung, shop prices) | systems |
+| `BL-339` | ❓ | **Mentoring system** — spec given 2026-10-09 → `docs/design/Mentoring.md`; answered in 3 passes 2026-10-09; BUILDABLE (open: shop prices; exp rune = 50%) | systems |
 
 ---
 
@@ -2422,5 +2422,4 @@ a bad deal, and I'd make it **30d for ~30**.
 **Third pass, same day: the four are closed.** Graduation Certificates at 76 (10, or 9/6 for a late bond); Bond
 Certs paid at each level; the 1d exp/SP rune at 50 Bond; **no IP rule**. Instead: one mentee per account, AFK
 mentees don't count, and a **10-rung buff weighted by mentee level** (level²/1800: 10@20 = L2, 10@40 = L8, 5@60 =
-L10); Graduation Certs buy real, permanent items. **Buildable.** Still open: which `rune_exp` rung (I'll use 20%) and
-the shop prices.
+L10); Graduation Certs buy real, permanent items. **Buildable.** Exp rune = **50%** (`rune_expsp` L6, his 2026-10-09). Still open: the shop prices.
