@@ -1,0 +1,98 @@
+using System;
+
+namespace Game.Shared;
+
+/// <summary>
+/// `BL-339` — THE MENTOR SYSTEM's numbers, in one place. The design and his three answer passes are
+/// `docs/design/Mentoring.md`; every number here is his unless the comment says it is mine.
+///
+/// <list type="bullet">
+/// <item>A MENTOR is a character whose MAIN class is level 76+ with a 4th class. Up to 10 mentees, and
+/// never two mentees of the same account.</item>
+/// <item>A MENTEE is a character below 76 with no mentor. One mentor, never one of their own account.</item>
+/// <item>The bond pays at the mentee's level 20 / 40 / 76 (Bond Certificates to both, and the mentor's
+/// one-off Graduation Certificates at 76), and ends at 76.</item>
+/// <item>While bonded, an online mentor gives the mentee +50% exp/SP; online, ACTIVE mentees give the
+/// mentor a 10-rung aura weighted by their level.</item>
+/// </list>
+/// </summary>
+public static class Mentoring
+{
+    /// <summary>The level a mentor's MAIN class must reach — with a 4th class, which cannot be taken below it.</summary>
+    public const int MentorLevel = 76;
+    /// <summary>A mentee is below this. Reaching it is the graduation.</summary>
+    public const int GraduationLevel = 76;
+    public const int MaxMentees = 10;
+
+    /// <summary>The three milestones, the Bond Certificates each pays the MENTEE and the MENTOR.</summary>
+    public static readonly int[] MilestoneLevels = { 20, 40, 76 };
+    public static readonly int[] MenteeBondPay = { 150, 300, 550 };
+    public static readonly int[] MentorBondPay = { 15, 30, 55 };
+
+    /// <summary>His third pass: the mentor's Graduation Certificates, paid ONCE at 76 — 10 minus every
+    /// milestone this mentor missed. 6 always, +1 if he held the bond at 20, +3 if he held it at 40.</summary>
+    public const int GraduationBase = 6, GraduationAt20 = 1, GraduationAt40 = 3;
+
+    public static int GraduationCertificates(bool heldAt20, bool heldAt40) =>
+        GraduationBase + (heldAt20 ? GraduationAt20 : 0) + (heldAt40 ? GraduationAt40 : 0);
+
+    // ----- The two auras -----
+
+    /// <summary>The mentee's: +50% exp AND SP while the mentor is online.</summary>
+    public const float MenteeExpSpBonus = 0.50f;
+
+    /// <summary>The mentor's aura: 10 rungs, each +10% exp/SP and +1% drop chance/gold (his totals: L10 =
+    /// +100% exp/SP, +10% drop/gold; the per-rung split is mine).</summary>
+    public const int MaxAuraRung = 10;
+    public const float AuraExpSpPerRung = 0.10f;
+    public const float AuraDropGoldPerRung = 0.01f;
+
+    /// <summary>A mentee's weight toward the aura: level² / 1800 (mine, fitted to his three targets —
+    /// 10 at lvl 20 → L2, 10 at lvl 40 → L8, 5 at lvl 60 → L10). The rung is the floor of the sum.</summary>
+    public static float MenteeWeight(int level) => level * level / 1800f;
+
+    public static int AuraRung(float weightSum) =>
+        Math.Clamp((int)MathF.Floor(weightSum + 1e-4f), 0, MaxAuraRung);
+
+    /// <summary>The aura is re-checked this often, and a mentee who logged out keeps counting for the
+    /// grace window so a crash costs nothing (his "ok" to 2 min / 3 min).</summary>
+    public const int RecheckSeconds = 120;
+    public const int GraceSeconds = 180;
+
+    /// <summary>An online mentee counts only if ACTIVE: combat or exp gained within this long (his: *"an
+    /// online player that is afk refuses you lvls"*; the 10 min is mine).</summary>
+    public const int ActiveWindowSeconds = 600;
+
+    // ----- Removal penalty -----
+
+    /// <summary>His five-step table, keyed on the OTHER side's last login: under 24h → 24h, under 3d → 12h,
+    /// under 5d → 6h, under 7d → 3h, 7d+ → none. An online partner is "0m".</summary>
+    public static TimeSpan RemovalPenalty(TimeSpan sinceOtherOnline)
+    {
+        double d = sinceOtherOnline.TotalDays;
+        if (d < 1) return TimeSpan.FromHours(24);
+        if (d < 3) return TimeSpan.FromHours(12);
+        if (d < 5) return TimeSpan.FromHours(6);
+        if (d < 7) return TimeSpan.FromHours(3);
+        return TimeSpan.Zero;
+    }
+
+    /// <summary>The activity figure a mentee reads off a candidate mentor: days logged in of the last 7.</summary>
+    public const int ActivityDays = 7;
+
+    /// <summary>The list's last-online column, his rule: *"the same logic as buffs duration -&gt; 1m,5m,1h,5h,1d,30d
+    /// … no seconds needed, when over 1h no minutes need, when its over a day no need for hours"*.</summary>
+    public static string Ago(TimeSpan t)
+    {
+        if (t.TotalHours < 1) return $"{Math.Max(0, (int)t.TotalMinutes)}m";
+        if (t.TotalDays < 1) return $"{(int)t.TotalHours}h";
+        return $"{(int)t.TotalDays}d";
+    }
+
+    /// <summary>A penalty's remaining time, rounded UP so "0h" is never shown while one still runs.</summary>
+    public static string Remaining(TimeSpan t)
+    {
+        if (t.TotalHours >= 1) return $"{(int)Math.Ceiling(t.TotalHours)}h";
+        return $"{Math.Max(1, (int)Math.Ceiling(t.TotalMinutes))}m";
+    }
+}

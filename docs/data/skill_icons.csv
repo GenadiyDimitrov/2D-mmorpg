@@ -450,6 +450,8 @@ rune_blessing_boost,eye-of-horus,sound,
 buff:paved_streets,stone-path,wind,the town paving's run-speed row
 buff:grade_penalty_armor,broken-shield,blood,
 buff:grade_penalty_weapon,broken-axe,blood,
+buff:mentor_aura,teacher,mind,BL-339 the mentor's online-mentees aura
+buff:mentor_guidance,wisdom,holy,BL-339 the mentee's +50% while the mentor is online
 magic_swing,sound-waves,sound,BL-335 the magic basic attack
 combo_mastery_demon,pummeled,steel,
 combo_mastery_elf,pummeled,steel,

@@ -25,6 +25,26 @@
 
 ---
 
+## §148 — 0.234.0: mentoring, the bond core (`BL-339`, 2026-10-09)
+
+⚠ **New APK + server restart + `game.db` delete.** Needs two accounts: a mentor (main class 76 + a 4th class) and a
+character under 76 on another account. The 11 Mentor Blessing skills and the shop are NOT in this build.
+
+- `148a` [ ] - From either side `/mentor invite <name>`, the other `/mentor accept <name>` (or `decline`). Both get a
+  line; `/mentor list` shows `Invited` / `Pending` before, `Name Online (lvl) 0m` after. The mentee's list, before
+  bonding, shows the mentor's `x/7d (y%)`. ->
+- `148b` [ ] - With the mentor online the mentee has **Mentor's Guidance** on the buff bar (no timer, +50% exp/SP).
+  The mentor logs out: it goes 3-5 min later. ->
+- `148c` [ ] - The mentee fights (or gains exp): within 2 min the mentor gets **Mentor Aura** with a level (a level-60
+  mentee alone = Lv.2). An idle mentee adds nothing. ->
+- `148d` [ ] - Mentee reaches 20 / 40 / 76: Bond Certificates in both bags (150/300/550 and 15/30/55), plus 10
+  Graduation Certificates to the mentor at 76 if bonded since before 20 (9 / 6 if later). The bond ends at 76.
+  The certificates won't trade, sell or go in the account keeper. ->
+- `148e` [ ] - `/mentor remove [name]` on an online partner: a 24h penalty, and the next `/mentor invite` is refused
+  with the time left. Withdrawing an unanswered invitation costs nothing. ->
+
+---
+
 ## §147 — 0.233.0: mobs on one target stand apart; tap the mob you stand on (`BL-338`, 2026-10-09)
 
 ⚠ **New APK + server restart.**

@@ -1657,6 +1657,17 @@ public class Entity
     /// nothing casts it, nothing persists it, and the buff bar shows it as a synthetic row.</summary>
     public bool OnPavedStreets { get; set; }
 
+    /// <summary>`BL-339` — the MENTOR's aura rung, 0-10, from his online, active mentees; and whether this
+    /// MENTEE's mentor is online (+50% exp/SP). Both are STATES like the paving: written by the mentoring
+    /// re-check, never persisted, drawn as synthetic buff-bar rows with no timer, and folded into
+    /// <see cref="Runes"/> by RecomputeDerived — ADDED to the rune bonus, his ruling (+100% + +100% = ×3).</summary>
+    public int MentorAuraRung { get; set; }
+    public bool MentorGuidance { get; set; }
+
+    /// <summary>`BL-339` — when this character last banked exp. With <see cref="LastCombatTick"/> it is what
+    /// "an active mentee" means: an AFK one adds nothing to his mentor's aura.</summary>
+    public DateTime LastExpGainUtc { get; set; }
+
     /// <summary>Future perk hook (owner): "this character may equip gear N levels early". Lifts the
     /// effective level used for GRADE comparisons only — never real level. 0 = no perk, today's behaviour.</summary>
     public int GradeLevelBonus { get; set; }
@@ -4169,11 +4180,15 @@ public class Entity
 
         // The reward multipliers, from the best rune held in each channel. A STOP wins outright: it is
         // the point of the Rune of Sinister ("no lvl up") and of the Rune of Sinners (nothing at all).
+        // `BL-339` — the mentoring auras ADD to the best rune (his: rune +100% + mentor +100% = ×3).
+        float mentorExpSp = MentorAuraRung * Mentoring.AuraExpSpPerRung
+                          + (MentorGuidance ? Mentoring.MenteeExpSpBonus : 0f);
+        float mentorDropGold = MentorAuraRung * Mentoring.AuraDropGoldPerRung;
         Runes = new RateSet(
-            Exp:        stopExpSp    ? 0f : 1f + bestExp,
-            Sp:         stopExpSp    ? 0f : 1f + bestSp,
-            Gold:       stopGoldDrop ? 0f : 1f + bestGold,
-            DropChance: stopGoldDrop ? 0f : 1f + bestDrop,
+            Exp:        stopExpSp    ? 0f : 1f + bestExp + mentorExpSp,
+            Sp:         stopExpSp    ? 0f : 1f + bestSp + mentorExpSp,
+            Gold:       stopGoldDrop ? 0f : 1f + bestGold + mentorDropGold,
+            DropChance: stopGoldDrop ? 0f : 1f + bestDrop + mentorDropGold,
             DropAmount: 1f);
         // Fold the crit-RATE chain exactly once: base × (every passive/buff multiplier) + (every
         // flat source), then the single cap — StatCaps.PhysicalCritRate = his 500 on the 0-1000

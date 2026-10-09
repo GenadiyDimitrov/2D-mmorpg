@@ -1,6 +1,8 @@
-# Mentoring (`BL-339`) — design, NOT BUILT
+# Mentoring (`BL-339`) — design; the BOND CORE is BUILT (0.234.0)
 
-Status 2026-10-09: his spec (verbatim, bottom), then three passes of his answers (newest at the top wins). BUILDABLE; only the shop prices are open (exp rune = `rune_expsp` L6, 50%).
+Status 2026-10-09: his spec (verbatim, bottom), then three passes of his answers (newest at the top wins). **0.234.0 built the bond core** (`Game.Server/Simulation/Mentoring.cs`, numbers in `Game.Shared/Mentoring.cs`): commands, penalties, roster, certificates, both auras. **Not built yet:** the 11 Mentor Blessing skills, and the shop (prices open; exp rune = `rune_expsp` L6, 50%).
+
+Build notes (my calls, 0.234.0): "online" = the character is in the world (link-dead and offline-farming count); "active" = combat or exp within 10 min; a milestone reached with NO mentor is passed, not owed to a later one; a character who predates mentoring has its passed milestones marked on first login; the list word is **mentee**; the row for an invitation in a mentee's list also says Invited/Pending so they know whom to accept.
 
 ## His answers, THIRD pass (2026-10-09) — the four left open, now closed. WINS over everything below.
 

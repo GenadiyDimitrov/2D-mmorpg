@@ -95,6 +95,8 @@ public class PersistenceService
                 _ = await db.Items.OrderBy(x => x.Id).FirstOrDefaultAsync();
                 _ = await db.BossTimers.OrderBy(x => x.Id).FirstOrDefaultAsync();
                 _ = await db.ChatLog.OrderBy(x => x.Id).FirstOrDefaultAsync();
+                _ = await db.MentorProfiles.OrderBy(x => x.CharacterId).FirstOrDefaultAsync();
+                _ = await db.MentorBonds.OrderBy(x => x.Id).FirstOrDefaultAsync();
                 return false;   // schema is current
             }
             catch (SqliteException ex)
@@ -1526,6 +1528,54 @@ public class PersistenceService
             db.BossTimers.Add(new BossTimerRecord { ZoneId = zoneId, RespawnAtUtc = respawnAtUtc });
         else
             rec.RespawnAtUtc = respawnAtUtc;
+        await db.SaveChangesAsync();
+    }
+
+    // ----- Mentoring (`BL-339`) -------------------------------------------
+
+    /// <summary>The whole mentor roster and every bond, for the tick loop to hold in memory. A row whose
+    /// character no longer exists (deleted) is dropped here, and so is any bond that names one.</summary>
+    public async Task<(List<MentorProfileRecord> Profiles, List<MentorBondRecord> Bonds)> LoadMentoringAsync()
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var alive = (await db.Characters.Select(c => c.Id).ToListAsync()).ToHashSet();
+        var profiles = await db.MentorProfiles.ToListAsync();
+        var bonds = await db.MentorBonds.ToListAsync();
+        var deadProfiles = profiles.Where(p => !alive.Contains(p.CharacterId)).ToList();
+        var deadBonds = bonds.Where(b => !alive.Contains(b.MentorCharacterId) || !alive.Contains(b.MenteeCharacterId)).ToList();
+        if (deadProfiles.Count > 0 || deadBonds.Count > 0)
+        {
+            db.MentorProfiles.RemoveRange(deadProfiles);
+            db.MentorBonds.RemoveRange(deadBonds);
+            await db.SaveChangesAsync();
+        }
+        return (profiles.Except(deadProfiles).ToList(), bonds.Except(deadBonds).ToList());
+    }
+
+    public async Task UpsertMentorProfileAsync(MentorProfileRecord p)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var rec = await db.MentorProfiles.FindAsync(p.CharacterId);
+        if (rec is null) db.MentorProfiles.Add(p);
+        else db.Entry(rec).CurrentValues.SetValues(p);
+        await db.SaveChangesAsync();
+    }
+
+    public async Task UpsertMentorBondAsync(MentorBondRecord b)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var rec = await db.MentorBonds.FindAsync(b.Id);
+        if (rec is null) db.MentorBonds.Add(b);
+        else db.Entry(rec).CurrentValues.SetValues(b);
+        await db.SaveChangesAsync();
+    }
+
+    public async Task DeleteMentorBondAsync(Guid id)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var rec = await db.MentorBonds.FindAsync(id);
+        if (rec is null) return;
+        db.MentorBonds.Remove(rec);
         await db.SaveChangesAsync();
     }
 

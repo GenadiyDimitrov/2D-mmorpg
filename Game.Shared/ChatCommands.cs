@@ -39,6 +39,8 @@ public static class ChatCommandCatalog
         new("titlecolor", "/titlecolor <colour>", "colour your title (needs the right)", AccountRole.Player),
         new("unstuck", "/unstuck <name>", "send another character of YOUR account to town (you must be in town)", AccountRole.Player),
         new("buff", "/buff", "buff yourself, where the server allows it", AccountRole.Player),
+        new("mentor", "/mentor invite|accept|decline <name>", "make a mentor bond (a 76+ 4th class mentors a player under 76)", AccountRole.Player),
+        new("mentor", "/mentor remove [name] · /mentor list", "end a bond (may cost a penalty) · your mentor or mentees", AccountRole.Player),
         new("blist", "/blist", "the players you block", AccountRole.Player),
         new("block", "/block", "on/off: hide all player chat", AccountRole.Player),
         new("block-w", "/block-w", "on/off: hide whispers", AccountRole.Player),

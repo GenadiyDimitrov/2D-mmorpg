@@ -10,7 +10,7 @@ namespace Game.Server.Simulation;
 /// The heart of the server: a fixed-tick loop (10 t/s).
 /// Each tick: drain commands -> simulate -> broadcast snapshots.
 /// </summary>
-public class GameLoopService : BackgroundService
+public partial class GameLoopService : BackgroundService
 {
     // Which mob types are aggressive (chase on sight). Names match WorldMap zones.
     private static bool IsAggressive(string mobName) => MobCatalog.IsAggressive(mobName);
@@ -53,6 +53,7 @@ public class GameLoopService : BackgroundService
     {
         GameClock.Epoch = DateTime.UtcNow;
         await InitZonesAsync();
+        await LoadMentoringAsync();   // `BL-339` — the roster and every bond, held in memory
         SpawnNpcs();
         _log.LogInformation("Game loop started at {Rate} ticks/sec", GameConstants.TickRate);
 
@@ -392,6 +393,7 @@ public class GameLoopService : BackgroundService
         entity.LastScamWarningUtc = DateTime.UtcNow;
         SendSystemToEntity(entity, GameConstants.ScamWarning);
         NotifyFriendsOnline(entity);   // "X is back online" — MUTUAL friends only, see NotifyFriendsPresence
+        MentorOnEnter(entity);         // `BL-339` — login day, owed certificates, the auras
         if (GameConstants.AnnounceWorldEntryExit)
             BroadcastSystem($"{entity.Name} entered the world.");
         _log.LogInformation("Player {Name} entered (char {Id})", entity.Name, entity.PersistentId);
@@ -492,6 +494,7 @@ public class GameLoopService : BackgroundService
     private Task NormalLeave(Entity entity)
     {
         NotifyFriendsPresence(entity, online: false);   // while they're still in Entities to compare against
+        MentorOnLeave(entity);   // `BL-339` — the last-online stamp the list and the penalty read
         // Shed every mob locked onto them BEFORE they vanish, or those mobs sit Engaged on an id that
         // no longer resolves — MobAi's engaged branch returns early, so they would never re-aggro and
         // never wander again. MobAi now self-heals from that too, but clearing it here is the tidy half.
@@ -7578,6 +7581,14 @@ public class GameLoopService : BackgroundService
             }
         }
 
+        // THE FIFTH: `/mentor …` (`BL-339`) — a player command with no staff half; see Mentoring.cs.
+        if (cmd.Command.Equals("mentor", StringComparison.OrdinalIgnoreCase)
+            && TryGetPlayer(cmd.ConnectionId, out var mentorCaller))
+        {
+            HandleMentorCommand(mentorCaller, cmd.Argument.Trim());
+            return;
+        }
+
         // SERVER-AUTHORIZED (owner): every moderation action re-checks the caller's role here, in
         // addition to the hub's session check — these SHIP in release, so authorization can't rely on a
         // compile flag the way the DEBUG cheats do.
@@ -8506,6 +8517,7 @@ public class GameLoopService : BackgroundService
                     pt.Exp = Math.Max(0, StatCalculator.ExpToNext(pt.Level) - 1);
                 else
                     pt.Exp = Math.Max(0, pt.Exp + progAmount);
+                pt.LastExpGainUtc = DateTime.UtcNow;   // `BL-339` — exp gained is exp gained: an active mentee
 
                 bool expLeveled = false;
                 while (pt.Level < progCap && pt.Exp >= StatCalculator.ExpToNext(pt.Level))
@@ -10163,6 +10175,7 @@ public class GameLoopService : BackgroundService
         TickServerControl();
 
         TickTitles();
+        TickMentoring();   // `BL-339` — the 2-minute aura re-check
 
         UpdateZones();
 
@@ -17453,6 +17466,7 @@ public class GameLoopService : BackgroundService
         var rates = RateConfig.World * player.Runes;
         long expGained = (long)(amount * rates.Exp);
         player.Exp += expGained;
+        if (expGained > 0) player.LastExpGainUtc = DateTime.UtcNow;   // `BL-339` — an active mentee
 
         long sp = spAmount >= 0
             ? (long)(spAmount * rates.Sp)
@@ -17537,6 +17551,7 @@ public class GameLoopService : BackgroundService
         // by the main reaching 76 with its 4th class. Every one of those is a level-up, so this is the
         // natural place to ask; the method is idempotent, so asking too often costs nothing.
         GrantEarnedSubclassTickets(player);
+        MentorOnLevelUp(player);   // `BL-339` — the 20 / 40 / 76 milestones and graduation
     }
 
     // =====================================================================================
@@ -19171,6 +19186,7 @@ public class GameLoopService : BackgroundService
         // the bar there is NO way to tell whether it's applying, which is exactly what the owner hit when
         // he tried to verify it and had to report "not sure if the penalty is working".
         dtos.AddRange(GradePenaltyRows(player));
+        dtos.AddRange(MentorRows(player));   // `BL-339` — the two no-timer mentoring rows
         if (player.OnPavedStreets)
             dtos.Add(new BuffDto("Paved Streets",
                 $"The blessed paving of the town quickens your step: +{MovementTuning.PavedStreetsRunBonus:0} run "

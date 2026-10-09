@@ -15,6 +15,8 @@ using Microsoft.AspNetCore.SignalR.Client;
 // the only part that was ever hard to get right.
 if (args.Length > 0 && (args[0] == "bot" || args[0] == "--bot"))
     return await Bot.RunAsync(args.Skip(1).ToArray());
+if (args.Length > 0 && (args[0] == "mentor" || args[0] == "--mentor"))
+    return await MentorTest.RunAsync();   // `BL-339`, see Mentor.cs
 
 const string Url = "http://localhost:5238/game";
 

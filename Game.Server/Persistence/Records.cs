@@ -471,3 +471,53 @@ public class ChatLogRecord
 
     public required string Text { get; set; }
 }
+
+/// <summary>`BL-339` — ONE CHARACTER as the mentor system sees it: the roster the `/mentor` commands look
+/// names up in, online or not. Written by the mentoring code itself (never through the character snapshot),
+/// one row per character that has ever entered the world since mentoring existed, and loaded WHOLE at
+/// startup — so an offline mentee's level, an offline mentor's activity, and a penalty that must refuse an
+/// accept while its owner is logged out are all answers from memory, with no database round trip.</summary>
+public class MentorProfileRecord
+{
+    /// <summary>The character's row id — also this row's key.</summary>
+    [System.ComponentModel.DataAnnotations.Key]
+    public int CharacterId { get; set; }
+    public int AccountId { get; set; }
+    public required string Name { get; set; }
+
+    /// <summary>The MAIN class's level (slot 0) — a mentee has no other, and a mentor's eligibility is his.</summary>
+    public int MainLevel { get; set; }
+    /// <summary>Main 76+ with a 4th class.</summary>
+    public bool MentorEligible { get; set; }
+
+    /// <summary>When the character last LEFT the world (or entered it, if the server died under them).</summary>
+    public DateTime LastOnlineUtc { get; set; }
+    /// <summary>The distinct UTC days (yyyyMMdd) logged in, newest first, at most 7 — the activity figure.</summary>
+    public string LoginDaysCsv { get; set; } = "";
+
+    /// <summary>No new bond, either way, until this time. Null = none.</summary>
+    public DateTime? PenaltyUntilUtc { get; set; }
+
+    /// <summary>The mentee's milestones already PAID (bit 0 = 20, 1 = 40, 2 = 76), so a delevel and relevel
+    /// or a second mentor never pays the same milestone twice.</summary>
+    public int MilestonesPaid { get; set; }
+
+    /// <summary>Certificates earned while offline or with a full bag, paid on the next login.</summary>
+    public int OwedBondCerts { get; set; }
+    public int OwedGraduationCerts { get; set; }
+}
+
+/// <summary>`BL-339` — one mentor ↔ mentee link: an ACTIVE bond, or an invitation one side sent.</summary>
+public class MentorBondRecord
+{
+    [System.ComponentModel.DataAnnotations.Key]
+    public Guid Id { get; set; }
+    public int MentorCharacterId { get; set; }
+    public int MenteeCharacterId { get; set; }
+    /// <summary>0 = active, 1 = the MENTOR invited, 2 = the MENTEE asked.</summary>
+    public int State { get; set; }
+    public DateTime CreatedUtc { get; set; }
+    /// <summary>This mentor held the bond when the mentee reached 20 / 40 — what the graduation pay reads.</summary>
+    public bool HeldAt20 { get; set; }
+    public bool HeldAt40 { get; set; }
+}

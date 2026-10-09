@@ -1331,6 +1331,12 @@ public static class ItemCatalog
     /// currency into gold, and a way to sell a slot you were given for reaching 76.</para></summary>
     public const string SubclassTicket    = "subclass_ticket";
 
+    /// <summary>`BL-339` — the mentoring currencies, both BOUND (his: *"no trade, no account warehouse, no sell,
+    /// no break. Use in the shop or keep in the private warehouse"*), ×9999. Bond Certificates are paid at the
+    /// mentee's 20/40/76 to both sides; Graduation Certificates once, to the mentor, at 76.</summary>
+    public const string BondCertificate       = "cert_bond";
+    public const string GraduationCertificate = "cert_graduation";
+
     // ----- PREMIUM REWARD RUNES (2026-08-12). One ITEM per channel per rung, every one pointing at
     //       the ONE ladder skill for its channel. The ids and the wording live in RewardRunes.cs;
     //       these two are aliased here because they are named directly (by `/give`, by the tests). -----
@@ -1672,6 +1678,20 @@ public static class ItemCatalog
             Description: "Use it to open one more subclass slot. Three are earned — your main's 4th "
                        + "class, then your first and second subclasses reaching level "
                        + $"{ThirdClassCatalog.SubclassLevel} — and the rest are bought from a class master."));
+
+        // `BL-339` — the two mentoring currencies. Materials (so they stack to 9,999 with no override) that
+        // nobody can buy, sell or trade; Tradable:false also keeps them out of the ACCOUNT keeper, while the
+        // private one takes them like any other item. No recipe names them, so "no break" holds by itself.
+        list.Add(new ItemDef(BondCertificate, "Bond Certificate", EquipSlot.Material,
+            ItemGrade.F, ItemRarity.Rare,
+            Tradable: false, BuyPriceOverride: -1, SellPriceOverride: 0, Value: 0, NoAttributes: true,
+            Description: "Earned through a mentor's bond: a mentee is paid 150 / 300 / 550 on reaching level "
+                       + "20 / 40 / 76, the mentor 15 / 30 / 55. Spent at the mentor shop. Bound to this character."));
+        list.Add(new ItemDef(GraduationCertificate, "Graduation Certificate", EquipSlot.Material,
+            ItemGrade.F, ItemRarity.Epic,
+            Tradable: false, BuyPriceOverride: -1, SellPriceOverride: 0, Value: 0, NoAttributes: true,
+            Description: "A mentor's reward when a mentee graduates at level 76: 10, less 1 if you were not their "
+                       + "mentor at 20 and 3 if not at 40. Spent at the mentor shop. Bound to this character."));
 
         // Return scrolls: same mechanism, but their skill has a CAST time, so double-clicking one
         // channels it. The skills are NOT learned — the ITEM is what grants them.

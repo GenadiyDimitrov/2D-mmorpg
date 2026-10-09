@@ -286,7 +286,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
 | `BL-336` | 🔵 | **No-refresh debuffs (IG rule)** — a debuff of the same type cannot be re-landed until the old one wears off (no perma-hold); a re-stun attempt may BREAK the stun instead of resetting it; boss-allowed stacking types excepted; design owed | combat |
 | `BL-337` | 🔵 | **Grand Rune off the apothecary shelf** — with the Warchanter all-magic (`BL-335`) no class fights with weapon AND spell, so the 1h/2h Grand Rune boxes leave the shop; the items stay for `/give`; build together with `BL-336` | items |
-| `BL-339` | ❓ | **Mentoring system** — spec given 2026-10-09 → `docs/design/Mentoring.md`; answered in 3 passes 2026-10-09; BUILDABLE (open: shop prices; exp rune = 50%) | systems |
+| `BL-339` | 🔴 | **Mentoring system** — **the bond core is BUILT (0.234.0)**: `/mentor`, penalties, certificates at 20/40/76, both auras. Next: the 11 Mentor Blessing skills, then the shop (prices open) | systems |
 
 ---
 
@@ -2403,7 +2403,7 @@ spell. Since `BL-335` (0.230.0) the Warchanter hits only through magic, so no cl
 
 Needs an APK only if the shop list is drawn on the client; the server owns the shelf.
 
-## `BL-339` ❓ MENTORING SYSTEM (2026-10-09)
+## `BL-339` 🔴 MENTORING SYSTEM (2026-10-09)
 
 You gave the full spec on 2026-10-09. It is in **`docs/design/Mentoring.md`** verbatim, with my read and **8 open
 questions** (what a penalty blocks, reward trigger, minimum bond age, mentee-side invite, wc_* rungs, bound
@@ -2423,3 +2423,11 @@ a bad deal, and I'd make it **30d for ~30**.
 Certs paid at each level; the 1d exp/SP rune at 50 Bond; **no IP rule**. Instead: one mentee per account, AFK
 mentees don't count, and a **10-rung buff weighted by mentee level** (level²/1800: 10@20 = L2, 10@40 = L8, 5@60 =
 L10); Graduation Certs buy real, permanent items. **Buildable.** Exp rune = **50%** (`rune_expsp` L6, his 2026-10-09). Still open: the shop prices.
+
+**0.234.0 (2026-10-09): the bond core is BUILT** (checklist §148): `/mentor invite|accept|decline|remove|list`, every
+refusal message you wrote, the five-step removal penalty, last-online and the 7-day activity %, Bond Certificates at
+20/40/76 to both sides and the Graduation Certificates (10/9/6) at 76, the mentor's 10-rung aura and the mentee's +50%
+(both no-timer bar rows). Headless test: `dotnet run --project tools/SmokeTest -- mentor`. **Still to build:** (1) the
+11 self-only **Mentor Blessing** skills (option 1, in the originals' families); (2) the **shop**, which waits on your
+price list (only the 1d Grand Rune = 50 Bond, the 1d exp/SP rune L6 = 50 Bond and the 1-Graduation-cert consumable
+list are settled).

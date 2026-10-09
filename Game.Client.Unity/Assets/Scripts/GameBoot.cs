@@ -3181,6 +3181,8 @@ namespace Game.Client
                                          // `/like <name>` (2026-09-24) — the typed Recommend; its staff
                                          // `-f <value>` form is gated server-side.
                                          || cmd.Equals("like", StringComparison.OrdinalIgnoreCase)
+                                         // `BL-339` — `/mentor …`: every rule of it is server-side.
+                                         || cmd.Equals("mentor", StringComparison.OrdinalIgnoreCase)
                                          || cmd.Equals("help", StringComparison.OrdinalIgnoreCase);   // 0.221.0: per rank, server-side
                     if (!IsAdmin && !playerAllowed) { ClientLog.Warn("Unknown command: " + raw); return; }
                     await _net.AdminCommandAsync(cmd, arg);

@@ -24,7 +24,31 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-09 (latest) — 0.233.0: mobs on one target stand apart; tap the mob you stand on (`BL-338`)
+## 2026-10-09 (latest) — 0.234.0: mentoring, the bond core (`BL-339`)
+
+**New APK + server restart + `game.db` delete** (two new tables; a DEBUG server recreates it by itself).
+
+- **`/mentor invite|accept|decline <name>`, `/mentor remove [name]`, `/mentor list`.** Either side invites. A mentor is
+  a character whose MAIN class is 76+ with a 4th class; a mentee is under 76 with no mentor. Up to 10 mentees, never two
+  of one account, never your own account. Every refusal is his wording (full mentor, already bonded, the penalty
+  checked again at accept). `/mentor list` rows: `Name Online (25) 0m`, `Name Offline (25) 29d`, `Name Invited`,
+  `Name Pending`; a mentee without a mentor sees each candidate's `3/7d (43%)` activity.
+- **Removal penalty**, keyed on the other side's last login: under 24h → 24h, 3d → 12h, 5d → 6h, 7d → 3h, 7d+ → none.
+  It blocks new bonds both ways; withdrawing an invitation costs nothing.
+- **Certificates** (new items, bound, ×9999, private keeper only): Bond Certificates 150/300/550 to the mentee and
+  15/30/55 to the mentor at level 20/40/76; Graduation Certificates once at 76, 10 / 9 / 6 by when the bond began. The
+  bond ends at 76. Paid into the bag, or owed and paid at the next login if offline or the bag is full.
+- **Two auras, no timer** (synthetic bar rows like the paving): the mentee's **Mentor's Guidance** (+50% exp/SP while
+  the mentor is online), and the mentor's **Mentor Aura** Lv.1-10 (+10% exp/SP, +1% drop/gold a rung), rung =
+  floor(Σ level²/1800) over online, ACTIVE mentees (combat or exp in the last 10 min). Re-checked every 2 min with a
+  3-min logout grace. Both ADD to the runes (`docs/Formulas.md`).
+- Roster in memory: `MentorProfiles` + `MentorBonds` tables, loaded whole at startup, written through an ordered chain
+  (`Game.Server/Simulation/Mentoring.cs`; `GameLoopService` is now `partial`). Admin `/exp` counts as exp gained.
+- Headless: `dotnet run --project tools/SmokeTest -- mentor` (25 checks, all pass). Icons: `buff:mentor_aura`
+  (teacher), `buff:mentor_guidance` (wisdom).
+- Not yet: the 11 Mentor Blessing skills, and the shop (prices open).
+
+## 2026-10-09 — 0.233.0: mobs on one target stand apart; tap the mob you stand on (`BL-338`)
 
 **New APK + server restart.**
 

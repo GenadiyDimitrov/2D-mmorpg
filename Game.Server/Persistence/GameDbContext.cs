@@ -11,6 +11,8 @@ public class GameDbContext : DbContext
     public DbSet<AccountItemRecord> AccountItems => Set<AccountItemRecord>();
     public DbSet<BossTimerRecord> BossTimers => Set<BossTimerRecord>();
     public DbSet<ChatLogRecord> ChatLog => Set<ChatLogRecord>();
+    public DbSet<MentorProfileRecord> MentorProfiles => Set<MentorProfileRecord>();
+    public DbSet<MentorBondRecord> MentorBonds => Set<MentorBondRecord>();
 
     public GameDbContext(DbContextOptions<GameDbContext> options) : base(options) { }
 
