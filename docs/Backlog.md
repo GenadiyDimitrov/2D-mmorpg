@@ -286,7 +286,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
 | `BL-336` | 🔵 | **No-refresh debuffs (IG rule)** — a debuff of the same type cannot be re-landed until the old one wears off (no perma-hold); a re-stun attempt may BREAK the stun instead of resetting it; boss-allowed stacking types excepted; design owed | combat |
 | `BL-337` | 🔵 | **Grand Rune off the apothecary shelf** — with the Warchanter all-magic (`BL-335`) no class fights with weapon AND spell, so the 1h/2h Grand Rune boxes leave the shop; the items stay for `/give`; build together with `BL-336` | items |
-| `BL-339` | ❓ | **Mentoring system** — spec given 2026-10-09 → `docs/design/Mentoring.md`; 8 questions + 4 number clashes owed before a build | systems |
+| `BL-339` | ❓ | **Mentoring system** — spec given 2026-10-09 → `docs/design/Mentoring.md`; answered 2026-10-09; 4 left (Graduation lump vs 1/3/6, exp/SP rune, multibox rule, T80 price) | systems |
 
 ---
 
@@ -2410,3 +2410,11 @@ questions** (what a penalty blocks, reward trigger, minimum bond age, mentee-sid
 certificates, stacking with runes, the buff-rung rule) and **4 numbers that disagree** (drop/gold %, Grand Rune 50 vs
 20, exp-rune price, 3/7 days ≠ 50%). My picks: blessing **option 1** (separate self-only skills in the originals'
 buff families), an **anti-multibox rule** for the mentor's online count, and a **better T80 offer**. Not built.
+
+**2026-10-09, your answers are in** (the "His answers" section at the top of the doc): 2% drop/gold per level,
+Bond + Mentor Certificates (both bound, ×9999), Grand Rune 50, activity as %, the penalty blocks new bonds both
+ways and is checked at accept, rewards on LEVEL 20/40/76, no minimum bond age, either side invites, group buffs at
+their ≤74 rung, bonuses add, and the mentor buff is an **online aura** (no timer, 1-3 min re-check + grace).
+**Four left for you:** (1) 10 Graduation Certs at 76 or 1/3/6? I'd keep 1/3/6. (2) the 1d exp/SP rune: 50, or cut?
+I'd cut it. (3) the multibox rule (not the mentor's IP + not idle): yes/no? (4) T80: I explained why 7d for 100 is
+a bad deal, and I'd make it **30d for ~30**.

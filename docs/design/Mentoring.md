@@ -1,6 +1,67 @@
 # Mentoring (`BL-339`) — design, NOT BUILT
 
-Status 2026-10-09: his spec below (verbatim), my read of it, and the questions that block a build.
+Status 2026-10-09: his spec (verbatim, bottom), then his answers to my 8 questions + 4 clashes (top). Four items still open: Graduation lump vs 1/3/6, the exp/SP rune, the multibox rule, the T80 price.
+
+## His answers (2026-10-09, second pass) — these WIN over everything below
+
+### Numbers, settled
+1. **Mentor buff: +20% exp/SP and +2% drop/gold per level** → L5 = +100% exp/SP, +10% drop/gold. ("5%" was a slip.)
+2. **Two currencies, renamed:** **Bond Certificate** = the level-up payout (mentee 150/300/550, mentor 15/30/55);
+   **Mentor Certificate** = the mentor's own (1/3/6). He floated paying the mentor **10 "Graduation Certificates" once
+   at graduation** instead of 1/3/6 (still open, see below).
+3. **1d Grand Rune = 50 Bond Certificates.** The 1d exp/SP rune: price it ~50 too so it is a real choice (faster vs
+   cheaper levelling), **or drop it**, since the mentee already has the +50% while the mentor is online. (Still open.)
+4. **Mentor activity is shown as a %**, e.g. `3/7d (43%)`.
+
+### Questions, answered
+1. **The penalty blocks NEW bonds both ways**: no new mentor and no new mentee while it runs; existing bonds stay.
+   It is checked at **accept** time, so an invite sent before the penalty fails on accept:
+   `Mentor is under a bond penalty for Xh. Bond cannot be made.`
+2. **Rewards fire on reaching LEVEL 20 / 40 / 76**, not on the class change (a class-quest gate could be farmed for
+   the bonus). The mentee does the class quest when they choose.
+3. **No minimum bond age.** His reasoning: a mentor with time to raise characters to 76 bonds them at level 1 anyway
+   for the full 100/10, not 55/6. A 75 at 90% who never found a mentor can ask in world chat, and any mentor with a free
+   slot gets 55/6 for free. Both sides win.
+4. **Either side invites; the other answers.** `/mentor invite <name>` → `/mentor accept|decline <name>`. Accept or
+   decline clears the pending/invited row; accept turns it into a bond row. Messages (his wording; he wrote
+   "apprentices/students/mentees" as name candidates, one word to pick at build):
+   - mentee invites a full mentor: `Mentor <name> cannot accept any more mentees.`
+   - mentor invites someone already bonded: `Mentee <name> already has a mentor.`
+   - full mentor invites: `You cannot accept any more mentees. Use '/mentor remove <name>' or wait for graduation.`
+5. **Group buffs given without a rung = the rung learned at level ≤ 74** (no 4th-class rungs; some ladders go on past
+   76). The harmonies stay at the rungs he named (Protection L4, Speed L1, Warrior L5, Wizard L5). They are capped on
+   purpose so a real buffer is still worth having.
+6. **Both certificates are BOUND**: no trade, no account warehouse, no sell, no break. Use in the shop or keep in the
+   private warehouse. Stack ×9999.
+7. **Exp/SP bonuses ADD**, the same as runes: rune +100% + mentor buff +100% = +200% = ×3.
+8. **The mentor buff becomes an ONLINE AURA, not a 10-min timer.** No duration is shown (so players read it as
+   online-linked). It re-checks every **1-3 min** and sets its level to the current online-mentee count (cap 5).
+   When a mentee logs out there is a **1-3 min grace period** so a crash costs nothing. This replaces the "highest rung
+   holds 10 min" rule, which the enter/leave pump exploited (ten alts relogging = L5 for 10 min). Engine need: a
+   buff with no timer that the server renews, drawn with no countdown and no expiry blink.
+
+### Still open after this pass
+- **Graduation Certificates (10 at 76) or 1/3/6 per milestone?** My pick: **keep 1/3/6.** With a lump sum at 76,
+  the late joiner his Q3 welcomes gets all 10 certs, the same as a mentor who raised the character from level 1. That
+  removes the reason to bond early. Under 1/3/6 the late joiner gets 6, which is still "free" and still a win-win.
+- **The 1d exp/SP rune: 50 Bond, or cut?** My pick: **cut it for now.** The mentee already gets +50% whenever the mentor
+  is online. A rune that only matters while the mentor is away is a weak buy next to a Grand Rune at the same price.
+  Add it later if the shop feels thin.
+- **The multibox hole is not closed by the aura.** The aura stops the relog pump but not five alt accounts idling in
+  town: that is a permanent L5 (+100%). My proposal stands: a mentee counts as online only if they are **not on the
+  mentor's IP/device** and **not idle** (combat or exp gained in the last 10 min). Needs his yes or no.
+- **Recheck interval:** "1-3 min". My pick: **2 min re-check, 3 min grace.**
+
+### T80 offer, as he asked ("elaborate?")
+100 Mentor Certificates = **ten mentees raised to 76**, which is months of a mentor's time. The same 100 certs on the
+1-cert list buy 100 Ultimate Resurrect Scrolls, or 50,000 uncommon HP potions, or 500 mythic dash potions. Against
+that, **7 days** of T80 gear is a bad trade: a mentor at 76+ with a 4th class already wears end-game gear of their own,
+and the set is gone in a week. Nobody sensible picks it, so the line does nothing.
+Options, my pick first:
+- **30-day T80 set + weapon for ~30 Mentor Certs** (three graduations). Still a real goal, and it lasts long enough
+  to matter. ← my pick
+- 7 days for ~10 certs (one graduation): a cheap "try the next tier" item.
+- Permanent at 100: a real prestige goal, but it competes with crafting/drops, which `BL-282` priced carefully.
 
 ## What already exists to build on
 - **Friends list** (`/friend`) — the invite/accept/list shape he asked to copy.
@@ -46,7 +107,8 @@ Proposal: 30d, permanent, or far cheaper.
 Mentor per mentee: 15+30+55 = 100 Bond, 1+3+6 = 10 Mentor. Mentee: 150+300+550 = 1000 Bond.
 Gear tiers 100+250+500 = 850 ≤ 1000, and each payout covers its tier when it lands (150≥100, 300≥250, 550≥500).
 
-## Open questions (his to answer)
+
+## Open questions — ANSWERED 2026-10-09, see "His answers" above
 1. **What does a penalty block?** Assumed: only inviting/accepting a new bond for that long; existing bonds untouched.
 2. **Reward trigger:** reaching level 20/40/76, or completing the class change? The bond ends at 76, so the 76
    reward must land first.
