@@ -286,7 +286,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
 | `BL-336` | 🔵 | **No-refresh debuffs (IG rule)** — a debuff of the same type cannot be re-landed until the old one wears off (no perma-hold); a re-stun attempt may BREAK the stun instead of resetting it; boss-allowed stacking types excepted; design owed | combat |
 | `BL-337` | 🔵 | **Grand Rune off the apothecary shelf** — with the Warchanter all-magic (`BL-335`) no class fights with weapon AND spell, so the 1h/2h Grand Rune boxes leave the shop; the items stay for `/give`; build together with `BL-336` | items |
-| `BL-339` | ❓ | **Mentoring system** — you named it on 2026-10-09 and said we discuss what it means later; nothing designed yet | systems |
+| `BL-339` | ❓ | **Mentoring system** — spec given 2026-10-09 → `docs/design/Mentoring.md`; 8 questions + 4 number clashes owed before a build | systems |
 
 ---
 
@@ -2405,11 +2405,8 @@ Needs an APK only if the shop list is drawn on the client; the server owns the s
 
 ## `BL-339` ❓ MENTORING SYSTEM (2026-10-09)
 
-Your words: *"make a bl entry about this + a new mentoring system (wile will discuss later what that means)"*.
-
-Nothing is designed yet; you said we discuss what it means later. Questions to open that discussion with:
-1. **Who can mentor whom**: a level gap, a class match, or any two players?
-2. **What each side gets**: exp/SP for the student, a currency or title for the mentor, a reward when the student
-   reaches a level?
-3. **Is it a party bond or a standing one**: does it only work while grouped, and how many students may one mentor hold?
-4. **What ends it**: the student outgrows a level, either side breaks it, or a cooldown?
+You gave the full spec on 2026-10-09. It is in **`docs/design/Mentoring.md`** verbatim, with my read and **8 open
+questions** (what a penalty blocks, reward trigger, minimum bond age, mentee-side invite, wc_* rungs, bound
+certificates, stacking with runes, the buff-rung rule) and **4 numbers that disagree** (drop/gold %, Grand Rune 50 vs
+20, exp-rune price, 3/7 days ≠ 50%). My picks: blessing **option 1** (separate self-only skills in the originals'
+buff families), an **anti-multibox rule** for the mentor's online count, and a **better T80 offer**. Not built.

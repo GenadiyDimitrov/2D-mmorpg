@@ -8412,3 +8412,16 @@ Built as proposed:
 
 **Not built, on purpose:** general mob-vs-mob separation (wandering or idle mobs in a camp). Add it only if stacks still
 show up outside fights.
+
+## `BL-339` — the placeholder entry, rewritten 2026-10-09 when he gave the spec (verbatim)
+
+## `BL-339` ❓ MENTORING SYSTEM (2026-10-09)
+
+Your words: *"make a bl entry about this + a new mentoring system (wile will discuss later what that means)"*.
+
+Nothing is designed yet; you said we discuss what it means later. Questions to open that discussion with:
+1. **Who can mentor whom**: a level gap, a class match, or any two players?
+2. **What each side gets**: exp/SP for the student, a currency or title for the mentor, a reward when the student
+   reaches a level?
+3. **Is it a party bond or a standing one**: does it only work while grouped, and how many students may one mentor hold?
+4. **What ends it**: the student outgrows a level, either side breaks it, or a cooldown?
