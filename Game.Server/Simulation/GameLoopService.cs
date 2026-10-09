@@ -6414,6 +6414,15 @@ public partial class GameLoopService : BackgroundService
         if (def.Charge is { GatherPerUse: > 0 })
             return IsChargePoolFull(p, def);
 
+        // 🔴 `BL-339` — A MENTOR BLESSING IS A SHELL: it lands the SHELF RUNG (LandMentorBlessing), under that rung's
+        // family. Asked of itself it has no BuffKey, so the key fell back to "Mentor Blessing: Bulwark" — a buff nobody
+        // ever wears — every blessing read as missing forever, and the chain recast the first two on every reuse and
+        // never reached the third (him, 2026-10-09). Ask about the rung that actually lands; none at this level = nothing
+        // to do.
+        if (SkillCatalog.MentorBlessingShelf(def.Id) is string mentorShelf)
+            return SkillCatalog.NpcBuffRung(mentorShelf, p.Level) is not (SkillDef rungDef, int rung)
+                || AutoBuffUpToDate(p, rungDef, rung);
+
         // One child = the wrapper hands out that family's rung; ask about the CHILD.
         if (def.ChildBuffsAt(level) is { Length: 1 } one
             && SkillCatalog.Get(one[0]) is SkillDef child)

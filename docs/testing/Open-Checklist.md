@@ -25,6 +25,15 @@
 
 ---
 
+## §151 — 0.236.1: the autopilot sees a Mentor Blessing that is already up (`BL-339`, 2026-10-09)
+
+⚠ **Server restart.** A bonded mentee (mentor online), several Mentor Blessings on the auto bar.
+
+- `151a` [ ] - Auto on: every armed blessing is cast ONCE, in bar order (Bulwark, Swift, then the 3rd, 4th …), and none
+  is recast until it has ~5s left. A blessing already covered by a stronger NPC/class buff is skipped, not spammed. ->
+
+---
+
 ## §150 — 0.236.0: Mentor Blessings level-gated like the spirit helper; Guidance in 5 rungs (`BL-339`, 2026-10-09)
 
 ⚠ **New APK + server restart** (new skill ids and icons; no `game.db` delete). Same two accounts as §148. The eleven

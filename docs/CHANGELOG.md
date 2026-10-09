@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.236.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.236.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,19 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-09 (latest) — 0.236.0: Mentor Blessings level-gated like the spirit helper; Guidance in 5 rungs (`BL-339`)
+## 2026-10-09 (latest) — 0.236.1: the autopilot sees a Mentor Blessing that is already up (`BL-339`)
+
+Server restart only (no APK).
+
+- His find: *"the single mentor buffs now don't auto use as suppose to. It start with bulwark then swift then bulwark
+  again then swift again and only those two .. the effect is applied but it still reapplies it and never gets to 3rd
+  buff"*. A Mentor Blessing is a SHELL that lands the shelf rung under that rung's family, but the autopilot's "is it
+  up?" (`AutoBuffUpToDate`) asked about the shell itself — no `BuffKey`, so it looked for a buff called `Mentor
+  Blessing: Bulwark` that nobody ever wears. Every blessing read as missing forever and the chain recast the first two
+  on each reuse. It now asks about the rung `NpcBuffRung` would land at the caster's level (same 5s renewal window,
+  same "something stronger is up" skip); no rung at this level = nothing to do.
+
+## 2026-10-09 — 0.236.0: Mentor Blessings level-gated like the spirit helper; Guidance in 5 rungs (`BL-339`)
 
 **New APK + server restart** (new skill ids and icons in `Game.Shared`; no schema change, no `game.db` delete).
 
