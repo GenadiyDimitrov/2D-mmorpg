@@ -26,6 +26,30 @@ namespace Game.Client
         /// press began over the button, and that is what decides it.</summary>
         private bool _downOverUi;
 
+        private static readonly RaycastHit[] PickHits = new RaycastHit[16];
+
+        /// <summary>`BL-338` — WHICH BODY THE FINGER MEANT. Tap boxes are 200 server units across and
+        /// a melee fight stands 80 apart, so in a fight your OWN box covers most of the mob's. A plain
+        /// <c>Physics.Raycast</c> returned the first box the ray met — often yours — and the tap was
+        /// read as a ground move: you could not target the mob you were standing on. Now every box on
+        /// the ray is considered, SELF is skipped, and of the rest the one whose centre is nearest the
+        /// tap ON SCREEN wins, so two half-overlapped mobs are picked by which half you touched.</summary>
+        private static EntityView PickEntity(Ray ray, Vector2 screen, Camera cam)
+        {
+            int n = Physics.RaycastNonAlloc(ray, PickHits, 1000f);
+            EntityView best = null;
+            float bestSq = float.MaxValue;
+            for (int i = 0; i < n; i++)
+            {
+                var view = PickHits[i].collider.GetComponent<EntityView>();
+                if (view == null || view.IsSelf) continue;
+                Vector2 c = cam.WorldToScreenPoint(view.transform.position);
+                float sq = (c - screen).sqrMagnitude;
+                if (sq < bestSq) { bestSq = sq; best = view; }
+            }
+            return best;
+        }
+
         private void Update()
         {
             if (Boot == null || Boot.Phase != ClientPhase.InWorld) return;
@@ -67,42 +91,39 @@ namespace Game.Client
             var ray = cam.ScreenPointToRay(screen);
 
             // 1) an entity?
-            if (Physics.Raycast(ray, out var hit, 1000f))
+            var view = PickEntity(ray, screen, cam);
+            if (view != null)
             {
-                var view = hit.collider.GetComponent<EntityView>();
-                if (view != null && !view.IsSelf)
+                // Tapping SELECTS. What happens next depends on WHAT it is:
+                //   NPC           → the FIRST tap only targets, and the frame grows a [Talk]
+                //                   button; a SECOND tap (or Talk) WALKS you there and opens the
+                //                   conversation on arrival (owner, playtest-19 M13). Talking on
+                //                   the first tap meant every NPC you tapped from across the
+                //                   square answered "too far away" and you tapped twice anyway.
+                //   mob / player  → the FIRST tap only opens the target window; a SECOND tap on the
+                //                   SAME target acts. Tapping a DIFFERENT one just re-targets.
+                //   PARTY member  → that second tap FOLLOWS instead of attacking.
+                //
+                // The two-tap rule exists because one tap used to charge straight in, which is
+                // miserable on a mage or an archer: you could not inspect a mob, or switch targets,
+                // without committing to melee (playtest-15).
+                //
+                // Party-vs-not is decided inside AttackOrFollow, which is the SAME verb the Attack
+                // action on the bar and the target frame's Attack button use — the second tap must
+                // not mean anything different from pressing Attack (owner).
+                var previous = Boot.TargetId;
+                Boot.TargetId = view.Id;
+                if (Boot.Entities != null && Boot.Entities.TryGetState(view.Id, out var dto) && !dto.Dead)
                 {
-                    // Tapping SELECTS. What happens next depends on WHAT it is:
-                    //   NPC           → the FIRST tap only targets, and the frame grows a [Talk]
-                    //                   button; a SECOND tap (or Talk) WALKS you there and opens the
-                    //                   conversation on arrival (owner, playtest-19 M13). Talking on
-                    //                   the first tap meant every NPC you tapped from across the
-                    //                   square answered "too far away" and you tapped twice anyway.
-                    //   mob / player  → the FIRST tap only opens the target window; a SECOND tap on the
-                    //                   SAME target acts. Tapping a DIFFERENT one just re-targets.
-                    //   PARTY member  → that second tap FOLLOWS instead of attacking.
-                    //
-                    // The two-tap rule exists because one tap used to charge straight in, which is
-                    // miserable on a mage or an archer: you could not inspect a mob, or switch targets,
-                    // without committing to melee (playtest-15).
-                    //
-                    // Party-vs-not is decided inside AttackOrFollow, which is the SAME verb the Attack
-                    // action on the bar and the target frame's Attack button use — the second tap must
-                    // not mean anything different from pressing Attack (owner).
-                    var previous = Boot.TargetId;
-                    Boot.TargetId = view.Id;
-                    if (Boot.Entities != null && Boot.Entities.TryGetState(view.Id, out var dto) && !dto.Dead)
+                    if (dto.Kind == EntityKind.Npc)
                     {
-                        if (dto.Kind == EntityKind.Npc)
-                        {
-                            if (previous == view.Id) Boot.ApproachAndTalk(view.Id);
-                        }
-                        else if (previous == view.Id &&
-                                 (dto.Kind == EntityKind.Mob || dto.Kind == EntityKind.Player))
-                            Boot.AttackOrFollow(view.Id);
+                        if (previous == view.Id) Boot.ApproachAndTalk(view.Id);
                     }
-                    return;
+                    else if (previous == view.Id &&
+                             (dto.Kind == EntityKind.Mob || dto.Kind == EntityKind.Player))
+                        Boot.AttackOrFollow(view.Id);
                 }
+                return;
             }
 
             // 2) the ground → move there. A ground tap also ABANDONS a pending walk-to-talk: you have

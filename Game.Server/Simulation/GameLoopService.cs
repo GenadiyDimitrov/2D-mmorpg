@@ -10170,6 +10170,7 @@ public class GameLoopService : BackgroundService
         // despawn an entity, and enumerating a Dictionary through that throws and kills the tick.
         _tickBuffer.Clear();
         _tickBuffer.AddRange(_world.Entities.Values);
+        BuildAttackerCrowds();   // `BL-338` — who is swinging at whom, once, before anyone moves
 
         foreach (var entity in _tickBuffer)
         {
@@ -16128,6 +16129,8 @@ public class GameLoopService : BackgroundService
 
         attacker.TargetX = null;
         attacker.TargetY = null;
+        if (attacker.Kind == EntityKind.Mob)
+            SpreadFromCrowd(attacker, target, range);   // `BL-338` — may set a small sidestep
 
         if (attacker.AttackCooldown > 0)
             return;
@@ -16139,6 +16142,84 @@ public class GameLoopService : BackgroundService
             (int)(baseInterval * attacker.EffectiveAttackSpeedMultiplier));
 
         ResolveBasicAttack(attacker, target);
+    }
+
+    // ═══ `BL-338` — MOBS ON ONE TARGET STAND APART ═══════════════════════════════════════════════
+    //
+    // Every melee mob was walked straight at its target's centre and stopped at the first point in
+    // range, so three mobs arriving from one side stopped on the SAME point and drew as one blob.
+    // Now a mob already in range is pushed off any other mob swinging at the same target, and kept
+    // inside its own reach — so the pack settles into a ring around the victim.
+    //
+    // 🔑 MOB-vs-MOB ONLY, and only between attackers of ONE target. A player is never pushed and never
+    //    body-blocks: that would make mobs able to trap you and change kiting, which is intended.
+    // 🔑 Cheap by construction: the crowd map is built once per tick (O(mobs)), and each in-range mob
+    //    compares only against the handful hitting the same victim — never a grid sweep.
+
+    /// <summary>Centre-to-centre distance two attackers of one target keep. A body draws 90 across
+    /// (client marker 0.9 × 100), so 80 lets them touch without stacking.</summary>
+    private const float CrowdSpacing = 80f;
+
+    /// <summary>Overlap smaller than this is left alone, so a settled ring does not shuffle.</summary>
+    private const float CrowdDeadband = 6f;
+
+    private readonly Dictionary<Guid, List<Entity>> _attackerCrowds = new();
+    private readonly Stack<List<Entity>> _crowdListPool = new();
+
+    private void BuildAttackerCrowds()
+    {
+        foreach (var list in _attackerCrowds.Values) { list.Clear(); _crowdListPool.Push(list); }
+        _attackerCrowds.Clear();
+        foreach (var e in _tickBuffer)
+        {
+            if (e.Kind != EntityKind.Mob || e.Dead || !e.Engaged || e.CasterMob) continue;
+            if (e.CombatTargetId is not Guid tid) continue;
+            if (!_attackerCrowds.TryGetValue(tid, out var list))
+                _attackerCrowds[tid] = list = _crowdListPool.Count > 0 ? _crowdListPool.Pop() : new List<Entity>();
+            list.Add(e);
+        }
+    }
+
+    private void SpreadFromCrowd(Entity mob, Entity target, float range)
+    {
+        if (!_attackerCrowds.TryGetValue(target.Id, out var crowd) || crowd.Count < 2) return;
+        if (mob.IsRooted || mob.EffectiveSpeed <= 0f) return;
+
+        float px = 0f, py = 0f;
+        foreach (var o in crowd)
+        {
+            if (o == mob || o.Dead) continue;
+            float dx = mob.X - o.X, dy = mob.Y - o.Y;
+            float d = MathF.Sqrt(dx * dx + dy * dy);
+            if (d >= CrowdSpacing) continue;
+            if (d < 0.5f)
+            {
+                // Exactly stacked: no direction to push along. Sidestep around the target instead, the
+                // two choosing opposite sides by id so they cannot both pick the same one.
+                float tx = mob.X - target.X, ty = mob.Y - target.Y;
+                float tl = MathF.Sqrt(tx * tx + ty * ty);
+                if (tl < 0.5f) { tx = 1f; ty = 0f; tl = 1f; }
+                float sign = mob.Id.CompareTo(o.Id) < 0 ? 1f : -1f;
+                px += -ty / tl * sign * CrowdSpacing;
+                py += tx / tl * sign * CrowdSpacing;
+                continue;
+            }
+            float push = CrowdSpacing - d;
+            px += dx / d * push;
+            py += dy / d * push;
+        }
+        if (px * px + py * py < CrowdDeadband * CrowdDeadband) return;
+
+        // Half the overlap per mob: the other side of the pair pushes too.
+        float nx = mob.X + px * 0.5f, ny = mob.Y + py * 0.5f;
+
+        // Stay inside reach — the sidestep must never cost a swing — and off the target's own centre.
+        float rx = nx - target.X, ry = ny - target.Y;
+        float rl = MathF.Sqrt(rx * rx + ry * ry);
+        if (rl < 0.5f) return;
+        float clamped = Math.Clamp(rl, CrowdSpacing * 0.5f, range * 0.95f);
+        mob.TargetX = target.X + rx / rl * clamped;
+        mob.TargetY = target.Y + ry / rl * clamped;
     }
 
     private void Disengage(Entity entity)

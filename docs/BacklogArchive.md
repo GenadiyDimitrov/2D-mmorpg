@@ -8395,3 +8395,20 @@ Your answers of the same day settled the toggles (two per race, contents on the 
 
 🔵 **Waits on you**: your `buffer 3rd.csv` / `buffer 4th.csv` edits, starting from the measured numbers in §8 of the page.
 
+
+## `BL-338` ✅ BUILT in 0.233.0 — mobs on one target stand apart; a tap can pick the mob you stand on (2026-10-09)
+
+Your words: *"will it be strain for the server entities not to move on top of eachother ? now there is a chance a mobs
+to be on top of eachother ot atleast overlap like 50% .. and player cannot click/target a mob when he is also over the
+mob"*, then *"OK do it"*.
+
+Built as proposed:
+1. **The tap** (client): `TouchInput.PickEntity` looks at every tap box on the ray, skips your own, and picks the body
+   whose centre is nearest your finger on screen. Before, the first box the ray met won, and in melee that was often
+   yours, so the tap became a ground move.
+2. **The spacing** (server): a melee mob in range is pushed off other mobs hitting the SAME target (80 apart) and kept
+   inside its own reach, so a pack settles into a ring around its victim. Mob-vs-mob only: players are never pushed and
+   never body-block. The cost is one per-tick map of target → attackers, plus a few comparisons per mob in range.
+
+**Not built, on purpose:** general mob-vs-mob separation (wandering or idle mobs in a camp). Add it only if stacks still
+show up outside fights.

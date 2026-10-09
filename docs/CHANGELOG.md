@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.232.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.233.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,22 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-07 (latest) — 0.232.4: the autopilot healer walks to a dying member
+## 2026-10-09 (latest) — 0.233.0: mobs on one target stand apart; tap the mob you stand on (`BL-338`)
+
+**New APK + server restart.**
+
+- **Tapping a mob you stand on.** In melee your own tap box (200 across) covers most of the mob's, and the tap raycast
+  took the first box it met, which was often yours, so the tap became a ground move. `TouchInput.PickEntity` now looks
+  at every box on the ray, skips your own, and picks the body whose centre is nearest the finger on screen. Two
+  half-overlapped mobs are told apart by which half you touch.
+- **Mobs hitting one target spread into a ring.** A melee mob already in range is pushed off any other mob swinging at
+  the same target (`CrowdSpacing` 80, a body draws 90) and clamped inside 95% of its own reach, so the sidestep never
+  costs a swing. Exact stacks sidestep around the target, the two picking opposite sides by id. Mob-vs-mob only:
+  players are never pushed and never body-block. Cost: one target → attackers map built per tick
+  (`BuildAttackerCrowds`), plus a few comparisons per in-range mob.
+- New open entry `BL-339`: a mentoring system, to be discussed.
+
+## 2026-10-07 — 0.232.4: the autopilot healer walks to a dying member
 
 Server restart only (no APK).
 

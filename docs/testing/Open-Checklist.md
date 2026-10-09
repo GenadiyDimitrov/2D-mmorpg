@@ -25,6 +25,15 @@
 
 ---
 
+## §147 — 0.233.0: mobs on one target stand apart; tap the mob you stand on (`BL-338`, 2026-10-09)
+
+⚠ **New APK + server restart.**
+
+- `147a` [ ] - Melee a mob and stand on or right next to it, then tap it: it gets targeted, and you don't walk. With
+  two mobs half-overlapped, tapping each visible half picks that mob. ->
+- `147b` [ ] - Pull 3-4 melee mobs onto yourself: they settle around you in a ring and don't stack into one blob. They
+  keep hitting while they sidestep. ->
+
 ## §146 — 0.232.4: the autopilot healer walks to a dying member (2026-10-07)
 
 ⚠ **Server restart.** Party of two on auto, assist OFF, each farming its own ring.
