@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.233.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.235.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,30 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-09 (latest) — 0.234.0: mentoring, the bond core (`BL-339`)
+## 2026-10-09 (latest) — 0.235.0: the eleven Mentor Blessings; the mentor's buff split into Aura + Knowledge (`BL-339`)
+
+**New APK + server restart** (new skill defs in `Game.Shared` and new icons; no schema change, no `game.db` delete).
+
+- **Mentor Aura / Mentor Knowledge** (his fourth pass): the mentor's one buff is now two. **Aura** = exp/SP only,
+  +10%/rung, Lv.1-10, from every ONLINE mentee **AFK included**, weighted level²/1800 as before. **Knowledge** = drop
+  chance and gold only, +2%/rung, Lv.1-5, **one rung per mentee active in the last 10 min, whatever their level**
+  (5 active = +10%). The level formula is the aura's only. `docs/Formulas.md` moved with it.
+- **The eleven Mentor Blessings** (`Game.Shared/Skills/Skills.Mentor.cs`, option 1): `mentor_war_frenzy`,
+  `mentor_feral_precision`, `mentor_feral_bloodlust`, `mentor_arcane_insight`, `mentor_arcane_serenity`,
+  `mentor_body_reinforcement`, `mentor_wind_grace`, `mentor_harmony_protection` (L4), `mentor_harmony_speed` (L1),
+  `mentor_harmony_warrior` (L5), `mentor_harmony_wizard` (L5). Self-only, **1 hour**, each a copy of its original
+  built FROM the catalog def (a retune of the original reaches it), landing in the **original's family at the copied
+  rung's rank**, so a real buffer's higher rung still outranks it. Granted while the bond holds (login, level-up,
+  accept), taken back when it ends (remove, graduation). Cast refused, and skipped by the autopilot, while the mentor
+  is offline (past the 3-min grace). Faces `Mentor Blessing: <Name>`, description "Mentor is watching over you: …".
+- **My calls:** 0 MP, 1s cast, 1s reuse (a level-5 mentee could not pay a 464-MP harmony); `Replaces` cleared so a
+  granted blessing never hides the mentee's own Focus/Might from their learn list. A blessing still running when the
+  bond ends is left to run out.
+- Icons: each blessing wears its original's glyph in the holy colour; `buff:mentor_knowledge` = open-book.
+- `tools/SmokeTest -- mentor`: 34 checks, all pass (AFK level-60 mentee → Aura Lv.2 and no Knowledge; active → Knowledge
+  Lv.1; three blessings land for 3600s in the right family; graduation and remove take them away).
+
+## 2026-10-09 — 0.234.0: mentoring, the bond core (`BL-339`)
 
 **New APK + server restart + `game.db` delete** (two new tables; a DEBUG server recreates it by itself).
 

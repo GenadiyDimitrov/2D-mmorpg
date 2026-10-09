@@ -12,8 +12,9 @@ namespace Game.Shared;
 /// <item>A MENTEE is a character below 76 with no mentor. One mentor, never one of their own account.</item>
 /// <item>The bond pays at the mentee's level 20 / 40 / 76 (Bond Certificates to both, and the mentor's
 /// one-off Graduation Certificates at 76), and ends at 76.</item>
-/// <item>While bonded, an online mentor gives the mentee +50% exp/SP; online, ACTIVE mentees give the
-/// mentor a 10-rung aura weighted by their level.</item>
+/// <item>While bonded, an online mentor gives the mentee +50% exp/SP and lets them cast the eleven Mentor
+/// Blessings (Skills.Mentor.cs). ONLINE mentees (AFK too) give the mentor a 10-rung exp/SP aura weighted by their
+/// level; ACTIVE ones give a 5-rung drop/gold Knowledge, one rung each.</item>
 /// </list>
 /// </summary>
 public static class Mentoring
@@ -41,11 +42,14 @@ public static class Mentoring
     /// <summary>The mentee's: +50% exp AND SP while the mentor is online.</summary>
     public const float MenteeExpSpBonus = 0.50f;
 
-    /// <summary>The mentor's aura: 10 rungs, each +10% exp/SP and +1% drop chance/gold (his totals: L10 =
-    /// +100% exp/SP, +10% drop/gold; the per-rung split is mine).</summary>
+    // 🔑 HIS FOURTH PASS (2026-10-09) SPLIT THE MENTOR'S BUFF IN TWO: *"Mentor aura is only from online mentees (afk
+    //    also count) and increases Exp/SP; Mentor Knowledge ins for your 10min active mentees and increases gold/drop
+    //    … the formula is only for mentors aura and it dont have the 10 min exp gain penalty"*.
+
+    /// <summary>MENTOR AURA — exp/SP only. 10 rungs, +10% each (L10 = +100%), from every ONLINE mentee, AFK
+    /// included (*"an afk player in town to count as online … afk for 10h is still online"*), weighted by level.</summary>
     public const int MaxAuraRung = 10;
     public const float AuraExpSpPerRung = 0.10f;
-    public const float AuraDropGoldPerRung = 0.01f;
 
     /// <summary>A mentee's weight toward the aura: level² / 1800 (mine, fitted to his three targets —
     /// 10 at lvl 20 → L2, 10 at lvl 40 → L8, 5 at lvl 60 → L10). The rung is the floor of the sum.</summary>
@@ -54,13 +58,20 @@ public static class Mentoring
     public static int AuraRung(float weightSum) =>
         Math.Clamp((int)MathF.Floor(weightSum + 1e-4f), 0, MaxAuraRung);
 
-    /// <summary>The aura is re-checked this often, and a mentee who logged out keeps counting for the
+    /// <summary>MENTOR KNOWLEDGE — drop chance and gold only. One rung per ACTIVE mentee whatever their level (his:
+    /// *"5 active mentees get u L5 10% gold amount and drop rates despite mentees lvl"*), cap 5, +2% each.</summary>
+    public const int MaxKnowledgeRung = 5;
+    public const float KnowledgeDropGoldPerRung = 0.02f;
+
+    public static int KnowledgeRung(int activeMentees) => Math.Clamp(activeMentees, 0, MaxKnowledgeRung);
+
+    /// <summary>Both are re-checked this often, and a mentee who logged out keeps counting for the
     /// grace window so a crash costs nothing (his "ok" to 2 min / 3 min).</summary>
     public const int RecheckSeconds = 120;
     public const int GraceSeconds = 180;
 
-    /// <summary>An online mentee counts only if ACTIVE: combat or exp gained within this long (his: *"an
-    /// online player that is afk refuses you lvls"*; the 10 min is mine).</summary>
+    /// <summary>ACTIVE, for Mentor Knowledge only: combat or exp gained within this long (the 10 min is mine, and his
+    /// fourth pass kept it: *"the active 10 mins timer can be used for mentors gold/drop rates"*).</summary>
     public const int ActiveWindowSeconds = 600;
 
     // ----- Removal penalty -----

@@ -2268,6 +2268,7 @@ public static partial class SkillCatalog
         list.AddRange(Bulwark4thSkills());    // Skills.Bulwark4th.cs (`BL-154`/`BL-155` — the pull and the two silences)
         list.AddRange(SkillMasterySkills());  // Skills.SkillMasteries.cs (`BL-191` — the four passives that turn `BL-190` on)
         list.AddRange(Nuker4thSkills());      // Skills.Nuker4th.cs (his `nuker 4th.csv`, 76-90 — `BL-192`)
+        list.AddRange(MentorBlessingSkills(list)); // Skills.Mentor.cs (`BL-339` the mentee's eleven self-only copies — granted, never learned)
 
         var dict = new Dictionary<string, SkillDef>();
         foreach (var sk in list)

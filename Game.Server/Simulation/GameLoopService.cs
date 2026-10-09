@@ -1695,6 +1695,8 @@ public partial class GameLoopService : BackgroundService
         // double-clicking the scroll invokes its skill directly (see UsePotion), which needs no
         // learned entry. They used to be auto-learned, which wrongly put them in your skill list.
         player.LearnedSkills.TryAdd(SkillCatalog.ReturnSkill, 1);
+        // `BL-339` — the eleven Mentor Blessings: known while a mentor bond holds, gone when it ends.
+        SyncMentorBlessings(player);
         player.LearnedSkills.Remove(SkillCatalog.ScrollReturnSkill);
         player.LearnedSkills.Remove(SkillCatalog.ScrollReturnUltSkill);
         player.LearnedSkills.Remove(SkillCatalog.ScrollResurrectSkill);
@@ -2166,6 +2168,13 @@ public partial class GameLoopService : BackgroundService
         if (def.RequireHpBelowFraction > 0f && caster.Hp > caster.MaxHp * def.RequireHpBelowFraction)
         {
             SendSystemToEntity(caster, $"{def.Name} can only be used at or below {(int)(def.RequireHpBelowFraction * 100)}% HP.");
+            return;
+        }
+
+        // `BL-339` — a Mentor Blessing needs the mentor online (the same flag that draws Mentor's Guidance).
+        if (SkillCatalog.IsMentorBlessing(def.Id) && !caster.MentorGuidance)
+        {
+            SendSystemToEntity(caster, "Your mentor is offline — Mentor Blessings need them online.");
             return;
         }
 
@@ -6508,6 +6517,8 @@ public partial class GameLoopService : BackgroundService
             if (!ArmorGate.Satisfies(p.BodyArmorWeight, p.HasShield,
                                      def.RequiredArmor, def.RequiredShield)) continue;
             if (def.RequireHpBelowFraction > 0f && p.Hp > p.MaxHp * def.RequireHpBelowFraction) continue;
+            // `BL-339` — a Mentor Blessing with the mentor offline is a refused tap: skipped, not spammed.
+            if (SkillCatalog.IsMentorBlessing(def.Id) && !p.MentorGuidance) continue;
             // `BL-237` — a full Focus pool is a refused tap, so it is a skipped entry here too.
             if (IsChargePoolFull(p, def)) continue;
 
@@ -19186,7 +19197,7 @@ public partial class GameLoopService : BackgroundService
         // the bar there is NO way to tell whether it's applying, which is exactly what the owner hit when
         // he tried to verify it and had to report "not sure if the penalty is working".
         dtos.AddRange(GradePenaltyRows(player));
-        dtos.AddRange(MentorRows(player));   // `BL-339` — the two no-timer mentoring rows
+        dtos.AddRange(MentorRows(player));   // `BL-339` — the three no-timer mentoring rows
         if (player.OnPavedStreets)
             dtos.Add(new BuffDto("Paved Streets",
                 $"The blessed paving of the town quickens your step: +{MovementTuning.PavedStreetsRunBonus:0} run "

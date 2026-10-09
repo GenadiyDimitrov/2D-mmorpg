@@ -235,7 +235,7 @@ public partial class GameLoopService
                     ? $"Your mentee {p.Name} graduated at {lvl}: {Mentoring.MentorBondPay[i]} Bond and {grad} Graduation Certificates."
                     : $"Your mentee {p.Name} reached level {lvl}: {Mentoring.MentorBondPay[i]} Bond Certificates.");
 
-            if (graduation) DeleteMentorBond(bond);
+            if (graduation) { DeleteMentorBond(bond); PushMentorBlessings(p.CharacterId); }
             else SaveMentorBond(bond);
             if (mentorOnline is not null) PayOwedCertificates(mentorOnline, mentor);
             SaveMentorProfile(mentor);
@@ -262,6 +262,26 @@ public partial class GameLoopService
         if (p.OwedBondCerts > 0 || p.OwedGraduationCerts > 0)
             SendSystemToEntity(e, "Mentoring certificates are waiting but your bag is full — make room and relog.");
         if (paid) { SendInventory(e); SaveMentorProfile(p); }
+    }
+
+    // ----- the Mentor Blessings (Skills.Mentor.cs) -----
+
+    /// <summary>The eleven blessings are KNOWN while the bond holds and gone the moment it ends — granted free, the
+    /// same shape as every other auto-grant in AutoLearnCoreSkills, which calls this on login, level-up and class
+    /// swap. Whether one can be CAST is a separate gate (the mentor online). Returns whether anything changed.</summary>
+    private bool SyncMentorBlessings(Entity e)
+    {
+        bool bonded = e.PersistentId is int id && MenteeBond(id) is not null;
+        bool changed = false;
+        foreach (var s in SkillCatalog.MentorBlessingIds)
+            changed |= bonded ? e.LearnedSkills.TryAdd(s, 1) : e.LearnedSkills.Remove(s);
+        return changed;
+    }
+
+    /// <summary>A bond just formed or ended: if that mentee is online, their skill list (and bar) follow at once.</summary>
+    private void PushMentorBlessings(int menteeId)
+    {
+        if (OnlineCharacter(menteeId) is Entity e && SyncMentorBlessings(e)) SendLearned(e);
     }
 
     // ----- the auras -----
@@ -293,25 +313,33 @@ public partial class GameLoopService
         foreach (var e in _world.Entities.Values)
         {
             if (e.Kind != EntityKind.Player || e.PersistentId is not int id) continue;
-            int rung = 0;
+            int rung = 0, knowledge = 0;
             bool guidance = false;
             if (_mentorProfiles.TryGetValue(id, out var me))
             {
                 if (me.MentorEligible)
                 {
+                    // His fourth pass: the AURA counts every online mentee, AFK in town included, by weight;
+                    // KNOWLEDGE counts the active ones, one rung each whatever their level.
                     float weight = 0f;
+                    int active = 0;
                     foreach (var b in MentorBonds(id))
-                        if (_mentorProfiles.TryGetValue(b.MenteeCharacterId, out var mentee)
-                            && OnlineOrInGrace(mentee) && RecentlyActive(mentee.CharacterId))
-                            weight += Mentoring.MenteeWeight(mentee.MainLevel);
+                    {
+                        if (!_mentorProfiles.TryGetValue(b.MenteeCharacterId, out var mentee) || !OnlineOrInGrace(mentee))
+                            continue;
+                        weight += Mentoring.MenteeWeight(mentee.MainLevel);
+                        if (RecentlyActive(mentee.CharacterId)) active++;
+                    }
                     rung = Mentoring.AuraRung(weight);
+                    knowledge = Mentoring.KnowledgeRung(active);
                 }
                 if (MenteeBond(id) is MentorBondRecord mb
                     && _mentorProfiles.TryGetValue(mb.MentorCharacterId, out var mentor))
                     guidance = OnlineOrInGrace(mentor);
             }
-            if (rung == e.MentorAuraRung && guidance == e.MentorGuidance) continue;
+            if (rung == e.MentorAuraRung && knowledge == e.MentorKnowledgeRung && guidance == e.MentorGuidance) continue;
             e.MentorAuraRung = rung;
+            e.MentorKnowledgeRung = knowledge;
             e.MentorGuidance = guidance;
             e.RecomputeDerived();
             PushBuffs(e);
@@ -323,7 +351,7 @@ public partial class GameLoopService
         if (_tick % (Mentoring.RecheckSeconds * GameConstants.TickRate) == 0) RefreshMentorAuras();
     }
 
-    /// <summary>The two synthetic buff-bar rows. No timer (-1), like the paving: they last as long as the
+    /// <summary>The three synthetic buff-bar rows. No timer (-1), like the paving: they last as long as the
     /// condition does, and the player is meant to read them as "while online".</summary>
     private static IEnumerable<BuffDto> MentorRows(Entity p)
     {
@@ -331,10 +359,18 @@ public partial class GameLoopService
         {
             int r = p.MentorAuraRung;
             yield return new BuffDto("Mentor Aura",
-                $"Your mentees are out there levelling: +{r * Mentoring.AuraExpSpPerRung * 100:0}% experience and SP, "
-                + $"+{r * Mentoring.AuraDropGoldPerRung * 100:0}% drop chance and gold. It grows with how many active "
-                + $"mentees are online and how high they are (max level {Mentoring.MaxAuraRung}).",
+                $"Your mentees are online: +{r * Mentoring.AuraExpSpPerRung * 100:0}% experience and SP. It grows with "
+                + $"how many mentees are online and how high they are (max level {Mentoring.MaxAuraRung}).",
                 -1f, false, "mentor_aura", 1, BuffRow.Buff, "", Level: r, IconSkillId: "mentor_aura");
+        }
+        if (p.MentorKnowledgeRung > 0)
+        {
+            int r = p.MentorKnowledgeRung;
+            yield return new BuffDto("Mentor Knowledge",
+                $"Your mentees are out there fighting: +{r * Mentoring.KnowledgeDropGoldPerRung * 100:0}% drop chance and "
+                + $"gold. One level for each mentee active in the last {Mentoring.ActiveWindowSeconds / 60} minutes "
+                + $"(max level {Mentoring.MaxKnowledgeRung}).",
+                -1f, false, "mentor_knowledge", 1, BuffRow.Buff, "", Level: r, IconSkillId: "mentor_knowledge");
         }
         if (p.MentorGuidance)
             yield return new BuffDto("Mentor's Guidance",
@@ -481,6 +517,7 @@ public partial class GameLoopService
         string line = $"{mentor.Name} is now the mentor of {mentee.Name}.";
         SendSystemToEntity(p, line);
         if (otherOnline is not null) SendSystemToEntity(otherOnline, line);
+        PushMentorBlessings(mentee.CharacterId);
         RefreshMentorAuras();
     }
 
@@ -524,6 +561,7 @@ public partial class GameLoopService
         SendSystemToEntity(p, (iWasMentor ? $"{them.Name} is no longer your mentee." : $"{them.Name} is no longer your mentor.") + tail);
         if (themOnline is not null)
             SendSystemToEntity(themOnline, iWasMentor ? $"{me.Name} is no longer your mentor." : $"{me.Name} is no longer your mentee.");
+        PushMentorBlessings(bond.MenteeCharacterId);
         RefreshMentorAuras();
     }
 
@@ -536,7 +574,8 @@ public partial class GameLoopService
         {
             var rows = _mentorBonds.Where(b => b.MentorCharacterId == me.CharacterId).ToList();
             lines.Add($"Mentees ({rows.Count(b => b.State == BondActive)}/{Mentoring.MaxMentees})"
-                      + (p.MentorAuraRung > 0 ? $" — Mentor Aura Lv.{p.MentorAuraRung}:" : ":"));
+                      + (p.MentorAuraRung > 0 ? $" — Mentor Aura Lv.{p.MentorAuraRung}" : "")
+                      + (p.MentorKnowledgeRung > 0 ? $" — Mentor Knowledge Lv.{p.MentorKnowledgeRung}" : "") + ":");
             foreach (var b in rows.OrderBy(b => b.State).ThenBy(b => NameOf(b.MenteeCharacterId)))
             {
                 var m = _mentorProfiles[b.MenteeCharacterId];

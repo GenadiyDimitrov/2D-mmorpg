@@ -1,8 +1,22 @@
-# Mentoring (`BL-339`) — design; the BOND CORE is BUILT (0.234.0)
+# Mentoring (`BL-339`) — design; BUILT except the shop (0.234.0 bond core, 0.235.0 blessings)
 
-Status 2026-10-09: his spec (verbatim, bottom), then three passes of his answers (newest at the top wins). **0.234.0 built the bond core** (`Game.Server/Simulation/Mentoring.cs`, numbers in `Game.Shared/Mentoring.cs`): commands, penalties, roster, certificates, both auras. **Not built yet:** the 11 Mentor Blessing skills, and the shop (prices open; exp rune = `rune_expsp` L6, 50%).
+Status 2026-10-09: his spec (verbatim, bottom), then four passes of his answers (newest at the top wins). **0.234.0 built the bond core** (`Game.Server/Simulation/Mentoring.cs`, numbers in `Game.Shared/Mentoring.cs`): commands, penalties, roster, certificates, both auras. **0.235.0 built the 11 Mentor Blessings** (`Game.Shared/Skills/Skills.Mentor.cs`, 0 MP / 1s cast / 1s reuse — my call) and the fourth pass below. **Not built yet:** the shop (prices open; exp rune = `rune_expsp` L6, 50%).
 
 Build notes (my calls, 0.234.0): "online" = the character is in the world (link-dead and offline-farming count); "active" = combat or exp within 10 min; a milestone reached with NO mentor is passed, not owed to a later one; a character who predates mentoring has its passed milestones marked on first login; the list word is **mentee**; the row for an invitation in a mentee's list also says Invited/Pending so they know whom to accept.
+
+## His answers, FOURTH pass (2026-10-09) — the mentor's buff splits in two. WINS over everything below.
+
+Verbatim: *"no 10 mins for exp .. i want an afk player in town to count as online ... afk for 10h is still online...
+the mentor with active mentees have more benifith than one just exploit to fast lvl up -> the active 10 mins timer can
+be used for mentors gold/drop rates ... Mentors Aura and Mentors Knowledge -> Mentor aura is only from online mentees
+(afk also count) and increases Exp/SP; Mentor Knowledge ins for your 10min active mentees and increases gold/drop to
+10% for active mentees (and can not be gated as the auroa with lvl formula ) -> 5 active mentees get u L5 10% gold
+amount and drop rates despite mentees lvl ... the formula is only for mentors aura and it dont have the 10 min exp gain
+penalty"*
+
+- **Mentor Aura** = exp/SP only, +10% a rung, Lv.1-10, rung = floor(Σ level²/1800) over ONLINE mentees, AFK included.
+- **Mentor Knowledge** = drop chance + gold only, +2% a rung, Lv.1-5, one rung per mentee ACTIVE in the last 10 min,
+  whatever their level. Built 0.235.0 with the eleven blessings.
 
 ## His answers, THIRD pass (2026-10-09) — the four left open, now closed. WINS over everything below.
 

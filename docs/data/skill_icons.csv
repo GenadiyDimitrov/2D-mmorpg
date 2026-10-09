@@ -452,6 +452,7 @@ buff:grade_penalty_armor,broken-shield,blood,
 buff:grade_penalty_weapon,broken-axe,blood,
 buff:mentor_aura,teacher,mind,BL-339 the mentor's online-mentees aura
 buff:mentor_guidance,wisdom,holy,BL-339 the mentee's +50% while the mentor is online
+buff:mentor_knowledge,open-book,mind,BL-339 the mentor's active-mentees drop/gold Knowledge
 magic_swing,sound-waves,sound,BL-335 the magic basic attack
 combo_mastery_demon,pummeled,steel,
 combo_mastery_elf,pummeled,steel,
@@ -459,3 +460,14 @@ reinforcement_demon,armor-upgrade,earth,
 reinforcement_elf,armor-upgrade,earth,
 sharpening_demon,sword-smithing,steel,
 sharpening_elf,sword-smithing,steel,
+mentor_war_frenzy,screaming,holy,BL-339 Mentor Blessing - the original's glyph in the mentor colour
+mentor_feral_precision,hunter-eyes,holy,BL-339 Mentor Blessing - the original's glyph in the mentor colour
+mentor_feral_bloodlust,fangs-circle,holy,BL-339 Mentor Blessing - the original's glyph in the mentor colour
+mentor_arcane_insight,all-seeing-eye,holy,BL-339 Mentor Blessing - the original's glyph in the mentor colour
+mentor_arcane_serenity,lotus-flower,holy,BL-339 Mentor Blessing - the original's glyph in the mentor colour
+mentor_body_reinforcement,muscle-up,holy,BL-339 Mentor Blessing - the original's glyph in the mentor colour
+mentor_wind_grace,feathered-wing,holy,BL-339 Mentor Blessing - the original's glyph in the mentor colour
+mentor_harmony_protection,templar-shield,holy,BL-339 Mentor Blessing - the original's glyph in the mentor colour
+mentor_harmony_speed,wingfoot,holy,BL-339 Mentor Blessing - the original's glyph in the mentor colour
+mentor_harmony_warrior,swordman,holy,BL-339 Mentor Blessing - the original's glyph in the mentor colour
+mentor_harmony_wizard,wizard-staff,holy,BL-339 Mentor Blessing - the original's glyph in the mentor colour

@@ -286,7 +286,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
 | `BL-336` | 🔵 | **No-refresh debuffs (IG rule)** — a debuff of the same type cannot be re-landed until the old one wears off (no perma-hold); a re-stun attempt may BREAK the stun instead of resetting it; boss-allowed stacking types excepted; design owed | combat |
 | `BL-337` | 🔵 | **Grand Rune off the apothecary shelf** — with the Warchanter all-magic (`BL-335`) no class fights with weapon AND spell, so the 1h/2h Grand Rune boxes leave the shop; the items stay for `/give`; build together with `BL-336` | items |
-| `BL-339` | 🔴 | **Mentoring system** — **the bond core is BUILT (0.234.0)**: `/mentor`, penalties, certificates at 20/40/76, both auras. Next: the 11 Mentor Blessing skills, then the shop (prices open) | systems |
+| `BL-339` | 🔴 | **Mentoring system** — **bond core (0.234.0) + the 11 Mentor Blessings and the Aura/Knowledge split (0.235.0) BUILT**. Left: the shop (prices open, yours) | systems |
 
 ---
 
@@ -2423,6 +2423,10 @@ a bad deal, and I'd make it **30d for ~30**.
 Certs paid at each level; the 1d exp/SP rune at 50 Bond; **no IP rule**. Instead: one mentee per account, AFK
 mentees don't count, and a **10-rung buff weighted by mentee level** (level²/1800: 10@20 = L2, 10@40 = L8, 5@60 =
 L10); Graduation Certs buy real, permanent items. **Buildable.** Exp rune = **50%** (`rune_expsp` L6, his 2026-10-09). Still open: the shop prices.
+
+**Built:** 0.234.0 the bond core; 0.235.0 the eleven Mentor Blessings and your fourth pass, the split into **Mentor
+Aura** (exp/SP, online mentees incl. AFK, level²/1800, Lv.1-10) and **Mentor Knowledge** (drop/gold, +2% per mentee
+active in 10 min, Lv.1-5). Blessings are 0 MP / 1s, my call. **Only the shop is left, and it waits on your prices.**
 
 **0.234.0 (2026-10-09): the bond core is BUILT** (checklist §148): `/mentor invite|accept|decline|remove|list`, every
 refusal message you wrote, the five-step removal penalty, last-online and the 7-day activity %, Bond Certificates at

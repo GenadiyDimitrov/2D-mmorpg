@@ -25,6 +25,22 @@
 
 ---
 
+## §149 — 0.235.0: the Mentor Blessings; Aura split from Knowledge (`BL-339`, 2026-10-09)
+
+⚠ **New APK + server restart.** Same two accounts as §148. ⚠ This replaces `148c`'s rule: an idle mentee DOES count
+for the aura now.
+
+- `149a` [ ] - Bond, then open the mentee's skill window: eleven **Mentor Blessing: …** skills. Put a few on the bar
+  and cast them: each lands for 1h on yourself only, named `Mentor Blessing: …`. ->
+- `149b` [ ] - A Warchanter casts his own Feral Precision / Harmony of the Warrior on the mentee: they replace the
+  blessing (same family), and a higher rung can't be overwritten by recasting the blessing. ->
+- `149c` [ ] - Mentor logs out; after 3-5 min a blessing tap says `Your mentor is offline …` and the autopilot stops
+  trying it. `/mentor remove` (or graduation) takes the eleven out of the skill list and off the bar. ->
+- `149d` [ ] - A mentee idling in town: the mentor's **Mentor Aura** counts them (a level-60 alone = Lv.2) and there is
+  no **Mentor Knowledge**. The mentee fights: within 2 min the mentor gets Knowledge Lv.1 (+2% drop/gold). ->
+
+---
+
 ## §148 — 0.234.0: mentoring, the bond core (`BL-339`, 2026-10-09)
 
 ⚠ **New APK + server restart + `game.db` delete.** Needs two accounts: a mentor (main class 76 + a 4th class) and a

@@ -225,6 +225,7 @@ internal static class Rows
         ["grade_penalty_weapon"] = "Over-Grade Weapon",
         ["mentor_aura"]          = "Mentor Aura",          // `BL-339`
         ["mentor_guidance"]      = "Mentor's Guidance",
+        ["mentor_knowledge"]     = "Mentor Knowledge",
     };
 
     /// <summary>The review page's section for a row that no class file lists.</summary>

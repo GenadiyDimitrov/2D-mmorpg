@@ -1061,12 +1061,13 @@ NOT in his party    silently skipped, no cost   REFUSED at cast start + one rung
 (`BossJudgment` = the ladder as data) · `GameLoopService.AddThreat` · `.TryBossJudgment` ·
 `.OnSupport` · `.TickBossJudgment` · `.WalkBossJudgmentClock`
 
-## Personal reward rates: runes + mentoring (`Entity.Runes`, `BL-339` 0.234.0)
+## Personal reward rates: runes + mentoring (`Entity.Runes`, `BL-339` 0.234.0, split 0.235.0)
 
 ```
 Runes.Exp / Sp      = 1 + bestRune(channel) + 0.10 * mentorAuraRung + (mentorOnline ? 0.50 : 0)
-Runes.Gold / Drop   = 1 + bestRune(channel) + 0.01 * mentorAuraRung
-mentorAuraRung      = clamp(floor(sum over online-or-<3min-gone, active-<10min mentees of level² / 1800), 0, 10)
+Runes.Gold / Drop   = 1 + bestRune(channel) + 0.02 * mentorKnowledgeRung
+mentorAuraRung      = clamp(floor(sum over online-or-<3min-gone mentees, AFK included, of level² / 1800), 0, 10)
+mentorKnowledgeRung = clamp(count of online-or-<3min-gone mentees ACTIVE in the last 10 min, 0, 5)
 (Sinister / Sinners still zero their channels outright)
 ```
 
