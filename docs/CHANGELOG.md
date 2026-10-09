@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.236.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.236.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,20 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-09 (latest) — 0.236.1: the autopilot sees a Mentor Blessing that is already up (`BL-339`)
+## 2026-10-09 (latest) — 0.236.2: a "reach level N" quest step checks your real level after the auto-farm beat
+
+Server restart only (no APK).
+
+- His find: *"I was lvl 13 and had to do the 'get to 15' quest when I was lvl 20 I went finish the 15 quest then he
+  gave me the auto farm quest and it ask for me to get to 18 as I already am at 20 ... Never checks my real lvl"*. "A
+  Trade to Learn" opens on the auto-farm `DoAction` beat and hands over to "Reach level 18". Kill, talk, collect,
+  accept and level-up all re-check a `ReachLevel` step that just became current; the `DoAction` path
+  (`AdvanceActionQuests`) did not, so a player past 18 sat there until his next level-up. It now re-checks, and
+  **login** re-checks too, so a character already parked on an outgrown step is repaired on the next login.
+- Tool: `BalanceMatrix --potmp` — a fully buffed nuker's MP spend at every proposed Potion Mastery rung against the
+  three mana potions (`BL-340`, filed, waiting on his ladder pick).
+
+## 2026-10-09 — 0.236.1: the autopilot sees a Mentor Blessing that is already up (`BL-339`)
 
 Server restart only (no APK).
 

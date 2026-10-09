@@ -369,6 +369,9 @@ public partial class GameLoopService : BackgroundService
         SendCooldowns(entity); // after the bar: the overlay has nothing to sit on before it exists
         SendSubclasses(entity);
         SendCrafting(entity);  // crafter state + learned recipes; the craft window is empty without it
+        // A character already parked on a "reach level N" step it has outgrown (saved before the
+        // DoAction path re-checked) is repaired on login rather than waiting for a level-up.
+        AdvanceLevelQuests(entity);
         SendQuestLog(entity);
         SendGold(entity);
         SendAutoHuntConfig(entity);   // restore the saved auto-hunt settings in the client UI
@@ -23167,7 +23170,11 @@ public partial class GameLoopService : BackgroundService
             }
             changed = true;
         }
-        if (changed) SendQuestLog(player);
+        // 🔴 The one advance path that forgot this (playtest, 2026-10-09): "A Trade to Learn" opens on
+        // the auto-farm beat and hands straight over to "Reach level 18" — a player who took it at 20
+        // switched auto on and sat on "reach 18" until his next level-up, the hole every other path
+        // (kill, talk, collect, accept) already plugs.
+        if (changed) { AdvanceLevelQuests(player); SendQuestLog(player); }
     }
 
     /// <summary>Credit any active quest sitting on a <see cref="QuestStepType.CollectItem"/> step whose

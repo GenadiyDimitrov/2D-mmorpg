@@ -287,6 +287,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-336` | 🔵 | **No-refresh debuffs (IG rule)** — a debuff of the same type cannot be re-landed until the old one wears off (no perma-hold); a re-stun attempt may BREAK the stun instead of resetting it; boss-allowed stacking types excepted; design owed | combat |
 | `BL-337` | 🔵 | **Grand Rune off the apothecary shelf** — with the Warchanter all-magic (`BL-335`) no class fights with weapon AND spell, so the 1h/2h Grand Rune boxes leave the shop; the items stay for `/give`; build together with `BL-336` | items |
 | `BL-339` | 🔴 | **Mentoring system** — **bond core (0.234.0) + the Aura/Knowledge split (0.235.0) + level-gated shelf-single Mentor Blessings and 5-rung Guidance (0.236.0) BUILT**. Left: the shop (prices open, yours) | systems |
+| `BL-340` | ❓ | **Potion Mastery** — a % passive on every warrior (HP potions) and every nuker (MP potions) from the 2nd class on, boosting the potion HoT only; measured (`--potmp`); waiting on your pick of ladder A or B | classes |
 
 ---
 
@@ -2435,3 +2436,30 @@ refusal message you wrote, the five-step removal penalty, last-online and the 7-
 11 self-only **Mentor Blessing** skills (option 1, in the originals' families); (2) the **shop**, which waits on your
 price list (only the 1d Grand Rune = 50 Bond, the 1d exp/SP rune L6 = 50 Bond and the 1-Graduation-cert consumable
 list are settled).
+
+## `BL-340` ❓ POTION MASTERY (2026-10-09)
+
+Your ask: *"make potions more effective for different classes ... warriors (hp pots) and nukers (mp pots)
+@20,40,52,61,76,85 ... % based so weaker pots stay weaker"*. Then: every warrior and every nuker from here on
+(warrior 2nd/3rd/4th + war_aoe 3rd/4th; nuker 2nd/3rd/4th + any future summoner), from the **2nd class**
+(`warrior 2nd.csv`, `nuker 2nd.csv`), and **Instant Healing is NOT affected** — only the potion HoT.
+
+**How it would be built:** one passive per resource (one skill id, rungs replace each other, like the armour
+masteries), its % in a new `DESCR` word; the engine multiplies only the `potion_heal` / `potion_mana` families
+in `TickHealOverTime` (Harmony of Restoration's HoT shares that loop and must not be boosted). The CSV rows
+ship in the same commit.
+
+**Measured** (`dotnet run --project tools/BalanceMatrix -- --potmp`): a fully buffed nuker (whole NPC shelf +
+Spell Rune), casting non-stop, needs a potion to cover about 13 MP/s at 40, 31-40 at 52, 44-55 at 61,
+56-69 at 76, 71-91 at 80, 87-116 at 85 and 95-128 at 90. Without the passive the Rare potion (75 sustained)
+stops covering him at 80; with it at +66.7% it covers to ~85-90. Uncommon never catches up past 61, so the
+potion order stays. **The % is not too high.**
+
+**Your pick, one of:**
+- **A** — 10 / 20 / 25 / 35 / 45 / 55 / 66.7 % at 20 / 40 / 52 / 61 / 76 / 80 / 85 (**my pick**: the rung at 80
+  is where the drain jumps).
+- **B** — 15 / 25 / 35 / 45 / 55 / 66.7 % at 20 / 40 / 52 / 61 / 76 / 85 (my reading of your "15,25,35..." —
+  more at 20-76, where the Uncommon potion already covers).
+
+Owed after your pick: the HP twin's measurement for the warriors (their need is mob damage, not their own
+spending), the two passives, their CSV rows and SP.

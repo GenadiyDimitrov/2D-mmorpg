@@ -25,6 +25,17 @@
 
 ---
 
+## §152 — 0.236.2: a "reach level N" quest step checks your real level (2026-10-09)
+
+⚠ **Server restart.** Your stuck character, still on "Reach level 18".
+
+- `152a` [ ] - Log in: "A Trade to Learn" has moved past "Reach level 18" on its own and now says to speak with
+  Elder Marius. ->
+- `152b` [ ] - A fresh character past 18 takes the quest and switches auto-farm on: it goes straight to "Speak with
+  Elder Marius", never showing "Reach level 18". ->
+
+---
+
 ## §151 — 0.236.1: the autopilot sees a Mentor Blessing that is already up (`BL-339`, 2026-10-09)
 
 ⚠ **Server restart.** A bonded mentee (mentor online), several Mentor Blessings on the auto bar.

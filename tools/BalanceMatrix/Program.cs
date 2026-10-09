@@ -2721,6 +2721,14 @@ if (args.Length > 0 && args[0] == "--mpnpc")
     return;
 }
 
+// `--potmp` - the potion-mastery question (2026-10-09): a FULLY buffed nuker's MP spend at every
+// proposed rung, against regen and the three mana potions with the two % ladders he is weighing.
+if (args.Length > 0 && args[0] == "--potmp")
+{
+    PotMp();
+    return;
+}
+
 // `--stacks` - what every item in the catalog stacks to, and what a farm trip costs in ROWS (0.93.0).
 if (args.Length > 0 && args[0] == "--stacks")
 {
@@ -9312,6 +9320,115 @@ static Entity BuildHisHealer(int level, bool jewels = true, bool weapon = true,
 //  ⚠ NOTHING HERE CHANGES THE ENGINE. Drain mirrors GameLoopService.AutoCycleTicks +
 //  EffectiveMpCost; regen mirrors Regenerate's MP branch, flats outside, exactly as 0.88.0 left it.
 // ============================================================================================
+
+// ============================================================================================
+//  `--potmp` — THE POTION-MASTERY QUESTION (owner, 2026-10-09). A % passive on the nukers (and
+//  the warriors' HP twin) that raises the potion HoT only. He asked: *"run a balance matrix we can
+//  check a full buffed nuker how much mp he spends .. On every rung ... So we can deside to
+//  decrease the %"*.
+//
+//  DRAIN is not one spell: the nuker never stops casting, so a 180s rotation is SIMULATED on the
+//  auto-hunt's cycle (cast x castSpeed, then the reduced reuse) — whenever he is free he fires the
+//  most expensive damage spell that is ready. That is the ceiling a farming nuker spends at.
+//  "Fully buffed" = the whole NPC shelf at his level (ApplyNpcBuffs, fullShelf) + the Spell Rune.
+//  A potion is up 15s of every 30s reuse, so its SUSTAINED rate is half the sticker.
+// ============================================================================================
+static void PotMp()
+{
+    var ladderA = new (int L, float Pct)[] { (20, .10f), (40, .20f), (52, .25f), (61, .35f), (76, .45f), (80, .55f), (85, .667f) };
+    var ladderB = new (int L, float Pct)[] { (20, .15f), (40, .25f), (52, .35f), (61, .45f), (76, .55f), (85, .667f) };
+    static float At((int L, float Pct)[] lad, int lvl) => lad.Where(r => r.L <= lvl).Select(r => r.Pct).DefaultIfEmpty(0f).Last();
+
+    static float Mp(Entity e)   // standing, as MpNpc models it (the farming nuker stands to cast)
+    {
+        float stance = MovementTuning.RegenMultiplier(MoveState.Running, false);
+        float pct = e.Buffs.Where(b => b.Has(SkillEffect.BuffMpRegen)).Sum(b => b.Percent(SkillEffect.BuffMpRegen));
+        float flat = e.Buffs.Where(b => b.Has(SkillEffect.BuffMpRegen)).Sum(b => b.Flat(SkillEffect.BuffMpRegen));
+        return StatCalculator.MpRegenPerSecond(e.EffectiveSpt, e.Level)
+                   * stance * e.MpRegenStandMult * e.MpRegenMult * (1f + pct)
+               + e.MpRegenBonus + flat;
+    }
+    static int Cost(Entity e, SkillDef d, int lvl) =>
+        (int)(d.MpCostAt(lvl) * (1f - (d.Category == SkillCategory.Physical
+            ? e.PhysMpCostReduction : e.MagicMpCostReduction)));
+
+    // 180s of never-idle casting. Returns MP/s spent and the spell that was cast most.
+    static (float Drain, string Top, int Spells) Rotation(Entity e)
+    {
+        var kit = new List<(SkillDef D, int Lvl, int Mp, int Cast, int Cd)>();
+        foreach (var (id, sl) in e.LearnedSkills)
+        {
+            if (SkillCatalog.Get(id) is not SkillDef d) continue;
+            if ((d.Effect & SkillEffect.MagicDamage) == 0 || d.MpPerSecondAt(sl) > 0) continue;
+            int mp = Cost(e, d, sl);
+            if (mp <= 0) continue;
+            int cast = Math.Max(2, (int)(d.CastTicksAt(sl) * e.EffectiveCastSpeedMultiplier));
+            int cd = d.CooldownTicksAt(sl);
+            if (cd > 0 && e.CooldownReduction > 0f) cd = Math.Max(1, (int)(cd * (1f - e.CooldownReduction)));
+            kit.Add((d, sl, mp, cast, cd));
+        }
+        if (kit.Count == 0) return (0f, "-", 0);
+        const int Ticks = 1800;
+        var ready = new int[kit.Count];
+        var casts = new int[kit.Count];
+        long spent = 0; int t = 0;
+        while (t < Ticks)
+        {
+            int best = -1;
+            for (int i = 0; i < kit.Count; i++)
+                if (ready[i] <= t && (best < 0 || kit[i].Mp > kit[best].Mp)) best = i;
+            if (best < 0) { t++; continue; }
+            spent += kit[best].Mp; casts[best]++;
+            t += kit[best].Cast;
+            ready[best] = t + kit[best].Cd;
+        }
+        int top = Array.IndexOf(casts, casts.Max());
+        return (spent / (Ticks / 10f), kit[top].D.Name, kit.Count);
+    }
+
+    var pots = new[] { ItemCatalog.MinorManaPotion, ItemCatalog.ManaPotion, ItemCatalog.GreaterManaPotion }
+        .Select(id =>
+        {
+            var item = ItemCatalog.Get(id)!;
+            var sk = SkillCatalog.Get(item.UseSkillId!)!;
+            float sticker = sk.Magnitudes!.First(m => m.Effect == SkillEffect.RestoreMp).Value;
+            float up = sk.DurationTicks / (float)Math.Max(sk.DurationTicks, item.PotionCooldownTicks);
+            return (Name: item.Rarity.ToString(), Sustained: sticker * up);
+        }).ToArray();
+
+    Console.WriteLine();
+    Console.WriteLine("=== POTION MASTERY — A FULLY BUFFED NUKER'S MP, EVERY RUNG (2026-10-09) ===");
+    Console.WriteLine();
+    Console.WriteLine("  Nuker 2nd at 20, Magus 3rd from 40, 4th from 76. Best-for-tier staff + robe + jewels, Spell Rune,");
+    Console.WriteLine("  the WHOLE NPC shelf at his level. drain = 180s of never-idle casting (most expensive ready nuke");
+    Console.WriteLine("  first). regen = standing, buffed. net = what a potion has to cover.");
+    Console.WriteLine("  Potions are SUSTAINED rates (15s up per 30s reuse): " + string.Join(", ", pots.Select(p => $"{p.Name} {p.Sustained:0}")) + " MP/s.");
+    Console.WriteLine("  A = 10/20/25/35/45/55/66.7% @20/40/52/61/76/80/85    B = 15/25/35/45/55/66.7% @20/40/52/61/76/85");
+    Console.WriteLine("  Each potion cell = base / A / B sustained MP/s;  '+' after a cell = it covers the net at that ladder (A,B).");
+    Console.WriteLine();
+    Console.WriteLine("     L  race     pool  spells  top nuke            drain   regen     net |  A%    B%  | Common          Uncommon         Rare");
+    Console.WriteLine("  ------------------------------------------------------------------------------------------------------------------------------------");
+    foreach (int L in new[] { 20, 40, 52, 61, 76, 80, 85, 90 })
+    {
+        foreach (var race in new[] { Race.Elf, Race.Human, Race.Demon })
+        {
+            var e = BuildWarchanter(race, L, disc: Discipline.Magus, fourth: L >= FourthClassCatalog.ChangeLevel);
+            ApplyNpcBuffs(e, fullShelf: true);
+            var (drain, top, n) = Rotation(e);
+            float regen = Mp(e), net = drain - regen;
+            float a = At(ladderA, L), b = At(ladderB, L);
+            string Cell(float s)
+            {
+                float sa = s * (1 + a), sb = s * (1 + b);
+                string mark = (sa >= net ? "A" : "") + (sb >= net ? "B" : "");
+                return $"{s,3:0}/{sa,3:0}/{sb,3:0}{(mark.Length > 0 ? "+" + mark : ""),-3}";
+            }
+            Console.WriteLine($"  {L,4}  {race,-6} {e.MaxMp,6}  {n,5}   {Trim(top, 17),-17} {drain,7:0.0} {regen,7:0.0} {net,7:+0.0;-0.0} | {a * 100,4:0}  {b * 100,4:0}  | "
+                            + string.Join("  ", pots.Select(p => Cell(p.Sustained))));
+        }
+    }
+    Console.WriteLine();
+}
 
 static void MpDrain(int[] argLevels)
 {
