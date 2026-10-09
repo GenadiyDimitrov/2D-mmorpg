@@ -1,8 +1,35 @@
-# Mentoring (`BL-339`) — design; BUILT except the shop (0.234.0 bond core, 0.235.0 blessings)
+# Mentoring (`BL-339`) — design; BUILT except the shop (0.234.0 bond core, 0.235.0 blessings, 0.236.0 level gates)
 
-Status 2026-10-09: his spec (verbatim, bottom), then four passes of his answers (newest at the top wins). **0.234.0 built the bond core** (`Game.Server/Simulation/Mentoring.cs`, numbers in `Game.Shared/Mentoring.cs`): commands, penalties, roster, certificates, both auras. **0.235.0 built the 11 Mentor Blessings** (`Game.Shared/Skills/Skills.Mentor.cs`, 0 MP / 1s cast / 1s reuse — my call) and the fourth pass below. **Not built yet:** the shop (prices open; exp rune = `rune_expsp` L6, 50%).
+Status 2026-10-09: his spec (verbatim, bottom), then five passes of his answers (newest at the top wins). **0.234.0 built the bond core** (`Game.Server/Simulation/Mentoring.cs`, numbers in `Game.Shared/Mentoring.cs`): commands, penalties, roster, certificates, both auras. **0.235.0 built the 11 Mentor Blessings** (`Game.Shared/Skills/Skills.Mentor.cs`, 0 MP / 1s cast / 1s reuse — my call) and the fourth pass below. **0.236.0 replaced them** with 27 level-gated shelf singles and put Mentor's Guidance in five level rungs (fifth pass). **Not built yet:** the shop (prices open; exp rune = `rune_expsp` L6, 50%).
 
 Build notes (my calls, 0.234.0): "online" = the character is in the world (link-dead and offline-farming count); "active" = combat or exp within 10 min; a milestone reached with NO mentor is passed, not owed to a later one; a character who predates mentoring has its passed milestones marked on first login; the list word is **mentee**; the row for an invitation in a mentee's list also says Invited/Pending so they know whom to accept.
+
+## His answers, FIFTH pass (2026-10-09, after 0.235.0) — the mentee side was too strong. WINS over everything below.
+
+Verbatim: *"i feel like the mentor buffs are kinda op for lvl 1 char ... also the mentor guidence the 50% exp/sp mentee
+buff - lets make the buffs lvl gated as the npc buffers - lets make the buffs singles not the gruped ones -> if having an
+online mentor u can rebuff yourself like you are buffing from the npc buffer -> meaning you get the same effects as the
+npc for your lvl get you. U still get all the buffs u need and u dont pay for them .. still a buffer in a party is better
+- at lvl 1 with a mentor u get the 8 starting buffs ... at lvl 40 u get the ward,vigor,serenity,agility,aim,frenzy,focus
+...etc ... at 44 + soul ... etc .. same as the npc buffer -> so u can farm without needing a buffer or bless boxes of
+going every hour back to town as long as your mentor is online .. - the buffs are level gated .. @40 get L1 frenzy and 52
+the frenzy becomes L2 .. etc .. - the buffs stay as "Mentor blessing:" just become their single versions (marks are 78
+gated so no mentor buff for them) - I just made a char and its incredibly OP being almost fully buffed - the Mentor
+guidence buff exp/sp is also to op 50% at the begining ... so also gate it to lvl with rungs ... let say i wanted 0.75%
+per lvl but that will make 60-70 rungs ... so we will make it 5 rungs -> @1~19 5%, @20~39 10%, @40~51 20%, @52~60 35%,
+@61~75 50%;"*
+
+**Built 0.236.0:**
+- The eleven group copies are GONE. In their place **27 Mentor Blessings, one per single on the spirit helper's shelf**
+  (the 19 blessings + the 8 single harmonies; the 3 Marks left out). Each is known only once `npc_buff_shelf.csv` would
+  sell it at the mentee's level, and a cast lands **the rung the shelf sells at that level** — the same resolver as the
+  NPC, so the two can never disagree and one replaces the other (same family). Free, 1h, self only, mentor online.
+  Shown as `Mentor Blessing: Frenzy Lv.1` → `Lv.2` at 52 (the rung's place on the shelf ladder).
+- **Mentor's Guidance in five rungs**, his numbers: 5% / 10% / 20% / 35% / 50% at 1 / 20 / 40 / 52 / 61. The bar row
+  shows its level and the next rung.
+- ⚠ **"at lvl 1 … the 8 starting buffs"**: the shelf opens them at **6**, and I followed the shelf ("same as the npc
+  buffer"), so a level 1-5 mentee has no blessing yet. If you want 1, change the eight rows' `MIN_LEVEL` in
+  `docs/data/npc_buff_shelf.csv` to 1 — that moves the NPC and the mentor together.
 
 ## His answers, FOURTH pass (2026-10-09) — the mentor's buff splits in two. WINS over everything below.
 

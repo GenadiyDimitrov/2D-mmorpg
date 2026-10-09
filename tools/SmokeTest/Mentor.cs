@@ -60,6 +60,10 @@ static class MentorTest
     static int Knowledge(Session s) => s.Buffs?.Buffs.FirstOrDefault(b => b.Key == "mentor_knowledge")?.Level ?? 0;
     static int Blessings(Session s) => s.Learned?.Skills.Count(k => SkillCatalog.IsMentorBlessing(k.Id)) ?? 0;
     static BuffDto? BuffOn(Session s, string key) => s.Buffs?.Buffs.FirstOrDefault(b => b.Key == key);
+    static BuffDto? Named(Session s, string name) => s.Buffs?.Buffs.FirstOrDefault(b => b.Name == name);
+    static int Guidance(Session s) => s.Buffs?.Buffs.FirstOrDefault(b => b.Key == "mentor_guidance")?.Level ?? 0;
+    static bool Knows(Session s, string id) => s.Learned?.Skills.Any(k => k.Id == id) == true;
+    static string Dump(Session s) => string.Join(" | ", s.Buffs?.Buffs.Select(b => $"{b.Name}/{b.Key}/L{b.Level}/{b.SecondsLeft:0}") ?? Array.Empty<string>());
 
     public static async Task<int> RunAsync()
     {
@@ -91,8 +95,8 @@ static class MentorTest
         Check("the bond is made", await m.WaitFor(() => Said(m, $"Admin is now the mentor of {mName}")));
         Check("the mentee has Mentor's Guidance at once (mentor online)", await m.WaitFor(() => Guided(m)));
         Check("a level-1 mentee gives the mentor no aura (1²/1800 rounds down)", Rung(a) == 0, $"rung {Rung(a)}");
-        Check("the mentee now knows the eleven Mentor Blessings",
-              await m.WaitFor(() => Blessings(m) == SkillCatalog.MentorBlessingIds.Length), $"{Blessings(m)}");
+        Check("Mentor's Guidance at level 1 is Lv.1 (+5%)", Guidance(m) == 1, $"level {Guidance(m)}");
+        Check("a level-1 mentee knows NO Mentor Blessing yet (the shelf opens at 6)", Blessings(m) == 0, $"{Blessings(m)}");
 
         // ---- milestones ----
         await a.Hub.SendAsync("AdminCommand", "lvl", $"{mName} 20");
@@ -100,6 +104,9 @@ static class MentorTest
               await m.WaitFor(() => Count(m, ItemCatalog.BondCertificate) == 150), $"{Count(m, ItemCatalog.BondCertificate)}");
         Check("…and the mentor 15", await a.WaitFor(() => Count(a, ItemCatalog.BondCertificate) == aBond0 + 15),
               $"{Count(a, ItemCatalog.BondCertificate) - aBond0}");
+        Check("at level 20 the mentee knows the free eight Mentor Blessings", await m.WaitFor(() => Blessings(m) == 8), $"{Blessings(m)}");
+        Check("…but not Ward (the shelf sells it from 40)", !Knows(m, "mentor_ward"));
+        Check("Mentor's Guidance at level 20 is Lv.2 (+10%)", await m.WaitFor(() => Guidance(m) == 2), $"level {Guidance(m)}");
 
         // `/lvl` banks no exp, so the mentee is ONLINE BUT AFK here — his fourth pass: that still feeds the aura.
         await a.Hub.SendAsync("AdminCommand", "lvl", $"{mName} 60");
@@ -119,19 +126,21 @@ static class MentorTest
               $"knowledge {Knowledge(a)}");
         Check("…and the aura is unchanged (61²/1800 = 2.07)", Rung(a) == 2, $"rung {Rung(a)}");
 
-        // ---- the blessings: self-only, an hour, in the original's family ----
-        await m.Hub.SendAsync("UseSkill", "mentor_feral_precision", m.MyId);
-        Check("Mentor Blessing: Feral Precision lands in Feral Precision's family, for an hour",
-              await m.WaitFor(() => BuffOn(m, SkillCatalog.WcFeralPrecision)?.SecondsLeft > 3000),
-              $"{BuffOn(m, SkillCatalog.WcFeralPrecision)?.SecondsLeft:0}s");
-        await m.Hub.SendAsync("UseSkill", "mentor_harmony_warrior", m.MyId);
-        Check("Mentor Blessing: Harmony of the Warrior lands as harmony_warrior, for an hour",
-              await m.WaitFor(() => BuffOn(m, "harmony_warrior")?.SecondsLeft > 3000),
-              $"{BuffOn(m, "harmony_warrior")?.SecondsLeft:0}s");
-        await m.Hub.SendAsync("UseSkill", "mentor_war_frenzy", m.MyId);
-        Check("Mentor Blessing: War Frenzy lands as its Frenzy rung (one-child wrapper), for an hour",
-              await m.WaitFor(() => BuffOn(m, "frenzy")?.SecondsLeft > 3000),
-              string.Join(" | ", m.Buffs?.Buffs.Select(b => $"{b.Key}/{b.SourceSkillId}/{b.SecondsLeft:0}") ?? Array.Empty<string>()));
+        // ---- the blessings: the shelf rung this level buys, self-only, an hour ----
+        Check("Mentor's Guidance at level 61 is Lv.5 (+50%)", await m.WaitFor(() => Guidance(m) == 5), $"level {Guidance(m)}");
+        int open61 = SkillCatalog.MentorBlessingIds.Count(id => NpcBuffShelf.TierFor(SkillCatalog.MentorBlessingShelf(id)!, 61) > 0);
+        Check($"at level 61 the mentee knows every blessing the shelf sells at 61 ({open61})",
+              await m.WaitFor(() => Blessings(m) == open61), $"{Blessings(m)}");
+        await m.Hub.SendAsync("UseSkill", "mentor_frenzy", m.MyId);
+        Check("Mentor Blessing: Frenzy lands at Lv.2 at level 61 (52+), for an hour",
+              await m.WaitFor(() => Named(m, "Mentor Blessing: Frenzy") is { Level: 2, SecondsLeft: > 3000 }),
+              Dump(m));
+        await m.Hub.SendAsync("UseSkill", "mentor_ward", m.MyId);
+        Check("Mentor Blessing: Ward lands at Lv.3 at level 61 (52+)",
+              await m.WaitFor(() => Named(m, "Mentor Blessing: Ward") is { Level: 3 }), Dump(m));
+        await m.Hub.SendAsync("UseSkill", "mentor_harmony_bulwark", m.MyId);
+        Check("Mentor Blessing: Harmony of Bulwark (a one-rung single) lands with no level",
+              await m.WaitFor(() => Named(m, "Mentor Blessing: Harmony of Bulwark") is { Level: 0 }), Dump(m));
 
         // ---- graduation ----
         await a.Hub.SendAsync("AdminCommand", "lvl", $"{mName} 76");

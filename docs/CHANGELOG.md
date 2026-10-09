@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.235.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.236.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,27 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-09 (latest) — 0.235.0: the eleven Mentor Blessings; the mentor's buff split into Aura + Knowledge (`BL-339`)
+## 2026-10-09 (latest) — 0.236.0: Mentor Blessings level-gated like the spirit helper; Guidance in 5 rungs (`BL-339`)
+
+**New APK + server restart** (new skill ids and icons in `Game.Shared`; no schema change, no `game.db` delete).
+
+His fifth pass: *"I just made a char and its incredibly OP being almost fully buffed"*.
+- **The eleven group copies are gone.** In their place **27 Mentor Blessings, one per single on the spirit helper's
+  shelf** — the 19 blessings + the 8 single harmonies; the 3 Marks left out (78-gated). `mentor_might` … `mentor_insight`,
+  `mentor_harmony_ward` … `mentor_harmony_body` (`Game.Shared/Skills/Skills.Mentor.cs`). Each def is a SHELL: known only
+  once `npc_buff_shelf.csv` sells that blessing at the mentee's level (`SyncMentorBlessings`), and a cast lands the rung
+  the shelf sells at that level (`LandMentorBlessing`, through the NPC's own `NpcBuffRung` — one resolver, so the two
+  never disagree and share a family). Free, 1h, self only, mentor online. Shown as `Mentor Blessing: Frenzy Lv.1` →
+  `Lv.2` at 52 (the rung's place on the shelf ladder; one-rung singles show no level).
+- ⚠ **The free eight open at 6**, as the shelf does — he wrote "at lvl 1"; I followed "same as the npc buffer". One
+  `MIN_LEVEL` edit in the shelf file moves both.
+- **Mentor's Guidance in five level rungs**, his numbers: +5% @1-19, +10% @20-39, +20% @40-51, +35% @52-60, +50% @61-75
+  (`Mentoring.GuidanceRungs`). The bar row shows the rung and names the next one. `docs/Formulas.md` moved with it.
+- Icons: each blessing wears its shelf blessing's glyph in the holy colour (27 new, 11 retired).
+- `tools/SmokeTest -- mentor`: 40 checks, all pass (level 1 = no blessings + Guidance Lv.1; 20 = the free eight, no Ward,
+  Lv.2; 61 = 25 blessings, Guidance Lv.5, Frenzy lands Lv.2, Ward Lv.3, Harmony of Bulwark with no level).
+
+## 2026-10-09 — 0.235.0: the eleven Mentor Blessings; the mentor's buff split into Aura + Knowledge (`BL-339`)
 
 **New APK + server restart** (new skill defs in `Game.Shared` and new icons; no schema change, no `game.db` delete).
 

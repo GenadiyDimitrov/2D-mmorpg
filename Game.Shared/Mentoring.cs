@@ -12,8 +12,8 @@ namespace Game.Shared;
 /// <item>A MENTEE is a character below 76 with no mentor. One mentor, never one of their own account.</item>
 /// <item>The bond pays at the mentee's level 20 / 40 / 76 (Bond Certificates to both, and the mentor's
 /// one-off Graduation Certificates at 76), and ends at 76.</item>
-/// <item>While bonded, an online mentor gives the mentee +50% exp/SP and lets them cast the eleven Mentor
-/// Blessings (Skills.Mentor.cs). ONLINE mentees (AFK too) give the mentor a 10-rung exp/SP aura weighted by their
+/// <item>While bonded, an online mentor gives the mentee +5..50% exp/SP by level and lets them cast the Mentor
+/// Blessings, the shelf singles their level buys (Skills.Mentor.cs). ONLINE mentees (AFK too) give the mentor a 10-rung exp/SP aura weighted by their
 /// level; ACTIVE ones give a 5-rung drop/gold Knowledge, one rung each.</item>
 /// </list>
 /// </summary>
@@ -39,8 +39,22 @@ public static class Mentoring
 
     // ----- The two auras -----
 
-    /// <summary>The mentee's: +50% exp AND SP while the mentor is online.</summary>
-    public const float MenteeExpSpBonus = 0.50f;
+    /// <summary>MENTOR'S GUIDANCE — the mentee's exp AND SP bonus while the mentor is online, in five level rungs. His
+    /// second pass (2026-10-09): *"the Mentor guidence buff exp/sp is also to op 50% at the begining ... so we will make
+    /// it 5 rungs -&gt; @1~19 5%, @20~39 10%, @40~51 20%, @52~60 35%, @61~75 50%"*. (MinLevel, bonus), lowest first.</summary>
+    public static readonly (int MinLevel, float Bonus)[] GuidanceRungs =
+        { (1, 0.05f), (20, 0.10f), (40, 0.20f), (52, 0.35f), (61, 0.50f) };
+
+    /// <summary>The 1-based Guidance rung at this level.</summary>
+    public static int GuidanceRung(int level)
+    {
+        int rung = 1;
+        for (int i = 0; i < GuidanceRungs.Length; i++)
+            if (level >= GuidanceRungs[i].MinLevel) rung = i + 1;
+        return rung;
+    }
+
+    public static float MenteeExpSpBonus(int level) => GuidanceRungs[GuidanceRung(level) - 1].Bonus;
 
     // 🔑 HIS FOURTH PASS (2026-10-09) SPLIT THE MENTOR'S BUFF IN TWO: *"Mentor aura is only from online mentees (afk
     //    also count) and increases Exp/SP; Mentor Knowledge ins for your 10min active mentees and increases gold/drop

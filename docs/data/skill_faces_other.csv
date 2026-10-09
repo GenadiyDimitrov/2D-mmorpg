@@ -411,14 +411,30 @@ whisp_great_heal,Whisp Great Heal,The whisp mends its master.,
 whisp_great_weapon_break,Whisp Weapon Break,The whisp blunts an enemy's weapon and their magic alike for @{duration}: -15%.,| typed numbers kept: 15%
 whisp_mana,Whisp Mana,The whisp pours a little of itself back into its master.,
 word_of_unmaking,Word of Unmaking,A boss's word of unmaking — every skill fails for all nearby foes.,
-mentor_war_frenzy,Mentor Blessing: War Frenzy,,BL-339 self-only mentee copy of madness — granted while bonded; cast needs the mentor online
-mentor_feral_precision,Mentor Blessing: Feral Precision,,BL-339 self-only mentee copy of wc_feral_precision — granted while bonded; cast needs the mentor online
-mentor_feral_bloodlust,Mentor Blessing: Feral Bloodlust,,BL-339 self-only mentee copy of wc_feral_bloodlust — granted while bonded; cast needs the mentor online
-mentor_arcane_insight,Mentor Blessing: Arcane Insight,,BL-339 self-only mentee copy of wc_arcane_insight — granted while bonded; cast needs the mentor online
-mentor_arcane_serenity,Mentor Blessing: Arcane Serenity,,BL-339 self-only mentee copy of wc_arcane_serenity — granted while bonded; cast needs the mentor online
-mentor_body_reinforcement,Mentor Blessing: Body Reinforcement,,BL-339 self-only mentee copy of wc_body_reinforcement — granted while bonded; cast needs the mentor online
-mentor_wind_grace,Mentor Blessing: Wind Grace,,BL-339 self-only mentee copy of wc_wind_grace — granted while bonded; cast needs the mentor online
-mentor_harmony_protection,Mentor Blessing: Harmony of Protection,,BL-339 self-only mentee copy of npc_harmony_protection L4 — granted while bonded; cast needs the mentor online
-mentor_harmony_speed,Mentor Blessing: Harmony of Speed,,BL-339 self-only mentee copy of harmony_of_speed L1 — granted while bonded; cast needs the mentor online
-mentor_harmony_warrior,Mentor Blessing: Harmony of the Warrior,,BL-339 self-only mentee copy of npc_harmony_warrior L5 — granted while bonded; cast needs the mentor online
-mentor_harmony_wizard,Mentor Blessing: Harmony of the Wizard,,BL-339 self-only mentee copy of npc_harmony_wizard L5 — granted while bonded; cast needs the mentor online
+mentor_might,Mentor Blessing: Might,,BL-339 self-cast of the shelf's npc_might at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_bulwark,Mentor Blessing: Bulwark,,BL-339 self-cast of the shelf's npc_bulwark at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_vampirism,Mentor Blessing: Vampirism,,BL-339 self-cast of the shelf's npc_vampirism at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_force,Mentor Blessing: Force,,BL-339 self-cast of the shelf's npc_force at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_ward,Mentor Blessing: Ward,,BL-339 self-cast of the shelf's npc_ward at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_resolve,Mentor Blessing: Resolve,,BL-339 self-cast of the shelf's npc_resolve at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_body,Mentor Blessing: Body,,BL-339 self-cast of the shelf's npc_body at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_vigor,Mentor Blessing: Vigor,,BL-339 self-cast of the shelf's npc_vigor at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_soul,Mentor Blessing: Soul,,BL-339 self-cast of the shelf's npc_soul at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_serenity,Mentor Blessing: Serenity,,BL-339 self-cast of the shelf's npc_serenity at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_alacrity,Mentor Blessing: Alacrity,,BL-339 self-cast of the shelf's npc_alacrity at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_haste,Mentor Blessing: Fury,,BL-339 self-cast of the shelf's npc_haste at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_swift,Mentor Blessing: Swift,,BL-339 self-cast of the shelf's npc_swift at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_agility,Mentor Blessing: Agility,,BL-339 self-cast of the shelf's npc_agility at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_accuracy,Mentor Blessing: Aim,,BL-339 self-cast of the shelf's npc_accuracy at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_frenzy,Mentor Blessing: Frenzy,,BL-339 self-cast of the shelf's npc_frenzy at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_focus,Mentor Blessing: Focus,,BL-339 self-cast of the shelf's npc_focus at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_ferocity,Mentor Blessing: Ferocity,,BL-339 self-cast of the shelf's npc_ferocity at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_insight,Mentor Blessing: Insight,,BL-339 self-cast of the shelf's npc_insight at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_harmony_ward,Mentor Blessing: Harmony of Ward,,BL-339 self-cast of the shelf's npc_harmony_ward at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_harmony_force,Mentor Blessing: Harmony of Force,,BL-339 self-cast of the shelf's npc_harmony_force at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_harmony_swift,Mentor Blessing: Harmony of Swift,,BL-339 self-cast of the shelf's npc_harmony_swift at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_harmony_alacrity,Mentor Blessing: Harmony of Alacrity,,BL-339 self-cast of the shelf's npc_harmony_alacrity at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_harmony_bulwark,Mentor Blessing: Harmony of Bulwark,,BL-339 self-cast of the shelf's npc_harmony_bulwark at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_harmony_might,Mentor Blessing: Harmony of the Might,,BL-339 self-cast of the shelf's npc_harmony_might at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_harmony_fury,Mentor Blessing: Harmony of the Fury,,BL-339 self-cast of the shelf's npc_harmony_fury at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online
+mentor_harmony_body,Mentor Blessing: Harmony of Body,,BL-339 self-cast of the shelf's npc_harmony_body at the rung the mentee's level buys; known once the shelf sells it; cast needs the mentor online

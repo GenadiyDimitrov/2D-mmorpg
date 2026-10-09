@@ -266,16 +266,48 @@ public partial class GameLoopService
 
     // ----- the Mentor Blessings (Skills.Mentor.cs) -----
 
-    /// <summary>The eleven blessings are KNOWN while the bond holds and gone the moment it ends — granted free, the
-    /// same shape as every other auto-grant in AutoLearnCoreSkills, which calls this on login, level-up and class
-    /// swap. Whether one can be CAST is a separate gate (the mentor online). Returns whether anything changed.</summary>
+    /// <summary>A blessing is KNOWN while the bond holds AND the spirit helper's shelf would sell it at this level (his
+    /// second pass: *"at lvl 1 with a mentor u get the 8 starting buffs ... at lvl 40 u get the ward,vigor ... at 44 +
+    /// soul ... same as the npc buffer"*), and gone the moment either stops — granted free, the same shape as every
+    /// other auto-grant in AutoLearnCoreSkills, which calls this on login, level-up and class swap. Whether one can be
+    /// CAST is a separate gate (the mentor online). Returns whether anything changed.</summary>
     private bool SyncMentorBlessings(Entity e)
     {
         bool bonded = e.PersistentId is int id && MenteeBond(id) is not null;
         bool changed = false;
         foreach (var s in SkillCatalog.MentorBlessingIds)
-            changed |= bonded ? e.LearnedSkills.TryAdd(s, 1) : e.LearnedSkills.Remove(s);
+        {
+            bool open = bonded && SkillCatalog.NpcBuffTierFor(SkillCatalog.MentorBlessingShelf(s)!, e.Level) > 0;
+            changed |= open ? e.LearnedSkills.TryAdd(s, 1) : e.LearnedSkills.Remove(s);
+        }
         return changed;
+    }
+
+    /// <summary>A Mentor Blessing LANDED (ExecuteSkill, past every gate): grant the shelf rung this level buys, exactly
+    /// as the NPC's "single" grant does — same resolver, same family, same hour — but free, and named as the mentor's.
+    /// The shown level is the rung's place on the shelf ladder (Frenzy Lv.1 at 40, Lv.2 at 52).</summary>
+    private void LandMentorBlessing(Entity caster, SkillDef def, string shelfId)
+    {
+        string name = SkillName(caster, def.Id);
+        if (SkillCatalog.NpcBuffRung(shelfId, caster.Level) is not (SkillDef rungDef, int rung))
+        {
+            SendSystemToEntity(caster, $"{name} is beyond you until level {SkillCatalog.NpcBuffMinLevel(shelfId)}.");
+            return;
+        }
+        if (!BuffWouldLand(caster, rungDef, rung))
+        {
+            SendSystemToEntity(caster, $"You already carry something stronger than {name}.");
+            return;
+        }
+        int tier = SkillCatalog.NpcBuffTierFor(shelfId, caster.Level);
+        int ladder = NpcBuffShelf.Shelf.TryGetValue(shelfId, out var rungs) ? rungs.Length : 1;
+        ApplyBuff(caster, rungDef, rung, refresh: false,
+                  durationOverride: SkillCatalog.MentorBlessingTicks, sourceSkillId: def.Id,
+                  displayName: name, shownLevel: ladder > 1 ? tier : 0);
+        BroadcastCombat(caster, caster, 0, CombatOutcome.Buff, name);
+        caster.RecomputeDerived();
+        PushBuffs(caster);
+        SendStats(caster);
     }
 
     /// <summary>A bond just formed or ended: if that mentee is online, their skill list (and bar) follow at once.</summary>
@@ -373,9 +405,18 @@ public partial class GameLoopService
                 -1f, false, "mentor_knowledge", 1, BuffRow.Buff, "", Level: r, IconSkillId: "mentor_knowledge");
         }
         if (p.MentorGuidance)
+        {
+            // His five level rungs (Mentoring.GuidanceRungs); the next one is named so levelling has a visible goal.
+            int g = Mentoring.GuidanceRung(p.Level);
+            string next = g < Mentoring.GuidanceRungs.Length
+                ? $" Level {g + 1} at character level {Mentoring.GuidanceRungs[g].MinLevel}: "
+                  + $"+{Mentoring.GuidanceRungs[g].Bonus * 100:0}%."
+                : "";
             yield return new BuffDto("Mentor's Guidance",
-                $"Your mentor is online and watching over you: +{Mentoring.MenteeExpSpBonus * 100:0}% experience and SP.",
-                -1f, false, "mentor_guidance", 1, BuffRow.Buff, "", IconSkillId: "mentor_guidance");
+                $"Your mentor is online and watching over you: +{Mentoring.MenteeExpSpBonus(p.Level) * 100:0}% experience "
+                + $"and SP.{next}",
+                -1f, false, "mentor_guidance", 1, BuffRow.Buff, "", Level: g, IconSkillId: "mentor_guidance");
+        }
     }
 
     // ----- /mentor -----

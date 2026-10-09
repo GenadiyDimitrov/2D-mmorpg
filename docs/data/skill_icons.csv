@@ -460,14 +460,30 @@ reinforcement_demon,armor-upgrade,earth,
 reinforcement_elf,armor-upgrade,earth,
 sharpening_demon,sword-smithing,steel,
 sharpening_elf,sword-smithing,steel,
-mentor_war_frenzy,screaming,holy,BL-339 Mentor Blessing - the original's glyph in the mentor colour
-mentor_feral_precision,hunter-eyes,holy,BL-339 Mentor Blessing - the original's glyph in the mentor colour
-mentor_feral_bloodlust,fangs-circle,holy,BL-339 Mentor Blessing - the original's glyph in the mentor colour
-mentor_arcane_insight,all-seeing-eye,holy,BL-339 Mentor Blessing - the original's glyph in the mentor colour
-mentor_arcane_serenity,lotus-flower,holy,BL-339 Mentor Blessing - the original's glyph in the mentor colour
-mentor_body_reinforcement,muscle-up,holy,BL-339 Mentor Blessing - the original's glyph in the mentor colour
-mentor_wind_grace,feathered-wing,holy,BL-339 Mentor Blessing - the original's glyph in the mentor colour
-mentor_harmony_protection,templar-shield,holy,BL-339 Mentor Blessing - the original's glyph in the mentor colour
-mentor_harmony_speed,wingfoot,holy,BL-339 Mentor Blessing - the original's glyph in the mentor colour
-mentor_harmony_warrior,swordman,holy,BL-339 Mentor Blessing - the original's glyph in the mentor colour
-mentor_harmony_wizard,wizard-staff,holy,BL-339 Mentor Blessing - the original's glyph in the mentor colour
+mentor_might,biceps,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_bulwark,checked-shield,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_vampirism,neck-bite,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_force,magic-swirl,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_ward,bolt-shield,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_resolve,inner-self,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_body,muscular-torso,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_vigor,heart-beats,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_soul,soul,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_serenity,lotus,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_alacrity,hourglass,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_haste,dervish-swords,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_swift,wingfoot,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_agility,acrobatic,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_accuracy,crosshair,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_frenzy,burning-passion,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_focus,on-target,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_ferocity,fangs,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_insight,third-eye,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_harmony_ward,bolt-shield,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_harmony_force,magic-swirl,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_harmony_swift,wingfoot,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_harmony_alacrity,hourglass,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_harmony_bulwark,checked-shield,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_harmony_might,biceps,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_harmony_fury,dervish-swords,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour
+mentor_harmony_body,muscular-torso,holy,BL-339 Mentor Blessing - the shelf blessing's glyph in the mentor colour

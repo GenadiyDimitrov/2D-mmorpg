@@ -286,7 +286,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
 | `BL-336` | 🔵 | **No-refresh debuffs (IG rule)** — a debuff of the same type cannot be re-landed until the old one wears off (no perma-hold); a re-stun attempt may BREAK the stun instead of resetting it; boss-allowed stacking types excepted; design owed | combat |
 | `BL-337` | 🔵 | **Grand Rune off the apothecary shelf** — with the Warchanter all-magic (`BL-335`) no class fights with weapon AND spell, so the 1h/2h Grand Rune boxes leave the shop; the items stay for `/give`; build together with `BL-336` | items |
-| `BL-339` | 🔴 | **Mentoring system** — **bond core (0.234.0) + the 11 Mentor Blessings and the Aura/Knowledge split (0.235.0) BUILT**. Left: the shop (prices open, yours) | systems |
+| `BL-339` | 🔴 | **Mentoring system** — **bond core (0.234.0) + the Aura/Knowledge split (0.235.0) + level-gated shelf-single Mentor Blessings and 5-rung Guidance (0.236.0) BUILT**. Left: the shop (prices open, yours) | systems |
 
 ---
 

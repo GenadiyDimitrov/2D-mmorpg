@@ -1695,7 +1695,7 @@ public partial class GameLoopService : BackgroundService
         // double-clicking the scroll invokes its skill directly (see UsePotion), which needs no
         // learned entry. They used to be auto-learned, which wrongly put them in your skill list.
         player.LearnedSkills.TryAdd(SkillCatalog.ReturnSkill, 1);
-        // `BL-339` — the eleven Mentor Blessings: known while a mentor bond holds, gone when it ends.
+        // `BL-339` — the Mentor Blessings: known while a mentor bond holds AND the shelf sells them at this level.
         SyncMentorBlessings(player);
         player.LearnedSkills.Remove(SkillCatalog.ScrollReturnSkill);
         player.LearnedSkills.Remove(SkillCatalog.ScrollReturnUltSkill);
@@ -13209,6 +13209,13 @@ public partial class GameLoopService : BackgroundService
                 return;
             }
             OfferResurrect(caster, target, def.ResExpPctAt(lvl), hpPct: def.ResHpPctAt(lvl));
+            return;
+        }
+
+        // ---- `BL-339` — a Mentor Blessing is a shell: the shelf rung for the caster's level lands instead.
+        if (SkillCatalog.MentorBlessingShelf(def.Id) is string mentorShelf)
+        {
+            LandMentorBlessing(caster, def, mentorShelf);
             return;
         }
 

@@ -4184,7 +4184,7 @@ public class Entity
         // the point of the Rune of Sinister ("no lvl up") and of the Rune of Sinners (nothing at all).
         // `BL-339` — the mentoring auras ADD to the best rune (his: rune +100% + mentor +100% = ×3).
         float mentorExpSp = MentorAuraRung * Mentoring.AuraExpSpPerRung
-                          + (MentorGuidance ? Mentoring.MenteeExpSpBonus : 0f);
+                          + (MentorGuidance ? Mentoring.MenteeExpSpBonus(Level) : 0f);
         float mentorDropGold = MentorKnowledgeRung * Mentoring.KnowledgeDropGoldPerRung;
         Runes = new RateSet(
             Exp:        stopExpSp    ? 0f : 1f + bestExp + mentorExpSp,

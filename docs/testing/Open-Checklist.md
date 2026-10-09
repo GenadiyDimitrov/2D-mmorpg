@@ -25,17 +25,28 @@
 
 ---
 
-## §149 — 0.235.0: the Mentor Blessings; Aura split from Knowledge (`BL-339`, 2026-10-09)
+## §150 — 0.236.0: Mentor Blessings level-gated like the spirit helper; Guidance in 5 rungs (`BL-339`, 2026-10-09)
 
-⚠ **New APK + server restart.** Same two accounts as §148. ⚠ This replaces `148c`'s rule: an idle mentee DOES count
-for the aura now.
+⚠ **New APK + server restart** (new skill ids and icons; no `game.db` delete). Same two accounts as §148. The eleven
+group copies of 0.235.0 are gone — `149a`-`149c` left with them.
 
-- `149a` [ ] - Bond, then open the mentee's skill window: eleven **Mentor Blessing: …** skills. Put a few on the bar
-  and cast them: each lands for 1h on yourself only, named `Mentor Blessing: …`. ->
-- `149b` [ ] - A Warchanter casts his own Feral Precision / Harmony of the Warrior on the mentee: they replace the
-  blessing (same family), and a higher rung can't be overwritten by recasting the blessing. ->
-- `149c` [ ] - Mentor logs out; after 3-5 min a blessing tap says `Your mentor is offline …` and the autopilot stops
-  trying it. `/mentor remove` (or graduation) takes the eleven out of the skill list and off the bar. ->
+- `150a` [ ] - A fresh mentee (level 1) bonds: **no** Mentor Blessing yet, and Mentor's Guidance reads **Lv.1, +5%**
+  with the next rung named. ⚠ The shelf opens the free eight at **6**, not 1 — I followed the shelf; say if you want
+  1 (then the NPC moves too). ->
+- `150b` [ ] - At 6 the eight free singles appear (`Mentor Blessing: Might`, `… Fury`, …); at 40 Ward, Vigor, Serenity,
+  Agility, Aim, Frenzy, Focus, Ferocity; at 44 Body and Soul; harmonies at 44-66; Insight at 62. No Marks. ->
+- `150c` [ ] - Cast a few: each lands on yourself for 1h at the rung the NPC would sell you — `Mentor Blessing: Frenzy
+  Lv.1` at 40, `Lv.2` at 52. Buying the same blessing from the NPC replaces it (same family), and the reverse. ->
+- `150d` [ ] - Guidance: Lv.2 +10% at 20, Lv.3 +20% at 40, Lv.4 +35% at 52, Lv.5 +50% at 61. ->
+- `150e` [ ] - Mentor logs out; after 3-5 min a blessing tap says `Your mentor is offline …` and the autopilot stops
+  trying it. `/mentor remove` (or graduation) takes every blessing out of the skill list and off the bar. ->
+
+---
+
+## §149 — 0.235.0: Aura split from Knowledge (`BL-339`, 2026-10-09)
+
+⚠ This replaces `148c`'s rule: an idle mentee DOES count for the aura now.
+
 - `149d` [ ] - A mentee idling in town: the mentor's **Mentor Aura** counts them (a level-60 alone = Lv.2) and there is
   no **Mentor Knowledge**. The mentee fights: within 2 min the mentor gets Knowledge Lv.1 (+2% drop/gold). ->
 
@@ -49,7 +60,7 @@ character under 76 on another account. The 11 Mentor Blessing skills and the sho
 - `148a` [ ] - From either side `/mentor invite <name>`, the other `/mentor accept <name>` (or `decline`). Both get a
   line; `/mentor list` shows `Invited` / `Pending` before, `Name Online (lvl) 0m` after. The mentee's list, before
   bonding, shows the mentor's `x/7d (y%)`. ->
-- `148b` [ ] - With the mentor online the mentee has **Mentor's Guidance** on the buff bar (no timer, +50% exp/SP).
+- `148b` [ ] - With the mentor online the mentee has **Mentor's Guidance** on the buff bar (no timer, +5-50% exp/SP by level — `150d`).
   The mentor logs out: it goes 3-5 min later. ->
 - `148c` [ ] - The mentee fights (or gains exp): within 2 min the mentor gets **Mentor Aura** with a level (a level-60
   mentee alone = Lv.2). An idle mentee adds nothing. ->
