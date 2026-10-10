@@ -25,6 +25,23 @@
 
 ---
 
+## §155 — 0.237.1: no Focus chat; `/stat hpreg|mpreg`, `/help <command>`, `/duration` (2026-10-10)
+
+⚠ **Server restart only** (no APK). An Admin character; a Human warrior with Focus for `155a`.
+
+- `155a` [ ] - Gather Focus and use Focused Double / Tripple Slash: no "spent N Focus — +x% power" line in chat any
+  more; the Focus square on the buff bar still shrinks. ->
+- `155b` [ ] - `/stat mpreg 500` and `/stat hpreg 500`: the stats window shows 500/s and the bars fill that fast.
+  `/stat mpreg 0` stops MP regen entirely; `/stat` alone puts both back. ->
+- `155c` [ ] - `/help stat` prints the command, its notes and the full key list (the same list a wrong key gives).
+  `/help duration`, `/help buff`, `/help give` show their examples; `/help nosuch` says there is no such command. ->
+- `155d` [ ] - `/buff 30d` gives the full set for 30 days (it says "30 days"); `/buff might 2h` still works. ->
+- `155e` [ ] - `/duration buffs 30d` re-times every skill buff on you, `/duration potions 30d` only potions, scrolls and
+  runes; `/duration all +1h` adds an hour; `/duration @t might 2h` works on your target. Debuffs are left alone, and a
+  relog keeps the new times. ->
+
+---
+
 ## §154 — 0.237.0: Common drops are boxes; Grand Runes off the Apothecary (`BL-342`, `BL-337`, 2026-10-10)
 
 ⚠ **Server restart + new APK.** Any character that can hunt level 40-51 mobs (a raised `/droprate common` helps).

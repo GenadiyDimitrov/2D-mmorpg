@@ -7528,6 +7528,33 @@ public partial class GameLoopService : BackgroundService
                 return;
     }
 
+    /// <summary>`/help &lt;command&gt;` (2026-10-10): every catalog row of that command the asker's rank may use, its
+    /// <see cref="ChatCommandDef.Detail"/> lines, and — for `/stat` — the key table the wrong-input answer prints,
+    /// through the same <see cref="SendStatKeys"/> so the two can never disagree.</summary>
+    private void SendCommandHelp(Entity asker, string name)
+    {
+        var rows = ChatCommandCatalog.For(name, asker.Role);
+        if (rows.Count == 0)
+        {
+            SendSystemToEntity(asker, $"No command '/{name}'. /help lists every one you can use.");
+            return;
+        }
+        foreach (var c in rows)
+        {
+            SendSystemToEntity(asker, $"{c.Usage}  —  {c.What}");
+            foreach (var d in c.Detail) SendSystemToEntity(asker, "   " + d);
+        }
+        if (rows.Any(c => c.Name == "stat")) SendStatKeys(asker);
+    }
+
+    /// <summary>The `/stat` key table — generated from <see cref="Entity.AdminStatKeys"/>, so it lists exactly what
+    /// the command accepts.</summary>
+    private void SendStatKeys(Entity to)
+    {
+        foreach (var (key, what) in Entity.AdminStatKeys)
+            SendSystemToEntity(to, $"   {key,-7} {what}");
+    }
+
     private void HandleAdmin(AdminCmd cmd)
     {
         // `/help` is for EVERYONE (0.221.0): each rank sees its own section and every one below it. Answered above the
@@ -7535,6 +7562,8 @@ public partial class GameLoopService : BackgroundService
         if (cmd.Command.Equals("help", StringComparison.OrdinalIgnoreCase)
             && TryGetPlayer(cmd.ConnectionId, out var asker))
         {
+            string about = cmd.Argument.Trim().TrimStart('/');
+            if (about.Length > 0) { SendCommandHelp(asker, about); return; }
             foreach (var line in ChatCommandCatalog.HelpLines(asker.Role))
                 SendSystemToEntity(asker, line);
             return;
@@ -8292,8 +8321,7 @@ public partial class GameLoopService : BackgroundService
                 {
                     // The list is generated from the table, so it can never drift from what is accepted.
                     SendSystemToEntity(admin, "Usage: /stat <name> <value>   (/stat alone clears all)");
-                    foreach (var (key, what) in Entity.AdminStatKeys)
-                        SendSystemToEntity(admin, $"   {key,-7} {what}");
+                    SendStatKeys(admin);
                     break;
                 }
 
@@ -8768,6 +8796,60 @@ public partial class GameLoopService : BackgroundService
             case "buff":
                 RunBuffCommand(admin, arg, selfOnly: false);
                 break;
+
+            // `/duration [name] <buffs|potions|all|skill> <time>` (owner, 2026-10-10: *"/duration buffs 30d ...
+            // /duration potions 30d .. To increase the duration of buff on me"*). Re-times what is ALREADY on
+            // someone; `/buff` is what puts it there. The split is the buff-bar ROW: Buff = skill buffs,
+            // Consumable = potions, scrolls and runes. Debuffs and toggles are never touched. `+2h` adds.
+            case "duration":
+            {
+                var dw = arg.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
+                string timeWord = dw.Count > 0 ? dw[^1] : "";
+                bool addTime = timeWord.StartsWith('+');
+                if (dw.Count < 2 || !TryParseDurationWord(addTime ? timeWord[1..] : timeWord, out int durTicks))
+                {
+                    foreach (var c in ChatCommandCatalog.For("duration", admin.Role))
+                    {
+                        SendSystemToEntity(admin, "Usage: " + c.Usage);
+                        foreach (var d in c.Detail) SendSystemToEntity(admin, "   " + d);
+                    }
+                    break;
+                }
+                dw.RemoveAt(dw.Count - 1);
+
+                Entity durTarget = admin;
+                if (dw.Count >= 2 && FindOnlinePlayer(dw[0]) is Entity durNamed)
+                {
+                    durTarget = durNamed;
+                    dw.RemoveAt(0);
+                }
+                string what = string.Join(' ', dw);
+                string whatKey = NameKey(what);
+                Func<BuffInstance, bool> pick = what.ToLowerInvariant() switch
+                {
+                    "buffs" or "buff" => b => b.Row == BuffRow.Buff,
+                    "potions" or "potion" => b => b.Row == BuffRow.Consumable,
+                    "all" => b => b.Row is BuffRow.Buff or BuffRow.Consumable,
+                    _ => b => NameKey(b.Name).Contains(whatKey)
+                              || NameKey(b.SourceSkillId).Contains(whatKey),
+                };
+                var retimed = durTarget.Buffs.Where(b => !b.IsDebuff && !b.Toggle && pick(b)).ToList();
+                string durWho = ReferenceEquals(durTarget, admin) ? "You" : durTarget.Name;
+                if (retimed.Count == 0)
+                {
+                    SendSystemToEntity(admin, $"{durWho}: nothing matching '{what}' to re-time.");
+                    break;
+                }
+                long maxTicks = MaxCommandDurationDays * 86400L * GameConstants.TickRate;
+                foreach (var b in retimed)
+                    b.TicksRemaining = (int)Math.Min(maxTicks, (addTime ? (long)b.TicksRemaining : 0L) + durTicks);
+                if (durTarget.Kind == EntityKind.Player) PushBuffs(durTarget);
+                SendSystemToEntity(admin,
+                    $"{durWho}: {retimed.Count} effect{(retimed.Count == 1 ? "" : "s")} "
+                    + (addTime ? $"extended by {FormatDuration(durTicks)}" : $"set to {FormatDuration(durTicks)}")
+                    + (retimed.Count <= 6 ? $" ({string.Join(", ", retimed.Select(b => b.Name).Distinct())})." : "."));
+                break;
+            }
 
             // `/who <name>` (0.222.0) — the player's Character window, opened on the admin's screen. Read-only and
             // ONLINE only: the sheet is derived numbers (buffs, gear, passives), which exist only on a live Entity.
@@ -9260,26 +9342,37 @@ public partial class GameLoopService : BackgroundService
     /// with a unit letter glued to it is a duration, so nothing that worked before changes meaning.</para>
     ///
     /// <para>⚠ A skill NAME is never eaten by this: names are words, and a word only qualifies when it
-    /// is digits followed by exactly one of s/m/h. The one theoretical collision would be a buff called
+    /// is digits followed by exactly one of s/m/h/d. The one theoretical collision would be a buff called
     /// something like "5m", and there is none.</para></summary>
     private static (string Remaining, int? Ticks) SplitDurationWord(string arg)
     {
         var words = (arg ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
         for (int i = 0; i < words.Length; i++)
-        {
-            string w = words[i];
-            if (w.Length < 2) continue;
-            char unit = char.ToLowerInvariant(w[^1]);
-            if (unit is not ('s' or 'm' or 'h')) continue;
-            if (!int.TryParse(w[..^1], out int n) || n <= 0) continue;
-            int seconds = unit switch { 'h' => n * 3600, 'm' => n * 60, _ => n };
-            // Clamped to a day: the field is an int of ticks and a typo like `9999h` would otherwise
-            // overflow into a negative duration, which reads as "already expired".
-            seconds = Math.Min(seconds, 24 * 3600);
-            return (string.Join(' ', words.Where((_, j) => j != i)), seconds * GameConstants.TickRate);
-        }
+            if (TryParseDurationWord(words[i], out int ticks))
+                return (string.Join(' ', words.Where((_, j) => j != i)), ticks);
         return (arg ?? "", null);
     }
+
+    /// <summary>One duration word — digits plus exactly one of s/m/h/d (`30s`, `15m`, `2h`, `30d`) — as TICKS.
+    /// Days arrived 2026-10-10 with `/duration` (*"/duration buffs 30d"*); the cap went from one day to
+    /// <see cref="MaxCommandDurationDays"/> with them.</summary>
+    private static bool TryParseDurationWord(string w, out int ticks)
+    {
+        ticks = 0;
+        if (w.Length < 2) return false;
+        char unit = char.ToLowerInvariant(w[^1]);
+        if (unit is not ('s' or 'm' or 'h' or 'd')) return false;
+        if (!long.TryParse(w[..^1], out long n) || n <= 0) return false;
+        long seconds = unit switch { 'd' => n * 86400, 'h' => n * 3600, 'm' => n * 60, _ => n };
+        // Clamped, and parsed as a long: the field is an int of ticks and a typo like `99999d` would
+        // otherwise overflow into a negative duration, which reads as "already expired".
+        seconds = Math.Min(seconds, MaxCommandDurationDays * 86400L);
+        ticks = (int)(seconds * GameConstants.TickRate);
+        return true;
+    }
+
+    /// <summary>The longest duration a staff command will set — a year, far inside an int of ticks.</summary>
+    private const int MaxCommandDurationDays = 365;
 
     /// <summary>A tick count as the shortest human phrase — "1 hour", "30 minutes", "45s". Only used
     /// to say back what `/buff` just did, so the exact wording matters less than that it reads like the
@@ -9287,6 +9380,8 @@ public partial class GameLoopService : BackgroundService
     private static string FormatDuration(int ticks)
     {
         int seconds = Math.Max(0, ticks) / GameConstants.TickRate;
+        if (seconds >= 86400 && seconds % 86400 == 0)
+            return seconds == 86400 ? "1 day" : $"{seconds / 86400} days";
         if (seconds >= 3600 && seconds % 3600 == 0)
             return seconds == 3600 ? "1 hour" : $"{seconds / 3600} hours";
         if (seconds >= 60 && seconds % 60 == 0)
@@ -14916,14 +15011,9 @@ public partial class GameLoopService : BackgroundService
 
         pool.Stacks -= spent;
         if (pool.Stacks <= 0) caster.Buffs.Remove(pool);
-        if (caster.Kind == EntityKind.Player)
-        {
-            PushBuffs(caster);
-            // The venom lesson (`BL-207`): a pool you spend should say what it bought, or the bonus is
-            // invisible and reads as not working.
-            SendSystemToEntity(caster,
-                $"{castName} spent {spent} Focus — +{spent * rule.PowerPerCharge * 100f:0}% power.");
-        }
+        // No chat line (owner, 2026-10-10: *"Remove the human warrior focuses chat spam"*) — the pool's
+        // square on the buff bar shrinking is the feedback. The venom burst's line is a different skill.
+        if (caster.Kind == EntityKind.Player) PushBuffs(caster);
         return 1f + spent * rule.PowerPerCharge;
     }
 
@@ -18190,10 +18280,13 @@ public partial class GameLoopService : BackgroundService
             else
                 regen = StatCalculator.MobHpRegenPerSecond(entity.MaxHp, engaged, entity.EnrageStage)
                         * multiplier;
+            // `/stat hpreg` (2026-10-10) replaces the FINISHED number, stance and buffs included.
+            float? forcedHp = entity.AdminStat("hpreg");
+            if (forcedHp is float fh) regen = fh;
 
             // `BL-278`: an engaged mob under the divisor heals NOTHING — skipped here, before the 1-HP
-            // floor below would hand it back one point a tick.
-            if (player || regen > 0f)
+            // floor below would hand it back one point a tick. A forced 0 is skipped the same way.
+            if ((player && forcedHp is null) || regen > 0f)
                 entity.Hp = Math.Min(entity.MaxHp, entity.Hp + Math.Max(1, (int)(regen * period)));
         }
 
@@ -18220,8 +18313,11 @@ public partial class GameLoopService : BackgroundService
                         + entity.MpRegenBonus + mpRegenFlat;
             else
                 regen = StatCalculator.MobMpRegenPerSecond(entity.MaxMp, engaged) * multiplier;
+            float? forcedMp = entity.AdminStat("mpreg");   // `/stat mpreg`, as hpreg above
+            if (forcedMp is float fm) regen = fm;
 
-            entity.Mp = Math.Min(entity.MaxMp, entity.Mp + Math.Max(1, (int)(regen * period)));
+            if (forcedMp is null || regen > 0f)
+                entity.Mp = Math.Min(entity.MaxMp, entity.Mp + Math.Max(1, (int)(regen * period)));
         }
 
         if (!player) MobRecoveryCheck(entity);
@@ -19432,7 +19528,7 @@ public partial class GameLoopService : BackgroundService
         float mp = StatCalculator.MpRegenPerSecond(p.EffectiveSpt, p.Level)
                        * stance * mpStance * p.MpRegenMult * (1f + mpPct)
                    + p.MpRegenBonus + mpFlat;
-        return (hp, mp);
+        return (p.AdminStat("hpreg") ?? hp, p.AdminStat("mpreg") ?? mp);
     }
 
     /// <summary>Stop a volley in progress (`SkillDef.ChannelSkill`). The arrows not yet loosed are

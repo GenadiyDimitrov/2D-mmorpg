@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.237.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.237.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,24 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-10 (latest) — 0.237.0: every Common drop is a Random Common box; Grand Runes off the Apothecary
+## 2026-10-10 (latest) — 0.237.1: no Focus chat spam; `/stat hpreg|mpreg`, `/help <command>`, `/duration`
+
+Server restart only — every change is server-side (an Admin's client already forwards any command).
+
+- **Focus spends are silent.** His ask: *"Remove the human warrior focuses chat spam"*. `SpendCharges` no longer
+  prints "X spent N Focus — +x% power."; the pool square shrinking on the buff bar is the feedback. The refusal at the
+  cap ("already at its limit") stays — it answers a press. SmokeTest's two Focus checks read the pool count instead.
+- **`/stat hpreg <v>` / `/stat mpreg <v>`** force the FINISHED per-second regen (stance and buffs included) in the tick
+  loop and in the stats window alike; `0` really stops regen (the 1-point-a-tick floor is skipped). `mcdmg` — honoured
+  by the code since it was written but missing from the key table, so refused — is in the table now.
+- **`/help <command>`** prints that command's rows for your rank, new per-row `Detail` lines (examples and fine print,
+  `ChatCommandDef.Detail`), and for `/stat` the key list through the same `SendStatKeys` the wrong-key answer uses.
+- **`/duration [name] <buffs|potions|all|skill> <time>`** (Admin) re-times what is already on someone: `buffs` = the
+  Buff row, `potions` = the Consumable row (potions, scrolls, runes), `all` = both, or one buff by name. `+2h` adds
+  instead of setting. Debuffs and toggles are never touched; a relog keeps the time (buffs persist seconds left).
+- **Durations take days**: `30d` works in `/buff` and `/duration`; the cap went from 1 day to 365 days.
+
+## 2026-10-10 — 0.237.0: every Common drop is a Random Common box; Grand Runes off the Apothecary
 
 Server restart + **new APK** (20 new items the client must know).
 

@@ -3659,13 +3659,10 @@ await gm.DisposeAsync();
             bool slashed = await fs.WaitFor(
                 () => fs.Combat.Count(c => c.Skill == "Focused Double Slash" && c.AttackerId == fs.MyId) >= 2, 8000);
             await Task.Delay(500);
-            var spends = fs.SystemChat.Where(s => s.Contains("spent") && s.Contains("Focus")).ToList();
+            // The spend has no chat line any more (2026-10-10, his "focus chat spam"); the pool is the proof.
             Check("Focused Double Slash lands BOTH slashes", slashed,
                   $"{fs.Combat.Count(c => c.Skill == "Focused Double Slash")} slash event(s)");
-            Check("...and spends the pool ONCE for the cast — 3 Focus, +45% power, a single spend line",
-                  spends.Count == 1 && spends[0].Contains("spent 3 Focus") && spends[0].Contains("+45%"),
-                  string.Join(" | ", spends));
-            Check("...leaving the pool empty and GONE from the bar, not sitting at x0",
+            Check("...spending the whole pool of 3 in the cast, leaving it empty and GONE from the bar, not at x0",
                   !HasFocus(fs), $"pool reads {FocusOf(fs)}");
 
             // ---- FOCUS MASTERY: basic swings gather it. 15% a hit, so ~20 swings is 96% sure;
@@ -3762,11 +3759,10 @@ await gm.DisposeAsync();
                 // ---- ...and the Triple Slash spends its four. ----
                 f4.SystemChat.Clear();
                 await f4.Hub.SendAsync("UseSkill", SkillCatalog.FocusedTrippleSlash, d4.Key);
-                await f4.WaitFor(() => f4.SystemChat.Any(x => x.Contains("spent") && x.Contains("Focus")), 8000);
-                var spend4 = f4.SystemChat.FirstOrDefault(x => x.Contains("spent") && x.Contains("Focus"));
+                await f4.WaitFor(() => Focus4() < 10, 8000);
+                await Task.Delay(500);   // long enough for a WRONG second spend to land
                 Check("Focused Tripple Slash spends exactly 4 of the ten, leaving 6",
-                      spend4 is not null && spend4.Contains("spent 4 Focus") && Focus4() == 6,
-                      $"{spend4} / pool reads {Focus4()}");
+                      Focus4() == 6, $"pool reads {Focus4()}");
             }
             else
             {

@@ -9,7 +9,9 @@ namespace Game.Shared;
 /// <param name="Usage">The whole line a player types, arguments included (<c>/kick &lt;name&gt; [min]</c>).</param>
 /// <param name="What">What it does, one short clause.</param>
 /// <param name="MinRole">The lowest rank that may use it. Every higher rank has it too.</param>
-public record ChatCommandDef(string Name, string Usage, string What, AccountRole MinRole);
+/// <param name="Detail">Extra lines only `/help &lt;command&gt;` prints — the examples and fine print the full list
+/// has no room for.</param>
+public record ChatCommandDef(string Name, string Usage, string What, AccountRole MinRole, params string[] Detail);
 
 /// <summary>
 /// EVERY typed command, by the lowest rank that may use it — the one list `/help` prints and the staff allow-lists
@@ -29,7 +31,7 @@ public static class ChatCommandCatalog
     public static readonly ChatCommandDef[] All =
     {
         // ---- everyone ----
-        new("help", "/help", "this list", AccountRole.Player),
+        new("help", "/help [command]", "this list, or everything about one command (/help stat)", AccountRole.Player),
         new("!", "!<text>", "say it in World chat", AccountRole.Player),
         new("where", "/where", "your own coordinates, to tell friends where you are", AccountRole.Player),
         new("return", "/return", "cast Return: back to town", AccountRole.Player),
@@ -70,17 +72,36 @@ public static class ChatCommandCatalog
         new("god", "/god", "on/off: take no damage (survives a relog)", AccountRole.Admin),
         new("invis", "/invis", "on/off: unseen (survives a relog)", AccountRole.Admin),
         new("heal", "/heal [name]", "HP and MP to full, in combat too", AccountRole.Admin),
-        new("buff", "/buff [name] [skill] [duration] [level]", "any buff on anyone", AccountRole.Admin),
+        new("buff", "/buff [name] [skill] [duration] [level]", "any buff on anyone", AccountRole.Admin,
+            "No skill = the full buff set, each at its top rung.",
+            "duration: 30s, 15m, 2h, 30d (up to 365d); none = 1 hour.",
+            "level: a bare number at the end; none = the top rung.",
+            "e.g. /buff 30d  ·  /buff @t might 2h  ·  /buff harmony_mark 1h 2"),
+        new("duration", "/duration [name] <buffs|potions|all|skill> <time>", "set how long the buffs already on someone last", AccountRole.Admin,
+            "buffs = skill buffs; potions = potions, scrolls and runes; all = both; or one buff by name.",
+            "time: 30s, 15m, 2h, 30d (up to 365d) sets it; +2h adds to what is left.",
+            "Debuffs and toggles are never touched. A relog keeps the new time.",
+            "e.g. /duration buffs 30d  ·  /duration potions 30d  ·  /duration @t all +1h"),
         new("clearbuffs", "/clearbuffs [name]", "every buff off (debuffs stay)", AccountRole.Admin),
-        new("stat", "/stat <key> <value>", "force one of your stats; /stat alone clears all, a wrong key lists them", AccountRole.Admin),
-        new("spd", "/spd <m|a|c> <value>", "force move / attack / cast speed; /spd alone resets", AccountRole.Admin),
-        new("lvl", "/lvl [name] <level|max>", "set a level", AccountRole.Admin),
-        new("exp", "/exp [name] <amount|max>", "give EXP", AccountRole.Admin),
-        new("sp", "/sp [name] <amount|max>", "give SP", AccountRole.Admin),
+        new("stat", "/stat <key> <value>", "force one of your stats; /stat alone clears all, a wrong key lists them", AccountRole.Admin,
+            "Uncapped, and applied after gear, passives and buffs — the number you type is the number used.",
+            "hpreg/mpreg force the finished per-second regen; 0 stops regen.",
+            "e.g. /stat mpreg 500  ·  /stat crate 500  ·  /stat"),
+        new("spd", "/spd <m|a|c> <value>", "force move / attack / cast speed; /spd alone resets", AccountRole.Admin,
+            "m = move, a = attack, c = cast (333 = 1.0x). Uncapped. e.g. /spd m 250"),
+        new("lvl", "/lvl [name] <level|max>", "set a level", AccountRole.Admin, "No name = you."),
+        new("exp", "/exp [name] <amount|max>", "give EXP", AccountRole.Admin,
+            "No name = you. k/m/b/t suffixes and 1_000_000 both work. e.g. /exp @t 100k"),
+        new("sp", "/sp [name] <amount|max>", "give SP", AccountRole.Admin,
+            "No name = you. k/m/b/t suffixes and 1_000_000 both work. e.g. /sp max"),
         new("bag", "/bag <name>", "open a player's bag (remove items from it)", AccountRole.Admin),
-        new("give", "/give <name> [itemId] [sellPrice] [tradable] [timed]", "give an item; just a name opens the picker", AccountRole.Admin),
-        new("givegold", "/givegold <name> <amount>", "give gold (k/m/b work)", AccountRole.Admin),
-        new("giveplat", "/giveplat <name> <amount>", "give platinum (k/m/b work)", AccountRole.Admin),
+        new("give", "/give <name> [itemId] [sellPrice] [tradable] [timed]", "give an item; just a name opens the picker", AccountRole.Admin,
+            "Full form: /give <player> <itemId> [sellPrice] [tradable] [timed] [\"name\"] [enchant] [canStorePrivate] [canStoreAccount] [amount]",
+            "'-' leaves a slot alone. e.g. /give Gena mat_iron - - - - - - - 1000"),
+        new("givegold", "/givegold <name> <amount>", "give gold (k/m/b work)", AccountRole.Admin,
+            "k/m/b/t suffixes and 1_000_000 both work; a negative amount takes gold away."),
+        new("giveplat", "/giveplat <name> <amount>", "give platinum (k/m/b work)", AccountRole.Admin,
+            "k/m/b/t suffixes and 1_000_000 both work; a negative amount takes it away. It is ACCOUNT-wide."),
         new("enchant", "/enchant <value>", "pick an item in your bag and set its enchant", AccountRole.Admin),
         new("like", "/like <name> -f <value>", "force a player's current charisma", AccountRole.Admin),
         new("titleright", "/titleright <name> <on|off>", "grant or take the right to /title", AccountRole.Admin),
@@ -91,7 +112,8 @@ public static class ChatCommandCatalog
         new("resetlimits", "/resetlimits [name]", "today's dailies, farm allowance, likes, Favor potion", AccountRole.Admin),
         new("farmcap", "/farmcap <name> <autoHours> <offlineHours>", "an account's farm allowance (-1 default, 0 unlimited)", AccountRole.Admin),
         new("testcaps", "/testcaps [off]", "short farm caps for testing", AccountRole.Admin),
-        new("server", "/server <shutdown|reboot|on> [min] [adminOnly]", "shut down or reboot on a countdown; on cancels", AccountRole.Admin),
+        new("server", "/server <shutdown|reboot|on> [min] [adminOnly]", "shut down or reboot on a countdown; on cancels", AccountRole.Admin,
+            "minutes: '-', '0' or blank = now; unparseable = 30."),
 
         // ---- Owner ----
         new("role", "/role <name> admin", "make an Admin (only the Owner may)", AccountRole.Owner),
@@ -110,6 +132,13 @@ public static class ChatCommandCatalog
             if (c.MinRole != AccountRole.Player && c.MinRole <= role) names.Add(c.Name);
         return names;
     }
+
+    /// <summary>Every row named <paramref name="name"/> (no slash, any case) that <paramref name="role"/> may use — what
+    /// `/help &lt;command&gt;` prints. Several rows can share a name (`/where`, `/mentor`, `/chatlog`), one per rank or form.</summary>
+    public static IReadOnlyList<ChatCommandDef> For(string name, AccountRole role) =>
+        All.Where(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase) && c.MinRole <= role
+                       && !(c.Name == "buff" && c.MinRole == AccountRole.Player && !RateConfig.FreeBuffs))
+           .ToList();
 
     private static readonly (AccountRole Role, string Header)[] Sections =
     {
