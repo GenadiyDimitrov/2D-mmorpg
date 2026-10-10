@@ -19879,7 +19879,7 @@ public partial class GameLoopService : BackgroundService
         // A box whose every entry is GUARANTEED is refused until all of it fits (`BL-277` part 3). The
         // random-box path below spills what does not fit ("some loot was lost"), which is tolerable for a
         // roll and not for a fixed payout — the Wayfarer's Subclass Box is given once per slot, ever.
-        if (box.Entries.All(e => e.Chance >= 1f))
+        if (!box.OneOf && box.Entries.All(e => e.Chance >= 1f))
         {
             int freeRows = GameConstants.InventorySize - player.Inventory.Count(i => !i.Equipped)
                          + (item.Quantity == 1 ? 1 : 0);   // opening the last box frees its own row
@@ -19902,11 +19902,14 @@ public partial class GameLoopService : BackgroundService
 
         var got = new List<string>();
         bool full = false;
-        foreach (var entry in box.Entries)
+        // A ONE-OF box (the random Common boxes) hands out exactly one entry, Chance read as its weight.
+        var rolled = box.OneOf ? PickOneOf(box.Entries.Where(e => e.ForClass is not BaseClass only || player.BaseClass == only))
+                               : box.Entries;
+        foreach (var entry in rolled)
         {
             // A class-conditional entry (the training boxes) is invisible to the other base class.
             if (entry.ForClass is BaseClass only && player.BaseClass != only) continue;
-            if (_rng.NextDouble() >= entry.Chance) continue;
+            if (!box.OneOf && _rng.NextDouble() >= entry.Chance) continue;
             int qty = entry.MaxQty > entry.MinQty
                 ? _rng.Next(entry.MinQty, entry.MaxQty + 1)
                 : entry.MinQty;
@@ -19942,6 +19945,16 @@ public partial class GameLoopService : BackgroundService
             ? $"{def.Name}: {string.Join(", ", got)}."
             : $"{def.Name}: nothing this time.");
         AdvanceActionQuests(player, QuestActions.OpenBox);   // the tutorial's box beat (`58a`)
+    }
+
+    /// <summary>One entry, weighted by its Chance; none if the list is empty.</summary>
+    private BoxEntry[] PickOneOf(IEnumerable<BoxEntry> entries)
+    {
+        var list = entries.Where(e => e.Chance > 0).ToArray();
+        double roll = _rng.NextDouble() * list.Sum(e => (double)e.Chance);
+        foreach (var e in list)
+            if ((roll -= e.Chance) < 0) return new[] { e };
+        return list.Length > 0 ? new[] { list[^1] } : Array.Empty<BoxEntry>();
     }
 
     /// <summary>How many picks a selection box still owes: its own part-spent counter if it has one,

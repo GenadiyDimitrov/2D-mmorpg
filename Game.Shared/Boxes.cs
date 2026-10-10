@@ -15,8 +15,10 @@ public record BoxEntry(string ItemId, float Chance, int MinQty = 1, int MaxQty =
 
 /// <summary>A box/chest loot table, keyed by the box's item id. PickCount = 0 means a
 /// RANDOM box (each entry rolls its Chance). PickCount &gt; 0 makes it a SELECTION box:
-/// the entries are OPTIONS and the player chooses exactly that many (Chance ignored).</summary>
-public record BoxDef(string Id, BoxEntry[] Entries, int PickCount = 0);
+/// the entries are OPTIONS and the player chooses exactly that many (Chance ignored).
+/// OneOf makes it a ONE-OF box: exactly one entry comes out, picked with Chance as its WEIGHT (the random
+/// Common boxes, 2026-10-10).</summary>
+public record BoxDef(string Id, BoxEntry[] Entries, int PickCount = 0, bool OneOf = false);
 
 /// <summary>The openable boxes/chests and what they can drop. Keyed by item id, so the
 /// open handler just looks up Get(boxItemId). Chances span 1/1 (100%) to 1/1000000.</summary>
@@ -182,7 +184,7 @@ public static class BoxCatalog
         };
 
         var dict = new Dictionary<string, BoxDef>();
-        foreach (var b in list.Concat(TieredAccessoryBoxes()).Concat(RuneBoxes()).Concat(TempGearBoxes()))
+        foreach (var b in list.Concat(TieredAccessoryBoxes()).Concat(RuneBoxes()).Concat(TempGearBoxes()).Concat(CommonBoxes()))
             if (!dict.TryAdd(b.Id, b))
                 throw new InvalidOperationException($"Duplicate box id '{b.Id}'.");
         return dict;
@@ -233,6 +235,15 @@ public static class BoxCatalog
                         .Select(s => new BoxEntry(ItemCatalog.TempId($"{s}_t{L}"), 1f)).ToArray());
         }
     }
+    /// <summary>The random Common boxes (2026-10-10): ONE piece of the kind, every line equal weight.</summary>
+    private static IEnumerable<BoxDef> CommonBoxes()
+    {
+        foreach (int L in ItemCatalog.CommonBoxTiers)
+            foreach (var (kind, _, _) in ItemCatalog.CommonBoxKinds)
+                yield return new BoxDef(ItemCatalog.CommonBoxId(kind, L),
+                    ItemCatalog.CommonBoxContents(kind, L).Select(id => new BoxEntry(id, 1f)).ToArray(), OneOf: true);
+    }
+
     /// <summary>One accessory box per gear tier → the 3 accessories of that tier (100% each).</summary>
     private static IEnumerable<BoxDef> TieredAccessoryBoxes()
     {

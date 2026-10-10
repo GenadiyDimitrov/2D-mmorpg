@@ -309,39 +309,58 @@ Check("the Blessing fill is paused out of combat (BL-317)", await a.WaitFor(() =
 
     // The drop groups, read off the same tables the kill roll uses.
     float GroupSum(IEnumerable<DropEntry> rows, int g) => rows.Where(r => r.GroupId == g).Sum(r => r.Chance);
-    // `BL-287` (0.201.0): each SLOT rolls its own Common chance (ring > ear/boots/gloves > helm/shield/neck >
-    // body > weapon), T40 2%..1% (sum 14%), T52 1%..0.2% (5.8%), T61 0.3%..0.05% (1.7%); an elite x2.
-    float SlotSum(int L, MobRank r, Func<string, bool> key) => MobCatalog.GearDrops(L, r)
-        .Where(e => e.GroupId == MobCatalog.GroupCommonGear && key(e.ItemId)).Sum(e => e.Chance);
-    Check("a normal T40 / T52 / T61 kill rolls Commons at 14% / 5.8% / 1.7% in total, an elite x2",
-          Math.Abs(GroupSum(MobCatalog.GearDrops(45, MobRank.Normal), MobCatalog.GroupCommonGear) - 0.14f) < 1e-5
-          && Math.Abs(GroupSum(MobCatalog.GearDrops(56, MobRank.Normal), MobCatalog.GroupCommonGear) - 0.058f) < 1e-5
-          && Math.Abs(GroupSum(MobCatalog.GearDrops(68, MobRank.Normal), MobCatalog.GroupCommonGear) - 0.017f) < 1e-5
-          && Math.Abs(GroupSum(MobCatalog.GearDrops(45, MobRank.Elite), MobCatalog.GroupCommonGear) - 0.28f) < 1e-5);
-    Check("per slot at T40: ring 2%, boots 1.75%, helm 1.5%, body 1.25% (3 weights), weapon 1% (8 lines)",
-          Math.Abs(SlotSum(45, MobRank.Normal, id => id.StartsWith("ring_")) - 0.02f) < 1e-6
-          && Math.Abs(SlotSum(45, MobRank.Normal, id => id.StartsWith("boots_")) - 0.0175f) < 1e-6
-          && Math.Abs(SlotSum(45, MobRank.Normal, id => id.StartsWith("helm_")) - 0.015f) < 1e-6
-          && Math.Abs(SlotSum(45, MobRank.Normal, id => id.StartsWith("heavy_") || id.StartsWith("light_") || id.StartsWith("robe_")) - 0.0125f) < 1e-6
-          && Math.Abs(SlotSum(45, MobRank.Normal, id => ItemCatalog.Get(id)?.Slot == EquipSlot.Weapon) - 0.01f) < 1e-6);
-    Check("every Common drop id is a real item",
-          new[] { 45, 56, 68 }.All(L => MobCatalog.GearDrops(L, MobRank.Normal).All(e => ItemCatalog.Get(e.ItemId) is not null)));
+    // 2026-10-10: the Commons drop as FOUR random boxes (weapon / armor / armor part / jewel), each at the LOWEST
+    // `BL-287` slot chance among its pieces: T40 1% + 1.25% + 1.5% + 1.5% = 5.25%, T52 1.8%, T61 0.5125%; an elite x2.
+    float BoxChance(int L, MobRank r, string kind) => MobCatalog.GearDrops(L, r)
+        .Where(e => e.GroupId == MobCatalog.GroupCommonGear && e.ItemId.StartsWith($"box_common_{kind}_t")).Sum(e => e.Chance);
+    Check("a normal T40 / T52 / T61 kill rolls Common boxes at 5.25% / 1.8% / 0.5125% in total, an elite x2",
+          Math.Abs(GroupSum(MobCatalog.GearDrops(45, MobRank.Normal), MobCatalog.GroupCommonGear) - 0.0525f) < 1e-5
+          && Math.Abs(GroupSum(MobCatalog.GearDrops(56, MobRank.Normal), MobCatalog.GroupCommonGear) - 0.018f) < 1e-5
+          && Math.Abs(GroupSum(MobCatalog.GearDrops(68, MobRank.Normal), MobCatalog.GroupCommonGear) - 0.005125f) < 1e-5
+          && Math.Abs(GroupSum(MobCatalog.GearDrops(45, MobRank.Elite), MobCatalog.GroupCommonGear) - 0.105f) < 1e-5);
+    Check("per box at T40: weapon 1%, armor 1.25%, armor part 1.5% (helm/shield, the lowest), jewel 1.5% (necklace)",
+          Math.Abs(BoxChance(45, MobRank.Normal, "weapon") - 0.01f) < 1e-6
+          && Math.Abs(BoxChance(45, MobRank.Normal, "armor") - 0.0125f) < 1e-6
+          && Math.Abs(BoxChance(45, MobRank.Normal, "part") - 0.015f) < 1e-6
+          && Math.Abs(BoxChance(45, MobRank.Normal, "jewel") - 0.015f) < 1e-6);
+    Check("every Common box drop id is a real item",
+          new[] { 10, 30, 45, 56, 68 }.All(L => MobCatalog.GearDrops(L, MobRank.Normal).All(e => ItemCatalog.Get(e.ItemId) is not null)));
+    Check("NO mob or boss table drops a Common piece any more — only boxes (2026-10-10)",
+          MobCatalog.Templates.Where(m => m.Drops is not null).All(m => new[] { MobRank.Normal, MobRank.Elite, MobRank.Boss }
+              .All(r => MobCatalog.KillTable(m, m.Level, r).All(e => ItemCatalog.Get(e.ItemId) is not { } d || !ItemCatalog.IsCommonGear(d)))));
+    {
+        bool boxesOk = ItemCatalog.CommonBoxTiers.All(t => ItemCatalog.CommonBoxKinds.All(k =>
+        {
+            var def = ItemCatalog.Get(ItemCatalog.CommonBoxId(k.Kind, t));
+            var box = BoxCatalog.Get(ItemCatalog.CommonBoxId(k.Kind, t));
+            if (def is null || box is null || !box.OneOf || def.MaxStack != 1 || ItemCatalog.IsPurchasable(def)) return false;
+            var pieces = box.Entries.Select(e => ItemCatalog.Get(e.ItemId)).ToList();
+            if (pieces.Count != k.Stems.Length || pieces.Any(p => p is null || !ItemCatalog.IsCommonGear(p))) return false;
+            double avgSell = pieces.Average(p => (double)ItemCatalog.SellPrice(p!));
+            return ItemCatalog.SellPrice(def) > 0 && ItemCatalog.SellPrice(def) < avgSell;
+        }));
+        var b40 = ItemCatalog.Get(ItemCatalog.CommonBoxId("weapon", 40))!;
+        Check("each Random Common box opens into ONE piece of its kind, never stacks, is not sold, sells under its contents",
+              boxesOk, $"{b40.Name}: sells {ItemCatalog.SellPrice(b40)}, avg content {BoxCatalog.Get(b40.Id)!.Entries.Average(e => ItemCatalog.SellPrice(ItemCatalog.Get(e.ItemId)!)):0}");
+    }
+    Check("the Apothecary no longer sells the 1h/2h Grand Rune boxes (BL-337)",
+          ShopCatalog.AllShops.All(s => !s.ItemIds.Contains(ItemCatalog.BoxGrandRune1h) && !s.ItemIds.Contains(ItemCatalog.BoxGrandRune2h)));
     Check("no healing potion drops from a mob above level 40 (BL-287)",
           MobCatalog.Templates.Where(m => m.Level > MobCatalog.HealingPotionDropMaxLevel)
               .All(m => (m.Drops ?? Array.Empty<DropEntry>()).All(d => ItemCatalog.Get(d.ItemId) is not ItemDef p || !ItemCatalog.IsHealPotion(p))));
     Check("a normal mob from T76 up drops NO equipment",
           !MobCatalog.GearDrops(78, MobRank.Normal).Any());
     // `BL-307` (2026-09-28): F and E have Commons now, the T40 table x1 (F) and x0.35 (E).
-    Check("BL-307: a normal F / E kill rolls Commons at 14% / 4.9% in total (the T40 table x1 / x0.35)",
-          Math.Abs(GroupSum(MobCatalog.GearDrops(10, MobRank.Normal), MobCatalog.GroupCommonGear) - 0.14f) < 1e-5
-          && Math.Abs(GroupSum(MobCatalog.GearDrops(30, MobRank.Normal), MobCatalog.GroupCommonGear) - 0.049f) < 1e-5,
+    Check("BL-307: a normal F / E kill rolls Common boxes at 5.25% / 1.8375% in total (the T40 table x1 / x0.35)",
+          Math.Abs(GroupSum(MobCatalog.GearDrops(10, MobRank.Normal), MobCatalog.GroupCommonGear) - 0.0525f) < 1e-5
+          && Math.Abs(GroupSum(MobCatalog.GearDrops(30, MobRank.Normal), MobCatalog.GroupCommonGear) - 0.018375f) < 1e-5,
           $"F {GroupSum(MobCatalog.GearDrops(10, MobRank.Normal), MobCatalog.GroupCommonGear)}, E {GroupSum(MobCatalog.GearDrops(30, MobRank.Normal), MobCatalog.GroupCommonGear)}");
     {
         var low = MobCatalog.Templates.Where(m => !m.Dummy && !m.HandPlaced && !m.Guard && m.Drops is not null && m.Level < 40).ToList();
         bool Has(MobType m, Func<DropEntry, bool> f) => m.Drops!.Any(f);
         Check("BL-307: every creature under 40 has a specialty, drops its grade's Commons and a lucky Mythic of its kinds",
               low.Count > 0 && low.All(m => m.Profile is not null
-                  && Has(m, d => d.GroupId == MobCatalog.GroupCommonGear && d.ItemId.EndsWith($"_t{(m.Level >= 20 ? 20 : 1)}_common"))
+                  && Has(m, d => d.GroupId == MobCatalog.GroupCommonGear && d.ItemId.StartsWith("box_common_") && d.ItemId.EndsWith($"_t{(m.Level >= 20 ? 20 : 1)}"))
                   && Has(m, d => d.GroupId == MobCatalog.GroupRareGear && ItemCatalog.Get(d.ItemId) is { Rarity: ItemRarity.Mythic })),
               string.Join(", ", low.Where(m => m.Profile is null).Select(m => m.Id)));
         Check("BL-307: no recipe and no part drops under 40; base mats from 20, none below",
@@ -442,7 +461,7 @@ Check("the Blessing fill is paused out of combat (BL-317)", await a.WaitFor(() =
               roster.All(m => m.Profile is not null)
               && roster.All(m => MobCatalog.KillTable(m, m.Level, MobRank.Normal)
                      .Where(e => e.GroupId == MobCatalog.GroupCommonGear)
-                     .All(e => m.Profile!.Keys.Any(k => e.ItemId.StartsWith(k + "_t")))),
+                     .All(e => m.Profile!.Keys.Any(k => e.ItemId.StartsWith($"box_common_{ItemCatalog.CommonBoxKindOf(k)}_t")))),
               $"{roster.Count} creatures");
         var elite = roster.First(m => m.Profile!.Kind == MobSpecialty.Weapons && m.Level is >= 40 and < 52);
         double Part(MobRank r) => MobCatalog.KillTable(elite, elite.Level, r).Where(e => e.ItemId.StartsWith("part_")).Sum(e => (double)e.Chance);

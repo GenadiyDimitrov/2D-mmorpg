@@ -285,7 +285,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-332` | ❓   | **Notifications** — low HP / low potions / farm time over / died: in-game alerts, scheduled phone notifications, server push; my pick + four questions                                                                                                                                                                                                                                                                                                         | ui           |
 | `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
 | `BL-336` | 🔵 | **No-refresh debuffs (IG rule)** — a debuff of the same type cannot be re-landed until the old one wears off (no perma-hold); a re-stun attempt may BREAK the stun instead of resetting it; boss-allowed stacking types excepted; design owed | combat |
-| `BL-337` | 🔵 | **Grand Rune off the apothecary shelf** — with the Warchanter all-magic (`BL-335`) no class fights with weapon AND spell, so the 1h/2h Grand Rune boxes leave the shop; the items stay for `/give`; build together with `BL-336` | items |
 | `BL-339` | 🔴 | **Mentoring system** — **bond core (0.234.0) + the Aura/Knowledge split (0.235.0) + level-gated shelf-single Mentor Blessings and 5-rung Guidance (0.236.0) BUILT**. Left: the shop (prices open, yours) | systems |
 | `BL-340` | ❓ | **Potion Mastery** — a % passive on every warrior (HP potions) and every nuker (MP potions) from the 2nd class on, boosting the potion HoT only; measured (`--potmp`); waiting on your pick of ladder A or B | classes |
 | `BL-341` | ⏸ | **Skill vampirism + skill reflect** — a buff that vamps from any spell/physical skill (later-chronicle IG), only together with reflect on skill damage; "a lot later if at all" | combat |
@@ -2386,24 +2385,6 @@ Your words: *"in IG the game dont allow same type of debuf (except the boss allo
 3. **A re-stun on a stunned target may BREAK the stun** instead. The chance grows with the stun's length (your *"longer duration longer chance"*), around 10-15% for a 15s stun.
 
 ❓ **Open:** the exact break curve (a % per second of the stun's duration, or per second REMAINING?); whether rule 1 applies to mobs as well as players; and whether a break also starts a short immunity. Design owed before code.
-
-## `BL-337` 🔵 GRAND RUNE OFF THE APOTHECARY SHELF (2026-10-06)
-
-Your words: *"with that making buffers magic .. the grand rune can be removed from apothecary .. no dual class
-any longer ... can keep them as items for /give just not in the shop (no point for now) - mark as BL entry and we build
-it later with the perma stun"*.
-
-The Grand Rune (x2 physical AND magical damage, shorter casts) exists for a class that fights with both weapon and
-spell. Since `BL-335` (0.230.0) the Warchanter hits only through magic, so no class needs it.
-
-**To build** (together with `BL-336`, his order):
-1. Take `box_grand_rune_1h` and `box_grand_rune_2h` off the apothecary shelf (`ShopCatalog.cs`, the two lines beside
-   the War/Spell rune boxes).
-2. **Keep** the items and their box defs (`rune_grand`, `box_grand_rune_1h/2h/24h`): `/give` still hands them out.
-   `box_grand_rune_24h` is admin-only already.
-3. Check nothing else sells them or says they are in the shop (the box text, a guide, the rune-stack rule of 0.228.0).
-
-Needs an APK only if the shop list is drawn on the client; the server owns the shelf.
 
 ## `BL-339` 🔴 MENTORING SYSTEM (2026-10-09)
 

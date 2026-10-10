@@ -910,21 +910,22 @@ public static class MobCatalog
         }
 
         if (!ItemCatalog.HasCommonTier(tier)) yield break;
-        // `BL-287`: each SLOT carries its own chance (ring highest, weapon lowest); the body and weapon
-        // slots split theirs across their weights / lines, so a slot's total is what the table says.
         float mul = rank == MobRank.Elite ? CommonGearEliteMul : 1f;
-        foreach (var (_, keys) in GearFamilies)
-        {
-            var bySlot = keys.GroupBy(CommonSlotRank);
-            foreach (var slot in bySlot)
-            {
-                float each = CommonGearSlotChance(tier, slot.Key) * mul
-                           / (slot.Key is 4 or 5 ? slot.Count() : 1);
-                foreach (var key in slot)
-                    yield return new DropEntry($"{key}_t{tier}_common", each, GroupId: GroupCommonGear);
-            }
-        }
+        foreach (var e in CommonBoxDrops(GearFamilies.SelectMany(f => f.Keys), tier, mul)) yield return e;
     }
+
+    /// <summary>THE COMMON DROP IS A BOX (owner, 2026-10-10): *"Mobs that drop common weapons drop the same grade
+    /// 'Random X common box' ... the chance is the current common weapon one"*, and for armour, armour parts and
+    /// jewels *"the chance is the lowest of the current if at all differ per part"*. So one entry per box KIND the
+    /// keys touch, at the LOWEST `BL-287` slot chance among those keys — weapon = the weapon slot, body = the body
+    /// slot (both were already one total split over the lines), parts = helm/shield's, jewels = the necklace's.
+    /// ⚠ A part or jewel carrier used to roll every piece on its own (T40: 6.5% / 5.25% summed); one box at the
+    /// lowest is 1.5%. That cut is his rule, not a slip.</summary>
+    private static IEnumerable<DropEntry> CommonBoxDrops(IEnumerable<string> keys, int tier, float mul) =>
+        keys.GroupBy(ItemCatalog.CommonBoxKindOf)
+            .Where(g => g.Key is not null)
+            .Select(g => new DropEntry(ItemCatalog.CommonBoxId(g.Key!, tier),
+                g.Min(k => CommonGearSlotChance(tier, CommonSlotRank(k))) * mul, GroupId: GroupCommonGear));
 
     // ===================================================================
     //  PER-MOB DROP TABLES (`BL-274` part 1, 0.206.0; design doc §2.3 "Step 11 proposal")
@@ -1263,16 +1264,10 @@ public static class MobCatalog
         var p = t.Profile;
         if (p is not null && ItemCatalog.HasCommonTier(gearTier))
         {
-            // A slot's chance is the `BL-287` table's; the body splits it over its three weights and the
-            // weapon slot over the lines THIS creature carries (not all eight).
+            // The Commons come as ONE random box of the specialty's kind (2026-10-10): a weapon carrier of
+            // bow + fangs drops the same weapon box as one of sword + greatsword, and the box decides the line.
             float cm = elite ? CommonGearEliteMul : 1f;
-            int lines = p.Keys.Count(k => CommonSlotRank(k) == 5);
-            foreach (var key in p.Keys)
-            {
-                int rk = CommonSlotRank(key);
-                float each = CommonGearSlotChance(gearTier, rk) * cm / (rk == 4 ? 3 : rk == 5 ? lines : 1);
-                list.Add(new DropEntry($"{key}_t{gearTier}_common", each, GroupId: GroupCommonGear));
-            }
+            list.AddRange(CommonBoxDrops(p.Keys, gearTier, cm));
             float rare = (float)(RareGearChance(gearTier) * cm / p.Keys.Length);
             foreach (var key in p.Keys)
                 list.Add(new DropEntry($"{key}_t{gearTier}", rare, GroupId: GroupRareGear));

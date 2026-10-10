@@ -1253,6 +1253,35 @@ public static class ItemCatalog
     public static string TempArmorBoxId(int tier) => $"box_temp_armor_t{tier}";
     public static string TempSetBoxId(string weight, int tier) => $"box_temp_{weight}_t{tier}";
 
+    // ---- THE RANDOM COMMON BOXES (owner, 2026-10-10) ------------------------------------------------
+    // *"common equip is very unequal ... 6 mobs at lvl 40 drop fangs/bow and only 1 drops greatsword ...
+    //  So let's convert the common drop to boxes"*. No creature drops a Common piece any more: it drops
+    // ONE of four boxes per grade, and the box opens into one piece of its kind, every line equally
+    // likely. Which mob carries which kind is still its specialty; WHICH line falls out is the box's.
+    // ⚠ Expression properties, not fields: the catalog builds from a static initializer above this point.
+
+    /// <summary>The grades a Common exists at (F/E/D/C/B), one set of four boxes each.</summary>
+    public static int[] CommonBoxTiers => new[] { FGradeLevel, 20, 40, 52, 61 };
+
+    /// <summary>The four box kinds and the id stems each opens into.</summary>
+    public static (string Kind, string Label, string[] Stems)[] CommonBoxKinds => new[]
+    {
+        ("weapon", "Weapon",     new[] { "sword1h", "sword2h", "blunt1h", "blunt2h", "duals", "bow", "wand", "staff" }),
+        ("armor",  "Armor",      new[] { "heavy", "light", "robe" }),
+        ("part",   "Armor Part", new[] { "helm", "gloves", "boots", "shield" }),
+        ("jewel",  "Jewel",      new[] { "necklace", "ring", "earring" }),
+    };
+
+    public static string CommonBoxId(string kind, int tier) => $"box_common_{kind}_t{tier}";
+
+    /// <summary>The box kind a gear stem belongs to ("bow" → "weapon"), or null.</summary>
+    public static string? CommonBoxKindOf(string stem) =>
+        CommonBoxKinds.FirstOrDefault(k => k.Stems.Contains(stem)).Kind;
+
+    /// <summary>The Common pieces a box opens into, in box order.</summary>
+    public static IEnumerable<string> CommonBoxContents(string kind, int tier) =>
+        CommonBoxKinds.First(k => k.Kind == kind).Stems.Select(s => $"{s}_t{tier}_common");
+
     /// <summary>Every temporary piece's id at a tier, in box order.</summary>
     public static IEnumerable<string> TempPieceIds(int tier) =>
         TempWeaponStems.Concat(TempArmorWeights).Concat(TempArmorShared).Select(s => TempId($"{s}_t{tier}"));
@@ -2175,6 +2204,8 @@ public static class ItemCatalog
         list.AddRange(BoundCopies(list));
         // The temporary 2-hour Common gear and its vendor boxes (`BL-272` part 2), cloned off the Commons.
         list.AddRange(TempGear(list));
+        // The random Common boxes that replaced every Common drop (2026-10-10), priced off the Commons.
+        list.AddRange(CommonBoxes(list));
         // `BL-301` — LAST, so the bound copies' "(Bound)" goes too.
         for (int i = 0; i < list.Count; i++) list[i] = WithoutQualifier(list[i]);
 
@@ -2569,6 +2600,31 @@ public static class ItemCatalog
                                + "(2 hours of wearing each)."));
             }
         }
+        return made;
+    }
+
+    /// <summary>The RANDOM COMMON BOXES (see <see cref="CommonBoxTiers"/>). Each is valued at HALF the average
+    /// shelf price of what it holds (*"so it's better to open and sell than sell the box itself"*), sold
+    /// nowhere, and does NOT stack — one row per box, the way the pieces never stacked. Throws if a kind has
+    /// no Common at a tier, so a renamed line fails at boot instead of shipping an empty box.</summary>
+    private static List<ItemDef> CommonBoxes(List<ItemDef> all)
+    {
+        var by = all.GroupBy(d => d.Id).ToDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
+        var made = new List<ItemDef>();
+        foreach (int tier in CommonBoxTiers)
+            foreach (var (kind, label, _) in CommonBoxKinds)
+            {
+                var pieces = CommonBoxContents(kind, tier).Select(id => by.TryGetValue(id, out var c) ? c
+                    : throw new InvalidOperationException($"Common box: no '{id}'.")).ToList();
+                // A Common's Value is still 0 here (DefaultValue fills it after the build); ask the same formula.
+                double avg = pieces.Average(c => (double)BuyPrice(c.Value > 0 ? c : c with { Value = DefaultValue(c) }));
+                string grade = TierLetter(tier);
+                made.Add(new ItemDef(CommonBoxId(kind, tier), $"Random {grade} Common {label} Box", EquipSlot.Box,
+                    ItemGrade.B, ItemRarity.Common, BuyPriceOverride: -1, NoAttributes: true, MaxStackOverride: 1,
+                    Description: $"Opens into ONE random {grade}-grade Common {label.ToLowerInvariant()}, "
+                               + $"every kind equally likely: {string.Join(", ", pieces.Select(p => p.Name))}.")
+                    { Value = Math.Max(1, (int)(avg / 2)) });
+            }
         return made;
     }
 

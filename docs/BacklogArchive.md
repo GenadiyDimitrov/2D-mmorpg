@@ -8425,3 +8425,46 @@ Nothing is designed yet; you said we discuss what it means later. Questions to o
    reaches a level?
 3. **Is it a party bond or a standing one**: does it only work while grouped, and how many students may one mentor hold?
 4. **What ends it**: the student outgrows a level, either side breaks it, or a cooldown?
+
+## `BL-337` ✅ BUILT in 0.237.0 — Grand Rune off the apothecary shelf (filed 2026-10-06, built 2026-10-10)
+
+Your words: *"with that making buffers magic .. the grand rune can be removed from apothecary .. no dual class
+any longer ... can keep them as items for /give just not in the shop (no point for now) - mark as BL entry and we build
+it later with the perma stun"*.
+
+The Grand Rune (x2 physical AND magical damage, shorter casts) exists for a class that fights with both weapon and
+spell. Since `BL-335` (0.230.0) the Warchanter hits only through magic, so no class needs it.
+
+**To build** (together with `BL-336`, his order):
+1. Take `box_grand_rune_1h` and `box_grand_rune_2h` off the apothecary shelf (`ShopCatalog.cs`, the two lines beside
+   the War/Spell rune boxes).
+2. **Keep** the items and their box defs (`rune_grand`, `box_grand_rune_1h/2h/24h`): `/give` still hands them out.
+   `box_grand_rune_24h` is admin-only already.
+3. Check nothing else sells them or says they are in the shop (the box text, a guide, the rune-stack rule of 0.228.0).
+
+Needs an APK only if the shop list is drawn on the client; the server owns the shelf.
+
+**Built 2026-10-10 (0.237.0)**, on its own rather than with `BL-336`, at his word: *"Also remove the 1h and 2h grand
+Runes from apothecary"*. The two shelf lines are gone; the items, their box defs and `/give` are untouched. Nothing
+else sold them, and no box text names the shop. SmokeTest checks no shop lists either box.
+
+## `BL-342` ✅ BUILT in 0.237.0 — every Common drop is a Random Common box (2026-10-10)
+
+His words: *"Because common equip is very unequal ... 6 mobs at lvl 40 drop fangs/bow and only 1 drops grrwat sword
+and that's at 51 ... Very unfair ... So let's convert the common drop to boxes.... Mobs that drop common weapons drop
+the same grade "Random X common box" after open u get one X grade random common weapon the chance is the current common
+weapon one we just swap the bow/fang and any other common weapon drop to this box. The box buy price (just to calculate
+the sell price not that is sold anywhere - so it's better to open and sell than sell the box itself) is half of average
+of the content.. Same goes for all other common drops "Random X common armor"/"Random X common armor part"/"Random X
+common jewels" -> the chance is the lowest of the current if at all differ per part. Boxes don't stack as equip didn't
+(it's not to save space - it's just fair drop for every player). So no more common drops anywhere. Only boxes...bosses
+that drop common items and can drop multiple now just drop multiple boxes"*.
+
+**Built:** 20 boxes, `box_common_{weapon|armor|part|jewel}_t{1|20|40|52|61}`, named "Random {F..B} Common {Weapon |
+Armor | Armor Part | Jewel} Box". A one-of box (`BoxDef.OneOf`): one piece, every line equal. Value = ½ the average
+Common shelf price, sold nowhere, `MaxStackOverride: 1`. A creature drops ONE box of its specialty's kind at the lowest
+`BL-287` slot % among that kind's pieces (`MobCatalog.CommonBoxDrops`). Weapon and body carriers keep their totals
+(1% / 1.25% at T40); a part carrier drops 1.5% where it rolled 6.5% summed, a jewel carrier 1.5% where it rolled 5.25%.
+**Bosses:** no boss dropped a Common (they pay Mythic pieces since `BL-308`), so the "multiple boxes" clause had nothing
+to convert.
+

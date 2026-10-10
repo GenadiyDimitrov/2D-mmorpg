@@ -1113,6 +1113,23 @@ His ranges (T40 1-2%, T52 0.2-1%, T61 0.05-0.3%) and slot order; the linear cell
 **F and E (`BL-307`, 0.214.38)** read the T40 column: **F (1-19) ×1** (sum 14.0%) and **E (20-39) ×0.35** (sum 4.9%)
 (`MobCatalog.CommonScaleF` / `CommonScaleE`).
 
+**🔑 THE COMMON DROP IS A BOX (2026-10-10).** No creature drops a Common piece. A creature that carries a kind drops
+that kind's **Random {grade} Common box** — Weapon (8 lines) · Armor (heavy/light/robe) · Armor Part
+(helm/gloves/boots/shield) · Jewel (necklace/ring/earring) — at the **lowest** slot % above among its pieces:
+
+```
+box             chance = rank      T40      T52      T61       (F = T40 ×1, E = T40 ×0.35; elite ×2)
+weapon          5                  1.00%    0.20%    0.0500%
+armor           4                  1.25%    0.40%    0.1125%
+armor part      3 (helm/shield)    1.50%    0.60%    0.1750%
+jewel           3 (necklace)       1.50%    0.60%    0.1750%
+```
+
+Opening gives ONE piece, every line equally likely (`BoxDef.OneOf`). A box does not stack, is sold nowhere, and its
+Value is ½ × the average shelf price of its pieces, so it sells for half of what an opened piece averages.
+`ItemCatalog.CommonBoxes` / `MobCatalog.CommonBoxDrops`. ⚠ The slot table above is now only the INPUT: summed
+across slots it no longer describes a kill, since one creature drops one kind of box.
+
 ```
 boss kill     boss group    T40 1.0 · T52 0.9 · T61 0.85 · T76 0.75 · T80 0.7  × rates   one Mythic piece, group "boss" ×1 (0.214.17, BL-308)
               + per family  0.02  × rates   Mythic accent             groups armor/accessory/weapon/jewel ×0.075
@@ -1142,7 +1159,7 @@ kinds               weapons: its lines · body: heavy/light/robe · small: helm/
 Per kill, what `MobCatalog.CreatureDrops(type, level, rank)` gives (normal; elite multiplier after `|`):
 
 ```
-Common (F-T61)      the slot % above, only its kinds; weapon % ÷ ITS lines, body % ÷ 3       | ×2   group common
+Common box (F-T61)  ONE Random Common box of its kind at the box % above (2026-10-10)      | ×2   group common
 rare full item      F 1/1,000 · E 1/3,000 · T40-T61 1/10,000 a kill, split over its kinds     | ×2   group rare
                     (MobCatalog.RareGearChance). Below 40 only these two rows: no recipe, part or Nightsilver
 recipe, per kind    ALL ÷2.5 (MobRecipeCut, 0.227.0) of: T40 100% 1/100 · T52 100% 1/175 · T61 60% 1/250 · T76 20% table B

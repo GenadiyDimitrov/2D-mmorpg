@@ -25,6 +25,23 @@
 
 ---
 
+## §154 — 0.237.0: Common drops are boxes; Grand Runes off the Apothecary (`BL-342`, `BL-337`, 2026-10-10)
+
+⚠ **Server restart + new APK.** Any character that can hunt level 40-51 mobs (a raised `/droprate common` helps).
+
+- `154a` [ ] - Kill mobs that used to drop Common bows/fangs: they drop "Random D Common Weapon Box" now, never a
+  Common weapon. ->
+- `154b` [ ] - Open a few weapon boxes: each gives ONE D-grade Common weapon, and the lines vary (greatswords show up
+  too). ->
+- `154c` [ ] - Two boxes in the bag take two rows (they do not stack). Its sell price is about half a Common
+  weapon's. ->
+- `154d` [ ] - Armor, Armor Part and Jewel boxes drop from the mobs that carry those, and each opens into one piece of
+  its kind. ->
+- `154e` [ ] - The Apothecary no longer sells the Grand Rune 1h / 2h boxes; the War and Spell rune boxes are still
+  there. ->
+
+---
+
 ## §153 — 0.236.3: Demonic Drain heals you (2026-10-09)
 
 ⚠ **Server restart.** A Demon fighter with Demonic Drain.

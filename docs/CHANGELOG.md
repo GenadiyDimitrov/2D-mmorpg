@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.236.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.237.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -24,7 +24,26 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-09 (latest) — 0.236.3: Demonic Drain heals you
+## 2026-10-10 (latest) — 0.237.0: every Common drop is a Random Common box; Grand Runes off the Apothecary
+
+Server restart + **new APK** (20 new items the client must know).
+
+- **`BL-342`** — his find: *"6 mobs at lvl 40 drop fangs/bow and only 1 drops greatsword ... Very unfair"*. No
+  creature drops a Common piece any more. It drops a **Random {grade} Common box** of its specialty's kind — Weapon,
+  Armor, Armor Part or Jewel — for F, E, D, C and B (20 boxes, `box_common_{kind}_t{tier}`). Opening one gives ONE
+  Common of that grade, every line equally likely (new `BoxDef.OneOf`: one entry, Chance read as a weight).
+- **The chance** is the old slot chance, the LOWEST where the pieces differed (his rule): weapon 1%, armor 1.25%,
+  armor part 1.5% (helm/shield), jewel 1.5% (necklace) at T40; elite ×2; F ×1, E ×0.35 as before. ⚠ A part carrier
+  rolled every piece on its own before (6.5% summed at T40), a jewel carrier 5.25%; both are 1.5% now.
+- **Price:** Value = half the average shelf price of what is inside, sold by no vendor, so selling the box pays half
+  of what an opened piece averages (a D weapon box sells 51,562; its pieces average 103,125). Boxes do not stack.
+- Bosses never dropped Commons (Mythic pieces since `BL-308`), so they are unchanged.
+- **`BL-337`** — the 1h and 2h Grand Rune boxes are off the Apothecary shelf (his: *"remove the 1h and 2h grand Runes
+  from apothecary"*). The items stay, for `/give`.
+- `docs/data/mobs/mob_drops.csv` regenerated (`Common per kill %` now reads the box); `docs/Formulas.md` has the box
+  table. SmokeTest: 4 new checks, the Common-drop checks rewritten for boxes.
+
+## 2026-10-09 — 0.236.3: Demonic Drain heals you
 
 Server restart only (no APK).
 
