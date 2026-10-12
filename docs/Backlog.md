@@ -2443,3 +2443,21 @@ like that ... u can mark it to answer later .. just not to lose it as an idea"*.
 - ❓ To settle when you pick it up: does it hit mobs as well as players (mobs native to the zone immune?); can a
   buff/potion/armour resist it (a "fire resistance" counter would give lava zones a gear goal); the numbers per hazard;
   whether a whole zone is hazardous or only patches inside it (pools, storm cells).
+
+**His answers, 2026-10-12** (still ⏸, *"its way in the future.. just to mark it"*): *"mobs are immune to enviremental dmg
+- they live in that zone they evole to the envirement ... i was thinking about buffers have some enviremental resistance
+buff that decreases the effects of envirement with like 60% then some quest for high zones for example the lava
+envirement can give you a buff potion or some quest item that keep you safe from that exact evirement ... and as u said
+we can have elemental resistance but then we can add elemental dmg to spells/skills so a fros pierce is ice/water spell
+and water/ice resistance to work in a snowy zone evirement and agains elfs spells"*.
+- **Mobs are immune** to environmental effects (they evolved to live there). Players only.
+- **Three layers of protection:**
+  1. A **buffer's Environmental Resistance buff**: about −60% to every hazard's effect.
+  2. **Per-zone quest rewards** in the high zones: a potion or quest item giving full safety from THAT zone's hazard
+     (the lava zone's quest protects from lava).
+  3. **Elemental resistances** (fire, water/ice, …), which would also need **elemental damage on spells and skills**
+     (a frost pierce is ice/water, so an ice resistance helps in the snow zone AND against elves' ice spells).
+- ⚠ **Layer 3 meets an old ruling.** The roadmap lists a *magic-resist stat* under "Dropped, don't re-add" (offence
+  comes from the War/Spell Runes instead; `docs/Roadmap.md`, bottom). Elemental resistance against spells is a cousin
+  of that stat, so layer 3 needs your explicit decision to reopen it when this is picked up. Layers 1 and 2 only touch
+  hazards and do not run into the ruling.
