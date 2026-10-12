@@ -291,6 +291,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-348` | ⏸ | **Hazard terrain** — harsh zones put a visible debuff on you until you leave: blizzard/wind = more misses + magic fails, lava pools = DoT, slowed attack/cast speed; the combat half of `BL-328`; answer later | world |
 | `BL-349` | ⏸ | **Race starting zones** — each race starts in its own territory (elves water/ice, humans an island, demons fire/lava), each class at its own spot (temple, ruins, arena, summoning circle) with low-level mobs and its own newbie guide; after `BL-346` | world |
 | `BL-350` | ⏸ | **The game's story** — where each race comes from and what it is for, a pantheon of named gods that skills can be described by; so quests are more than "go there, kill that" | story |
+| `BL-351` | ⏸ | **Downloadable content** — move art out of the APK (Addressables + CDN, or Play Asset Delivery) once it passes ~100 MB; until then new asset kinds load through one function | client |
 
 ---
 
@@ -2519,3 +2520,20 @@ descripted for those entitites)"*.
 - ⚠ Every name must pass the IP test in `CLAUDE.md` (no IG god, race or place names; word + same race + same role).
 - ❓ To settle when picked up: who writes it (you, me drafting for your edit, or both); where it lives (a
   `docs/design/Lore.md`); how deep before content uses it.
+
+## `BL-351` ⏸ DOWNLOADABLE CONTENT — art out of the APK (2026-10-12, when it grows)
+
+Your words: *"if apk start to grow can the resources be downloaded separate or thats an overkill for now .. and can it
+be later spearated"*. My answer: overkill now (APK 49.7 MB at 0.247.0, sideloaded, so no store cap), cheap later.
+
+- **Trigger:** the APK passes ~100 MB, or there are real players and a content-only patch without a reinstall is
+  worth having. Sound (`docs/design/SoundSources.md`) is the likely thing that crosses it.
+- **How:** Unity Addressables with a remote catalog on a CDN (works for a sideloaded APK), or Play Asset Delivery if
+  it ships on Google Play (needs an AAB; the base download is capped around 150-200 MB, check the current policy).
+- **What moves:** every load goes through `Resources.Load` at about five places: `EntityManager.cs` (models),
+  `PropScatter.cs` (props + material), `BiomeGround.cs` (shader), `GameUi.Skills.cs` (icons). Switching = those calls
+  become async loads and the folders leave `Resources/`.
+- 🔑 **Until then, the rule that keeps it cheap:** a new asset kind goes behind ONE loader function, never a new
+  `Resources.Load` sprinkled through the code.
+- Costs it brings: hosting, client/content version matching, a first-launch download screen with retry, cache
+  invalidation.
