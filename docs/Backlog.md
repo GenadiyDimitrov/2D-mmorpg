@@ -207,12 +207,12 @@ joined the Mage preset. See it with `dotnet run --project tools/BalanceMatrix --
 won't require new npc just change of id's"* holds · ✅ `BL-164` — the Marks now carry their
 RUNG in their rank, so nothing weaker overwrites one: **BUILT (0.177.0) and archived** · `BL-156` (debuff
 duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed) ·
-`BL-93` (the visuals conversation, yours to start) · `BL-102` (blocked on one file from you) ·
+`BL-93` (the visuals conversation, yours to start) · ✅ `BL-102` (character animation, BUILT 0.244.0, archived) ·
 `BL-02` (the 40+ kits, blocked on your CSVs).
 
 ---
 
-## Index — 60 open entries
+## Index — 59 open entries
 
 | id       |     | what it is                                                                                                                                                                                                                                                                                                                                                                                                                                                     | area         |
 | -------- | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
@@ -243,7 +243,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-78`  | 🔵   | Mobs are too easy — three of four built, only THE BILL is left                                                                                                                                                                                                                                                                                                                                                                                                 | world        |
 | `BL-80`  | 🔵   | Fortress sieges — your own design, transcribed whole                                                                                                                                                                                                                                                                                                                                                                                                           | world        |
 | `BL-93`  | 🔵   | In-game visuals — models, terrain, the look of the world                                                                                                                                                                                                                                                                                                                                                                                                       | UI           |
-| `BL-102` | 🔴   | The character models have no animation clips — one file from you                                                                                                                                                                                                                                                                                                                                                                                               | UI           |
 | `BL-103` | 🔵   | Visible weapons — the shape is settled, the meshes are not                                                                                                                                                                                                                                                                                                                                                                                                     | UI           |
 | `BL-104` | 🔵   | The warrior's sword-vs-blunt split — ruled, nothing to attach it to yet                                                                                                                                                                                                                                                                                                                                                                                        | classes      |
 | `BL-106` | ❓   | Your cross-chain id rule — six ids disobey it; three answers wanted                                                                                                                                                                                                                                                                                                                                                                                            | classes      |
@@ -285,7 +284,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-332` | ❓   | **Notifications** — low HP / low potions / farm time over / died: in-game alerts, scheduled phone notifications, server push; my pick + four questions                                                                                                                                                                                                                                                                                                         | ui           |
 | `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
 | `BL-341` | ⏸ | **Skill vampirism + skill reflect** — a buff that vamps from any spell/physical skill (later-chronicle IG), only together with reflect on skill damage; "a lot later if at all" | combat |
-| `BL-344` | 🔴 | **Visual pass** — ground, animations, entities; order + status in `design/VisualPass.md` §0, **your animation download owed (§0.1)** | client |
+| `BL-344` | 🔴 | **Visual pass** — ground, animations, entities; order + status in `design/VisualPass.md` §0; steps 1-2 built (0.243.0, 0.244.0), **step 3 (ground) next** | client |
 | `BL-345` | ❓ | **Hosting for friends** — where the server runs (your question: an Oracle Always Free Linux machine?), how friends download the APK and connect; answer owed after `BL-344` | ops |
 
 ---
@@ -651,59 +650,12 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
   What is still NOT automatable, and is why you held it: which model suits a family, and its height —
   both are authored per row, because the packs disagree on scale (the Rat imports 2.9 units tall).
 
-  ⤷ 🔴 **THE PLAYER MODEL CANNOT ANIMATE — see `BL-102`. It is a missing FILE, not missing code.**
+  ⤷ ✅ **THE PLAYER MODEL ANIMATES since 0.244.0** (`BL-102`, archived): the Quaternius UAL clips retarget onto the humanoid body.
 
   Still un-started, in the order I'd do them: **terrain generated from the zone circles** (biggest
   perceived change per hour, needs no art) → creature families → **8 skill-FX archetypes** (one enum +
   colour on `SkillDef`; the client reads `SkillCatalog` directly, so no protocol change) → **~25 sound
   clips + 2-3 ambient loops** → skybox/fog/day-night (🔑 `GameClock` is already server-synced).
-
-- `BL-102` 🔴 **THE CHARACTER MODELS HAVE NO ANIMATION CLIPS — I need a file from you, and it is the
-  only thing standing between you and a running character.** You asked, 2026-08-28: *"now if we can add
-  runing animation"*. The wiring is done and proven — the two mob families in 0.100.2 walk, run, swing
-  and die off messages that already existed. The player does not, for one reason:
-
-  **All 21 FBXs in `Models/Characters/` contain zero animation.** Measured, not assumed: mesh,
-  skeleton, bind pose, 65 bones — and `AnimationStack` count **0**. The monster pack ships five takes
-  per creature; the character pack you committed ships none. `humanoid.prefab` is a body with nothing
-  to play, so it slides in its bind pose. No controller can fix that: there is nothing to put in it.
-
-  🔑 **What you did right and what it buys you:** you set the character rig to **Humanoid**. That is
-  the setting that makes clips *retargetable*, so any humanoid animation set drops onto these bodies —
-  and onto the elf and demon bodies you add next week — with no per-model work. This is exactly the
-  swappability argument from the direction talk, arriving early.
-
-  **Two ways to close it, both free, either is fine:**
-  1. **The pack's own animation file.** These packs normally ship a separate animations FBX beside the
-     characters; it was not in what you copied across. If you still have the download, that one file is
-     the whole fix.
-  2. **Mixamo** — upload one character FBX, pick clips, download "without skin". CC0-safe for this use
-     and the standard route for a Humanoid rig.
-
-  ⤷ ✅ **MY HALF IS BUILT (0.102.2) — WHAT IS LEFT IS THE FILE, AND NOTHING ELSE.** `ModelSetup` now
-  has a character half: `BuildAll` builds the bodies as well as the creatures, the clip sources are
-  imported as retargetable Humanoid motion, single-take files are renamed to their own file name (every
-  Mixamo take is called `mixamo.com`), locomotion is looped and root-locked, `Casting` joined the
-  generated controller, and `humanoid.prefab` is rebuilt with a wired `Animator`. **An empty folder is a
-  skip, not a failure** — running it today changes nothing and overwrites nothing.
-
-  **THE THREE STEPS THAT ARE YOURS:**
-  1. Put animation files in **`Game.Client.Unity/Assets/Art/Models/Characters/Animations/`**
-     (the folder exists and is empty). Named `idle.fbx` · `walk.fbx` · `run.fbx` · `attack.fbx` ·
-     `death.fbx` · `cast.fbx`. **Only `idle` is required** — `walk` falls back to `idle`, `run` to
-     `walk`, so *two* files already give you a character that stands and runs. Mixamo: **FBX Binary**,
-     **Without Skin**, tick *In Place*. Names are a substring match, so `Walking.fbx` works unrenamed.
-  2. Run it with the Editor closed:
-     `Unity.exe -batchmode -quit -nographics -projectPath …\Game.Client.Unity -executeMethod
-     Game.ClientEditor.ModelSetup.BuildAll -logFile -`
-  3. `pwsh tools/publish.ps1 -Apk` — `Resources` ships inside the build, so a new APK is not optional.
-
-  📖 **Step by step, with the download settings and a symptom→cause table:**
-  `docs/guides/UnityClient.md` → *"Adding move / idle / attack animations to the PLAYER"*.
-
-  🔑 **You buy this once for every body you will ever have.** The clips retarget through the Humanoid
-  avatar, so the same files animate all 21 characters and the elf and demon bodies you add later, with
-  no per-model work and no second download.
 
 - `BL-103` 🔵 **VISIBLE WEAPONS — the key shape is settled, the meshes are not. Your design, 2026-08-28:**
   *"if I make a sword1h.prefab and one sword1h_t20.prefab can that work? a t20 swords to be this one
@@ -2406,8 +2358,9 @@ picks, Q1-Q5 in §3** (order, ground style, animation source, camera default, th
 player, NPC and non-animal mob still wears ONE unanimated human body, and ~13 MB of unused FBX in `Resources/` ships
 in the APK anyway. Step 1 of the work (clean-up + Skeleton/Dragon families) needs nothing from you.
 ✅ **Your picks are in** (§0 of `VisualPass.md` holds them and the live order). **0.243.0: work step 1 built**
-(Skeleton/Dragon families, FBXs out of `Resources/`, modern bodies deleted). ❓ **Owed: ONE download for step 2**
-(the character animations), exact steps in `VisualPass.md` §0.1.
+(Skeleton/Dragon families, FBXs out of `Resources/`, modern bodies deleted). ✅ **0.244.0: step 2 built** — your
+`UAL1_Standard.fbx` landed and every player, NPC and humanoid mob now idles, walks, jogs, swings, casts and dies
+(`BL-102` closed). Next: step 3, the vertex-coloured ground.
 
 ## `BL-345` ❓ HOSTING FOR FRIENDS — where the server lives and how they join (2026-10-12)
 

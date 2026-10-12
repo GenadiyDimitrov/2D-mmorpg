@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.243.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.244.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,23 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-12 (latest) — 0.243.0: skeletons and dragons, and a lighter APK (`BL-344` step 1)
+## 2026-10-12 (latest) — 0.244.0: the characters move (`BL-344` step 2, `BL-102` closed)
+
+**Client only, new APK.** No server change beyond the version label, no `game.db` delete.
+
+- **Every player, NPC and humanoid mob now animates**: idle, walk, jog, attack swing, cast pose and death, from your
+  download, the Quaternius *Universal Animation Library* (Standard, CC0), `UAL1_Standard.fbx` in
+  `Assets/Art/Models/Characters/Animations/`. The clips retarget onto the humanoid body through its Humanoid avatar,
+  so the other bodies (and the elf/demon ones later) take the same file with no extra work.
+- Takes used: `Idle_Loop`, `Walk_Loop`, `Jog_Fwd_Loop` (the run), `Sword_Attack`, `Death01`, `Spell_Simple_Idle_Loop`
+  (held for the whole cast bar). The other 37 takes stay in the source file and do not ship: **APK 47.4 MB** (+0.1).
+- `ModelSetup` fixes so it picks those, not the wrong ones: the `Armature|` prefix is stripped from take names, `_Loop`
+  takes loop, and each slot tries the library's exact take name first. Without it, idle landed on `Sword_Idle`, the run
+  fell back to the walk, and the cast pose was the one-shot `Spell_Simple_Enter`. The creature picks are unchanged.
+- ⚠ Not yet: a sit pose (other clients are not told who is sitting), and bows/staves swing the sword take until weapons
+  in hand (step 7).
+
+## 2026-10-12 — 0.243.0: skeletons and dragons, and a lighter APK (`BL-344` step 1)
 
 **Client only, new APK.** No server change beyond the version label, no `game.db` delete.
 

@@ -8591,3 +8591,57 @@ stun leaves **no immunity**; the control set is **stun, hold, fear, charm and bo
 debuffs keep refreshing). His clarification the same day: *"only stun can be canceld .. reholding or resilencing some1
 just dont reset the timer ... silence and hold are long duration if we put a break on them they will sure release the
 effect"* — which is how it was built. The guard is in `ApplyBuff` (every road), the roll in the contested branch.
+
+## `BL-102` ✅ BUILT in 0.244.0 — CHARACTER ANIMATION, the text it replaced (2026-08-28 → 10-12)
+
+- `BL-102` 🔴 **THE CHARACTER MODELS HAVE NO ANIMATION CLIPS — I need a file from you, and it is the
+  only thing standing between you and a running character.** You asked, 2026-08-28: *"now if we can add
+  runing animation"*. The wiring is done and proven — the two mob families in 0.100.2 walk, run, swing
+  and die off messages that already existed. The player does not, for one reason:
+
+  **All 21 FBXs in `Models/Characters/` contain zero animation.** Measured, not assumed: mesh,
+  skeleton, bind pose, 65 bones — and `AnimationStack` count **0**. The monster pack ships five takes
+  per creature; the character pack you committed ships none. `humanoid.prefab` is a body with nothing
+  to play, so it slides in its bind pose. No controller can fix that: there is nothing to put in it.
+
+  🔑 **What you did right and what it buys you:** you set the character rig to **Humanoid**. That is
+  the setting that makes clips *retargetable*, so any humanoid animation set drops onto these bodies —
+  and onto the elf and demon bodies you add next week — with no per-model work. This is exactly the
+  swappability argument from the direction talk, arriving early.
+
+  **Two ways to close it, both free, either is fine:**
+  1. **The pack's own animation file.** These packs normally ship a separate animations FBX beside the
+     characters; it was not in what you copied across. If you still have the download, that one file is
+     the whole fix.
+  2. **Mixamo** — upload one character FBX, pick clips, download "without skin". CC0-safe for this use
+     and the standard route for a Humanoid rig.
+
+  ⤷ ✅ **MY HALF IS BUILT (0.102.2) — WHAT IS LEFT IS THE FILE, AND NOTHING ELSE.** `ModelSetup` now
+  has a character half: `BuildAll` builds the bodies as well as the creatures, the clip sources are
+  imported as retargetable Humanoid motion, single-take files are renamed to their own file name (every
+  Mixamo take is called `mixamo.com`), locomotion is looped and root-locked, `Casting` joined the
+  generated controller, and `humanoid.prefab` is rebuilt with a wired `Animator`. **An empty folder is a
+  skip, not a failure** — running it today changes nothing and overwrites nothing.
+
+  **THE THREE STEPS THAT ARE YOURS:**
+  1. Put animation files in **`Game.Client.Unity/Assets/Art/Models/Characters/Animations/`**
+     (the folder exists and is empty). Named `idle.fbx` · `walk.fbx` · `run.fbx` · `attack.fbx` ·
+     `death.fbx` · `cast.fbx`. **Only `idle` is required** — `walk` falls back to `idle`, `run` to
+     `walk`, so *two* files already give you a character that stands and runs. Mixamo: **FBX Binary**,
+     **Without Skin**, tick *In Place*. Names are a substring match, so `Walking.fbx` works unrenamed.
+  2. Run it with the Editor closed:
+     `Unity.exe -batchmode -quit -nographics -projectPath …\Game.Client.Unity -executeMethod
+     Game.ClientEditor.ModelSetup.BuildAll -logFile -`
+  3. `pwsh tools/publish.ps1 -Apk` — `Resources` ships inside the build, so a new APK is not optional.
+
+  📖 **Step by step, with the download settings and a symptom→cause table:**
+  `docs/guides/UnityClient.md` → *"Adding move / idle / attack animations to the PLAYER"*.
+
+  🔑 **You buy this once for every body you will ever have.** The clips retarget through the Humanoid
+  avatar, so the same files animate all 21 characters and the elf and demon bodies you add later, with
+  no per-model work and no second download.
+
+**Built 2026-10-12 (0.244.0)** from the file he downloaded: Quaternius **Universal Animation Library (Standard)**,
+`UAL1_Standard.fbx`, CC0, in `Assets/Art/Models/Characters/Animations/`. `ModelSetup.BuildAll` retargets it onto the
+humanoid body: idle = `Idle_Loop`, walk = `Walk_Loop`, run = `Jog_Fwd_Loop`, attack = `Sword_Attack`, death =
+`Death01`, cast = `Spell_Simple_Idle_Loop`. Every player, NPC and humanoid mob now animates. Done under `BL-344` step 2.

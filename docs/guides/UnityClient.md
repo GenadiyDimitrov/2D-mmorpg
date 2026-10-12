@@ -564,6 +564,10 @@ decision. That number and *which model suits a family* are the two things the sc
 
 ### Adding move / idle / attack animations to the PLAYER  (`BL-102`, tool shipped 0.102.2)
 
+✅ **DONE in 0.244.0** with the Quaternius *Universal Animation Library* (`UAL1_Standard.fbx`, one multi-take FBX, in
+the folder below). The rest of this section is still how you ADD or REPLACE clips: drop the file in, re-run
+`ModelSetup.BuildAll`, and read its `picks:` log line, which names the take each slot landed on.
+
 🔴 **The character models have no animation in them.** Measured, not assumed: all 21 FBXs under
 `Models/Characters/` have mesh, skeleton, bind pose and 65 bones, and an `AnimationStack` count of
 **0**. The *monster* pack ships five takes per creature — which is why the rats and spiders already

@@ -105,7 +105,7 @@ namespace Game.ClientEditor
         /// <c>Run_Fwd</c> and <c>Standing Idle</c> all land — which is what lets a Mixamo file name be
         /// dropped in unrenamed. <b>Attack and death are deliberately absent</b>: a looping death
         /// re-kills the corpse forever.</para></summary>
-        private static readonly string[] Looping = { "idle", "walk", "run", "flying", "cast" };
+        private static readonly string[] Looping = { "idle", "walk", "run", "flying", "cast", "_loop", "jog" };
 
         /// <summary>
         /// 🔴 `BL-102` — ONE PLAYER BODY PER ROW, and the animation comes from somewhere else.
@@ -409,6 +409,13 @@ namespace Game.ClientEditor
                 {
                     if (defs.Length == 1 && c.name != fileName) { c.name = fileName; dirty = true; }
 
+                    // `BL-344` step 2 — a Blender export names every take "Armature|Idle_Loop". The
+                    // prefix is the rig object, not the take, and it defeats the EXACT pass of FindClip
+                    // (so "idle_loop" would fall through to a substring and could land on
+                    // Crouch_Idle_Loop). Keep the part after the last '|'.
+                    int bar = c.name.LastIndexOf('|');
+                    if (bar >= 0 && bar < c.name.Length - 1) { c.name = c.name.Substring(bar + 1); dirty = true; }
+
                     bool loop = Looping.Any(l => c.name.ToLowerInvariant().Contains(l));
                     if (c.loopTime != loop) { c.loopTime = loop; dirty = true; }
                     if (c.loopPose != loop) { c.loopPose = loop; dirty = true; }
@@ -561,18 +568,27 @@ namespace Game.ClientEditor
 
             AnimationClip Find(params string[] wanted) => FindClip(clips, wanted);
 
-            var idle    = Find("idle", "flying");
-            var walk    = Find("walk", "run", "running", "flying", "jump") ?? idle;
-            var run     = Find("run", "running", "walk", "flying") ?? walk;
-            var attack  = Find("attack", "attack2", "punch", "slash");
-            var death   = Find("death", "dying", "die");
-            var casting = Find("cast", "casting", "spell", "summon");
+            // `BL-344` step 2: the first word of each list is the Quaternius Universal Animation
+            // Library take (exact pass). Without them the substring pass picked Sword_Idle for idle
+            // (the "_idle" suffix), found no run at all (the library calls it Jog_Fwd_Loop) and took
+            // Spell_Simple_Enter — a one-shot — for the cast loop. The creature packs never use these
+            // names, so their picks are unchanged.
+            var idle    = Find("idle_loop", "idle", "flying");
+            var walk    = Find("walk_loop", "walk", "run", "running", "flying", "jump") ?? idle;
+            var run     = Find("jog_fwd_loop", "run", "running", "walk", "flying") ?? walk;
+            var attack  = Find("sword_attack", "attack", "attack2", "punch", "slash");
+            var death   = Find("death01", "death", "dying", "die");
+            var casting = Find("spell_simple_idle_loop", "cast", "casting", "spell", "summon");
 
             if (idle == null)
             {
                 Debug.LogError($"[BL-93] {key}: no idle clip among [{string.Join(", ", clips.Select(c => c.name))}]");
                 return null;
             }
+
+            string N(AnimationClip c) => c == null ? "-" : c.name;
+            Debug.Log($"[BL-93] {key} picks: idle={N(idle)} walk={N(walk)} run={N(run)} " +
+                      $"attack={N(attack)} death={N(death)} cast={N(casting)}");
 
             ac.AddParameter("Speed", AnimatorControllerParameterType.Float);
             var sm = ac.layers[0].stateMachine;

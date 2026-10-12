@@ -15,15 +15,15 @@ bodies (deleted, git keeps them) and the fantasy ones kept.
 | # | Step | Status |
 |---|---|---|
 | 1 | Clean-up + the free families | ✅ **0.243.0.** Undead → Skeleton, Dragon → Dragon. Source FBXs moved to `Assets/Art/Models/`; 15 modern bodies deleted, 6 fantasy kept (Man Adventurer / Farmer / King, Woman Adventurer / Medieval / Witch). Slime was NOT given to MagicCreature: that family is golems, a lich, blades and an eye, and a slime fits none of them. |
-| 2 | Character animation (`BL-102`) | ⏳ **Waiting on one download from you**, see §0.1. |
-| 3 | Ground, vertex-coloured (your Q2 = B) | next one I can do without you |
+| 2 | Character animation (`BL-102`) | ✅ **0.244.0.** Your `UAL1_Standard.fbx` (Quaternius Universal Animation Library, Standard, CC0). Picks: idle = `Idle_Loop`, walk = `Walk_Loop`, run = `Jog_Fwd_Loop`, attack = `Sword_Attack`, death = `Death01`, cast = `Spell_Simple_Idle_Loop`. One body and one clip set for everyone; bows and staves still swing the sword take until step 7. APK 47.3 → 47.4 MB: only the six used clips ship. |
+| 3 | Ground, vertex-coloured (your Q2 = B) | **next** |
 | 4 | Props: trees, rocks, grass clumps (your Q2's C, own step) | after 3 |
 | 5 | Light and time of day | |
 | 6 | Skill FX archetypes | |
 | 7 | Weapons in hand (`BL-103`, protocol bump) | |
 | 8 | Camera: horizontal rotation + limited vertical tilt (your Q4 "later") | top-down stays the default until then |
 
-### 0.1 Step 2: the one file I need from you (for dummies)
+### 0.1 Step 2: the one file I needed from you (done 2026-10-12, kept for the next download)
 
 1. Open **https://quaternius.itch.io/universal-animation-library** in your browser.
 2. Click **Download Now**. A page asks for money: click **"No thanks, just take me to the downloads"** (it is CC0 and
