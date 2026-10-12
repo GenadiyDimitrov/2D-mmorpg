@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.240.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.241.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,22 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-12 (latest) — 0.240.0: the trade window gets category tabs and the order button (`BL-343`)
+## 2026-10-12 (latest) — 0.241.0: Mana Recovery boosts MP potions at half strength (`BL-340`, nuker half)
+
+**Server + new APK** (the APK only carries the new Mana Recovery description). No `game.db` delete.
+
+- His pick, after four measured tables: *"what if the mana_recovery passive worked on potions"* → *"lets go with half -
+  a heavy spammer will need to conserve"*. The per-second MP tick (`TickHealOverTime`: mana potions and Harmony of
+  Restoration's MP part) is now scaled by `Entity.MpTickMod = 1 + MR%/2`: +5% at 20, +20% at 52, +30% at 76, +35% at 85.
+  Cast restores and the Mana Totem keep the FULL Mana Recovery (they already had it, through `RestoreMpOne`).
+- Measured (`dotnet run --project tools/BalanceMatrix -- --potmp-elf`, new): a nuker rotating his whole kit, debuffs
+  recast only once worn off, NPC shelf. With half, the Rare potion covers every race up to 85 and the Elf falls ~7 MP/s
+  short at 90 (101 vs 109) — on purpose, a heavy spammer conserves. A buffer's harmony closes it (+6 MP/s more at 90).
+- No new passive, no SP change. `nuker 2nd.csv` Mana Recovery DESCRIPTION gains "MP potions and mana over time get
+  half of that bonus"; faces regenerated. `docs/Formulas.md` (Healing) carries the formula.
+- The warriors' HP-potion half of `BL-340` stays open.
+
+## 2026-10-12 — 0.240.0: the trade window gets category tabs and the order button (`BL-343`)
 
 **New APK** only (client change; the server is unchanged from 0.239.0).
 

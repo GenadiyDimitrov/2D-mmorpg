@@ -8,7 +8,7 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 20,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,maxMP +20,0,2760,[]
 30,Mana Capacity,mp_capacity,Passive,,,0,0,self/single,0,0,0,maxMP +30,0,9920,[]
 ,,,,,,,,,,,,,,,,----------------------------Mana Recovery----------------------------
-20,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,mpWhenRestored +10%,0,2760,[],,Increase MP Restore spells effect on you with @{restoremp}
+20,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,mpWhenRestored +10%,0,2760,[],,Increase MP Restore spells effect on you with @{restoremp}. MP potions and mana over time get half of that bonus
 25,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,mpWhenRestored +15%,0,5550,[]
 30,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,mpWhenRestored +20%,0,9920,[]
 35,Mana Recovery,mana_recovery,Passive,,,0,0,self/single,0,0,0,mpWhenRestored +25%,0,16300,[]

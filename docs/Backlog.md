@@ -285,7 +285,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-332` | ❓   | **Notifications** — low HP / low potions / farm time over / died: in-game alerts, scheduled phone notifications, server push; my pick + four questions                                                                                                                                                                                                                                                                                                         | ui           |
 | `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
 | `BL-336` | 🔵 | **No-refresh debuffs (IG rule)** — a debuff of the same type cannot be re-landed until the old one wears off (no perma-hold); a re-stun attempt may BREAK the stun instead of resetting it; boss-allowed stacking types excepted; design owed | combat |
-| `BL-340` | ❓ | **Potion Mastery** — a % passive on every warrior (HP potions) and every nuker (MP potions) from the 2nd class on, boosting the potion HoT only; measured (`--potmp`); waiting on your pick of ladder A or B | classes |
+| `BL-340` | 🔵 | **Potion Mastery — warrior HP half** — nuker half BUILT 0.241.0 (MP tick gets half of Mana Recovery); the warriors' HP potions still need a measurement and your pick of passive | classes |
 | `BL-341` | ⏸ | **Skill vampirism + skill reflect** — a buff that vamps from any spell/physical skill (later-chronicle IG), only together with reflect on skill damage; "a lot later if at all" | combat |
 
 ---
@@ -2385,32 +2385,15 @@ Your words: *"in IG the game dont allow same type of debuf (except the boss allo
 
 ❓ **Open:** the exact break curve (a % per second of the stun's duration, or per second REMAINING?); whether rule 1 applies to mobs as well as players; and whether a break also starts a short immunity. Design owed before code.
 
-## `BL-340` ❓ POTION MASTERY (2026-10-09)
+## `BL-340` 🔵 POTION MASTERY — THE WARRIOR (HP) HALF (2026-10-09, rewritten 2026-10-12)
 
-Your ask: *"make potions more effective for different classes ... warriors (hp pots) and nukers (mp pots)
-@20,40,52,61,76,85 ... % based so weaker pots stay weaker"*. Then: every warrior and every nuker from here on
-(warrior 2nd/3rd/4th + war_aoe 3rd/4th; nuker 2nd/3rd/4th + any future summoner), from the **2nd class**
-(`warrior 2nd.csv`, `nuker 2nd.csv`), and **Instant Healing is NOT affected** — only the potion HoT.
+**The nuker half is BUILT (0.241.0)** and its old text is archived: no new passive, the per-second MP tick (mana
+potions, Harmony of Restoration's MP) gets **half of Mana Recovery** (`Entity.MpTickMod`, +35% at 85), your pick of
+2026-10-12 (*"lets go with half - a heavy spammer will need to conserve"*). Measured: `BalanceMatrix --potmp-elf`.
 
-**How it would be built:** one passive per resource (one skill id, rungs replace each other, like the armour
-masteries), its % in a new `DESCR` word; the engine multiplies only the `potion_heal` / `potion_mana` families
-in `TickHealOverTime` (Harmony of Restoration's HoT shares that loop and must not be boosted). The CSV rows
-ship in the same commit.
-
-**Measured** (`dotnet run --project tools/BalanceMatrix -- --potmp`): a fully buffed nuker (whole NPC shelf +
-Spell Rune), casting non-stop, needs a potion to cover about 13 MP/s at 40, 31-40 at 52, 44-55 at 61,
-56-69 at 76, 71-91 at 80, 87-116 at 85 and 95-128 at 90. Without the passive the Rare potion (75 sustained)
-stops covering him at 80; with it at +66.7% it covers to ~85-90. Uncommon never catches up past 61, so the
-potion order stays. **The % is not too high.**
-
-**Your pick, one of:**
-- **A** — 10 / 20 / 25 / 35 / 45 / 55 / 66.7 % at 20 / 40 / 52 / 61 / 76 / 80 / 85 (**my pick**: the rung at 80
-  is where the drain jumps).
-- **B** — 15 / 25 / 35 / 45 / 55 / 66.7 % at 20 / 40 / 52 / 61 / 76 / 85 (my reading of your "15,25,35..." —
-  more at 20-76, where the Uncommon potion already covers).
-
-Owed after your pick: the HP twin's measurement for the warriors (their need is mob damage, not their own
-spending), the two passives, their CSV rows and SP.
+**Still owed: the warriors' HP potions** (warrior 2nd/3rd/4th + war_aoe 3rd/4th, from the 2nd class, Instant Healing
+not affected). Their need is mob damage, not their own spending, so it needs its own measurement, and they have no
+Mana-Recovery-like passive to borrow. Waiting on you: a new HP passive, or an existing warrior passive to reuse.
 
 ## `BL-341` ⏸ SKILL VAMPIRISM + SKILL REFLECT, AS ONE PAIR (2026-10-09, "a lot later if at all")
 

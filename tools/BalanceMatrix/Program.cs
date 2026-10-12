@@ -2728,6 +2728,13 @@ if (args.Length > 0 && args[0] == "--potmp")
     PotMp();
     return;
 }
+// `--potmp-elf` - the same question for ONE spammer (2026-10-12): an Elf Magus casting nothing but his
+// main nuke, NPC shelf vs `/buff` (the admin set) + 5 WIT.
+if (args.Length > 0 && args[0] == "--potmp-elf")
+{
+    PotMpElf();
+    return;
+}
 
 // `--stacks` - what every item in the catalog stacks to, and what a farm trip costs in ROWS (0.93.0).
 if (args.Length > 0 && args[0] == "--stacks")
@@ -9426,6 +9433,176 @@ static void PotMp()
             Console.WriteLine($"  {L,4}  {race,-6} {e.MaxMp,6}  {n,5}   {Trim(top, 17),-17} {drain,7:0.0} {regen,7:0.0} {net,7:+0.0;-0.0} | {a * 100,4:0}  {b * 100,4:0}  | "
                             + string.Join("  ", pots.Select(p => Cell(p.Sustained))));
         }
+    }
+    Console.WriteLine();
+}
+
+// ============================================================================================
+//  `--potmp-elf` — the owner's follow-up (2026-10-12): *"same table just with spamming elf of
+//  elemental blast and in the () add same elf just fully buffed /buff + 5 wit"*. One spell, cast
+//  the moment it is ready (Elemental Bolt at 20 — Blast replaces it at 40). Two loadouts: the NPC
+//  shelf (what --potmp measures) and the admin `/buff` set (ApplyAdminBuffs) with WIT +5.
+//  Each potion column = the % boost that potion needs to cover the net (0 = already covers).
+// ============================================================================================
+static void PotMpElf()
+{
+    static float Mp(Entity e)
+    {
+        float stance = MovementTuning.RegenMultiplier(MoveState.Running, false);
+        float pct = e.Buffs.Where(b => b.Has(SkillEffect.BuffMpRegen)).Sum(b => b.Percent(SkillEffect.BuffMpRegen));
+        float flat = e.Buffs.Where(b => b.Has(SkillEffect.BuffMpRegen)).Sum(b => b.Flat(SkillEffect.BuffMpRegen));
+        return StatCalculator.MpRegenPerSecond(e.EffectiveSpt, e.Level)
+                   * stance * e.MpRegenStandMult * e.MpRegenMult * (1f + pct)
+               + e.MpRegenBonus + flat;
+    }
+    // Spam ONE spell for 180s: cast x castSpeed, then wait out its reduced reuse, again.
+    static (float Drain, int Mp, float Cycle) Spam(Entity e, string id)
+    {
+        var d = SkillCatalog.Get(id)!;
+        int sl = e.LearnedSkills.TryGetValue(id, out var lv) ? lv : 1;
+        int mp = (int)(d.MpCostAt(sl) * (1f - e.MagicMpCostReduction));
+        int cast = Math.Max(2, (int)(d.CastTicksAt(sl) * e.EffectiveCastSpeedMultiplier));
+        int cd = d.CooldownTicksAt(sl);
+        if (cd > 0 && e.CooldownReduction > 0f) cd = Math.Max(1, (int)(cd * (1f - e.CooldownReduction)));
+        float cycle = (cast + cd) / 10f;
+        return (mp / cycle, mp, cycle);
+    }
+    // The --potmp rotation (most expensive READY damage spell), but a spell that leaves a debuff/DoT
+    // (DurationTicks > 0, e.g. Witches Curse) is not spam: once it lands it is recast only when it
+    // wears off, so its reuse is max(cooldown, duration).
+    static (float Drain, string Kit) Rotate(Entity e)
+    {
+        var kit = new List<(SkillDef D, int Mp, int Cast, int Cd)>();
+        foreach (var (sid, sl) in e.LearnedSkills)
+        {
+            if (SkillCatalog.Get(sid) is not SkillDef d) continue;
+            if ((d.Effect & SkillEffect.MagicDamage) == 0 || d.MpPerSecondAt(sl) > 0) continue;
+            int mp = (int)(d.MpCostAt(sl) * (1f - e.MagicMpCostReduction));
+            if (mp <= 0) continue;
+            int cast = Math.Max(2, (int)(d.CastTicksAt(sl) * e.EffectiveCastSpeedMultiplier));
+            int cd = d.CooldownTicksAt(sl);
+            if (cd > 0 && e.CooldownReduction > 0f) cd = Math.Max(1, (int)(cd * (1f - e.CooldownReduction)));
+            cd = Math.Max(cd, d.DurationTicksAt(sl));
+            kit.Add((d, mp, cast, cd));
+        }
+        const int Ticks = 1800;
+        var ready = new int[kit.Count]; var casts = new int[kit.Count];
+        long spent = 0; int t = 0;
+        while (t < Ticks)
+        {
+            int best = -1;
+            for (int i = 0; i < kit.Count; i++)
+                if (ready[i] <= t && (best < 0 || kit[i].Mp > kit[best].Mp)) best = i;
+            if (best < 0) { t++; continue; }
+            spent += kit[best].Mp; casts[best]++;
+            t += kit[best].Cast;
+            ready[best] = t + kit[best].Cd;
+        }
+        string desc = string.Join(", ", Enumerable.Range(0, kit.Count).Where(i => casts[i] > 0)
+            .OrderByDescending(i => casts[i]).Select(i => $"{kit[i].D.Name} x{casts[i]}"
+                + (kit[i].D.DurationTicksAt(1) > 0 ? $" [dur {kit[i].Cd / 10}s]" : "")));
+        return (spent / (Ticks / 10f), desc);
+    }
+
+    var pots = new[] { ItemCatalog.MinorManaPotion, ItemCatalog.ManaPotion, ItemCatalog.GreaterManaPotion }
+        .Select(pid =>
+        {
+            var item = ItemCatalog.Get(pid)!;
+            var sk = SkillCatalog.Get(item.UseSkillId!)!;
+            float sticker = sk.Magnitudes!.First(m => m.Effect == SkillEffect.RestoreMp).Value;
+            float up = sk.DurationTicks / (float)Math.Max(sk.DurationTicks, item.PotionCooldownTicks);
+            return (Name: item.Rarity.ToString(), Sustained: sticker * up);
+        }).ToArray();
+
+    Console.WriteLine();
+    Console.WriteLine("=== POTION MASTERY — ELF MAGUS SPAMMING HIS NUKE (2026-10-12) ===");
+    Console.WriteLine("  first = NPC shelf + Spell Rune;  (second) = /buff admin set + Spell Rune + 5 WIT.");
+    Console.WriteLine("  Potions sustained: " + string.Join(", ", pots.Select(p => $"{p.Name} {p.Sustained:0}")) + " MP/s.");
+    Console.WriteLine();
+    Console.WriteLine("     L  spell             mp  cycle(s)          drain           regen             net | " + string.Join(" | ", pots.Select(p => $"{p.Name,-16}")));
+    foreach (int L in new[] { 20, 40, 52, 61, 76, 80, 85, 90 })
+    {
+        string id = L >= 40 ? SkillCatalog.ElementalBlast : SkillCatalog.ElementalBolt;
+        Entity Build(bool admin)
+        {
+            var e = BuildWarchanter(Race.Elf, L, disc: Discipline.Magus, fourth: L >= FourthClassCatalog.ChangeLevel);
+            if (admin) { ApplyAdminBuffs(e); e.Wit += 5; e.RecomputeDerived(); }
+            else ApplyNpcBuffs(e, fullShelf: true);
+            return e;
+        }
+        var n = Build(false); var a = Build(true);
+        var (dn, mpn, cyn) = Spam(n, id); var (da, mpa, cya) = Spam(a, id);
+        float rn = Mp(n), ra = Mp(a), nn = dn - rn, na = da - ra;
+        static string Need(float net, float s) => net <= s ? "0" : $"+{(net / s - 1f) * 100f:0}";
+        Console.WriteLine($"  {L,4}  {Trim(SkillCatalog.Get(id)!.Name, 16),-16} {mpn,3}({mpa,3}) {cyn,4:0.00}({cya,4:0.00})"
+            + $" {dn,6:0.0}({da,6:0.0}) {rn,5:0.0}({ra,5:0.0}) {nn,6:+0.0;-0.0}({na,6:+0.0;-0.0}) | "
+            + string.Join(" | ", pots.Select(p => $"{Need(nn, p.Sustained),6}({Need(na, p.Sustained),6})    ")));
+    }
+    Console.WriteLine();
+    Console.WriteLine("--- ROTATION: most expensive ready nuke, debuffs recast only when they expire ---");
+    foreach (int L in new[] { 20, 40, 52, 61, 76, 80, 85, 90 })
+    {
+        Entity Build(bool admin)
+        {
+            var e = BuildWarchanter(Race.Elf, L, disc: Discipline.Magus, fourth: L >= FourthClassCatalog.ChangeLevel);
+            if (admin) { ApplyAdminBuffs(e); e.Wit += 5; e.RecomputeDerived(); }
+            else ApplyNpcBuffs(e, fullShelf: true);
+            return e;
+        }
+        var n = Build(false); var a = Build(true);
+        var (dn, kn) = Rotate(n); var (da, _) = Rotate(a);
+        float nn = dn - Mp(n), na = da - Mp(a);
+        static string Need(float net, float s) => net <= s ? "0" : $"+{(net / s - 1f) * 100f:0}";
+        Console.WriteLine($"  {L,4}  drain {dn,6:0.0}({da,6:0.0}) net {nn,6:+0.0;-0.0}({na,6:+0.0;-0.0}) | "
+            + string.Join(" | ", pots.Select(p => $"{p.Name} {Need(nn, p.Sustained)}({Need(na, p.Sustained)})")));
+        Console.WriteLine($"        kit: {kn}");
+    }
+    Console.WriteLine();
+
+    // *"totems/harmony will that get a boost as well on mage"* — every MP source on either pipe.
+    Console.WriteLine("--- MP SOURCES: per-second buff tick (TickHealOverTime, NOT boosted today) vs RestoreMpOne (boosted) ---");
+    foreach (var d in SkillCatalog.AllSkills)
+    {
+        for (int lv = 1; lv <= Math.Max(1, d.MaxLevel); lv++)
+        {
+            var mags = d.MagnitudesAt(lv);
+            var m = mags?.FirstOrDefault(x => x.Effect == SkillEffect.RestoreMp);
+            bool buffTick = m is { Value: > 0f } && d.DurationTicksAt(lv) > 0 && !d.PlacesTotem;
+            if (buffTick)
+                Console.WriteLine($"  TICK  {d.Id,-34} L{lv,-2} {m!.Value.Value,6:0.##}/s  dur {d.DurationTicksAt(lv) / 10}s  ({d.Name})");
+            if (d.PlacesTotem && (d.Effect & SkillEffect.RestoreMp) != 0)
+                Console.WriteLine($"  TOTEM {d.Id,-34} L{lv,-2} power {d.PowerAt(lv)} every {d.TotemPulseTicks / 10f}s, life {d.TotemLifeTicks / 10}s ({d.Name})");
+        }
+    }
+    Console.WriteLine();
+
+    // 2026-10-12, his next question: *"what if the mana_recovery passive worked on potions"* — the
+    // potion HoT is boosted by the nuker's own RestoreMpMod (Mana Recovery), FULL and HALF. All three
+    // races, NPC shelf, the rotation above (debuffs recast only once worn off). Range = lightest>heaviest race.
+    Console.WriteLine("--- MANA RECOVERY ON POTIONS: all races, NPC shelf, rotation with debuffs-on-expiry ---");
+    Console.WriteLine("     L  net MP/s range    MR%  | " + string.Join(" | ", pots.Select(p => $"{p.Name} full / half (base {p.Sustained:0})")));
+    foreach (int L in new[] { 20, 40, 52, 61, 76, 80, 85, 90 })
+    {
+        var nets = new List<(Race R, float Net)>();
+        float mr = 0f, tick = 0f;
+        foreach (var race in new[] { Race.Elf, Race.Human, Race.Demon })
+        {
+            var e = BuildWarchanter(race, L, disc: Discipline.Magus, fourth: L >= FourthClassCatalog.ChangeLevel);
+            ApplyNpcBuffs(e, fullShelf: true);
+            var (d, _) = Rotate(e);
+            nets.Add((race, d - Mp(e)));
+            mr = e.RestoreMpMod - 1f;
+            tick = e.MpTickMod - 1f;   // the engine's own half (BL-340, built 0.241.0)
+        }
+        float lo = nets.Min(x => x.Net), hi = nets.Max(x => x.Net);
+        string Mark(float rate) => rate >= hi ? "ALL" : rate >= lo ? "some" : "none";
+        Console.WriteLine($"  {L,4}  {lo,5:0.0} > {hi,5:0.0}   {mr * 100,4:0}  | "
+            + string.Join(" | ", pots.Select(p =>
+              {
+                  float f = p.Sustained * (1 + mr), h = p.Sustained * (1 + mr / 2);
+                  return $"{f,5:0.0} {Mark(f),-4} / {h,5:0.0} {Mark(h),-4}";
+              }))
+            + $"   engine tick +{tick * 100:0.#}%   heaviest: " + nets.OrderByDescending(x => x.Net).First().R);
     }
     Console.WriteLine();
 }

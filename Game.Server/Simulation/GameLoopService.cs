@@ -18353,7 +18353,8 @@ public partial class GameLoopService : BackgroundService
         }
         if (mpFlat > 0f && entity.Mp < entity.MaxMp)
         {
-            int gain = Math.Max(1, (int)mpFlat);
+            // `BL-340` — Mana Recovery at HALF strength (Entity.MpTickMod): potions and the harmony's MP.
+            int gain = Math.Max(1, (int)MathF.Round(mpFlat * entity.MpTickMod));
             int had = entity.Mp;
             entity.Mp = Math.Min(entity.MaxMp, entity.Mp + gain);
             // ⚠ ManaHeal, NOT Heal. It was `Heal` with the skill named "Mana", which draws the BLUE

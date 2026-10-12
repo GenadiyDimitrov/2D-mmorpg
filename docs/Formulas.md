@@ -735,6 +735,10 @@ landed = flatReceived + pctReceived               (0 while the target is HP-froz
   slots from 20% by −2%.
 - **HoT ticks** run the same split: `MaxHp·pct + flat·HealReceivedMod`, so a flat potion is hindered
   by an anti-heal debuff and a % channel is not.
+- **MP received** (`BL-340`, 0.241.0). A cast restore or a totem pulse: `amount·RestoreMpMod`, where
+  Mana Recovery gives `RestoreMpMod = 1 + pct` (+10% at 20 … +70% at 85). The per-second MP TICK
+  (mana potions, Harmony of Restoration's MP): `round(flat·MpTickMod)`, `MpTickMod = 1 + pct/2`, i.e.
+  HALF of Mana Recovery (+35% at 85). The tick ignores MP-received debuffs (it always has).
 
 `SkillMath.HealAmount` · `GameLoopService.HealOne` (the flat/% split) and its heal branch in
 `ExecuteSkill` (the triage ordering) · `Entity.HealPowerFlat/HealPowerMod/HealReceivedFlat/HealReceivedMod`

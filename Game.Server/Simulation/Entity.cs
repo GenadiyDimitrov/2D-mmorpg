@@ -1600,6 +1600,13 @@ public class Entity
     /// times — so the owner re-authored it as a percent that scales with whatever actually lands,
     /// exactly as healing already works. See StatMods.RestoreMpPct.</para></summary>
     public float RestoreMpMod { get; set; } = 1f;
+    /// <summary>MANA-OVER-TIME received — the per-second MP tick (mana potions, Harmony of Restoration's
+    /// MP part) scaled by HALF of Mana Recovery (`BL-340`, owner 2026-10-12: *"lets go with half - a heavy
+    /// spammer will need to conserve"*). +70% on a cast restore is +35% here. Measured with
+    /// `BalanceMatrix --potmp-elf`: half lets the Rare potion cover a rotating nuker of every race to 85.
+    /// Totems are NOT on this pipe: their pulse goes through RestoreMpOne and gets the full
+    /// <see cref="RestoreMpMod"/>.</summary>
+    public float MpTickMod { get; set; } = 1f;
     // (MagicFailResist DELETED 2026-08-10 — the owner's magic-landing model has no caster-side
     //  accuracy stat. It was also the field the bow penalty halved, which is why `57d` was invisible.)
     public bool UntrainedCasterWeapon { get; set; }  // Spellcaster Mastery: bow/dual/bare (feeds MagicFailSelfMult ×25)
@@ -3231,6 +3238,7 @@ public class Entity
         BluntDefCoef = 1f;
         BowDefCoef = 1f;
         RestoreMpMod = 1f;
+        MpTickMod = 1f;
         MagicResist = 0f;
         PhysicalResist = 0f;
         UntrainedCasterWeapon = false;
@@ -3791,6 +3799,7 @@ public class Entity
                 // ×1.6, not +60 points — the same convention as the crit-rate lines above. Masteries
                 // COMPOUND here, which is what lets a set bonus ride on top of the robe mastery.
                 if (sm.RestoreMpPct != 0f) RestoreMpMod *= 1f + sm.RestoreMpPct;
+                if (sm.RestoreMpPct != 0f) MpTickMod *= 1f + sm.RestoreMpPct * 0.5f;   // `BL-340`: half on the MP tick
                 // "Decrease Mp Consumption with 8%" — his Healer Armor Mastery, 78 and up. ONE authored
                 // number, BOTH channels; clamped with everything else at the bottom of this method.
                 PhysMpCostReduction += sm.MpCostPct;

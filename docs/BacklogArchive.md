@@ -8518,3 +8518,37 @@ shared rules (`ItemCatalog.InCategory`, `CompareByOrder`) so the four windows ca
 
 **Built 2026-10-12 (0.240.0)**, the same day: five tabs (All / Gear / Use / Boxes / Mats) and the shared `[ORDER]`
 button over the trade window's bag list; the list follows the shared order. Client only.
+
+## `BL-340` ✅ NUKER HALF BUILT in 0.241.0 — POTION MASTERY, the text it replaced (2026-10-09 → 10-12)
+
+
+Your ask: *"make potions more effective for different classes ... warriors (hp pots) and nukers (mp pots)
+@20,40,52,61,76,85 ... % based so weaker pots stay weaker"*. Then: every warrior and every nuker from here on
+(warrior 2nd/3rd/4th + war_aoe 3rd/4th; nuker 2nd/3rd/4th + any future summoner), from the **2nd class**
+(`warrior 2nd.csv`, `nuker 2nd.csv`), and **Instant Healing is NOT affected** — only the potion HoT.
+
+**How it would be built:** one passive per resource (one skill id, rungs replace each other, like the armour
+masteries), its % in a new `DESCR` word; the engine multiplies only the `potion_heal` / `potion_mana` families
+in `TickHealOverTime` (Harmony of Restoration's HoT shares that loop and must not be boosted). The CSV rows
+ship in the same commit.
+
+**Measured** (`dotnet run --project tools/BalanceMatrix -- --potmp`): a fully buffed nuker (whole NPC shelf +
+Spell Rune), casting non-stop, needs a potion to cover about 13 MP/s at 40, 31-40 at 52, 44-55 at 61,
+56-69 at 76, 71-91 at 80, 87-116 at 85 and 95-128 at 90. Without the passive the Rare potion (75 sustained)
+stops covering him at 80; with it at +66.7% it covers to ~85-90. Uncommon never catches up past 61, so the
+potion order stays. **The % is not too high.**
+
+**Your pick, one of:**
+- **A** — 10 / 20 / 25 / 35 / 45 / 55 / 66.7 % at 20 / 40 / 52 / 61 / 76 / 80 / 85 (**my pick**: the rung at 80
+  is where the drain jumps).
+- **B** — 15 / 25 / 35 / 45 / 55 / 66.7 % at 20 / 40 / 52 / 61 / 76 / 85 (my reading of your "15,25,35..." —
+  more at 20-76, where the Uncommon potion already covers).
+
+Owed after your pick: the HP twin's measurement for the warriors (their need is mob damage, not their own
+spending), the two passives, their CSV rows and SP.
+
+
+**Built 2026-10-12 (0.241.0)** — neither ladder. His pick after `BalanceMatrix --potmp-elf`: *"what if the mana_recovery passive
+worked on potions"* → *"lets go with half - a heavy spammer will need to conserve"*. The per-second MP tick (mana potions,
+Harmony of Restoration's MP) now gets HALF of Mana Recovery (`Entity.MpTickMod`); totems already had the full one. No new
+passive, no SP. The warrior HP half stays open in `Backlog.md` under the same id.
