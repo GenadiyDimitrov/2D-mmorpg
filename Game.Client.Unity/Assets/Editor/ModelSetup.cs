@@ -149,6 +149,7 @@ namespace Game.ClientEditor
             bool ok = BuildFamilies();
             ok &= BuildCharacterBodies();
             ok &= BuildPropPrefabs();
+            ok &= BuildWeaponPrefabs();   // after the bodies: a weapon is sized against the humanoid
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -580,6 +581,10 @@ namespace Game.ClientEditor
             var attack  = Find("sword_attack", "attack", "attack2", "punch", "slash");
             var death   = Find("death01", "death", "dying", "die");
             var casting = Find("spell_simple_idle_loop", "cast", "casting", "spell", "summon");
+            // `BL-103` — the weapon picks its swing (HeldWeapons.StyleFor). Exact UAL names only: a creature pack has
+            // neither, so a creature controller gets no AttackStyle parameter and keeps its one attack.
+            var bowShot   = clips.FirstOrDefault(c => c.name.ToLowerInvariant() == "pistol_shoot");
+            var spellShot = clips.FirstOrDefault(c => c.name.ToLowerInvariant() == "spell_simple_shoot");
 
             if (idle == null)
             {
@@ -626,6 +631,32 @@ namespace Game.ClientEditor
                 back.hasExitTime = true;      // the swing plays out; the server already resolved the blow
                 back.exitTime = 0.9f;
                 back.duration = 0.1f;
+
+                if (bowShot != null || spellShot != null)
+                {
+                    // `BL-103` — one Attack trigger, three swings, chosen by the INT the client sets when it dresses
+                    // the body (0 melee, 1 bow, 2 spell). A missing style clip falls back to the sword swing.
+                    ac.AddParameter("AttackStyle", AnimatorControllerParameterType.Int);
+                    into.AddCondition(AnimatorConditionMode.Equals, 0f, "AttackStyle");
+                    AddStyle("AttackBow", bowShot ?? attack, 1);
+                    AddStyle("AttackSpell", spellShot ?? attack, 2);
+                }
+
+                void AddStyle(string name, AnimationClip clip, int style)
+                {
+                    var s = sm.AddState(name);
+                    s.motion = clip;
+                    var i = locomotion.AddTransition(s);
+                    i.AddCondition(AnimatorConditionMode.If, 0f, "Attack");
+                    i.AddCondition(AnimatorConditionMode.Equals, style, "AttackStyle");
+                    i.hasExitTime = false;
+                    i.duration = 0.05f;
+                    var b = s.AddTransition(locomotion);
+                    b.hasExitTime = true;
+                    b.exitTime = 0.9f;
+                    b.duration = 0.1f;
+                }
+                Debug.Log($"[BL-103] {key} attack styles: bow={N(bowShot)} spell={N(spellShot)}");
             }
 
             if (casting != null)

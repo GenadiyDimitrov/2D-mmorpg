@@ -20,7 +20,7 @@ bodies (deleted, git keeps them) and the fantasy ones kept.
 | 4 | Props: trees, rocks, grass clumps (your Q2's C, own step) | ✅ **0.246.0** scatter (`PropScatter.cs`, §0.3) + **0.247.0** real models from the nature pack (§0.2): 19 picks over 9 kinds, twisted trees in the marsh, flower patches in the meadow. APK 47.5 → 49.7 MB. ❓ judge in a playtest: density, tree size, trees hiding you in a wood (§0.3 last point), frame rate on High. |
 | 5 | Light and time of day | ✅ **0.248.0.** Lit ground (`LitVertexColor.shader`), characters cast shadows, the directional light turned by `GameClock` (`DayNight.cs`, §0.4). Your pick: night 0.30 (*"0.12 is to dark, 0.2 as well"*), plus **Settings → Night brightness** 0.10-0.60 for your *"a bar or gamma as other games"*. Settings → Shadows: characters (default) / + trees / off. ❓ judge on the phone: frame rate with trees casting, how night reads outdoors. |
 | 6 | Skill FX archetypes | ✅ **0.249.0.** `FxPlayer.cs`, `SkillDef.Fx` + `SkillFxRules` (§0.5). Your picks: exceptions in `docs/data/skill_fx.csv` (one row: Mana Ray = Beam), basic attacks show only crit sparks. ❓ judge on the phone: size and brightness at your zoom, the frame rate in a crowd fight. |
-| 7 | Weapons in hand (`BL-103`, protocol bump) | |
+| 7 | Weapons in hand (`BL-103`, protocol bump) | ✅ **0.250.0.** One mesh per weapon type on the hand bones (`HeldWeapons.cs`, §0.6), CC0 meshes I fetched myself (Quaternius medieval weapons + KayKit staff/wand). Bows shoot with `Pistol_Shoot`, wands and staves with `Spell_Simple_Shoot`. Protocol 53. Tier prefabs + rarity glow stay in `BL-103`. ❓ judge on the phone: sizes at your zoom, the bow pose. |
 | 8 | Camera: horizontal rotation + limited vertical tilt (your Q4 "later") | top-down stays the default until then |
 
 ### 0.1 Step 2: the one file I needed from you (done 2026-10-12, kept for the next download)
@@ -153,6 +153,36 @@ has about 70-80 textured models (trees incl. pine, birch and dead/dry trees, roc
 - **From above** (the default camera) a vertical rise is a dot, so every landing also spreads outward on the ground.
 - **Preview:** `ModelSetup.PreviewFx` (batchmode WITHOUT `-nographics`, `-previewOut <png>`): 12 frames, one effect
   each, the last one straight down. It logs the live particle count per frame.
+
+### 0.6 Step 7: how the weapons in hand work (built 0.250.0)
+
+- **The wire:** `EntityDto` gained `Weapon` (the `WeaponType`), `MagicWeapon` and `Shield` at the end, on the spawn
+  only (equipping changes a static field, so the diff re-sends the spawn). Protocol 53, a pure addition. Players send
+  what they have equipped; mobs send the weapon they FIGHT with (archer role → bow, else the template's passive, else
+  the family default: humanoids club, undead and demons carry a sword, angels a mace). NPCs hold nothing.
+- **One mesh per type**, `Resources/Weapons/<key>`: `sword1h` · `sword2h` · `blunt1h` · `blunt2h` · `dagger` (twice,
+  for duals) · `bow` · `wand` · `staff` · `shield`. Blunt + magic = wand, 2H blunt + magic = staff. Tier prefabs and the
+  rarity glow from `BL-103` are NOT built (they need the item tier and rarity on the wire).
+- **Meshes, both CC0, no download needed from you** (I fetched them; `Art/Models/Weapons/SOURCES.txt`): Quaternius
+  *LowPoly Medieval Weapons* (Sword, Sword_Big, Hammer_Small, Hammer_Double, Dagger, Bow_Wooden, Shield_Heater_2) and
+  the KayKit *Adventurers* staff and wand. 150-1,900 tris each, flat colours (+ one 256² swatch map for the KayKit
+  two). Our own URP Lit materials in `Art/Models/Weapons/Materials/`.
+- **Where they sit:** `HeldWeapons.cs` builds a grip frame on each hand from the hand's OWN children (wrist → middle
+  finger root, wrist → thumb root), so no rotation is authored per rig. Every prefab is built into that one frame by
+  `ModelSetup.BuildWeapons` (root = grip, +Y along the weapon, +Z the edge, a shield faces outward). Everything rides the
+  RIGHT hand, the bow too; the shield and the second dagger the left. Sizes are a share of the body's height (sword
+  0.52, 2H sword 0.80, staff 0.97, shield 0.46, ...), so they follow the entity-size slider.
+- **The swing follows the weapon:** the humanoid controller gained an `AttackStyle` int. Sword, blunt and duals play
+  `Sword_Attack`; a **bow plays `Pistol_Shoot`** (the right arm raises the bow upright, string toward the archer); a
+  **wand or staff plays `Spell_Simple_Shoot`**. UAL1 Standard has no bow-draw take; a later library can replace it
+  (the bow would then move to the left hand).
+- **A body without hands draws nothing**, and that is not an error: rat, spider, skeleton and dragon have no Humanoid
+  avatar, so an animal's "claws" (Dual) never show as daggers.
+- **Preview:** `ModelSetup.PreviewWeapons` (batchmode WITHOUT `-nographics`, `-previewOut <png>`; or
+  `BuildWeaponsAndPreview` to rebuild first): ten sets, idle and mid-attack from the side, then idle from straight
+  above. ⚠ Headless, neither a skinned mesh nor a renderer under a bone redraws after the bones move, so the preview
+  samples with `AnimationMode` and draws BAKED copies of the body and the weapons. The phone has no such problem.
+- APK: 50.3 → 50.4 MB (+0.2 MB; the budget is 120).
 
 ## 1. What the client draws today
 

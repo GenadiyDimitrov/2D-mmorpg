@@ -243,7 +243,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-78`  | 🔵   | Mobs are too easy — three of four built, only THE BILL is left                                                                                                                                                                                                                                                                                                                                                                                                 | world        |
 | `BL-80`  | 🔵   | Fortress sieges — your own design, transcribed whole                                                                                                                                                                                                                                                                                                                                                                                                           | world        |
 | `BL-93`  | 🔵   | In-game visuals — models, terrain, the look of the world                                                                                                                                                                                                                                                                                                                                                                                                       | UI           |
-| `BL-103` | 🔵   | Visible weapons — the shape is settled, the meshes are not                                                                                                                                                                                                                                                                                                                                                                                                     | UI           |
+| `BL-103` | 🔵   | Visible weapons — one mesh per type built (0.250.0); tier prefabs + rarity glow owed | UI           |
 | `BL-104` | 🔵   | The warrior's sword-vs-blunt split — ruled, nothing to attach it to yet                                                                                                                                                                                                                                                                                                                                                                                        | classes      |
 | `BL-106` | ❓   | Your cross-chain id rule — six ids disobey it; three answers wanted                                                                                                                                                                                                                                                                                                                                                                                            | classes      |
 | `BL-157` | 🔵   | The worm — a polymorph debuffer/nuker class, a seed only                                                                                                                                                                                                                                                                                                                                                                                                       | classes      |
@@ -284,7 +284,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-332` | ❓   | **Notifications** — low HP / low potions / farm time over / died: in-game alerts, scheduled phone notifications, server push; my pick + four questions                                                                                                                                                                                                                                                                                                         | ui           |
 | `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
 | `BL-341` | ⏸ | **Skill vampirism + skill reflect** — a buff that vamps from any spell/physical skill (later-chronicle IG), only together with reflect on skill damage; "a lot later if at all" | combat |
-| `BL-344` | 🔴 | **Visual pass** — ground, animations, entities; order + status in `design/VisualPass.md` §0; steps 1-3 built (0.243.0, 0.244.0, 0.245.0), step 4 built (0.246.0 scatter, 0.247.0 real models), step 5 built (0.248.0 light, shadows, day/night), step 6 built (0.249.0 skill FX); next: step 7, weapons in hand | client |
+| `BL-344` | 🔴 | **Visual pass** — ground, animations, entities; order + status in `design/VisualPass.md` §0; steps 1-3 built (0.243.0, 0.244.0, 0.245.0), step 4 built (0.246.0 scatter, 0.247.0 real models), step 5 built (0.248.0 light, shadows, day/night), step 6 built (0.249.0 skill FX), step 7 built (0.250.0 weapons in hand); next: step 8, camera rotation | client |
 | `BL-345` | ❓ | **Hosting for friends** — where the server runs (your question: an Oracle Always Free Linux machine?), how friends download the APK and connect; answer owed after `BL-344` | ops |
 | `BL-346` | ⏸ | **The open-world grid map** — the world as a grid of zone cells, castle territories of several cells (farming zones, spawners, dungeons), one seamless map, impassable terrain with passages between biomes; for later | world |
 | `BL-347` | ⏸ | **Inventory as cells** — a grid of item cells with icons, and a tooltip-style details panel; for later | ui |
@@ -666,54 +666,20 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
   colour on `SkillDef`; the client reads `SkillCatalog` directly, so no protocol change) → **~25 sound
   clips + 2-3 ambient loops** → skybox/fog/day-night (🔑 `GameClock` is already server-synced).
 
-- `BL-103` 🔵 **VISIBLE WEAPONS — the key shape is settled, the meshes are not. Your design, 2026-08-28:**
-  *"if I make a sword1h.prefab and one sword1h_t20.prefab can that work? a t20 swords to be this one
-  every rarity (we can change hue for example or glow) and if no tier prefab to fallback to default"*.
-  **Yes — and `sword1h_t20` is not an invented name: it is literally an existing item id**
-  (`TieredWeapons` emits `$"{w.Key}_t{L}"`).
+- `BL-103` 🔵 **VISIBLE WEAPONS — ONE MESH PER TYPE IS BUILT (0.250.0); TIERS AND RARITY GLOW ARE NOT.** Everyone now
+  holds what they fight with: nine prefabs in `Resources/Weapons/` (sword1h, sword2h, blunt1h, blunt2h, dagger, bow,
+  wand, staff, shield) hung on the humanoid's hand bones by `HeldWeapons.cs`, chosen from `EntityDto.Weapon` +
+  `MagicWeapon` + `Shield`. How it works: `docs/design/VisualPass.md` §0.6. The old text, your 2026-08-28 design, is
+  in `BacklogArchive.md` under this id.
 
-  **The eight weapon keys** — `sword1h` · `sword2h` · `blunt1h` · `blunt2h` · `duals` · `bow` · `wand` ·
-  `staff`. **The seven tiers** — 1 / 20 / 40 / 52 / 61 / 76 / 80.
-
-  🔑 **KEY ON THE FAMILY + TIER, NOT ON THE ITEM ID.** The id space also holds `_rare` / `_epic` /
-  `_legendary` copies (`ItemCatalog.QualityId`), `_lo` sets and `_dmg` variants — key on the id and
-  every rarity demands its own prefab, which is exactly what your hue/glow plan avoids. The chain:
-
-  ```
-  Models/weapon_sword1h_t20     your tier prefab
-  Models/weapon_sword1h         your default for that weapon
-  (no file)                     draw no weapon; nothing breaks
-  ```
-
-  **Eight files give every weapon in the game a look**, and each tier prefab peels one rung off with no
-  code change — the same shape that let `mob_animal` peel the animals off `humanoid`.
-  🔑 The derivation is free and invents no taxonomy: **`WeaponType` + `IsMagicWeapon` maps exactly onto
-  those eight keys** (Blunt+magic = wand, TwoHandedBlunt+magic = staff), and `ItemLevel` is the tier.
-
-  **Rarity = a tint on whatever prefab answered** — your call, and correct. Two practical notes:
-  - ⚠ **Prefer GLOW (emission) to hue.** Hue-shifting a textured mesh goes muddy; emission reads at
-    phone size and does not fight the texture. Rarity is a 6-rung ladder and the drop copies populate
-    all of it, so it is a natural intensity ramp.
-  - 🔴 **It must go through a `MaterialPropertyBlock`.** `renderer.material.color` instantiates and
-    mutates the shared asset — every sword in the world changes and batching dies. Same wall
-    `SetOpacity` hit with models (the stealth-fade gap above).
-
-  **Cost:**
-  - ✅ **Free: the hand socket.** `GetBoneTransform(HumanBodyBones.RightHand)` on a Humanoid rig, no
-    per-model setup — the second dividend of the rig choice.
-  - ⚠ **Authoring, not code:** each mesh needs a consistent **grip origin and orientation** — the same
-    class of decision as the family height in `ModelSetup`, and the same thing no script can decide.
-    Duals need two sockets; a bow sits differently.
-  - 🔴 **A protocol bump.** `EntityDto` carries NO equipment today. Four small values on the **spawn**
-    DTO only (`EntityLean` untouched), the same shape `Category`/`Role` took in protocol 29.
-  - ⚠ **Animation is per-weapon in a real MMO** and we have one clip set, so a sword swing will look
-    right and a bow draw will not. Later problem, not a blocker.
-
-  🔵 **TIMING — my recommendation, not a ruling:** there are **zero weapon meshes in the repo**, so like
-  `BL-102` nothing draws until art exists. **Bundle this with the race bodies** — one protocol bump and
-  one APK, instead of a reinstall now for a feature that draws nothing. The key shape above is all you
-  need to start naming files against.
-
+  **What is still owed from your design**, when you want it:
+  - **Tier prefabs** (`weapon_sword1h_t20` → `weapon_sword1h` → nothing). Needs the equipped item's TIER on the wire
+    (one byte on the spawn DTO, a pure addition) and a lookup chain in `HeldWeapons.Prefab`. The pack already holds
+    spare looks for it: `Sword_Golden`, `Bow_Golden`, `Bow_Evil`, `Claymore`, `Axe_Double` (`Art/Models/Weapons/SOURCES.txt`
+    says where; they are not in the repo yet).
+  - **Rarity glow** (emission through a `MaterialPropertyBlock`, never `renderer.material`). Needs the rarity on the
+    wire, one more byte.
+  - ⚠ **NPCs hold nothing**: a town NPC has no weapon on the server. Guards are mobs, so they do.
 - `BL-104` 🔵 **THE WARRIOR'S SWORD-vs-BLUNT SPLIT — RULED BY YOU, NOTHING TO ATTACH IT TO YET.**
   Your ruling, 2026-08-29: *"the aoe warriors to be a 2h blunt while mele warriors to use 2h swords …
   we don't want an aoe warrior going with mace+shield and being even more hard to kill"*. This is the
@@ -2382,7 +2348,8 @@ the marsh, flowers in the meadow; `VisualPass.md` §0.2).
 turned by the game clock; night brightness is a Settings slider, default 0.30 (your pick).
 ✅ **0.249.0: step 6 done** — skill effects: projectiles, arrows, beams, slashes, hit sparks, heal/MP glows, buff
 rings, debuff motes and a pillar of light when someone is raised. Every skill picks its look from its shape; the
-exceptions go in `docs/data/skill_fx.csv` (your pick). Next: step 7 (weapons in hand, `BL-103`).
+exceptions go in `docs/data/skill_fx.csv` (your pick). **Step 7 built 0.250.0**: weapons in hand (one mesh per
+weapon type, `HeldWeapons.cs`, VisualPass §0.6; `BL-103` keeps the tier and rarity half). Next: step 8 (camera rotation).
 
 ## `BL-345` ❓ HOSTING FOR FRIENDS — where the server lives and how they join (2026-10-12)
 

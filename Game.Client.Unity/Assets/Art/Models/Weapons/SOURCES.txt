@@ -1,0 +1,11 @@
+Weapon meshes for BL-103 / BL-344 step 7. Both packs are CC0 (public domain, no credit required).
+
+Sword, Sword_Big, Hammer_Small, Hammer_Double, Dagger, Bow_Wooden, Shield_Heater_2:
+  Quaternius, "LowPoly Medieval Weapons" (Sept 2018)
+  https://quaternius.itch.io/lowpoly-medieval-weapons
+  mirror: https://opengameart.org/content/lowpoly-medieval-weapons
+
+Staff, Wand (+ mage_texture.png, which they are UV-mapped onto):
+  Kay Lousberg, "KayKit Character Pack: Adventurers 1.0"
+  https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0
+  (files addons/kaykit_character_pack_adventures/Assets/fbx/staff.fbx, wand.fbx, mage_texture.png)

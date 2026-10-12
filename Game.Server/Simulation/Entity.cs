@@ -1773,9 +1773,9 @@ public class Entity
     public float CasterCastPenaltyCancel { get; set; } = 1f;
     public float CasterMagicPenaltyCancel { get; set; } = 1f;
     /// <summary>True while a magic weapon (wand/staff) is equipped, per ItemDef.IsMagicWeapon.
-    /// ⚠ NOTHING READS THIS TODAY — Divine Focus was its last consumer and was deleted 2026-08-20, and
-    /// the healer's mastery gates on the TYPE (Blunt) rather than on this flag, deliberately. Kept
-    /// because the flag is real item data the stats window and a future caster rule can both want.</summary>
+    /// ⚠ NO GAME RULE READS THIS — Divine Focus was its last consumer and was deleted 2026-08-20, and
+    /// the healer's mastery gates on the TYPE (Blunt) rather than on this flag, deliberately. The wire
+    /// does (`BL-103`): it is what tells a wand from a club and a staff from a maul in someone's hand.</summary>
     public bool HasMagicWeapon { get; set; }
 
     // ----- Heal stats (owner 2026-07-17): heals no longer use M.Atk. A heal's OUTPUT is
@@ -4636,7 +4636,8 @@ public class Entity
             X, Y, EffectiveSpeed, Level,
             Hp, MaxHp, Mp, MaxMp, SecondClass, ThirdClass, Dead, IsDisconnected, FlagState,
             Kind == EntityKind.Mob && Aggressive && !IsGuardMob, Title, TitleColor, SocialClanShown,
-            ModelCategory, ModelRole, Warp);
+            ModelCategory, ModelRole, Warp,
+            WeaponType, HasMagicWeapon, HasShield);   // `BL-103` — what the client hangs in its hands
 
     /// <summary>`BL-93` — the creature's authored family/role, for the client to pick a MODEL with.
     /// Read from the template rather than stored on the entity: it never changes for the life of a
@@ -4681,5 +4682,8 @@ public class Entity
         // a player (which is already compared above), so this can never actually differ — it is here
         // so that the day something DOES repolymorph a creature, the client is re-told instead of
         // drawing the old mesh until it walks out of view and back.
-        a.Category == b.Category && a.Role == b.Role;
+        a.Category == b.Category && a.Role == b.Role &&
+        // `BL-103` — swapping a weapon or a shield changes no dynamic field, so without these an
+        // equip would only reach the people who walked into view after it.
+        a.Weapon == b.Weapon && a.MagicWeapon == b.MagicWeapon && a.Shield == b.Shield;
 }

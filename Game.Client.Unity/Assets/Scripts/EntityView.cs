@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Game.Shared;
 
 namespace Game.Client
 {
@@ -146,7 +147,12 @@ namespace Game.Client
         // "behave exactly as this class did before the feature existed".
         private Transform _model;
         private Animator _animator;
-        private bool _hasSpeed, _hasAttack, _hasCasting, _hasDead;
+        private bool _hasSpeed, _hasAttack, _hasCasting, _hasDead, _hasAttackStyle;
+
+        // `BL-103` — what is in its hands. Remembered so a re-sent spawn with the same gear rebuilds nothing.
+        private readonly System.Collections.Generic.List<GameObject> _held = new System.Collections.Generic.List<GameObject>();
+        private WeaponType _heldWeapon;
+        private bool _heldMagic, _heldShield, _heldDressed;
         private Vector3 _lastDrawn;
         private bool _hasLastDrawn;
         private float _facing;            // degrees, the direction the model is turned toward
@@ -699,6 +705,7 @@ namespace Game.Client
                     else if (p.name == "Attack") _hasAttack = true;
                     else if (p.name == "Casting") _hasCasting = true;
                     else if (p.name == "Dead") _hasDead = true;
+                    else if (p.name == "AttackStyle") _hasAttackStyle = true;
                 }
                 if (_hasDead) _animator.SetBool("Dead", _dead);
 
@@ -727,6 +734,19 @@ namespace Game.Client
         public void PlayAttack()
         {
             if (_animator != null && _hasAttack && !_dead) _animator.SetTrigger("Attack");
+        }
+
+        /// <summary>`BL-103` — put this weapon set in the body's hands (see <see cref="HeldWeapons"/>), and pick the
+        /// swing the next "Attack" plays: a bow shot, a spell thrust for a wand or staff, the sword swing for the rest.
+        /// Called on every spawn DTO; only a CHANGE rebuilds anything. A body with no hands (a sphere, a rat) draws
+        /// nothing and that is not an error.</summary>
+        public void SetWeapons(WeaponType weapon, bool magic, bool shield)
+        {
+            if (_heldDressed && weapon == _heldWeapon && magic == _heldMagic && shield == _heldShield) return;
+            _heldWeapon = weapon; _heldMagic = magic; _heldShield = shield; _heldDressed = true;
+            if (_animator == null) return;
+            HeldWeapons.Dress(_animator, _model, weapon, magic, shield, _held);
+            if (_hasAttackStyle) _animator.SetInteger("AttackStyle", HeldWeapons.StyleFor(weapon, magic));
         }
 
         /// <summary>Show/hide the casting pose. Driven by <c>MobCastInfo</c> and the self cast bar —

@@ -241,6 +241,7 @@ namespace Game.Client
             view.SetTarget(WorldMapper.ToUnity(e.X, e.Y), e.Warp);
             if (view.IsSelf) view.SetPredictSpeed(e.Speed * WorldMapper.Scale);   // a walk tracks speed changes mid-way
             view.SetColor(ColorFor(e));
+            view.SetWeapons(e.Weapon, e.MagicWeapon, e.Shield);   // `BL-103` — a no-op unless the gear changed
             if (view.IsSelf) ApplySelfVisual(view);   // `BL-82` — survives a respawn of the marker
             // Dead entities stay in the world (corpses are lootable/visible) but are dimmed rather
             // than hidden, so a kill is legible instead of things silently vanishing.

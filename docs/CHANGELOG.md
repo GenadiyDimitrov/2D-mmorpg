@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.247.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.250.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,24 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-12 (latest) — 0.249.0: skill effects (`BL-344` step 6)
+## 2026-10-12 (latest) — 0.250.0: weapons in hand (`BL-344` step 7, `BL-103` first half)
+
+**Client + server, new APK.** No `game.db` delete. Protocol 52 → 53, a pure addition: an older APK still logs in and
+simply draws empty hands.
+
+- **Everyone holds what they fight with.** Your sword, two-hander, mace, maul, daggers (one in each hand), bow, wand or
+  staff shows in your character's hand, and a shield on the left arm, for you and for everyone who sees you. Mobs drawn
+  as people show theirs too: goblins club, skeleton-kin and demons carry swords, archers a bow. Animals keep their
+  claws invisible (they have no hands to hold anything). Town NPCs hold nothing.
+- **The swing matches the weapon:** a bow is raised and shot, a wand or staff thrusts a spell, everything else keeps the
+  sword swing.
+- **Meshes: free CC0 packs I fetched myself, no download needed from you** (Quaternius medieval weapons, KayKit staff
+  and wand; the sources are in `Art/Models/Weapons/SOURCES.txt`). One look per weapon type for now: a tier-20 sword
+  looks like a tier-1 one. Your tier prefabs and the rarity glow (`BL-103`) are still owed.
+- Checked with a headless render (`ModelSetup.PreviewWeapons`: every set idle, mid-attack and from straight above).
+  NOT checked on a phone yet.
+
+## 2026-10-12 — 0.249.0: skill effects (`BL-344` step 6)
 
 **Client + server, new APK.** No `game.db` delete, no protocol bump (one field appended to the combat message; an
 older client ignores it).

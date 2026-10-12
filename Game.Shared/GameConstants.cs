@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.249.0";
+    public const string GameVersion = "0.250.0";
 
     /// <summary>RUNES STACK, UP TO A CAP (owner, 2026-10-03): opening a rune box while you hold the same rune ADDS its
     /// time to that rune instead of starting a second clock beside it. A box of this length or shorter (1h/2h) may only
@@ -234,7 +234,9 @@ public static class GameConstants
     /// 52 (0.214.40) — the skill bar is 150 entries, not 60 (`BL-321`): an old client reads only the first 60
     /// and writes a 60-entry bar back, cutting every entry past 60 (pages 3-5).
     /// ⚠ A NEW APK AND SERVER TOGETHER.
-    public const int ProtocolVersion = 52;   // 52: the 150-entry skill bar (`BL-321`)
+    /// 53 (0.250.0) — `EntityDto` gained Weapon / MagicWeapon / Shield at the end, so other players and mobs
+    /// show what they hold (`BL-103`). A pure addition: an old client ignores them and draws empty hands.
+    public const int ProtocolVersion = 53;   // 53: weapons in hand (`BL-103`)
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means

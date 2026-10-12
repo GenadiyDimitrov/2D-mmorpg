@@ -8645,3 +8645,61 @@ effect"* — which is how it was built. The guard is in `ApplyBuff` (every road)
 `UAL1_Standard.fbx`, CC0, in `Assets/Art/Models/Characters/Animations/`. `ModelSetup.BuildAll` retargets it onto the
 humanoid body: idle = `Idle_Loop`, walk = `Walk_Loop`, run = `Jog_Fwd_Loop`, attack = `Sword_Attack`, death =
 `Death01`, cast = `Spell_Simple_Idle_Loop`. Every player, NPC and humanoid mob now animates. Done under `BL-344` step 2.
+
+## `BL-103` 🟡 HALF BUILT in 0.250.0 — VISIBLE WEAPONS, the text it replaced (2026-08-28 → 10-12)
+
+- `BL-103` 🔵 **VISIBLE WEAPONS — the key shape is settled, the meshes are not. Your design, 2026-08-28:**
+  *"if I make a sword1h.prefab and one sword1h_t20.prefab can that work? a t20 swords to be this one
+  every rarity (we can change hue for example or glow) and if no tier prefab to fallback to default"*.
+  **Yes — and `sword1h_t20` is not an invented name: it is literally an existing item id**
+  (`TieredWeapons` emits `$"{w.Key}_t{L}"`).
+
+  **The eight weapon keys** — `sword1h` · `sword2h` · `blunt1h` · `blunt2h` · `duals` · `bow` · `wand` ·
+  `staff`. **The seven tiers** — 1 / 20 / 40 / 52 / 61 / 76 / 80.
+
+  🔑 **KEY ON THE FAMILY + TIER, NOT ON THE ITEM ID.** The id space also holds `_rare` / `_epic` /
+  `_legendary` copies (`ItemCatalog.QualityId`), `_lo` sets and `_dmg` variants — key on the id and
+  every rarity demands its own prefab, which is exactly what your hue/glow plan avoids. The chain:
+
+  ```
+  Models/weapon_sword1h_t20     your tier prefab
+  Models/weapon_sword1h         your default for that weapon
+  (no file)                     draw no weapon; nothing breaks
+  ```
+
+  **Eight files give every weapon in the game a look**, and each tier prefab peels one rung off with no
+  code change — the same shape that let `mob_animal` peel the animals off `humanoid`.
+  🔑 The derivation is free and invents no taxonomy: **`WeaponType` + `IsMagicWeapon` maps exactly onto
+  those eight keys** (Blunt+magic = wand, TwoHandedBlunt+magic = staff), and `ItemLevel` is the tier.
+
+  **Rarity = a tint on whatever prefab answered** — your call, and correct. Two practical notes:
+  - ⚠ **Prefer GLOW (emission) to hue.** Hue-shifting a textured mesh goes muddy; emission reads at
+    phone size and does not fight the texture. Rarity is a 6-rung ladder and the drop copies populate
+    all of it, so it is a natural intensity ramp.
+  - 🔴 **It must go through a `MaterialPropertyBlock`.** `renderer.material.color` instantiates and
+    mutates the shared asset — every sword in the world changes and batching dies. Same wall
+    `SetOpacity` hit with models (the stealth-fade gap above).
+
+  **Cost:**
+  - ✅ **Free: the hand socket.** `GetBoneTransform(HumanBodyBones.RightHand)` on a Humanoid rig, no
+    per-model setup — the second dividend of the rig choice.
+  - ⚠ **Authoring, not code:** each mesh needs a consistent **grip origin and orientation** — the same
+    class of decision as the family height in `ModelSetup`, and the same thing no script can decide.
+    Duals need two sockets; a bow sits differently.
+  - 🔴 **A protocol bump.** `EntityDto` carries NO equipment today. Four small values on the **spawn**
+    DTO only (`EntityLean` untouched), the same shape `Category`/`Role` took in protocol 29.
+  - ⚠ **Animation is per-weapon in a real MMO** and we have one clip set, so a sword swing will look
+    right and a bow draw will not. Later problem, not a blocker.
+
+  🔵 **TIMING — my recommendation, not a ruling:** there are **zero weapon meshes in the repo**, so like
+  `BL-102` nothing draws until art exists. **Bundle this with the race bodies** — one protocol bump and
+  one APK, instead of a reinstall now for a feature that draws nothing. The key shape above is all you
+  need to start naming files against.
+
+
+**Built 2026-10-12 (0.250.0, `BL-344` step 7): one mesh per weapon TYPE.** `EntityDto` carries `Weapon` (the
+`WeaponType`), `MagicWeapon` and `Shield`; the client hangs `Resources/Weapons/<key>` (sword1h, sword2h, blunt1h,
+blunt2h, dagger ×2 for duals, bow, wand, staff, shield) on the humanoid's hand bones (`HeldWeapons.cs`). Meshes: Quaternius
+*LowPoly Medieval Weapons* + KayKit *Adventurers* staff and wand, both CC0. The TIER prefabs (`weapon_sword1h_t20`) and the
+RARITY glow from the text above were NOT built: they need the item level and rarity on the wire, and there is one mesh
+per type to draw today. That half stays open as the new `BL-103`.

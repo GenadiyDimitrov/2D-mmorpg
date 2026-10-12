@@ -99,7 +99,20 @@ public record EntityDto(
     // Costs one byte on a spawn and one on a lean. An old client ignores it and behaves exactly as it
     // does today; a new client against an old server reads 0 forever and never snaps, which is also
     // exactly as today.
-    byte Warp = 0);
+    byte Warp = 0,
+    // ---- WHAT IS IN ITS HANDS (`BL-103`, `BL-344` step 7) ----
+    //
+    // The weapon's TYPE, not its item id: the client draws one mesh per type, and wand vs staff is the
+    // only split the type cannot make on its own (Blunt + magic = wand, TwoHandedBlunt + magic =
+    // staff). For a mob this is the weapon it FIGHTS with (MobCatalog's role → passive → category
+    // chain, already resolved at spawn), so a goblin's club and an archer's bow show too; a non-human
+    // rig (a rat's "Dual" claws) simply has no hand bone to hang it on. NPCs carry None.
+    // Tier and rarity are NOT here yet: one mesh per type is all there is to draw, and a later field
+    // is a pure addition like this one. Spawn DTO only — equipping changes a static field, so the
+    // diff re-sends the spawn (Entity.StaticFieldsEqual).
+    WeaponType Weapon = WeaponType.None,
+    bool MagicWeapon = false,
+    bool Shield = false);
 
 /// <summary>What to draw over an NPC's head about quests. Sent per player, because availability is
 /// personal — level, race, class and what you have already done all decide it.</summary>
