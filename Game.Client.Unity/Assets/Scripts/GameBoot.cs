@@ -1236,15 +1236,13 @@ namespace Game.Client
             ui.Boot = this;
             Ui = ui;   // so server pushes can refresh a panel that is showing stale data
 
-            if (FindAnyObjectByType<GroundGrid>() == null)
-                new GameObject("GroundGrid").AddComponent<GroundGrid>();
-
-            // The scene's default 10×10 plane is far smaller than the world and almost the same grey
-            // as the entity markers. WorldGround fixes both, on whatever object is already there.
-            if (FindAnyObjectByType<WorldGround>() == null)
+            // The streamed, vertex-coloured ground (BL-344 step 3). The scene still carries its old
+            // default plane, which would z-fight the chunks at y = 0, so it is switched off here.
+            if (FindAnyObjectByType<BiomeGround>() == null)
             {
-                var ground = GameObject.Find("Ground");
-                if (ground != null) ground.AddComponent<WorldGround>();
+                var oldPlane = GameObject.Find("Ground");
+                if (oldPlane != null) oldPlane.SetActive(false);
+                new GameObject("BiomeGround").AddComponent<BiomeGround>();
             }
 
             // HELD, not looked up on demand: FindAnyObjectByType skips INACTIVE objects, so once the

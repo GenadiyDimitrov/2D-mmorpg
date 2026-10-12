@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.244.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.245.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,29 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-12 (latest) — 0.244.0: the characters move (`BL-344` step 2, `BL-102` closed)
+## 2026-10-12 (latest) — 0.245.0: the ground has biomes (`BL-344` step 3)
+
+**Client only, new APK.** No server change beyond the version label and a cosmetic data table in `Game.Shared`, no
+`game.db` delete.
+
+- **The ground is real terrain colour now**, by the city territory you are in: Brackenford green meadow, Stonewatch
+  grey-brown moor (its Ashen / Emberdust / Cinderflat Barrens are ash), Greymarsh dark swamp, Ironreach reddish
+  highland, Frostmere snow, and **Redhorn Highlands is lava**: dark rock with molten pools. Territories fade into each
+  other over ~2000 units, so there are no seams. Towns are paved, with a soft edge. Table: `Game.Shared/Biomes.cs`.
+- **It streams.** The ground is 2000-unit chunks (a vertex every 100) built only under the camera and pooled
+  (`BiomeGround.cs`), so its cost follows the screen, not the map. That keeps it valid for the open-world grid you
+  described (`BL-346`).
+- **Your picks:** the level band moved onto the field **rims** (green → yellow → red, under the same zone-colours
+  toggle; the flat fills are gone), the **grid is deleted** (the ground's patches are what you move against now), the
+  ground stays **flat** (server and taps unchanged).
+- Dungeon floors are always drawn as stone over a dark void, toggle or not.
+- 🔴 **Bug fixed on the way:** the old ground plane and grid covered only the 0-24k quarter of the 48k world; the
+  matching clear colour hid it. `WorldGround.cs` and `GroundGrid.cs` are deleted.
+- New shader `Assets/Resources/Shaders/UnlitVertexColor.shader` (URP's Unlit ignores vertex colours). Lighting comes in
+  step 5.
+- Filed: `BL-346` (the open-world grid map) and `BL-347` (inventory as cells with icons and tooltips), both for later.
+
+## 2026-10-12 — 0.244.0: the characters move (`BL-344` step 2, `BL-102` closed)
 
 **Client only, new APK.** No server change beyond the version label, no `game.db` delete.
 

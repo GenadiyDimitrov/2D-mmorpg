@@ -384,29 +384,32 @@ namespace Game.Client
         private void BuildRegionOutlines()
         {
             _regionOutlines = new GameObject("RegionOutlines");
+
+            // DUNGEON floors are always drawn, toggle or not: the ground under the negative quadrant is a
+            // dark void (BiomeGround), and a dungeon is a corridor too narrow for its 100-unit vertex grid
+            // to outline crisply. The polygon is the floor; the void around it is the wall.
+            var floors = new GameObject("DungeonFloors");
+            foreach (var dungeon in RegionMap.Dungeons)
+                if (dungeon.Outline != null && dungeon.Outline.Length >= 3)
+                    BuildRegionFill(dungeon, new Color(0.30f, 0.29f, 0.27f), 0.02f, floors.transform);
+
             foreach (var region in RegionMap.All)
             {
                 if (region.Outline == null || region.Outline.Length < 3) continue;
 
-                // FIELDS get a filled polygon coloured by their LEVEL band — the field colour that
-                // replaces the spawn-zone circles. TOWNS get a neutral fill drawn ON TOP (higher y), which
-                // masks the field colour under a town so it reads as an island/lake in the field — the
-                // "donut" look without a donut polygon. Gameplay containment is separate (At() = town first).
-                if (region.Kind == RegionKind.Field)
-                    BuildRegionFill(region, ColourForLevel(RegionMap.LevelBand(region.Id)?.Max ?? 1), 0.02f);
-                else
-                    BuildRegionFill(region, new Color(0.28f, 0.30f, 0.35f), 0.03f);   // town island: calm slate
-
+                // No fills any more (BL-344 step 3, owner's pick "rims"): the ground itself is the biome,
+                // and the LEVEL band moved onto the field's rim — green → yellow → red, the same scale as
+                // the boss/dungeon discs in ZoneOverlay. Towns keep their muted steel-blue rim.
                 var go = new GameObject(region.Id);
                 go.transform.SetParent(_regionOutlines.transform, false);
                 var lr = go.AddComponent<LineRenderer>();
                 lr.useWorldSpace = true;
                 lr.loop = true;
-                lr.widthMultiplier = 0.6f;
+                lr.widthMultiplier = region.Kind == RegionKind.Town ? 0.6f : 0.9f;
                 lr.material = new Material(UnlitMaterials.Shader);   // IL2CPP-safe (no magenta on device)
                 Color col = region.Kind == RegionKind.Town
                     ? new Color(0.20f, 0.42f, 0.68f, 0.55f)          // towns: muted steel-blue (owner: less blue/lighter)
-                    : new Color(1.00f, 0.90f, 0.55f, 0.90f);         // fields: a bright rim over the fill
+                    : ColourForLevel(RegionMap.LevelBand(region.Id)?.Max ?? 1);
                 lr.startColor = lr.endColor = col;
 
                 lr.positionCount = region.Outline.Length;
@@ -421,8 +424,9 @@ namespace Game.Client
         }
 
         /// <summary>A flat filled polygon on the ground at height <paramref name="height"/>, made
-        /// double-sided so it shows regardless of winding. Fields use their level colour at a low y;
-        /// towns use a neutral fill at a higher y so they mask the field beneath them (the island look).
+        /// double-sided so it shows regardless of winding. Since BL-344 step 3 only the DUNGEON floors use it
+        /// (fields and towns are painted by BiomeGround); they sit under <paramref name="parent"/>, which is
+        /// always shown, not under the toggled outlines.
         ///
         /// ⚠ This used to be a TRIANGLE FAN from vertex 0, on the stated grounds that "the outlines are
         /// convex". They are not, and since 2026-08-24 they are emphatically not: a dungeon is now a
@@ -430,14 +434,14 @@ namespace Game.Client
         /// gap between two rooms — the map would draw a solid blob where the walls are, with only the
         /// LineRenderer rim hinting at the real outline. Ear clipping costs a few dozen lines and is
         /// correct for any simple polygon, convex ones included.</summary>
-        private void BuildRegionFill(Region region, Color col, float height)
+        private void BuildRegionFill(Region region, Color col, float height, Transform parent)
         {
             var poly = region.Outline;
             var verts = new Vector3[poly.Length];
             for (int i = 0; i < poly.Length; i++)
             {
                 var u = WorldMapper.ToUnity(poly[i].X, poly[i].Y);
-                u.y = height;                    // fields low (0.02), towns higher (0.03) to mask the field
+                u.y = height;
                 verts[i] = u;
             }
 
@@ -457,7 +461,7 @@ namespace Game.Client
             mesh.RecalculateBounds();
 
             var go = new GameObject(region.Id + "_fill");
-            go.transform.SetParent(_regionOutlines.transform, false);
+            go.transform.SetParent(parent, false);
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             var mr = go.AddComponent<MeshRenderer>();
             mr.material = UnlitMaterials.Create(col);

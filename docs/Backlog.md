@@ -284,8 +284,10 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-332` | ❓   | **Notifications** — low HP / low potions / farm time over / died: in-game alerts, scheduled phone notifications, server push; my pick + four questions                                                                                                                                                                                                                                                                                                         | ui           |
 | `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
 | `BL-341` | ⏸ | **Skill vampirism + skill reflect** — a buff that vamps from any spell/physical skill (later-chronicle IG), only together with reflect on skill damage; "a lot later if at all" | combat |
-| `BL-344` | 🔴 | **Visual pass** — ground, animations, entities; order + status in `design/VisualPass.md` §0; steps 1-2 built (0.243.0, 0.244.0), **step 3 (ground) next** | client |
+| `BL-344` | 🔴 | **Visual pass** — ground, animations, entities; order + status in `design/VisualPass.md` §0; steps 1-3 built (0.243.0, 0.244.0, 0.245.0), **step 4 (props) next** | client |
 | `BL-345` | ❓ | **Hosting for friends** — where the server runs (your question: an Oracle Always Free Linux machine?), how friends download the APK and connect; answer owed after `BL-344` | ops |
+| `BL-346` | ⏸ | **The open-world grid map** — the world as a grid of zone cells, castle territories of several cells (farming zones, spawners, dungeons), one seamless map, impassable terrain with passages between biomes; for later | world |
+| `BL-347` | ⏸ | **Inventory as cells** — a grid of item cells with icons, and a tooltip-style details panel; for later | ui |
 
 ---
 
@@ -2360,7 +2362,10 @@ in the APK anyway. Step 1 of the work (clean-up + Skeleton/Dragon families) need
 ✅ **Your picks are in** (§0 of `VisualPass.md` holds them and the live order). **0.243.0: work step 1 built**
 (Skeleton/Dragon families, FBXs out of `Resources/`, modern bodies deleted). ✅ **0.244.0: step 2 built** — your
 `UAL1_Standard.fbx` landed and every player, NPC and humanoid mob now idles, walks, jogs, swings, casts and dies
-(`BL-102` closed). Next: step 3, the vertex-coloured ground.
+(`BL-102` closed). ✅ **0.245.0: step 3 built** — the ground is streamed vertex-coloured chunks by biome per city
+territory (meadow, moor, ash, marsh, highland, snow, and lava on Redhorn Highlands), blended by distance; the grid and
+the level fills are gone and the level band moved onto the field rims (your picks: rims, delete, flat, + lava).
+Next: step 4, props.
 
 ## `BL-345` ❓ HOSTING FOR FRIENDS — where the server lives and how they join (2026-10-12)
 
@@ -2373,3 +2378,42 @@ What the answer has to cover:
 2. **Opening it up.** The port, the firewall, and whether it needs a domain name and HTTPS for the phone client.
 3. **The client.** How the APK finds a server that is not `localhost`, and where friends download it from.
 4. **Running it.** Starting the server as a service, updating it to a new version, and backing up `game.db`.
+
+## `BL-346` ⏸ THE OPEN-WORLD GRID MAP — zone cells, castle territories, one seamless world (2026-10-12, for later)
+
+Your words: *"i want the map to be in a grid order with 50k x 50k in cells .. and each cell to be its own zone -> a
+several zones can be a castle teritory. That teritory have different famrming zones and spawners .. can contain
+dungeonens etc .. and the map is "open world" so everithing is rendered in your fov (3k around) with options to
+decrease loaded details/range for example to side to side zones can be a lava and snow one with one small passage in
+between that blends them - not like Cabal Online -> one map => then tp to other zone => new map ... I want a real
+openworld map"*. You asked whether it had to come before the ground (`BL-344` step 3). It did not.
+
+What already holds, so this is a DATA job and not a new engine:
+- **The server is already one seamless world**: one coordinate space, no map loads, interest management in 3000-unit
+  cells streamed 3×3 around you (`GameConstants.ViewRange` / `CellSize`). That is the "everything in your 3k FOV".
+- **The ground follows the screen, not the map** (0.245.0, `BiomeGround`): chunks stream around the camera, so a world
+  many times today's 48k costs the phone the same. Its colour comes from `Game.Shared/Biomes.cs`; when the grid exists,
+  the biome moves onto the cell and the ground keeps working. Neighbouring biomes already fade into each other.
+- Float precision is fine to about a million server units.
+
+What it will need:
+1. **The grid itself**: cell size (❓ yours: does "50k × 50k" mean each cell, or the whole map? Each cell at 50k would be
+   bigger than today's whole world), cell → zone id, biome, level band, owning territory.
+2. **Territories** grouping cells, with their castle (ties to the castles + vault entry in the roadmap).
+3. **Impassable terrain**: a "small passage between lava and snow" means walls on either side, and walls are
+   GAMEPLAY. The server has to know them (movement and pathing collision); the ground cannot provide them.
+4. Re-placing cities, fields and spawners onto the grid (`WorldPlan` places fields by bearing and distance from their
+   city, so moving a city moves its fields with it).
+5. The client's "loaded detail / range" option (`BiomeGround.MaxRange`, and props from step 4 onward).
+
+## `BL-347` ⏸ INVENTORY AS CELLS — icons and tooltip details (2026-10-12, for later)
+
+Your words: *"also can we make bl enrty to update the inventory to cells + icons and tooltip like details ? (for later
+date just mark it before i forget)"*.
+
+The inventory window becomes a grid of cells, one item per cell with its icon (stack count on the cell), and an item's
+details show as a tooltip-style panel on tap or long-press. Today the bag is ROWS (name + a details window opened from
+the row, `GameUi.Items.cs`). Item icons would follow the skill
+icons' route (`BL-331`: game-icons.net, tinted per category or grade). To settle when you pick it up: cell size and
+columns on a phone, sorting and tabs, what the panel shows, and whether equipment, warehouse and trade windows switch to
+cells too.

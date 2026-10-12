@@ -16,8 +16,8 @@ bodies (deleted, git keeps them) and the fantasy ones kept.
 |---|---|---|
 | 1 | Clean-up + the free families | ✅ **0.243.0.** Undead → Skeleton, Dragon → Dragon. Source FBXs moved to `Assets/Art/Models/`; 15 modern bodies deleted, 6 fantasy kept (Man Adventurer / Farmer / King, Woman Adventurer / Medieval / Witch). Slime was NOT given to MagicCreature: that family is golems, a lich, blades and an eye, and a slime fits none of them. |
 | 2 | Character animation (`BL-102`) | ✅ **0.244.0.** Your `UAL1_Standard.fbx` (Quaternius Universal Animation Library, Standard, CC0). Picks: idle = `Idle_Loop`, walk = `Walk_Loop`, run = `Jog_Fwd_Loop`, attack = `Sword_Attack`, death = `Death01`, cast = `Spell_Simple_Idle_Loop`. One body and one clip set for everyone; bows and staves still swing the sword take until step 7. APK 47.3 → 47.4 MB: only the six used clips ship. |
-| 3 | Ground, vertex-coloured (your Q2 = B) | **next** |
-| 4 | Props: trees, rocks, grass clumps (your Q2's C, own step) | after 3 |
+| 3 | Ground, vertex-coloured (your Q2 = B) | ✅ **0.245.0.** Biome per city territory, blended by distance (`Game.Shared/Biomes.cs`), streamed 2000-unit chunks (`BiomeGround.cs`). Your picks: level band on the field RIMS, grid DELETED, FLAT, biomes as proposed **+ lava** (Redhorn Highlands). Old plane + grid deleted (they covered only a quarter of the world). |
+| 4 | Props: trees, rocks, grass clumps (your Q2's C, own step) | **next** — scattered from the same biome + noise data, chunk-streamed like the ground |
 | 5 | Light and time of day | |
 | 6 | Skill FX archetypes | |
 | 7 | Weapons in hand (`BL-103`, protocol bump) | |
@@ -46,6 +46,8 @@ reach the APK.
 ## 1. What the client draws today
 
 ### Ground
+> ⚠ This is the state at 0.242.0. Since 0.245.0 the Base, Grid and Field-fill rows are replaced by `BiomeGround.cs` (see §0, step 3).
+
 | Layer | What it is | File |
 |---|---|---|
 | Base | One Unity `Plane` scaled to the whole 240-unit world, flat dark green `(0.13,0.16,0.14)`, **unlit**, no texture. The camera clears to the same colour, so zooming out past the map edge shows more ground instead of a hole. | `WorldGround.cs` |
