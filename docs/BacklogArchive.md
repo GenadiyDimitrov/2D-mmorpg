@@ -8552,3 +8552,22 @@ spending), the two passives, their CSV rows and SP.
 worked on potions"* → *"lets go with half - a heavy spammer will need to conserve"*. The per-second MP tick (mana potions,
 Harmony of Restoration's MP) now gets HALF of Mana Recovery (`Entity.MpTickMod`); totems already had the full one. No new
 passive, no SP. The warrior HP half stays open in `Backlog.md` under the same id.
+
+## `BL-340` ✅ CLOSED 2026-10-12 — the warrior (HP) half, DECLINED
+
+
+**The nuker half is BUILT (0.241.0)** and its old text is archived: no new passive, the per-second MP tick (mana
+potions, Harmony of Restoration's MP) gets **half of Mana Recovery** (`Entity.MpTickMod`, +35% at 85), your pick of
+2026-10-12 (*"lets go with half - a heavy spammer will need to conserve"*). Measured: `BalanceMatrix --potmp-elf`.
+
+**Still owed: the warriors' HP potions** (warrior 2nd/3rd/4th + war_aoe 3rd/4th, from the 2nd class, Instant Healing
+not affected). Their need is mob damage, not their own spending, so it needs its own measurement, and they have no
+Mana-Recovery-like passive to borrow. Waiting on you: a new HP passive, or an existing warrior passive to reuse.
+
+
+**Closed 2026-10-12** by his ruling: *"ok we leave it only on nukers for mp pots ... warriors wont get same effect for hp
+pots"*. His reasons: a level-73 warrior in D~C gear farms indefinitely on the mentor buffs with Battle Regeneration and
+Demonic Drain, using only 10-20 potions; Humans have damage reduction, Elves a flat heal, war_aoe an instant heal every
+15s plus an extra potion for 10s; healers/buffers heal themselves and fighters have their race sustain skills. Mana is
+the real problem for mages and buffers, and buffers' Mana Vampirism got stronger once they deal magic damage. Healers
+*"need to have mana problems otherwise no pvp will end"*. Nothing more is owed under `BL-340`.

@@ -285,7 +285,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-332` | ❓   | **Notifications** — low HP / low potions / farm time over / died: in-game alerts, scheduled phone notifications, server push; my pick + four questions                                                                                                                                                                                                                                                                                                         | ui           |
 | `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
 | `BL-336` | 🔵 | **No-refresh debuffs (IG rule)** — a debuff of the same type cannot be re-landed until the old one wears off (no perma-hold); a re-stun attempt may BREAK the stun instead of resetting it; boss-allowed stacking types excepted; design owed | combat |
-| `BL-340` | 🔵 | **Potion Mastery — warrior HP half** — nuker half BUILT 0.241.0 (MP tick gets half of Mana Recovery); the warriors' HP potions still need a measurement and your pick of passive | classes |
 | `BL-341` | ⏸ | **Skill vampirism + skill reflect** — a buff that vamps from any spell/physical skill (later-chronicle IG), only together with reflect on skill damage; "a lot later if at all" | combat |
 
 ---
@@ -2384,16 +2383,6 @@ Your words: *"in IG the game dont allow same type of debuf (except the boss allo
 3. **A re-stun on a stunned target may BREAK the stun** instead. The chance grows with the stun's length (your *"longer duration longer chance"*), around 10-15% for a 15s stun.
 
 ❓ **Open:** the exact break curve (a % per second of the stun's duration, or per second REMAINING?); whether rule 1 applies to mobs as well as players; and whether a break also starts a short immunity. Design owed before code.
-
-## `BL-340` 🔵 POTION MASTERY — THE WARRIOR (HP) HALF (2026-10-09, rewritten 2026-10-12)
-
-**The nuker half is BUILT (0.241.0)** and its old text is archived: no new passive, the per-second MP tick (mana
-potions, Harmony of Restoration's MP) gets **half of Mana Recovery** (`Entity.MpTickMod`, +35% at 85), your pick of
-2026-10-12 (*"lets go with half - a heavy spammer will need to conserve"*). Measured: `BalanceMatrix --potmp-elf`.
-
-**Still owed: the warriors' HP potions** (warrior 2nd/3rd/4th + war_aoe 3rd/4th, from the 2nd class, Instant Healing
-not affected). Their need is mob damage, not their own spending, so it needs its own measurement, and they have no
-Mana-Recovery-like passive to borrow. Waiting on you: a new HP passive, or an existing warrior passive to reuse.
 
 ## `BL-341` ⏸ SKILL VAMPIRISM + SKILL REFLECT, AS ONE PAIR (2026-10-09, "a lot later if at all")
 
