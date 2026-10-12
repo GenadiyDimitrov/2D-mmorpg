@@ -2,6 +2,40 @@
 
 namespace Game.Server.Simulation;
 
+/// <summary>`BL-336` — the CONTROL types a hostile effect can impose. IG's rule, the owner's words
+/// (2026-10-06): *"the game dont allow same type of debuf ... to reset duration .. so if i hold some1
+/// for 30s i cannot rehold him until his 30s worn of (no perma hold)"*. Two effects of the SAME type
+/// never refresh each other; a stun on a held target still lands (different type). Slow, DoTs and every
+/// stat debuff are NOT here — they keep stacking and replacing (his "ms/as/pdef/dots ..." list).</summary>
+[Flags]
+public enum ControlKind
+{
+    None            = 0,
+    Stun            = 1,
+    Hold            = 2,    // SkillEffect.Root
+    Fear            = 4,
+    Charm           = 8,
+    SilencePhysical = 16,
+    SilenceMagical  = 32,
+}
+
+public static class ControlKinds
+{
+    /// <summary>The control types one payload imposes — the flags plus the three FIELD payloads
+    /// (charm and the two silences ride fields because the effect enum is full).</summary>
+    public static ControlKind Of(SkillEffect effect, bool charms, bool silencePhysical, bool silenceMagical)
+    {
+        var k = ControlKind.None;
+        if ((effect & SkillEffect.Stun) != 0) k |= ControlKind.Stun;
+        if ((effect & SkillEffect.Root) != 0) k |= ControlKind.Hold;
+        if ((effect & SkillEffect.Fear) != 0) k |= ControlKind.Fear;
+        if (charms)          k |= ControlKind.Charm;
+        if (silencePhysical) k |= ControlKind.SilencePhysical;
+        if (silenceMagical)  k |= ControlKind.SilenceMagical;
+        return k;
+    }
+}
+
 /// <summary>A timed stat modifier (buff or debuff) on an entity. Carries a
 /// flags Effect (one buff can touch several stats) and a per-effect magnitude
 /// array with flat/percent modes. Identified by Key; same-Key buffs compare by
@@ -12,6 +46,10 @@ public class BuffInstance
     public required SkillEffect Effect { get; set; }
     public required EffectMagnitude[] Magnitudes { get; set; }
     public int TicksRemaining { get; set; }
+    /// <summary>`BL-336` — the length this effect LANDED with, after [Double] and the CON/SPT cut. The
+    /// stun-break chance reads it (*"longer duration longer chance"*). 0 on a buff rebuilt from a
+    /// persisted row, which only ever matters for a hostile control a relog carried — none persist.</summary>
+    public int TotalTicks { get; init; }
     public required string Name { get; init; }
     public string Description { get; init; } = "";
 
@@ -349,6 +387,11 @@ public class BuffInstance
     /// a reflect has no def to have been stamped from. Every new curse is recognised by the stamp.</para></summary>
     public bool IsDebuff => Hostile || (Effect & SkillEffect.AnyDebuff) != 0 || Charms
                          || SilencesPhysical || SilencesMagical;
+
+    /// <summary>`BL-336` — which control types this effect is imposing right now. Hostile effects only
+    /// (no buff in the catalog carries a control flag today; this keeps one from ever blocking a hold).</summary>
+    public ControlKind Controls => Suppressed || !IsDebuff ? ControlKind.None
+        : ControlKinds.Of(Effect, Charms, SilencesPhysical, SilencesMagical);
 
     /// <summary>Sum of this buff's flat entries for an effect. For a stacking effect the
     /// Magnitudes are re-snapshotted to the current stack LEVEL on each stack (see
@@ -1789,6 +1832,18 @@ public class Entity
     /// ApplyBuff recomputes derived stats and pushes to the client, which is tick-thread work — so it
     /// parks them here and the game loop drains the list on entry to the world.</summary>
     public List<Persistence.PersistenceService.BuffSnapshot> PendingBuffs { get; } = new();
+
+    /// <summary>`BL-336` — every control type currently on this entity. The boss's petrify counts as a
+    /// stun (it is one, off its rung), so nothing can re-stun a petrified character either.</summary>
+    public ControlKind ActiveControls
+    {
+        get
+        {
+            var k = Petrified ? ControlKind.Stun : ControlKind.None;
+            foreach (var b in Buffs) k |= b.Controls;
+            return k;
+        }
+    }
 
     /// <summary>Held in place by a Root effect — cannot move until it expires.</summary>
     public bool IsRooted

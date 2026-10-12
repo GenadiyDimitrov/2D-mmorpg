@@ -8571,3 +8571,23 @@ Demonic Drain, using only 10-20 potions; Humans have damage reduction, Elves a f
 15s plus an extra potion for 10s; healers/buffers heal themselves and fighters have their race sustain skills. Mana is
 the real problem for mages and buffers, and buffers' Mana Vampirism got stronger once they deal magic damage. Healers
 *"need to have mana problems otherwise no pvp will end"*. Nothing more is owed under `BL-340`.
+
+## `BL-336` ✅ BUILT in 0.242.0 — NO-REFRESH DEBUFFS, the text it replaced (2026-10-06 → 10-12)
+
+Your words: *"in IG the game dont allow same type of debuf (except the boss allowed ones (dots/pdef/mdef/as/ms/cs/patk/matk/etc)) to reset duration .. so if i hold some1 for 30s i cannot rehold him until his 30s worn of (no perma hold) and stuns attacks even have a chance to cancel it when trying to stun again (so stun for 15s .. try stun 10-15% chance to cancel the stunnig effect .. not to reset duration)"*, and *"duration means nothing if that logic is in effect (the stun break chance we need to think of .. longer duration longer chance if the stun succeed and try to reaaply)"*.
+
+**Today** a stun or hold is a buff on the target, and `ApplyBuff`'s equal-rank rule (`BL-263`) lets the incoming one REPLACE it, so every re-land resets the clock. With a short cooldown (Acoustic Shock: 5s stun, 3s reuse) that is a permanent lock.
+
+**The rule to build:**
+1. A **control** debuff (stun, hold, sleep, fear, …) that is already on the target **cannot be re-landed**: the new cast does nothing to its duration.
+2. The **stat** debuffs you listed (DoTs, P.Def, M.Def, attack / move / cast speed, P.Atk, M.Atk, …) keep today's stacking and replacing.
+3. **A re-stun on a stunned target may BREAK the stun** instead. The chance grows with the stun's length (your *"longer duration longer chance"*), around 10-15% for a 15s stun.
+
+❓ **Open:** the exact break curve (a % per second of the stun's duration, or per second REMAINING?); whether rule 1 applies to mobs as well as players; and whether a break also starts a short immunity. Design owed before code.
+
+**Built 2026-10-12 (0.242.0)** with his four answers (all my recommendations): the break chance is **0.8% per second
+of the stun's LANDED length** (5s → 4%, 15s → 12%, 30s → 24%); the rule holds for **players and mobs alike**; a broken
+stun leaves **no immunity**; the control set is **stun, hold, fear, charm and both silences** (slow, DoTs and stat
+debuffs keep refreshing). His clarification the same day: *"only stun can be canceld .. reholding or resilencing some1
+just dont reset the timer ... silence and hold are long duration if we put a break on them they will sure release the
+effect"* — which is how it was built. The guard is in `ApplyBuff` (every road), the roll in the contested branch.

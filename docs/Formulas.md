@@ -421,6 +421,24 @@ duration = round( authoredTicks * factor )        min 1 tick
 
 `StatCalculator.DebuffDurationFactor` · `StatCaps.DebuffDurationStatBase/StatFull/Floor`
 
+## Re-landing a control debuff (`BL-336`, 0.242.0)
+
+```
+control types = stun · hold (Root) · fear · charm · physical silence · magical silence
+same type already on the target  ->  the new one does NOT land (no stack, no clock reset)
+re-stun that WON its contest     ->  breakChance = landedSeconds * 0.008      (5s 4% · 15s 12% · 30s 24%)
+```
+
+- **Any skill of the same type** blocks, whatever its rank. A stun on a held target still lands (different type).
+- **Stun only** breaks; a re-hold or re-silence just does nothing. The longest stun on the target sets the chance, and
+  a break removes every cancellable stun on it. No immunity follows.
+- `landedSeconds` is what the stun actually got: after [Double] and the CON/SPT cut above.
+- Players and mobs alike. Slow, DoTs and stat debuffs are not control and refresh as before. Uncancellable effects (the
+  boss's petrify) are never refused and never broken.
+
+`Entity.ActiveControls` · `BuffInstance.Controls/TotalTicks` · `GameLoopService.ControlsOf/TryBreakStun` ·
+`GameConstants.StunBreakChancePerSecond`
+
 ## Pull and charge (`BL-154`, 0.110.0 · `BL-256`, 0.146.0 · the stride, 0.164.0)
 
 ```

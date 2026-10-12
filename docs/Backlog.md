@@ -284,8 +284,9 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-331` | 🔵   | **Skill icons** — game-icons.net tinted per school, `docs/data/skill_icons.csv` + `tools/SkillIcons`; bar, buff bar, Skills window (Known / Learn / Actions) BUILT 0.219.0-0.219.1, your review passed; NPC buffs, potions, scrolls, runes, paving 0.226.0; owed: the cast bar, the tree page; your own redraw "a lot later"                                                                                                                                                                                     | ui           |
 | `BL-332` | ❓   | **Notifications** — low HP / low potions / farm time over / died: in-game alerts, scheduled phone notifications, server push; my pick + four questions                                                                                                                                                                                                                                                                                                         | ui           |
 | `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
-| `BL-336` | 🔵 | **No-refresh debuffs (IG rule)** — a debuff of the same type cannot be re-landed until the old one wears off (no perma-hold); a re-stun attempt may BREAK the stun instead of resetting it; boss-allowed stacking types excepted; design owed | combat |
 | `BL-341` | ⏸ | **Skill vampirism + skill reflect** — a buff that vamps from any spell/physical skill (later-chronicle IG), only together with reflect on skill damage; "a lot later if at all" | combat |
+| `BL-344` | 🔴 | **Visual pass** — ground, animations, entities (characters, mobs, NPCs) and the rest of the presentation; your next job after `BL-336` | client |
+| `BL-345` | ❓ | **Hosting for friends** — where the server runs (your question: an Oracle Always Free Linux machine?), how friends download the APK and connect; answer owed after `BL-344` | ops |
 
 ---
 
@@ -2371,19 +2372,6 @@ on the Apothecary shelf) shipped in 0.223.0.
 ⏸ **Waits on him**: whether a pet gets stronger base stats or a rune effect of its own decides whether this item exists at
 all. Prices above are his, for when it does. Pets/summons themselves are `BL-38`.
 
-## `BL-336` 🔵 NO-REFRESH DEBUFFS — IG's rule against the permanent lock (2026-10-06)
-
-Your words: *"in IG the game dont allow same type of debuf (except the boss allowed ones (dots/pdef/mdef/as/ms/cs/patk/matk/etc)) to reset duration .. so if i hold some1 for 30s i cannot rehold him until his 30s worn of (no perma hold) and stuns attacks even have a chance to cancel it when trying to stun again (so stun for 15s .. try stun 10-15% chance to cancel the stunnig effect .. not to reset duration)"*, and *"duration means nothing if that logic is in effect (the stun break chance we need to think of .. longer duration longer chance if the stun succeed and try to reaaply)"*.
-
-**Today** a stun or hold is a buff on the target, and `ApplyBuff`'s equal-rank rule (`BL-263`) lets the incoming one REPLACE it, so every re-land resets the clock. With a short cooldown (Acoustic Shock: 5s stun, 3s reuse) that is a permanent lock.
-
-**The rule to build:**
-1. A **control** debuff (stun, hold, sleep, fear, …) that is already on the target **cannot be re-landed**: the new cast does nothing to its duration.
-2. The **stat** debuffs you listed (DoTs, P.Def, M.Def, attack / move / cast speed, P.Atk, M.Atk, …) keep today's stacking and replacing.
-3. **A re-stun on a stunned target may BREAK the stun** instead. The chance grows with the stun's length (your *"longer duration longer chance"*), around 10-15% for a 15s stun.
-
-❓ **Open:** the exact break curve (a % per second of the stun's duration, or per second REMAINING?); whether rule 1 applies to mobs as well as players; and whether a break also starts a short immunity. Design owed before code.
-
 ## `BL-341` ⏸ SKILL VAMPIRISM + SKILL REFLECT, AS ONE PAIR (2026-10-09, "a lot later if at all")
 
 Your note: *"Later we can return to that and do a buff that vamp from any spell/phisicsl skill like later
@@ -2404,3 +2392,24 @@ that also works on skill damage, so vampirism has a counter on the same channel.
 
 Nothing to decide now.
 
+
+## `BL-344` 🔴 THE VISUAL PASS — ground, animations, entities (2026-10-12)
+
+Your words: *"then i want to start updation visuals (ground/animations/entities) etc"*. The next job after `BL-336`.
+
+Scope as you named it: the **ground** (terrain look), **animations**, and the **entities** (characters, mobs, NPCs),
+plus whatever else the "etc" turns out to cover. This is the "presentation pass" the roadmap has been carrying.
+Client-only, so every step ships as a new APK. The first step is a short survey of what the client draws today and a
+proposed order, for you to pick from before any asset work starts.
+
+## `BL-345` ❓ HOSTING FOR FRIENDS — where the server lives and how they join (2026-10-12)
+
+Your words: *"after the visuals i want to tell me how to host so i can ask friends to join/download etc (this is my
+question about oracle free linux machine?)"*. Answer owed **after `BL-344`**, on your order.
+
+What the answer has to cover:
+1. **The machine.** Your candidate is Oracle Cloud's Always Free tier (an ARM Linux VM). The server is plain .NET with
+   SQLite, so it can run there; the answer should check the current free limits and the setup steps.
+2. **Opening it up.** The port, the firewall, and whether it needs a domain name and HTTPS for the phone client.
+3. **The client.** How the APK finds a server that is not `localhost`, and where friends download it from.
+4. **Running it.** Starting the server as a service, updating it to a new version, and backing up `game.db`.

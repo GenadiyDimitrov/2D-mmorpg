@@ -14008,10 +14008,23 @@ public partial class GameLoopService : BackgroundService
                     {
                         if (!spentStacks) ApplyDotStack(caster, target, def, lvl);   // the DoT damage effect
                     }
+                    // `BL-336` — NO REFRESH. The same control type already on the target: the cast won its
+                    // contest and still does nothing to the clock. A STUN gets one more thing, his *"try
+                    // stun ... chance to cancel the stunning effect .. not to reset duration"*: the won
+                    // re-stun may BREAK the stun instead. ApplyBuff refuses the refresh on every other road
+                    // too (a reflect, a pull's arrival stun); this arm exists only to roll the break and say so.
+                    else if ((target.ActiveControls & ControlsOf(def, lvl)) is var held && held != ControlKind.None)
+                    {
+                        bool broke = (held & ControlKind.Stun) != 0 && TryBreakStun(target);
+                        BroadcastCombat(caster, target, 0, CombatOutcome.Buff,
+                            broke ? "Stun broken" : castName + " (no refresh)");
+                        goto contestDone;
+                    }
                     else
                         ApplyBuff(target, def, lvl, durationOverride: doubledTicks, source: caster, shownLevel: ShownLevelOf(caster, def.Id, lvl));   // single CC buff
                     BroadcastCombat(caster, target, 0, CombatOutcome.Buff,
                         durationDoubled ? castName + " [Double]" : castName);
+                    contestDone:;
                 }
                 else
                 {
@@ -14340,6 +14353,30 @@ public partial class GameLoopService : BackgroundService
         return false;
     }
 
+    /// <summary>`BL-336` — the control types a skill imposes at this level (a leveled-stack skill's
+    /// first stack included, which is what ApplyBuff would land).</summary>
+    private static ControlKind ControlsOf(SkillDef def, int level) =>
+        ControlKinds.Of(def.Effect | (def.StackLevelAt(1)?.Effect ?? SkillEffect.None),
+                        def.Charms, def.SilencePhysical, def.SilenceMagical);
+
+    /// <summary>`BL-336` — roll the break on a re-stun that won its contest. The chance grows with the
+    /// existing stun's LANDED length (<see cref="GameConstants.StunBreakChancePerSecond"/>); the longest
+    /// one decides. A broken stun is removed outright and leaves no immunity (his pick, 2026-10-12).
+    /// ⚠ The boss's petrify is not a buff to break — <c>Petrified</c> stays whatever this rolls.</summary>
+    private bool TryBreakStun(Entity target)
+    {
+        int longest = 0;
+        foreach (var b in target.Buffs)
+            if (b.Cancellable && (b.Controls & ControlKind.Stun) != 0) longest = Math.Max(longest, b.TotalTicks);
+        if (longest <= 0) return false;
+        float chance = longest * GameConstants.TickSeconds * GameConstants.StunBreakChancePerSecond;
+        if (_rng.NextDouble() >= chance) return false;
+        target.Buffs.RemoveAll(b => b.Cancellable && (b.Controls & ControlKind.Stun) != 0);
+        target.RecomputeDerived();
+        if (target.Kind == EntityKind.Player) { PushBuffs(target); SendStats(target); }
+        return true;
+    }
+
     /// <summary>Apply a buff with the two stacking rules:
     /// (1) FAMILY conflict, then Rank: apply only if the incoming Rank >= the rank of every active
     ///     buff whose family set overlaps this one's (weaker is ignored entirely); on apply, replace
@@ -14484,6 +14521,20 @@ public partial class GameLoopService : BackgroundService
             if (factor < 1f) duration = Math.Max(1, (int)MathF.Round(duration * factor));
         }
 
+        // ---- `BL-336`: NO REFRESH OF A CONTROL TYPE ALREADY HELD --------------------------------
+        //      IG's rule against the permanent lock: a stun, hold, fear, charm or silence that is
+        //      already on the target cannot be re-landed by ANY skill of the same type until it wears
+        //      off — it neither stacks nor resets the clock, whatever its rank. Players and mobs alike
+        //      (his pick, 2026-10-12). HERE, because every road to a landed debuff comes through
+        //      ApplyBuff (the contested branch, a reflect, a pull's arrival stun, a mob's cast); the
+        //      contested branch checks first only so it can roll the stun break and say so.
+        //      ⚠ `force` (the staff `/buff`) is exempt, as it is from every other refusal — and so is an
+        //        UNCANCELLABLE effect: the boss's petrify re-asserts its own Stun-flagged icon every
+        //        second while `Petrified` already counts as a stun, and must never refuse itself.
+        if (!force && def.Cancellable && SkillMath.IsHostile(def)
+            && (target.ActiveControls & ControlsOf(def, level)) != ControlKind.None)
+            return false;
+
         // Stacking effect (MaxStacks > 1): reapplying ADDS a stack (capped) and refreshes,
         // rather than replacing. If the skill has a per-stack table, the status re-snapshots
         // that level's Effect + Magnitudes (so a slow can grow, or become a freeze at stack N).
@@ -14619,6 +14670,7 @@ public partial class GameLoopService : BackgroundService
                        : first?.Magnitudes ?? def.MagnitudesAt(level) ?? Array.Empty<EffectMagnitude>()),
             CoveredKeys = covered,
             TicksRemaining = duration,
+            TotalTicks = duration,         // `BL-336` — the stun-break chance reads the length it landed with
             Toggle = toggle,
             // STEALTH (BL-69, kind 2) rides on the buff, so it ends the moment the buff does — by
             // whichever of the many routes a buff can leave. See BuffInstance.HidesFromMobs.

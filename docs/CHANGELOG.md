@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.241.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.242.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,21 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-12 (latest) — 0.241.0: Mana Recovery boosts MP potions at half strength (`BL-340`, nuker half)
+## 2026-10-12 (latest) — 0.242.0: no-refresh control debuffs + the stun break (`BL-336`)
+
+**Server only.** No APK (the client already prints the floater text it is sent), no `game.db` delete.
+
+- IG's rule against the permanent lock, his words: *"if i hold some1 for 30s i cannot rehold him until his 30s worn
+  of (no perma hold)"*. A **stun, hold, fear, charm or silence** already on a target cannot be re-landed by ANY skill
+  of the same type until it wears off: the cast still rolls its contest, then does nothing to the clock. Players and
+  mobs alike. Slow, DoTs and every stat debuff keep stacking and replacing as before.
+- **A re-stun that WINS its contest may BREAK the stun** instead: 0.8% per second of the stun's landed length (5s → 4%,
+  15s → 12%, 30s → 24%), no immunity after. Stun only; his: *"only stun can be canceld .. reholding or resilencing
+  some1 just dont reset the timer"*. The floater reads **"Stun broken"** or **"<skill> (no refresh)"**.
+- The guard lives in `ApplyBuff`, so it holds on every road (a reflect, a pull's arrival stun, a mob's cast). The
+  boss's petrify is exempt: uncancellable, never refused, never broken. `docs/Formulas.md` carries the rule.
+
+## 2026-10-12 — 0.241.0: Mana Recovery boosts MP potions at half strength (`BL-340`, nuker half)
 
 **Server + new APK** (the APK only carries the new Mana Recovery description). No `game.db` delete.
 

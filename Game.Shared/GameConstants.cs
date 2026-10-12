@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.241.0";
+    public const string GameVersion = "0.242.0";
 
     /// <summary>RUNES STACK, UP TO A CAP (owner, 2026-10-03): opening a rune box while you hold the same rune ADDS its
     /// time to that rune instead of starting a second clock beside it. A box of this length or shorter (1h/2h) may only
@@ -367,6 +367,11 @@ public static class GameConstants
 
     /// <summary>Seconds per tick (0.1s at 10 t/s).</summary>
     public const float TickSeconds = 1f / TickRate;
+
+    /// <summary>`BL-336` — a re-stun that WINS its contest on an already-stunned target breaks the stun
+    /// with this chance per second of the stun's LANDED length (5s → 4%, 15s → 12%, 30s → 24%). The
+    /// owner: *"stun for 15s .. try stun 10-15% chance to cancel"*, *"longer duration longer chance"*.</summary>
+    public const float StunBreakChancePerSecond = 0.008f;
 
     /// <summary>`BL-279` — the ceiling of a skill's custom auto-hunt delay, in seconds. His range is
     /// *"1~9999s"*. Shared so the client's picker and the server's clamp can never disagree.</summary>
