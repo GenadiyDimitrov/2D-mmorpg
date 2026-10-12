@@ -15,7 +15,15 @@ namespace Game.Shared;
 /// <b>All</b> tab in front of them itself, so a shop never declares one. The SELL side always keeps the
 /// generic tabs: it lists your bag, and "Ring" or "Scrolls" would hide most of it.</para>
 public record ShopDef(string NpcId, string Title, string[] ItemIds, bool EssenceOnly = false,
-                      ShopTab[]? Tabs = null);
+                      ShopTab[]? Tabs = null, IReadOnlyDictionary<string, ShopRow>? Rows = null);
+
+/// <summary>One ingredient of an ITEM price — an item id and how many (`BL-339`: certificates; the essence shop's
+/// essences are the same shape).</summary>
+public record ShopCost(string ItemId, int Qty);
+
+/// <summary>A shelf row priced in ITEMS, not gold (0.239.0, the mentor shop): what it costs and how many of the item one
+/// purchase hands over (his 1-certificate bundles: 500 potions for one). The costs are taken from the bag.</summary>
+public record ShopRow(ShopCost[] Cost, int Gives = 1);
 
 /// <summary>One of a shop's own buy tabs (`BL-290`): a name and the test for what sits under it. A BOX sits
 /// under every tab that holds something inside it (<see cref="ShopCatalog.InTab"/>), so the temporary
@@ -239,6 +247,10 @@ public static class ShopCatalog
                 .OrderBy(x => x.r.IsGear ? 2 : x.r.Refine ? 0 : 1).ThenBy(x => x.r.GearItemLevel).ThenBy(x => x.r.UnlockLevel)
                 .ThenBy(x => x.d.Name)
                 .Select(x => x.d.Id).ToArray()),
+
+            // `BL-339` (0.239.0) — THE MENTOR SHOP, Bond and Graduation Certificates only (MentorShop has the
+            // prices and why). Tabs by what is inside, so the timed boxes sit under the gear they open into.
+            MentorShelf(),
         };
 
         var dict = new Dictionary<string, ShopDef>(StringComparer.OrdinalIgnoreCase);
@@ -260,6 +272,38 @@ public static class ShopCatalog
         }
         return dict;
     }
+
+    /// <summary>The mentor steward's shelf (`BL-339`).</summary>
+    private static ShopDef MentorShelf()
+    {
+        var rows = MentorShop.Rows().ToList();
+        var tabs = new ShopTab[]
+        {
+            new("Runes", d => d.Slot == EquipSlot.Rune),
+            new("Weapons", d => d.Slot == EquipSlot.Weapon),
+            new("Armor", d => d.Slot is EquipSlot.Armor or EquipSlot.Shield),
+            new("Jewels", d => d.Slot == EquipSlot.Jewel),
+            new("Supplies", d => d.Slot is EquipSlot.Consumable or EquipSlot.Scroll),
+        };
+        return new ShopDef(MentorShop.StewardId, "Mentor Steward — Certificates",
+            rows.Select(r => r.ItemId).ToArray(), Tabs: tabs,
+            Rows: rows.ToDictionary(r => r.ItemId, r => r.Row, StringComparer.Ordinal));
+    }
+
+    /// <summary>The ITEM price of a row on this shelf, or null for a gold/platinum row. The essence shop's price is
+    /// <see cref="Crafting.EssenceShopPrice"/> read as one; every other item-priced shelf authors its <see cref="ShopDef.Rows"/>.
+    /// Server (charge) and display both ask this, so the price quoted is the price taken.</summary>
+    public static ShopRow? ItemPrice(ShopDef shop, ItemDef def)
+    {
+        if (shop.EssenceOnly)
+            return Crafting.EssenceShopPrice(def) is Crafting.EssenceYield[] e
+                ? new ShopRow(e.Select(y => new ShopCost(y.EssenceId, y.Qty)).ToArray())
+                : null;
+        return shop.Rows?.GetValueOrDefault(def.Id);
+    }
+
+    /// <summary>Is this shelf priced in items (and never in gold)?</summary>
+    public static bool ItemPriced(ShopDef shop) => shop.EssenceOnly || shop.Rows is not null;
 
     /// <summary>Every shop. For the tools that have to ask "is this item on a shelf ANYWHERE" rather
     /// than "does this one NPC sell it" — `BL-147`'s generated consumable-buff page is the first, and

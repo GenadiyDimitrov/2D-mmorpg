@@ -8468,3 +8468,43 @@ Common shelf price, sold nowhere, `MaxStackOverride: 1`. A creature drops ONE bo
 **Bosses:** no boss dropped a Common (they pay Mythic pieces since `BL-308`), so the "multiple boxes" clause had nothing
 to convert.
 
+
+## `BL-339` ✅ BUILT in 0.234.0-0.239.0 — MENTORING SYSTEM (2026-10-09)
+
+You gave the full spec on 2026-10-09. It is in **`docs/design/Mentoring.md`** verbatim, with my read and **8 open
+questions** (what a penalty blocks, reward trigger, minimum bond age, mentee-side invite, wc_* rungs, bound
+certificates, stacking with runes, the buff-rung rule) and **4 numbers that disagree** (drop/gold %, Grand Rune 50 vs
+20, exp-rune price, 3/7 days ≠ 50%). My picks: blessing **option 1** (separate self-only skills in the originals'
+buff families), an **anti-multibox rule** for the mentor's online count, and a **better T80 offer**. Not built.
+
+**2026-10-09, your answers are in** (the "His answers" section at the top of the doc): 2% drop/gold per level,
+Bond + Mentor Certificates (both bound, ×9999), Grand Rune 50, activity as %, the penalty blocks new bonds both
+ways and is checked at accept, rewards on LEVEL 20/40/76, no minimum bond age, either side invites, group buffs at
+their ≤74 rung, bonuses add, and the mentor buff is an **online aura** (no timer, 1-3 min re-check + grace).
+**Four left for you:** (1) 10 Graduation Certs at 76 or 1/3/6? I'd keep 1/3/6. (2) the 1d exp/SP rune: 50, or cut?
+I'd cut it. (3) the multibox rule (not the mentor's IP + not idle): yes/no? (4) T80: I explained why 7d for 100 is
+a bad deal, and I'd make it **30d for ~30**.
+
+**Third pass, same day: the four are closed.** Graduation Certificates at 76 (10, or 9/6 for a late bond); Bond
+Certs paid at each level; the 1d exp/SP rune at 50 Bond; **no IP rule**. Instead: one mentee per account, AFK
+mentees don't count, and a **10-rung buff weighted by mentee level** (level²/1800: 10@20 = L2, 10@40 = L8, 5@60 =
+L10); Graduation Certs buy real, permanent items. **Buildable.** Exp rune = **50%** (`rune_expsp` L6, his 2026-10-09). Still open: the shop prices.
+
+**Built:** 0.234.0 the bond core; 0.235.0 the eleven Mentor Blessings and your fourth pass, the split into **Mentor
+Aura** (exp/SP, online mentees incl. AFK, level²/1800, Lv.1-10) and **Mentor Knowledge** (drop/gold, +2% per mentee
+active in 10 min, Lv.1-5). Blessings are 0 MP / 1s, my call. **Only the shop is left, and it waits on your prices.**
+
+**0.234.0 (2026-10-09): the bond core is BUILT** (checklist §148): `/mentor invite|accept|decline|remove|list`, every
+refusal message you wrote, the five-step removal penalty, last-online and the 7-day activity %, Bond Certificates at
+20/40/76 to both sides and the Graduation Certificates (10/9/6) at 76, the mentor's 10-rung aura and the mentee's +50%
+(both no-timer bar rows). Headless test: `dotnet run --project tools/SmokeTest -- mentor`. **Still to build:** (1) the
+11 self-only **Mentor Blessing** skills (option 1, in the originals' families); (2) the **shop**, which waits on your
+price list (only the 1d Grand Rune = 50 Bond, the 1d exp/SP rune L6 = 50 Bond and the 1-Graduation-cert consumable
+list are settled).
+
+**The shop, built 2026-10-12 (0.239.0)** from his shop pass the same day: a Mentor Steward beside the Apothecary in
+the three major cities; Bond rows (1d Grand Rune 50, 1d +50% exp/SP rune 50, bound Blessing Box 10, timed T20/T40 30-day
+and T76 7-day armour/weapon boxes at 60/40, 150/100, 300/200), the T80 7-day pair at 600 Bond + 2 Graduation / 400 + 1,
+his eight 1-Graduation bundles (bound), and permanent bound T76 Mythic pieces (helmet 1,000 Graduation; the gold table's
+D column / 1000). Everything bought is bound; timed gear runs on the wall clock; bound gear never breaks or gets a recipe.
+Certificates became quest items in 0.238.0. Prices and the why: `Game.Shared/MentorShop.cs`; checklist §157.

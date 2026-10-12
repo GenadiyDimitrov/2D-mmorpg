@@ -389,6 +389,9 @@ public static class WorldMap
             // togheter"*, `BL-303`; *"later model will be just an anvil"*, so no title).
             yield return At(Id(CraftMasterId, CraftMasterId), CraftMasterName(t.Key), TownLayout.XDoor.Crafter, NpcRole.CraftMaster);
             yield return At(Id(AnvilId, AnvilId), "Anvil", TownLayout.XDoor.Anvil, NpcRole.Anvil);
+            // `BL-339` (0.239.0) — the MENTOR STEWARD, beside the Apothecary in each major city (his: *"in every big city as
+            // mentees also need to buy - i agree next to apoth but only in major cities"*). The mentor shop.
+            yield return At(Id(MentorShop.StewardId, MentorShop.StewardId), StewardName(t.Key), TownLayout.XDoor.Steward, NpcRole.Vendor);
 
             switch (t.Key)
             {
@@ -436,6 +439,13 @@ public static class WorldMap
 
     /// <summary>The Mindwright's (skill reset) NPC id — Brackenford's; a major city's is <c>resetter_main_&lt;town&gt;</c>.</summary>
     public const string ResetterId = "resetter_main";
+
+    private static string StewardName(string townKey) => "Mentor Steward " + townKey switch
+    {
+        "brackenford" => "Halden",
+        "greymarsh" => "Ilse",
+        _ => "Corwin",
+    };
 
     private static string MindwrightName(string townKey) => "Mindwright " + (townKey == "greymarsh" ? "Ivo" : "Rhosa");
 

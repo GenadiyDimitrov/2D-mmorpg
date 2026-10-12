@@ -471,6 +471,9 @@ public static class Crafting
         // Temporary 2-hour gear (`BL-272` part 2) never breaks: it is bought with gold, and a bought
         // piece that broke into essence would be a vendor selling essence (*"no vendor sells essence"*).
         if (def.WornLifetimeSeconds > 0) return null;
+        // Nor does BOUND gear (`BL-339`, the mentor shop): bought with certificates, broken it would turn them into
+        // tradable essence. The other bound gear (the Newbie loaners) is F-grade and never broke anyway.
+        if (!def.Tradable) return null;
         int grade = EssenceGrade(def.ItemLevel);
         int col = BreakColumn(def);
         if (grade < 0 || col < 0) return null;

@@ -1,8 +1,25 @@
-# Mentoring (`BL-339`) — design; BUILT except the shop (0.234.0 bond core, 0.235.0 blessings, 0.236.0 level gates)
+# Mentoring (`BL-339`) — design; ALL BUILT (0.234.0 bond core, 0.235.0 blessings, 0.236.0 level gates, 0.238.0 certificates as quest items, 0.239.0 the shop)
 
 Status 2026-10-09: his spec (verbatim, bottom), then five passes of his answers (newest at the top wins). **0.234.0 built the bond core** (`Game.Server/Simulation/Mentoring.cs`, numbers in `Game.Shared/Mentoring.cs`): commands, penalties, roster, certificates, both auras. **0.235.0 built the 11 Mentor Blessings** (`Game.Shared/Skills/Skills.Mentor.cs`, 0 MP / 1s cast / 1s reuse — my call) and the fourth pass below. **0.236.0 replaced them** with 27 level-gated shelf singles and put Mentor's Guidance in five level rungs (fifth pass). **Not built yet:** the shop (prices open; exp rune = `rune_expsp` L6, 50%).
 
 Build notes (my calls, 0.234.0): "online" = the character is in the world (link-dead and offline-farming count); "active" = combat or exp within 10 min; a milestone reached with NO mentor is passed, not owed to a later one; a character who predates mentoring has its passed milestones marked on first login; the list word is **mentee**; the row for an invitation in a mentee's list also says Invited/Pending so they know whom to accept.
+
+## His answers, SHOP pass (2026-10-12) — built in 0.239.0. WINS over everything below.
+
+Verbatim: *"1. Ok -> i was wondering if some1 skips a grade or two .. what happens then .. does he get to be OP ? like many
+grand boxes ? ... 2. yes 3. yes like the newbie kit - same idea 4. yes bonded - its char only 5. ok lets try with perma T76
+with your prices; if we have perma T80 i would like to be with Graduation cers not bondcerst ..; i would like to have a 7d
+T80 same logic as T76 is for 500 t80 should be for 2k so no mentee that dont use any of his bond certs to be able to get
+the T80 ... ot 1000bond + 2-3 graduations ..; very well for platinum 6. in every big city as mentteees also need to buy - i
+agree next to apoth but only in major cities"*. And, same message: *"bond/grad certs to be as quest item - separate from
+main inventory; Boxes to have their own type or tab"* (0.238.0).
+
+- **Skipping a grade is not OP**: his own spec already allows it (*"one mentee can decide to skip equipment and have 20d
+  worth of grand runes"*) and the total is capped at 1,000 Bond per mentee — prices kept.
+- **T80 7-day pair = 1,000 Bond + 3 Graduation** (my pick of his two; 2,000 Bond is twenty raised mentees for one week),
+  split armour 600 + 2, weapon 400 + 1. A mentee never holds a Graduation Certificate, so it is mentor-only either way.
+- **Permanent T76 at my table**; permanent T80 would be Graduation-priced and is not sold. **No platinum.**
+- The full price list, the box chain and why each number is what it is: `Game.Shared/MentorShop.cs`.
 
 ## His answers, FIFTH pass (2026-10-09, after 0.235.0) — the mentee side was too strong. WINS over everything below.
 

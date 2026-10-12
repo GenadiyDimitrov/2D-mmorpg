@@ -184,7 +184,8 @@ public static class BoxCatalog
         };
 
         var dict = new Dictionary<string, BoxDef>();
-        foreach (var b in list.Concat(TieredAccessoryBoxes()).Concat(RuneBoxes()).Concat(TempGearBoxes()).Concat(CommonBoxes()))
+        foreach (var b in list.Concat(TieredAccessoryBoxes()).Concat(RuneBoxes()).Concat(TempGearBoxes()).Concat(CommonBoxes())
+                     .Concat(MentorBoxes(list.First(x => x.Id == ItemCatalog.BoxBuffScrolls))))
             if (!dict.TryAdd(b.Id, b))
                 throw new InvalidOperationException($"Duplicate box id '{b.Id}'.");
         return dict;
@@ -235,6 +236,34 @@ public static class BoxCatalog
                         .Select(s => new BoxEntry(ItemCatalog.TempId($"{s}_t{L}"), 1f)).ToArray());
         }
     }
+    /// <summary>`BL-339` — the mentor shop's box chain (see <see cref="MentorShop"/>): armour box → pick a weight → set
+    /// box → five pieces; weapon box → pick a weapon → (T40+) pick its max attribute; the bound Blessing Box and the
+    /// exp/SP rune box. Ids from MentorShop's helpers only, like the temporary boxes above.</summary>
+    private static IEnumerable<BoxDef> MentorBoxes(BoxDef blessing)
+    {
+        foreach (int L in MentorShop.TimedTiers)
+        {
+            yield return new BoxDef(MentorShop.ArmorBoxId(L),
+                MentorShop.ArmorWeights.Select(w => new BoxEntry(MentorShop.SetBoxId(w, L), 1f)).ToArray(), PickCount: 1);
+            foreach (var w in MentorShop.ArmorWeights)
+                yield return new BoxDef(MentorShop.SetBoxId(w, L), new[] { w }.Concat(MentorShop.ArmorShared)
+                    .Select(s => new BoxEntry(MentorShop.TimedId($"{s}_t{L}"), 1f)).ToArray());
+
+            bool attributed = MentorShop.Attributed(L);
+            yield return new BoxDef(MentorShop.WeaponBoxId(L), MentorShop.WeaponStems.Select(s => new BoxEntry(
+                attributed ? MentorShop.WeaponKindBoxId(s, L) : MentorShop.TimedId($"{s}_t{L}"), 1f)).ToArray(), PickCount: 1);
+            if (!attributed) continue;
+            foreach (var s in MentorShop.WeaponStems)
+                yield return new BoxDef(MentorShop.WeaponKindBoxId(s, L), MentorShop.AttrTypesOf(s)
+                    .Select(a => new BoxEntry(MentorShop.TimedAttrId($"{s}_t{L}", a), 1f)).ToArray(), PickCount: 1);
+        }
+        yield return blessing with { Id = MentorShop.BlessingBoxBound };
+        yield return new BoxDef(MentorShop.ExpSpRuneBox, new[]
+        {
+            new BoxEntry(RewardRunes.ChannelOf(RewardRunes.KeyExpSp).ItemId(MentorShop.ExpSpRunePercent), 1f),
+        });
+    }
+
     /// <summary>The random Common boxes (2026-10-10): ONE piece of the kind, every line equal weight.</summary>
     private static IEnumerable<BoxDef> CommonBoxes()
     {

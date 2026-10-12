@@ -277,6 +277,9 @@ public static class RecipeCatalog
             if (d.ItemLevel <= 0) continue;                // only the tiered gear
             // Only the authored (Mythic) piece is craftable; its Common copy is drop-only.
             if (d.Rarity != ItemRarity.Mythic) continue;
+            // A BOUND clone (the mentor shop's timed/permanent pieces, `BL-339`) is the authored piece under another id,
+            // never a thing to craft: its recipe would mint bound gear from tradable mats.
+            if (!d.Tradable) continue;
             if (!Crafting.IsGearSlot(d.Slot)) continue;
             int t = System.Array.IndexOf(Crafting.GearTiers, d.ItemLevel);
             int c = GearColumn(d);

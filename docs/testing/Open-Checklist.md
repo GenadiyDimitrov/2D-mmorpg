@@ -25,6 +25,28 @@
 
 ---
 
+## §157 — 0.239.0: the mentor shop (`BL-339`, 2026-10-12)
+
+⚠ **Server restart + new APK.** A mentor and a mentee with certificates (`/give <name> cert_bond 1000`,
+`/give <name> cert_graduation 50`).
+
+- `157a` [ ] - A **Mentor Steward** stands at the Apothecary's north-east corner in Brackenford, Greymarsh and Frostmere
+  (not Stonewatch / Ironreach). Talking opens a shelf with tabs Runes / Weapons / Armor / Jewels / Supplies, every row
+  priced in certificates, no gold. ->
+- `157b` [ ] - Buy a **Mentor D Weapon Box (30d)** for 100 Bond: open it, pick a wand, then pick Cast Speed / M.Atk / Max
+  MP; the wand shows its attribute at the maximum (Cast Speed 15) and a 30-day clock. The boxes say 7 days. ->
+- `157c` [ ] - Buy a **Mentor E Armor Box (30d)** (60): pick light → five pieces with a shield; wear them all → the set
+  bonus shows. They cannot be sold, traded or broken (no Break button). ->
+- `157d` [ ] - **Grand Rune Box (1d)** and **Rune of Exp/SP (50%) Box (1d)**, 50 Bond each: the day starts on open.
+  **Blessing Box** (10): picks 10 bound scrolls; the box itself cannot be traded. ->
+- `157e` [ ] - **Graduation bundles**: 1 certificate buys "Healing Potion x500" (bound) etc.; with a full bag the buy is
+  refused and nothing is taken. ->
+- `157f` [ ] - **T80 pair** asks 600 Bond + 2 Graduation (armour) / 400 + 1 (weapon): a mentee with 1,000 Bond and no
+  Graduation cannot buy it. **Permanent T76**: helmet 1,000 Graduation, no clock, bound. ->
+- `157g` [ ] - Too few certificates → "Not enough (need …)" and nothing changes. ->
+
+---
+
 ## §156 — 0.238.0: certificates on the Quest tab; Boxes get their own tab (2026-10-12)
 
 ⚠ **Server restart + new APK.** Any character with a few boxes; a mentor or mentee with certificates for `156a`.

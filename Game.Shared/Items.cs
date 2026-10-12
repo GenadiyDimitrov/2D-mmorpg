@@ -2205,6 +2205,9 @@ public static class ItemCatalog
         list.AddRange(BoundCopies(list));
         // The temporary 2-hour Common gear and its vendor boxes (`BL-272` part 2), cloned off the Commons.
         list.AddRange(TempGear(list));
+        // `BL-339` (0.239.0) — the mentor shop's bound wares: timed gear + its boxes, the permanent T76 pieces, the
+        // bound potions, the bound Blessing Box and the exp/SP rune box. Cloned off the Mythic pieces like the above.
+        list.AddRange(MentorWares(list));
         // The random Common boxes that replaced every Common drop (2026-10-10), priced off the Commons.
         list.AddRange(CommonBoxes(list));
         // `BL-301` — LAST, so the bound copies' "(Bound)" goes too.
@@ -2601,6 +2604,105 @@ public static class ItemCatalog
                                + "(2 hours of wearing each)."));
             }
         }
+        return made;
+    }
+
+    /// <summary>`BL-339` — everything the mentor shop sells that did not exist (see <see cref="MentorShop"/>). Every
+    /// piece is a CLONE of a generated Mythic piece (same numbers, same SetId, so a set completes), bound, unbuyable
+    /// off any gold shelf, worth nothing to a vendor. Throws if a stem names no piece, so a renamed line fails at
+    /// boot instead of shipping an empty box.</summary>
+    private static List<ItemDef> MentorWares(List<ItemDef> all)
+    {
+        var by = all.GroupBy(d => d.Id).ToDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
+        var made = new List<ItemDef>();
+        ItemDef Piece(string id) => by.TryGetValue(id, out var d) ? d
+            : throw new InvalidOperationException($"Mentor shop: no '{id}'.");
+        ItemDef Bound(ItemDef d, string id, int lifetime) => d with
+        {
+            Id = id, Tradable = false, BuyPriceOverride = -1, SellPriceOverride = 0, LifetimeSeconds = lifetime,
+        };
+        ItemDef Box(string id, string name, string desc) => new(id, name, EquipSlot.Box, ItemGrade.F, ItemRarity.Epic,
+            Tradable: false, BuyPriceOverride: -1, SellPriceOverride: 0, NoAttributes: true,
+            LifetimeSeconds: MentorShop.BoxLifetimeSeconds, Description: desc);
+        const string Kept = " The box lasts 7 days unopened. Bound: cannot be traded, sold or broken.";
+
+        foreach (int tier in MentorShop.TimedTiers)
+        {
+            int days = MentorShop.TimedDays(tier), life = days * 24 * 3600;
+            string g = TierLetter(tier);
+
+            // ARMOUR: kind box (pick a weight) → set box → body + helm + gloves + boots + shield.
+            foreach (var stem in MentorShop.ArmorWeights.Concat(MentorShop.ArmorShared))
+                made.Add(Bound(Piece($"{stem}_t{tier}"), MentorShop.TimedId($"{stem}_t{tier}"), life));
+            made.Add(Box(MentorShop.ArmorBoxId(tier), $"Mentor {g} Armor Box ({days}d)",
+                $"Choose ONE {g}-grade Mythic set — heavy, light or robe — with helmet, gloves, boots and shield, "
+                + $"the set bonus included. Every piece lasts {days} days from the moment it is yours." + Kept));
+            foreach (var w in MentorShop.ArmorWeights)
+            {
+                string body = Piece($"{w}_t{tier}").Name;
+                made.Add(Box(MentorShop.SetBoxId(w, tier), $"Mentor {body} Set ({days}d)",
+                    $"Opens into a {body}, helmet, gloves, boots and shield, each lasting {days} days." + Kept));
+            }
+
+            // WEAPONS: kind box (pick a weapon) → [T40+: pick its attribute, at the maximum] → the weapon.
+            foreach (var stem in MentorShop.WeaponStems)
+            {
+                var w = Piece($"{stem}_t{tier}");
+                if (!MentorShop.Attributed(tier))
+                {
+                    made.Add(Bound(w, MentorShop.TimedId(w.Id), life));
+                    continue;
+                }
+                var t = AttributeSystem.TierOf(tier);
+                // The pick box (BoxCatalog) lists MentorShop.AttrTypesOf(stem); the piece must offer exactly those.
+                if (!AttributeSystem.PoolFor(w).Select(l => l.Type).SequenceEqual(MentorShop.AttrTypesOf(stem)))
+                    throw new InvalidOperationException($"Mentor shop: '{w.Id}' pool differs from its stem's.");
+                foreach (var line in AttributeSystem.PoolFor(w))
+                {
+                    int max = line.At(t).Max;
+                    made.Add(Bound(w, MentorShop.TimedAttrId(w.Id, line.Type), life) with
+                    {
+                        Name = $"{w.Name} - {AttributeSystem.DisplayName(line.Type)}",
+                        FixedAttributes = new[] { new ItemAttribute(line.Type, max) },
+                    });
+                }
+                made.Add(Box(MentorShop.WeaponKindBoxId(stem, tier), $"Mentor {w.Name} Box ({days}d)",
+                    $"Choose the {w.Name}'s attribute, already at its maximum. The weapon lasts {days} days." + Kept));
+            }
+            made.Add(Box(MentorShop.WeaponBoxId(tier), $"Mentor {g} Weapon Box ({days}d)",
+                $"Choose ONE {g}-grade Mythic weapon"
+                + (MentorShop.Attributed(tier) ? ", then its attribute at the maximum" : "")
+                + $". It lasts {days} days from the moment it is yours." + Kept));
+        }
+
+        // The PERMANENT T76 pieces (Graduation Certificates): bound, no clock.
+        foreach (var stem in MentorShop.WeaponStems.Concat(MentorShop.ArmorWeights)
+                     .Concat(MentorShop.ArmorShared).Concat(MentorShop.JewelStems))
+        {
+            var d = Piece($"{stem}_t{MentorShop.PermanentTier}");
+            made.Add(Bound(d, MentorShop.PermanentId(d.Id), 0));
+        }
+
+        // Bound potions the Newbie completion kit did not already make; the same name, the row's (B) tag tells them apart.
+        foreach (var id in MentorShop.NewBoundConsumables)
+        {
+            var d = Piece(id);
+            made.Add(Bound(d, BoundId(id), 0) with
+            {
+                BarName = $"{(string.IsNullOrEmpty(d.BarName) ? d.Name : d.BarName)} (Bound)",
+            });
+        }
+
+        // The Blessing Box, bound (its scrolls already are).
+        made.Add(Bound(Piece(BoxBuffScrolls), MentorShop.BlessingBoxBound, 0));
+
+        // The 1-day +50% exp/SP rune, sealed: the day starts when it is opened.
+        var expSp = RewardRunes.ChannelOf(RewardRunes.KeyExpSp);
+        made.Add(new ItemDef(MentorShop.ExpSpRuneBox, $"{expSp.NameAt(MentorShop.ExpSpRunePercent)} Box (1d)",
+            EquipSlot.Box, ItemGrade.F, ItemRarity.Rare, GrantsRuneSeconds: 24 * 3600,
+            Tradable: false, BuyPriceOverride: -1, SellPriceOverride: 0,
+            Description: $"Opens to a {expSp.NameAt(MentorShop.ExpSpRunePercent)} lasting 24 hours: "
+                       + $"+{MentorShop.ExpSpRunePercent}% experience AND SP from monsters. Bound."));
         return made;
     }
 

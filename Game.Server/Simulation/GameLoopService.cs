@@ -21196,10 +21196,10 @@ public partial class GameLoopService : BackgroundService
             return;
         }
 
-        // `BL-272` part 2 — the T52 essence shop charges essence and nothing else.
-        if (ShopCatalog.Get(npcId) is { EssenceOnly: true })
+        // An ITEM-priced shelf (`BL-272` part 2 the T52 essence shop, `BL-339` the mentor shop) charges items and no gold.
+        if (ShopCatalog.Get(npcId) is ShopDef itemShop && ShopCatalog.ItemPriced(itemShop))
         {
-            BuyForEssence(player, def);
+            BuyForItems(player, def, ShopCatalog.ItemPrice(itemShop, def));
             return;
         }
 
@@ -21295,46 +21295,39 @@ public partial class GameLoopService : BackgroundService
             $"Bought {def.Name}{(qty > 1 ? $" x{qty}" : "")} for {paid}.");
     }
 
-    /// <summary>A shelf's essence price on the wire (names resolved), or null for none.</summary>
-    private static ItemCostDto[]? EssenceCostDto(Crafting.EssenceYield[]? price) =>
-        price?.Select(p => new ItemCostDto(p.EssenceId, ItemCatalog.Get(p.EssenceId)?.Name ?? p.EssenceId, p.Qty))
-              .ToArray();
+    /// <summary>A shelf's ITEM price on the wire (names resolved), or null for none.</summary>
+    private static ItemCostDto[]? ItemCostDto(ShopRow? row) =>
+        row?.Cost.Select(c => new ItemCostDto(c.ItemId, ItemCatalog.Get(c.ItemId)?.Name ?? c.ItemId, c.Qty)).ToArray();
 
-    /// <summary>`BL-272` part 2 — buy one T52 Mythic piece at the essence shop: Cobalt + Darksteel essence
-    /// from the BAG (<see cref="Crafting.EssenceShopPrice"/>), no gold (*"essence only, no gold"*). One piece
-    /// per purchase, because gear does not stack. Everything is checked before anything is taken.</summary>
-    private void BuyForEssence(Entity player, ItemDef def)
+    /// <summary>"750 Cobalt Essence and 6,750 Darksteel Essence" / "1 Graduation Certificate".</summary>
+    private static string CostWords(ShopRow row) => string.Join(" and ", row.Cost.Select(c =>
+        $"{c.Qty:N0} {ItemCatalog.Get(c.ItemId)?.Name ?? c.ItemId}"));
+
+    /// <summary>Buy one row of an ITEM-priced shelf — the T52 essence shop (`BL-272` part 2) and the mentor shop
+    /// (`BL-339`): the cost comes out of the BAG, never gold. One row per purchase; a row may hand over several
+    /// (<see cref="ShopRow.Gives"/>, the 1-certificate bundles). Everything is checked before anything is taken, and
+    /// the goods are placed before the cost is spent — AddItem is all-or-nothing, so a full bag costs nothing.</summary>
+    private void BuyForItems(Entity player, ItemDef def, ShopRow? row)
     {
-        if (Crafting.EssenceShopPrice(def) is not Crafting.EssenceYield[] price)
+        if (row is null)
         {
             SendSystemToEntity(player, "That item is not for sale.");
             return;
         }
-        var shortOf = price.Where(p => CountItem(player, p.EssenceId) < p.Qty).ToList();
-        if (shortOf.Count > 0)
+        if (row.Cost.Any(c => CountItem(player, c.ItemId) < c.Qty))
         {
-            SendSystemToEntity(player, "Not enough essence (need " + string.Join(" and ", price.Select(p =>
-                $"{p.Qty:N0} {ItemCatalog.Get(p.EssenceId)?.Name ?? p.EssenceId}")) + ").");
+            SendSystemToEntity(player, $"Not enough (need {CostWords(row)}).");
             return;
         }
-        if (player.Inventory.Count(i => !i.Equipped) >= GameConstants.InventorySize)
+        if (!AddItem(player, def.Id, row.Gives, rollAttributes: true))
         {
             SendSystemToEntity(player, "Your inventory is full.");
             return;
         }
-        foreach (var p in price) ConsumeItem(player, p.EssenceId, p.Qty);
-        if (!AddItem(player, def.Id, 1, rollAttributes: false))
-        {
-            // Unreachable after the slot check, but never let essence vanish for nothing.
-            foreach (var p in price) AddItem(player, p.EssenceId, p.Qty, rollAttributes: false);
-            SendInventory(player);
-            SendSystemToEntity(player, "Your inventory is full.");
-            return;
-        }
+        foreach (var c in row.Cost) ConsumeItem(player, c.ItemId, c.Qty);
         SendInventory(player);
         SaveEntity(player);
-        SendSystemToEntity(player, $"Bought {def.Name} for " + string.Join(" and ", price.Select(p =>
-            $"{p.Qty:N0} {ItemCatalog.Get(p.EssenceId)?.Name ?? p.EssenceId}")) + ".");
+        SendSystemToEntity(player, $"Bought {def.Name}{(row.Gives > 1 ? $" x{row.Gives:N0}" : "")} for {CostWords(row)}.");
     }
 
     private void HandleSell(SellItemCmd cmd)
@@ -22500,9 +22493,11 @@ public partial class GameLoopService : BackgroundService
             var items = shopDef.ItemIds
                 .Select(id => ItemCatalog.Get(id))
                 .Where(d => d is not null)
-                .Select(d => shopDef.EssenceOnly
-                    // `BL-272` part 2: the essence shop quotes essence and no gold.
-                    ? new ShopItemDto(d!.Id, d.Name, 0, 0, EssenceCostDto(Crafting.EssenceShopPrice(d)))
+                .Select(d => ShopCatalog.ItemPriced(shopDef)
+                    // An item-priced shelf (essence, certificates) quotes items and no gold; a bundle names its count.
+                    ? ShopCatalog.ItemPrice(shopDef, d!) is ShopRow row
+                        ? new ShopItemDto(d!.Id, row.Gives > 1 ? $"{d.Name} x{row.Gives:N0}" : d.Name, 0, 0, ItemCostDto(row))
+                        : new ShopItemDto(d!.Id, d.Name, 0, 0, null)
                     : new ShopItemDto(d!.Id, d.Name, ItemCatalog.BuyPrice(d), ItemCatalog.PlatinumPrice(d)))
                 .ToArray();
             shop = new ShopInfo(shopDef.Title, items, shopDef.NpcId);

@@ -102,6 +102,9 @@ public static class TownLayout
         public static Vec2 Arms2 => new(330, -900);
         public static Vec2 Apothecary => new(330, -500);
         public static Vec2 Assayer => new(330, -300);
+        // `BL-339` — the Mentor Steward, at the Apothecary's north-east corner (her lot is x 380-920, y -700..-260). Not
+        // on her face at (330, -700): that is Church3's label row, and WorldMap.ValidateNpcLabels wants 1500 apart on X.
+        public static Vec2 Steward => new(1000, -700);
         // The KEEPER (south-east), and Frostmere's Ledgerkeep at its side door.
         public static Vec2 Keeper => new(650, 330);
         public static Vec2 KeeperSide => new(330, 560);

@@ -207,18 +207,7 @@ public static class AttributeSystem
     public static AttrRange[] PoolFor(ItemDef def)
     {
         if (def.NoAttributes) return Array.Empty<AttrRange>();
-        if (def.Slot == EquipSlot.Weapon)
-        {
-            if (def.IsMagicWeapon) return MagicWeapon;
-            return def.WeaponType.Base() switch
-            {
-                WeaponType.Sword => SwordWeapon,
-                WeaponType.Blunt => BluntWeapon,
-                WeaponType.Dual => DualWeapon,
-                WeaponType.Bow => BowWeapon,
-                _ => Array.Empty<AttrRange>()
-            };
-        }
+        if (def.Slot == EquipSlot.Weapon) return WeaponPool(def.WeaponType, def.IsMagicWeapon);
         if (def.Slot == EquipSlot.Jewel)
             return def.JewelType switch
             {
@@ -229,6 +218,18 @@ public static class AttributeSystem
             };
         return Array.Empty<AttrRange>();
     }
+
+    /// <summary>A weapon's pool from its type alone — for BoxCatalog, which may not read ItemCatalog (`BL-339`'s
+    /// attribute-pick boxes). <see cref="PoolFor"/> answers through this, so the two cannot disagree.</summary>
+    public static AttrRange[] WeaponPool(WeaponType type, bool magic) =>
+        magic ? MagicWeapon : type.Base() switch
+        {
+            WeaponType.Sword => SwordWeapon,
+            WeaponType.Blunt => BluntWeapon,
+            WeaponType.Dual => DualWeapon,
+            WeaponType.Bow => BowWeapon,
+            _ => Array.Empty<AttrRange>()
+        };
 
     /// <summary>Can this item ever hold an attribute? (A weapon/jewel of D grade or better.)</summary>
     public static bool CanHoldAttribute(ItemDef def) =>

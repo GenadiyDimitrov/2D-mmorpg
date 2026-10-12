@@ -24,7 +24,30 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-12 (latest) — 0.238.0: certificates on the Quest tab; Boxes get their own tab
+## 2026-10-12 (latest) — 0.239.0: the mentor shop (`BL-339` done)
+
+Server restart + **new APK** (the client must know the new items and the steward's shelf tabs).
+
+- **Mentor Steward** (Halden / Ilse / Corwin) at the Apothecary's north-east corner in Brackenford, Greymarsh and
+  Frostmere (his: *"in every big city ... next to apoth but only in major cities"*). One shelf, priced in certificates
+  only; tabs Runes / Weapons / Armor / Jewels / Supplies (a box sits under what it opens into).
+- **Bond Certificates:** 1-day Grand Rune box 50; 1-day Rune of Exp/SP (50%) box 50 (new sealed box); bound Blessing Box
+  10; timed armour / weapon boxes — T20 30-day 60 / 40, T40 30-day 150 / 100, T76 7-day 300 / 200 (his pair totals,
+  split 60/40). **T80 7-day:** armour 600 Bond + 2 Graduation, weapon 400 + 1 (mentor-only: a mentee never holds a
+  Graduation Certificate).
+- **Graduation Certificates:** his 1-certificate list as bound bundles — 500 Uncommon HP, 250 Uncommon MP, 100 Rare HP,
+  50 Rare MP, 10 Instant HP, 5 Dash (Mythic), 2 Ultimate Return, 1 Ultimate Resurrect; and **permanent bound T76 Mythic**:
+  gloves/boots 600, helmet/shield 1,000, body 1,800, 1H 2,700, 2H 3,000, ring 250, earring 500, necklace 1,500.
+- **The box chain** (his description): kind box → pick a weight (armour) or a weapon → set box (five pieces with shield,
+  set bonus works) or, at T40+, pick the weapon's ONE attribute at its maximum (one option per line of its pool). Every
+  box lasts 7 days unopened; the gear 30 days (T20/T40) or 7 (T76/T80) on the wall clock, like the Newbie kit.
+- **Everything bought is BOUND** (*"its char only"*). New engine rules for it: bound gear never breaks
+  (`Crafting.BreakYield`), and a bound clone never gets a craft recipe (`RecipeCatalog`).
+- Engine: an item-priced shelf is now generic (`ShopDef.Rows`, `ShopRow`/`ShopCost`, `ShopCatalog.ItemPrice`) — the T52
+  essence shop is one user, the mentor shop the other; `BuyForItems` replaced `BuyForEssence` and a row may hand over a
+  bundle (`ShopRow.Gives`, shown as "x500" on the row). `AttributeSystem.WeaponPool` answers a weapon's pool by type.
+
+## 2026-10-12 — 0.238.0: certificates on the Quest tab; Boxes get their own tab
 
 Server restart + **new APK** (the client draws the new tab).
 
