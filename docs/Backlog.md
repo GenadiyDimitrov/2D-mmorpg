@@ -285,7 +285,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-332` | ❓   | **Notifications** — low HP / low potions / farm time over / died: in-game alerts, scheduled phone notifications, server push; my pick + four questions                                                                                                                                                                                                                                                                                                         | ui           |
 | `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
 | `BL-341` | ⏸ | **Skill vampirism + skill reflect** — a buff that vamps from any spell/physical skill (later-chronicle IG), only together with reflect on skill damage; "a lot later if at all" | combat |
-| `BL-344` | 🔴 | **Visual pass** — ground, animations, entities; survey + order in `design/VisualPass.md`, **your picks Q1-Q5 owed** | client |
+| `BL-344` | 🔴 | **Visual pass** — ground, animations, entities; order + status in `design/VisualPass.md` §0, **your animation download owed (§0.1)** | client |
 | `BL-345` | ❓ | **Hosting for friends** — where the server runs (your question: an Oracle Always Free Linux machine?), how friends download the APK and connect; answer owed after `BL-344` | ops |
 
 ---
@@ -688,7 +688,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
   skip, not a failure** — running it today changes nothing and overwrites nothing.
 
   **THE THREE STEPS THAT ARE YOURS:**
-  1. Put animation files in **`Game.Client.Unity/Assets/Resources/Models/Characters/Animations/`**
+  1. Put animation files in **`Game.Client.Unity/Assets/Art/Models/Characters/Animations/`**
      (the folder exists and is empty). Named `idle.fbx` · `walk.fbx` · `run.fbx` · `attack.fbx` ·
      `death.fbx` · `cast.fbx`. **Only `idle` is required** — `walk` falls back to `idle`, `run` to
      `walk`, so *two* files already give you a character that stands and runs. Mixamo: **FBX Binary**,
@@ -2405,6 +2405,9 @@ proposed order, for you to pick from before any asset work starts.
 picks, Q1-Q5 in §3** (order, ground style, animation source, camera default, the modern bodies). Two findings: every
 player, NPC and non-animal mob still wears ONE unanimated human body, and ~13 MB of unused FBX in `Resources/` ships
 in the APK anyway. Step 1 of the work (clean-up + Skeleton/Dragon families) needs nothing from you.
+✅ **Your picks are in** (§0 of `VisualPass.md` holds them and the live order). **0.243.0: work step 1 built**
+(Skeleton/Dragon families, FBXs out of `Resources/`, modern bodies deleted). ❓ **Owed: ONE download for step 2**
+(the character animations), exact steps in `VisualPass.md` §0.1.
 
 ## `BL-345` ❓ HOSTING FOR FRIENDS — where the server lives and how they join (2026-10-12)
 

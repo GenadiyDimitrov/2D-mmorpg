@@ -575,7 +575,7 @@ nothing to put in it.** What is missing is a file, and this is how you supply it
 One folder of clips, already made for you and empty:
 
 ```
-Game.Client.Unity/Assets/Resources/Models/Characters/Animations/
+Game.Client.Unity/Assets/Art/Models/Characters/Animations/
 ```
 
 | Drop this file in | Becomes           | Loops | Needed?                                    |
@@ -599,7 +599,7 @@ whatever the controller does not have.
 **Route 1 — Mixamo (free, ~10 minutes, this is the one I'd use).**
 
 1. `mixamo.com`, sign in with a free Adobe account.
-2. **Upload Character** → pick `Assets/Resources/Models/Characters/Man/Adventurer.fbx`. This is only
+2. **Upload Character** → pick `Assets/Art/Models/Characters/Man/Adventurer.fbx`. This is only
    so you can preview; the clips you download work on **every** body regardless of what you uploaded.
 3. Search and pick: **Idle**, **Walking**, **Running**, **Sword And Shield Slash** (or any
    *Standing Melee Attack*), **Dying**, **Standing 2H Magic Attack 01**.

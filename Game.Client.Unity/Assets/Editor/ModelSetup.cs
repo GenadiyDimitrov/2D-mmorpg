@@ -65,7 +65,15 @@ namespace Game.ClientEditor
             public Family(string key, string fbx, float height) { Key = key; Fbx = fbx; Height = height; }
         }
 
+        /// <summary>Where the built prefabs + controllers go — the ONLY thing that has to be in
+        /// <c>Resources/</c>, because <c>ModelLibrary.Load</c> asks for them by key.</summary>
         private const string ModelsDir = "Assets/Resources/Models";
+
+        /// <summary>Where the source FBXs live (`BL-344` step 1). 🔴 <b>Everything under a
+        /// <c>Resources/</c> folder ships in the APK whether anything uses it or not</b>; a prefab's
+        /// FBX ships anyway as its dependency, so the sources sit OUTSIDE it and only the art a prefab
+        /// actually references reaches the phone. Spare monsters wait here at zero APK cost.</summary>
+        private const string ArtDir = "Assets/Art/Models";
 
         /// <summary>
         /// 🔑 THE TWO HE ASKED FOR, chosen by WHAT A NEW CHARACTER ACTUALLY MEETS, not by which mesh
@@ -74,16 +82,19 @@ namespace Game.ClientEditor
         /// 9 templates. Between them a fresh character stops seeing human bodies on wildlife within
         /// its first hour, which is the question the proof of concept is asking.
         ///
-        /// <para>The remaining seven families are a line each and the FBXs for four of them are already
-        /// committed: Undead → Skeleton (9 templates, from Lv 18), Dragon → Dragon (5, from Lv 35),
-        /// and Bat/Frog/Slime/Snake/Wasp are spare bodies for whichever family wants them. Humanoid
+        /// <para>Undead → Skeleton and Dragon → Dragon joined in `BL-344` step 1 (their FBXs were already
+        /// committed). Bat/Frog/Slime/Snake/Wasp are spare bodies for whichever family wants them. Humanoid
         /// deliberately has NO row — it is the 40-template majority and it is what
         /// <c>Models/humanoid.prefab</c> already serves correctly.</para>
         /// </summary>
         private static readonly Family[] Families =
         {
-            new Family("mob_animal", ModelsDir + "/Monsters/Rat.fbx",    1.1f),
-            new Family("mob_insect", ModelsDir + "/Monsters/Spider.fbx", 1.0f),
+            new Family("mob_animal", ArtDir + "/Monsters/Rat.fbx",    1.1f),
+            new Family("mob_insect", ArtDir + "/Monsters/Spider.fbx", 1.0f),
+            // `BL-344` step 1 — the two families whose FBX was already committed. The Dragon pack has
+            // no Idle take; FindClip falls back to Flying, which is what a hovering drake should do.
+            new Family("mob_undead", ArtDir + "/Monsters/Skeleton.fbx", 1.7f),
+            new Family("mob_dragon", ArtDir + "/Monsters/Dragon.fbx",   2.0f),
         };
 
         /// <summary>Clip names that must LOOP. Imported takes do not loop by default, so an idle plays
@@ -112,14 +123,14 @@ namespace Game.ClientEditor
         /// </summary>
         private static readonly Body[] Bodies =
         {
-            new Body("humanoid", ModelsDir + "/Characters/Man/Adventurer.fbx", 0f),
+            new Body("humanoid", ArtDir + "/Characters/Man/Adventurer.fbx", 0f),
         };
 
         /// <summary>Where the character clips live. 🔑 <b>This folder is the whole of `BL-102`</b> — the
         /// bodies are rigged, avatared and committed; what is missing is motion, and motion is files in
         /// here. Anything Unity can import as a model is read: one multi-take FBX, or one file per
         /// action, or both.</summary>
-        private const string CharAnimDir = ModelsDir + "/Characters/Animations";
+        private const string CharAnimDir = ArtDir + "/Characters/Animations";
 
         /// <summary>A player body: the prefab key, the source FBX, and its height in Unity units — or
         /// <c>0</c> to keep whatever the model imports at. See <see cref="Bodies"/>.</summary>
@@ -172,7 +183,7 @@ namespace Game.ClientEditor
         /// them onto each body in <see cref="Bodies"/>, and writes the prefab + controller.
         ///
         /// <para><b>What you have to supply, and nothing else:</b> animation files in
-        /// <c>Assets/Resources/Models/Characters/Animations/</c>. The matcher is a substring match on
+        /// <c>Assets/Art/Models/Characters/Animations/</c>. The matcher is a substring match on
         /// the clip name, lower-cased, so the natural names all work:</para>
         /// <code>
         ///   idle.fbx      → Idle          (loops)   REQUIRED — nothing is built without it

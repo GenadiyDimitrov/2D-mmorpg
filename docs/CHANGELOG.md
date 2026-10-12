@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.242.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.243.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,23 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-12 (latest) — 0.242.0: no-refresh control debuffs + the stun break (`BL-336`)
+## 2026-10-12 (latest) — 0.243.0: skeletons and dragons, and a lighter APK (`BL-344` step 1)
+
+**Client only, new APK.** No server change beyond the version label, no `game.db` delete.
+
+- **Undead mobs draw as a Skeleton, Dragon mobs as a Dragon**, animated (idle, run, attack, death; the dragon hovers on
+  its Flying take, the pack has no idle). Two `Families` rows in `Assets/Editor/ModelSetup.cs`, built headlessly. They
+  no longer wear the players' human body.
+- **The source FBXs left `Resources/`** for `Assets/Art/Models/`: **the APK went from 54 MB to 47.3 MB.** Everything in a `Resources/` folder ships in the APK
+  used or not; a prefab's FBX ships anyway as its dependency. Only the prefabs and controllers stay in
+  `Resources/Models/`. The spare monsters (Bat, Frog, Slime, Snake, Wasp) wait in `Art/` at zero APK cost.
+- **Your Q5: the 15 modern character bodies are deleted** (Beach, Casual ×3, Formal, Punk ×2, SciFi, Soldier,
+  Spacesuit, Suit ×2, Swat, Worker ×2); git history keeps them. Six fantasy bodies remain: Man Adventurer / Farmer /
+  King, Woman Adventurer / Medieval / Witch. ⚠ Soldier, Worker and Formal were my call (the pack's are modern
+  military, construction and office wear).
+- The character-animation drop folder moved with them: **`Game.Client.Unity/Assets/Art/Models/Characters/Animations/`**.
+
+## 2026-10-12 — 0.242.0: no-refresh control debuffs + the stun break (`BL-336`)
 
 **Server only.** No APK (the client already prints the floater text it is sent), no `game.db` delete.
 

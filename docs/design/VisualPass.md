@@ -5,6 +5,44 @@ order I propose for the work. **No asset work starts until you pick from §3.** 
 (2026-08-26) still holds: low-poly stylised CC0 art, Humanoid rigs, the art budget spent per *family* and not per
 mob, terrain that is cosmetic only (the server stays 2D at y=0), and an APK that stays at or under 120 MB.
 
+## 0. Decided (2026-10-12) — the LIVE order and where each step stands
+
+Your picks: **Q1 = A**, **Q2 = B with C as its own step**, **Q3 = A** (*"Explain steps - for dummies"*), **Q4 = A**
+(*"for now .. later i would like to add horizontal rotation and limited vertical"*), **Q5**: *"I would like to have
+fantasy ones so we can remove them from later commits (they will still hold in history)"*, which is B for the modern
+bodies (deleted, git keeps them) and the fantasy ones kept.
+
+| # | Step | Status |
+|---|---|---|
+| 1 | Clean-up + the free families | ✅ **0.243.0.** Undead → Skeleton, Dragon → Dragon. Source FBXs moved to `Assets/Art/Models/`; 15 modern bodies deleted, 6 fantasy kept (Man Adventurer / Farmer / King, Woman Adventurer / Medieval / Witch). Slime was NOT given to MagicCreature: that family is golems, a lich, blades and an eye, and a slime fits none of them. |
+| 2 | Character animation (`BL-102`) | ⏳ **Waiting on one download from you**, see §0.1. |
+| 3 | Ground, vertex-coloured (your Q2 = B) | next one I can do without you |
+| 4 | Props: trees, rocks, grass clumps (your Q2's C, own step) | after 3 |
+| 5 | Light and time of day | |
+| 6 | Skill FX archetypes | |
+| 7 | Weapons in hand (`BL-103`, protocol bump) | |
+| 8 | Camera: horizontal rotation + limited vertical tilt (your Q4 "later") | top-down stays the default until then |
+
+### 0.1 Step 2: the one file I need from you (for dummies)
+
+1. Open **https://quaternius.itch.io/universal-animation-library** in your browser.
+2. Click **Download Now**. A page asks for money: click **"No thanks, just take me to the downloads"** (it is CC0 and
+   free; tipping is optional).
+3. Download **`Universal Animation Library[Standard].zip`** (about 15 MB). Not Pro, not Source.
+4. Unzip it anywhere (right-click → *Extract All*).
+5. Inside, look for the **Unity** export as an **`.fbx`** file. There are two of each: one whose name ends in **`_RM`**
+   (root motion) and one without. **Take the one WITHOUT `_RM`**: the server moves the characters, and root motion
+   would fight it. If there is no Unity-specific file, take the plain `.fbx` without `_RM`.
+6. Copy that ONE `.fbx` into
+   **`G:\Work\Repository\L2Clone\Game.Client.Unity\Assets\Art\Models\Characters\Animations\`**
+   (the folder already exists, with a `.gitkeep` in it). Do not rename it.
+7. Tell me "animations are in". I run the builder headlessly, check which takes it found (idle, walk, run, attack,
+   death, cast), and ship the APK. If the Standard set has no attack or cast take, I'll say which one is missing
+   rather than borrow a wrong-looking one.
+
+You do not need to open Unity or Mixamo. The file stays outside `Resources/`, so only the clips the controller uses
+reach the APK.
+
 ## 1. What the client draws today
 
 ### Ground
