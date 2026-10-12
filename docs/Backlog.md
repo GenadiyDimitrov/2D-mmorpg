@@ -284,7 +284,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-332` | ❓   | **Notifications** — low HP / low potions / farm time over / died: in-game alerts, scheduled phone notifications, server push; my pick + four questions                                                                                                                                                                                                                                                                                                         | ui           |
 | `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
 | `BL-341` | ⏸ | **Skill vampirism + skill reflect** — a buff that vamps from any spell/physical skill (later-chronicle IG), only together with reflect on skill damage; "a lot later if at all" | combat |
-| `BL-344` | 🔴 | **Visual pass** — ground, animations, entities; order + status in `design/VisualPass.md` §0; steps 1-3 built (0.243.0, 0.244.0, 0.245.0), **step 4 (props) next** | client |
+| `BL-344` | 🔴 | **Visual pass** — ground, animations, entities; order + status in `design/VisualPass.md` §0; steps 1-3 built (0.243.0, 0.244.0, 0.245.0), step 4 scatter built with placeholders (0.246.0), **❓ owed: the nature pack download (`VisualPass.md` §0.2)** | client |
 | `BL-345` | ❓ | **Hosting for friends** — where the server runs (your question: an Oracle Always Free Linux machine?), how friends download the APK and connect; answer owed after `BL-344` | ops |
 | `BL-346` | ⏸ | **The open-world grid map** — the world as a grid of zone cells, castle territories of several cells (farming zones, spawners, dungeons), one seamless map, impassable terrain with passages between biomes; for later | world |
 | `BL-347` | ⏸ | **Inventory as cells** — a grid of item cells with icons, and a tooltip-style details panel; for later | ui |
@@ -427,6 +427,9 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
   *"45 is a separate discussion later on"*) — do not start it piecemeal.
   ⤷ 🆕 **The VISUAL half of it now has its own id and its own conversation: `BL-93`.** `BL-45` keeps
   the rest — sound, feel, feedback, polish.
+  ⤷ 🆕 2026-10-12, your ask *"also offer sound ideas ... suno ? or orher ai tools ? or free from real ppl ? - note"*:
+  the options and their licence catches are in `design/SoundSources.md` (free CC0 libraries for effects, Suno only on
+  a paid month for music). A note, nothing built.
 
 - `BL-48` ⏸ **Instances — you are holding.** Design is written (`design/Instances.md`). One
   load-bearing decision is still open: the daily attempt **GLOBAL vs PER-INSTANCE**. It changes the
@@ -2368,7 +2371,9 @@ in the APK anyway. Step 1 of the work (clean-up + Skeleton/Dragon families) need
 (`BL-102` closed). ✅ **0.245.0: step 3 built** — the ground is streamed vertex-coloured chunks by biome per city
 territory (meadow, moor, ash, marsh, highland, snow, and lava on Redhorn Highlands), blended by distance; the grid and
 the level fills are gone and the level band moved onto the field rims (your picks: rims, delete, flat, + lava).
-Next: step 4, props.
+✅ **0.246.0: step 4, first half** — the prop scatter (trees, rocks, bushes, grass per biome; kept off towns, roads,
+camp centres; Settings → Scenery High/Medium/Low/Off) draws placeholder shapes. ❓ **Owed: the Quaternius Stylized
+Nature MegaKit download**, step by step in `VisualPass.md` §0.2. Then the real models ship, and step 5 (light).
 
 ## `BL-345` ❓ HOSTING FOR FRIENDS — where the server lives and how they join (2026-10-12)
 

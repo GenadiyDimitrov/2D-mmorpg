@@ -17,7 +17,7 @@ bodies (deleted, git keeps them) and the fantasy ones kept.
 | 1 | Clean-up + the free families | ✅ **0.243.0.** Undead → Skeleton, Dragon → Dragon. Source FBXs moved to `Assets/Art/Models/`; 15 modern bodies deleted, 6 fantasy kept (Man Adventurer / Farmer / King, Woman Adventurer / Medieval / Witch). Slime was NOT given to MagicCreature: that family is golems, a lich, blades and an eye, and a slime fits none of them. |
 | 2 | Character animation (`BL-102`) | ✅ **0.244.0.** Your `UAL1_Standard.fbx` (Quaternius Universal Animation Library, Standard, CC0). Picks: idle = `Idle_Loop`, walk = `Walk_Loop`, run = `Jog_Fwd_Loop`, attack = `Sword_Attack`, death = `Death01`, cast = `Spell_Simple_Idle_Loop`. One body and one clip set for everyone; bows and staves still swing the sword take until step 7. APK 47.3 → 47.4 MB: only the six used clips ship. |
 | 3 | Ground, vertex-coloured (your Q2 = B) | ✅ **0.245.0.** Biome per city territory, blended by distance (`Game.Shared/Biomes.cs`), streamed 2000-unit chunks (`BiomeGround.cs`). Your picks: level band on the field RIMS, grid DELETED, FLAT, biomes as proposed **+ lava** (Redhorn Highlands). Old plane + grid deleted (they covered only a quarter of the world). |
-| 4 | Props: trees, rocks, grass clumps (your Q2's C, own step) | **next** — scattered from the same biome + noise data, chunk-streamed like the ground |
+| 4 | Props: trees, rocks, grass clumps (your Q2's C, own step) | 🟡 **0.246.0: the scatter is built and draws PLACEHOLDER shapes** (`PropScatter.cs`, design in §0.3). ❓ **Owed: the nature pack download (§0.2).** Then I pick the models, build them headlessly and ship the APK with real trees. |
 | 5 | Light and time of day | |
 | 6 | Skill FX archetypes | |
 | 7 | Weapons in hand (`BL-103`, protocol bump) | |
@@ -42,6 +42,47 @@ bodies (deleted, git keeps them) and the fantasy ones kept.
 
 You do not need to open Unity or Mixamo. The file stays outside `Resources/`, so only the clips the controller uses
 reach the APK.
+
+### 0.2 Step 4: the nature pack (owed, 2026-10-12)
+
+The pack is **Quaternius Stylized Nature MegaKit**: CC0 (free for any use, no credit needed), the free Standard tier
+has about 70-80 textured models (trees incl. pine, birch and dead/dry trees, rocks, bushes, grass, flowers, mushrooms).
+
+1. Open **https://quaternius.itch.io/stylized-nature-megakit** in your browser.
+2. Click **Download Now**, then **"No thanks, just take me to the downloads"** (free; tipping optional).
+3. Download **`Stylized Nature MegaKit[Standard].zip`** (about 99 MB). Not Pro, not Source.
+   (Mirror if itch is down: https://opengameart.org/content/stylized-nature-megakit, file
+   `stylized_nature_megakitstandard.zip`; it may be an older copy.)
+4. Unzip it anywhere (right-click → *Extract All*).
+5. Inside are the same models in three formats (FBX, OBJ, glTF). **Take only the `FBX` folder.** If the textures
+   (`.png` files) sit in their own folder BESIDE it rather than inside it, take that folder too: the FBX files find
+   their textures by relative path.
+6. Copy them into **`G:\Work\Repository\L2Clone\Game.Client.Unity\Assets\Art\Models\Nature\`** (the folder exists,
+   with a `.gitkeep`). Do not rename anything. Skip OBJ and glTF; they would only grow the repo.
+7. Tell me "nature is in". I pick about two models per kind (broad tree, pine, dead tree, bush, rock, grass, dry
+   grass), build them into `Resources/Props/<Kind>/` headlessly, and ship the APK. Only the picked models reach the
+   APK; the rest stay in `Art/` (in git, not shipped), like the character bodies.
+
+### 0.3 Step 4: how the scatter works (built 0.246.0)
+
+- **Per-biome sets** (props per 100×100 cell before clumping): Meadow 0.22 (broad trees, bushes, a few rocks, grass),
+  Moor 0.16 (some pines, bushes, rocks, grass), Ash 0.10 (dead trees, rocks, dry grass), Marsh 0.22 (broad and dead
+  trees, bushes, grass), Highland 0.18 (pines, rocks, dry grass), Snow 0.14 (pines, rocks), Lava 0.08 (dead trees,
+  rocks). The biome is drawn from the same territory weights that colour the ground, so props mix across a border
+  exactly where the colours do.
+- **Woods, not an even sprinkle:** trees and bushes follow a 1500-unit noise (dense woods, near-bare clearings);
+  rocks gather into outcrops on a finer one; grass is even.
+- **Kept clear:** towns plus a 250 rim, 380 either side of the road's centre line, the middle 55% of every mob camp
+  (where the fighting is), 250 around any NPC outside a town, and the dungeon void. Grass may come 25% closer.
+- **Deterministic:** every number is a hash of the cell, so the same spot grows the same tree on every phone and every
+  visit. It streams with the ground chunks (rolled when one is built, dropped when it is pooled).
+- **Mobile cost:** GPU instancing, gathered across all chunks in range, so the draw calls are one per prop mesh and
+  material (about a dozen), however many chunks are on screen. No collision, no shadows yet (step 5).
+- **Settings → Scenery: High / Medium / Low / Off.** Density ×1 / ×0.65 / ×0.35 and draw range 9000 / 6500 / 4000
+  units from the screen centre. Off is the bare ground.
+- ❓ **One thing to judge in a playtest:** from straight overhead a tree hides whatever walks under it. Camps, roads
+  and towns are kept clear for that reason, but walking through a wood you will lose sight of yourself for a moment.
+  If that bothers you, the fix is to fade the trees near your character; say so and I'll add it.
 
 ## 1. What the client draws today
 

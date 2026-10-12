@@ -729,6 +729,15 @@ public record RoadPath(float Width, MapPoint[] Points)
         return false;
     }
 
+    /// <summary>Distance from (px,py) to the path's centre line. The client keeps scenery off the road with it.</summary>
+    public float DistanceTo(float px, float py)
+    {
+        float best = float.MaxValue;
+        for (int i = 0; i < Points.Length - 1; i++)
+            best = Math.Min(best, DistanceToSegment(px, py, Points[i], Points[i + 1]));
+        return best;
+    }
+
     private static float DistanceToSegment(float px, float py, MapPoint a, MapPoint b)
     {
         float abx = b.X - a.X, aby = b.Y - a.Y;

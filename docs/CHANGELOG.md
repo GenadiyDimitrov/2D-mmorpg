@@ -28,7 +28,25 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-12 (latest) — 0.245.0: the ground has biomes (`BL-344` step 3)
+## 2026-10-12 (latest) — 0.246.0: scenery scatter, placeholder shapes (`BL-344` step 4, first half)
+
+**Client only, new APK.** The server change is the version label plus one helper on `RoadPath`. No `game.db` delete.
+
+- **Trees, rocks, bushes and grass clumps** now dot the overworld, scattered per biome: woods in the meadows and the
+  marsh, pines in the highlands and snow, dead trees and stone on the ash and lava, dry grass up high. Trees gather
+  into woods and clearings instead of spreading evenly. They mix across a border where the ground colours do.
+- **For now they are simple placeholder shapes** (sphere-crowned trees, cone pines, grey stones). The real models
+  wait on one download (`docs/design/VisualPass.md` §0.2); the scatter, the density and the spacing can be judged
+  already.
+- **Kept clear** of towns, roads, the middle of every mob camp and NPCs outside town, so nothing hides what you fight
+  or tap. Cosmetic only: no collision, and the server knows nothing of them.
+- **Settings → Scenery: High / Medium / Low / Off** (beside the 3D-models button). Lower settings thin the props and
+  shorten how far they are drawn; Off is the bare ground. Same spot, same tree on every phone.
+- Drawn with GPU instancing (about a dozen draw calls however much is on screen), streamed with the ground chunks.
+- Note filed: **where sound could come from** (`docs/design/SoundSources.md`, under `BL-45`): free CC0 libraries vs
+  Suno / ElevenLabs, with their licence catches.
+
+## 2026-10-12 — 0.245.0: the ground has biomes (`BL-344` step 3)
 
 **Client only, new APK.** No server change beyond the version label and a cosmetic data table in `Game.Shared`, no
 `game.db` delete.

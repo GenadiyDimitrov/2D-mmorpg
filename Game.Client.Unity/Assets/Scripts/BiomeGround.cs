@@ -54,6 +54,7 @@ namespace Game.Client
         private int[] _tris;
         private Material _material;
         private bool _linear;
+        private PropScatter _props;
 
         private void Start()
         {
@@ -61,6 +62,10 @@ namespace Game.Client
             _material = CreateMaterial();
             BuildSharedGeometry();
             PaintTheVoid();
+
+            // Step 4: the scenery rides on these chunks (rolled when one is built, dropped when it is pooled).
+            _props = gameObject.AddComponent<PropScatter>();
+            _props.RerollAll = p => { foreach (var key in _live.Keys) p.ChunkBuilt(key); };
         }
 
         private void Update()
@@ -83,6 +88,7 @@ namespace Game.Client
                 c.Go.SetActive(false);
                 _pool.Push(c);
                 _live.Remove(key);
+                if (_props != null) _props.ChunkReleased(key);
             }
 
             // Build the missing ones, nearest the screen centre first.
@@ -149,6 +155,7 @@ namespace Game.Client
             chunk.Go.transform.position = WorldMapper.ToUnity(ox, oy);
             chunk.Go.SetActive(true);
             _live[key] = chunk;
+            if (_props != null) _props.ChunkBuilt(key);
         }
 
         private Chunk NewChunk()
@@ -246,6 +253,41 @@ namespace Game.Client
         }
 
         [System.ThreadStatic] private static float[] SiteDist;
+
+        /// <summary>One biome for a point, drawn from the SAME territory weights <see cref="ColourAt"/>
+        /// blends: <paramref name="r"/> in [0,1) picks in proportion to each site's weight. A scattered
+        /// prop calls it, so across a border the props mix exactly where the colours do.</summary>
+        public static GroundBiome PickBiome(float x, float y, float r)
+        {
+            var sites = Biomes.Sites;
+            if (sites.Length == 0) return GroundBiome.Meadow;
+            var dist = SiteDist;
+            if (dist == null || dist.Length != sites.Length) dist = SiteDist = new float[sites.Length];
+            float best = float.MaxValue;
+            for (int i = 0; i < sites.Length; i++)
+            {
+                float dx = sites[i].X - x, dy = sites[i].Y - y;
+                dist[i] = Mathf.Sqrt(dx * dx + dy * dy);
+                if (dist[i] < best) best = dist[i];
+            }
+            float wsum = 0f;
+            for (int i = 0; i < sites.Length; i++)
+            {
+                float extra = dist[i] - best;
+                dist[i] = extra > Blend * 5f ? 0f : Mathf.Exp(-extra / Blend);   // reuse the buffer for weights
+                wsum += dist[i];
+            }
+            r *= wsum;
+            for (int i = 0; i < sites.Length; i++)
+            {
+                if (r < dist[i]) return sites[i].Biome;
+                r -= dist[i];
+            }
+            return sites[sites.Length - 1].Biome;
+        }
+
+        /// <summary>The ground's value noise, for anything that wants its patches in step with it.</summary>
+        public static float Noise(float x, float y) => ValueNoise(x, y);
 
         /// <summary>Each biome is two colours mixed by the noise: the base and its patches. Lava's patches
         /// are a hard threshold, so the glow reads as cracks and pools in dark rock, not as an orange wash.

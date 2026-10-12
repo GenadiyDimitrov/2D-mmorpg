@@ -82,6 +82,7 @@ namespace Game.Client
             NameplateHeight = PlayerPrefs.GetFloat(PrefPlate, NameplateHeight);
             _showDamageNumbers = PlayerPrefs.GetInt(PrefDamage, 1) == 1;
             _showTickLines = PlayerPrefs.GetInt(PrefTicks, 0) == 1;
+            PropScatter.LoadQuality();   // so the Settings label is right before the ground exists
 
             // Applied here rather than only written on tap: the preference was being saved and then
             // ignored on the next launch, so "zone colours off" never survived a restart.
@@ -239,6 +240,16 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(models.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(18f, y), new Vector2(260f, 38f));
             _modelToggle = models;
+            // `BL-344` step 4 — trees, rocks, grass. A quality setting beside the models one, for the
+            // same reason: Low thins them and shortens the draw range, Off is the bare ground.
+            var scenery = UiKit.TextButton(inner, "", () =>
+            {
+                PropScatter.SetQuality((PropScatter.Level)(((int)PropScatter.Quality + 3) % 4));
+                RefreshSettingsLabels();
+            }, 15f);
+            UiKit.Place(UiKit.Rect(scenery.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(292f, y), new Vector2(260f, 38f));
+            _sceneryToggle = scenery;
             y -= 48f;
 
             // `BL-269` — extra skill squares, 0/6/12/18/24: *"need option to add more 6/12/18/24 skill slots
@@ -263,7 +274,7 @@ namespace Game.Client
             {
                 foreach (var key in new[] { PrefPitch, PrefYaw, PrefOrtho, PrefOrthoSize,
                                             PrefEntity, PrefPlate, PrefUiScale, PrefBarScale, PrefDamage,
-                                            PrefZones, PrefTicks, PrefBarShape, PrefExtraBars })
+                                            PrefZones, PrefTicks, PrefBarShape, PrefExtraBars, PropScatter.Pref })
                     PlayerPrefs.DeleteKey(key);
                 PlayerPrefs.Save();
                 // The two sizes come back at once — they are the ones that can make the game unusable.
@@ -280,7 +291,7 @@ namespace Game.Client
             _settingsPanel.gameObject.SetActive(false);
         }
 
-        private Button _damageToggle, _zoneToggle, _projectionToggle, _modelToggle, _tickToggle;
+        private Button _damageToggle, _zoneToggle, _projectionToggle, _modelToggle, _tickToggle, _sceneryToggle;
         private Button _extraSlotsToggle, _barShapeToggle;   // `BL-269`, `BL-299`
         private Slider _uiScaleSlider, _barScaleSlider;
 
@@ -307,6 +318,7 @@ namespace Game.Client
             UiKit.SetButtonText(_modelToggle,
                 EntityManager.ModelsEnabled ? "3D models: ON" : "3D models: off (faster)");
             UiKit.SetButtonText(_extraSlotsToggle, ExtraSlotsLabel);
+            UiKit.SetButtonText(_sceneryToggle, "Scenery: " + PropScatter.Quality);
             UiKit.SetButtonText(_barShapeToggle, BarShapeLabel);
         }
 
