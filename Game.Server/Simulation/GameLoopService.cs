@@ -11570,6 +11570,14 @@ public partial class GameLoopService : BackgroundService
     {
         if (owner.Kind != EntityKind.Player || owner.LearnedSkills.Count == 0)
             return;
+        string outerFx = _fxSkillId;
+        _fxSkillId = "";   // `BL-344` — a proc draws no effect of the skill that triggered it
+        try { TryProcsCore(owner, when, magicHit, victim, basicAttack); }
+        finally { _fxSkillId = outerFx; }
+    }
+
+    private void TryProcsCore(Entity owner, ProcWhen when, bool magicHit, Entity? victim, bool basicAttack)
+    {
 
         foreach (var (skillId, level) in owner.LearnedSkills)
         {
@@ -13104,6 +13112,23 @@ public partial class GameLoopService : BackgroundService
     /// <param name="powerOverride">The power ONE SHOT of a channel lands for, when the wrapper is
     /// what carries the ladder. 0 = the skill's own. See Entity.ChannelPower.</param>
     private void ExecuteSkill(Entity caster, SkillDef def, int levelOverride = 0, int powerOverride = 0)
+    {
+        // `BL-344` step 6 — every CombatEvent this resolution sends carries the skill's id (see _fxSkillId).
+        // Saved and restored, not cleared: a skill can execute another (a channel's shot, the charge's stomp).
+        string outerFx = _fxSkillId;
+        _fxSkillId = def.Id;
+        try { ExecuteSkillCore(caster, def, levelOverride, powerOverride); }
+        finally { _fxSkillId = outerFx; }
+    }
+
+    /// <summary>`BL-344` step 6 — the skill whose effect the client should draw for the CombatEvents being sent
+    /// right now, or "" for none. 🔑 Set in ONE place (ExecuteSkill) instead of threaded through the ~50
+    /// BroadcastCombat calls: the loop is the single writer, so "the skill being resolved" is well defined, and
+    /// every hit, heal, buff and reflect a skill causes is sent from inside its resolution. TryProcs clears it,
+    /// because a proc is its own effect and must not replay the triggering skill's projectile.</summary>
+    private string _fxSkillId = "";
+
+    private void ExecuteSkillCore(Entity caster, SkillDef def, int levelOverride, int powerOverride)
     {
         // The caster's learned LEVEL of this skill selects its per-level values
         // (Power / Magnitudes / MP). Default 1 for anything not in the learned set.
@@ -18877,7 +18902,7 @@ public partial class GameLoopService : BackgroundService
         CombatOutcome outcome, string? skill = null)
     {
         var evt = new CombatEvent(
-            attacker.Id, attacker.Name, target.Id, target.Name, damage, outcome, skill);
+            attacker.Id, attacker.Name, target.Id, target.Name, damage, outcome, skill, _fxSkillId);
 
         foreach (var nearby in _world.Grid.Nearby(attacker))
         {

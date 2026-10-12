@@ -53,6 +53,8 @@ namespace Game.Client
         public ZoneOverlay Zones;
         /// <summary>The ground circles — totem footprints and area-skill flashes.</summary>
         public GroundDecals Decals;
+        /// <summary>`BL-344` step 6 — the skill effects (projectiles, beams, slashes, glows, the res pillar).</summary>
+        public FxPlayer Fx;
 
         // ----- State the HUD reads -------------------------------------------------------------
         public ClientPhase Phase { get; private set; } = ClientPhase.Offline;
@@ -1248,6 +1250,15 @@ namespace Game.Client
             // BL-344 step 5: the sun turns with the game clock (cosmetic; the server keeps its own day/night).
             if (FindAnyObjectByType<DayNight>() == null) new GameObject("DayNight").AddComponent<DayNight>();
 
+            // BL-344 step 6: the skill effects, fed from the Combat events below and from revivals.
+            if (Fx == null)
+            {
+                Fx = FindAnyObjectByType<FxPlayer>();
+                if (Fx == null) Fx = new GameObject("FxPlayer").AddComponent<FxPlayer>();
+                Fx.Entities = Entities;
+                Entities.Revived += Fx.Pillar;
+            }
+
             // HELD, not looked up on demand: FindAnyObjectByType skips INACTIVE objects, so once the
             // overlay was switched off the next lookup returned null and it could never be switched
             // back on. A toggle that only works in one direction is worse than no toggle.
@@ -2267,6 +2278,8 @@ namespace Game.Client
                     var attacker = Entities.Find(e.AttackerId);
                     if (attacker != null) attacker.PlayAttack();
                 }
+                // `BL-344` step 6 — the skill's effect, also for every fight in view, for the same reason.
+                if (Fx != null) Fx.Play(e);
 
                 if (e.AttackerId != _selfId && e.TargetId != _selfId) return;
                 // `BL-43`: remember who is hitting US, so the target cycle can put them first. Stamped

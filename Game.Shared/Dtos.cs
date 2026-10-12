@@ -209,7 +209,12 @@ public record ChatMessage(string From, string Text, ChatChannel Channel, string?
 
 /// <summary>Server -> Clients near the fight: one resolved combat action.
 /// Damage doubles as the heal amount for Heal; Skill is set for skill-based
-/// outcomes (and carries the buff/debuff name for Buff).</summary>
+/// outcomes (and carries the buff/debuff name for Buff).
+///
+/// <para><paramref name="SkillId"/> (`BL-344` step 6) is the skill being RESOLVED when this fired, so the client
+/// can draw its effect (<see cref="SkillDef.Fx"/>). <c>Skill</c> cannot do that job: it is the caster's display
+/// name (a race face, sometimes with " [Reflect]" on the end). "" for basic attacks, ticks, traps, procs and the
+/// whisp. Appended, so an older client just ignores it.</para></summary>
 public record CombatEvent(
     Guid AttackerId,
     string AttackerName,
@@ -217,7 +222,8 @@ public record CombatEvent(
     string TargetName,
     int Damage,
     CombatOutcome Outcome,
-    string? Skill = null);
+    string? Skill = null,
+    string SkillId = "");
 
 /// <summary>Server -> the owning client: exp/level progress after a kill.
 ///

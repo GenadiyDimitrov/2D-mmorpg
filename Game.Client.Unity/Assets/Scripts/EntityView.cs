@@ -13,6 +13,9 @@ namespace Game.Client
     {
         public Guid Id;
         public bool IsSelf;
+        public bool IsDead => _dead;
+        /// <summary>The last teleport counter seen (EntityDto.Warp) — `BL-344` tells a res in place from a respawn.</summary>
+        public byte LastWarp => _warp;
 
         private const float HalfHeight = 0.75f;   // lifts the billboard so its base sits on the ground
 

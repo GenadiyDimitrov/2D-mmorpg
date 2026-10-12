@@ -27,6 +27,9 @@ namespace Game.Client
         /// way to answer it.</summary>
         public static float EntityScale = 0.9f;
 
+        /// <summary>`BL-344` step 6 — a player came back to life where they lay (see Upsert).</summary>
+        public event Action<EntityView> Revived;
+
         /// <summary>Re-scale markers already in the world after the setting changes — otherwise the
         /// new size would only apply to things that happen to respawn.</summary>
         public void ApplyEntityScale()
@@ -234,13 +237,19 @@ namespace Game.Client
             }
 
             view.IsSelf = e.Id == SelfId;
+            byte warpBefore = view.LastWarp;   // `BL-344` — read before SetTarget takes the new one
             view.SetTarget(WorldMapper.ToUnity(e.X, e.Y), e.Warp);
             if (view.IsSelf) view.SetPredictSpeed(e.Speed * WorldMapper.Scale);   // a walk tracks speed changes mid-way
             view.SetColor(ColorFor(e));
             if (view.IsSelf) ApplySelfVisual(view);   // `BL-82` — survives a respawn of the marker
             // Dead entities stay in the world (corpses are lootable/visible) but are dimmed rather
             // than hidden, so a kill is legible instead of things silently vanishing.
+            bool wasDead = view.IsDead;
             view.SetDead(e.Dead);
+            // `BL-344` step 6 — a PLAYER back on their feet where they fell: a resurrection. A respawn in town
+            // bumps the teleport counter (a res never moves the body) and a mob coming back is a respawn, so
+            // neither gets the pillar.
+            if (wasDead && !e.Dead && e.Warp == warpBefore && e.Kind == EntityKind.Player && Revived != null) Revived(view);
         }
 
         private void Remove(Guid id)

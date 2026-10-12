@@ -28,7 +28,30 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-12 (latest) — 0.248.0: light, shadows and a day/night cycle (`BL-344` step 5)
+## 2026-10-12 (latest) — 0.249.0: skill effects (`BL-344` step 6)
+
+**Client + server, new APK.** No `game.db` delete, no protocol bump (one field appended to the combat message; an
+older client ignores it).
+
+- **Every skill now has a look, and nobody authored one.** How it TRAVELS is picked from its shape: melee strikes
+  **slash** (an arc of sparks in front of you), ranged spells fly as a glowing **orb**, bow skills as a thin **arrow**
+  streak, heals and buffs cast on someone else draw a short **beam** to them, and self buffs and area skills play
+  straight on the target. What plays where it LANDS comes from what happened: a **spark burst** on a hit (a bigger,
+  orange one on a crit, a dim one on a magic fail), a **green glow** for HP, **blue** for MP, a **gold ring** for a
+  buff, **purple motes drifting down** for a debuff. A player raised where they fell gets a **pillar of light**; a
+  respawn in town does not.
+- **Basic attacks stay clean, except a crit sparks** (your pick).
+- **Exceptions live in `docs/data/skill_fx.csv`** (your pick: `SKILL_ID,FX,COMMENT`, only the skills whose automatic
+  look is wrong). The one row today: **Mana Ray draws a beam**, not an orb. FX words: `None`, `Instant`, `Slash`,
+  `Projectile`, `Arrow`, `Beam`. After an edit: `dotnet run --project tools/SkillCsvSeed -- --gen-fx`; `--check` flags
+  an unknown skill, a bad word, or a row that only repeats the automatic pick. `--fx-list` prints every skill's look.
+- **Cheap on a phone:** three particle systems for the whole world (one draw call each, additive, no texture), fed
+  without creating anything per cast. A big fight fills a cap; it never stalls.
+- Not drawn: damage-over-time ticks, traps, procs and the whisp (they keep their numbers only).
+- Checked with a headless render (`ModelSetup.PreviewFx`, one frame per effect plus one from straight above). NOT
+  checked on a phone yet.
+
+## 2026-10-12 — 0.248.0: light, shadows and a day/night cycle (`BL-344` step 5)
 
 **Client only, new APK.** The server change is the version label. No `game.db` delete.
 

@@ -19,7 +19,7 @@ bodies (deleted, git keeps them) and the fantasy ones kept.
 | 3 | Ground, vertex-coloured (your Q2 = B) | ✅ **0.245.0.** Biome per city territory, blended by distance (`Game.Shared/Biomes.cs`), streamed 2000-unit chunks (`BiomeGround.cs`). Your picks: level band on the field RIMS, grid DELETED, FLAT, biomes as proposed **+ lava** (Redhorn Highlands). Old plane + grid deleted (they covered only a quarter of the world). |
 | 4 | Props: trees, rocks, grass clumps (your Q2's C, own step) | ✅ **0.246.0** scatter (`PropScatter.cs`, §0.3) + **0.247.0** real models from the nature pack (§0.2): 19 picks over 9 kinds, twisted trees in the marsh, flower patches in the meadow. APK 47.5 → 49.7 MB. ❓ judge in a playtest: density, tree size, trees hiding you in a wood (§0.3 last point), frame rate on High. |
 | 5 | Light and time of day | ✅ **0.248.0.** Lit ground (`LitVertexColor.shader`), characters cast shadows, the directional light turned by `GameClock` (`DayNight.cs`, §0.4). Your pick: night 0.30 (*"0.12 is to dark, 0.2 as well"*), plus **Settings → Night brightness** 0.10-0.60 for your *"a bar or gamma as other games"*. Settings → Shadows: characters (default) / + trees / off. ❓ judge on the phone: frame rate with trees casting, how night reads outdoors. |
-| 6 | Skill FX archetypes | |
+| 6 | Skill FX archetypes | ✅ **0.249.0.** `FxPlayer.cs`, `SkillDef.Fx` + `SkillFxRules` (§0.5). Your picks: exceptions in `docs/data/skill_fx.csv` (one row: Mana Ray = Beam), basic attacks show only crit sparks. ❓ judge on the phone: size and brightness at your zoom, the frame rate in a crowd fight. |
 | 7 | Weapons in hand (`BL-103`, protocol bump) | |
 | 8 | Camera: horizontal rotation + limited vertical tilt (your Q4 "later") | top-down stays the default until then |
 
@@ -125,6 +125,34 @@ has about 70-80 textured models (trees incl. pine, birch and dead/dry trees, roc
 - **Preview:** `ModelSetup.PreviewLight` (batchmode WITHOUT `-nographics`, `-previewOut <png>`): real biome ground beside
   Brackenford, two players, a rat, props; dawn / noon / dusk / twilight, then night at the slider's min / default / max
   and before dawn. ⚠ It renders once to warm up: the first render draws before the textures upload.
+
+### 0.5 Step 6: how the skill effects work (built 0.249.0)
+
+- **Two halves.** The DELIVERY, how a skill travels, is the one per-skill choice: `SkillDef.Fx` (`Auto` / `None` /
+  `Instant` / `Slash` / `Projectile` / `Arrow` / `Beam`). The LANDING, what plays on the target, comes from the
+  outcome the server already sends: hit = sparks, crit = a bigger orange burst, magic fail = a dim one, heal = green
+  glow, MP = blue glow, buff = gold ring, debuff = purple motes falling, miss = nothing. One short enum covers every
+  skill that way.
+- **`Auto`** (`SkillFxRules.AutoDelivery`): passives draw nothing; caster-centred areas and self-only skills are
+  `Instant` (the area keeps its ground flash and every target gets its landing); damage with a bow is `Arrow`;
+  physical damage at melee reach (range ≤ 100, melee is 40) is `Slash`; ranged damage is `Projectile`; ranged heals
+  and buffs are `Beam` (no beam when you cast on yourself); ranged debuffs fly as a `Projectile`. At 0.249.0 that gives
+  29 slashes, 15 arrows, 79 projectiles, 54 beams, 508 instant.
+- **Exceptions:** `docs/data/skill_fx.csv` → `SkillFx.g.cs` (`SkillCsvSeed --gen-fx`), applied in `BuildCatalog`.
+  Never write `Fx =` in a SkillDef; `--check` catches it. An unknown id in the file is skipped, not thrown (a look
+  must never stop the server booting).
+- **The wire:** `CombatEvent` gained `SkillId` at the end, because `Skill` is the caster's display name (a race face,
+  sometimes with " [Reflect]") and cannot be looked up. The server sets it in ONE place, `ExecuteSkill`, for every
+  event the resolution sends; `TryProcs` clears it. Ticks, traps, procs and the whisp send `""` and draw nothing.
+- **The pillar** needs no message: `EntityManager.Upsert` sees a PLAYER go from dead to alive without the teleport
+  counter (`Warp`) moving. A respawn in town moves it, so it gets no pillar.
+- **Cost:** three `ParticleSystem`s for the world (soft dots, sparks with drag, stretched streaks), one draw call
+  each, fed by `Emit` with one reused parameter struct. Projectiles in flight sit in a fixed 64-slot array and land
+  where the target IS on arrival. Shader `Resources/Shaders/FxAdditive.shader`: additive, a soft round falloff
+  computed from the UV, no texture. Additive means a debuff can't be dark, so it is a dusky purple.
+- **From above** (the default camera) a vertical rise is a dot, so every landing also spreads outward on the ground.
+- **Preview:** `ModelSetup.PreviewFx` (batchmode WITHOUT `-nographics`, `-previewOut <png>`): 12 frames, one effect
+  each, the last one straight down. It logs the live particle count per frame.
 
 ## 1. What the client draws today
 

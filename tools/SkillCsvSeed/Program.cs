@@ -54,6 +54,10 @@ if (args.Contains("--gen-faces")) return Faces.Gen(dir.FullName);
 if (args.Contains("--faces-to-csv")) return Faces.Migrate(dir.FullName);
 // `--skill-tree` — `BL-330` step 1: docs/design/SkillTree.html, every race's tree off the compiled tables + faces.
 if (args.Contains("--skill-tree")) return SkillTree.Run(dir.FullName);
+// `--gen-fx` — `BL-344` step 6: docs/data/skill_fx.csv (the skills whose automatic FX is wrong) → SkillFx.g.cs.
+// `--fx-list` prints every castable skill with the look it draws. See FxTable.cs.
+if (args.Contains("--gen-fx")) return FxTable.Gen(dir.FullName);
+if (args.Contains("--fx-list")) return FxTable.List();
 
 if (args.Contains("--check"))
 {
@@ -61,7 +65,8 @@ if (args.Contains("--check"))
     int rc = Check.Run(outDir);
     int faces = Faces.Check(dir.FullName);
     int sp = PassiveGen.CheckSp(outDir);
-    return rc != 0 ? rc : faces == 0 && sp == 0 ? 0 : 1;
+    int fx = FxTable.Check(dir.FullName);
+    return rc != 0 ? rc : faces == 0 && sp == 0 && fx == 0 ? 0 : 1;
 }
 
 // --retarget rewrites the TARGET column of every file into his `[scope]/[breadth]` scheme (2026-08-27).

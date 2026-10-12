@@ -1050,7 +1050,12 @@ public record SkillDef(
     /// <see cref="StatCalculator.MagicFailChance"/> roll (the same slot the defender's M.Evasion uses). The
     /// elf Warchanter's Magic Stab is the only author: +59 reads ~60% at parity and still follows the level
     /// curve, which a multiplier would not (×60 hits the 95% cap two levels up). M.Accuracy takes it back.</summary>
-    float MagicFailPoints = 0f)
+    float MagicFailPoints = 0f,
+    /// <summary>`BL-344` step 6 — HOW THE SKILL TRAVELS on screen (projectile, beam, slash, …). Purely visual; the
+    /// server never reads it. <see cref="SkillFx.Auto"/> = picked from the skill's shape by
+    /// <see cref="SkillFxRules.Delivery"/>, which is almost every skill. ⚠ Never set it in a SkillDef literal: an
+    /// exception is a row in `docs/data/skill_fx.csv`, generated into `SkillFx.g.cs` and applied in BuildCatalog.</summary>
+    SkillFx Fx = SkillFx.Auto)
 {
     /// <summary>Hash on the ID alone — and this override MUST stay.
     ///
@@ -2274,6 +2279,9 @@ public static partial class SkillCatalog
         foreach (var sk in list)
             if (!dict.TryAdd(sk.Id, sk))
                 throw new InvalidOperationException($"Duplicate skill id '{sk.Id}'.");
+
+        // `BL-344` step 6 — the authored FX exceptions (docs/data/skill_fx.csv → SkillFx.g.cs). Visual only.
+        SkillFxRules.ApplyOverrides(dict);
 
         // CHILD-ID guard, the sibling of the duplicate-id guard above. A group buff names its
         // children by STRING; a typo there does not fail to compile, it just silently applies
