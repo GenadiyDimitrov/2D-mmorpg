@@ -289,6 +289,8 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-346` | ⏸ | **The open-world grid map** — the world as a grid of zone cells, castle territories of several cells (farming zones, spawners, dungeons), one seamless map, impassable terrain with passages between biomes; for later | world |
 | `BL-347` | ⏸ | **Inventory as cells** — a grid of item cells with icons, and a tooltip-style details panel; for later | ui |
 | `BL-348` | ⏸ | **Hazard terrain** — harsh zones put a visible debuff on you until you leave: blizzard/wind = more misses + magic fails, lava pools = DoT, slowed attack/cast speed; the combat half of `BL-328`; answer later | world |
+| `BL-349` | ⏸ | **Race starting zones** — each race starts in its own territory (elves water/ice, humans an island, demons fire/lava), each class at its own spot (temple, ruins, arena, summoning circle) with low-level mobs and its own newbie guide; after `BL-346` | world |
+| `BL-350` | ⏸ | **The game's story** — where each race comes from and what it is for, a pantheon of named gods that skills can be described by; so quests are more than "go there, kill that" | story |
 
 ---
 
@@ -2466,3 +2468,53 @@ and water/ice resistance to work in a snowy zone evirement and agains elfs spell
   comes from the War/Spell Runes instead; `docs/Roadmap.md`, bottom). Elemental resistance against spells is a cousin
   of that stat, so layer 3 needs your explicit decision to reopen it when this is picked up. Layers 1 and 2 only touch
   hazards and do not run into the ruling.
+
+## `BL-349` ⏸ RACE STARTING ZONES — every race and class begins in its own place (2026-10-12, after the map rework)
+
+Your words: *"can we make different races to start in different zones .. let say in IG humans start on an island and
+warriors start in a warrir hall and wizards in a wizard temple .. so they have low lvl mobs around them and newbiew
+quest is started from several npcs not only in our case Cera (same quest just diferent positions of same npc "the
+newbie guide").. we to do the same .. each race its start its own teritory (thats after the map reorganizasstion
+though) elf to start in their teritory with lots of water/ice etc (they get their 30-40% wind/ice resistance because
+they are born in that envirement) .. mages in a temple of sorts or monument ... fighters in some ruins/ training ground
+humans to start in their own zone island like surraunded by lits of water ... mages in a temple or praying ground ..
+fighters in woods like hunting hut demons in fiery zone with lts of fire/lava around (they get their 20% envirement
+resistance as passive later on from that zone) warriors in some sort of arena/hell pit ... a mages from a totem/pentagram
+summoning circle - like theyve been summoned from the underworld something to help with later development of a story"*.
+
+Today every new character starts in Brackenford and the tutorial chain (`Game.Shared/Quests/Quests.Tutorial.cs`) runs
+from its NPCs there. The idea:
+
+| Race  | Territory                              | Mage start                         | Fighter start              |
+|-------|----------------------------------------|------------------------------------|----------------------------|
+| Elf   | water and ice                          | a temple or monument               | ruins / a training ground  |
+| Human | an island surrounded by water          | a temple or praying ground         | a hunting hut in the woods |
+| Demon | fire and lava                          | a totem / pentagram summoning circle (summoned from the underworld) | an arena / hell pit |
+
+- **Each start spot has its own low-level mobs** around it and its own copy of **the newbie guide**: the same NPC and
+  the same quest at several positions, not one Cera in one town.
+- **The territory explains a racial resistance**: elves 30-40% wind/ice (born in it), demons ~20% environmental (a
+  passive later, from that zone). No such resistance exists in the game today.
+- **Gated on `BL-346`** (the open-world grid map / map reorganisation), as you said.
+- ⚠ **The resistances meet the same old ruling as `BL-348` layer 3**: a magic-resist stat is under "Dropped, don't
+  re-add" (`docs/Roadmap.md`, bottom). A wind/ice resistance against environments only (`BL-348`) does not hit it; one
+  against elves' ice SPELLS does. Settle both entries together.
+- ❓ To settle when picked up: does the tutorial chain run once per start spot (its NPCs at every spot) or only the
+  first part before everyone walks to a shared town; can you leave the starting zone at level 1; where the three races
+  meet; whether the start spots tie into `BL-350`'s story.
+
+## `BL-350` ⏸ THE GAME'S STORY — races' origins, purpose, and named gods (2026-10-12, for later)
+
+Your words: *"on that note we will later need a story for the game ... where each race comes from .. what is its
+purpose etc .. like a real game .. not -> go there kill that ... so we will need names for gods (skills can be
+descripted for those entitites)"*.
+
+- **A world story**: where each of the three races (Human / Elf / Demon) comes from, what it is for, how they relate.
+- **A pantheon with names**: gods that skills (holy, dark, elemental …) can be described by in their `DESCRIPTION`
+  text, and that temples, priests and quests can serve.
+- **Quests with a reason**, not only "go there, kill that".
+- `BL-349`'s starting zones are the first place it would show (the demon mage summoned from the underworld, the elves
+  born in the ice).
+- ⚠ Every name must pass the IP test in `CLAUDE.md` (no IG god, race or place names; word + same race + same role).
+- ❓ To settle when picked up: who writes it (you, me drafting for your edit, or both); where it lives (a
+  `docs/design/Lore.md`); how deep before content uses it.
