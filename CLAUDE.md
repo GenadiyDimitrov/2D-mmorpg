@@ -74,6 +74,9 @@ from IG references.
   `Data Source=game.db`, resolved against the CONTENT ROOT (`Game.Server/`) — *not* `bin/Debug/net8.0/`,
   where a stale copy may also sit and mislead you into thinking you reset the schema when you didn't.
   Migrations are deferred until there's real data to preserve.
+- 🔑 **The top of `docs/CHANGELOG.md` carries `Last game.db reset: x.y.z`** (owner, 2026-10-12) so he can tell whether
+  an install crosses a reset. **Any version whose entry says "delete `game.db`" moves that line to itself in the SAME
+  commit.** A schema change (`Records.cs` / `GameDbContext.cs`) or a removed skill id a saved character could hold both count.
 - Only **characters/accounts** persist (load on login, save on logout + 60s
   autosave + some events). Mobs, zones, rates, casting state are runtime-only.
 - Quests persist via `CompletedQuestsCsv` + `ActiveQuestsJson` columns.

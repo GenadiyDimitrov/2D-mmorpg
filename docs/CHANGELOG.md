@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+> 🗄️ **Last `game.db` reset: 0.234.0** (2026-10-09, mentoring's two new tables).
+> If the build you have is **older than 0.234.0** and the one you install is 0.234.0 or newer, delete `game.db` (and
+> `-shm`/`-wal`) in `Game.Server/`. Otherwise keep it. This line moves every time a version needs the delete.
+
 Development history, newest first.
 
 Early work was tracked as **phases** — self-contained slices that each ended in a playable build.
@@ -7,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.237.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.240.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
