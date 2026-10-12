@@ -285,7 +285,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-332` | ❓   | **Notifications** — low HP / low potions / farm time over / died: in-game alerts, scheduled phone notifications, server push; my pick + four questions                                                                                                                                                                                                                                                                                                         | ui           |
 | `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
 | `BL-341` | ⏸ | **Skill vampirism + skill reflect** — a buff that vamps from any spell/physical skill (later-chronicle IG), only together with reflect on skill damage; "a lot later if at all" | combat |
-| `BL-344` | 🔴 | **Visual pass** — ground, animations, entities (characters, mobs, NPCs) and the rest of the presentation; your next job after `BL-336` | client |
+| `BL-344` | 🔴 | **Visual pass** — ground, animations, entities; survey + order in `design/VisualPass.md`, **your picks Q1-Q5 owed** | client |
 | `BL-345` | ❓ | **Hosting for friends** — where the server runs (your question: an Oracle Always Free Linux machine?), how friends download the APK and connect; answer owed after `BL-344` | ops |
 
 ---
@@ -2401,6 +2401,10 @@ Scope as you named it: the **ground** (terrain look), **animations**, and the **
 plus whatever else the "etc" turns out to cover. This is the "presentation pass" the roadmap has been carrying.
 Client-only, so every step ships as a new APK. The first step is a short survey of what the client draws today and a
 proposed order, for you to pick from before any asset work starts.
+✅ **2026-10-12, step 1 done: the survey and the proposed order are in `docs/design/VisualPass.md`.** ❓ **Owed: your
+picks, Q1-Q5 in §3** (order, ground style, animation source, camera default, the modern bodies). Two findings: every
+player, NPC and non-animal mob still wears ONE unanimated human body, and ~13 MB of unused FBX in `Resources/` ships
+in the APK anyway. Step 1 of the work (clean-up + Skeleton/Dragon families) needs nothing from you.
 
 ## `BL-345` ❓ HOSTING FOR FRIENDS — where the server lives and how they join (2026-10-12)
 
