@@ -288,6 +288,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-345` | ❓ | **Hosting for friends** — where the server runs (your question: an Oracle Always Free Linux machine?), how friends download the APK and connect; answer owed after `BL-344` | ops |
 | `BL-346` | ⏸ | **The open-world grid map** — the world as a grid of zone cells, castle territories of several cells (farming zones, spawners, dungeons), one seamless map, impassable terrain with passages between biomes; for later | world |
 | `BL-347` | ⏸ | **Inventory as cells** — a grid of item cells with icons, and a tooltip-style details panel; for later | ui |
+| `BL-348` | ⏸ | **Hazard terrain** — harsh zones put a visible debuff on you until you leave: blizzard/wind = more misses + magic fails, lava pools = DoT, slowed attack/cast speed; the combat half of `BL-328`; answer later | world |
 
 ---
 
@@ -2417,3 +2418,26 @@ the row, `GameUi.Items.cs`). Item icons would follow the skill
 icons' route (`BL-331`: game-icons.net, tinted per category or grade). To settle when you pick it up: cell size and
 columns on a phone, sorting and tabs, what the panel shows, and whether equipment, warehouse and trade windows switch to
 cells too.
+
+## `BL-348` ⏸ HAZARD TERRAIN — harsh zones debuff you until you leave (2026-10-12, answer later)
+
+Your words: *"when we adding more ground details (we talked about slowing speed in water when sweebing etc ...) but also
+for exaple u enter a hard envirement zone that does dot or other effects. they show as debuff untill u leave -> same
+logic as towns pavement for speed but let say a high wind/snow zone hinders your acc so u miss more and magic fails ..
+or lava zones if you enter a lava pool u start taking dot ... and the zone slows your attack or cast speed .. something
+like that ... u can mark it to answer later .. just not to lose it as an idea"*.
+
+- **The mechanism is the one Paved Streets already uses** (`BL-324`, 0.218.0): the server tests which area you stand
+  in and applies an effect that shows on the buff bar as a `buff:<key>` row, so it is never unexplained. Leaving the
+  area removes it. `BL-328` (water/mud movement) is the same shape for speed; this entry is the combat half.
+- Your examples:
+  - **High wind / blizzard (snow):** lower accuracy (more misses) and a higher magic fail chance.
+  - **Lava pool:** a damage-over-time while you stand in it.
+  - **Any harsh zone:** slower attack and/or cast speed.
+- **It needs terrain data the SERVER can read.** Today's biomes (`Game.Shared/Biomes.cs`, 0.245.0) are cosmetic: the
+  client blends them and the server never reads them, and the lava pools are client noise the server cannot see. So
+  the hazard areas must be authored data in `Game.Shared` (polygons or `BL-346` grid cells), and the ground draws FROM
+  that data, so what you see and what hurts are always the same place.
+- ❓ To settle when you pick it up: does it hit mobs as well as players (mobs native to the zone immune?); can a
+  buff/potion/armour resist it (a "fire resistance" counter would give lava zones a gear goal); the numbers per hazard;
+  whether a whole zone is hazardous or only patches inside it (pools, storm cells).
