@@ -2230,6 +2230,8 @@ thats lot later and can still be separate from towns just as an idea"*.
 - **Town gardens** (his §118a, 2026-10-01, when Paved Streets became the whole city): *"later when we add mud etc and
   we add "gardens" in towns when player walks across it it will hinder him even +50 speed"* — a slow patch inside a
   city cancels the city bonus, so walking where you should not reads as wrong.
+- **The combat half is `BL-348`** (hazard terrain: blizzard misses and fails, lava DoT, slowed attack/cast), the same
+  region-test + buff-row mechanism; build them together.
 ⏸ *"lot later"*, his words.
 
 ## `BL-329` ⏸ LOGIN SESSION TIMER — no lingering on the login screens
