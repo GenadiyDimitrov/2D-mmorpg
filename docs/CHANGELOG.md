@@ -24,7 +24,15 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-12 (latest) — 0.239.0: the mentor shop (`BL-339` done)
+## 2026-10-12 (latest) — 0.240.0: the trade window gets category tabs and the order button (`BL-343`)
+
+**New APK** only (client change; the server is unchanged from 0.239.0).
+
+- His ask: *"also trade aslo need filter by category and order buttons"*. The trade window's "Your bag" list has the
+  same strip as the bag, vendor and keeper — All / Gear / Use / Boxes / Mats (no Quest: a token cannot be traded) — and
+  the shared `[ORDER]` button (A-Z / Z-A / Rarity / Rarity ^ / Type, one setting for every window). An empty tab says so.
+
+## 2026-10-12 — 0.239.0: the mentor shop (`BL-339` done)
 
 Server restart + **new APK** (the client must know the new items and the steward's shelf tabs).
 

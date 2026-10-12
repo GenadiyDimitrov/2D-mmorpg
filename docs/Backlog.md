@@ -287,7 +287,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-336` | 🔵 | **No-refresh debuffs (IG rule)** — a debuff of the same type cannot be re-landed until the old one wears off (no perma-hold); a re-stun attempt may BREAK the stun instead of resetting it; boss-allowed stacking types excepted; design owed | combat |
 | `BL-340` | ❓ | **Potion Mastery** — a % passive on every warrior (HP potions) and every nuker (MP potions) from the 2nd class on, boosting the potion HoT only; measured (`--potmp`); waiting on your pick of ladder A or B | classes |
 | `BL-341` | ⏸ | **Skill vampirism + skill reflect** — a buff that vamps from any spell/physical skill (later-chronicle IG), only together with reflect on skill damage; "a lot later if at all" | combat |
-| `BL-343` | 🔵 | **Trade window: category tabs + order button** — the bag list in trade gets All/Gear/Use/Boxes/Mats and the shared `[ORDER]` cycle | ui |
 
 ---
 
@@ -2433,9 +2432,3 @@ that also works on skill damage, so vampirism has a counter on the same channel.
 
 Nothing to decide now.
 
-## `BL-343` 🔵 TRADE WINDOW: CATEGORY TABS + ORDER BUTTON (2026-10-12)
-
-Your ask: *"also trade aslo need filter by category and order buttons"*. The trade window's "your bag" list gets
-the same category tabs as the bag/vendor/keeper (All / Gear / Use / Boxes / Mats) and the shared `[ORDER]`
-button (A-Z / Z-A / Rarity / Rarity ^ / Type), so offering one item out of a full bag is not a scroll. Same
-shared rules (`ItemCatalog.InCategory`, `CompareByOrder`) so the four windows cannot drift. Client only.

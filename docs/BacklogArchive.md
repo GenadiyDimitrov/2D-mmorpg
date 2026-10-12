@@ -8508,3 +8508,13 @@ and T76 7-day armour/weapon boxes at 60/40, 150/100, 300/200), the T80 7-day pai
 his eight 1-Graduation bundles (bound), and permanent bound T76 Mythic pieces (helmet 1,000 Graduation; the gold table's
 D column / 1000). Everything bought is bound; timed gear runs on the wall clock; bound gear never breaks or gets a recipe.
 Certificates became quest items in 0.238.0. Prices and the why: `Game.Shared/MentorShop.cs`; checklist §157.
+
+## `BL-343` ✅ BUILT in 0.240.0 — TRADE WINDOW: CATEGORY TABS + ORDER BUTTON (2026-10-12)
+
+Your ask: *"also trade aslo need filter by category and order buttons"*. The trade window's "your bag" list gets
+the same category tabs as the bag/vendor/keeper (All / Gear / Use / Boxes / Mats) and the shared `[ORDER]`
+button (A-Z / Z-A / Rarity / Rarity ^ / Type), so offering one item out of a full bag is not a scroll. Same
+shared rules (`ItemCatalog.InCategory`, `CompareByOrder`) so the four windows cannot drift. Client only.
+
+**Built 2026-10-12 (0.240.0)**, the same day: five tabs (All / Gear / Use / Boxes / Mats) and the shared `[ORDER]`
+button over the trade window's bag list; the list follows the shared order. Client only.

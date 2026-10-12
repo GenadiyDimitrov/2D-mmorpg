@@ -43,6 +43,13 @@ namespace Game.Client
 
         private Guid? _tradeRequestFrom;
 
+        /// <summary>`BL-343` — the bag column's category filter, the fourth window to carry the strip (owner, 2026-10-12:
+        /// *"also trade aslo need filter by category and order buttons"*). Quest is not a tab: a token cannot be traded.</summary>
+        private ItemCategory _tradeTab = ItemCategory.All;
+        private Button[] _tradeTabButtons;
+        private static readonly ItemCategory[] TradeTabs =
+            { ItemCategory.All, ItemCategory.Gear, ItemCategory.Use, ItemCategory.Boxes, ItemCategory.Mats };
+
         private void BuildTradePanel()
         {
             _tradePanel = UiKit.PanelBox(_worldRoot, "Trade");
@@ -103,9 +110,14 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(UiKit.Label(inner, "Your bag — tap to add or remove", 14f, UiKit.Accent).gameObject),
                         new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(colW + 40f, -top + 26f),
                         new Vector2(colW, 22f));
+            // `BL-343` — the tabs and the shared [ORDER] button over the list, which gives up their 36px. Five tabs at 60
+            // (+2) and the 86px button fill the 400px column with 4 to spare.
+            _tradeTabButtons = BuildCategoryTabs(inner, TradeTabs, new Vector2(colW + 40f, -top), 60f,
+                                                 cat => { _tradeTab = cat; FillTradeBag(); });
+            BuildOrderButton(inner, new Vector2(colW + 40f + TradeTabs.Length * 62f, -top), 86f, FillTradeBag);
             _tradeBag = UiKit.ScrollArea(inner, out var bagScroll, 2f);
             UiKit.Place((RectTransform)bagScroll.transform, new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(colW + 40f, -top), new Vector2(colW, 356f));
+                        new Vector2(colW + 40f, -top - 36f), new Vector2(colW, 320f));
 
             // ---- bottom ----
             _tradeStatus = UiKit.Label(inner, "", 14f, UiKit.TextDim);
@@ -224,7 +236,9 @@ namespace Game.Client
             for (int i = _tradeBag.childCount - 1; i >= 0; i--)
                 Destroy(_tradeBag.GetChild(i).gameObject);
 
-            foreach (var item in Boot.Inventory)
+            PaintCategoryTabs(_tradeTabButtons, TradeTabs, _tradeTab);
+            bool any = false;
+            foreach (var item in ByName(Boot.Inventory))   // `BL-343`: the shared order, like the bag, vendor and keeper
             {
                 // Equipped gear is not offerable — the server refuses it, and listing it would only
                 // produce a tap that silently does nothing.
@@ -238,6 +252,8 @@ namespace Game.Client
                 // `BL-239` — and the same for a locked item: HandleTradeOffer drops it from the offer,
                 // so a row here would be one you tap and watch fall off the table with no explanation.
                 if (bagDef != null && Boot.IsLocked(bagDef, item)) continue;
+                if (bagDef != null && !InCategory(_tradeTab, bagDef)) continue;   // `BL-343`
+                any = true;
 
                 int offered = _tradeOffer.TryGetValue(item.InstanceId, out var o) ? o : 0;
                 var id = item.InstanceId;
@@ -250,6 +266,10 @@ namespace Game.Client
                 var button = UiKit.TextButton(_tradeBag, label, () => TapTradeItem(it), 14f);
                 button.gameObject.AddComponent<LayoutElement>().preferredHeight = 32f;
             }
+            if (!any)
+                UiKit.Label(_tradeBag, _tradeTab == ItemCategory.All ? "Nothing here can be traded."
+                    : "Nothing tradable in this category — try All.", 14f, UiKit.TextDim)
+                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 28f;
         }
 
         /// <summary>Tap a bag row. A single item toggles; a stack opens the numpad so you can put part

@@ -25,6 +25,16 @@
 
 ---
 
+## §158 — 0.240.0: trade window tabs + order (`BL-343`, 2026-10-12)
+
+⚠ **New APK.** Two characters to trade between.
+
+- `158a` [ ] - Open a trade: over "Your bag" sit All / Gear / Use / Boxes / Mats and the order button; each tab shows
+  only its kind, and the order button re-sorts the list (and the bag's own button follows it). ->
+- `158b` [ ] - Offering from a filtered tab still works (tap = add/remove, a stack opens the numpad). ->
+
+---
+
 ## §157 — 0.239.0: the mentor shop (`BL-339`, 2026-10-12)
 
 ⚠ **Server restart + new APK.** A mentor and a mentee with certificates (`/give <name> cert_bond 1000`,
