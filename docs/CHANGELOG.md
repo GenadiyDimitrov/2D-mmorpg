@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.245.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.247.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,21 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-12 (latest) — 0.246.0: scenery scatter, placeholder shapes (`BL-344` step 4, first half)
+## 2026-10-12 (latest) — 0.247.0: real trees, rocks, grass and flowers (`BL-344` step 4 done)
+
+**Client only, new APK.** The server change is the version label. No `game.db` delete.
+
+- **The placeholder shapes are gone: the scenery is the Quaternius Stylized Nature MegaKit** (CC0). Broad trees,
+  pines, dead trees, bushes (one with flowers), three rocks, green grass and straw-coloured dry grass, two or three
+  models each. Picks and reasons: `docs/design/VisualPass.md` §0.2.
+- **The marsh gets gnarled twisted trees** instead of the broad ones, and **the meadow gets flower patches**: two new
+  prop kinds.
+- Leaves, grass and flowers are cut out cleanly (no white squares around the leaves) and seen from both sides;
+  everything is still drawn instanced, no collision, no shadows.
+- The whole pack is in the repo under `Assets/Art/Models/Nature/` (not shipped); only the picked models and their
+  shrunk textures reach the phone: APK 47.5 → 49.7 MB (+2.2).
+
+## 2026-10-12 — 0.246.0: scenery scatter, placeholder shapes (`BL-344` step 4, first half)
 
 **Client only, new APK.** The server change is the version label plus one helper on `RoadPath`. No `game.db` delete.
 

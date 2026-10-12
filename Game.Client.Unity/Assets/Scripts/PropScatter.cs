@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Game.Client
 {
     /// <summary>What a scattered prop is. Client-only: the server never sees scenery.</summary>
-    public enum PropKind { Tree = 0, Pine = 1, DeadTree = 2, Bush = 3, Rock = 4, Grass = 5, DryGrass = 6 }
+    public enum PropKind { Tree = 0, Pine = 1, DeadTree = 2, Bush = 3, Rock = 4, Grass = 5, DryGrass = 6, TwistedTree = 7, Flower = 8 }
 
     /// <summary>
     /// Trees, rocks and grass clumps (`BL-344` step 4, 2026-10-12). Cosmetic only: no collision, nothing
@@ -36,6 +36,7 @@ namespace Game.Client
     public class PropScatter : MonoBehaviour
     {
         public const float CellSize = 100f;   // server units; one candidate prop per cell
+        private const int KindCount = 9;      // PropKind values
 
         // ── quality ─────────────────────────────────────────────────────────────────────────────
 
@@ -80,16 +81,16 @@ namespace Game.Client
         /// high and in the snow, dead trees and stone where it burned. Density is per 100×100 cell.</summary>
         private static readonly Table[] Tables =
         {
-            /* Meadow   */ new Table(0.22f, (PropKind.Tree, 30), (PropKind.Bush, 15), (PropKind.Rock, 8), (PropKind.Grass, 47)),
+            /* Meadow   */ new Table(0.22f, (PropKind.Tree, 30), (PropKind.Bush, 15), (PropKind.Rock, 8), (PropKind.Grass, 37), (PropKind.Flower, 10)),
             /* Moor     */ new Table(0.16f, (PropKind.Pine, 10), (PropKind.Bush, 15), (PropKind.Rock, 25), (PropKind.Grass, 50)),
             /* Ash      */ new Table(0.10f, (PropKind.DeadTree, 30), (PropKind.Rock, 55), (PropKind.DryGrass, 15)),
-            /* Marsh    */ new Table(0.22f, (PropKind.Tree, 15), (PropKind.DeadTree, 15), (PropKind.Bush, 25), (PropKind.Grass, 45)),
+            /* Marsh    */ new Table(0.22f, (PropKind.TwistedTree, 15), (PropKind.DeadTree, 15), (PropKind.Bush, 25), (PropKind.Grass, 45)),
             /* Highland */ new Table(0.18f, (PropKind.Pine, 35), (PropKind.Rock, 35), (PropKind.DryGrass, 30)),
             /* Snow     */ new Table(0.14f, (PropKind.Pine, 60), (PropKind.Rock, 40)),
             /* Lava     */ new Table(0.08f, (PropKind.DeadTree, 20), (PropKind.Rock, 80)),
         };
 
-        private static bool IsTall(PropKind k) => k == PropKind.Tree || k == PropKind.Pine || k == PropKind.DeadTree;
+        private static bool IsTall(PropKind k) => k == PropKind.Tree || k == PropKind.TwistedTree || k == PropKind.Pine || k == PropKind.DeadTree;
 
         /// <summary>Base height of each kind in Unity units (a player is ~1.6). The roll varies it ±25%.</summary>
         private static float BaseSize(PropKind k)
@@ -97,10 +98,12 @@ namespace Game.Client
             switch (k)
             {
                 case PropKind.Tree: return 4.2f;
+                case PropKind.TwistedTree: return 4.0f;
                 case PropKind.Pine: return 4.8f;
                 case PropKind.DeadTree: return 3.4f;
                 case PropKind.Bush: return 1.0f;
                 case PropKind.Rock: return 0.9f;
+                case PropKind.Flower: return 0.45f;
                 default: return 0.55f;   // grass clumps
             }
         }
@@ -127,9 +130,9 @@ namespace Game.Client
 
         /// <summary>A prop's model is one or more parts; every part of the chosen model gets the same
         /// instance matrix, so a tree whose bark and leaves are separate meshes stays one tree.</summary>
-        private readonly List<Variant>[] _parts = new List<Variant>[7];     // per kind: all parts of all its models
-        private readonly List<int>[] _modelOf = new List<int>[7];           // per kind: part index → model index
-        private readonly int[] _modelCount = new int[7];
+        private readonly List<Variant>[] _parts = new List<Variant>[KindCount];     // per kind: all parts of all its models
+        private readonly List<int>[] _modelOf = new List<int>[KindCount];           // per kind: part index → model index
+        private readonly int[] _modelCount = new int[KindCount];
 
         private readonly Dictionary<Vector2Int, List<Placed>> _chunks = new Dictionary<Vector2Int, List<Placed>>();
         private readonly Stack<List<Placed>> _pool = new Stack<List<Placed>>();
@@ -255,7 +258,7 @@ namespace Game.Client
         private bool Blocked(float x, float y, PropKind kind)
         {
             // Grass may creep a little nearer than the rest: it hides nothing.
-            float shrink = kind == PropKind.Grass || kind == PropKind.DryGrass ? 0.75f : 1f;
+            float shrink = kind == PropKind.Grass || kind == PropKind.DryGrass || kind == PropKind.Flower ? 0.75f : 1f;
             foreach (var c in _circles)
             {
                 float dx = c.x - x, dy = c.y - y, r = c.z * shrink;
@@ -390,9 +393,10 @@ namespace Game.Client
 
         private readonly Dictionary<Material, Material> _instanced = new Dictionary<Material, Material>();
 
-        /// <summary>A copy with instancing switched on, shared by every part that used the original.</summary>
+        /// <summary>The material itself when it is a shipped asset with instancing on (the nature props); otherwise a copy with instancing switched on, shared by every part that used the original.</summary>
         private Material Instanced(Material src)
         {
+            if (src.enableInstancing) return src;   // the shipped prop materials already are
             if (_instanced.TryGetValue(src, out var m)) return m;
             m = new Material(src) { enableInstancing = true };
             _instanced[src] = m;
@@ -440,6 +444,7 @@ namespace Game.Client
             switch (kind)
             {
                 case PropKind.Tree:
+                case PropKind.TwistedTree:
                     parts.Add((Cylinder, TRS(0f, 0.2f, 0f, 0.08f, 0.2f, 0.08f), bark));
                     parts.Add((Sphere, TRS(0f, 0.65f, 0f, 0.62f, 0.7f, 0.62f), new Color(0.16f, 0.36f, 0.12f)));
                     break;
@@ -460,7 +465,8 @@ namespace Game.Client
                     parts.Add((Sphere, Matrix4x4.TRS(new Vector3(0f, 0.45f, 0f), Quaternion.Euler(8f, 30f, 12f), new Vector3(1.4f, 0.9f, 1.1f)), new Color(0.42f, 0.41f, 0.39f)));
                     break;
                 default:
-                    var blade = kind == PropKind.DryGrass ? new Color(0.48f, 0.42f, 0.25f) : new Color(0.27f, 0.45f, 0.17f);
+                    var blade = kind == PropKind.DryGrass ? new Color(0.48f, 0.42f, 0.25f)
+                              : kind == PropKind.Flower ? new Color(0.78f, 0.42f, 0.55f) : new Color(0.27f, 0.45f, 0.17f);
                     for (int b = 0; b < 5; b++)
                     {
                         float a = b * 72f * Mathf.Deg2Rad, r = b == 0 ? 0f : 0.22f;

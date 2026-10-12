@@ -45,7 +45,7 @@ namespace Game.ClientEditor
     /// <para>Idempotent: it overwrites its own outputs and touches nothing else, so re-running after
     /// dropping in a better FBX is the update path.</para>
     /// </summary>
-    public static class ModelSetup
+    public static partial class ModelSetup
     {
         /// <summary>One creature family: the prefab key, the source FBX, and how tall the thing should
         /// stand in Unity units at the root's own scale.
@@ -143,11 +143,12 @@ namespace Game.ClientEditor
             public Body(string key, string fbx, float height) { Key = key; Fbx = fbx; Height = height; }
         }
 
-        [MenuItem("Tools/BL-93/Build ALL prefabs (creatures + characters)")]
+        [MenuItem("Tools/BL-93/Build ALL prefabs (creatures + characters + props)")]
         public static void BuildAll()
         {
             bool ok = BuildFamilies();
             ok &= BuildCharacterBodies();
+            ok &= BuildPropPrefabs();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();

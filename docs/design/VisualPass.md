@@ -17,7 +17,7 @@ bodies (deleted, git keeps them) and the fantasy ones kept.
 | 1 | Clean-up + the free families | ✅ **0.243.0.** Undead → Skeleton, Dragon → Dragon. Source FBXs moved to `Assets/Art/Models/`; 15 modern bodies deleted, 6 fantasy kept (Man Adventurer / Farmer / King, Woman Adventurer / Medieval / Witch). Slime was NOT given to MagicCreature: that family is golems, a lich, blades and an eye, and a slime fits none of them. |
 | 2 | Character animation (`BL-102`) | ✅ **0.244.0.** Your `UAL1_Standard.fbx` (Quaternius Universal Animation Library, Standard, CC0). Picks: idle = `Idle_Loop`, walk = `Walk_Loop`, run = `Jog_Fwd_Loop`, attack = `Sword_Attack`, death = `Death01`, cast = `Spell_Simple_Idle_Loop`. One body and one clip set for everyone; bows and staves still swing the sword take until step 7. APK 47.3 → 47.4 MB: only the six used clips ship. |
 | 3 | Ground, vertex-coloured (your Q2 = B) | ✅ **0.245.0.** Biome per city territory, blended by distance (`Game.Shared/Biomes.cs`), streamed 2000-unit chunks (`BiomeGround.cs`). Your picks: level band on the field RIMS, grid DELETED, FLAT, biomes as proposed **+ lava** (Redhorn Highlands). Old plane + grid deleted (they covered only a quarter of the world). |
-| 4 | Props: trees, rocks, grass clumps (your Q2's C, own step) | 🟡 **0.246.0: the scatter is built and draws PLACEHOLDER shapes** (`PropScatter.cs`, design in §0.3). ❓ **Owed: the nature pack download (§0.2).** Then I pick the models, build them headlessly and ship the APK with real trees. |
+| 4 | Props: trees, rocks, grass clumps (your Q2's C, own step) | ✅ **0.246.0** scatter (`PropScatter.cs`, §0.3) + **0.247.0** real models from the nature pack (§0.2): 19 picks over 9 kinds, twisted trees in the marsh, flower patches in the meadow. APK 47.5 → 49.7 MB. ❓ judge in a playtest: density, tree size, trees hiding you in a wood (§0.3 last point), frame rate on High. |
 | 5 | Light and time of day | |
 | 6 | Skill FX archetypes | |
 | 7 | Weapons in hand (`BL-103`, protocol bump) | |
@@ -43,7 +43,32 @@ bodies (deleted, git keeps them) and the fantasy ones kept.
 You do not need to open Unity or Mixamo. The file stays outside `Resources/`, so only the clips the controller uses
 reach the APK.
 
-### 0.2 Step 4: the nature pack (owed, 2026-10-12)
+### 0.2 Step 4: the nature pack (done 2026-10-12, kept for the next download)
+
+**Built 0.247.0.** The pack's `FBX(Unity)` export sits in `Assets/Art/Models/Nature/FBX/` with `Textures/` beside it
+(the FBXs find their maps by relative path; keep that layout). `ModelSetup.BuildProps` (`Assets/Editor/ModelSetup.Props.cs`)
+builds `Resources/Props/<Kind>/` headlessly; `ModelSetup.PreviewProps` renders every pick to a PNG (batchmode WITHOUT
+`-nographics`, `-previewOut <path>`) so the textures can be checked without the Editor or a phone.
+
+| Kind | Models | Why |
+|---|---|---|
+| Tree | CommonTree_3, CommonTree_5 | the two lightest broad trees (~3.2-3.5k tris) |
+| TwistedTree (**new kind**, Marsh) | TwistedTree_1, TwistedTree_2 | gnarled = swamp. ⚠ the heaviest picks (~9.3k tris); they replace the broad tree in the marsh only |
+| Pine | Pine_4, Pine_5 | lightest (1.6k / 3.4k tris) |
+| DeadTree | DeadTree_4, DeadTree_5 | lightest of five near-equal ones |
+| Bush | Bush_Common, Bush_Common_Flowers | the only two |
+| Rock | Rock_Medium_1, _2, _3 | all three: 250-520 tris each |
+| Grass | Grass_Common_Short, _Tall | green |
+| DryGrass | Grass_Wispy_Short, _Tall | the pack has no dry grass; the wispy ones already sit on the orange strip of the grass map, muted a little |
+| Flower (**new kind**, Meadow) | Flower_3_Group, Flower_4_Group | groups, not singles: one prop reads as a patch |
+
+**Materials are ours** (`Art/Models/Nature/Materials/`, URP Lit, instancing ON as shipped assets so the build keeps
+the instanced variant): leaves, grass and flowers alpha CLIP + two-sided, never blended; mip coverage preserved so
+leaves don't thin out at distance. The pack's twisted-tree leaf map is autumn RED (the plain bush wears it too), so
+those use the white mask tinted moss green. Normal maps unused, textures capped at 512 (1024 for the plant atlas,
+128 for the grass gradient): what reaches the APK is those, not the pack's 2048² maps.
+
+The original download how-to:
 
 The pack is **Quaternius Stylized Nature MegaKit**: CC0 (free for any use, no credit needed), the free Standard tier
 has about 70-80 textured models (trees incl. pine, birch and dead/dry trees, rocks, bushes, grass, flowers, mushrooms).
@@ -65,8 +90,8 @@ has about 70-80 textured models (trees incl. pine, birch and dead/dry trees, roc
 
 ### 0.3 Step 4: how the scatter works (built 0.246.0)
 
-- **Per-biome sets** (props per 100×100 cell before clumping): Meadow 0.22 (broad trees, bushes, a few rocks, grass),
-  Moor 0.16 (some pines, bushes, rocks, grass), Ash 0.10 (dead trees, rocks, dry grass), Marsh 0.22 (broad and dead
+- **Per-biome sets** (props per 100×100 cell before clumping): Meadow 0.22 (broad trees, bushes, a few rocks, grass, flower patches),
+  Moor 0.16 (some pines, bushes, rocks, grass), Ash 0.10 (dead trees, rocks, dry grass), Marsh 0.22 (twisted and dead
   trees, bushes, grass), Highland 0.18 (pines, rocks, dry grass), Snow 0.14 (pines, rocks), Lava 0.08 (dead trees,
   rocks). The biome is drawn from the same territory weights that colour the ground, so props mix across a border
   exactly where the colours do.
