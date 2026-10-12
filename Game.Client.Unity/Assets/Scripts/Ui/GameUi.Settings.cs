@@ -24,8 +24,8 @@ namespace Game.Client
         private Canvas _setupCanvas;
         private RectTransform _setupRoot;
 
-        private const string PrefPitch      = "cam.pitch";
-        private const string PrefYaw        = "cam.yaw";
+        private const string PrefPitch      = CameraRig.PitchKey;   // the drag gesture writes it too
+        private const string PrefYaw        = CameraRig.YawKey;
         private const string PrefOrtho      = "cam.ortho";
         private const string PrefOrthoSize  = "cam.orthoSize";
         private const string PrefEntity     = "ui.entityScale";
@@ -112,7 +112,7 @@ namespace Game.Client
 
             float y = -chrome - 14f;
 
-            Row(inner, ref y, UiKit.SliderRow(inner, "Camera angle", 45f, 90f,
+            Row(inner, ref y, _pitchSlider = UiKit.SliderRow(inner, "Camera angle", CameraRig.MinPitch, CameraRig.MaxPitch,
                 Boot.CameraRig != null ? Boot.CameraRig.Pitch : 90f, "0", v =>
                 {
                     if (Boot.CameraRig != null) Boot.CameraRig.Pitch = v;
@@ -126,10 +126,8 @@ namespace Game.Client
                     // The rig owns its own persistence for distance (pinch writes it too).
                 }));
 
-            // Yaw exists on the rig and was hardcoded to 0. As a SLIDER rather than a twist gesture:
-            // a two-finger twist is hard to tell from pinch, and until the world has occluders there
-            // is nothing to rotate around — this is enough to judge whether it is worth a gesture.
-            Row(inner, ref y, UiKit.SliderRow(inner, "Camera rotation", 0f, 360f,
+            // Yaw: this slider, or (`BL-344` step 8) one finger dragged sideways across the world.
+            Row(inner, ref y, _yawSlider = UiKit.SliderRow(inner, "Camera rotation", 0f, 360f,
                 Boot.CameraRig != null ? Boot.CameraRig.Yaw : 0f, "0", v =>
                 {
                     if (Boot.CameraRig != null) Boot.CameraRig.Yaw = v;
@@ -315,6 +313,18 @@ namespace Game.Client
         private Button _damageToggle, _zoneToggle, _projectionToggle, _modelToggle, _tickToggle, _sceneryToggle, _shadowToggle;
         private Button _extraSlotsToggle, _barShapeToggle;   // `BL-269`, `BL-299`
         private Slider _uiScaleSlider, _barScaleSlider;
+        private Slider _pitchSlider, _yawSlider;   // follow the drag gesture while Settings is open (SyncCameraSliders)
+
+        /// <summary>`BL-344` step 8: the drag and the compass move the camera behind the sliders' back, so
+        /// an open Settings window pulls the numbers back off the rig. Setting <c>value</c> runs the row's
+        /// handler, which only writes the same numbers back — harmless.</summary>
+        private void SyncCameraSliders()
+        {
+            var rig = Boot != null ? Boot.CameraRig : null;
+            if (rig == null || _pitchSlider == null || !_settingsPanel.gameObject.activeSelf) return;
+            if (Mathf.Abs(_pitchSlider.value - rig.Pitch) > 0.5f) _pitchSlider.value = rig.Pitch;
+            if (Mathf.Abs(Mathf.DeltaAngle(_yawSlider.value, rig.Yaw)) > 0.5f) _yawSlider.value = rig.Yaw;
+        }
 
         /// <summary>Resize the GAME canvas now. Every panel is anchored, so changing the scaler's design
         /// height is the whole job — bar the overflow menu, whose column count depends on how tall the

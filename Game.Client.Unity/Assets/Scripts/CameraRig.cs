@@ -49,9 +49,44 @@ namespace Game.Client
 
         private const string DistanceKey = "cam.distance";
 
+        /// <summary>The Settings sliders and the drag gesture write the SAME two keys, so whichever moved
+        /// the camera last is what the next launch starts from.</summary>
+        public const string PitchKey = "cam.pitch";
+        public const string YawKey = "cam.yaw";
+
+        // ── `BL-344` step 8: ONE FINGER DRAGGED ACROSS THE WORLD TURNS AND TILTS THE VIEW ──────────
+        //
+        // A one-finger drag did nothing before this (a tap is decided on release, and anything that
+        // travelled past the slop was thrown away), so it was the free gesture. Two-finger TWIST was the
+        // other candidate and loses: it is hard to tell from a pinch, and both hands are already busy.
+        // Sideways turns (180° per screen width), up/down tilts within [MinPitch, 90] — the "limited
+        // vertical" of the owner's Q4. Finger UP looks further ahead (lower pitch), as a mouse-look does.
+        // A press that STARTS over UI never turns the camera: the skill bar and window drags own it.
+
+        /// <summary>The tilt limit. Matches the Settings slider's floor: below ~45° the ortho rig's
+        /// near-plane correction grows and the ground reaches the far plane at full zoom-out.</summary>
+        public const float MinPitch = 45f, MaxPitch = 90f;
+        public float YawPerScreen = 180f;      // degrees for a drag across the full screen width
+        public float PitchPerScreen = 90f;     // degrees for a drag up the full screen height
+        /// <summary>Same as <see cref="TouchInput.TapSlopPixels"/>: a finger that stays inside it is a tap.</summary>
+        public const float DragSlopPixels = 40f;
+
+        /// <summary>True from the moment the current touch became a camera gesture (a drag past the slop,
+        /// or a second finger for a pinch) until every finger is up. <see cref="TouchInput"/> reads it so
+        /// that releasing such a touch is never also a tap — a drag that wanders back to where it began,
+        /// or the finger left over from a pinch, used to walk you to the spot under it.</summary>
+        public bool TouchConsumed { get; private set; }
+
+        /// <summary>The view is off the top-down, north-up home (the HUD compass shows only then).</summary>
+        public bool Turned => Mathf.Abs(Mathf.DeltaAngle(Yaw, 0f)) > 0.5f || Pitch < MaxPitch - 0.5f;
+
         private float _lastPinch;
         private bool _pinching;
         private float _savedDistance;
+        private bool _dragOk, _dragging;
+        private Vector2 _dragLast;
+        private float _resetFrom = -1f, _resetYaw, _resetPitch;
+        private const float ResetSeconds = 0.35f;
 
         private void Awake()
         {
@@ -61,10 +96,103 @@ namespace Game.Client
             _savedDistance = Distance;
         }
 
+        /// <summary>The compass: swing back to north-up, straight down. Animated, so you see which way
+        /// the world turns and keep your bearings.</summary>
+        public void ResetView()
+        {
+            _resetFrom = Time.unscaledTime;
+            _resetYaw = Yaw;
+            _resetPitch = Pitch;
+        }
+
         private void Update()
         {
-            // Two fingers = zoom. One finger is tap-to-move (TouchInput), which ignores multi-touch
-            // frames, so the two never fight.
+            Zoom();
+            Turn();
+
+            if (_resetFrom >= 0f)
+            {
+                float t = Mathf.Clamp01((Time.unscaledTime - _resetFrom) / ResetSeconds);
+                t = t * t * (3f - 2f * t);
+                Yaw = Mathf.LerpAngle(_resetYaw, 0f, t);
+                Pitch = Mathf.Lerp(_resetPitch, MaxPitch, t);
+                if (t >= 1f) { _resetFrom = -1f; Yaw = 0f; PersistView(); }
+            }
+        }
+
+        private void Turn()
+        {
+            if (Input.touchCount == 0)
+            {
+                if (_dragging) PersistView();
+                _dragging = false;
+                TouchConsumed = false;
+                MouseTurn();
+                return;
+            }
+
+            var t = Input.GetTouch(0);
+            if (Input.touchCount > 1)
+            {
+                // A pinch. It ends the drag, and nothing more may turn or tap until every finger is up.
+                if (_dragging) PersistView();
+                _dragging = false;
+                _dragOk = false;
+                TouchConsumed = true;
+                return;
+            }
+
+            if (t.phase == TouchPhase.Began)
+            {
+                _dragOk = !TouchConsumed && !UiKit.OverUi(t.position);
+                _dragging = false;
+                _dragLast = t.position;
+                return;
+            }
+            if (!_dragOk) return;
+
+            if (!_dragging)
+            {
+                if ((t.position - t.rawPosition).magnitude < DragSlopPixels) return;
+                _dragging = true;
+                TouchConsumed = true;
+                _resetFrom = -1f;
+                _dragLast = t.rawPosition;   // the slop is not lost: the view catches up to the finger
+            }
+            Drag(t.position - _dragLast);
+            _dragLast = t.position;
+        }
+
+        /// <summary>The Editor stand-in: hold the RIGHT mouse button and drag. The left one stays a click.</summary>
+        private void MouseTurn()
+        {
+            if (Input.GetMouseButtonDown(1)) { _dragLast = Input.mousePosition; _resetFrom = -1f; }
+            if (Input.GetMouseButton(1))
+            {
+                Vector2 now = Input.mousePosition;
+                Drag(now - _dragLast);
+                _dragLast = now;
+            }
+            if (Input.GetMouseButtonUp(1)) PersistView();
+        }
+
+        private void Drag(Vector2 delta)
+        {
+            Yaw = Mathf.Repeat(Yaw + delta.x / Mathf.Max(1, Screen.width) * YawPerScreen, 360f);
+            Pitch = Mathf.Clamp(Pitch - delta.y / Mathf.Max(1, Screen.height) * PitchPerScreen, MinPitch, MaxPitch);
+        }
+
+        private void PersistView()
+        {
+            PlayerPrefs.SetFloat(PitchKey, Pitch);
+            PlayerPrefs.SetFloat(YawKey, Yaw);
+            PlayerPrefs.Save();
+        }
+
+        private void Zoom()
+        {
+            // Two fingers = zoom. One finger is a tap (TouchInput) or, dragged, a turn (Turn); a touch
+            // that ever had a second finger is neither (TouchConsumed).
             if (Input.touchCount == 2)
             {
                 float gap = (Input.GetTouch(0).position - Input.GetTouch(1).position).magnitude;
@@ -188,8 +316,6 @@ namespace Game.Client
 
             ApplyProjection();
 
-            var rot = Quaternion.Euler(Pitch, Yaw, 0f);
-
             // 🔴 THE SMOOTHING BELONGS TO THE FOLLOW, NOT TO THE ORBIT.
             //
             // This used to smooth the camera's WORLD POSITION toward `Target.position + orbit`. That
@@ -223,13 +349,22 @@ namespace Game.Client
             _followPoint = Vector3.Lerp(
                 _followPoint, Target.position, 1f - Mathf.Exp(-Follow * Time.deltaTime));
 
-            transform.position = _followPoint + rot * Vector3.back * RigDistance;
+            Pose(transform, _followPoint, Pitch, Yaw, RigDistance);
+        }
 
-            // Assign the rotation directly rather than LookAt(Target): at Pitch 90 the view direction
-            // is parallel to Vector3.up, which makes LookAt's up-vector degenerate and the image spin
-            // or flip. This is exact by construction — the position above was derived from the same
-            // rotation, so the follow point is dead centre of frame.
-            transform.rotation = rot;
+        /// <summary>
+        /// Hang a camera off a point: <paramref name="distance"/> back along the view, looking at it. Public and
+        /// static so the Editor preview (<c>ModelSetup.PreviewCamera</c>) places its camera with THIS code.
+        ///
+        /// The rotation is assigned directly rather than LookAt(Target): at Pitch 90 the view direction
+        /// is parallel to Vector3.up, which makes LookAt's up-vector degenerate and the image spin
+        /// or flip. This is exact by construction — the position was derived from the same rotation,
+        /// so the point is dead centre of frame.
+        /// </summary>
+        public static void Pose(Transform camera, Vector3 at, float pitch, float yaw, float distance)
+        {
+            var rot = Quaternion.Euler(pitch, yaw, 0f);
+            camera.SetPositionAndRotation(at + rot * Vector3.back * distance, rot);
         }
     }
 }

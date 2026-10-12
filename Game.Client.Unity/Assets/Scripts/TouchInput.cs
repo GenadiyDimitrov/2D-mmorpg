@@ -66,7 +66,10 @@ namespace Game.Client
                 if (Input.touchCount == 1 && t.phase == TouchPhase.Began)
                     _downOverUi = UiKit.OverUi(t.position);   // the panel is still on screen NOW
 
-                if (Input.touchCount == 1 && t.phase == TouchPhase.Ended &&
+                // A touch the camera took (a drag that turned the view, or what is left of a pinch) is
+                // never a tap, even if the finger came back to where it started.
+                bool camera = Boot.CameraRig != null && Boot.CameraRig.TouchConsumed;
+                if (Input.touchCount == 1 && t.phase == TouchPhase.Ended && !camera &&
                     (t.position - t.rawPosition).magnitude < TapSlopPixels)
                 {
                     tapped = true;

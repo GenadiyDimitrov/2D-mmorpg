@@ -21,7 +21,7 @@ bodies (deleted, git keeps them) and the fantasy ones kept.
 | 5 | Light and time of day | ✅ **0.248.0.** Lit ground (`LitVertexColor.shader`), characters cast shadows, the directional light turned by `GameClock` (`DayNight.cs`, §0.4). Your pick: night 0.30 (*"0.12 is to dark, 0.2 as well"*), plus **Settings → Night brightness** 0.10-0.60 for your *"a bar or gamma as other games"*. Settings → Shadows: characters (default) / + trees / off. ❓ judge on the phone: frame rate with trees casting, how night reads outdoors. |
 | 6 | Skill FX archetypes | ✅ **0.249.0.** `FxPlayer.cs`, `SkillDef.Fx` + `SkillFxRules` (§0.5). Your picks: exceptions in `docs/data/skill_fx.csv` (one row: Mana Ray = Beam), basic attacks show only crit sparks. ❓ judge on the phone: size and brightness at your zoom, the frame rate in a crowd fight. |
 | 7 | Weapons in hand (`BL-103`, protocol bump) | ✅ **0.250.0.** One mesh per weapon type on the hand bones (`HeldWeapons.cs`, §0.6), CC0 meshes I fetched myself (Quaternius medieval weapons + KayKit staff/wand). Bows shoot with `Pistol_Shoot`, wands and staves with `Spell_Simple_Shoot`. Protocol 53. Tier prefabs + rarity glow stay in `BL-103`. ❓ judge on the phone: sizes at your zoom, the bow pose. |
-| 8 | Camera: horizontal rotation + limited vertical tilt (your Q4 "later") | top-down stays the default until then |
+| 8 | Camera: horizontal rotation + limited vertical tilt (your Q4 "later") | ✅ **0.251.0.** One finger dragged across the world turns (sideways) and tilts (up/down, 90° to 45°); a compass under Skills appears only while you are turned and swings you back to top-down north-up (§0.7). Top-down stays the default. ❓ judge on the phone: drag speed, whether the compass spot is free on your screen, trees hiding you at a tilt. |
 
 ### 0.1 Step 2: the one file I needed from you (done 2026-10-12, kept for the next download)
 
@@ -183,6 +183,32 @@ has about 70-80 textured models (trees incl. pine, birch and dead/dry trees, roc
   above. ⚠ Headless, neither a skinned mesh nor a renderer under a bone redraws after the bones move, so the preview
   samples with `AnimationMode` and draws BAKED copies of the body and the weapons. The phone has no such problem.
 - APK: 50.3 → 50.4 MB (+0.2 MB; the budget is 120).
+
+### 0.7 Step 8: how the camera turns (built 0.251.0)
+
+- **One finger dragged across the world.** Sideways turns the view around your character (180° for a drag across the
+  whole screen); up and down tilts it, from 90° (straight down) to 45° (the same floor as the Settings slider; below
+  it the ortho view starts losing ground at full zoom-out). Finger up looks further ahead, as a mouse-look does. A
+  one-finger drag did nothing before, so nothing else changes: a tap is still a tap (inside 40 px), pinch is still
+  zoom. Why not a two-finger twist: it is hard to tell from a pinch. Why not buttons: a drag is what every phone game
+  does and costs no screen.
+- **A press that starts on the HUD never turns the camera** (the skill bar drag, window drags, sliders own it).
+- **A touch the camera took is never a tap:** a drag that wanders back to where it started, or the finger left over
+  after a pinch, no longer walks you to the spot under it (the second was an old bug the same flag fixes).
+- **No auto-reset.** The view stays where you leave it, across logins (the same two saved values as the Settings
+  sliders, which now follow the drag while Settings is open). **The compass** (a red-tipped needle, under the Skills
+  button) appears only while you are turned or tilted, its red end points north, and a tap swings you back to top-down
+  north-up in a third of a second. At the default view it is hidden, so the HUD is unchanged.
+- **What follows the camera, checked:** name plates, damage numbers and the quest arrow are projected through it; the
+  placeholder spheres billboard to it; models face where they walk; the tap ray, ground chunks and the shadow range
+  are all measured off the real screen corners. One change: the **scenery draw range** is now measured from the middle
+  of the ground you can SEE (halfway between the screen's bottom and top edges) instead of the screen centre. Tilted,
+  you see far further ahead than behind, and from the centre the top of the screen showed bare ground on Medium.
+- **Trees hiding you (§0.3):** at a tilt a tree between the camera and you hides you from the side as well as from above.
+  Still not built; say if it bothers you and I'll fade trees near your character.
+- **Editor:** hold the right mouse button and drag. **Preview:** `ModelSetup.PreviewCamera` (batchmode WITHOUT
+  `-nographics`, `-previewOut <png>`), the light preview's set at noon posed by the game's own `CameraRig.Pose` at
+  90° / 70° / 55° / 45° facing north, then turned east, south, 250° and 320°.
 
 ## 1. What the client draws today
 

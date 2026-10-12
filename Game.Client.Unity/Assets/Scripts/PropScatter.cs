@@ -289,9 +289,18 @@ namespace Game.Client
             if (Quality == Level.Off || _chunks.Count == 0) return;
             var cam = Camera.main;
             if (cam == null) return;
+            // `BL-344` step 8: the range is measured from the middle of the ground you can SEE, halfway
+            // between the bottom and top edge of the screen. Top-down that is the screen centre; tilted it
+            // moves ahead, where the view now reaches far further than it does behind you — measured from
+            // the centre, the top of a tilted screen showed bare ground on Medium.
+            var plane = new Plane(Vector3.up, Vector3.zero);
             var ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-            if (!new Plane(Vector3.up, Vector3.zero).Raycast(ray, out float d)) return;
+            if (!plane.Raycast(ray, out float d)) return;
             var centre = WorldMapper.ToServer(ray.GetPoint(d));
+            var low = cam.ViewportPointToRay(new Vector3(0.5f, 0f, 0f));
+            var high = cam.ViewportPointToRay(new Vector3(0.5f, 1f, 0f));
+            if (plane.Raycast(low, out float dl) && plane.Raycast(high, out float dh))
+                centre = (WorldMapper.ToServer(low.GetPoint(dl)) + WorldMapper.ToServer(high.GetPoint(dh))) * 0.5f;
             float range = RangeAt[(int)Quality], range2 = range * range;
             float half = BiomeGround.ChunkSize * 0.5f;
 

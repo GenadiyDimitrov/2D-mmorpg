@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.250.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.251.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,22 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-12 (latest) — 0.250.0: weapons in hand (`BL-344` step 7, `BL-103` first half)
+## 2026-10-12 (latest) — 0.251.0: turn and tilt the camera (`BL-344` step 8)
+
+**Client only, new APK.** No `game.db` delete, no protocol bump. This is the last step of the visual pass.
+
+- **Drag one finger across the world to turn the view** (sideways) **or tilt it** (up/down, from straight down to
+  45°). Top-down north-up stays the default; the view stays where you leave it, across logins.
+- **A compass appears under the Skills button while you are turned.** Its red end points north; tap it to swing back
+  to top-down north-up. At the default view it is hidden.
+- A press that starts on a button or window never turns the camera, and a drag never counts as a tap.
+- **Fixed:** lifting one finger after a pinch-to-zoom could walk you to the spot under the other finger.
+- Scenery is now drawn around the middle of the ground you can see, so a tilted view no longer shows bare ground at
+  the top of the screen.
+- The Settings camera sliders follow the drag while Settings is open. In the Editor, right-mouse drag.
+- Checked with a headless render (`ModelSetup.PreviewCamera`, eight poses). NOT checked on a phone yet.
+
+## 2026-10-12 — 0.250.0: weapons in hand (`BL-344` step 7, `BL-103` first half)
 
 **Client + server, new APK.** No `game.db` delete. Protocol 52 → 53, a pure addition: an older APK still logs in and
 simply draws empty hands.

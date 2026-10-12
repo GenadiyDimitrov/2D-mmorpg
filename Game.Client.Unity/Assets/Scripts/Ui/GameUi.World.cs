@@ -1032,7 +1032,43 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_respawnButton.gameObject), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                         new Vector2(0f, -120f), new Vector2(200f, 54f));
 
+            BuildCompass();
             BuildMenuPanel();
+        }
+
+        private RectTransform _compass, _compassNeedle;
+
+        /// <summary>
+        /// `BL-344` step 8 — the way home after a drag has turned or tilted the view. It shows ONLY while
+        /// the camera is off top-down north-up (so the default HUD is unchanged), its red end points at
+        /// north wherever you have turned, and a tap swings the view back (<see cref="CameraRig.ResetView"/>).
+        /// Under the Skills button: the one free square between the action rows (down to -146) and the
+        /// quest tracker (from -220).
+        /// </summary>
+        private void BuildCompass()
+        {
+            var button = UiKit.TextButton(_worldRoot, "", () => { if (Boot.CameraRig != null) Boot.CameraRig.ResetView(); });
+            _compass = UiKit.Rect(button.gameObject);
+            UiKit.Place(_compass, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-12f, -152f), new Vector2(46f, 46f));
+
+            var needle = UiKit.Box(button.transform, "Needle", new Color(0.85f, 0.87f, 0.90f), blocksInput: false);
+            _compassNeedle = UiKit.Rect(needle.gameObject);
+            UiKit.Place(_compassNeedle, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(7f, 32f));
+            var north = UiKit.Box(needle.transform, "North", new Color(0.92f, 0.25f, 0.22f), blocksInput: false);
+            var nr = UiKit.Rect(north.gameObject);
+            nr.anchorMin = new Vector2(0f, 0.5f);
+            nr.anchorMax = Vector2.one;
+            nr.offsetMin = nr.offsetMax = Vector2.zero;
+            _compass.gameObject.SetActive(false);
+        }
+
+        private void RefreshCompass()
+        {
+            var rig = Boot.CameraRig;
+            bool show = rig != null && rig.Turned;
+            if (_compass.gameObject.activeSelf != show) _compass.gameObject.SetActive(show);
+            // The camera turned right by Yaw, so north on screen sits Yaw counter-clockwise of up (+z in UI).
+            if (show) _compassNeedle.localRotation = Quaternion.Euler(0f, 0f, rig.Yaw);
         }
 
         /// <summary>The overflow menu: everything you press once a session rather than once a fight.
@@ -1466,6 +1502,7 @@ namespace Game.Client
             RefreshSelf();
             RefreshTarget();
             RefreshSkillBar();
+            RefreshCompass();     // `BL-344` step 8
             RefreshConsole();
             RefreshTitlesTab();
             RefreshBag();

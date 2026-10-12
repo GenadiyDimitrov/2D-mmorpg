@@ -26,6 +26,30 @@ namespace Game.ClientEditor
 
             int editorQuality = QualitySettings.GetQualityLevel();
             QualitySettings.SetQualityLevel(0, true);   // "Mobile": what Android runs (put back at the end, or it is saved)
+            var sun = BuildPreviewWorld();
+
+            // The game's default 2.5D-ish angle when tilted: 60° down, 12 units back (zoomed in so the characters can be judged).
+            var cam = new GameObject("Cam").AddComponent<Camera>();
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = new Color(0.09f, 0.09f, 0.10f);
+            cam.fieldOfView = 60f;
+            cam.transform.rotation = Quaternion.Euler(60f, 0f, 0f);
+            cam.transform.position = new Vector3(0f, 0f, 0.5f) - cam.transform.forward * 12f;
+
+            var frames = new (double hour, float night)[]
+            {
+                (6.5, DayNight.NightDefault), (12.0, DayNight.NightDefault), (17.75, DayNight.NightDefault), (19.0, DayNight.NightDefault),
+                (0.0, DayNight.NightMin), (0.0, DayNight.NightDefault), (0.0, DayNight.NightMax), (5.5, DayNight.NightDefault),
+            };
+            RenderSheet(cam, outPath, frames.Length, f => DayNight.Apply(sun, DayNight.LookAt(frames[f].hour, frames[f].night), true));
+            QualitySettings.SetQualityLevel(editorQuality, true);
+            Debug.Log($"[BL-344] light preview ({frames.Length} frames) -> {outPath}");
+        }
+
+        /// <summary>The preview set (shared by the light and camera previews): a 60 × 40 patch of real biome
+        /// ground beside Brackenford, two players and a rat in their idle pose, a few props, and a sun.</summary>
+        private static Light BuildPreviewWorld()
+        {
             var scene = UnityEditor.SceneManagement.EditorSceneManager.NewScene(
                 UnityEditor.SceneManagement.NewSceneSetup.EmptyScene);
 
@@ -78,41 +102,7 @@ namespace Game.ClientEditor
             sun.shadowBias = 0.05f; sun.shadowNormalBias = 0.4f;
             RenderSettings.sun = sun;
 
-            // The game's default 2.5D-ish angle when tilted: 60° down, 12 units back (zoomed in so the characters can be judged).
-            var cam = new GameObject("Cam").AddComponent<Camera>();
-            cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = new Color(0.09f, 0.09f, 0.10f);
-            cam.fieldOfView = 60f;
-            cam.transform.rotation = Quaternion.Euler(60f, 0f, 0f);
-            cam.transform.position = new Vector3(0f, 0f, 0.5f) - cam.transform.forward * 12f;
-
-            var frames = new (double hour, float night)[]
-            {
-                (6.5, DayNight.NightDefault), (12.0, DayNight.NightDefault), (17.75, DayNight.NightDefault), (19.0, DayNight.NightDefault),
-                (0.0, DayNight.NightMin), (0.0, DayNight.NightDefault), (0.0, DayNight.NightMax), (5.5, DayNight.NightDefault),
-            };
-            const int FW = 800, FH = 450;
-            var sheet = new Texture2D(FW * 4, FH * 2, TextureFormat.RGB24, false);
-            var rt = new RenderTexture(FW, FH, 24) { antiAliasing = 4 };
-            cam.targetTexture = rt;
-            cam.Render();   // warm-up: the FIRST render draws before textures upload (white characters, a green rat)
-            for (int f = 0; f < frames.Length; f++)
-            {
-                DayNight.Apply(sun, DayNight.LookAt(frames[f].hour, frames[f].night), true);
-                cam.Render();
-                RenderTexture.active = rt;
-                var img = new Texture2D(FW, FH, TextureFormat.RGB24, false);
-                img.ReadPixels(new Rect(0, 0, FW, FH), 0, 0);
-                img.Apply();
-                int col = f % 4, row = 1 - f / 4;   // texture rows run bottom-up: first four frames on top
-                sheet.SetPixels(col * FW, row * FH, FW, FH, img.GetPixels());
-                Object.DestroyImmediate(img);
-            }
-            RenderTexture.active = null;
-            sheet.Apply();
-            File.WriteAllBytes(outPath, sheet.EncodeToPNG());
-            QualitySettings.SetQualityLevel(editorQuality, true);
-            Debug.Log($"[BL-344] light preview ({frames.Length} frames) -> {outPath}");
+            return sun;
 
             void Place(string path, Vector3 pos, float yaw)
             {
@@ -139,6 +129,34 @@ namespace Game.ClientEditor
                 // Props cast nothing by default in the game (Settings → Shadows: characters).
                 foreach (var r in go.GetComponentsInChildren<Renderer>()) r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             }
+        }
+
+        /// <summary>Up to eight 800 × 450 frames on a 4 × 2 sheet, first four on top. <paramref name="setup"/> poses
+        /// frame f before it is drawn. Renders once to warm up: the FIRST render draws before the textures upload
+        /// (white characters, a green rat).</summary>
+        private static void RenderSheet(Camera cam, string outPath, int count, System.Action<int> setup)
+        {
+            const int FW = 800, FH = 450;
+            var sheet = new Texture2D(FW * 4, FH * 2, TextureFormat.RGB24, false);
+            var rt = new RenderTexture(FW, FH, 24) { antiAliasing = 4 };
+            cam.targetTexture = rt;
+            setup(0);
+            cam.Render();
+            for (int f = 0; f < count; f++)
+            {
+                setup(f);
+                cam.Render();
+                RenderTexture.active = rt;
+                var img = new Texture2D(FW, FH, TextureFormat.RGB24, false);
+                img.ReadPixels(new Rect(0, 0, FW, FH), 0, 0);
+                img.Apply();
+                int col = f % 4, row = 1 - f / 4;   // texture rows run bottom-up: first four frames on top
+                sheet.SetPixels(col * FW, row * FH, FW, FH, img.GetPixels());
+                Object.DestroyImmediate(img);
+            }
+            RenderTexture.active = null;
+            sheet.Apply();
+            File.WriteAllBytes(outPath, sheet.EncodeToPNG());
         }
     }
 }
