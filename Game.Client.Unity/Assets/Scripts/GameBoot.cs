@@ -208,7 +208,7 @@ namespace Game.Client
             def.IsStackable || item == null ? def.Id : item.InstanceId.ToString();
 
         /// <summary>`BL-241` — the MINIMUM rarity this character picks up, per bag category, indexed by
-        /// <see cref="ItemCatalog.PickupCategories"/> (Gear, Use, Mats). Sent with the bag, for the same
+        /// <see cref="ItemCatalog.PickupCategories"/> (Gear, Use, Mats, Boxes). Sent with the bag, for the same
         /// reason the lock set is: the buttons live in the bag window.
         ///
         /// <para>⚠ This copy is for DRAWING the buttons only. The filter is a LOOT RULE the server

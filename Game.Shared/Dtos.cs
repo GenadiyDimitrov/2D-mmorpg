@@ -350,7 +350,7 @@ public static class ItemTag
 ///
 /// <para>`BL-241` — <paramref name="PickupMinRarity"/> rides along for the same reason: the pickup
 /// filter is a property of the bag, and its three buttons live in the bag window. THREE entries, in
-/// the fixed order <b>Gear, Use, Mats</b> (see <see cref="ItemCatalog.PickupCategories"/>), each an
+/// the fixed order <b>Gear, Use, Mats, Boxes</b> (see <see cref="ItemCatalog.PickupCategories"/>), each an
 /// <see cref="ItemRarity"/> — the MINIMUM rarity this character will accept from a drop.
 /// <see cref="ItemRarity.Common"/> (0) is the default and means "everything", which is why the whole
 /// array is optional: an older client reads the bag exactly as before.</para></summary>

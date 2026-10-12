@@ -182,7 +182,7 @@ namespace Game.Client
         private ItemCategory _bagTab = ItemCategory.All;   // which C8 category the list is filtered to
         private Button[] _bagTabButtons;
         private static readonly ItemCategory[] BagTabs =
-            { ItemCategory.All, ItemCategory.Gear, ItemCategory.Use, ItemCategory.Mats, ItemCategory.Quest };
+            { ItemCategory.All, ItemCategory.Gear, ItemCategory.Use, ItemCategory.Boxes, ItemCategory.Mats, ItemCategory.Quest };
         private Button _bagDelToggle;
 
         /// <summary>`BL-241` — the bag's [Pick] button. Its caption is the number of categories with a
@@ -1354,7 +1354,7 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_bagDelToggle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(112f, -chrome - 36f), new Vector2(104f, 32f));
 
-            _bagTabButtons = BuildCategoryTabs(inner, BagTabs, new Vector2(16f, -chrome - 72f), 80f,
+            _bagTabButtons = BuildCategoryTabs(inner, BagTabs, new Vector2(16f, -chrome - 72f), 68f,   // six tabs since 0.238.0 (Boxes): 6 x 70 from 16 ends at 436 of the collapsed 460
                                                cat => { _bagTab = cat; _bagRevision = -1; });
             // `BL-117` — the [ORDER] cycle. 🔴 IT WAS AT THE END OF THE TAB STRIP AND HUNG OUT OF THE
             // WINDOW while the bag was collapsed (owner, 2026-09-03: *"when in bag the equip is not
@@ -2500,7 +2500,8 @@ namespace Game.Client
                 var empty = UiKit.Label(_bagContent, _bagTab switch
                 {
                     ItemCategory.Gear  => "No gear in the bag.",
-                    ItemCategory.Use   => "No potions, scrolls or boxes.",
+                    ItemCategory.Use   => "No potions or scrolls.",
+                    ItemCategory.Boxes => "No boxes.",
                     ItemCategory.Mats  => "No materials.",
                     ItemCategory.Quest => "No quest items.",
                     _                  => "No items.",

@@ -32,7 +32,7 @@ namespace Game.Client
         private ItemCategory _warehouseTab = ItemCategory.All;
         private Button[] _warehouseTabButtons;
         private static readonly ItemCategory[] WarehouseTabs =
-            { ItemCategory.All, ItemCategory.Gear, ItemCategory.Use, ItemCategory.Mats };
+            { ItemCategory.All, ItemCategory.Gear, ItemCategory.Use, ItemCategory.Boxes, ItemCategory.Mats };
 
         private void BuildWarehouseWindow()
         {

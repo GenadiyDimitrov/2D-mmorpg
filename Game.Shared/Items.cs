@@ -937,7 +937,7 @@ public static class StackLimits
 /// <summary>The bag/vendor/keeper tabs (`BL-240` moved them here from the Unity client — see the note
 /// on <see cref="ItemCatalog.CategoryOf"/>). The numbering is the tab ORDER and is on the wire
 /// (`InstantSellCmd`), so it is append-only like every other id in this game.</summary>
-public enum ItemCategory { All = 0, Gear = 1, Use = 2, Mats = 3, Quest = 4 }
+public enum ItemCategory { All = 0, Gear = 1, Use = 2, Mats = 3, Quest = 4, Boxes = 5 }
 
 public static class ItemCatalog
 {
@@ -1708,15 +1708,16 @@ public static class ItemCatalog
                        + "class, then your first and second subclasses reaching level "
                        + $"{ThirdClassCatalog.SubclassLevel} — and the rest are bought from a class master."));
 
-        // `BL-339` — the two mentoring currencies. Materials (so they stack to 9,999 with no override) that
-        // nobody can buy, sell or trade; Tradable:false also keeps them out of the ACCOUNT keeper, while the
-        // private one takes them like any other item. No recipe names them, so "no break" holds by itself.
-        list.Add(new ItemDef(BondCertificate, "Bond Certificate", EquipSlot.Material,
+        // `BL-339` — the two mentoring currencies. QUEST ITEMS since 0.238.0 (owner, 2026-10-12: *"bond/grad certs
+        // to be as quest item - separate from main inventory"*): they live on the bag's Quest tab, one uncapped
+        // row, and every quest-item rule comes with it — no sell, trade, bin or keeper (either one). Nobody can
+        // buy them and no recipe names them, so "no break" holds by itself.
+        list.Add(new ItemDef(BondCertificate, "Bond Certificate", EquipSlot.QuestItem,
             ItemGrade.F, ItemRarity.Rare,
             Tradable: false, BuyPriceOverride: -1, SellPriceOverride: 0, Value: 0, NoAttributes: true,
             Description: "Earned through a mentor's bond: a mentee is paid 150 / 300 / 550 on reaching level "
                        + "20 / 40 / 76, the mentor 15 / 30 / 55. Spent at the mentor shop. Bound to this character."));
-        list.Add(new ItemDef(GraduationCertificate, "Graduation Certificate", EquipSlot.Material,
+        list.Add(new ItemDef(GraduationCertificate, "Graduation Certificate", EquipSlot.QuestItem,
             ItemGrade.F, ItemRarity.Epic,
             Tradable: false, BuyPriceOverride: -1, SellPriceOverride: 0, Value: 0, NoAttributes: true,
             Description: "A mentor's reward when a mentee graduates at level 76: 10, less 1 if you were not their "
@@ -3393,11 +3394,15 @@ public static class ItemCatalog
     // scrolls and boxes with it — a box is a tap-to-spend, not a material. Mats = the rest, which is
     // what "everything else" honestly is. Quest is a category so the bag can keep its own tab for it;
     // the vendor and the keeper never show it at all (B4).
+    // 0.238.0 — BOXES are their own tab (owner, 2026-10-12: *"Boxes to have their own type or tab"*): the Common
+    // drop boxes, rune boxes and selection boxes had buried the potions. A RECIPE BOOK is an EquipSlot.Box only
+    // so the open flow can teach it; it is not a box to a player and stays under Use.
 
     public static ItemCategory CategoryOf(ItemDef def) => def == null ? ItemCategory.Mats : def.Slot switch
     {
         EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield
             or EquipSlot.Jewel or EquipSlot.Rune          => ItemCategory.Gear,
+        EquipSlot.Box when def.TeachesRecipeId.Length == 0 => ItemCategory.Boxes,
         EquipSlot.Consumable or EquipSlot.Scroll
             or EquipSlot.Box                              => ItemCategory.Use,
         EquipSlot.QuestItem                               => ItemCategory.Quest,
@@ -3426,7 +3431,7 @@ public static class ItemCatalog
     /// wire (<c>InventoryUpdate.PickupMinRarity</c>) and drawn in the bag. Never reorder this: the
     /// array is positional on both sides and persisted by INDEX nowhere — but the wire is by index.</summary>
     public static readonly ItemCategory[] PickupCategories =
-        { ItemCategory.Gear, ItemCategory.Use, ItemCategory.Mats };
+        { ItemCategory.Gear, ItemCategory.Use, ItemCategory.Mats, ItemCategory.Boxes };   // Boxes APPENDED, 0.238.0
 
     /// <summary>Index of <paramref name="c"/> in <see cref="PickupCategories"/>, or -1 for a category
     /// that cannot be filtered (All, Quest).</summary>

@@ -25,6 +25,20 @@
 
 ---
 
+## §156 — 0.238.0: certificates on the Quest tab; Boxes get their own tab (2026-10-12)
+
+⚠ **Server restart + new APK.** Any character with a few boxes; a mentor or mentee with certificates for `156a`.
+
+- `156a` [ ] - Bond / Graduation Certificates show on the bag's **Quest** tab only (not All), one row however many.
+  They cannot be binned, sold, traded or put in either warehouse. ->
+- `156b` [ ] - The bag has a **Boxes** tab between Use and Mats: rune boxes, Common drop boxes, the Blessing Box are
+  there; potions and scrolls stay under Use; a recipe book stays under Use. All six tabs fit the closed bag. ->
+- `156c` [ ] - The vendor's sell side and the keeper show the Boxes tab too; Instant sale on Boxes sells only boxes of
+  that rarity. The vendor strip still fits beside Instant sale. ->
+- `156d` [ ] - Bag [Pick]: a fourth row, **Boxes**; set it to Rare and a Common box on the ground is left there. ->
+
+---
+
 ## §155 — 0.237.1: no Focus chat; `/stat hpreg|mpreg`, `/help <command>`, `/duration` (2026-10-10)
 
 ⚠ **Server restart only** (no APK). An Admin character; a Human warrior with Focus for `155a`.

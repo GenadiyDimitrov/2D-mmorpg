@@ -704,7 +704,7 @@ public class Entity
     /// Round Robin and Random hand an item to — it does not merely bin it after the fact. See
     /// <c>GameLoopService.PickupWanted</c>, which is the one place the question is asked.</para>
     ///
-    /// <para>Only the three categories in <see cref="ItemCatalog.PickupCategories"/> can be filtered;
+    /// <para>Only the categories in <see cref="ItemCatalog.PickupCategories"/> can be filtered;
     /// a missing entry means <see cref="ItemRarity.Common"/>, i.e. take everything. Persisted as a CSV
     /// of <c>Category:Rarity</c> pairs, like <see cref="LockedItems"/>.</para></summary>
     public Dictionary<ItemCategory, ItemRarity> PickupFilters { get; } = new();

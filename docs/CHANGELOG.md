@@ -24,7 +24,22 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-10 (latest) — 0.237.1: no Focus chat spam; `/stat hpreg|mpreg`, `/help <command>`, `/duration`
+## 2026-10-12 (latest) — 0.238.0: certificates on the Quest tab; Boxes get their own tab
+
+Server restart + **new APK** (the client draws the new tab).
+
+- **Bond and Graduation Certificates are QUEST ITEMS** (his: *"bond/grad certs to be as quest item - separate from
+  main inventory"*). They sit on the bag's Quest tab in one uncapped row, out of All. Every quest-item rule comes with
+  them: no sell, trade or bin, and **no keeper either** — the private warehouse no longer takes them (it did as
+  Materials). ⚠ A Material-era certificate already in a bag simply becomes a quest item; nothing to migrate.
+- **Boxes have their own tab** (his: *"Boxes to have their own type or tab"*): new `ItemCategory.Boxes` (= 5,
+  appended) in the bag (All / Gear / Use / Boxes / Mats / Quest), the vendor's generic strip and the keeper. Every
+  `EquipSlot.Box` except a RECIPE BOOK (a box only so it can be opened; it stays under Use). The pickup filter gets a
+  fourth row, Boxes (appended to `PickupCategories`; a filter set on Use before this no longer reaches boxes), and
+  Instant sale works on the tab ("Sold 3 Common boxes").
+- `BL-343` filed: category tabs + the order button in the TRADE window (his ask the same day).
+
+## 2026-10-10 — 0.237.1: no Focus chat spam; `/stat hpreg|mpreg`, `/help <command>`, `/duration`
 
 Server restart only — every change is server-side (an Admin's client already forwards any command).
 

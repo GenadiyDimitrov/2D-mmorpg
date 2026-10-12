@@ -6645,7 +6645,7 @@ static void CraftCost()
     var recipeOf = RecipeCatalog.All.Where(r => !r.IsGear).GroupBy(r => r.OutputId).ToDictionary(g => g.Key, g => g.First());
     Console.WriteLine("=== C5a: CONSUMABLE CENSUS — every Use-tab item: shelf price, sources, today's (placeholder) recipe ===");
     Console.WriteLine($"{"id",-28} {"rarity",-9} {"buy",9} {"value",9} {"sell",7} {"trd",3} {"shelf",5} {"mobs",5} {"boxes",5} | recipe (qty, unlock, inputs)");
-    foreach (var d in ItemCatalog.AllItems.Where(d => ItemCatalog.CategoryOf(d) == ItemCategory.Use).OrderBy(d => d.Slot).ThenBy(d => d.Id))
+    foreach (var d in ItemCatalog.AllItems.Where(d => ItemCatalog.CategoryOf(d) is ItemCategory.Use or ItemCategory.Boxes).OrderBy(d => d.Slot).ThenBy(d => d.Id))
     {
         string rc = recipeOf.TryGetValue(d.Id, out var r)
             ? $"x{r.OutputQty} L{r.UnlockLevel} {r.SuccessChance:P0} " + string.Join("+", r.Inputs.Select(i => $"{i.Qty} {i.ItemId.Replace("mat_", "")}"))

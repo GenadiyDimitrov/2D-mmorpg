@@ -285,6 +285,7 @@ namespace Game.Client
             ItemCategory.Gear => "Gear",
             ItemCategory.Use => "Use",
             ItemCategory.Mats => "Mats",
+            ItemCategory.Boxes => "Boxes",
             _ => "Quest",
         };
 
@@ -460,7 +461,7 @@ namespace Game.Client
             // ⚠ The category axis SKIPS `ItemCategory.All` (0). `CategoryOf` never returns it — it is the
             // name of the bag's "everything" tab, not a category anything is in — so leaving it in the
             // cycle would give a setting that silently matches nothing. -1 is this axis's "any".
-            if (which == 0) _dropFilterCat = _dropFilterCat >= 4 ? -1 : (_dropFilterCat < 1 ? 1 : _dropFilterCat + 1);
+            if (which == 0) _dropFilterCat = _dropFilterCat >= (int)ItemCategory.Boxes ? -1 : (_dropFilterCat < 1 ? 1 : _dropFilterCat + 1);
             else if (which == 1) _dropFilterRarity = _dropFilterRarity >= 5 ? -1 : _dropFilterRarity + 1;
             else _dropFilterGrade = _dropFilterGrade >= GradePenalty.GradeNames.Length - 1 ? -1 : _dropFilterGrade + 1;
             _dropShownItem = "";        // narrowing the tree means you are choosing again

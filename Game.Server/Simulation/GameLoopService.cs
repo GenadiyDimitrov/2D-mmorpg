@@ -21475,6 +21475,7 @@ public partial class GameLoopService : BackgroundService
         ItemCategory.Gear => "gear",
         ItemCategory.Use  => "consumables",
         ItemCategory.Mats => "materials",
+        ItemCategory.Boxes => "boxes",
         _                 => "items",
     };
 

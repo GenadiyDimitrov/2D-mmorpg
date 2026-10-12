@@ -50,7 +50,7 @@ namespace Game.Client
         private ItemCategory _vendorTab = ItemCategory.All;
         private Button[] _vendorTabButtons;
         private static readonly ItemCategory[] VendorTabs =
-            { ItemCategory.All, ItemCategory.Gear, ItemCategory.Use, ItemCategory.Mats };
+            { ItemCategory.All, ItemCategory.Gear, ItemCategory.Use, ItemCategory.Boxes, ItemCategory.Mats };
 
         // `BL-290` — A VENDOR'S TABS ARE ITS OWN, on the BUY side: the strip is rebuilt from the shop being
         // shown (`ShopDef.Tabs`), with "All" in front. The sell side and a shop with no tabs of its own keep
@@ -273,7 +273,7 @@ namespace Game.Client
             int count;
             if (tabs == null)
             {
-                width = 88f;
+                width = 72f;   // five generic tabs since 0.238.0 (Boxes); 18 + 5 x 74 + the order button stays left of Instant sale
                 count = VendorTabs.Length;
                 _vendorTabButtons = BuildCategoryTabs(_vendorInner, VendorTabs, at, width,
                                                       cat => { _vendorTab = cat; _vendorRevision = -1; });
@@ -562,6 +562,7 @@ namespace Game.Client
             ItemCategory.Gear => "gear",
             ItemCategory.Use  => "consumables",
             ItemCategory.Mats => "materials",
+            ItemCategory.Boxes => "boxes",
             _                 => "items",
         };
 

@@ -288,6 +288,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-339` | 🔴 | **Mentoring system** — **bond core (0.234.0) + the Aura/Knowledge split (0.235.0) + level-gated shelf-single Mentor Blessings and 5-rung Guidance (0.236.0) BUILT**. Left: the shop (prices open, yours) | systems |
 | `BL-340` | ❓ | **Potion Mastery** — a % passive on every warrior (HP potions) and every nuker (MP potions) from the 2nd class on, boosting the potion HoT only; measured (`--potmp`); waiting on your pick of ladder A or B | classes |
 | `BL-341` | ⏸ | **Skill vampirism + skill reflect** — a buff that vamps from any spell/physical skill (later-chronicle IG), only together with reflect on skill damage; "a lot later if at all" | combat |
+| `BL-343` | 🔵 | **Trade window: category tabs + order button** — the bag list in trade gets All/Gear/Use/Boxes/Mats and the shared `[ORDER]` cycle | ui |
 
 ---
 
@@ -2465,3 +2466,10 @@ that also works on skill damage, so vampirism has a counter on the same channel.
   for spell damage.
 
 Nothing to decide now.
+
+## `BL-343` 🔵 TRADE WINDOW: CATEGORY TABS + ORDER BUTTON (2026-10-12)
+
+Your ask: *"also trade aslo need filter by category and order buttons"*. The trade window's "your bag" list gets
+the same category tabs as the bag/vendor/keeper (All / Gear / Use / Boxes / Mats) and the shared `[ORDER]`
+button (A-Z / Z-A / Rarity / Rarity ^ / Type), so offering one item out of a full bag is not a scroll. Same
+shared rules (`ItemCatalog.InCategory`, `CompareByOrder`) so the four windows cannot drift. Client only.
