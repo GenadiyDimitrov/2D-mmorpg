@@ -110,8 +110,10 @@ namespace Game.Client
         }
 
         /// <summary>The god-mode ring. Gold, and deliberately translucent — it is a border around your
-        /// marker, not a repaint of it, so you can still read your own dot's normal colour through it.</summary>
-        private static readonly Color GodHalo = new Color(1.00f, 0.82f, 0.25f, 0.42f);
+        /// marker, not a repaint of it, so you can still read your own dot's normal colour through it.
+        /// 0.25 alpha, down from 0.42 — the owner, 2026-10-12: *"to visible and when mobs are swarming I cannot
+        /// see any of them because of the god sphere"*, asked for 0.2~0.3.</summary>
+        private static readonly Color GodHalo = new Color(1.00f, 0.82f, 0.25f, 0.25f);
 
         /// <summary>Raised when a frame referenced an entity we never saw spawn — the one symptom of a
         /// desynced delta stream. GameBoot answers it with a resync request.</summary>

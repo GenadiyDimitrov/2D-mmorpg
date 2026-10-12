@@ -174,6 +174,12 @@ namespace Game.Client
         private Transform _halo;
         private Renderer _haloRenderer;
 
+        // The model's half of the fade: each renderer's IMPORTED materials, kept while it wears FadeLit copies.
+        private readonly System.Collections.Generic.Dictionary<Renderer, Material[]> _modelSolid =
+            new System.Collections.Generic.Dictionary<Renderer, Material[]>();
+        private static Shader _fadeShader;
+        private static bool _fadeShaderSearched;
+
         public void Init(Color color)
         {
             _renderer = GetComponent<Renderer>();
@@ -246,6 +252,77 @@ namespace Game.Client
                 }
             }
             Apply();
+            ApplyModelFade();
+        }
+
+        /// <summary>The fade for a body that wears a MODEL — the sphere above is un-drawn then, so swapping its
+        /// material alone faded nothing you could see (the owner, after `BL-344`: *"/invis don't seem to work on
+        /// the models"*). Every renderer under the model, weapons included, swaps onto a FadeLit copy carrying its
+        /// own texture and colour; going solid puts the imported materials back. Safe to call any time: it also
+        /// picks up a weapon dressed while you were already faded.</summary>
+        private void ApplyModelFade()
+        {
+            if (_model == null) return;
+
+            if (_alpha >= 0.999f)
+            {
+                foreach (var kv in _modelSolid)
+                {
+                    if (kv.Key == null) continue;                 // a weapon swapped out while faded
+                    foreach (var m in kv.Key.sharedMaterials) if (m != null) Destroy(m);
+                    kv.Key.sharedMaterials = kv.Value;
+                }
+                _modelSolid.Clear();
+                return;
+            }
+
+            if (!_fadeShaderSearched)
+            {
+                _fadeShaderSearched = true;
+                _fadeShader = Resources.Load<Shader>("Shaders/FadeLit") ?? Shader.Find("L2Clone/FadeLit");
+                if (_fadeShader == null) Debug.LogError("[EntityView] FadeLit shader missing — models will not fade.");
+            }
+            if (_fadeShader == null) return;
+
+            var gone = new System.Collections.Generic.List<Renderer>();
+            foreach (var r in _modelSolid.Keys) if (r == null) gone.Add(r);
+            foreach (var r in gone) _modelSolid.Remove(r);
+
+            foreach (var r in _model.GetComponentsInChildren<Renderer>(true))
+            {
+                if (!_modelSolid.ContainsKey(r))
+                {
+                    var solid = r.sharedMaterials;
+                    var faded = new Material[solid.Length];
+                    for (int i = 0; i < solid.Length; i++) faded[i] = FadeCopy(solid[i]);
+                    _modelSolid[r] = solid;
+                    r.sharedMaterials = faded;
+                }
+                foreach (var m in r.sharedMaterials) if (m != null) m.SetFloat("_Alpha", _alpha);
+            }
+        }
+
+        private static Material FadeCopy(Material src)
+        {
+            var m = new Material(_fadeShader);
+            if (src == null) return m;
+            // URP Lit names these _BaseMap/_BaseColor, older imports _MainTex/_Color; mainTexture follows [MainTexture].
+            var tex = src.HasProperty("_BaseMap") ? src.GetTexture("_BaseMap") : src.mainTexture;
+            if (tex != null)
+            {
+                m.SetTexture("_BaseMap", tex);
+                string st = src.HasProperty("_BaseMap") ? "_BaseMap" : "_MainTex";
+                if (src.HasProperty(st))
+                {
+                    m.SetTextureScale("_BaseMap", src.GetTextureScale(st));
+                    m.SetTextureOffset("_BaseMap", src.GetTextureOffset(st));
+                }
+            }
+            var color = src.HasProperty("_BaseColor") ? src.GetColor("_BaseColor")
+                      : src.HasProperty("_Color") ? src.GetColor("_Color") : Color.white;
+            color.a = 1f;
+            m.SetColor("_BaseColor", color);
+            return m;
         }
 
         /// <summary>A translucent shell around the marker — the god-mode ring (`BL-82`). Built on first
@@ -688,12 +765,9 @@ namespace Game.Client
             // thin limb, so the root's collider stays the only one.
             foreach (var extra in model.GetComponentsInChildren<Collider>()) Destroy(extra);
 
-            // Un-draw the sphere, keep everything else. ⚠ KNOWN GAP: SetOpacity (`BL-82`'s stealth
-            // fade) works by swapping THIS renderer's material, so a self marker wearing a model does
-            // not fade when hiding. The god halo still works (it is its own child sphere). Fading a
-            // model means its imported materials have to support transparency, which is an art
-            // decision and cannot be settled from here — so it is left visibly owed rather than
-            // half-solved. Stealth still functions; only its self-visual cue is missing.
+            // Un-draw the sphere, keep everything else. The stealth fade (`BL-82`) reaches the model
+            // through ApplyModelFade, which swaps its renderers onto FadeLit copies; the god halo is its
+            // own child sphere and needs nothing.
             if (_renderer != null) _renderer.enabled = false;
 
             _animator = model.GetComponentInChildren<Animator>();
@@ -715,6 +789,7 @@ namespace Game.Client
                 // camera is looking at.
                 _animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
             }
+            ApplyModelFade();
         }
 
         /// <summary>Re-seat the model on the ground after the root's scale changes. See AttachModel.</summary>
@@ -747,6 +822,7 @@ namespace Game.Client
             if (_animator == null) return;
             HeldWeapons.Dress(_animator, _model, weapon, magic, shield, _held);
             if (_hasAttackStyle) _animator.SetInteger("AttackStyle", HeldWeapons.StyleFor(weapon, magic));
+            ApplyModelFade();   // a weapon put in a faded hand fades with it
         }
 
         /// <summary>Show/hide the casting pose. Driven by <c>MobCastInfo</c> and the self cast bar —
