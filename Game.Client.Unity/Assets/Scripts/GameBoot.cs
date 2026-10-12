@@ -1245,6 +1245,9 @@ namespace Game.Client
                 new GameObject("BiomeGround").AddComponent<BiomeGround>();
             }
 
+            // BL-344 step 5: the sun turns with the game clock (cosmetic; the server keeps its own day/night).
+            if (FindAnyObjectByType<DayNight>() == null) new GameObject("DayNight").AddComponent<DayNight>();
+
             // HELD, not looked up on demand: FindAnyObjectByType skips INACTIVE objects, so once the
             // overlay was switched off the next lookup returned null and it could never be switched
             // back on. A toggle that only works in one direction is worse than no toggle.

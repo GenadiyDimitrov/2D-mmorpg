@@ -18,7 +18,7 @@ bodies (deleted, git keeps them) and the fantasy ones kept.
 | 2 | Character animation (`BL-102`) | ✅ **0.244.0.** Your `UAL1_Standard.fbx` (Quaternius Universal Animation Library, Standard, CC0). Picks: idle = `Idle_Loop`, walk = `Walk_Loop`, run = `Jog_Fwd_Loop`, attack = `Sword_Attack`, death = `Death01`, cast = `Spell_Simple_Idle_Loop`. One body and one clip set for everyone; bows and staves still swing the sword take until step 7. APK 47.3 → 47.4 MB: only the six used clips ship. |
 | 3 | Ground, vertex-coloured (your Q2 = B) | ✅ **0.245.0.** Biome per city territory, blended by distance (`Game.Shared/Biomes.cs`), streamed 2000-unit chunks (`BiomeGround.cs`). Your picks: level band on the field RIMS, grid DELETED, FLAT, biomes as proposed **+ lava** (Redhorn Highlands). Old plane + grid deleted (they covered only a quarter of the world). |
 | 4 | Props: trees, rocks, grass clumps (your Q2's C, own step) | ✅ **0.246.0** scatter (`PropScatter.cs`, §0.3) + **0.247.0** real models from the nature pack (§0.2): 19 picks over 9 kinds, twisted trees in the marsh, flower patches in the meadow. APK 47.5 → 49.7 MB. ❓ judge in a playtest: density, tree size, trees hiding you in a wood (§0.3 last point), frame rate on High. |
-| 5 | Light and time of day | |
+| 5 | Light and time of day | ✅ **0.248.0.** Lit ground (`LitVertexColor.shader`), characters cast shadows, the directional light turned by `GameClock` (`DayNight.cs`, §0.4). Your pick: night 0.30 (*"0.12 is to dark, 0.2 as well"*), plus **Settings → Night brightness** 0.10-0.60 for your *"a bar or gamma as other games"*. Settings → Shadows: characters (default) / + trees / off. ❓ judge on the phone: frame rate with trees casting, how night reads outdoors. |
 | 6 | Skill FX archetypes | |
 | 7 | Weapons in hand (`BL-103`, protocol bump) | |
 | 8 | Camera: horizontal rotation + limited vertical tilt (your Q4 "later") | top-down stays the default until then |
@@ -108,6 +108,23 @@ has about 70-80 textured models (trees incl. pine, birch and dead/dry trees, roc
 - ❓ **One thing to judge in a playtest:** from straight overhead a tree hides whatever walks under it. Camps, roads
   and towns are kept clear for that reason, but walking through a wood you will lose sight of yourself for a moment.
   If that bothers you, the fix is to fade the trees near your character; say so and I'll add it.
+
+### 0.4 Step 5: how the light works (built 0.248.0)
+
+- **One directional light, keyed over 24 game hours** (`DayNight.Keys`): night (moon, blue) to 04:30, purple twilight
+  at 05:30, warm sun at 06:30, white day 08:30-15:30, warm again at 17:30, twilight 18:30, night from 19:30. Blended
+  linearly between keys. The sun rises in the east, stands in the south at noon (shadows point up the screen), sets in
+  the west, never lower than 25°; the moon crosses at 50°. The swap between them happens in the dim twilight hours.
+- **Brightness:** midday ≈ the old unlit ground (sun 0.8 + ambient 0.33). Night = `NightLevel` of that, half moon and
+  half blue ambient. ⚠ The keys are LINEAR light; Unity reads a light's colour and the flat ambient as sRGB, so they
+  go in as `.gamma` (the first preview had every dim scene at a third of the intended brightness for that reason).
+- **Shadows:** hard, one cascade (the phone's URP asset). The range follows the camera: the distance to the farthest
+  ground corner on screen, so a zoom-out never cuts shadows off mid-screen. Characters cast; props cast only on
+  "characters + trees"; the ground and placeholders never cast.
+- **Not lit, on purpose:** name plates, UI, zone colours, decals, the move marker and the fallback spheres.
+- **Preview:** `ModelSetup.PreviewLight` (batchmode WITHOUT `-nographics`, `-previewOut <png>`): real biome ground beside
+  Brackenford, two players, a rat, props; dawn / noon / dusk / twilight, then night at the slider's min / default / max
+  and before dawn. ⚠ It renders once to warm up: the first render draws before the textures upload.
 
 ## 1. What the client draws today
 

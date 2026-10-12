@@ -321,7 +321,8 @@ namespace Game.Client
                 {
                     var rp = new RenderParams(v.Materials[sub])
                     {
-                        shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off,
+                        shadowCastingMode = DayNight.ShadowQuality == DayNight.Shadows.All   // step 5: trees cast only on the top setting
+                            ? UnityEngine.Rendering.ShadowCastingMode.On : UnityEngine.Rendering.ShadowCastingMode.Off,
                         receiveShadows = false,
                         worldBounds = new Bounds(WorldMapper.ToUnity(centre.x, centre.y), Vector3.one * (range * WorldMapper.Scale * 2f + 20f)),
                     };
@@ -432,7 +433,7 @@ namespace Game.Client
             // runtime is invisible to that check, so the instanced variant would be missing on the phone.
             var shipped = Resources.Load<Material>("Props/PropPlaceholder");
             if (shipped != null) return _placeholderMaterial = shipped;
-            var shader = Resources.Load<Shader>("Shaders/UnlitVertexColor") ?? Shader.Find("L2Clone/UnlitVertexColor") ?? Shader.Find("Sprites/Default");
+            var shader = Resources.Load<Shader>("Shaders/LitVertexColor") ?? Shader.Find("L2Clone/LitVertexColor") ?? Shader.Find("Sprites/Default");
             _placeholderMaterial = new Material(shader) { enableInstancing = true };
             return _placeholderMaterial;
         }

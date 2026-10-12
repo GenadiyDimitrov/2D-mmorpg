@@ -28,7 +28,26 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-12 (latest) — 0.247.0: real trees, rocks, grass and flowers (`BL-344` step 4 done)
+## 2026-10-12 (latest) — 0.248.0: light, shadows and a day/night cycle (`BL-344` step 5)
+
+**Client only, new APK.** The server change is the version label. No `game.db` delete.
+
+- **The sun follows the game clock** (the one the server already syncs, a full game day = 4 real hours): a warm, low
+  sun at dawn (around 06:30) and dusk (around 17:45), a white one at midday that rises in the east and sets in the west,
+  a purple twilight, and a **dim blue moonlit night** from about 19:30 to 04:30. Cosmetic only: what spawns at night is
+  still the server's own 06:00-18:00 rule.
+- **The ground is lit now**, so it darkens with the evening and takes shadows. Midday looks like the ground did before.
+- **Shadows: Settings → Shadows: characters / characters + trees / off.** Characters is the default (one cheap shadow
+  map). Trees and rocks casting too is the top step, because it doubles the scenery's drawing work; try it on your
+  phone and see if the frame rate holds.
+- **Settings → Night brightness** (your ask: *"a bar or gamma as other games"*): 0.10-0.60, **default 0.30**, your pick
+  from the preview (*"0.12 is to dark, 0.2 as well"*). The number is the ground's brightness at midnight as a fraction of
+  noon in linear light, which is why 0.30 looks like about 60% on screen.
+- Name plates, the UI, the zone colours and the ground circles are not lit, so they read the same at night.
+- Checked with a headless render (`ModelSetup.PreviewLight`: dawn, noon, dusk, twilight, three nights, before dawn).
+  NOT checked on a phone yet.
+
+## 2026-10-12 — 0.247.0: real trees, rocks, grass and flowers (`BL-344` step 4 done)
 
 **Client only, new APK.** The server change is the version label. No `game.db` delete.
 

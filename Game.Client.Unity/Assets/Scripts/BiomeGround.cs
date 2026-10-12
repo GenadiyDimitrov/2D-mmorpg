@@ -50,7 +50,7 @@ namespace Game.Client
         private readonly List<Vector2Int> _wanted = new List<Vector2Int>();
         private readonly List<Vector2Int> _drop = new List<Vector2Int>();
         private readonly Color[] _colours = new Color[Side * Side];
-        private Vector3[] _verts;
+        private Vector3[] _verts, _normals;
         private int[] _tris;
         private Material _material;
         private bool _linear;
@@ -162,6 +162,7 @@ namespace Game.Client
         {
             var mesh = new Mesh { name = "GroundChunk" };
             mesh.vertices = _verts;
+            mesh.normals = _normals;   // all straight up: the ground is flat and lit (step 5)
             mesh.triangles = _tris;
             mesh.colors = _colours;
             mesh.RecalculateBounds();
@@ -172,7 +173,7 @@ namespace Game.Client
             var mr = go.AddComponent<MeshRenderer>();
             mr.sharedMaterial = _material;
             mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            mr.receiveShadows = false;
+            mr.receiveShadows = true;    // the characters' shadows land here (step 5)
             return new Chunk { Go = go, Mesh = mesh };
         }
 
@@ -185,6 +186,8 @@ namespace Game.Client
             for (int j = 0; j < Side; j++)
                 for (int i = 0; i < Side; i++)
                     _verts[j * Side + i] = new Vector3(i * s, 0f, -j * s);
+            _normals = new Vector3[Side * Side];
+            for (int k = 0; k < _normals.Length; k++) _normals[k] = Vector3.up;
 
             _tris = new int[Quads * Quads * 6];
             int t = 0;
@@ -336,8 +339,8 @@ namespace Game.Client
         /// always shipped) is the fallback, so a missing shader degrades instead of going magenta.</summary>
         private static Material CreateMaterial()
         {
-            var shader = Resources.Load<Shader>("Shaders/UnlitVertexColor")
-                         ?? Shader.Find("L2Clone/UnlitVertexColor")
+            var shader = Resources.Load<Shader>("Shaders/LitVertexColor")
+                         ?? Shader.Find("L2Clone/LitVertexColor")
                          ?? Shader.Find("Sprites/Default");
             if (shader == null)
             {

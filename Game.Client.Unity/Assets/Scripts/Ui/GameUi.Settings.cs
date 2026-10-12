@@ -83,6 +83,7 @@ namespace Game.Client
             _showDamageNumbers = PlayerPrefs.GetInt(PrefDamage, 1) == 1;
             _showTickLines = PlayerPrefs.GetInt(PrefTicks, 0) == 1;
             PropScatter.LoadQuality();   // so the Settings label is right before the ground exists
+            DayNight.LoadPrefs();
 
             // Applied here rather than only written on tap: the preference was being saved and then
             // ignored on the next launch, so "zone colours off" never survived a restart.
@@ -105,7 +106,7 @@ namespace Game.Client
             // must never be scaled by the setting it controls.
             _settingsPanel = UiKit.PanelBox(_setupRoot, "Settings");
             UiKit.Place(_settingsPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                        Vector2.zero, new Vector2(640f, 650f));   // grown for the camera rows, the bar-shape row, then the bar size
+                        Vector2.zero, new Vector2(640f, 738f));   // grown for the camera rows, the bar-shape row, the bar size, then shadows + night
             var inner = _settingsPanel.GetChild(0);
             float chrome = UiKit.WindowChrome(_settingsPanel, "Settings", () => CloseWindow(_settingsPanel));
 
@@ -252,6 +253,26 @@ namespace Game.Client
             _sceneryToggle = scenery;
             y -= 48f;
 
+            // `BL-344` step 5 — shadows: off / characters / characters + trees. Characters are one cheap shadow map;
+            // trees double the scenery's vertex work, so they are the top step and not the default.
+            var shadows = UiKit.TextButton(inner, "", () =>
+            {
+                DayNight.SetShadows((DayNight.Shadows)(((int)DayNight.ShadowQuality + 1) % 3));
+                RefreshSettingsLabels();
+            }, 15f);
+            UiKit.Place(UiKit.Rect(shadows.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(18f, y), new Vector2(260f, 38f));
+            _shadowToggle = shadows;
+            y -= 48f;
+
+            // `BL-344` step 5 — the owner asked for "a bar or gamma as other games": how bright night is, per player.
+            Row(inner, ref y, UiKit.SliderRow(inner, "Night brightness", DayNight.NightMin, DayNight.NightMax,
+                DayNight.NightLevel, "0.00", v =>
+                {
+                    DayNight.NightLevel = v;
+                    PlayerPrefs.SetFloat(DayNight.NightPref, v);
+                }));
+
             // `BL-269` — extra skill squares, 0/6/12/18/24: *"need option to add more 6/12/18/24 skill slots
             // (half of or full the 2nd and 3rd skill bars)"*. A LOOK setting like the rest of this column,
             // so it lives on the phone; what the server stores is the same 60-slot bar either way.
@@ -274,7 +295,7 @@ namespace Game.Client
             {
                 foreach (var key in new[] { PrefPitch, PrefYaw, PrefOrtho, PrefOrthoSize,
                                             PrefEntity, PrefPlate, PrefUiScale, PrefBarScale, PrefDamage,
-                                            PrefZones, PrefTicks, PrefBarShape, PrefExtraBars, PropScatter.Pref })
+                                            PrefZones, PrefTicks, PrefBarShape, PrefExtraBars, PropScatter.Pref, DayNight.ShadowPref, DayNight.NightPref })
                     PlayerPrefs.DeleteKey(key);
                 PlayerPrefs.Save();
                 // The two sizes come back at once — they are the ones that can make the game unusable.
@@ -291,7 +312,7 @@ namespace Game.Client
             _settingsPanel.gameObject.SetActive(false);
         }
 
-        private Button _damageToggle, _zoneToggle, _projectionToggle, _modelToggle, _tickToggle, _sceneryToggle;
+        private Button _damageToggle, _zoneToggle, _projectionToggle, _modelToggle, _tickToggle, _sceneryToggle, _shadowToggle;
         private Button _extraSlotsToggle, _barShapeToggle;   // `BL-269`, `BL-299`
         private Slider _uiScaleSlider, _barScaleSlider;
 
@@ -319,6 +340,7 @@ namespace Game.Client
                 EntityManager.ModelsEnabled ? "3D models: ON" : "3D models: off (faster)");
             UiKit.SetButtonText(_extraSlotsToggle, ExtraSlotsLabel);
             UiKit.SetButtonText(_sceneryToggle, "Scenery: " + PropScatter.Quality);
+            UiKit.SetButtonText(_shadowToggle, DayNight.ShadowLabel);
             UiKit.SetButtonText(_barShapeToggle, BarShapeLabel);
         }
 
