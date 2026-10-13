@@ -1192,6 +1192,16 @@ namespace Game.Client
             // Typing an IP and a username on a phone keyboard every launch is its own punishment.
             // The ADDRESS is remembered either way — it is not a credential, and re-typing an IP is
             // the punishment this line exists to end. Only the account is governed by the checkbox.
+            // `BL-345` — the default comes from Resources/server.txt (first non-#, non-blank line), so the
+            // public address is one edited file and a fresh install on a friend's phone lands on it.
+            if (Resources.Load<TextAsset>("server") is TextAsset serverFile)
+                foreach (var raw in serverFile.text.Split('\n'))
+                {
+                    string line = raw.Trim();
+                    if (line.Length == 0 || line.StartsWith("#")) continue;
+                    ServerUrl = line;
+                    break;
+                }
             ServerUrl = PlayerPrefs.GetString(PrefUrl, ServerUrl);
             RememberLogin = PlayerPrefs.GetInt(PrefRemember, 1) == 1;
             // `BL-93` — before ANYTHING spawns. Read late and the first creatures into view would be

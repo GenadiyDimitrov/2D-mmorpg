@@ -2340,7 +2340,7 @@ Check("release from jail teleports to the STARTING town (not the nearest)",
 
 // ADMINS ARE IMMUNE. `/jail admin` used to jail the OWNER in their own jail.
 gm.SystemChat.Clear();
-await gm.Hub.SendAsync("AdminCommand", "jail", "Admin 60");
+await gm.Hub.SendAsync("AdminCommand", "jail", "Owner 60");
 await gm.Settle();
 Check("an admin can't jail themselves (or any other admin)",
       !gm.SystemChat.Any(s => s.Contains("jailed for")),

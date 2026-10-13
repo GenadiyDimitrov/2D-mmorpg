@@ -1,8 +1,8 @@
 # Hosting the server for friends (docs/guides/Hosting.md)
 
 `BL-345`. Your question: *can the server run on an Oracle Always Free Linux machine?* **Yes.** Below is where it runs,
-what it costs, the setup step by step, how friends get in, and the code that has to change first (part 4: none of it is
-built yet).
+what it costs, the setup step by step, how friends get in, and the code that had to change first (part 4: built in
+0.258.0, except the package id and signing key).
 
 ---
 
@@ -13,8 +13,8 @@ built yet).
 | **Where** | An Oracle Cloud **Always Free** ARM machine (Ampere A1), Ubuntu 24.04. |
 | **Cost** | **€0 a month.** Oracle asks for a card at sign-up (identity check, not charged). The address is a free **DuckDNS** name. |
 | **What friends do** | Open `https://<yourname>.duckdns.org` on the phone → tap *Download* → install → the login screen already holds the address → register → play. |
-| **What you do per update** | `pwsh tools/publish.ps1 -Apk`, copy one zip to the box, run `./update.sh`. About two minutes. |
-| **Before friends can join** | Six code changes (part 4). They are small, but two of them are security holes on a public server. |
+| **What you do per update** | `pwsh tools/publish.ps1 -Apk`, copy the zip and the APK to the box, run four lines (step 7). About two minutes. |
+| **Before friends can join** | Built in 0.258.0 (part 4). Still owed: the Android package id and signing key. |
 
 ### Why it fits
 The server is plain .NET with SQLite: no Windows-only parts, no external database. The published build **already
@@ -82,7 +82,10 @@ sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
 sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
 sudo netfilter-persistent save
 mkdir -p ~/game ~/game/apk ~/backups
+curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 10.0 --runtime aspnetcore
 ```
+The last line installs the .NET runtime the same way you did in Termux, into `~/.dotnet`. The server then runs as
+`~/.dotnet/dotnet Game.Server.dll`, from the same zip you already publish for the phone.
 The two `iptables` lines matter: Oracle's Ubuntu has a **second firewall inside the machine** that blocks everything
 except SSH. Forgetting it is the classic "I opened the port and it still doesn't connect".
 
@@ -112,9 +115,8 @@ After=network.target
 [Service]
 User=ubuntu
 WorkingDirectory=/home/ubuntu/game
-ExecStart=/home/ubuntu/game/Game.Server
+ExecStart=/home/ubuntu/.dotnet/dotnet /home/ubuntu/game/Game.Server.dll
 Environment=ASPNETCORE_URLS=http://127.0.0.1:5238
-Environment=GAME_PUBLIC=1
 Restart=always
 RestartSec=5
 TimeoutStopSec=30
@@ -122,40 +124,52 @@ TimeoutStopSec=30
 [Install]
 WantedBy=multi-user.target
 ```
-`127.0.0.1` means only Caddy can reach the game port; the world reaches it through HTTPS. `GAME_PUBLIC=1` switches off
-the dev conveniences that are dangerous on a public server (part 4, items 1 and 2).
+`127.0.0.1` means only Caddy can reach the game port; the world reaches it through HTTPS. `Restart=always` is also what
+brings the server back after `/server reboot`: under systemd it just exits and lets the service start it again.
 ```
 sudo systemctl daemon-reload
 sudo systemctl enable game
 ```
 
 ### Step 6: the first install
-On your PC:
+On your PC, first put your address in `Game.Client.Unity/Assets/Resources/server.txt`
+(`https://<yourname>.duckdns.org/game`), so the APK your friends download already holds it. Then:
 ```
-pwsh tools/publish.ps1 -Apk -Linux
-scp -i $HOME\.ssh\oracle.key builds\Game.Server-<version>-linux-arm64.zip builds\L2Clone-<version>.apk ubuntu@<IP>:~
+pwsh tools/publish.ps1 -Apk
+scp -i $HOME\.ssh\oracle.key builds\Game.Server-<version>.zip builds\L2Clone-<version>.apk ubuntu@<IP>:~
 ```
-On the server:
+On the server, **write `owner.txt` BEFORE the first start**. It names your account and your character:
 ```
-unzip -o ~/Game.Server-*-linux-arm64.zip -d ~/game && chmod +x ~/game/Game.Server
+unzip -o ~/Game.Server-*.zip -d ~/game
 mv ~/L2Clone-*.apk ~/game/apk/
-echo "<your character name>" > ~/game/owner.txt
+echo "genaacc/Gena" > ~/game/owner.txt
 sudo systemctl start game
 journalctl -u game -f
 ```
-The last line shows the server's console. Wait for `L2Clone server vX.Y.Z starting.`, then Ctrl+C (the server keeps
-running). Open `https://<yourname>.duckdns.org` in the phone's browser: you should see *Game server vX.Y.Z*.
+(Use your own `account/Character` in place of `genaacc/Gena`.) The last line shows the server's console. Wait for
+`L2Clone server vX.Y.Z starting.` and the line `Owner: genaacc/Gena · registration CLOSED`, then Ctrl+C (the server
+keeps running). Open `https://<yourname>.duckdns.org` in the phone's browser: you should see *Game server vX.Y.Z*.
 
-⚠ **Register YOUR account first** and create your character with the name you wrote in `owner.txt`. That makes you Owner.
+**Then, on the phone:**
+1. Register **that account** and create **that character**. Until you do, the server refuses every other registration
+   and character ("The server is not open yet."), so nobody can get in ahead of you. If you skip writing `owner.txt`,
+   the server writes `admin/Owner` by itself, and then a stranger who registers `admin` before you would be Owner.
+2. Log in as the Owner, set the rates or whatever else you want, then type **`/registration open`**. Now friends can
+   register. **`/registration close`** shuts the door again (no new accounts and no new characters), and the setting
+   survives restarts.
+3. To make a friend staff: `/role <name> admin`.
 
 ### Step 7: updating to a new version (each release, ~2 min)
-On the PC: `pwsh tools/publish.ps1 -Apk -Linux` and the same `scp` line. On the server, one command:
+On the PC: `pwsh tools/publish.ps1 -Apk` and the same `scp` line. On the server:
 ```
-~/game/update.sh
+sudo systemctl stop game
+cp ~/game/game.db ~/backups/game-before-update.db
+unzip -o ~/Game.Server-*.zip -d ~/game && rm ~/Game.Server-*.zip
+mv ~/L2Clone-*.apk ~/game/apk/ && sudo systemctl start game
 ```
-It is shipped inside the zip (part 4, item 5). It stops the server, which saves everyone online, backs up `game.db`,
-unpacks the new build over the old one, moves the APK into place and starts the server again. `game.db` and `owner.txt`
-are never in the zip, so nothing of yours is overwritten.
+Stopping saves everyone online first. `game.db`, `owner.txt` and `registration.txt` are never in the zip, so unpacking
+over the old build overwrites nothing of yours. `/apk` serves the newest file in `~/game/apk/`. To serve one from
+elsewhere, write its path (or a folder) on one line in `~/game/apk-path.txt`.
 
 ⚠ **A version whose CHANGELOG says "delete `game.db`" wipes everyone's characters**, friends included. Pre-release that is
 fine, but tell them first. The delete is `rm ~/game/game.db*` between stop and start.
@@ -184,7 +198,7 @@ scp -i $HOME\.ssh\oracle.key "ubuntu@<IP>:~/backups/game-*.db" G:\Backups\game\
 1. You send them one link: `https://<yourname>.duckdns.org`.
 2. On the phone they tap **Download the Android client**. Android asks to *allow installing from this browser*; they say
    yes once, then *Install*.
-3. The login screen already holds the server address (part 4, item 4). *Register* → pick a name and password → play.
+3. The login screen already holds the server address (`server.txt`, step 6). Once you have typed `/registration open`, *Register* → pick a name and password → play.
 4. **When you release a new version**, the server refuses the old APK with its version message. They open the same link
    and install over the top; their characters are on the server, not the phone.
 
@@ -193,25 +207,32 @@ that is always up to date. Google Play needs a $25 developer account and a revie
 
 ---
 
-## 4. What has to change in the code first (owed, not built)
+## 4. What had to change in the code (built in 0.258.0)
 
-| # | Change | Why | Side |
-|---|---|---|---|
-| 1 | **`owner.txt` is never auto-created when `GAME_PUBLIC=1`.** `ServerControl.EnsureOwnerFileForDev` writes a file naming **`Owner`**, so the first stranger to create a character called *Owner* would get the highest rank. Its own comment already says *"delete before going public"*; the env switch keeps it for your phone/PC loop. | security | server |
-| 2 | **"The first account's first character is born Admin" is off when `GAME_PUBLIC=1`** (`PersistenceService.CreateCharacterAsync`). On a fresh public server, whoever registers first gets Admin. With `owner.txt` written by hand, you do not need it. | security | server |
-| 3 | **A save on every stop, not only on `/shutdown`.** Today `AutoSaveAll` runs on the 60 s timer and on the admin countdown. `systemctl stop`, an update or an Oracle maintenance reboot loses up to a minute of everyone's progress. It should also save when the host asks the server to stop. A related fix: under a service, `/reboot` should only exit with its code and let systemd start it again. Today it launches a second copy itself, which systemd then kills. | data | server |
-| 4 | **The login screen's default address becomes yours** (`GameBoot.ServerUrl` + the placeholder in `GameUi.cs`). The URL field stays, so you can still point at your PC or phone. HTTPS needs nothing else from the client. The SignalR client already speaks `https://`/`wss://`, but **this is untested on the phone**, so the first test is exactly that. The `usesCleartextTraffic` line stays for the LAN dev server. | friends | client → **new APK** |
-| 5 | **`publish.ps1 -Linux`**: a *self-contained* `linux-arm64` build (`Game.Server-<ver>-linux-arm64.zip`), which carries its own .NET so the box needs no runtime installed and never gets one out of step. `update.sh` ships inside it. | ease | tools |
-| 6 | **`/apk` serves the newest `apk/*.apk` next to the server.** Today it looks in `../Game.Client.Unity/builds/`, which exists only in the repo. | friends | server |
+| # | Change | Why |
+|---|---|---|
+| 1 | **`owner.txt` is `account/Character`, and a fresh server admits only that pair.** Until that account holds that character, every other registration and character creation is refused. Once it exists, this step is skipped on every start. A missing file is written as `admin/Owner` (your dev loop), which is why step 6 writes the real one by hand first. | security |
+| 2 | **No character is born Admin any more.** Owner comes from `owner.txt`, every other rank from `/role`. | security |
+| 3 | **Reserved names**: no account or character may contain admin, owner, moderator, gamemaster, staff, support, system, server, official or developer, or be just GM / Mod / Dev / Sys / Root / God / Helper / Host / Operator / Sysop / Console. The `owner.txt` pair is exempt. | security |
+| 4 | **`/registration [open\|close]`** (Admin). Closed = no new accounts and no new characters, the owner pair excepted. Remembered in `registration.txt` beside `game.db`. A release server with no file starts **closed**. | security |
+| 5 | **Every stop saves everyone** (Ctrl+C, `systemctl stop`, an update, a host reboot), not only `/server shutdown`. Under systemd, `/server reboot` just exits and `Restart=always` brings it back. | data |
+| 6 | **`/apk`** serves the newest `apk/*.apk` beside the server, or what `apk-path.txt` names. | friends |
+| 7 | **The client's default address** comes from `Game.Client.Unity/Assets/Resources/server.txt`. The URL field stays. | friends |
 
-**Two smaller ones, worth doing in the same pass:**
-- **Registration switch**: an Owner command `/registration open|closed`, remembered in a file. Open while your friends
-  sign up, closed after, and strangers who find the address cannot make accounts. No client change.
-- **The Android package id and signing key**, set once before friends install. The APK is still
-  `com.UnityTechnologies.com.unity.template.urpblank` signed with your PC's debug key. A *later* change of either one
-  means every friend must uninstall, which deletes nothing on the server but is a nuisance. The package id is invisible
-  to players and has nothing to do with the game's final name, so a neutral one like `com.gdimitrov.mmo` is fine. The
-  signing key is a file you keep backed up forever. Lose it and nobody can update; they can only reinstall.
+The self-contained Linux build planned here was dropped. You install .NET on the box the same way as in Termux
+(step 4) and run the same zip.
+
+On hiding the server address from players: it would not protect anything. Anyone can unpack the APK or watch the phone's
+traffic and read it in a minute. The protection is on the server: the owner bootstrap, closed registration, passwords
+and role checks.
+
+**Still owed, before friends install: the Android package id and signing key.** The APK is still
+`com.UnityTechnologies.com.unity.template.urpblank`, signed with a debug key Unity generated on your PC. Android installs
+an update only over a copy signed with the **same key**. If that PC dies, or you build elsewhere, the key changes and
+every friend must uninstall and reinstall. Their characters are safe on the server, but it is a nuisance. The package
+id works the same way: change it later and the phone treats the APK as a different app. The fix is one-time: a neutral
+package id (`com.gdimitrov.mmo`), and a key file of your own with a password. You back that file up forever. Lose it and
+nobody can update any more; they can only reinstall.
 
 **What is already fine and needs nothing:** passwords are stored salted and hashed (PBKDF2), not in plain text. HTTPS
 protects them on the wire once Caddy is in front. Admin commands are gated by the character's role on the server. The
@@ -220,7 +241,8 @@ version check refuses stale clients. `game.db` runs in WAL mode, so the nightly 
 ---
 
 ## 5. Order of work
-1. The code changes in part 4 (one version; client change, so a new APK).
+1. ✅ The code changes in part 4 (0.258.0). Owed: the package id and signing key.
 2. You do steps 1-8 above. I cannot do them for you: they need your Oracle login.
 3. **First test, on your own phone over mobile data (Wi-Fi off):** connect to `https://<yourname>.duckdns.org/game`,
-   register, play a minute, relog. Then send your friends the link.
+   register your owner account, create the owner character, play a minute, relog. Then `/registration open` and send
+   your friends the link.

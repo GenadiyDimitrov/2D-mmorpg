@@ -46,7 +46,6 @@ public partial class GameLoopService : BackgroundService
         _lifetime = lifetime;
         LoadDebugConfig();     // restore persisted debug tuning (rates/karma/caps) between runs
         ServerControl.LoadLockdown();   // did the last run go down "staff only"?
-        ServerControl.EnsureOwnerFileForDev();   // ⚠ DEV ONLY — delete before going public
     }
 
     protected override async Task ExecuteAsync(CancellationToken ct)
@@ -58,18 +57,34 @@ public partial class GameLoopService : BackgroundService
         _log.LogInformation("Game loop started at {Rate} ticks/sec", GameConstants.TickRate);
 
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(GameConstants.TickSeconds));
-        while (await timer.WaitForNextTickAsync(ct))
+        try
         {
-            try
+            while (await timer.WaitForNextTickAsync(ct))
             {
-                ProcessCommands();
-                Simulate();
-                await BroadcastSnapshotsAsync();
+                try
+                {
+                    ProcessCommands();
+                    Simulate();
+                    await BroadcastSnapshotsAsync();
+                }
+                catch (Exception ex)
+                {
+                    _log.LogError(ex, "Unhandled error in game tick");
+                }
             }
-            catch (Exception ex)
-            {
-                _log.LogError(ex, "Unhandled error in game tick");
-            }
+        }
+        catch (OperationCanceledException) { /* the host is stopping */ }
+        finally
+        {
+            // `BL-345` — ONE save of everyone on EVERY stop: `/server shutdown`, Ctrl+C, `systemctl stop`,
+            // an update, a host reboot. Before this only the admin countdown saved, and any other stop
+            // cost up to a minute of everyone's progress. The loop has exited, so this thread is still
+            // the only writer, and it waits for the writes: the host gives a stopping service 30 s.
+            AutoSaveAll();
+            var pending = _saves.Keys.ToArray();
+            try { await Task.WhenAll(pending).WaitAsync(TimeSpan.FromSeconds(20)); }
+            catch (Exception ex) { _log.LogError(ex, "Final save did not finish"); }
+            _log.LogInformation("Game loop stopped — {Count} save(s) flushed.", pending.Length);
         }
     }
 
@@ -1224,7 +1239,7 @@ public partial class GameLoopService : BackgroundService
         }
         if (!fire) return;
 
-        AutoSaveAll();
+        // The save happens on the way out, in ExecuteAsync's finally — the same one every stop gets.
         var kind = _shutdownKind;
         _shutdownKind = ServerControl.Procedure.None;
         _log.LogWarning("Server {Kind} triggered by an admin — going down.",
@@ -1333,11 +1348,20 @@ public partial class GameLoopService : BackgroundService
 
     /// <summary>Fire-and-forget a DB write off the tick thread, logging any failure
     /// (so an exception in a background save can't go unobserved).</summary>
-    private Task RunSave(Func<Task> save) => Task.Run(async () =>
+    private Task RunSave(Func<Task> save)
     {
-        try { await save(); }
-        catch (Exception ex) { _log.LogError(ex, "Background character save failed"); }
-    });
+        var task = Task.Run(async () =>
+        {
+            try { await save(); }
+            catch (Exception ex) { _log.LogError(ex, "Background character save failed"); }
+        });
+        // Held until it finishes, so the stop path can wait for every write still in flight.
+        _saves[task] = 0;
+        task.ContinueWith(t => _saves.TryRemove(t, out _), TaskScheduler.Default);
+        return task;
+    }
+
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<Task, byte> _saves = new();
 
     private void HandleMove(MoveCmd move)
     {
@@ -8831,6 +8855,26 @@ public partial class GameLoopService : BackgroundService
                                 : "Nothing scheduled."));
                         break;
                 }
+                break;
+            }
+
+            // `/registration [open|close]` — `BL-345`. Closed refuses new accounts AND new characters to
+            // everyone but the owner.txt pair; remembered beside game.db (ServerControl.SetRegistration).
+            case "registration":
+            {
+                string v = arg.Trim().ToLowerInvariant();
+                if (v is "open" or "on")
+                    ServerControl.SetRegistration(true);
+                else if (v is "close" or "closed" or "off")
+                    ServerControl.SetRegistration(false);
+                else if (v.Length > 0)
+                {
+                    SendSystemToEntity(admin, "Usage: /registration [open|close]");
+                    break;
+                }
+                SendSystemToEntity(admin, ServerControl.RegistrationOpen
+                    ? "Registration is OPEN — anyone may make an account and characters."
+                    : "Registration is CLOSED — no new accounts or characters (owner.txt's pair excepted).");
                 break;
             }
 

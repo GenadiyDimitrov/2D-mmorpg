@@ -85,10 +85,9 @@ static class Bot
         {
             // No such account: REGISTER it and log in. This is what makes the bot usable against a
             // RELEASE server — the admin/test account seeding is `#if DEBUG`, so a freshly published
-            // server (the phone's) has an empty database and nothing to log in as. The FIRST character of
-            // the FIRST account on a fresh server is born Admin (PersistenceService.CreateCharacterAsync),
-            // so bootstrapping this way also produces a usable admin, which is how the admin toolbox gets
-            // exercised on a real deployment rather than only in a debug build.
+            // server (the phone's) has an empty database and nothing to log in as. ⚠ `BL-345`: a release
+            // server starts with registration CLOSED and admits only the owner.txt pair until that exists,
+            // so on one the bot can register only as owner.txt's account (or after `/registration open`).
             Log($"login failed ({auth.Error}) — registering '{user}'");
             var reg = await _hub.InvokeAsync<AuthResponse>("Register",
                 new AuthRequest(user, pass, GameConstants.ProtocolVersion), GameConstants.GameVersion);

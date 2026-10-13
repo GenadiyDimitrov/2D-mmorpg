@@ -72,7 +72,7 @@ static class MentorTest
         // ---- the mentor: Admin, ascended for the run ----
         var a = await Login("admin");
         var al = await a.Hub.InvokeAsync<CharacterList>("ListCharacters");
-        var ar = await a.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(al.Characters.First(c => c.Name == "Admin").Id));
+        var ar = await a.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(al.Characters.First(c => c.Name == "Owner").Id));
         Check("Admin entered", ar.Success, ar.Error);
         await a.Settle();
         bool ascended = false;

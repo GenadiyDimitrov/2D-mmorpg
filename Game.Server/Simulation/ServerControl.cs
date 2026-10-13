@@ -94,8 +94,14 @@ internal static class ServerControl
     // .. no db no nothing"*. Deliberately NOT in the database and NOT reachable from any command, so the
     // top of the hierarchy cannot be granted, stolen, or lost to a careless `/role`.
     //
-    // Format: one character NAME on the first non-blank, non-`#` line. Everything after it is ignored,
-    // so "cannot have two" is enforced by READING rather than by validating.
+    // Format: `account/Character` on the first non-blank, non-`#` line (`BL-345`, 2026-10-13). Everything
+    // after it is ignored, so "cannot have two" is enforced by READING rather than by validating. A line
+    // with no `/` names the character only, and then any account may hold it.
+    //
+    // 🔑 THE PAIR ALSO OPENS A FRESH SERVER (`BL-345`, his design): until that account holds that
+    // character, NOTHING else can be registered or created — see <see cref="OwnerBootstrapped"/>. So a
+    // new server is his first, and he lets everyone else in with `/registration open`. Both names are
+    // exempt from the reserved-word rule, which is what lets the dev default stay `admin/Owner`.
     //
     // ⚠ Read ONCE. Editing the file mid-session changes nothing until the server restarts — which is
     // the point: it is the one authority a running server cannot be talked out of.
@@ -103,80 +109,130 @@ internal static class ServerControl
         Path.Combine(AppContext.BaseDirectory, "owner.txt");
 
     private static string? _ownerName;
+    private static string? _ownerAccount;
     private static bool _ownerLoaded;
+
+    private static void LoadOwner()
+    {
+        if (_ownerLoaded) return;
+        _ownerLoaded = true;
+        try
+        {
+            if (!File.Exists(OwnerFile)) return;
+            string? line = File.ReadLines(OwnerFile)
+                .Select(l => l.Trim())
+                .FirstOrDefault(l => l.Length > 0 && !l.StartsWith("#"));
+            if (line is null) return;
+            int slash = line.IndexOf('/');
+            if (slash < 0) { _ownerName = line; return; }
+            string acc = line[..slash].Trim(), name = line[(slash + 1)..].Trim();
+            _ownerAccount = acc.Length > 0 ? acc : null;
+            _ownerName = name.Length > 0 ? name : null;
+        }
+        catch { /* unreadable file = no owner; the server must still start */ }
+    }
 
     /// <summary>The Owner's character name, or null when no owner.txt names one. Compared
     /// case-insensitively everywhere.</summary>
-    internal static string? OwnerCharacterName
+    internal static string? OwnerCharacterName { get { LoadOwner(); return _ownerName; } }
+
+    /// <summary>The account that must hold the Owner character, or null when owner.txt names none.</summary>
+    internal static string? OwnerAccountName { get { LoadOwner(); return _ownerAccount; } }
+
+    /// <summary>Is this the owner.txt ACCOUNT? With no account named there, no username is.</summary>
+    internal static bool IsOwnerAccount(string username) =>
+        OwnerAccountName is string a && string.Equals(a, username.Trim(), StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Is this account + character name exactly the owner.txt pair?</summary>
+    internal static bool IsOwnerPair(string username, string characterName) =>
+        OwnerCharacterName is string n
+        && string.Equals(n, characterName.Trim(), StringComparison.OrdinalIgnoreCase)
+        && (OwnerAccountName is null || IsOwnerAccount(username));
+
+    // `BL-345` — the owner bootstrap. True once the owner.txt pair exists in the database; until then the
+    // server admits only that pair. Set by PersistenceService (which owns the database) and latched: the
+    // Owner being deleted later is not a reason to lock everyone else out again.
+    private static volatile bool _ownerBootstrapped;
+    internal static bool OwnerBootstrapped => _ownerBootstrapped || OwnerCharacterName is null;
+    internal static void MarkOwnerBootstrapped() => _ownerBootstrapped = true;
+
+    // Dev convenience: a missing owner.txt is written as `admin/Owner`. Owner, playtest 27: *"each time I
+    // remove the GameServer folder it will remove it as well"* — and his deleted folder keeps its database,
+    // so the second install would otherwise have no Owner at all and no way to get one.
+    //
+    // `BL-345` made this safe enough to keep: the file is a PAIR now, and the bootstrap admits only that
+    // pair on a fresh database. The one hole left is a stranger registering `admin` on a fresh PUBLIC
+    // server before he does, which is why docs/guides/Hosting.md writes owner.txt by hand first.
+    internal static void EnsureOwnerFile()
+    {
+        try
+        {
+            if (File.Exists(OwnerFile)) return;
+            File.WriteAllText(OwnerFile,
+                "# The Owner: account/Character. Read at STARTUP only; edit by hand and restart.\n"
+                + "# The first non-blank, non-# line wins — there can only ever be one.\n"
+                + "# Until this account holds this character, nobody else can register or create one.\n"
+                + "#\n"
+                + "# This file was AUTO-CREATED because it was missing. Put YOUR account/character below.\n"
+                + "admin/Owner\n");
+            _ownerLoaded = false;
+            LoadOwner();
+        }
+        catch { /* no owner file = no Owner; every other rank still works */ }
+    }
+
+    // ═══ REGISTRATION ═════════════════════════════════════════════════════════════════════════════
+    //
+    // `BL-345` — `/registration open|close`. CLOSED refuses new accounts AND new characters for everyone
+    // but the owner.txt pair (his choice: *"forbids character creations and registrations of any kind"*).
+    // Remembered in a file beside game.db (the working directory), so it lives exactly as long as the
+    // database does — deleting the server folder in his dev loop does not reopen a closed server.
+    //
+    // A missing file means CLOSED on a release build (a new public server lets nobody in until he says so)
+    // and OPEN on a debug build (the dev seed and the SmokeTest register fresh accounts every run).
+    private static readonly string RegistrationFile =
+        Path.Combine(Directory.GetCurrentDirectory(), "registration.txt");
+
+    private static bool? _registrationOpen;
+
+    internal static bool RegistrationOpen
     {
         get
         {
-            if (_ownerLoaded) return _ownerName;
-            _ownerLoaded = true;
+            if (_registrationOpen is bool b) return b;
+#if DEBUG
+            bool open = true;
+#else
+            bool open = false;
+#endif
             try
             {
-                if (File.Exists(OwnerFile))
-                    _ownerName = File.ReadLines(OwnerFile)
-                        .Select(l => l.Trim())
-                        .FirstOrDefault(l => l.Length > 0 && !l.StartsWith("#"));
+                if (File.Exists(RegistrationFile))
+                    open = File.ReadAllText(RegistrationFile).Trim()
+                        .StartsWith("open", StringComparison.OrdinalIgnoreCase);
             }
-            catch { /* unreadable file = no owner; the server must still start */ }
-            return _ownerName;
+            catch { /* unreadable = the build's default */ }
+            _registrationOpen = open;
+            return open;
         }
     }
 
-    /// <summary>Name the Owner on a FRESH server — called once from the debug seed, which only runs on an
-    /// empty database. Never overwrites an existing file, so a real deployment's owner.txt is safe and
-    /// the seeded `Admin` character simply becomes the Owner on a dev machine, which is what makes the
-    /// whole hierarchy testable the moment the DB is deleted.</summary>
-    internal static void SeedOwnerFile(string characterName)
+    internal static void SetRegistration(bool open)
     {
-        try
-        {
-            if (File.Exists(OwnerFile)) return;
-            File.WriteAllText(OwnerFile,
-                "# The one Owner character. Read at STARTUP only; edit by hand and restart.\n"
-                + "# The first non-blank, non-# line wins — there can only ever be one.\n"
-                + characterName + "\n");
-            _ownerName = characterName;
-            _ownerLoaded = true;
-        }
-        catch { /* no owner file = no Owner; every other rank still works */ }
+        _registrationOpen = open;
+        try { File.WriteAllText(RegistrationFile, open ? "open" : "closed"); }
+        catch { /* honoured for this run even if it cannot be remembered */ }
     }
 
-
-    // ⚠⚠ DEV CONVENIENCE — DELETE THIS METHOD AND ITS CALL BEFORE THE GAME GOES PUBLIC. ⚠⚠
-    //
-    // Owner, playtest 27: *"can u make it for time being if now owner.txt is missing at start to create
-    // it with name Owner - each time I remove the GameServer folder it will remove it as well - make a
-    // comment to delete the file creation when game going public."*
-    //
-    // SeedOwnerFile above only runs on a fresh DATABASE, and his loop is the other one: he deletes the
-    // deployed server FOLDER on every build, which takes owner.txt with it while the database he keeps
-    // survives — so the second install had no Owner at all and no way to get one, the rank being
-    // deliberately unreachable from any command.
-    //
-    // On a public server this is exactly the wrong behaviour: an owner.txt that writes itself is an
-    // owner.txt an attacker can predict, and "the file was missing" would silently appoint whoever
-    // holds that name. The real deployment wants the file placed by hand, ONCE, and a missing file to
-    // mean NO owner. Hence the shouting above.
-    internal static void EnsureOwnerFileForDev()
+    /// <summary>Why a new account or character is refused right now, or null when it is allowed.</summary>
+    internal static string? CreationBlocked(bool ownerPair)
     {
-        try
-        {
-            if (File.Exists(OwnerFile)) return;
-            File.WriteAllText(OwnerFile,
-                "# The one Owner character. Read at STARTUP only; edit by hand and restart.\n"
-                + "# The first non-blank, non-# line wins — there can only ever be one.\n"
-                + "#\n"
-                + "# This file was AUTO-CREATED because it was missing (dev convenience, see\n"
-                + "# ServerControl.EnsureOwnerFileForDev). Put YOUR character's name below and restart.\n"
-                + "Owner\n");
-            _ownerName = "Owner";
-            _ownerLoaded = true;
-        }
-        catch { /* no owner file = no Owner; every other rank still works */ }
+        if (ownerPair) return null;
+        if (!OwnerBootstrapped) return "The server is not open yet.";
+        if (!RegistrationOpen) return "Registration is closed.";
+        return null;
     }
+
     /// <summary>The rank a character actually holds: whatever the DB row says, unless owner.txt names
     /// them, in which case Owner and nothing else. Applied on every load, so appointing the Owner costs
     /// one line in a file and one relog.</summary>
@@ -290,11 +346,14 @@ internal static class ServerControl
     /// detached copy of our own executable with our own arguments — the only restart mechanism that
     /// needs no supervisor, which matters because he runs the server under termux-ubuntu on a phone.
     ///
-    /// The exit code is still distinct (66 = "restart me"), so a supervisor CAN take over the job and
-    /// the self-relaunch can be dropped the day one exists.</summary>
+    /// The exit code is distinct (66 = "restart me"); under systemd the relaunch is skipped and the
+    /// unit's <c>Restart=always</c> does the job (`BL-345`).</summary>
     internal static int Execute(Procedure kind)
     {
         if (kind != Procedure.Reboot) return 0;
+        // Under systemd (which sets INVOCATION_ID) the unit's Restart= brings us back; a copy launched
+        // from here would be killed along with the old process's cgroup.
+        if (Environment.GetEnvironmentVariable("INVOCATION_ID") is { Length: > 0 }) return 66;
         try
         {
             if (Environment.ProcessPath is string exe)

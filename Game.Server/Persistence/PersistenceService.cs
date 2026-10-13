@@ -123,29 +123,48 @@ public class PersistenceService
 
     // ----- Accounts ----------------------------------------------------------
 
-    /// <summary><paramref name="IsFirstAccount"/> marks the very first account created on a fresh server
-    /// (the owner's). It is NOT an authorization signal — staff powers live on the CHARACTER's Role and
-    /// are checked at EnterWorld — it only decides that this account's characters start as Admin.</summary>
-    public record AuthResult(bool Success, string? Error, int AccountId, bool IsFirstAccount);
+    public record AuthResult(bool Success, string? Error, int AccountId);
+
+    /// <summary>`BL-345` — has the owner.txt account created the owner.txt character yet? Until it has,
+    /// <see cref="ServerControl.CreationBlocked"/> admits that pair and nothing else. Latched in
+    /// ServerControl the first time it is true, so this costs one query per register/create at most
+    /// until the Owner exists, and none after.</summary>
+    private async Task<bool> OwnerBootstrappedAsync(GameDbContext db)
+    {
+        if (ServerControl.OwnerBootstrapped) return true;
+        string name = ServerControl.OwnerCharacterName!.ToLower();
+        string? acc = ServerControl.OwnerAccountName?.ToLower();
+        bool exists = await db.Characters.AnyAsync(c => c.Name.ToLower() == name
+            && (acc == null || db.Accounts.Any(a => a.Id == c.AccountId && a.Username.ToLower() == acc)));
+        if (exists) ServerControl.MarkOwnerBootstrapped();
+        return exists;
+    }
 
     public async Task<AuthResult> RegisterAsync(string username, string password)
     {
         username = username.Trim();
         if (username.Length is < 3 or > 20)
-            return new AuthResult(false, "Username must be 3-20 characters.", 0, false);
+            return new AuthResult(false, "Username must be 3-20 characters.", 0);
         if (password.Length < 4)
-            return new AuthResult(false, "Password must be at least 4 characters.", 0, false);
+            return new AuthResult(false, "Password must be at least 4 characters.", 0);
+
+        bool ownerAccount = ServerControl.IsOwnerAccount(username);
+        if (!ownerAccount && GameConstants.IsReservedName(username))
+            return new AuthResult(false, "That name is reserved.", 0);
 
         await using var db = await _factory.CreateDbContextAsync();
 
-        if (await db.Accounts.AnyAsync(a => a.Username == username))
-            return new AuthResult(false, "Username already taken.", 0, false);
+        await OwnerBootstrappedAsync(db);
+        if (ServerControl.CreationBlocked(ownerAccount) is string blocked)
+            return new AuthResult(false, blocked, 0);
+
+        // Case-insensitive, like character names: `Gena` and `gena` must not be two accounts — the owner
+        // match is case-insensitive, so a second spelling of the owner's account would share his exemption.
+        var lower = username.ToLower();
+        if (await db.Accounts.AnyAsync(a => a.Username.ToLower() == lower))
+            return new AuthResult(false, "Username already taken.", 0);
 
         var (hash, salt) = PasswordHasher.Hash(password);
-
-        // First account ever created is the owner's — its characters are created as Admin (see
-        // CreateCharacterAsync). The role itself lives on the CHARACTER now, not here.
-        bool isFirst = !await db.Accounts.AnyAsync();
 
         var account = new AccountRecord
         {
@@ -156,13 +175,13 @@ public class PersistenceService
         db.Accounts.Add(account);
         await db.SaveChangesAsync();
 
-        return new AuthResult(true, null, account.Id, isFirst);
+        return new AuthResult(true, null, account.Id);
     }
 
     /// <summary>DEBUG convenience: on an EMPTY db, create ready-to-play accounts so you can skip the
     /// (already-tested) register/create flow — just log in, pick the char, enter.
     ///
-    /// admin/admin gets a FULLY KITTED character (see <see cref="EndgameKitAsync"/>): a level-90 Human
+    /// The owner.txt pair (admin/Owner by default, password admin) gets a FULLY KITTED character (see <see cref="EndgameKitAsync"/>): a level-90 Human
     /// Warchanter in A-grade robe/staff/jewels with every class skill learned. The schema changes often
     /// during development and every change means deleting the DB, so rebuilding that character by hand
     /// each time was pure repeated toil (owner, 2026-07-20).
@@ -180,17 +199,16 @@ public class PersistenceService
 
         async Task SeedAsync(string user, string pass, string charName)
         {
-            var acc = await RegisterAsync(user, pass);   // the FIRST account created becomes the owner's
+            var acc = await RegisterAsync(user, pass);
             if (acc.Success)
                 await CreateCharacterAsync(acc.AccountId, charName, Race.Human, BaseClass.Fighter);
         }
 
-        await SeedAsync("admin", "admin", "Admin");
-        await EndgameKitAsync("Admin");
-        // On a fresh DB the seeded Admin is also the OWNER — the top of the hierarchy has to exist for
-        // any of it to be testable, and this is the only place that knows a server is brand new. Never
-        // overwrites an existing owner.txt, so a real deployment's choice stands.
-        Game.Server.Simulation.ServerControl.SeedOwnerFile("Admin");
+        // `BL-345` — the kitted level-90 IS the owner.txt pair (admin/Owner unless he changed the file),
+        // created first so the bootstrap opens and the test accounts below can register. Password `admin`.
+        string ownerChar = ServerControl.OwnerCharacterName ?? "Owner";
+        await SeedAsync(ServerControl.OwnerAccountName ?? "admin", "admin", ownerChar);
+        await EndgameKitAsync(ownerChar);
         for (int i = 1; i <= 9; i++)
             await SeedAsync($"test{i}", "test", $"Test{i}");
     }
@@ -328,16 +346,16 @@ public class PersistenceService
 
         var account = await db.Accounts.FirstOrDefaultAsync(a => a.Username == username);
         if (account is null || !PasswordHasher.Verify(password, account.PasswordHash, account.PasswordSalt))
-            return new AuthResult(false, "Invalid username or password.", 0, false);
+            return new AuthResult(false, "Invalid username or password.", 0);
 
         if (account.IsBanned)
-            return new AuthResult(false, "This account is banned.", 0, false);
+            return new AuthResult(false, "This account is banned.", 0);
         if (account.BannedUntilUtc is DateTime until && until > DateTime.UtcNow)
-            return new AuthResult(false, $"This account is banned for another {Remaining(until)}.", 0, false);
+            return new AuthResult(false, $"This account is banned for another {Remaining(until)}.", 0);
 
         // Staff status is NOT decided here any more — it belongs to whichever CHARACTER you then enter
         // the world with (owner). Login only proves who the account is.
-        return new AuthResult(true, null, account.Id, false);
+        return new AuthResult(true, null, account.Id);
     }
 
     /// <summary>A short "2d 3h" / "5m" style remaining-time string for a UTC deadline.</summary>
@@ -521,22 +539,22 @@ public class PersistenceService
         if (await db.Characters.AnyAsync(c => c.Name.ToLower() == nameLower))
             return (false, "That character name is taken.");
 
-        // Only the very FIRST character of the very FIRST account on a fresh server is born Admin
-        // (convenient for testing — it's the owner's seeded "Admin"). Every LATER character, even on that
-        // same account, starts a plain Player and is promoted with /role.
-        //
-        // This used to make EVERY character of the owner's account an Admin, which quietly broke the
-        // per-character role model (see CharacterRecord.Role): the owner made an ordinary character to
-        // play as a normal player and it still had every admin command. The role is per CHARACTER on
-        // purpose — an account may hold an admin character alongside perfectly ordinary ones.
-        bool ownerAccount = accountId == await db.Accounts.OrderBy(a => a.Id).Select(a => a.Id).FirstAsync();
-        bool bornAdmin = ownerAccount && existingChars == 0;
+        // `BL-345` — every character is born a Player. The Owner rank comes from owner.txt alone (applied on
+        // load) and every other staff rank from `/role`; "the first account's first character is born
+        // Admin" handed the rank to whoever registered first on a fresh server, so it is gone.
+        string username = await db.Accounts.Where(a => a.Id == accountId).Select(a => a.Username).FirstAsync();
+        bool ownerPair = ServerControl.IsOwnerPair(username, name);
+        if (!ownerPair && GameConstants.IsReservedName(name))
+            return (false, "That name is reserved.");
+        await OwnerBootstrappedAsync(db);
+        if (ServerControl.CreationBlocked(ownerPair) is string blocked)
+            return (false, blocked);
 
         var stats = StatCalculator.GetBaseStats(race, baseClass);
         var record = new CharacterRecord
         {
             AccountId = accountId,
-            Role = bornAdmin ? AccountRole.Admin : AccountRole.Player,
+            Role = AccountRole.Player,
             Name = name,
             Race = race,
             Gender = look.Gender,

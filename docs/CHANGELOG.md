@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.257.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.258.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,36 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-13 (latest) — 0.257.0: music, sounds for the animations, a Sound window with Mute all
+## 2026-10-13 (latest) — 0.258.0: owner.txt opens a fresh server, /registration, reserved names, a save on every stop
+
+**Server zip + new APK** (no `game.db` delete). (`BL-345`, the code half of the hosting guide)
+
+- **`owner.txt` is `account/Character` now** (`ServerControl`). A missing file is written as `admin/Owner`. A line
+  with no `/` still works and names the character only.
+- **A fresh server lets only the Owner in.** Until that account holds that character, nobody else can register or
+  create a character ("The server is not open yet."). Once it exists, this step is skipped on every later start.
+- **`/registration [open|close]`** (Admin). Closed = no new accounts **and** no new characters, the owner.txt pair
+  excepted. It is remembered in `registration.txt` beside `game.db`, so deleting the server folder does not change it.
+  With no file, a release server starts **CLOSED** and a debug server OPEN. ⚠ **Your phone server will start closed:
+  type `/registration open` once.**
+- **No more "the first account's first character is born Admin".** Every character is born a Player. Owner comes from
+  `owner.txt`, Admin from `/role`.
+- **Reserved names** for accounts and characters: anything containing admin, owner, moderator, gamemaster, staff,
+  support, system, server, official or developer, and the whole names GM, Mod, Dev, Sys, Root, God, Helper, Host,
+  Operator, Sysop, Console (digits and `_ . -` ignored, so `GM_1` is refused and `Modest` is fine). The owner.txt
+  pair is exempt. Account names are now unique regardless of case, like character names.
+- **Every stop saves everyone**: Ctrl+C, `systemctl stop`, an update, a host reboot, not only `/server shutdown`.
+  The game loop saves on its way out and waits for the writes.
+- **`/server reboot` under systemd** just exits with code 66 and lets the service restart it. Elsewhere (Termux) it
+  still relaunches itself.
+- **`/apk`** reads its path from `apk-path.txt` beside the server (an .apk, or a folder whose newest .apk is served).
+  No file = the `apk` folder beside the server, then the repo's Unity `builds` folder.
+- **Client:** the login screen's default address comes from `Assets/Resources/server.txt`. Put your public address
+  there before building the APK for friends. The field stays, and the phone remembers what was typed.
+- Dev seed (debug builds): the kitted level-90 is now the owner.txt pair, `admin`/`admin` → **Owner** (was *Admin*).
+  SmokeTest follows.
+
+## 2026-10-13 — 0.257.0: music, sounds for the animations, a Sound window with Mute all
 
 **New APK only** (client-only; no server restart, no `game.db` delete). (`BL-45`)
 

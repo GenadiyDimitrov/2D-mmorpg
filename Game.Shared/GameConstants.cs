@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.257.0";
+    public const string GameVersion = "0.258.0";
 
     /// <summary>RUNES STACK, UP TO A CAP (owner, 2026-10-03): opening a rune box while you hold the same rune ADDS its
     /// time to that rune instead of starting a second clock beside it. A box of this length or shorter (1h/2h) may only
@@ -467,6 +467,32 @@ public static class GameConstants
         error = "";
         return true;
     }
+
+    /// <summary>`BL-345` — staff and system words no account or character may be named after (owner,
+    /// 2026-10-13: *"prevent system wording as able acc or char names"*). The long words are refused
+    /// anywhere inside the name (<c>xAdminx</c>); the short ones only as the whole name, digits and
+    /// <c>_ . -</c> aside (<c>GM_1</c>, <c>mod</c>), so <c>Modest</c> and <c>Gmork</c> stay legal. The
+    /// owner.txt pair is exempt — the server checks that, not this.</summary>
+    public static bool IsReservedName(string? name)
+    {
+        string n = (name ?? "").ToLowerInvariant();
+        foreach (var w in ReservedNameParts)
+            if (n.Contains(w)) return true;
+        var letters = new System.Text.StringBuilder();
+        foreach (char c in n) if (char.IsLetter(c)) letters.Append(c);
+        return Array.IndexOf(ReservedNameWords, letters.ToString()) >= 0;
+    }
+
+    private static readonly string[] ReservedNameParts =
+    {
+        "admin", "owner", "moderator", "gamemaster", "staff", "support", "system", "server",
+        "official", "developer",
+    };
+
+    private static readonly string[] ReservedNameWords =
+    {
+        "gm", "mod", "dev", "sys", "root", "god", "helper", "host", "operator", "sysop", "console",
+    };
 
     /// <summary>Character slots per account — enough for every race/class/discipline
     /// combination so a player needn't make extra accounts.</summary>

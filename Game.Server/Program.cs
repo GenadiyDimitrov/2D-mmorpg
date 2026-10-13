@@ -64,6 +64,12 @@ try
         await persistence.ResetIfSchemaStaleAsync(app.Logger);
 #endif
         await persistence.EnsureCreatedAsync();
+        // `BL-345` — before the seed, which creates the owner.txt pair. A missing file is written as
+        // admin/Owner (ServerControl.EnsureOwnerFile says why that is safe enough to keep).
+        ServerControl.EnsureOwnerFile();
+        app.Logger.LogInformation("Owner: {Account}/{Character} · registration {State}",
+            ServerControl.OwnerAccountName ?? "(any)", ServerControl.OwnerCharacterName ?? "(none)",
+            ServerControl.RegistrationOpen ? "OPEN" : "CLOSED");
 #if DEBUG
         // Dev only: seed admin/admin (a level-90 Warchanter in A-grade gear) + test1..test9/test
         // (plain level-1 fighters) on an empty db.
@@ -80,11 +86,32 @@ try
 
     // Serve the built APK so a phone on this LAN/VPN can download it straight from the browser (no adb):
     // open http://<server-ip>:5238/apk. Reuses the already-allowed game port, so no extra firewall rule.
+    //
+    // `BL-345` — WHERE it is comes from `apk-path.txt` beside the server (first non-#, non-blank line: an
+    // .apk file, or a folder whose newest .apk is served; relative = relative to that file). No file =
+    // the `apk` folder beside the server, then the repo's Unity builds folder for the dev PC.
+    static string? FindApk(string contentRoot)
+    {
+        string? Resolve(string path)
+        {
+            if (File.Exists(path)) return path;
+            if (!Directory.Exists(path)) return null;
+            return new DirectoryInfo(path).GetFiles("*.apk")
+                .OrderByDescending(f => f.LastWriteTimeUtc).FirstOrDefault()?.FullName;
+        }
+        string baseDir = AppContext.BaseDirectory;
+        string cfg = Path.Combine(baseDir, "apk-path.txt");
+        if (File.Exists(cfg)
+            && File.ReadLines(cfg).Select(l => l.Trim()).FirstOrDefault(l => l.Length > 0 && !l.StartsWith("#"))
+               is string line)
+            return Resolve(Path.GetFullPath(Path.Combine(baseDir, line)));
+        return Resolve(Path.Combine(baseDir, "apk"))
+            ?? Resolve(Path.GetFullPath(Path.Combine(contentRoot, "..", "Game.Client.Unity", "builds", "L2Clone.apk")));
+    }
     app.MapGet("/apk", () =>
     {
-        var apk = Path.GetFullPath(Path.Combine(
-            app.Environment.ContentRootPath, "..", "Game.Client.Unity", "builds", "L2Clone.apk"));
-        return File.Exists(apk)
+        var apk = FindApk(app.Environment.ContentRootPath);
+        return apk is not null
             ? Results.File(apk, "application/vnd.android.package-archive", "L2Clone.apk", enableRangeProcessing: true)
             : Results.NotFound("APK not built yet — check back in a minute.");
     });

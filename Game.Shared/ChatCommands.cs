@@ -123,6 +123,8 @@ public static class ChatCommandCatalog
         new("testcaps", "/testcaps [off]", "short farm caps for testing", AccountRole.Admin),
         new("server", "/server <shutdown|reboot|on> [min] [adminOnly]", "shut down or reboot on a countdown; on cancels", AccountRole.Admin,
             "minutes: '-', '0' or blank = now; unparseable = 30."),
+        new("registration", "/registration [open|close]", "let new accounts and characters in, or not; bare shows it", AccountRole.Admin,
+            "Closed = nobody may register or create a character except the owner.txt pair. Remembered across restarts."),
 
         // ---- Owner ----
         new("role", "/role <name> admin", "make an Admin (only the Owner may)", AccountRole.Owner),
