@@ -391,12 +391,7 @@ namespace Game.Client
                     break;
 
                 default:
-                    // `BL-354` — a woman's body first; every key below it is a man's.
-                    if (e.Gender == Gender.Female) yield return "Models/player_female";
-                    string cls = e.BaseClass.ToString().ToLowerInvariant();
-                    yield return "Models/player_" + e.Race.ToString().ToLowerInvariant() + "_" + cls;
-                    yield return "Models/player_" + cls;
-                    yield return "Models/player";
+                    foreach (var key in PlayerKeys(e.Race, e.BaseClass, e.Gender)) yield return key;
                     break;
             }
 
@@ -404,6 +399,28 @@ namespace Game.Client
             // prefab here and the entire world has models, badly — which is exactly what a proof of
             // concept wants to see before anyone commissions nine families.
             yield return "Models/humanoid";
+        }
+
+        /// <summary>`BL-354` — a player's body from the bare picks: the character-creation preview has no DTO yet.
+        /// The same chain <see cref="Keys"/> walks for a spawned player, so the preview cannot disagree with the world.</summary>
+        public static GameObject PlayerPrefab(Race race, BaseClass cls, Gender gender)
+        {
+            foreach (var key in PlayerKeys(race, cls, gender))
+            {
+                var prefab = Load(key);
+                if (prefab != null) return prefab;
+            }
+            return Load("Models/humanoid");
+        }
+
+        private static IEnumerable<string> PlayerKeys(Race race, BaseClass baseClass, Gender gender)
+        {
+            // `BL-354` — a woman's body first; every key below it is a man's.
+            if (gender == Gender.Female) yield return "Models/player_female";
+            string cls = baseClass.ToString().ToLowerInvariant();
+            yield return "Models/player_" + race.ToString().ToLowerInvariant() + "_" + cls;
+            yield return "Models/player_" + cls;
+            yield return "Models/player";
         }
     }
 }

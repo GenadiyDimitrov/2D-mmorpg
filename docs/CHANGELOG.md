@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.254.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.254.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,20 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-13 (latest) — 0.254.0: two genders for every race; women NPCs; hairstyle, hair colour and skin at creation; race builds
+## 2026-10-13 (latest) — 0.254.1: the creation screen shows the character
+
+**New APK only** (client-only; no server restart, no `game.db` delete). (`BL-354`)
+
+- **A model stands beside the creation buttons** and changes on every tap: race, class, body, hairstyle, hair
+  colour and skin — so you choose by looking, not by the word. It holds the class's first weapon (a sword for a
+  fighter, a staff for a mage). **Drag it sideways to turn it**; it faces you again each time the form opens.
+- It is the same body and the same look code the world uses, so what you see there is what you get in game.
+- It brings its own light, so it is not dark when the game clock is at night.
+- The form is wider (the model sits on its right).
+- Checked with a headless render of six race × body picks under a midnight sun (`ModelSetup.PreviewCreation`). NOT on
+  a phone yet.
+
+## 2026-10-13 — 0.254.0: two genders for every race; women NPCs; hairstyle, hair colour and skin at creation; race builds
 
 **Server restart + new APK + DELETE `game.db`** (new character columns; protocol 56). (`BL-354`)
 

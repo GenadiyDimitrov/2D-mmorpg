@@ -53,6 +53,8 @@ namespace Game.Client
         private Button _genderButton, _hairButton, _hairColorButton, _skinButton;
         private Gender _gender;
         private int _hair, _hairColor = 1, _skin = 2;
+        private CharacterPreview _preview;   // the model wearing those picks
+        private RawImage _previewImage;
         private static readonly Race[] Races = { Race.Human, Race.Elf, Race.Demon };   // all of them since 0.53.0
         private static readonly BaseClass[] Classes = { BaseClass.Fighter, BaseClass.Mage };
 
@@ -428,7 +430,7 @@ namespace Game.Client
         {
             _createPanel = UiKit.PanelBox(parent, "CreateForm");
             UiKit.Place(_createPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                        Vector2.zero, new Vector2(520f, 476f));
+                        Vector2.zero, new Vector2(800f, 476f));   // 520 of buttons + the model on the right
             var inner = _createPanel.GetChild(0);
 
             UiKit.Place(UiKit.Rect(UiKit.Label(inner, "New character", 24f).gameObject),
@@ -488,6 +490,17 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(cancel.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(266f, 20f), new Vector2(232f, 50f));
 
+            // `BL-354` — the model standing beside the buttons, wearing what they say (CharacterPreview). Drag it
+            // sideways to turn it. The texture is 1.5× the frame so it stays sharp on a high-DPI phone.
+            var frame = new GameObject("Preview", typeof(RectTransform), typeof(RawImage));
+            frame.transform.SetParent(inner, false);
+            UiKit.Place((RectTransform)frame.transform, new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(516f, -14f), new Vector2(264f, 442f));
+            _preview = CharacterPreview.Create(396, 663);
+            _previewImage = frame.GetComponent<RawImage>();
+            _previewImage.texture = _preview.Texture;
+            frame.AddComponent<CharacterPreviewDrag>().Preview = _preview;
+
             _createPanel.gameObject.SetActive(false);
             RefreshCreateForm();
         }
@@ -495,7 +508,8 @@ namespace Game.Client
         private void ShowCreate(bool show)
         {
             _createPanel.gameObject.SetActive(show);
-            if (show) _nameField.text = "";
+            if (show) { _nameField.text = ""; _preview.ResetTurn(); }
+            _preview.SetVisible(show);
         }
 
         private void RefreshCreateForm()
@@ -506,6 +520,10 @@ namespace Game.Client
             UiKit.SetButtonText(_hairButton, "Hair: " + Appearance.HairStyleNames(_gender)[_hair]);
             UiKit.SetButtonText(_hairColorButton, "Colour: " + Appearance.HairColorNames[_hairColor]);
             UiKit.SetButtonText(_skinButton, "Skin: " + Appearance.SkinToneNames[_skin]);
+
+            if (_preview == null) return;
+            _previewImage.enabled = _preview.Show(Races[_raceIndex], Classes[_classIndex], _gender, _hair, _hairColor, _skin);
+            _preview.SetVisible(_createPanel.gameObject.activeSelf);   // a body built while closed must not animate
         }
 
         private void RefreshCharacterSelect()

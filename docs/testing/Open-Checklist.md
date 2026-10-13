@@ -25,6 +25,18 @@
 
 ---
 
+## §162 — 0.254.1: a model on the creation screen (`BL-354`, 2026-10-13)
+
+⚠ **New APK only.**
+
+- `162a` [ ] - Create screen: a model stands to the right of the buttons, and every tap (Race, Class, Body, Hair,
+  Colour, Skin) changes it at once. A fighter holds a sword, a mage a staff. ->
+- `162b` [ ] - Drag sideways on the model: it turns. Close and reopen the form: it faces you again. ->
+- `162c` [ ] - It is well lit at night too (try `/time 0:00` first), the form fits your screen, and the model is not
+  cut off at the head or the feet. ->
+
+---
+
 ## §161 — 0.254.0: two genders, looks at creation, race builds, women NPCs (`BL-354`, 2026-10-13)
 
 ⚠ **Server restart + new APK + delete `game.db`.**

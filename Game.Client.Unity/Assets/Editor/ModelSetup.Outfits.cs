@@ -376,6 +376,69 @@ namespace Game.ClientEditor
             Debug.Log($"[BL-354] looks preview ({rows.Length} x {cols}) -> {outPath}");
         }
 
+        /// <summary>`BL-354` — the character-creation preview stage (Game.Client.CharacterPreview) rendered for six
+        /// race × body picks under a MIDNIGHT sun, which is the case its own lights exist for. Batchmode WITHOUT
+        /// -nographics, <c>-previewOut &lt;png&gt;</c>.</summary>
+        [MenuItem("Tools/BL-93/Preview the creation-screen model (BL-354)")]
+        public static void PreviewCreation()
+        {
+            var args = System.Environment.GetCommandLineArgs();
+            int at = System.Array.IndexOf(args, "-previewOut");
+            string outPath = at >= 0 && at + 1 < args.Length ? args[at + 1] : "creation-preview.png";
+
+            int editorQuality = QualitySettings.GetQualityLevel();
+            QualitySettings.SetQualityLevel(0, true);
+            UnityEditor.SceneManagement.EditorSceneManager.NewScene(UnityEditor.SceneManagement.NewSceneSetup.EmptyScene);
+            var sun = new GameObject("Sun").AddComponent<Light>();
+            sun.type = LightType.Directional;
+            RenderSettings.sun = sun;
+            Game.Client.DayNight.Apply(sun, Game.Client.DayNight.LookAt(0.0, Game.Client.DayNight.NightDefault), true);
+
+            var picks = new (Game.Shared.Race race, Game.Shared.BaseClass cls, Game.Shared.Gender g, int hair, int colour, int skin)[]
+            {
+                (Game.Shared.Race.Human, Game.Shared.BaseClass.Fighter, Game.Shared.Gender.Male, 3, 1, 2),
+                (Game.Shared.Race.Human, Game.Shared.BaseClass.Mage, Game.Shared.Gender.Female, 0, 4, 0),
+                (Game.Shared.Race.Elf, Game.Shared.BaseClass.Mage, Game.Shared.Gender.Male, 1, 6, 1),
+                (Game.Shared.Race.Elf, Game.Shared.BaseClass.Fighter, Game.Shared.Gender.Female, 1, 3, 2),
+                (Game.Shared.Race.Demon, Game.Shared.BaseClass.Fighter, Game.Shared.Gender.Male, 2, 0, 3),
+                (Game.Shared.Race.Demon, Game.Shared.BaseClass.Mage, Game.Shared.Gender.Female, 4, 7, 4),
+            };
+            var stage = Game.Client.CharacterPreview.Create(264, 442);
+            var cam = stage.GetComponentInChildren<Camera>();
+            var clip = AssetDatabase.LoadAllAssetsAtPath(ArtDir + "/Characters/Animations/UAL1_Standard.fbx")
+                                    .OfType<AnimationClip>().FirstOrDefault(c => c.name == "Idle_Loop");
+            const int FW = 264, FH = 442;
+            var sheet = new Texture2D(FW * picks.Length, FH, TextureFormat.RGB24, false);
+            AnimationMode.StartAnimationMode();
+            for (int i = 0; i <= picks.Length; i++)
+            {
+                var p = picks[System.Math.Max(0, i - 1)];
+                stage.Show(p.race, p.cls, p.g, p.hair, p.colour, p.skin);
+                var body = stage.transform.GetComponentInChildren<Animator>().gameObject;
+                if (clip != null)
+                {
+                    AnimationMode.BeginSampling();
+                    AnimationMode.SampleAnimationClip(body, clip, 0.3f);
+                    AnimationMode.EndSampling();
+                }
+                BakeSkin(body);
+                cam.Render(); cam.Render();
+                if (i == 0) continue;   // the first pass only warms the textures up
+                RenderTexture.active = stage.Texture;
+                var img = new Texture2D(FW, FH, TextureFormat.RGB24, false);
+                img.ReadPixels(new Rect(0, 0, FW, FH), 0, 0);
+                img.Apply();
+                sheet.SetPixels((i - 1) * FW, 0, FW, FH, img.GetPixels());
+                Object.DestroyImmediate(img);
+            }
+            AnimationMode.StopAnimationMode();
+            RenderTexture.active = null;
+            sheet.Apply();
+            System.IO.File.WriteAllBytes(outPath, sheet.EncodeToPNG());
+            QualitySettings.SetQualityLevel(editorQuality, true);
+            Debug.Log($"[BL-354] creation preview ({picks.Length}) -> {outPath}");
+        }
+
         /// <summary>Logs what each outfit FBX holds — renderers, their materials, the avatar, the height — so the
         /// material table can be written against real names instead of guesses.</summary>
         [MenuItem("Tools/BL-93/Inspect outfit bodies")]
