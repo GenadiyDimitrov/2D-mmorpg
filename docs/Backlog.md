@@ -285,7 +285,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
 | `BL-341` | ⏸ | **Skill vampirism + skill reflect** — a buff that vamps from any spell/physical skill (later-chronicle IG), only together with reflect on skill damage; "a lot later if at all" | combat |
 | `BL-344` | 🔴 | **Visual pass** — ground, animations, entities; order + status in `design/VisualPass.md` §0; steps 1-3 built (0.243.0, 0.244.0, 0.245.0), step 4 built (0.246.0 scatter, 0.247.0 real models), step 5 built (0.248.0 light, shadows, day/night), step 6 built (0.249.0 skill FX), step 7 built (0.250.0 weapons in hand), step 8 built (0.251.0 camera turn + tilt); all eight steps built, waiting on your phone check | client |
-| `BL-345` | ❓ | **Hosting for friends** — where the server runs (your question: an Oracle Always Free Linux machine?), how friends download the APK and connect; answer owed after `BL-344` | ops |
+| `BL-345` | 🔴 | **Hosting for friends**: ANSWERED in `docs/guides/Hosting.md` (Oracle Always Free ARM + DuckDNS + Caddy HTTPS, €0). Six code changes are owed before friends join: owner.txt and first-Admin off when public, save on stop, default URL, `-Linux` publish, `/apk` path | ops |
 | `BL-346` | ⏸ | **The open-world grid map** — the world as a grid of zone cells, castle territories of several cells (farming zones, spawners, dungeons), one seamless map, impassable terrain with passages between biomes; for later | world |
 | `BL-347` | ⏸ | **Inventory as cells** — a grid of item cells with icons, and a tooltip-style details panel; for later | ui |
 | `BL-348` | ⏸ | **Hazard terrain** — harsh zones put a visible debuff on you until you leave: blizzard/wind = more misses + magic fails, lava pools = DoT, slowed attack/cast speed; the combat half of `BL-328`; answer later | world |
@@ -2359,17 +2359,30 @@ rings, debuff motes and a pillar of light when someone is raised. Every skill pi
 exceptions go in `docs/data/skill_fx.csv` (your pick). **Step 7 built 0.250.0**: weapons in hand (one mesh per
 weapon type, `HeldWeapons.cs`, VisualPass §0.6; `BL-103` keeps the tier and rarity half). Next: step 8 (camera rotation).
 
-## `BL-345` ❓ HOSTING FOR FRIENDS — where the server lives and how they join (2026-10-12)
+## `BL-345` 🔴 HOSTING FOR FRIENDS — answered; the code it needs is owed (2026-10-12, answered 2026-10-13)
 
 Your words: *"after the visuals i want to tell me how to host so i can ask friends to join/download etc (this is my
-question about oracle free linux machine?)"*. Answer owed **after `BL-344`**, on your order.
+question about oracle free linux machine?)"*. (The question as filed is in the archive.)
 
-What the answer has to cover:
-1. **The machine.** Your candidate is Oracle Cloud's Always Free tier (an ARM Linux VM). The server is plain .NET with
-   SQLite, so it can run there; the answer should check the current free limits and the setup steps.
-2. **Opening it up.** The port, the firewall, and whether it needs a domain name and HTTPS for the phone client.
-3. **The client.** How the APK finds a server that is not `localhost`, and where friends download it from.
-4. **Running it.** Starting the server as a service, updating it to a new version, and backing up `game.db`.
+**The answer is [guides/Hosting.md](guides/Hosting.md): yes.** An Oracle Always Free ARM machine (2 OCPU / 12 GB since
+Oracle halved the allowance in 2026), a free DuckDNS name, Caddy for HTTPS, the server as a systemd service, and a nightly
+`game.db` backup. It costs €0 a month. Upgrade the account to Pay-As-You-Go so Oracle's idle reclaimer leaves the machine
+alone. Friends open `https://<name>.duckdns.org`, download the APK there, and register.
+
+**Owed, as one version (it includes a client change, so a new APK).** This is part 4 of the guide:
+1. With `GAME_PUBLIC=1`, `EnsureOwnerFileForDev` does nothing. Today a stranger who names a character *Owner* becomes
+   Owner.
+2. With `GAME_PUBLIC=1`, the "first account's first character is born Admin" rule is off too.
+3. The server saves everyone whenever the host stops it, not only on `/shutdown`. Under systemd, `/reboot` just exits.
+4. The login screen's default URL becomes your address. The URL field stays.
+5. `publish.ps1 -Linux` builds a self-contained `linux-arm64` zip that carries `update.sh`.
+6. `/apk` serves the newest `apk/*.apk` next to the server, not the repo path.
+
+Same pass, smaller: an Owner command `/registration open|closed`. Also a real Android package id and a release signing
+key, set **before** friends install, because changing either one later forces every friend to uninstall.
+
+After that you do the guide's steps 1-8 (they need your Oracle login). The first test is your own phone over mobile
+data. ⚠ Untested: the Unity SignalR client over `https://`/`wss://` on the phone.
 
 ## `BL-346` ⏸ THE OPEN-WORLD GRID MAP — zone cells, castle territories, one seamless world (2026-10-12, for later)
 

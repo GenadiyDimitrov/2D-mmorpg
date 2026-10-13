@@ -8746,3 +8746,15 @@ fits the lot), 0-2 huts per wooded field (18 in all), the Anvil as a stone block
 still owns that). Models: Quaternius *Medieval Village MegaKit* (CC0), assembled and baked by `ModelSetup.BuildBuildings`.
 ⚠ Most buildings stand at 0.6-0.8 of real size because the lots are small next to a character; when the map
 reorganisation grows the lots, the buildings follow with no code change.
+
+## `BL-345` — the question as filed, before the answer (2026-10-12; answered 2026-10-13 in guides/Hosting.md, code still owed)
+
+Your words: *"after the visuals i want to tell me how to host so i can ask friends to join/download etc (this is my
+question about oracle free linux machine?)"*. Answer owed **after `BL-344`**, on your order.
+
+What the answer has to cover:
+1. **The machine.** Your candidate is Oracle Cloud's Always Free tier (an ARM Linux VM). The server is plain .NET with
+   SQLite, so it can run there; the answer should check the current free limits and the setup steps.
+2. **Opening it up.** The port, the firewall, and whether it needs a domain name and HTTPS for the phone client.
+3. **The client.** How the APK finds a server that is not `localhost`, and where friends download it from.
+4. **Running it.** Starting the server as a service, updating it to a new version, and backing up `game.db`.
