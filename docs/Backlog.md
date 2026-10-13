@@ -437,6 +437,10 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
   ⤷ 🆕 2026-10-12, your ask *"also offer sound ideas ... suno ? or orher ai tools ? or free from real ppl ? - note"*:
   the options and their licence catches are in `design/SoundSources.md` (free CC0 libraries for effects, Suno only on
   a paid month for music). A note, nothing built.
+  ⤷ ✅ 2026-10-13, your *"can we build sounds now?"*: **sound effects BUILT in 0.256.0** (`Sfx.cs`, 22 cues, all CC0,
+  one folder per sound under `Resources/Sounds/`, Settings → Sound volume). **Still owed here:** music (your call on
+  the source, see the 0.256.0 changelog entry), ambient loops per biome, a sound of its own per skill school (the
+  colours of `BL-344` step 6 are the natural key), and swapping the clips that sound wrong once you have heard them.
 
 - `BL-48` ⏸ **Instances — you are holding.** Design is written (`design/Instances.md`). One
   load-bearing decision is still open: the daily attempt **GLOBAL vs PER-INSTANCE**. It changes the

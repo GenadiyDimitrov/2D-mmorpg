@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.255.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.256.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,25 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-13 (latest) — 0.255.0: houses in the towns, huts in the woods, a stone Anvil; scenery draws around you
+## 2026-10-13 (latest) — 0.256.0: sound effects
+
+**New APK only** (client-only; no server restart, no `game.db` delete). (`BL-45`, the sound half)
+
+- **The game makes noise for the first time.** Hits (a blade sound for swords and daggers, a thud for blunts, fists and
+  claws), crits on top, shield blocks, misses, the bow's twang with the arrow landing when it arrives, spell release
+  and spell impact (also on arrival), a fizzle when a spell fails, heals, mana, buffs, debuffs, creature deaths.
+- **Every fight in view is heard**, quieter the further it is from you and panned left/right by where it is on screen.
+  A fight you are in is always at full volume. Nothing past ~40 units plays.
+- **Your own**: footsteps (grass in the field, stone inside a town), a jingle on level-up and on your death, coins
+  when your purse grows, a leather rustle when you loot an item, a soft click on every button.
+- **Settings → Sound volume** (0 = silent; Reset to defaults restores it).
+- 🔑 **A sound is a FOLDER**: `Assets/Resources/Sounds/<cue>/`, every clip in it a random variant. Changing a sound is
+  dropping a file in or out; nothing else changes. 22 cues, 87 clips, 1.6 MB, all CC0 (Kenney + OpenGameArt; listed
+  in `docs/CREDITS.md`). Clips were chosen **by their names, not by ear**, so expect some to want swapping after the
+  first listen. The level-up and death jingles especially.
+- No music and no ambience yet.
+
+## 2026-10-13 — 0.255.0: houses in the towns, huts in the woods, a stone Anvil; scenery draws around you
 
 **New APK only** (client-only; no server restart, no `game.db` delete). (`BL-356`)
 

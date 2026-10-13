@@ -55,6 +55,7 @@ namespace Game.Client
         public GroundDecals Decals;
         /// <summary>`BL-344` step 6 — the skill effects (projectiles, beams, slashes, glows, the res pillar).</summary>
         public FxPlayer Fx;
+        public Sfx Sound;
 
         // ----- State the HUD reads -------------------------------------------------------------
         public ClientPhase Phase { get; private set; } = ClientPhase.Offline;
@@ -125,6 +126,7 @@ namespace Game.Client
         public float FavorReceivedAt { get; private set; }
         public ProgressUpdate Progress { get; private set; }
         public long Gold { get; private set; }
+        private bool _goldKnown;   // `BL-45` — the first purse push is a login, not a pickup
 
         /// <summary>PLATINUM (`BL-257`) — the premium currency. ⚠ It belongs to the ACCOUNT, not to this
         /// character, so a purchase on another character of the same account changes it while you are
@@ -1262,6 +1264,14 @@ namespace Game.Client
                 Entities.Revived += Fx.Pillar;
             }
 
+            // `BL-45`: the sound effects, fed from the same Combat events, the progress push and the gold push.
+            if (Sound == null)
+            {
+                Sound = FindAnyObjectByType<Sfx>();
+                if (Sound == null) Sound = new GameObject("Sfx").AddComponent<Sfx>();
+                Sound.Boot = this;
+            }
+
             // HELD, not looked up on demand: FindAnyObjectByType skips INACTIVE objects, so once the
             // overlay was switched off the next lookup returned null and it could never be switched
             // back on. A toggle that only works in one direction is worse than no toggle.
@@ -1425,9 +1435,19 @@ namespace Game.Client
                 if (ActiveClass != null && ActiveClass.Level != p.Level)
                     ActiveClass = ActiveClass with { Level = p.Level };
                 SkillPoints = p.SkillPoints;   // SP is earned on this event; stats aren't pushed here
-                if (p.LeveledUp) ClientLog.Good("Level up! Now level " + p.Level + ".");
+                if (p.LeveledUp)
+                {
+                    ClientLog.Good("Level up! Now level " + p.Level + ".");
+                    if (Sound != null) Sound.LevelUp();
+                }
             });
-            _net.GoldReceived += g => Main(() => { Gold = g.Gold; Platinum = g.Platinum; });
+            _net.GoldReceived += g => Main(() =>
+            {
+                // `BL-45` — coins only for MORE gold, and never for the first push after login (Gold 0 -> your purse).
+                if (Sound != null && _goldKnown && (g.Gold > Gold || g.Platinum > Platinum)) Sound.Gold();
+                _goldKnown = true;
+                Gold = g.Gold; Platinum = g.Platinum;
+            });
             // Auto-hunt drives the target window. The server owns the choice while the autopilot is on,
             // so this simply adopts it; when auto-hunt stops the server sends null and the window clears
             // rather than freezing on the last mob it killed.
@@ -2292,6 +2312,7 @@ namespace Game.Client
                 }
                 // `BL-344` step 6 — the skill's effect, also for every fight in view, for the same reason.
                 if (Fx != null) Fx.Play(e);
+                if (Sound != null) Sound.Play(e);   // `BL-45`
 
                 if (e.AttackerId != _selfId && e.TargetId != _selfId) return;
                 // `BL-43`: remember who is hitting US, so the target cycle can put them first. Stamped
@@ -3261,6 +3282,8 @@ namespace Game.Client
                     // several lines per kill and mirroring it into logcat is pure noise.
                     ClientLog.Chat(m.Text, m.From == "LOOT" ? LootColour : RewardColour,
                                    ClientLog.Tab.Combat);
+                    // `BL-45` — an ITEM picked up (gold has its own sound, off the purse).
+                    if (Sound != null && m.From == "LOOT" && m.Text != null && m.Text.StartsWith("You looted")) Sound.Loot();
                     break;
                 default:
                     ClientLog.Chat(m.From + ": " + m.Text,

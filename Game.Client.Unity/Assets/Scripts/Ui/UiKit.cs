@@ -276,7 +276,7 @@ namespace Game.Client
             Stretch(Rect(face.gameObject), 9f, 5f, 9f, 5f);
             PaintIcon(face.transform, icon);
 
-            if (onClick != null) button.onClick.AddListener(() => onClick());
+            if (onClick != null) button.onClick.AddListener(() => { Sfx.Instance?.Click(); onClick(); });   // `BL-45`
             return button;
         }
 
@@ -327,7 +327,7 @@ namespace Game.Client
             var label = Label(image.transform, text, size, Text, TextAlignmentOptions.Center);
             Stretch(Rect(label.gameObject), 2f, 2f, 2f, 2f);
 
-            if (onClick != null) button.onClick.AddListener(() => onClick());
+            if (onClick != null) button.onClick.AddListener(() => { Sfx.Instance?.Click(); onClick(); });   // `BL-45`
             return button;
         }
 
