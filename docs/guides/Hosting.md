@@ -53,6 +53,10 @@ address.
    - **Image:** *Change image* → **Canonical Ubuntu 24.04** (pick the one that is *not* "Minimal").
    - **Shape:** *Change shape* → *Ampere* → **VM.Standard.A1.Flex**, **2 OCPU, 12 GB**. It must show the *Always Free
      eligible* tag.
+   - **Networking:** *Create new virtual cloud network* + *Create new **public** subnet* (a private subnet cannot
+     get a public IP), and **Automatically assign public IPv4 address ON** (free, survives stop/reboot, lost only on
+     terminate). IPv6 off. If it only says "a subnet is required": in another tab, *Networking → Virtual cloud networks
+     → Start VCN Wizard → Create VCN with Internet Connectivity*, defaults, then pick that VCN and its public subnet.
    - **SSH keys:** *Generate a key pair for me* → **Download private key**. Save it as `C:\Users\genad\.ssh\oracle.key`.
      Without this file you cannot get into the machine.
    - *Create*. After a minute it shows **Public IP address**. That is `<IP>`.
