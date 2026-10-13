@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.251.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.252.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,26 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-12 (latest) — 0.251.0: turn and tilt the camera (`BL-344` step 8)
+## 2026-10-13 (latest) — 0.252.0: `/time`; fainter god halo; models fade on `/invis`
+
+**Server restart + new APK** (protocol 54 — an old APK still logs in, but its sky ignores an admin `/time`). No
+`game.db` delete.
+
+- **`/time`, for everyone:** the game time (day or night, and whether the clock is stopped) and the server's own wall
+  clock with its UTC offset.
+- **`/time <value>`, Admin only:** moves the game clock for the whole server; every connected player's sky jumps with
+  it, and the day/night mob populations swap on the next tick when the phase flips.
+  - `H:mm`, 24h: `/time 1:00`, `/time 6:31`, `/time 13:00`, `/time 18:31`. The clock keeps running from there.
+  - Keywords, the start of each stretch: `midnight` 00:00, `dawn` 04:30, `morning`/`day` 06:00, `noon` 12:00,
+    `dusk`/`evening` 17:30, `night` 18:00. (Morning and night are the server's day/night flips; dawn and dusk are
+    where the sky starts to change.)
+  - `/time stop` freezes the clock; a value typed while stopped moves it and it stays stopped. `/time start` lets it
+    run again **from where it stopped**; `/time reset` puts back the natural clock.
+  - Not saved: a server restart is the natural clock again.
+- **The god halo is fainter** (alpha 0.42 → 0.25): it hid swarming mobs.
+- **`/invis` and stealth now fade a body wearing a model** (and its weapons) — before, only the old capsule faded.
+
+## 2026-10-12 — 0.251.0: turn and tilt the camera (`BL-344` step 8)
 
 **Client only, new APK.** No `game.db` delete, no protocol bump. This is the last step of the visual pass.
 

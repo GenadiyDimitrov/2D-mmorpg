@@ -132,6 +132,7 @@ namespace Game.Client
 
         /// <summary>A plain server notice (e.g. the 3h "take a break" nudge) — shown as a transient banner.</summary>
         public event Action<string> NoticeReceived;
+        public event Action<ClockState> ClockReceived;
 
         /// <summary>A SELECTION box was opened — the server offers choices; the client shows a chooser.</summary>
         public event Action<SelectionOffer> SelectionReceived;
@@ -190,6 +191,7 @@ namespace Game.Client
             _connection.On<CraftingUpdate>("Crafting", c => CraftingReceived?.Invoke(c));
             _connection.On<RegionNotice>("Region", r => RegionReceived?.Invoke(r));
             _connection.On<string>("Notice", m => NoticeReceived?.Invoke(m));
+            _connection.On<ClockState>("Clock", c => ClockReceived?.Invoke(c));
             _connection.On<SelectionOffer>("Selection", o => SelectionReceived?.Invoke(o));
             _connection.On<TitleColorOffer>("TitleColors", o => TitleColorsReceived?.Invoke(o));
             _connection.On<BuffUpdate>("Buffs", b => BuffsReceived?.Invoke(b));

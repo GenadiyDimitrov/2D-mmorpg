@@ -18,7 +18,12 @@ public record LoginResult(
     float X,
     float Y,
     DateTime ServerEpochUtc = default,
-    AccountRole Role = AccountRole.Player);
+    AccountRole Role = AccountRole.Player,
+    double ClockFrozenHour = -1);
+
+/// <summary>Server -> every client, whenever an admin moves the game clock (`/time`): the epoch <see cref="GameClock"/>
+/// counts from, and the hour it is stopped at (-1 = running).</summary>
+public record ClockState(DateTime EpochUtc, double FrozenHour);
 
 /// <summary>One visible entity's state inside a snapshot.</summary>
 public record EntityDto(

@@ -51,7 +51,7 @@ public partial class GameLoopService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        GameClock.Epoch = DateTime.UtcNow;
+        GameClock.Epoch = GameClock.NaturalEpoch = DateTime.UtcNow;
         await InitZonesAsync();
         await LoadMentoringAsync();   // `BL-339` — the roster and every bond, held in memory
         SpawnNpcs();
@@ -334,7 +334,8 @@ public partial class GameLoopService : BackgroundService
             _world.AccountBudgets.TryAdd(entity.AccountId, cmd.AccountBudget);
 
         cmd.Result.TrySetResult(
-            new LoginResult(true, null, entity.Id, entity.X, entity.Y, GameClock.Epoch, entity.Role));
+            new LoginResult(true, null, entity.Id, entity.X, entity.Y, GameClock.Epoch, entity.Role,
+                            GameClock.FrozenHour ?? -1));
 
         AutoLearnCoreSkills(entity);
         // `BL-250` — pay any earned Subclass Ticket this character has qualified for and not received:
@@ -7584,6 +7585,16 @@ public partial class GameLoopService : BackgroundService
             return;
         }
 
+        // A bare `/time` is for everyone, like a bare `/where` (owner, 2026-10-13); `/time <value>` moves the clock and
+        // falls through to the staff gate, where only an Admin reaches the `time` case.
+        if (cmd.Command.Equals("time", StringComparison.OrdinalIgnoreCase)
+            && cmd.Argument.Trim().Length == 0
+            && TryGetPlayer(cmd.ConnectionId, out var clockAsker))
+        {
+            SendSystemToEntity(clockAsker, TimeLine());
+            return;
+        }
+
         // `BL-126` — THE SECOND COMMAND THAT IS NOT STAFF-ONLY, and like `/where` it is handled before
         // the gate. While RateConfig.FreeBuffs is on, ANY player may `/buff` — but only himself: the
         // target word is never parsed (`selfOnly`), so the half of this command that acts ON another
@@ -8239,6 +8250,39 @@ public partial class GameLoopService : BackgroundService
                 }
                 else SendSystemToEntity(admin, $"{arg} is not online.");
                 break;
+
+            case "time":
+            {
+                var now = DateTime.UtcNow;
+                switch (arg.ToLowerInvariant())
+                {
+                    case "stop":
+                        GameClock.Stop(now);
+                        break;
+                    case "start":
+                        GameClock.Start(now);
+                        break;
+                    case "reset":
+                        GameClock.Reset();
+                        break;
+                    default:
+                        if (!GameClock.TryParseHour(arg, out double hour))
+                        {
+                            foreach (var c in ChatCommandCatalog.For("time", admin.Role))
+                                SendSystemToEntity(admin, c.Usage);
+                            SendSystemToEntity(admin, "Keywords: " + GameClock.KeywordList() + ".");
+                            return;
+                        }
+                        GameClock.SetHour(hour, now);
+                        break;
+                }
+                // Every client draws its sky off its own copy of the clock, so all of them get the new one. The
+                // day/night mob swap needs nothing: UpdateZones reads the phase every tick and sees the jump.
+                _ = _hub.Clients.All.SendAsync("Clock", new ClockState(GameClock.Epoch, GameClock.FrozenHour ?? -1));
+                _log.LogInformation("{Admin} moved the game clock: /time {Arg}", admin.Name, arg);
+                SendSystemToEntity(admin, TimeLine());
+                break;
+            }
 
             case "where":
                 if (FindOnlinePlayer(arg) is Entity who)
@@ -18925,6 +18969,19 @@ public partial class GameLoopService : BackgroundService
     private void SendSystemTo(string connectionId, string text) =>
         _ = _hub.Clients.Client(connectionId)
             .SendAsync("Chat", new ChatMessage("SYSTEM", AsciiText.Fold(text), ChatChannel.System));
+
+    /// <summary>What `/time` answers: the game clock (with its phase, and whether an admin stopped it) and the server
+    /// machine's own wall clock with its UTC offset — players are in other timezones than the server.</summary>
+    private static string TimeLine()
+    {
+        var now = DateTime.UtcNow;
+        double hour = GameClock.HourOfDay(now);
+        string phase = GameClock.PhaseAt(hour) == DayPhase.Day ? "day" : "night";
+        string state = GameClock.FrozenHour.HasValue ? ", clock STOPPED" : "";
+        var local = DateTimeOffset.Now;
+        string offset = (local.Offset < TimeSpan.Zero ? "-" : "+") + local.Offset.ToString(@"hh\:mm");
+        return $"Game time {GameClock.Format(hour)} ({phase}{state}). Server time {local:HH:mm:ss} (UTC{offset}).";
+    }
 
     private void SendSystemToEntity(Entity entity, string text)
     {

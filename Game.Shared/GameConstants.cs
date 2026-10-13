@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.251.0";
+    public const string GameVersion = "0.252.0";
 
     /// <summary>RUNES STACK, UP TO A CAP (owner, 2026-10-03): opening a rune box while you hold the same rune ADDS its
     /// time to that rune instead of starting a second clock beside it. A box of this length or shorter (1h/2h) may only
@@ -236,7 +236,9 @@ public static class GameConstants
     /// ⚠ A NEW APK AND SERVER TOGETHER.
     /// 53 (0.250.0) — `EntityDto` gained Weapon / MagicWeapon / Shield at the end, so other players and mobs
     /// show what they hold (`BL-103`). A pure addition: an old client ignores them and draws empty hands.
-    public const int ProtocolVersion = 53;   // 53: weapons in hand (`BL-103`)
+    /// 54 (0.252.0) — `/time`: a new `Clock` push and `LoginResult.ClockFrozenHour` (appended, default -1). A pure
+    /// addition: an old client ignores both and keeps the natural clock — its sky is wrong after an admin `/time`.
+    public const int ProtocolVersion = 54;   // 54: `/time` clock push
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means

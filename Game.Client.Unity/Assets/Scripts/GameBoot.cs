@@ -1529,6 +1529,7 @@ namespace Game.Client
             });
             _net.RegionReceived += r => Main(() => Ui?.ShowRegionNotice(r));
             _net.NoticeReceived += m => Main(() => Ui?.ShowToast(m));
+            _net.ClockReceived += c => Main(() => ApplyClock(c.EpochUtc, c.FrozenHour));
             _net.SelectionReceived += o => Main(() => Ui?.ShowBoxSelection(o));
             _net.TitleColorsReceived += o => Main(() => Ui?.ShowTitleColorPicker(o));
             _net.PartyReceived += p => Main(() =>
@@ -1925,14 +1926,8 @@ namespace Game.Client
                 // thrown it away. Keeping it lets the status bar show in-game time off the SHARED
                 // GameClock formula rather than a second copy of it — one epoch, one TimeScale, no
                 // way for the two sides to disagree about what time it is.
-                // ⚠ Normalise the Kind: over the wire this can come back Unspecified, and
-                // `DateTime.UtcNow - Unspecified` would silently be out by the timezone offset.
                 if (result.ServerEpochUtc != default)
-                    GameClock.Epoch = result.ServerEpochUtc.Kind == DateTimeKind.Utc
-                        ? result.ServerEpochUtc
-                        : result.ServerEpochUtc.Kind == DateTimeKind.Local
-                            ? result.ServerEpochUtc.ToUniversalTime()
-                            : DateTime.SpecifyKind(result.ServerEpochUtc, DateTimeKind.Utc);
+                    ApplyClock(result.ServerEpochUtc, result.ClockFrozenHour);
                 Main(() =>
                 {
                     if (Entities != null) Entities.SetSelf(_selfId);   // re-tints anything already spawned
@@ -1956,6 +1951,17 @@ namespace Game.Client
         /// world (as the same or a different character) never shows a ghost from the last session — the
         /// party roster that hung around after a relog, a half-open NPC dialog, a stale target window.
         /// The server re-pushes what still applies on entry; this just makes "nothing" the default.</summary>
+        /// <summary>Adopt the server's game clock — at login, and again whenever an admin `/time`s it.
+        /// ⚠ Normalise the Kind: over the wire the epoch can come back Unspecified, and
+        /// `DateTime.UtcNow - Unspecified` would silently be out by the timezone offset.</summary>
+        private static void ApplyClock(DateTime epoch, double frozenHour)
+        {
+            GameClock.Epoch = epoch.Kind == DateTimeKind.Utc ? epoch
+                : epoch.Kind == DateTimeKind.Local ? epoch.ToUniversalTime()
+                : DateTime.SpecifyKind(epoch, DateTimeKind.Utc);
+            GameClock.FrozenHour = frozenHour >= 0 ? frozenHour : (double?)null;
+        }
+
         private void ResetWorldTransients()
         {
             TargetId = null;
@@ -3190,6 +3196,8 @@ namespace Game.Client
                     // client knows none of them.
                     bool playerAllowed = (cmd.Equals("where", StringComparison.OrdinalIgnoreCase)
                                           && arg.Length == 0)
+                                         // A bare `/time` (2026-10-13) — setting it is Admin, refused server-side.
+                                         || (cmd.Equals("time", StringComparison.OrdinalIgnoreCase) && arg.Length == 0)
                                          || cmd.Equals("buff", StringComparison.OrdinalIgnoreCase)
                                          || cmd.Equals("unstuck", StringComparison.OrdinalIgnoreCase)
                                          // `/like <name>` (2026-09-24) — the typed Recommend; its staff
