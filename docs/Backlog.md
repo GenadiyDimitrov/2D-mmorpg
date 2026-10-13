@@ -294,7 +294,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-351` | ⏸ | **Downloadable content** — move art out of the APK (Addressables + CDN, or Play Asset Delivery) once it passes ~100 MB; until then new asset kinds load through one function | client |
 | `BL-352` | 🔴 | **Vamp heals from the HP the target really LOST, not the damage rolled** — a 1500 hit on a 100-HP target vamps from 100; every lifesteal path (skill drains + basic-attack vamp) | combat |
 | `BL-353` | ⏸ | **Town NPCs get a level and a rank** — peasants 20-30, masters 50-60, the gatekeeper a lvl-90 mage, grand master a lvl-60 knight; 1-3k HP; mage or fighter by role | world |
-| `BL-354` | ⏸ | **Character bodies** — female bodies (needs a gender), the paid pack's other 10 outfits, armour type/grade → outfit pieces per slot | client |
+| `BL-354` | ⏸ | **Character bodies** — female NPCs first, then 2 genders per race (pick at creation), 5 hairstyles + hair colour + skin tone; the paid pack's other 10 outfits; armour type/grade → outfit pieces per slot | client |
 
 ---
 
@@ -2495,6 +2495,8 @@ descripted for those entitites)"*.
 - ⚠ Every name must pass the IP test in `CLAUDE.md` (no IG god, race or place names; word + same race + same role).
 - ❓ To settle when picked up: who writes it (you, me drafting for your edit, or both); where it lives (a
   `docs/design/Lore.md`); how deep before content uses it.
+- Seed (2026-10-13, with `BL-354`'s two genders): one god made men from stone and women from ash, or similar — the
+  world has two sexes, and its myth says why.
 
 ## `BL-351` ⏸ DOWNLOADABLE CONTENT — art out of the APK (2026-10-12, when it grows)
 
@@ -2553,9 +2555,22 @@ is split per slot (body / legs / arms / feet / hood), and the head is separate, 
 
 - ❓ **The other 10 outfits** are in the paid Source version ($20, still CC0); the free one has Peasant + Ranger only.
   Yours to decide whether to buy it — without it there is nothing to make heavy/light/robe looks from.
-- ❓ **Female bodies need a gender on the character.** The files are in the pack (Female Ranger imports fine; Female
-  Peasant failed to import as a humanoid and needs a look), but nothing on `EntityDto` says male or female, so every
-  player is male today. A gender pick at character creation (+ a `game.db` delete) is the cost.
+- **Two genders for every race, and female NPCs** (your words, 2026-10-13: *"if we have genders can atlast the npcs
+  have a female .. also it will be good to do at some point 5 hair stiles, 5 faces and each race to have 2 genders"*).
+  The plan, in build order:
+  1. **Female NPCs first — no gender field needed.** A male/female flag on each `NpcDef` (the server already decides
+     who every NPC is), carried on `EntityDto`; the client picks `npc_female` / `humanoid`. Needs the female head cut
+     from `Superhero_Female_FullBody` and Female Peasant's humanoid import fixed (it came in "generic").
+  2. **Player gender** — a pick at character creation, persisted (`game.db` delete), on `EntityDto` (protocol bump);
+     `ModelLibrary` gains `player_female` and the same per-race/class chain. 🔑 Label it **"Body: A / B"** in the UI
+     if you want the topic off the table entirely — common in recent games, costs nothing.
+  3. **Looks at creation:** hair **5 per gender** from the free pack's 6 meshes (male: Parted / Long / Buzzed / Parted
+     + Beard / Buzzed + Beard; female: Long / Buns / Parted / Buzzed-female / one more by colour) + a **hair colour**
+     (a tint, free) + **skin tone** (light/dark textures both ship) + eye colour. ⚠ **"5 faces" is not in this pack**:
+     it has ONE head per gender — skin, eyes, brows and beard make characters distinct, but the face SHAPE is the
+     same. Real face variety needs the paid Source pack or other art.
+  4. **Races:** the bodies are human. A demon skin tint is cheap; elf ears and demon horns need small extra meshes.
+  - Lore seed for `BL-350`: *"the Forge-god shaped men from stone and women from ash"* (your idea: the world has two).
 - **Per-grade looks** (= the visual half of `BL-103`): a table from armour type/grade → outfit pieces per slot, the
   client swapping the slot's mesh on the same skeleton. Blocked on the two questions above for anything beyond
   "Ranger vs Peasant".
