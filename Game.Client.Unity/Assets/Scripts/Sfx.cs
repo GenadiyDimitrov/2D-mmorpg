@@ -26,11 +26,23 @@ namespace Game.Client
     {
         public GameBoot Boot;
 
-        /// <summary>The player's volume, 0..1 (Settings → Sound volume).</summary>
-        public static float Volume = 0.8f;
-        public const string VolumePref = "snd.volume";
+        // ----- The player's levels (Menu → Sound, or the Sound button in Settings), each 0..1 -----
+        public static float Master = 1f, Effects = 0.8f, MusicVolume = 0.5f;
+        public static bool Muted;
+        public const string MasterPref = "snd.master", EffectsPref = "snd.volume", MusicPref = "snd.music", MutePref = "snd.mute";
+        public static readonly string[] Prefs = { MasterPref, EffectsPref, MusicPref, MutePref };
 
-        public static void LoadPrefs() => Volume = Mathf.Clamp01(PlayerPrefs.GetFloat(VolumePref, 0.8f));
+        /// <summary>What an effect and the music actually play at: master × its own slider, 0 while muted.</summary>
+        public static float EffectsLevel => Muted ? 0f : Master * Effects;
+        public static float MusicLevel => Muted ? 0f : Master * MusicVolume;
+
+        public static void LoadPrefs()
+        {
+            Master = Mathf.Clamp01(PlayerPrefs.GetFloat(MasterPref, 1f));
+            Effects = Mathf.Clamp01(PlayerPrefs.GetFloat(EffectsPref, 0.8f));
+            MusicVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(MusicPref, 0.5f));
+            Muted = PlayerPrefs.GetInt(MutePref, 0) == 1;
+        }
 
         /// <summary>The one instance, for the UI's button click. Null before the world boots, which is silence.</summary>
         public static Sfx Instance { get; private set; }
@@ -51,6 +63,9 @@ namespace Game.Client
             { "loot_gold", 0.6f }, { "loot_item", 0.6f },
             { "ui_click", 0.3f },
             { "step_grass", 0.25f }, { "step_stone", 0.25f },
+            // the animations' own (0.257.0)
+            { "swing", 0.35f }, { "cast_start", 0.4f }, { "mob_hurt", 0.45f }, { "player_hurt", 0.5f },
+            { "player_death", 0.7f }, { "body_fall", 0.5f }, { "sit", 0.4f },
         };
 
         private readonly Dictionary<string, AudioClip[]> _clips = new Dictionary<string, AudioClip[]>();
@@ -92,8 +107,11 @@ namespace Game.Client
 
             if (e.Outcome == CombatOutcome.Death)
             {
+                // The cry (a creature's, or a person's), and the body hitting the ground under it.
+                bool person = Boot.Entities.TryGetState(e.TargetId, out var dead) && dead.Kind == EntityKind.Player;
+                At(e.TargetId, person ? "player_death" : "death");
+                At(e.TargetId, "body_fall");
                 if (self) Ui("death_self");
-                else At(e.TargetId, "death");
                 return;
             }
 
@@ -105,6 +123,7 @@ namespace Game.Client
             {
                 // A tick, a reflect or a proc carries a label and no swing: the floating number is enough.
                 if (e.Swing <= 0f) return;
+                if (attacker != null && attacker.HeldWeapon != WeaponType.Bow) At(e.AttackerId, "swing");
                 bool bow = attacker != null && attacker.HeldWeapon == WeaponType.Bow;
                 if (bow)
                 {
@@ -140,6 +159,7 @@ namespace Game.Client
                 Arrive(attacker, target, false, land, e);
                 return;
             }
+            if (e.Swing > 0f && attacker != null) At(e.AttackerId, "swing");
             Strike(e, attacker);
         }
 
@@ -155,6 +175,23 @@ namespace Game.Client
             bool blade = (weapon & (WeaponType.AnySword | WeaponType.Dual)) != 0;
             At(e.TargetId, blade ? "hit_blade" : "hit_blunt");
             if (e.Outcome == CombatOutcome.Crit || e.Outcome == CombatOutcome.Double) At(e.TargetId, "crit");
+            var hurt = HurtCue(e);
+            if (hurt != null) At(e.TargetId, hurt);
+        }
+
+        /// <summary>A hit sometimes draws a voice from whoever took it: a grunt from a person, a cry from a creature.
+        /// Not every time (a voice per blow in a long fight is a chorus), but a crit always does.</summary>
+        private string HurtCue(CombatEvent e)
+        {
+            if (e.Damage <= 0 || !Boot.Entities.TryGetState(e.TargetId, out var who)) return null;
+            bool crit = e.Outcome == CombatOutcome.Crit || e.Outcome == CombatOutcome.Double;
+            if (!crit && UnityEngine.Random.value > 0.3f) return null;
+            switch (who.Kind)
+            {
+                case EntityKind.Player: return "player_hurt";
+                case EntityKind.Mob: return "mob_hurt";
+                default: return null;
+            }
         }
 
         /// <summary>The landing sound, held back for as long as <see cref="FxPlayer"/>'s projectile flies (the same
@@ -164,6 +201,8 @@ namespace Game.Client
             if (cue == null) return;
             if (e.Outcome == CombatOutcome.Crit) Queue(from, to, arrow, "crit", e.TargetId);
             Queue(from, to, arrow, cue, e.TargetId);
+            var hurt = e.Outcome == CombatOutcome.Fail ? null : HurtCue(e);
+            if (hurt != null) Queue(from, to, arrow, hurt, e.TargetId);
         }
 
         private void Queue(EntityView from, EntityView to, bool arrow, string cue, Guid target)
@@ -181,6 +220,9 @@ namespace Game.Client
         public void Gold() => Ui("loot_gold");
         public void Loot() => Ui("loot_item");
         public void Click() => Ui("ui_click");
+
+        /// <summary>Someone in view began a cast (you, or a creature: the two cast pushes the client gets).</summary>
+        public void CastStart(Guid caster) => At(caster, "cast_start");
 
         // ----- Playing ------------------------------------------------------------------------------------
 
@@ -213,7 +255,7 @@ namespace Game.Client
 
         private void Emit(string cue, float gain, float pan)
         {
-            if (Volume <= 0.001f || gain <= 0.01f || _voices == null) return;
+            if (EffectsLevel <= 0.001f || gain <= 0.01f || _voices == null) return;
             float now = Time.unscaledTime;
             if (_lastPlayed.TryGetValue(cue, out var last) && now - last < Repeat) return;
             var clips = ClipsOf(cue);
@@ -224,7 +266,7 @@ namespace Game.Client
             _next = (_next + 1) % _voices.Length;
             src.Stop();
             src.clip = clips[UnityEngine.Random.Range(0, clips.Length)];
-            src.volume = Volume * gain * (Gain.TryGetValue(cue, out var g) ? g : 0.6f);
+            src.volume = EffectsLevel * gain * (Gain.TryGetValue(cue, out var g) ? g : 0.6f);
             src.panStereo = pan;
             src.pitch = UnityEngine.Random.Range(0.94f, 1.06f);   // the same clip twice should not sound like a loop
             src.Play();
@@ -251,6 +293,19 @@ namespace Game.Client
                 At(p.Target, p.Cue, p.Gain);
             }
             Footsteps();
+            SitStand();
+        }
+
+        private MoveState _lastMove;
+
+        /// <summary>A rustle when you sit down or stand up.</summary>
+        private void SitStand()
+        {
+            var stats = Boot != null ? Boot.Stats : null;
+            if (stats == null) return;
+            bool was = _lastMove == MoveState.Sitting, now = stats.MoveState == MoveState.Sitting;
+            _lastMove = stats.MoveState;
+            if (was != now) Ui("sit");
         }
 
         /// <summary>Your own steps only — everyone's would be a drum roll in town. Paced off the ground actually

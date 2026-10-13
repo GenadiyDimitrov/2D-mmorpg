@@ -103,7 +103,7 @@ namespace Game.Client
             // must never be scaled by the setting it controls.
             _settingsPanel = UiKit.PanelBox(_setupRoot, "Settings");
             UiKit.Place(_settingsPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                        Vector2.zero, new Vector2(640f, 690f));   // +40 for the sound volume (BL-45); grown for the camera rows, the bar-shape row, the bar size, then shadows + night; -88 for the ortho rows (0.252.0)
+                        Vector2.zero, new Vector2(640f, 650f));   // grown for the camera rows, the bar-shape row, the bar size, then shadows + night; -88 for the ortho rows (0.252.0)
             var inner = _settingsPanel.GetChild(0);
             float chrome = UiKit.WindowChrome(_settingsPanel, "Settings", () => CloseWindow(_settingsPanel));
 
@@ -250,13 +250,6 @@ namespace Game.Client
                     PlayerPrefs.SetFloat(DayNight.NightPref, v);
                 }));
 
-            // `BL-45` — one volume for every sound effect; 0 = silent.
-            Row(inner, ref y, UiKit.SliderRow(inner, "Sound volume", 0f, 1f, Sfx.Volume, "0.00", v =>
-                {
-                    Sfx.Volume = v;
-                    PlayerPrefs.SetFloat(Sfx.VolumePref, v);
-                }));
-
             // `BL-269` — extra skill squares, 0/6/12/18/24: *"need option to add more 6/12/18/24 skill slots
             // (half of or full the 2nd and 3rd skill bars)"*. A LOOK setting like the rest of this column,
             // so it lives on the phone; what the server stores is the same 60-slot bar either way.
@@ -279,7 +272,7 @@ namespace Game.Client
             {
                 foreach (var key in new[] { PrefPitch, PrefYaw,
                                             PrefEntity, PrefPlate, PrefUiScale, PrefBarScale, PrefDamage,
-                                            PrefZones, PrefTicks, PrefBarShape, PrefExtraBars, PropScatter.Pref, DayNight.ShadowPref, DayNight.NightPref, Sfx.VolumePref })
+                                            PrefZones, PrefTicks, PrefBarShape, PrefExtraBars, PropScatter.Pref, DayNight.ShadowPref, DayNight.NightPref })
                     PlayerPrefs.DeleteKey(key);
                 PlayerPrefs.Save();
                 // The two sizes come back at once — they are the ones that can make the game unusable.
@@ -291,6 +284,11 @@ namespace Game.Client
             }, 16f);
             UiKit.Place(UiKit.Rect(reset.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(170f, 16f), new Vector2(220f, 40f));
+
+            // `BL-45` — sound has a window of its own (this one is full); this is the way to it from the login screen.
+            var sound = UiKit.TextButton(inner, "Sound", () => OpenSoundWindow(), 16f);
+            UiKit.Place(UiKit.Rect(sound.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
+                        new Vector2(402f, 16f), new Vector2(140f, 40f));
 
             RefreshSettingsLabels();
             _settingsPanel.gameObject.SetActive(false);

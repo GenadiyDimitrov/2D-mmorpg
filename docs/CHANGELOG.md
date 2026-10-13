@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.256.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.257.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,28 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-13 (latest) — 0.256.0: sound effects
+## 2026-10-13 (latest) — 0.257.0: music, sounds for the animations, a Sound window with Mute all
+
+**New APK only** (client-only; no server restart, no `game.db` delete). (`BL-45`)
+
+- **Music**, picked by where you stand and crossfaded (2.5 s) when that changes; a place's tracks play in a shuffled
+  order, each crossfading into the next. All CC0 orchestral/medieval (no chiptune), listed in `docs/CREDITS.md`:
+  - **Fields**: 3 tracks. **Dungeons** (inside, and at the entrance): 2 dark ambient tracks.
+  - **Towns by region**: the green south (Brackenford, Stonewatch, the Training Outpost, and the login screen) a
+    market tune; the middle lands (Greymarsh, Ironreach Keep) 2 tavern/feast tunes; the cold north (Frostmere) its own.
+    Which city plays which is one table in `Music.cs` (`TownMusic`).
+- **Sounds for the animations**: a weapon **swish** with every melee swing (hit or miss), a magic **charge** when anyone
+  in view starts a cast (you or a creature), a **grunt** from a hit player and a **cry** from a hit creature (about one
+  hit in three, every crit), a person's **death cry** for a dying player, a **body fall** under every death, and a
+  cloth rustle when you **sit or stand**. Heals now use a proper "cure" chime.
+- **Menu → Sound** (also a **Sound** button in Settings, so the login screen reaches it): **[ ] Mute all**, and
+  **Master / Music / Effects** sliders. Music starts at half, effects at 0.8. Every change is heard as you move the
+  slider. Sound got its own window because Settings already fills the screen height.
+- Import rules (`Editor/AudioImport.cs`): music is **streamed** from the APK (never decompressed whole into memory),
+  effects are mono. Dropping a new file into a `Sounds/` or `Music/` folder needs nothing else.
+- ⚠ Chosen **by name and page description, not by ear** (I cannot listen), so judge them and tell me what to swap.
+
+## 2026-10-13 — 0.256.0: sound effects
 
 **New APK only** (client-only; no server restart, no `game.db` delete). (`BL-45`, the sound half)
 

@@ -1271,6 +1271,7 @@ namespace Game.Client
                 if (Sound == null) Sound = new GameObject("Sfx").AddComponent<Sfx>();
                 Sound.Boot = this;
             }
+            if (FindAnyObjectByType<Music>() == null) new GameObject("Music").AddComponent<Music>().Boot = this;
 
             // HELD, not looked up on demand: FindAnyObjectByType skips INACTIVE objects, so once the
             // overlay was switched off the next lookup returned null and it could never be switched
@@ -1667,6 +1668,7 @@ namespace Game.Client
                 CastingSkillId = c.SkillId ?? "";
                 CastStartedAt = Time.realtimeSinceStartup;
                 CastEndsAt = CastStartedAt + c.Seconds;
+                if (Sound != null) Sound.CastStart(_selfId);   // `BL-45`
 
                 // The walk is over HERE — when the SERVER confirms a cast started and roots you — and
                 // not when the button was tapped. See UseSkill for why guessing was wrong.
@@ -1691,6 +1693,7 @@ namespace Game.Client
                     SkillName = c.SkillName, StartedAt = now, EndsAt = now + c.Seconds,
                 };
                 if (caster != null) caster.SetCasting(true);        // `BL-93`
+                if (Sound != null) Sound.CastStart(c.CasterId);  // `BL-45`
             });
             _net.Disconnected += m => Main(() =>
             {
