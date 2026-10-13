@@ -25,6 +25,19 @@
 
 ---
 
+## §163 — 0.254.2: natural arms, re-roll changes the body, admin look picker (`BL-354`/`BL-355`, 2026-10-13)
+
+⚠ **Server restart + new APK.**
+
+- `163a` [ ] - Standing still, the arms hang at the sides (not held out in front). Running, they swing. A swing or a
+  cast still plays its arm motion and goes back to normal afterwards, without a jerk. ->
+- `163b` [ ] - Debug → Class → Reset character to ANOTHER race: your body changes at once (and another player sees it
+  change too). ->
+- `163c` [ ] - Debug → Class → Change look: each tap on Body / Hair / Colour / Skin changes your character at once; a
+  relog keeps it. `/look Name 1 0 4 0` does the same to another player. ->
+
+---
+
 ## §162 — 0.254.1: a model on the creation screen (`BL-354`, 2026-10-13)
 
 ⚠ **New APK only.**

@@ -9141,6 +9141,33 @@ public partial class GameLoopService : BackgroundService
                 break;
             }
 
+            // `BL-354` — change a character's look after creation. Owner, 2026-10-13: later a PREMIUM service (look
+            // cheap, gender dearer, race/class dearest — that last one is the re-roll), "for now ... admin windows".
+            // The spawn diff carries the new look (Entity.StaticFieldsEqual) and the client rebuilds the body.
+            case "look":
+            {
+                var lookParts = (arg ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                int lookNums = 0;
+                while (lookNums < lookParts.Length && int.TryParse(lookParts[^(lookNums + 1)], out _)) lookNums++;
+                if (lookNums != 4)
+                {
+                    SendSystemToEntity(admin, "Usage: /look [name] <body 0-1> <hair 0-4> <colour 0-7> <skin 0-4>");
+                    break;
+                }
+                var lookName = string.Join(' ', lookParts[..^4]);
+                Entity? lt = lookName.Length == 0 ? admin : FindOnlinePlayer(lookName);
+                if (lt is null) { SendSystemToEntity(admin, $"{lookName} is not online."); break; }
+                int L(int i) => int.Parse(lookParts[lookParts.Length - 4 + i]);
+                var look = Appearance.Clamp(L(0) == 1 ? Gender.Female : Gender.Male, L(1), L(2), L(3));
+                (lt.Gender, lt.Hair, lt.HairColor, lt.Skin) = look;
+                SaveEntity(lt);
+                string said = $"{look.Gender}, {Appearance.HairStyleNames(look.Gender)[look.Hair]} hair, "
+                            + $"{Appearance.HairColorNames[look.HairColor]}, {Appearance.SkinToneNames[look.Skin]} skin";
+                SendSystemToEntity(admin, $"[DEBUG] {lt.Name}: {said}.");
+                if (lt != admin) SendSystemToEntity(lt, $"An admin changed your look: {said}.");
+                break;
+            }
+
             default:
                 SendSystemToEntity(admin, $"Unknown command: {command}");
                 break;

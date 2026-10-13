@@ -230,6 +230,15 @@ namespace Game.Client
 
         private void Upsert(EntityDto e)
         {
+            // `BL-354` — a new BODY on a live entity (an admin re-roll to another race, a look change): the model was
+            // picked and dressed once, at Create, so rebuild the whole view. Rare, and a rebuilt self is re-acquired by
+            // the camera on the next frame (GameBoot.AcquireCamera tests the destroyed transform as null).
+            if (States.TryGetValue(e.Id, out var before) && BodyChanged(before, e)
+                && _views.TryGetValue(e.Id, out var stale) && stale != null)
+            {
+                Destroy(stale.gameObject);
+                _views.Remove(e.Id);
+            }
             States[e.Id] = e;
 
             if (!_views.TryGetValue(e.Id, out var view) || view == null)
@@ -254,6 +263,11 @@ namespace Game.Client
             // neither gets the pillar.
             if (wasDead && !e.Dead && e.Warp == warpBefore && e.Kind == EntityKind.Player && Revived != null) Revived(view);
         }
+
+        /// <summary>Everything <see cref="ModelLibrary"/> and <see cref="CharacterLook"/> read to build a body.</summary>
+        private static bool BodyChanged(EntityDto a, EntityDto b) =>
+            a.Race != b.Race || a.BaseClass != b.BaseClass || a.Gender != b.Gender
+            || a.Hair != b.Hair || a.HairColor != b.HairColor || a.Skin != b.Skin;
 
         private void Remove(Guid id)
         {

@@ -81,6 +81,11 @@ namespace Game.Client
         // selection"*). Six permanent rows for something you press once a month were the loudest thing
         // on the tab.
         private bool _debugResetView;
+        // `BL-354` — the look picker (gender, hair, colour, skin). Held here while it is open: the server's answer
+        // arrives in a later spawn diff, and the chips must show the pick at once.
+        private bool _debugLookView;
+        private Gender _lookGender;
+        private int _lookHair, _lookColor, _lookSkin;
 
         // `BL-180` — the Functions tab's `[Buffs]` drill-down. Two fields, because it is two levels
         // deep: the root page (the four drawers) and one drawer's list.
@@ -166,6 +171,7 @@ namespace Game.Client
             _debugItemsView = 0;
             _debugAddDiscView = false;
             _debugResetView = false;
+            _debugLookView = false;
             _debugBuffsView = false;
             _debugBuffDrawer = null;
             if (tab == 5) Boot.Debug(n => n.RequestDebugConfigAsync(), "tuning");
@@ -971,6 +977,7 @@ namespace Game.Client
         {
             if (_debugAddDiscView) { BuildDebugAddDiscipline(); return; }
             if (_debugResetView) { BuildDebugReset(); return; }
+            if (_debugLookView) { BuildDebugLook(); return; }
 
             _debugTitle.text = "Classes, crafting, subclasses and reset";
 
@@ -1103,6 +1110,18 @@ namespace Game.Client
             DebugHeader("Reset character (re-roll, same char)");
             DebugAction("Reset -> pick race & class >", () => { _debugResetView = true; RefreshDebugPanel(); });
 
+            // `BL-354` — look changes after creation (a premium service later; admin-only for now).
+            DebugHeader("Look (body, hair, colour, skin)");
+            DebugAction("Change look >", () =>
+            {
+                if (Boot.Entities != null && Boot.Entities.TryGetState(Boot.SelfId, out var me))
+                {
+                    _lookGender = me.Gender; _lookHair = me.Hair; _lookColor = me.HairColor; _lookSkin = me.Skin;
+                }
+                _debugLookView = true;
+                RefreshDebugPanel();
+            });
+
             // `BL-296` — the re-roll keeps quests AND limits now, so this is the one way to get today's
             // back: dailies, farm allowance, likes, the Favor potion. Admin-only on the server.
             DebugHeader("Limits");
@@ -1133,6 +1152,36 @@ namespace Game.Client
                     });
                 }
             }
+        }
+
+        /// <summary>`BL-354` — the look picker: every tap is applied at once (the `/look` admin command) and the body
+        /// in the world rebuilds. Race and class are the re-roll's, one view over.</summary>
+        private void BuildDebugLook()
+        {
+            _debugTitle.text = "Change look — applied on every tap";
+            DebugAction("< Back", () => { _debugLookView = false; RefreshDebugPanel(); });
+
+            void Send()
+            {
+                string args = $"{(int)_lookGender} {_lookHair} {_lookColor} {_lookSkin}";
+                Boot.Debug(n => n.AdminCommandAsync("look", args), "look");
+                RefreshDebugPanel();
+            }
+            (int, string)[] List(string[] names) => names.Select((n, i) => (i, n)).ToArray();
+
+            DebugHeader("Body");
+            DebugChips(new[] { (Gender.Male, "Male"), (Gender.Female, "Female") },
+                       g => g == _lookGender, g => { _lookGender = g; Send(); });
+            DebugHeader("Hair");
+            DebugChips(List(Appearance.HairStyleNames(_lookGender)), i => i == _lookHair,
+                       i => { _lookHair = i; Send(); }, perRow: 3);
+            DebugHeader("Hair colour");
+            DebugChips(List(Appearance.HairColorNames), i => i == _lookColor,
+                       i => { _lookColor = i; Send(); }, perRow: 4);
+            DebugHeader("Skin");
+            DebugChips(List(Appearance.SkinToneNames), i => i == _lookSkin,
+                       i => { _lookSkin = i; Send(); }, perRow: 5);
+            DebugNote("Race and class: Reset character, one row up.");
         }
 
         private static string SubclassLabel(SubclassDto sc)

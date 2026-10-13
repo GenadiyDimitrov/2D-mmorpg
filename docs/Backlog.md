@@ -295,6 +295,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-352` | 🔴 | **Vamp heals from the HP the target really LOST, not the damage rolled** — a 1500 hit on a 100-HP target vamps from 100; every lifesteal path (skill drains + basic-attack vamp) | combat |
 | `BL-353` | ⏸ | **Town NPCs get a level and a rank** — peasants 20-30, masters 50-60, the gatekeeper a lvl-90 mage, grand master a lvl-60 knight; 1-3k HP; mage or fighter by role | world |
 | `BL-354` | ⏸ | **Character bodies, what is left** — the paid pack's 10 outfits, armour type/grade → outfit pieces per slot, face shapes, elf ears / demon horns | client |
+| `BL-355` | ⏸ | **Appearance changes after creation as a premium service** — look cheapest, gender dearer, race/class dearest; admin-only picker built, prices + currency + what a paid race change keeps are open | economy |
 
 ---
 
@@ -2567,3 +2568,20 @@ that rewrite is in `BacklogArchive.md`. Still open:
   wants per-bone scaling.
 - ⚠ The Ranger body is ~27k triangles (its boots alone 9k). Watch the phone's frame rate in a crowded town.
 - Lore seed lives in `BL-350` (one god made men from stone and women from ash).
+
+---
+
+## `BL-355` ⏸ APPEARANCE CHANGES AFTER CREATION — A PREMIUM SERVICE, PRICED BY HOW MUCH CHANGES (2026-10-13)
+
+Owner, 2026-10-13: *"each swap after creation will be premium cheaper only for look, more expensive for changing gender
+and resetting race/class is the most expensive — but for now we can have admin windows with selections like that"*.
+
+Three price tiers, cheapest first:
+1. **Look** — hairstyle, hair colour, skin tone.
+2. **Gender** — the body (the hairstyle list changes with it).
+3. **Race / class** — today's admin re-roll; the dearest.
+
+**Built for admins only (0.254.2):** Debug → Class → *Change look* (chips for body, hair, colour, skin, applied on
+each tap; the `/look` command underneath) and the existing *Reset character* for race + class. ❓ Owed when this becomes
+a player service: the currency (platinum?), the three prices, where it is sold (an NPC, the shop), and what a race/class
+change keeps — the admin re-roll sends the character back to level 1, which a paid one surely should not.

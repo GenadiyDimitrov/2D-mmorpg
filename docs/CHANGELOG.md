@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.254.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.254.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,24 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-13 (latest) — 0.254.1: the creation screen shows the character
+## 2026-10-13 (latest) — 0.254.2: arms hang naturally and swing when running; a re-roll changes the body; admin look picker
+
+**Server restart + new APK** (a new admin command). No `game.db` delete. (`BL-354`, `BL-355`)
+
+- **The arms no longer stick out in front** ("hugging, like a lego character"), and they **swing while running**. The
+  upper-body layer that plays swings and casts was always on; on these humanoid rigs its empty rest state held the arms
+  in the zero pose and blocked the run's arm swing. It is now on only while a swing or cast plays, fading in and out
+  with it. The creation-screen model had the same pose and is fixed too.
+- **A re-roll to another race now changes the body you see.** The server already switched the race; the client kept
+  the old body. Any change of race, class, gender, hair, colour or skin on a character now rebuilds its model, for you
+  and for everyone around you.
+- **Admin look picker:** Debug → Class → **Change look >** — Body, Hair, Hair colour and Skin as buttons, applied on
+  every tap. Race and class stay on *Reset character*. Also typed: `/look [name] <body 0-1> <hair 0-4> <colour 0-7>
+  <skin 0-4>`. Later a paid service for players (`BL-355`: look cheapest, gender dearer, race/class dearest).
+- NOT on a phone yet; the arm fix could not be checked headless (the preview renders sample the clip directly, past
+  the animator).
+
+## 2026-10-13 — 0.254.1: the creation screen shows the character
 
 **New APK only** (client-only; no server restart, no `game.db` delete). (`BL-354`)
 

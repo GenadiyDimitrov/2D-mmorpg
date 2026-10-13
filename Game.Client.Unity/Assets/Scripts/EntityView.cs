@@ -746,6 +746,7 @@ namespace Game.Client
             // nothing else rather than a console full of "parameter does not exist" — which matters
             // when the art is arriving one clip at a time.
             if (_hasSpeed) _animator.SetFloat("Speed", speed);
+            if (_actionLayer > 0) UpdateActionWeight();
 
             // Legs at the pace the ground actually moves. The blend tree picks WHICH cycle (walk or jog) but plays it at
             // its own cadence, so a slow runner pumped its legs like a sprinter while covering half the ground. The
@@ -866,7 +867,28 @@ namespace Game.Client
             if (_hasSwingSpeed)
                 _animator.SetFloat("SwingSpeed", len > 0.01f ? Mathf.Clamp(len * 0.95f / swing, 1f, 4f) : 1f);
             _casting = false;
+            if (_actionLayer > 0) _animator.SetLayerWeight(_actionLayer, 1f);   // on now, not after the state updates
             _animator.Play(state, _actionLayer, 0f);
+        }
+
+        /// <summary>The upper-body "Action" layer is ON only while it plays something. 🔑 Its "Empty" rest state does
+        /// NOT leave the base layer alone on a HUMANOID rig, write-defaults off or not: a weight-1 override writes the
+        /// masked muscles, and with no clip they sit at zero — the arms held out in front ("hugging, like a lego
+        /// character", owner 2026-10-13), and no arm swing while running. So the weight follows the layer: 0 at rest,
+        /// 1 in a swing or a cast, and across a crossfade into or out of rest it follows the fade.</summary>
+        private void UpdateActionWeight()
+        {
+            int empty = Animator.StringToHash("Empty");
+            bool fromRest = _animator.GetCurrentAnimatorStateInfo(_actionLayer).shortNameHash == empty;
+            float w;
+            if (_animator.IsInTransition(_actionLayer))
+            {
+                float t = Mathf.Clamp01(_animator.GetAnimatorTransitionInfo(_actionLayer).normalizedTime);
+                bool toRest = _animator.GetNextAnimatorStateInfo(_actionLayer).shortNameHash == empty;
+                w = toRest ? 1f - t : fromRest ? t : 1f;
+            }
+            else w = fromRest ? 0f : 1f;
+            _animator.SetLayerWeight(_actionLayer, w);
         }
 
         /// <summary>What this body holds — the FX layer reads it to give a bow's basic shot its arrow.</summary>

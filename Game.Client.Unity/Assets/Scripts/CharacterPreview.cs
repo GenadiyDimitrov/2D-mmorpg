@@ -106,6 +106,10 @@ namespace Game.Client
             if (_animator != null)
             {
                 _animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                // Nothing is swung here: the upper-body layer stays off, or its rest state holds the arms out in
+                // front (see EntityView.UpdateActionWeight).
+                int action = _animator.GetLayerIndex("Action");
+                if (action > 0) _animator.SetLayerWeight(action, 0f);
                 bool mage = cls == BaseClass.Mage;
                 HeldWeapons.Dress(_animator, _model.transform, mage ? WeaponType.TwoHandedBlunt : WeaponType.Sword,
                                   mage, false, _held);
