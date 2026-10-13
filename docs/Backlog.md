@@ -296,6 +296,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-353` | ⏸ | **Town NPCs get a level and a rank** — peasants 20-30, masters 50-60, the gatekeeper a lvl-90 mage, grand master a lvl-60 knight; 1-3k HP; mage or fighter by role | world |
 | `BL-354` | ⏸ | **Character bodies, what is left** — the paid pack's 10 outfits, armour type/grade → outfit pieces per slot, face shapes, elf ears / demon horns | client |
 | `BL-355` | ⏸ | **Appearance changes after creation as a premium service** — look cheapest, gender dearer, race/class dearest; admin-only picker built, prices + currency + what a paid race change keeps are open | economy |
+| `BL-357` | ⏸ | **No server URL field at public release**: the login screen loses it; the address is baked into the APK (`Resources/server.txt`), a domain like `someurl.domain/game`, not an IP. Not for the Oracle friends phase | ops |
 
 ---
 
@@ -2597,3 +2598,14 @@ Three price tiers, cheapest first:
 each tap; the `/look` command underneath) and the existing *Reset character* for race + class. ❓ Owed when this becomes
 a player service: the currency (platinum?), the three prices, where it is sold (an NPC, the shop), and what a race/class
 change keeps — the admin re-roll sends the character back to level 1, which a paid one surely should not.
+
+## `BL-357` ⏸ THE URL FIELD GOES AT PUBLIC RELEASE (2026-10-13)
+
+Your words: *"the url field must go (can stay in apk but not directly can be someurl.domain/game) once the release
+(not the oracle but the public later one)"*.
+
+**When:** the public release, not the Oracle-for-friends phase (`BL-345`), where the field stays.
+**What:** the login screen shows no address field. The address lives only inside the APK (`Assets/Resources/server.txt`,
+0.258.0) and is a **domain name** (`someurl.domain/game`), never a raw IP, so the machine behind it can move without a
+new APK. A remembered address in a player's phone (PlayerPrefs `PrefUrl`) must not override it then. Dev builds may keep
+a way to point elsewhere.
