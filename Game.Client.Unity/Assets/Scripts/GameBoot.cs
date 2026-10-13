@@ -1836,7 +1836,8 @@ namespace Game.Client
             catch (Exception ex) { Fail(Describe(ex)); }
         }
 
-        public async Task CreateCharacter(string name, Race race, BaseClass baseClass)
+        public async Task CreateCharacter(string name, Race race, BaseClass baseClass,
+            Gender gender = Gender.Male, int hair = 0, int hairColor = 0, int skin = 0)
         {
             if (_busy) return;
             // Same rule the server enforces, read from Game.Shared so the two cannot disagree — this is
@@ -1847,7 +1848,7 @@ namespace Game.Client
             _busy = true;
             try
             {
-                var err = await _net.CreateCharacterAsync(name, race, baseClass);
+                var err = await _net.CreateCharacterAsync(name, race, baseClass, gender, hair, hairColor, skin);
                 if (!string.IsNullOrEmpty(err)) { Fail("Create failed: " + err); return; }
                 ClientLog.Good("Created " + name + ".");
                 await RefreshCharacters();

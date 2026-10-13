@@ -24,6 +24,7 @@ namespace Game.ClientEditor
         private const string OutfitTex = OutfitDir + "/Textures";
         private const string OutfitMats = OutfitDir + "/Materials";
         private const string BaseBodyFbx = OutfitHeadDir + "/Superhero_Male_FullBody.fbx";
+        private const string BaseBodyFemaleFbx = OutfitHeadDir + "/Superhero_Female_FullBody.fbx";
 
         private readonly struct OutfitMat
         {
@@ -43,9 +44,13 @@ namespace Game.ClientEditor
             new OutfitMat("MI_Peasant",         "T_Peasant_BaseColor",           "T_Peasant_Normal",        1024),
             new OutfitMat("MI_Regular_Male",    "T_Regular_Male_Dark_BaseColor", "T_Regular_Male_Normal",    512),
             new OutfitMat("MI_Superhero_Male",  "T_Superhero_Male_Dark",         null,                       512),
+            new OutfitMat("MI_Regular_Female",  "T_Regular_Female_Dark_BaseColor", "T_Regular_Female_Normal", 512),
+            new OutfitMat("MI_Superhero_Female", "T_Superhero_Female_Dark_BaseColor", null,                  512),
             new OutfitMat("MI_Eyes",            "T_Eye_Brown",                   null,                       128),
             new OutfitMat("MI_Hair_1",          "T_Hair_1_BaseColor",            null,                       512, clip: true,
                           tint: new Color(0.42f, 0.27f, 0.16f)),   // the map is a grey mask the pack's own shader colours
+            new OutfitMat("MI_Hair_2",          "T_Hair_2_BaseColor",            null,                       512, clip: true,
+                          tint: new Color(0.42f, 0.27f, 0.16f)),
         };
 
         private static Dictionary<string, Material> _outfitMats;
@@ -57,20 +62,50 @@ namespace Game.ClientEditor
             var bones = inst.GetComponentsInChildren<Transform>(true)
                             .GroupBy(t => t.name).ToDictionary(g => g.Key, g => g.First());
 
-            var baseBody = AssetDatabase.LoadAssetAtPath<GameObject>(BaseBodyFbx);
-            if (baseBody == null) { Debug.LogError($"[BL-93] Missing {BaseBodyFbx}"); return; }
+            // Another file's clothes on THIS skeleton: the body's own pieces go, the other file's are rebound by bone name.
+            if (!string.IsNullOrEmpty(b.Pieces))
+            {
+                if (AssetImporter.GetAtPath(b.Pieces) is ModelImporter pimp && pimp.animationType != ModelImporterAnimationType.Generic)
+                {
+                    pimp.animationType = ModelImporterAnimationType.Generic;   // no avatar of its own is needed or possible
+                    pimp.SaveAndReimport();
+                }
+                var pieces = AssetDatabase.LoadAssetAtPath<GameObject>(b.Pieces);
+                if (pieces == null) { Debug.LogError($"[BL-93] {b.Key}: missing pieces {b.Pieces}"); return; }
+                // A prefab instance refuses to lose children; this body is saved as its own prefab anyway.
+                if (PrefabUtility.IsPartOfPrefabInstance(inst))
+                    PrefabUtility.UnpackPrefabInstance(inst, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+                foreach (var own in inst.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                    Object.DestroyImmediate(own.gameObject);
+                foreach (var src in pieces.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                    Rebind(inst, bones, src, src.sharedMesh, src.name);
+            }
+
+            // The Ranger's hood hides the hair the player picked at creation, so it is off. Kept in the prefab, hidden:
+            // the day a helmet slot draws (BL-354 per-grade looks), this is the piece it turns back on.
+            foreach (var r in inst.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                if (r.name.Contains("Head_Hood")) r.gameObject.SetActive(false);
+
+            string baseFbx = b.Female ? BaseBodyFemaleFbx : BaseBodyFbx;
+            var baseBody = AssetDatabase.LoadAssetAtPath<GameObject>(baseFbx);
+            if (baseBody == null) { Debug.LogError($"[BL-93] Missing {baseFbx}"); return; }
+            PrepareCharacterBody(baseFbx);
             foreach (var src in baseBody.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
                 // The body mesh contributes its head only; the eyes and brows come over whole.
-                var mesh = src.name.StartsWith("SuperHero") ? HeadMesh(src) : src.sharedMesh;
-                if (mesh != null) Rebind(inst, bones, src, mesh, src.name.StartsWith("SuperHero") ? "Head" : src.name);
+                bool body = src.name.StartsWith("SuperHero", System.StringComparison.OrdinalIgnoreCase);
+                var mesh = body ? HeadMesh(src, b.Female ? "Head_Female" : "Head_Male") : src.sharedMesh;
+                if (mesh != null) Rebind(inst, bones, src, mesh, body ? "Head" : src.name);
             }
-            foreach (var hair in b.Hair)
+            for (int h = 0; h < b.Hair.Length; h++)
             {
+                string hair = b.Hair[h];
                 var fbx = AssetDatabase.LoadAssetAtPath<GameObject>($"{OutfitHeadDir}/{hair}.fbx");
                 var src = fbx != null ? fbx.GetComponentInChildren<SkinnedMeshRenderer>(true) : null;
                 if (src == null) { Debug.LogError($"[BL-93] {b.Key}: hair {hair} not found."); continue; }
-                Rebind(inst, bones, src, src.sharedMesh, hair);
+                var go = Rebind(inst, bones, src, src.sharedMesh, hair);
+                // Only the first style shows until CharacterLook picks one (a mob wearing this body keeps it).
+                if (go != null && h > 0) go.SetActive(false);
             }
 
             foreach (var r in inst.GetComponentsInChildren<Renderer>(true))
@@ -91,7 +126,7 @@ namespace Game.ClientEditor
 
         /// <summary>A skinned mesh from another file of the same rig, driven by THIS body's bones (matched by name). The
         /// mesh keeps its own bind poses, so each vertex rides its bone exactly as it did in its source file.</summary>
-        private static void Rebind(GameObject inst, Dictionary<string, Transform> bones, SkinnedMeshRenderer src,
+        private static GameObject Rebind(GameObject inst, Dictionary<string, Transform> bones, SkinnedMeshRenderer src,
                                    Mesh mesh, string name)
         {
             var mapped = new Transform[src.bones.Length];
@@ -101,7 +136,7 @@ namespace Game.ClientEditor
                 {
                     Debug.LogError($"[BL-93] {name}: bone '{(src.bones[i] == null ? "null" : src.bones[i].name)}' " +
                                    "is not on the outfit's skeleton.");
-                    return;
+                    return null;
                 }
             }
             var go = new GameObject(name);
@@ -112,11 +147,12 @@ namespace Game.ClientEditor
             smr.rootBone = src.rootBone != null && bones.TryGetValue(src.rootBone.name, out var root) ? root : mapped[0];
             smr.sharedMaterials = src.sharedMaterials;
             smr.localBounds = src.localBounds;
+            return go;
         }
 
         /// <summary>The triangles of the base body that its head and neck bones own (every corner ≥ half-weighted to
         /// them), as a compacted mesh asset. Rebuilt every run so a new base body needs nothing by hand.</summary>
-        private static Mesh HeadMesh(SkinnedMeshRenderer body)
+        private static Mesh HeadMesh(SkinnedMeshRenderer body, string assetName)
         {
             var src = body.sharedMesh;
             var headBones = new HashSet<int>();
@@ -164,7 +200,7 @@ namespace Game.ClientEditor
                 }
             }
 
-            var head = new Mesh { name = "Head_Male" };
+            var head = new Mesh { name = assetName };
             head.SetVertices(verts);
             if (normals.Count > 0) head.SetNormals(normals);
             if (tangents.Count > 0) head.SetTangents(tangents);
@@ -174,7 +210,7 @@ namespace Game.ClientEditor
             head.bindposes = src.bindposes;
             head.RecalculateBounds();
 
-            string path = $"{OutfitHeadDir}/Head_Male.asset";
+            string path = $"{OutfitHeadDir}/{assetName}.asset";
             AssetDatabase.DeleteAsset(path);
             AssetDatabase.CreateAsset(head, path);
             Debug.Log($"[BL-93] head cut from {src.name}: {tris.Count / 3} of {all.Length / 3} triangles, {verts.Count} vertices.");
@@ -245,6 +281,99 @@ namespace Game.ClientEditor
             if (alpha && !ti.alphaIsTransparency) { ti.alphaIsTransparency = true; changed = true; }
             if (changed) ti.SaveAndReimport();
             return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+        }
+
+        /// <summary>`BL-354` — every body × race × hairstyle on one sheet, in the idle pose, through the client's own
+        /// <see cref="CharacterLook"/>: a row per (body, race), a column per hairstyle, the hair colour and skin tone
+        /// stepping along the row so the ranges show too. The last row is the two NPC bodies. Batchmode WITHOUT
+        /// -nographics; <c>-previewOut path.png</c>.</summary>
+        [MenuItem("Tools/BL-93/Preview character looks (BL-354)")]
+        public static void PreviewLooks()
+        {
+            var args = System.Environment.GetCommandLineArgs();
+            int at = System.Array.IndexOf(args, "-previewOut");
+            string outPath = at >= 0 && at + 1 < args.Length ? args[at + 1] : "looks-preview.png";
+
+            int editorQuality = QualitySettings.GetQualityLevel();
+            QualitySettings.SetQualityLevel(0, true);
+            var scene = UnityEditor.SceneManagement.EditorSceneManager.NewScene(
+                UnityEditor.SceneManagement.NewSceneSetup.EmptyScene);
+            var sun = new GameObject("Sun").AddComponent<Light>();
+            sun.type = LightType.Directional;
+            RenderSettings.sun = sun;
+            Game.Client.DayNight.Apply(sun, Game.Client.DayNight.LookAt(12.0, Game.Client.DayNight.NightDefault), true);
+
+            var rows = new (string key, Game.Shared.Race race, Game.Shared.Gender g)[]
+            {
+                ("player", Game.Shared.Race.Human, Game.Shared.Gender.Male),
+                ("player_female", Game.Shared.Race.Human, Game.Shared.Gender.Female),
+                ("player", Game.Shared.Race.Elf, Game.Shared.Gender.Male),
+                ("player_female", Game.Shared.Race.Elf, Game.Shared.Gender.Female),
+                ("player", Game.Shared.Race.Demon, Game.Shared.Gender.Male),
+                ("player_female", Game.Shared.Race.Demon, Game.Shared.Gender.Female),
+                ("npc_female", Game.Shared.Race.Human, Game.Shared.Gender.Female),
+                ("humanoid", Game.Shared.Race.Human, Game.Shared.Gender.Male),
+            };
+            const int cols = Game.Shared.Appearance.HairStyles;
+            var bodies = new List<GameObject>();
+            for (int r = 0; r < rows.Length; r++)
+            {
+                var pf = AssetDatabase.LoadAssetAtPath<GameObject>($"{ModelsDir}/{rows[r].key}.prefab");
+                if (pf == null) { Debug.LogError($"[BL-354] preview: no {rows[r].key} prefab"); return; }
+                for (int c = 0; c < cols; c++)
+                {
+                    var go = (GameObject)PrefabUtility.InstantiatePrefab(pf, scene);
+                    go.name = $"look_{r}_{c}";
+                    go.transform.SetPositionAndRotation(new Vector3(c * 4f + r * 30f, 0f, 0f), Quaternion.Euler(0f, 160f, 0f));
+                    Game.Client.CharacterLook.Apply(go, rows[r].race, rows[r].g, c, (c + r) % Game.Shared.Appearance.HairColors, c);
+                    go.GetComponentInChildren<Animator>().Rebind();
+                    bodies.Add(go);
+                }
+            }
+
+            var clip = AssetDatabase.LoadAllAssetsAtPath(ArtDir + "/Characters/Animations/UAL1_Standard.fbx")
+                                    .OfType<AnimationClip>().FirstOrDefault(c => c.name == "Idle_Loop");
+            AnimationMode.StartAnimationMode();
+            foreach (var go in bodies)
+            {
+                if (clip != null)
+                {
+                    AnimationMode.BeginSampling();
+                    AnimationMode.SampleAnimationClip(go, clip, 0.3f);
+                    AnimationMode.EndSampling();
+                }
+                BakeSkin(go);
+            }
+
+            var cam = new GameObject("Cam").AddComponent<Camera>();
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = new Color(0.55f, 0.65f, 0.75f);
+            cam.orthographic = true;
+            cam.orthographicSize = 1.25f;
+            const int FW = 300, FH = 480;
+            var sheet = new Texture2D(FW * cols, FH * rows.Length, TextureFormat.RGB24, false);
+            var rt = new RenderTexture(FW, FH, 24) { antiAliasing = 4 };
+            cam.targetTexture = rt;
+            cam.Render();   // warm-up: the first render draws before textures upload
+            for (int r = 0; r < rows.Length; r++)
+                for (int c = 0; c < cols; c++)
+                {
+                    cam.transform.rotation = Quaternion.Euler(5f, 180f, 0f);
+                    cam.transform.position = new Vector3(c * 4f + r * 30f, 1.1f, 0f) - cam.transform.forward * 5f;
+                    cam.Render(); cam.Render();
+                    RenderTexture.active = rt;
+                    var img = new Texture2D(FW, FH, TextureFormat.RGB24, false);
+                    img.ReadPixels(new Rect(0, 0, FW, FH), 0, 0);
+                    img.Apply();
+                    sheet.SetPixels(c * FW, (rows.Length - 1 - r) * FH, FW, FH, img.GetPixels());
+                    Object.DestroyImmediate(img);
+                }
+            AnimationMode.StopAnimationMode();
+            RenderTexture.active = null;
+            sheet.Apply();
+            System.IO.File.WriteAllBytes(outPath, sheet.EncodeToPNG());
+            QualitySettings.SetQualityLevel(editorQuality, true);
+            Debug.Log($"[BL-354] looks preview ({rows.Length} x {cols}) -> {outPath}");
         }
 
         /// <summary>Logs what each outfit FBX holds — renderers, their materials, the avatar, the height — so the

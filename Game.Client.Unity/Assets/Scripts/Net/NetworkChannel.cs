@@ -243,8 +243,10 @@ namespace Game.Client
         public Task<CharacterList> ListCharactersAsync() =>
             _connection.InvokeAsync<CharacterList>("ListCharacters");
 
-        public Task<string> CreateCharacterAsync(string name, Race race, BaseClass baseClass) =>
-            _connection.InvokeAsync<string>("CreateCharacter", new CreateCharacterRequest(name, race, baseClass));
+        public Task<string> CreateCharacterAsync(string name, Race race, BaseClass baseClass,
+            Gender gender = Gender.Male, int hair = 0, int hairColor = 0, int skin = 0) =>
+            _connection.InvokeAsync<string>("CreateCharacter",
+                new CreateCharacterRequest(name, race, baseClass, gender, hair, hairColor, skin));
 
         /// <summary>Schedule a character for deletion (low levels go immediately; the rest get the
         /// server's grace window, which <see cref="CancelDeleteCharacterAsync"/> undoes). Returns null

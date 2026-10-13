@@ -498,8 +498,10 @@ public class PersistenceService
     }
 
     public async Task<(bool Success, string? Error)> CreateCharacterAsync(
-        int accountId, string name, Race race, BaseClass baseClass)
+        int accountId, string name, Race race, BaseClass baseClass,
+        Gender gender = Gender.Male, int hair = 0, int hairColor = 0, int skin = 0)
     {
+        var look = Appearance.Clamp(gender, hair, hairColor, skin);   // `BL-354` — never trust the client's numbers
         name = (name ?? "").Trim();
         // ONE validator, in Game.Shared, so the create screen can enforce the same rule the moment the
         // client is rebuilt. Until then this is the only gate — and it is the authoritative one either
@@ -537,6 +539,10 @@ public class PersistenceService
             Role = bornAdmin ? AccountRole.Admin : AccountRole.Player,
             Name = name,
             Race = race,
+            Gender = look.Gender,
+            Hair = look.Hair,
+            HairColor = look.HairColor,
+            Skin = look.Skin,
             BaseClass = baseClass,
             Con = stats.Con,
             Atk = stats.Atk,
@@ -737,6 +743,10 @@ public class PersistenceService
             Name = rec.Name,
             Kind = EntityKind.Player,
             Race = rec.Race,            // CHARACTER-level: one body, several trainings
+            Gender = rec.Gender,        // `BL-354` — creation picks; never saved back (nothing changes them)
+            Hair = rec.Hair,
+            HairColor = rec.HairColor,
+            Skin = rec.Skin,
             X = rec.X,
             Y = rec.Y,
             Speed = GameConstants.BasePlayerSpeed,

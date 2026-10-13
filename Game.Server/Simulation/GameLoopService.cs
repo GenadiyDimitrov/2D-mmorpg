@@ -21248,8 +21248,13 @@ public partial class GameLoopService : BackgroundService
             // pick out by name. ⚠ The catalog keeps the FULL authored name: quest hints, the dialog
             // header and every doc still say "Elder Marius".
             var (role, personal) = TitleCatalog.SplitNpcName(npc.Name);
+            var look = Appearance.NpcLook(personal);   // `BL-354` — a stable look off the name, a woman by name
             var entity = new Entity
             {
+                Gender = Appearance.NpcGender(personal),
+                Hair = look.Hair,
+                HairColor = look.HairColor,
+                Skin = look.Skin,
                 Name = personal,
                 Title = role,
                 TitleColor = role.Length > 0 ? TitleCatalog.NpcHex : "",

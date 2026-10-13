@@ -112,7 +112,8 @@ public class GameHub : Hub
             return "Not logged in.";
 
         var (success, error) = await _db.CreateCharacterAsync(
-            auth.AccountId, request.Name, request.Race, request.BaseClass);
+            auth.AccountId, request.Name, request.Race, request.BaseClass,
+            request.Gender, request.Hair, request.HairColor, request.Skin);
         return success ? null : error;
     }
 

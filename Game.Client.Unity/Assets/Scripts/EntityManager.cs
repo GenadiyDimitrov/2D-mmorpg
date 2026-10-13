@@ -297,7 +297,12 @@ namespace Game.Client
             if (ModelsEnabled)
             {
                 var prefab = ModelLibrary.Prefab(e);
-                if (prefab != null) view.AttachModel(Instantiate(prefab));
+                if (prefab != null)
+                {
+                    var model = Instantiate(prefab);
+                    CharacterLook.Apply(model, e);   // `BL-354` — hair, colours, race build; before parenting
+                    view.AttachModel(model);
+                }
             }
             return view;
         }
@@ -381,10 +386,13 @@ namespace Game.Client
                     break;
 
                 case EntityKind.Npc:
+                    if (e.Gender == Gender.Female) yield return "Models/npc_female";   // `BL-354`
                     yield return "Models/npc";
                     break;
 
                 default:
+                    // `BL-354` — a woman's body first; every key below it is a man's.
+                    if (e.Gender == Gender.Female) yield return "Models/player_female";
                     string cls = e.BaseClass.ToString().ToLowerInvariant();
                     yield return "Models/player_" + e.Race.ToString().ToLowerInvariant() + "_" + cls;
                     yield return "Models/player_" + cls;

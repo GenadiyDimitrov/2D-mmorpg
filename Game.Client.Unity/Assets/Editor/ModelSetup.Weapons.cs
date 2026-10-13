@@ -390,14 +390,22 @@ namespace Game.ClientEditor
             foreach (var smr in body.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
                 var src = smr.sharedMesh;
-                if (src == null) continue;
+                if (src == null || !smr.gameObject.activeInHierarchy) continue;   // a hairstyle not worn
                 var t = body.transform.Find(smr.name + "__baked");
                 GameObject baked;
                 if (t == null)
                 {
                     baked = new GameObject(smr.name + "__baked", typeof(MeshFilter), typeof(MeshRenderer));
                     baked.transform.SetParent(body.transform, false);
-                    baked.GetComponent<MeshRenderer>().sharedMaterials = smr.sharedMaterials;
+                    var mr = baked.GetComponent<MeshRenderer>();
+                    mr.sharedMaterials = smr.sharedMaterials;
+                    // CharacterLook's colours live in per-material property blocks — carry them over.
+                    var block = new MaterialPropertyBlock();
+                    for (int i = 0; i < smr.sharedMaterials.Length; i++)
+                    {
+                        smr.GetPropertyBlock(block, i);
+                        if (!block.isEmpty) mr.SetPropertyBlock(block, i);
+                    }
                     baked.GetComponent<MeshFilter>().sharedMesh = Object.Instantiate(src);
                 }
                 else baked = t.gameObject;

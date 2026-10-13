@@ -71,6 +71,12 @@ public class CharacterRecord
 
     public required string Name { get; set; }
     public Race Race { get; set; }
+    /// <summary>`BL-354` (0.254.0, NEW COLUMNS — `game.db` delete): the body and its look, picked at creation and never
+    /// changed. Indices into <see cref="Appearance"/>; nothing but the client's drawing reads them.</summary>
+    public Gender Gender { get; set; }
+    public byte Hair { get; set; }
+    public byte HairColor { get; set; }
+    public byte Skin { get; set; }
     public BaseClass BaseClass { get; set; }
     public int SecondClass { get; set; }
     public int ThirdClass { get; set; }

@@ -1,7 +1,7 @@
 ﻿# Changelog
 
-> 🗄️ **Last `game.db` reset: 0.234.0** (2026-10-09, mentoring's two new tables).
-> If the build you have is **older than 0.234.0** and the one you install is 0.234.0 or newer, delete `game.db` (and
+> 🗄️ **Last `game.db` reset: 0.254.0** (2026-10-13, gender + appearance columns on the character).
+> If the build you have is **older than 0.254.0** and the one you install is 0.254.0 or newer, delete `game.db` (and
 > `-shm`/`-wal`) in `Game.Server/`. Otherwise keep it. This line moves every time a version needs the delete.
 
 Development history, newest first.
@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.253.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.254.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,31 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-13 (latest) — 0.253.0: new character bodies; swings that follow attack speed; a bow shoots arrows; thinner wand and staff
+## 2026-10-13 (latest) — 0.254.0: two genders for every race; women NPCs; hairstyle, hair colour and skin at creation; race builds
+
+**Server restart + new APK + DELETE `game.db`** (new character columns; protocol 56). (`BL-354`)
+
+- **Character creation has four new buttons** (tap to cycle, like Race and Class): **Body** (Male / Female),
+  **Hair** (5 styles per body), **Colour** (8 hair colours: black, dark brown, brown, auburn, blonde, ash, grey,
+  red) and **Skin** (5 tones, Pale → Deep). Picked once; nothing changes them later.
+  - Men: Parted, Long, Buzzed, Parted + beard, Buzzed + beard. Women: Long, Buns, Parted, Short, Long + buns.
+  - The brows take the hair colour.
+- **Women NPCs.** An NPC's body follows its name (Maela, Thessa, Sigrid, Nyra, Cera and the rest of the
+  22 women's names), and every NPC gets its own hair, colour and skin off its name, the same on every phone. Women
+  wear the peasant clothes like the men.
+- **The races look different** (your numbers):
+  - **Elf:** 10% taller and 10% slimmer, a step lighter skin. Same ears for now.
+  - **Demon:** a man is 5% taller and 10% broader; a woman is built like a human woman. Skin runs light brown to
+    red-brown, never near-black.
+  - **Human:** the base.
+- **The Ranger's hood is off** — it covered the hair you picked. It stays in the files for a helmet slot later.
+- Women players wear the Ranger outfit, women NPCs the Peasant clothes (moved onto the female skeleton, because the
+  pack's Female Peasant file has no head bone of its own).
+- ⚠ **"5 faces" is not in this pack**: one head per body. Skin, hair, colour and beard make characters distinct; the
+  face shape is the same. Elf ears and demon horns still need art (`BL-354`).
+- Checked with a headless render of every body × race × hairstyle (`ModelSetup.PreviewLooks`). NOT on a phone yet.
+
+## 2026-10-13 — 0.253.0: new character bodies; swings that follow attack speed; a bow shoots arrows; thinner wand and staff
 
 **Server restart + new APK** (protocol 55 — an old APK still logs in but keeps the old always-swinging animation). No
 `game.db` delete.

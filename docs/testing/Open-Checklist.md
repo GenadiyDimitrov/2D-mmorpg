@@ -25,6 +25,22 @@
 
 ---
 
+## §161 — 0.254.0: two genders, looks at creation, race builds, women NPCs (`BL-354`, 2026-10-13)
+
+⚠ **Server restart + new APK + delete `game.db`.**
+
+- `161a` [ ] - Create screen: Body / Hair / Colour / Skin buttons cycle, and the Hair label changes with the Body
+  (men's and women's styles). The character you create looks like what you picked. ->
+- `161b` [ ] - Make one of each race: the elf is visibly taller and slimmer with lighter skin; the demon man taller and
+  broader with light-brown-to-reddish skin (never near-black); the demon woman built like a human woman. ->
+- `161c` [ ] - In town: the women NPCs (Spirit Helper Nyra, Guild Receptionist Cera, Apothecary Miren, Outfitter Bryn …)
+  are women; NPCs do not all look the same; the same NPC looks the same after a relog. ->
+- `161d` [ ] - Another player sees your look exactly as you do (gender, hair, colour, skin, race build). ->
+- `161e` [ ] - Anything that clips (hair through a shoulder, a beard through the collar), stretches when an arm is raised,
+  or looks wrong at your zoom — write which race/body/style. ->
+
+---
+
 ## §160 — 0.253.0: new bodies; swings follow attack speed; bow arrows; thinner wand/staff (2026-10-13)
 
 ⚠ **Server restart + new APK.** A bow character, a melee character and a mage; mobs nearby.

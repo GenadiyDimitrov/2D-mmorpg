@@ -8703,3 +8703,34 @@ blunt2h, dagger ×2 for duals, bow, wand, staff, shield) on the humanoid's hand 
 *LowPoly Medieval Weapons* + KayKit *Adventurers* staff and wand, both CC0. The TIER prefabs (`weapon_sword1h_t20`) and the
 RARITY glow from the text above were NOT built: they need the item level and rarity on the wire, and there is one mesh
 per type to draw today. That half stays open as the new `BL-103`.
+
+## `BL-354` — text before its 0.254.0 rewrite (2026-10-13; genders, women NPCs, hair/colour/skin and race builds BUILT in 0.254.0)
+
+
+0.253.0 swapped every body to the Quaternius outfit kit (CC0), on the animations' own skeleton. Your question that day:
+*"is good that they come undressed we can then have models for different types and grades, right?"* — yes: each outfit
+is split per slot (body / legs / arms / feet / hood), and the head is separate, so an armour piece can swap ONE slot.
+
+- ❓ **The other 10 outfits** are in the paid Source version ($20, still CC0); the free one has Peasant + Ranger only.
+  Yours to decide whether to buy it — without it there is nothing to make heavy/light/robe looks from.
+- **Two genders for every race, and female NPCs** (your words, 2026-10-13: *"if we have genders can atlast the npcs
+  have a female .. also it will be good to do at some point 5 hair stiles, 5 faces and each race to have 2 genders"*).
+  The plan, in build order:
+  1. **Female NPCs first — no gender field needed.** A male/female flag on each `NpcDef` (the server already decides
+     who every NPC is), carried on `EntityDto`; the client picks `npc_female` / `humanoid`. Needs the female head cut
+     from `Superhero_Female_FullBody` and Female Peasant's humanoid import fixed (it came in "generic").
+  2. **Player gender** — a pick at character creation, persisted (`game.db` delete), on `EntityDto` (protocol bump);
+     `ModelLibrary` gains `player_female` and the same per-race/class chain. 🔑 Label it **"Body: A / B"** in the UI
+     if you want the topic off the table entirely — common in recent games, costs nothing.
+  3. **Looks at creation:** hair **5 per gender** from the free pack's 6 meshes (male: Parted / Long / Buzzed / Parted
+     + Beard / Buzzed + Beard; female: Long / Buns / Parted / Buzzed-female / one more by colour) + a **hair colour**
+     (a tint, free) + **skin tone** (light/dark textures both ship) + eye colour. ⚠ **"5 faces" is not in this pack**:
+     it has ONE head per gender — skin, eyes, brows and beard make characters distinct, but the face SHAPE is the
+     same. Real face variety needs the paid Source pack or other art.
+  4. **Races:** the bodies are human. A demon skin tint is cheap; elf ears and demon horns need small extra meshes.
+  - Lore seed for `BL-350`: *"the Forge-god shaped men from stone and women from ash"* (your idea: the world has two).
+- **Per-grade looks** (= the visual half of `BL-103`): a table from armour type/grade → outfit pieces per slot, the
+  client swapping the slot's mesh on the same skeleton. Blocked on the two questions above for anything beyond
+  "Ranger vs Peasant".
+- ⚠ The Ranger body is ~27k triangles (its boots alone 9k). Fine for a handful on screen; watch the phone's frame rate
+  in a crowded town before adding more pieces.

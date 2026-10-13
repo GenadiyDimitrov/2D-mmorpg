@@ -23,6 +23,14 @@ public enum Race
     //  replacement debug rig and are load-bearing now.)
 }
 
+/// <summary>A character's body (`BL-354`, 0.254.0): every race has two. Picked at creation, never changed; an NPC's
+/// follows its name (<see cref="Appearance.NpcGender"/>). Changes nothing but the body drawn.</summary>
+public enum Gender : byte
+{
+    Male = 0,
+    Female = 1,
+}
+
 public enum BaseClass
 {
     Fighter = 0,

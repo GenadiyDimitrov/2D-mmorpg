@@ -554,6 +554,13 @@ public class Entity
     public required string Name { get; init; }
     public required EntityKind Kind { get; init; }
 
+    /// <summary>`BL-354` — the body and its look (Appearance's indices). CHARACTER-level, unlike Race: a subclass of
+    /// another race wears that race's build and skin, but it is the same person. Drawing only; no stat reads them.</summary>
+    public Gender Gender { get; set; }
+    public byte Hair { get; set; }
+    public byte HairColor { get; set; }
+    public byte Skin { get; set; }
+
     // RACE is now PER-CLASS (owner, 2026-07-15): a subclass can be a different race, so Race proxies
     // into the active subclass like Level/BaseClass/etc. Setting it (character creation, debug reset)
     // writes the active subclass's race.
@@ -4637,7 +4644,8 @@ public class Entity
             Hp, MaxHp, Mp, MaxMp, SecondClass, ThirdClass, Dead, IsDisconnected, FlagState,
             Kind == EntityKind.Mob && Aggressive && !IsGuardMob, Title, TitleColor, SocialClanShown,
             ModelCategory, ModelRole, Warp,
-            WeaponType, HasMagicWeapon, HasShield);   // `BL-103` — what the client hangs in its hands
+            WeaponType, HasMagicWeapon, HasShield,    // `BL-103` — what the client hangs in its hands
+            Gender, Hair, HairColor, Skin);           // `BL-354` — how it looks
 
     /// <summary>`BL-93` — the creature's authored family/role, for the client to pick a MODEL with.
     /// Read from the template rather than stored on the entity: it never changes for the life of a
@@ -4685,5 +4693,7 @@ public class Entity
         a.Category == b.Category && a.Role == b.Role &&
         // `BL-103` — swapping a weapon or a shield changes no dynamic field, so without these an
         // equip would only reach the people who walked into view after it.
-        a.Weapon == b.Weapon && a.MagicWeapon == b.MagicWeapon && a.Shield == b.Shield;
+        a.Weapon == b.Weapon && a.MagicWeapon == b.MagicWeapon && a.Shield == b.Shield &&
+        // `BL-354` — never changes today; here so the day something does (a barber), the client is re-told.
+        a.Gender == b.Gender && a.Hair == b.Hair && a.HairColor == b.HairColor && a.Skin == b.Skin;
 }

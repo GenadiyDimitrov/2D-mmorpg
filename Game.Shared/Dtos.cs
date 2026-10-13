@@ -117,7 +117,13 @@ public record EntityDto(
     // diff re-sends the spawn (Entity.StaticFieldsEqual).
     WeaponType Weapon = WeaponType.None,
     bool MagicWeapon = false,
-    bool Shield = false);
+    bool Shield = false,
+    // ---- HOW IT LOOKS (`BL-354`, protocol 56) ---- a player's creation picks, an NPC's off its name (Appearance).
+    // Indices into Game.Shared.Appearance's lists; the client owns what each draws. Mobs leave them at 0.
+    Gender Gender = Gender.Male,
+    byte Hair = 0,
+    byte HairColor = 0,
+    byte Skin = 0);
 
 /// <summary>What to draw over an NPC's head about quests. Sent per player, because availability is
 /// personal — level, race, class and what you have already done all decide it.</summary>
@@ -1300,7 +1306,8 @@ public record CharacterSlot(int Id, string Name, Race Race, BaseClass BaseClass,
 public record CharacterList(CharacterSlot[] Characters);
 
 /// <summary>Client -> Server: create a new character on the account.</summary>
-public record CreateCharacterRequest(string Name, Race Race, BaseClass BaseClass);
+public record CreateCharacterRequest(string Name, Race Race, BaseClass BaseClass,
+    Gender Gender = Gender.Male, int Hair = 0, int HairColor = 0, int Skin = 0);   // `BL-354` — clamped server-side
 
 /// <summary>Client -> Server: enter the world with one of the account's characters.</summary>
 public record EnterWorldRequest(int CharacterId);

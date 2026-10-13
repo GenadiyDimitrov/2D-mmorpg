@@ -49,6 +49,10 @@ namespace Game.Client
         private TMP_InputField _nameField;
         private Button _raceButton, _classButton;
         private int _raceIndex, _classIndex;
+        // `BL-354` — the look, as Game.Shared.Appearance indices.
+        private Button _genderButton, _hairButton, _hairColorButton, _skinButton;
+        private Gender _gender;
+        private int _hair, _hairColor = 1, _skin = 2;
         private static readonly Race[] Races = { Race.Human, Race.Elf, Race.Demon };   // all of them since 0.53.0
         private static readonly BaseClass[] Classes = { BaseClass.Fighter, BaseClass.Mage };
 
@@ -424,7 +428,7 @@ namespace Game.Client
         {
             _createPanel = UiKit.PanelBox(parent, "CreateForm");
             UiKit.Place(_createPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                        Vector2.zero, new Vector2(520f, 360f));
+                        Vector2.zero, new Vector2(520f, 476f));
             var inner = _createPanel.GetChild(0);
 
             UiKit.Place(UiKit.Rect(UiKit.Label(inner, "New character", 24f).gameObject),
@@ -451,15 +455,30 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_classButton.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(266f, -116f), new Vector2(232f, 46f));
 
+            // `BL-354` — the look: four tap-to-cycle buttons, like race and class. A style index means a different
+            // haircut per gender, so switching body keeps the number and the label follows.
+            Button Cycle(float x, float y, System.Action next)
+            {
+                var b = UiKit.TextButton(inner, "", () => { next(); RefreshCreateForm(); });
+                UiKit.Place(UiKit.Rect(b.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                            new Vector2(x, y), new Vector2(232f, 46f));
+                return b;
+            }
+            _genderButton = Cycle(20f, -172f, () => _gender = _gender == Gender.Male ? Gender.Female : Gender.Male);
+            _hairButton = Cycle(266f, -172f, () => _hair = (_hair + 1) % Appearance.HairStyles);
+            _hairColorButton = Cycle(20f, -228f, () => _hairColor = (_hairColor + 1) % Appearance.HairColors);
+            _skinButton = Cycle(266f, -228f, () => _skin = (_skin + 1) % Appearance.SkinTones);
+
             // `BL-330` — the whole tree, opened on the race and class picked above (and free to look anywhere else).
             var tree = UiKit.TextButton(inner, "See the skill tree", () =>
                 OpenSkillTree(Races[_raceIndex], Classes[_classIndex]));
             UiKit.Place(UiKit.Rect(tree.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(20f, -172f), new Vector2(478f, 46f));
+                        new Vector2(20f, -284f), new Vector2(478f, 46f));
 
             var confirm = UiKit.TextButton(inner, "Create", () =>
             {
-                _ = Boot.CreateCharacter(_nameField.text, Races[_raceIndex], Classes[_classIndex]);
+                _ = Boot.CreateCharacter(_nameField.text, Races[_raceIndex], Classes[_classIndex],
+                                         _gender, _hair, _hairColor, _skin);
                 ShowCreate(false);
             });
             UiKit.Place(UiKit.Rect(confirm.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
@@ -483,6 +502,10 @@ namespace Game.Client
         {
             UiKit.SetButtonText(_raceButton, "Race: " + Races[_raceIndex]);
             UiKit.SetButtonText(_classButton, "Class: " + Classes[_classIndex]);
+            UiKit.SetButtonText(_genderButton, "Body: " + (_gender == Gender.Female ? "Female" : "Male"));
+            UiKit.SetButtonText(_hairButton, "Hair: " + Appearance.HairStyleNames(_gender)[_hair]);
+            UiKit.SetButtonText(_hairColorButton, "Colour: " + Appearance.HairColorNames[_hairColor]);
+            UiKit.SetButtonText(_skinButton, "Skin: " + Appearance.SkinToneNames[_skin]);
         }
 
         private void RefreshCharacterSelect()

@@ -126,9 +126,18 @@ namespace Game.ClientEditor
             // 0.253.0 — the Quaternius outfits, on the Universal Animation Library's own skeleton (the Adventurer rig,
             // Hips/UpperLeg.L, crossed its legs on the run: its rest pose disagreed with the clips'). "player" dresses
             // every player; "humanoid" stays the last resort for NPCs and humanoid mobs.
-            new Body("player",   OutfitDir + "/Male_Ranger.fbx",  0f, true, "Hair_SimpleParted"),
-            new Body("humanoid", OutfitDir + "/Male_Peasant.fbx", 0f, true, "Hair_SimpleParted", "Hair_Beard"),
+            // `BL-354` (0.254.0) — a woman's body for each. Every hairstyle the gender can wear is baked in hidden; the
+            // first is the one shown until CharacterLook picks (CharacterLook.MaleHair / FemaleHair name them all).
+            new Body("player",        OutfitDir + "/Male_Ranger.fbx",    0f, true, false, null, MaleHairs),
+            new Body("player_female", OutfitDir + "/Female_Ranger.fbx",  0f, true, true,  null, FemaleHairs),
+            new Body("humanoid",      OutfitDir + "/Male_Peasant.fbx",   0f, true, false, null, MaleHairs),
+            new Body("npc_female",    OutfitDir + "/Female_Ranger.fbx",  0f, true, true,
+                     OutfitDir + "/Female_Peasant.fbx", FemaleHairs),
         };
+
+        // Properties, not fields: Bodies above is initialised first, in textual order, and would read a null field.
+        private static string[] MaleHairs => new[] { "Hair_SimpleParted", "Hair_Long", "Hair_Buzzed", "Hair_Beard" };
+        private static string[] FemaleHairs => new[] { "Hair_Long", "Hair_Buns", "Hair_SimpleParted", "Hair_BuzzedFemale" };
 
         /// <summary>Where the character clips live. 🔑 <b>This folder is the whole of `BL-102`</b> — the
         /// bodies are rigged, avatared and committed; what is missing is motion, and motion is files in
@@ -147,9 +156,20 @@ namespace Game.ClientEditor
             /// (ModelSetup.Outfits.cs), and our own materials.</summary>
             public readonly bool Outfit;
             public readonly string[] Hair;
+            /// <summary>`BL-354` — a woman's head and brows (the female base body) instead of a man's.</summary>
+            public readonly bool Female;
+            /// <summary>Another outfit FBX whose pieces REPLACE this one's, rebound to this skeleton by bone name — for an
+            /// outfit file that cannot carry a humanoid avatar itself (Female_Peasant ships without a head bone).</summary>
+            public readonly string Pieces;
 
             public Body(string key, string fbx, float height, bool outfit = false, params string[] hair)
-            { Key = key; Fbx = fbx; Height = height; Outfit = outfit; Hair = hair ?? new string[0]; }
+                : this(key, fbx, height, outfit, false, null, hair) { }
+
+            public Body(string key, string fbx, float height, bool outfit, bool female, string pieces, params string[] hair)
+            {
+                Key = key; Fbx = fbx; Height = height; Outfit = outfit; Female = female; Pieces = pieces;
+                Hair = hair ?? new string[0];
+            }
         }
 
         [MenuItem("Tools/BL-93/Build ALL prefabs (creatures + characters + props)")]

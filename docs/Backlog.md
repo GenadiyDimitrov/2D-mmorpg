@@ -294,7 +294,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-351` | ⏸ | **Downloadable content** — move art out of the APK (Addressables + CDN, or Play Asset Delivery) once it passes ~100 MB; until then new asset kinds load through one function | client |
 | `BL-352` | 🔴 | **Vamp heals from the HP the target really LOST, not the damage rolled** — a 1500 hit on a 100-HP target vamps from 100; every lifesteal path (skill drains + basic-attack vamp) | combat |
 | `BL-353` | ⏸ | **Town NPCs get a level and a rank** — peasants 20-30, masters 50-60, the gatekeeper a lvl-90 mage, grand master a lvl-60 knight; 1-3k HP; mage or fighter by role | world |
-| `BL-354` | ⏸ | **Character bodies** — female NPCs first, then 2 genders per race (pick at creation), 5 hairstyles + hair colour + skin tone; the paid pack's other 10 outfits; armour type/grade → outfit pieces per slot | client |
+| `BL-354` | ⏸ | **Character bodies, what is left** — the paid pack's 10 outfits, armour type/grade → outfit pieces per slot, face shapes, elf ears / demon horns | client |
 
 ---
 
@@ -2547,32 +2547,23 @@ fighter etc.. Their life will be 1~3k"*.
 - ❓ To settle when picked up: a level per ROLE or per NPC; whether a retaliating NPC fights with its archetype's
   skills; whether the level shows on target-inspect.
 
-## `BL-354` ⏸ CHARACTER BODIES — FEMALE, THE OTHER 10 OUTFITS, PER-GRADE LOOKS (2026-10-13)
+## `BL-354` ⏸ CHARACTER BODIES — WHAT IS LEFT: MORE OUTFITS, PER-GRADE LOOKS, FACES, EARS/HORNS (2026-10-13)
 
-0.253.0 swapped every body to the Quaternius outfit kit (CC0), on the animations' own skeleton. Your question that day:
-*"is good that they come undressed we can then have models for different types and grades, right?"* — yes: each outfit
-is split per slot (body / legs / arms / feet / hood), and the head is separate, so an armour piece can swap ONE slot.
+0.253.0 put every body on the Quaternius outfit kit (CC0), on the animations' own skeleton; **0.254.0 built two genders
+for every race, women NPCs, 5 hairstyles + 8 hair colours + 5 skin tones at creation, and the race builds** (elf 10%
+taller and slimmer, lighter; demon man 5% taller, 10% broader; demon skin light brown → red-brown). The text before
+that rewrite is in `BacklogArchive.md`. Still open:
 
 - ❓ **The other 10 outfits** are in the paid Source version ($20, still CC0); the free one has Peasant + Ranger only.
-  Yours to decide whether to buy it — without it there is nothing to make heavy/light/robe looks from.
-- **Two genders for every race, and female NPCs** (your words, 2026-10-13: *"if we have genders can atlast the npcs
-  have a female .. also it will be good to do at some point 5 hair stiles, 5 faces and each race to have 2 genders"*).
-  The plan, in build order:
-  1. **Female NPCs first — no gender field needed.** A male/female flag on each `NpcDef` (the server already decides
-     who every NPC is), carried on `EntityDto`; the client picks `npc_female` / `humanoid`. Needs the female head cut
-     from `Superhero_Female_FullBody` and Female Peasant's humanoid import fixed (it came in "generic").
-  2. **Player gender** — a pick at character creation, persisted (`game.db` delete), on `EntityDto` (protocol bump);
-     `ModelLibrary` gains `player_female` and the same per-race/class chain. 🔑 Label it **"Body: A / B"** in the UI
-     if you want the topic off the table entirely — common in recent games, costs nothing.
-  3. **Looks at creation:** hair **5 per gender** from the free pack's 6 meshes (male: Parted / Long / Buzzed / Parted
-     + Beard / Buzzed + Beard; female: Long / Buns / Parted / Buzzed-female / one more by colour) + a **hair colour**
-     (a tint, free) + **skin tone** (light/dark textures both ship) + eye colour. ⚠ **"5 faces" is not in this pack**:
-     it has ONE head per gender — skin, eyes, brows and beard make characters distinct, but the face SHAPE is the
-     same. Real face variety needs the paid Source pack or other art.
-  4. **Races:** the bodies are human. A demon skin tint is cheap; elf ears and demon horns need small extra meshes.
-  - Lore seed for `BL-350`: *"the Forge-god shaped men from stone and women from ash"* (your idea: the world has two).
-- **Per-grade looks** (= the visual half of `BL-103`): a table from armour type/grade → outfit pieces per slot, the
-  client swapping the slot's mesh on the same skeleton. Blocked on the two questions above for anything beyond
-  "Ranger vs Peasant".
-- ⚠ The Ranger body is ~27k triangles (its boots alone 9k). Fine for a handful on screen; watch the phone's frame rate
-  in a crowded town before adding more pieces.
+  Yours to decide — without it there is nothing to make heavy / light / robe looks from.
+- **Per-grade looks** (= the visual half of `BL-103`): armour type/grade → outfit pieces per slot (body / legs / arms /
+  feet / head), the client swapping that slot's mesh on the same skeleton. The Ranger hood is already in every player
+  prefab, hidden — the first helmet.
+- ⚠ **Faces:** the free pack has ONE head per body, so "5 faces" today is skin + hair + colour + beard. Different face
+  SHAPES need the paid pack or other art.
+- **Elf ears, demon horns:** small extra meshes on the head bone; none in the pack. Eye colour (not built) is a tint like
+  hair colour if wanted.
+- ⚠ The race builds are a scale on the model ROOT, so a raised arm shears slightly. Invisible at 10%; anything bigger
+  wants per-bone scaling.
+- ⚠ The Ranger body is ~27k triangles (its boots alone 9k). Watch the phone's frame rate in a crowded town.
+- Lore seed lives in `BL-350` (one god made men from stone and women from ash).
