@@ -64,7 +64,7 @@ address.
 
 ### Step 2: the address (once, ~5 min)
 1. Go to **duckdns.org**, sign in with Google.
-2. Type a name (e.g. `emberfall`) → *add domain*. Put `<IP>` in the *current ip* box → *update ip*.
+2. Type a name (e.g. `vardelar`) → *add domain*. Put `<IP>` in the *current ip* box → *update ip*.
 3. Your server's address is now `<yourname>.duckdns.org`. Oracle keeps the IP for as long as the machine exists.
 
 ### Step 3: get into the machine (each time you work on it)

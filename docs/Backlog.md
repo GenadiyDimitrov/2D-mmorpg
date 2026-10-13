@@ -290,7 +290,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-347` | ⏸ | **Inventory as cells** — a grid of item cells with icons, and a tooltip-style details panel; for later | ui |
 | `BL-348` | ⏸ | **Hazard terrain** — harsh zones put a visible debuff on you until you leave: blizzard/wind = more misses + magic fails, lava pools = DoT, slowed attack/cast speed; the combat half of `BL-328`; answer later | world |
 | `BL-349` | ⏸ | **Race starting zones** — each race starts in its own territory (elves water/ice, humans an island, demons fire/lava), each class at its own spot (temple, ruins, arena, summoning circle) with low-level mobs and its own newbie guide; after `BL-346` | world |
-| `BL-350` | ⏸ | **The game's story** — where each race comes from and what it is for, a pantheon of named gods that skills can be described by; so quests are more than "go there, kill that" | story |
+| `BL-350` | ⏸ | **The game's story** (world = **Vardelar**, skeleton in `docs/design/Lore.md`) — where each race comes from and what it is for, a pantheon of named gods that skills can be described by; so quests are more than "go there, kill that" | story |
 | `BL-351` | ⏸ | **Downloadable content** — move art out of the APK (Addressables + CDN, or Play Asset Delivery) once it passes ~100 MB; until then new asset kinds load through one function | client |
 | `BL-352` | 🔴 | **Vamp heals from the HP the target really LOST, not the damage rolled** — a 1500 hit on a 100-HP target vamps from 100; every lifesteal path (skill drains + basic-attack vamp) | combat |
 | `BL-353` | ⏸ | **Town NPCs get a level and a rank** — peasants 20-30, masters 50-60, the gatekeeper a lvl-90 mage, grand master a lvl-60 knight; 1-3k HP; mage or fighter by role | world |
@@ -2511,6 +2511,10 @@ descripted for those entitites)"*.
   `docs/design/Lore.md`); how deep before content uses it.
 - Seed (2026-10-13, with `BL-354`'s two genders): one god made men from stone and women from ash, or similar — the
   world has two sexes, and its myth says why.
+- **2026-10-13: the name and the skeleton are settled → `docs/design/Lore.md`.** The world is **Vardelar**, the Creator,
+  murdered by the lesser gods he made; the world is his body. The races are their pieces in a game of war; world bosses
+  are the pieces of him that will not die; a 4th and 5th race are set up. Still open: the lesser gods' names, the boss
+  pieces, where it shows first.
 
 ## `BL-351` ⏸ DOWNLOADABLE CONTENT — art out of the APK (2026-10-12, when it grows)
 
