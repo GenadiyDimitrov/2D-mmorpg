@@ -294,9 +294,11 @@ namespace Game.Client
             // moves ahead, where the view now reaches far further than it does behind you — measured from
             // the centre, the top of a tilted screen showed bare ground on Medium.
             var plane = new Plane(Vector3.up, Vector3.zero);
+            // A level camera (pitch 0) never meets the ground at the screen centre: use the ground under it.
             var ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-            if (!plane.Raycast(ray, out float d)) return;
-            var centre = WorldMapper.ToServer(ray.GetPoint(d));
+            var centre = WorldMapper.ToServer(plane.Raycast(ray, out float d)
+                ? ray.GetPoint(d)
+                : new Vector3(cam.transform.position.x, 0f, cam.transform.position.z));
             var low = cam.ViewportPointToRay(new Vector3(0.5f, 0f, 0f));
             var high = cam.ViewportPointToRay(new Vector3(0.5f, 1f, 0f));
             if (plane.Raycast(low, out float dl) && plane.Raycast(high, out float dh))

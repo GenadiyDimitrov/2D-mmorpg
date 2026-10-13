@@ -25,7 +25,7 @@
 
 ---
 
-## §159 — 0.252.0: `/time`; a longer day; fainter god halo; models fade on `/invis` (2026-10-13)
+## §159 — 0.252.0: `/time`; a longer day; camera 0-90° and zoom 0.1-30; fainter god halo; models fade on `/invis` (2026-10-13)
 
 ⚠ **Server restart + new APK.** An admin and an ordinary player online together.
 
@@ -40,6 +40,11 @@
 - `159g` [ ] - The new day: `/time dawn` (05:00) the sky starts to lighten, `/time morning` (07:30) full day, `/time dusk`
   (19:30) the sun starts to set, `/time night` (22:00) full night. Each change is smooth, with no jump in the light or
   the shadows; `/time noon` the shadows point up the screen, a bit to the side (the sun is south at 13:30). ->
+- `159h` [ ] - Settings has no View (ortho) toggle and no Ortho zoom. Drag the view down to level with the horizon (0°):
+  the ground keeps loading around you and trees still appear as you walk. ->
+- `159i` [ ] - Pinch from 30 all the way in: each bit of finger travel looks like the same size of step, close in and far
+  out; at 0.1 you are inside the character, nothing disappears around it. Settings → Camera zoom follows the pinch and
+  shows the distance. ->
 - `159e` [ ] - `/god`: the halo is fainter and mobs swarming you are visible through it. ->
 - `159f` [ ] - `/invis` (or a rogue's stealth) on a character with a model: the body AND its weapons fade, and come back
   solid with their own look when it ends. ->

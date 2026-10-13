@@ -117,8 +117,12 @@ namespace Game.Client
         {
             minX = minY = float.MaxValue; maxX = maxY = float.MinValue;
             var plane = new Plane(Vector3.up, Vector3.zero);
-            if (!plane.Raycast(cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f)), out float cd)) return false;
-            var centre = WorldMapper.ToServer(cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f)).GetPoint(cd));
+            // A level camera (pitch 0, 0.252.0) looks at the horizon and its centre ray never meets the ground:
+            // measure from the ground under the camera then, or the ground would stop loading as you walk.
+            var mid = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+            var centre = WorldMapper.ToServer(plane.Raycast(mid, out float cd)
+                ? mid.GetPoint(cd)
+                : new Vector3(cam.transform.position.x, 0f, cam.transform.position.z));
 
             for (int i = 0; i < 4; i++)
             {

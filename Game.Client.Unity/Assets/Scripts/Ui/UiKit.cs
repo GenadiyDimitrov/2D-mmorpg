@@ -582,7 +582,8 @@ namespace Game.Client
         /// itself with the live value, because a slider with no number on it is a guess.
         /// </summary>
         public static Slider SliderRow(Transform parent, string title, float min, float max,
-                                       float value, string format, Action<float> onChange)
+                                       float value, string format, Action<float> onChange,
+                                       Func<float, string> show = null)
         {
             var row = Box(parent, "SliderRow", new Color(0, 0, 0, 0), blocksInput: false);
 
@@ -610,11 +611,12 @@ namespace Game.Client
             // anywhere on the track to set the value is both simpler and easier to hit.
             slider.targetGraphic = track;
             slider.value = value;
-            label.text = title + "   " + value.ToString(format);
+            Func<float, string> text = show ?? (v => v.ToString(format));
+            label.text = title + "   " + text(value);
 
             slider.onValueChanged.AddListener(v =>
             {
-                label.text = title + "   " + v.ToString(format);
+                label.text = title + "   " + text(v);
                 if (onChange != null) onChange(v);
             });
             return slider;

@@ -26,8 +26,6 @@ namespace Game.Client
 
         private const string PrefPitch      = CameraRig.PitchKey;   // the drag gesture writes it too
         private const string PrefYaw        = CameraRig.YawKey;
-        private const string PrefOrtho      = "cam.ortho";
-        private const string PrefOrthoSize  = "cam.orthoSize";
         private const string PrefEntity     = "ui.entityScale";
         private const string PrefPlate      = "ui.nameplateHeight";
         /// <summary>UI size as a MULTIPLIER, ×1 = an 800-high design (UiKit.ReferenceHeightAtX1). A new
@@ -95,8 +93,6 @@ namespace Game.Client
                 var rig = Boot.CameraRig;
                 rig.Pitch = PlayerPrefs.GetFloat(PrefPitch, rig.Pitch);
                 rig.Yaw = PlayerPrefs.GetFloat(PrefYaw, rig.Yaw);
-                rig.Orthographic = PlayerPrefs.GetInt(PrefOrtho, 0) == 1;
-                rig.OrthoSize = PlayerPrefs.GetFloat(PrefOrthoSize, rig.OrthoSize);
             }
         }
 
@@ -106,7 +102,7 @@ namespace Game.Client
             // must never be scaled by the setting it controls.
             _settingsPanel = UiKit.PanelBox(_setupRoot, "Settings");
             UiKit.Place(_settingsPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                        Vector2.zero, new Vector2(640f, 738f));   // grown for the camera rows, the bar-shape row, the bar size, then shadows + night
+                        Vector2.zero, new Vector2(640f, 650f));   // grown for the camera rows, the bar-shape row, the bar size, then shadows + night; -88 for the ortho rows (0.252.0)
             var inner = _settingsPanel.GetChild(0);
             float chrome = UiKit.WindowChrome(_settingsPanel, "Settings", () => CloseWindow(_settingsPanel));
 
@@ -119,12 +115,13 @@ namespace Game.Client
                     PlayerPrefs.SetFloat(PrefPitch, v);
                 }));
 
-            Row(inner, ref y, UiKit.SliderRow(inner, "Camera height", 10f, 90f,
-                Boot.CameraRig != null ? Boot.CameraRig.Distance : 38f, "0", v =>
+            // The slider holds the LOGARITHMIC position (0..1), the label the distance: equal slides are equal-looking
+            // zoom steps, the same as a pinch (CameraRig.ZoomToSlider).
+            Row(inner, ref y, _zoomSlider = UiKit.SliderRow(inner, "Camera zoom", 0f, 1f,
+                CameraRig.ZoomToSlider(Boot.CameraRig != null ? Boot.CameraRig.Distance : 20f), "0", v =>
                 {
-                    if (Boot.CameraRig != null) Boot.CameraRig.Distance = v;
-                    // The rig owns its own persistence for distance (pinch writes it too).
-                }));
+                    if (Boot.CameraRig != null) Boot.CameraRig.SetZoom(CameraRig.SliderToZoom(v));
+                }, v => CameraRig.SliderToZoom(v).ToString(CameraRig.SliderToZoom(v) < 1f ? "0.0" : "0")));
 
             // Yaw: this slider, or (`BL-344` step 8) one finger dragged sideways across the world.
             Row(inner, ref y, _yawSlider = UiKit.SliderRow(inner, "Camera rotation", 0f, 360f,
@@ -132,13 +129,6 @@ namespace Game.Client
                 {
                     if (Boot.CameraRig != null) Boot.CameraRig.Yaw = v;
                     PlayerPrefs.SetFloat(PrefYaw, v);
-                }));
-
-            Row(inner, ref y, UiKit.SliderRow(inner, "Ortho zoom", 6f, 60f,
-                Boot.CameraRig != null ? Boot.CameraRig.OrthoSize : 22f, "0", v =>
-                {
-                    if (Boot.CameraRig != null) Boot.CameraRig.OrthoSize = v;
-                    PlayerPrefs.SetFloat(PrefOrthoSize, v);
                 }));
 
             Row(inner, ref y, UiKit.SliderRow(inner, "Entity size", 0.3f, 3f,
@@ -172,18 +162,6 @@ namespace Game.Client
                     ApplyBarLayout();
                     PlayerPrefs.SetFloat(PrefBarScale, _barScale);
                 }));
-
-            var projection = UiKit.TextButton(inner, "", () =>
-            {
-                if (Boot.CameraRig == null) return;
-                Boot.CameraRig.Orthographic = !Boot.CameraRig.Orthographic;
-                PlayerPrefs.SetInt(PrefOrtho, Boot.CameraRig.Orthographic ? 1 : 0);
-                RefreshSettingsLabels();
-            }, 15f);
-            UiKit.Place(UiKit.Rect(projection.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(18f, y), new Vector2(260f, 38f));
-            _projectionToggle = projection;
-            y -= 48f;
 
             var damage = UiKit.TextButton(inner, "", () =>
             {
@@ -291,7 +269,7 @@ namespace Game.Client
 
             var reset = UiKit.TextButton(inner, "Reset to defaults", () =>
             {
-                foreach (var key in new[] { PrefPitch, PrefYaw, PrefOrtho, PrefOrthoSize,
+                foreach (var key in new[] { PrefPitch, PrefYaw,
                                             PrefEntity, PrefPlate, PrefUiScale, PrefBarScale, PrefDamage,
                                             PrefZones, PrefTicks, PrefBarShape, PrefExtraBars, PropScatter.Pref, DayNight.ShadowPref, DayNight.NightPref })
                     PlayerPrefs.DeleteKey(key);
@@ -310,10 +288,10 @@ namespace Game.Client
             _settingsPanel.gameObject.SetActive(false);
         }
 
-        private Button _damageToggle, _zoneToggle, _projectionToggle, _modelToggle, _tickToggle, _sceneryToggle, _shadowToggle;
+        private Button _damageToggle, _zoneToggle, _modelToggle, _tickToggle, _sceneryToggle, _shadowToggle;
         private Button _extraSlotsToggle, _barShapeToggle;   // `BL-269`, `BL-299`
         private Slider _uiScaleSlider, _barScaleSlider;
-        private Slider _pitchSlider, _yawSlider;   // follow the drag gesture while Settings is open (SyncCameraSliders)
+        private Slider _pitchSlider, _yawSlider, _zoomSlider;   // follow the drag gesture while Settings is open (SyncCameraSliders)
 
         /// <summary>`BL-344` step 8: the drag and the compass move the camera behind the sliders' back, so
         /// an open Settings window pulls the numbers back off the rig. Setting <c>value</c> runs the row's
@@ -324,6 +302,8 @@ namespace Game.Client
             if (rig == null || _pitchSlider == null || !_settingsPanel.gameObject.activeSelf) return;
             if (Mathf.Abs(_pitchSlider.value - rig.Pitch) > 0.5f) _pitchSlider.value = rig.Pitch;
             if (Mathf.Abs(Mathf.DeltaAngle(_yawSlider.value, rig.Yaw)) > 0.5f) _yawSlider.value = rig.Yaw;
+            float zoomAt = CameraRig.ZoomToSlider(rig.Distance);   // a pinch moves it too
+            if (Mathf.Abs(_zoomSlider.value - zoomAt) > 0.005f) _zoomSlider.value = zoomAt;
         }
 
         /// <summary>Resize the GAME canvas now. Every panel is anchored, so changing the scaler's design
@@ -339,8 +319,6 @@ namespace Game.Client
 
         private void RefreshSettingsLabels()
         {
-            bool ortho = Boot.CameraRig != null && Boot.CameraRig.Orthographic;
-            UiKit.SetButtonText(_projectionToggle, ortho ? "View: ORTHO (even sight)" : "View: perspective");
 
             UiKit.SetButtonText(_damageToggle, _showDamageNumbers ? "Damage numbers: ON" : "Damage numbers: off");
             UiKit.SetButtonText(_tickToggle, _showTickLines ? "DoT/HoT in chat: ON" : "DoT/HoT in chat: off");

@@ -31,10 +31,10 @@ namespace Game.ClientEditor
 
             var poses = new (float pitch, float yaw)[]
             {
-                (90f, 0f), (70f, 0f), (55f, 0f), (CameraRig.MinPitch, 0f),
-                (55f, 90f), (55f, 180f), (CameraRig.MinPitch, 250f), (60f, 320f),
+                (90f, 0f), (70f, 0f), (55f, 0f), (20f, 0f),
+                (55f, 90f), (55f, 180f), (10f, 250f), (60f, 320f),
             };
-            var target = new Vector3(0.05f, 0f, 0.3f);   // between the two players
+            var target = new Vector3(0.05f, CameraRig.LookHeight, 0.3f);   // between the two players
             RenderSheet(cam, outPath, poses.Length, f => CameraRig.Pose(cam.transform, target, poses[f].pitch, poses[f].yaw, 14f));
             QualitySettings.SetQualityLevel(editorQuality, true);
             Debug.Log($"[BL-344] camera preview ({poses.Length} poses) -> {outPath}");

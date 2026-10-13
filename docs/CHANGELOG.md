@@ -28,7 +28,7 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-13 (latest) — 0.252.0: `/time`; a longer day; fainter god halo; models fade on `/invis`
+## 2026-10-13 (latest) — 0.252.0: `/time`; a longer day; camera 0-90° and zoom 0.1-30; fainter god halo; models fade on `/invis`
 
 **Server restart + new APK** (protocol 54 — an old APK still logs in, but its sky ignores an admin `/time`). No
 `game.db` delete.
@@ -47,6 +47,15 @@ docs/changelogs/`.
   day at **07:30**, starts to set at **19:30** and is full night at **22:00** (it was 04:30 → 08:30 and 15:30 → 19:30).
   The sun stands south at 13:30. **Night mobs now only own the full dark, 22:00-05:00** (was 18:00-06:00): 7 game
   hours, about 70 real minutes of a 4-hour day instead of 2 hours.
+- **The camera:**
+  - **The ortho view is gone** (Settings lost the View toggle and the Ortho zoom slider): with the camera tilting it
+    broke the picture. Perspective only.
+  - **Tilt all the way down to level with the horizon**: 0-90° (was 45-90°), by the drag or Settings → Camera angle.
+  - **Zoom 0.1-30** (was 10-90): at 0.1 you are inside your character. The camera now looks at the character's chest,
+    not its feet, so a level view is at eye height. A saved zoom past 30 comes back as 30.
+  - **Every zoom step looks the same size**: pinching changes the distance by a ratio, so 1 → 2 and 15 → 30 take the
+    same finger travel (a full pinch of about 1200 px crosses the whole range). Settings → Camera zoom (was "Camera
+    height") moves the same way and shows the distance.
 - **The god halo is fainter** (alpha 0.42 → 0.25): it hid swarming mobs.
 - **`/invis` and stealth now fade a body wearing a model** (and its weapons) — before, only the old capsule faded.
 
