@@ -25,6 +25,23 @@
 
 ---
 
+## §164 — 0.255.0: houses in the towns, huts in the woods, a stone Anvil; scenery draws around you (`BL-356`, 2026-10-13)
+
+⚠ **New APK only.**
+
+- `164a` [ ] - Brackenford: a building on every footprint, and each shop's/church's door faces the NPC standing at it.
+  The church is a cross; the Anvil stands in a fenced yard behind the Master Crafter. Walk round the town at your usual
+  camera: do the buildings ever hide you or an NPC you want to tap? ->
+- `164b` [ ] - The Anvil is a stone block, not a person; tapping it still opens the crafting window. ->
+- `164c` [ ] - Stonewatch and Ironreach (the Y towns): small houses along the stem and arms, none on a road. ->
+- `164d` [ ] - A hut in the woods — one is at about (27000, 10400), just east of Stonewatch. Trees leave it a clearing.
+  Settings → Scenery Off hides it; the town buildings stay. ->
+- `164e` [ ] - Your report: camera angle 32-35, zoom 30. Trees and stones now appear round YOU, all at once, not from
+  the far end inward; at 30-31 they no longer vanish. The orange map border no longer shows from mid-map. ->
+- `164f` [ ] - Frame rate in a city on your phone, with Scenery High and Shadows All. ->
+
+---
+
 ## §163 — 0.254.2: natural arms, re-roll changes the body, admin look picker (`BL-354`/`BL-355`, 2026-10-13)
 
 ⚠ **Server restart + new APK.**

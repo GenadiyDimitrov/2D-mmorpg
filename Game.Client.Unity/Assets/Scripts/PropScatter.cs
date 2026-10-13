@@ -20,8 +20,9 @@ namespace Game.Client
     /// clumps trees into woods and clearings instead of spreading them evenly.</para>
     ///
     /// <para><b>Kept clear:</b> towns (and their rims), roads, the centre of every mob camp, NPCs
-    /// standing outside a town, and the dungeon void below 0. Those are where the player looks and
-    /// fights, and from the top-down camera a tree there would hide the thing you tap.</para>
+    /// standing outside a town, the forest huts (`BL-356`, <see cref="Buildings.HutSpots"/>), and the
+    /// dungeon void below 0. Those are where the player looks and fights, and from the top-down camera a
+    /// tree there would hide the thing you tap.</para>
     ///
     /// <para><b>Streaming</b> rides on <see cref="BiomeGround"/>: a chunk's props are rolled when its
     /// ground is built and dropped when it is pooled. <b>Drawing</b> is GPU instancing, gathered across
@@ -46,6 +47,9 @@ namespace Game.Client
         public static Level Quality = Level.High;
         private static readonly float[] DensityAt = { 0f, 0.35f, 0.65f, 1f };
         private static readonly float[] RangeAt = { 0f, 4000f, 6500f, 9000f };   // server units from the screen centre
+
+        /// <summary>How far from the player scenery is drawn at the current setting, in server units.</summary>
+        public static float Range => RangeAt[(int)Quality];
 
         public static void LoadQuality() =>
             Quality = (Level)Mathf.Clamp(PlayerPrefs.GetInt(Pref, (int)Level.High), 0, 3);
@@ -114,6 +118,7 @@ namespace Game.Client
         private const float RoadClear = 380f;       // from the road's centre line (the road is 600 wide)
         private const float CampCentre = 0.55f;     // × camp radius: the middle where the fighting is
         private const float NpcClear = 250f;
+        private const float HutClear = 450f;        // a small clearing round each forest hut
 
         // ── state ───────────────────────────────────────────────────────────────────────────────
 
@@ -253,6 +258,7 @@ namespace Game.Client
             foreach (var t in Towns.All) Add(t.X, t.Y, t.Radius + TownMargin);
             foreach (var z in WorldMap.SpawnZones) Add(z.X, z.Y, z.Radius * CampCentre);
             foreach (var n in WorldMap.Npcs) Add(n.X, n.Y, NpcClear);
+            foreach (var h in Buildings.HutSpots) Add(h.x, h.y, HutClear);
         }
 
         private bool Blocked(float x, float y, PropKind kind)
@@ -303,6 +309,10 @@ namespace Game.Client
             var high = cam.ViewportPointToRay(new Vector3(0.5f, 1f, 0f));
             if (plane.Raycast(low, out float dl) && plane.Raycast(high, out float dh))
                 centre = (WorldMapper.ToServer(low.GetPoint(dl)) + WorldMapper.ToServer(high.GetPoint(dh))) * 0.5f;
+            // `BL-356`: but once there is a player, a circle round HIM. The screen's middle above is only the fallback:
+            // tilted near the horizon the top edge's ray meets the ground at the map border, the midpoint ran off there,
+            // and the circle round it reached back toward you as a reversed arc — or, at pitch 30-31, not at all.
+            if (CameraRig.Focus.HasValue) centre = WorldMapper.ToServer(CameraRig.Focus.Value);
             float range = RangeAt[(int)Quality], range2 = range * range;
             float half = BiomeGround.ChunkSize * 0.5f;
 

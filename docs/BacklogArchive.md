@@ -8734,3 +8734,15 @@ is split per slot (body / legs / arms / feet / hood), and the head is separate, 
   "Ranger vs Peasant".
 - ⚠ The Ranger body is ~27k triangles (its boots alone 9k). Fine for a handful on screen; watch the phone's frame rate
   in a crowded town before adding more pieces.
+
+## `BL-356` — houses on the town lots, huts in the woods, a stone Anvil (2026-10-13; BUILT in 0.255.0, filed and closed the same day)
+
+Your words, 2026-10-13: *"only things i want is houses ... to fix the flat towns .. (and one two huts in some forests just as
+scenary - later map reognaization will fix the ground details and real position)"*, and mid-build: *"also change the
+skin of anvil :) now its human and its funny .. a log or a stone will do just not human"*.
+
+**Built 0.255.0:** a building on every `TownLayout` lot (door toward its NPC or the nearest road, the largest model that
+fits the lot), 0-2 huts per wooded field (18 in all), the Anvil as a stone block. Client-only, no collision (`BL-323`
+still owns that). Models: Quaternius *Medieval Village MegaKit* (CC0), assembled and baked by `ModelSetup.BuildBuildings`.
+⚠ Most buildings stand at 0.6-0.8 of real size because the lots are small next to a character; when the map
+reorganisation grows the lots, the buildings follow with no code change.

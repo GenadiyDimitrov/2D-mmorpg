@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.254.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.255.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,32 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-13 (latest) — 0.254.2: arms hang naturally and swing when running; a re-roll changes the body; admin look picker
+## 2026-10-13 (latest) — 0.255.0: houses in the towns, huts in the woods, a stone Anvil; scenery draws around you
+
+**New APK only** (client-only; no server restart, no `game.db` delete). (`BL-356`)
+
+- **Every building footprint in the five cities has a building on it**: cottages, town houses, stone houses and long
+  houses on the house lots; a two-storey shop for Arms & Armour, the Apothecary and the Keeper; a stone crafthall
+  with two forge chimneys; the Adventurers Guild as the biggest house in town; the church as two tall arms crossed;
+  a roofed pavilion for the shrine; and a fenced yard round the Anvil, open toward the Master Crafter.
+- **Doors face their NPC** (everyone already stands at a door), or the nearest road for a plain house. A small lot gets
+  a small house rather than a shrunken hall, and a street mixes several models.
+- ⚠ **The lots are small next to a character**, so most buildings stand at 0.6-0.8 of real size. That is the town plan
+  as drawn; your planned map reorganisation is where lots grow, and the buildings follow automatically.
+- **No collision yet**: you walk through walls, as with the footprints before (`BL-323`).
+- **18 huts** in some of the woods (a field gets 0, 1 or 2, always somewhere properly wooded, away from camps, roads
+  and towns). Trees keep a small clearing round each. They are scenery: Settings → Scenery **Off** hides them; town
+  buildings always show.
+- **The Anvil is a stone block**, no longer a person.
+- **Scenery and ground now draw around YOU**, not around the middle of the screen. Tilted toward the horizon (pitch
+  ~30-35 at full zoom-out) the middle of the screen ran off to the map border: trees appeared out there first, the
+  ring near you was a reversed arc, and at 30-31 nothing near you drew at all. The ground now loads what you can see
+  but never further than the scenery range + 3,000 from you, so the map edge no longer shows from the middle of the map.
+- Buildings follow the shadow setting like trees (they cast shadows only on **All**).
+- Models: Quaternius *Medieval Village MegaKit* (CC0), assembled from its wall/roof pieces and baked to one mesh per
+  building (`ModelSetup.BuildBuildings`; renders: `ModelSetup.PreviewBuildings`). NOT on a phone yet.
+
+## 2026-10-13 — 0.254.2: arms hang naturally and swing when running; a re-roll changes the body; admin look picker
 
 **Server restart + new APK** (a new admin command). No `game.db` delete. (`BL-354`, `BL-355`)
 

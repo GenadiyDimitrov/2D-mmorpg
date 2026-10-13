@@ -400,6 +400,9 @@ namespace Game.Client
                     break;
 
                 case EntityKind.Npc:
+                    // `BL-356` — the Anvil is an NPC so you can tap it, but it should not be a person. Known by its
+                    // spot: NPCs never move, and WorldMap.Npcs is the same list the server placed it from.
+                    if (IsAnvil(e)) yield return "Models/npc_anvil";
                     if (e.Gender == Gender.Female) yield return "Models/npc_female";   // `BL-354`
                     yield return "Models/npc";
                     break;
@@ -413,6 +416,13 @@ namespace Game.Client
             // prefab here and the entire world has models, badly — which is exactly what a proof of
             // concept wants to see before anyone commissions nine families.
             yield return "Models/humanoid";
+        }
+
+        private static bool IsAnvil(EntityDto e)
+        {
+            foreach (var n in WorldMap.Npcs)
+                if (n.Role == NpcRole.Anvil && Mathf.Abs(n.X - e.X) < 1f && Mathf.Abs(n.Y - e.Y) < 1f) return true;
+            return false;
         }
 
         /// <summary>`BL-354` — a player's body from the bare picks: the character-creation preview has no DTO yet.

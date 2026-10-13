@@ -298,7 +298,16 @@ namespace Game.Client
                 _followPoint, Target.position, 1f - Mathf.Exp(-Follow * Time.deltaTime));
 
             Pose(transform, _followPoint + Vector3.up * (LookHeight * EntityManager.EntityScale), Pitch, Yaw, Distance);
+            Focus = _followPoint;
         }
+
+        /// <summary>`BL-356` — the point the camera follows (you), on the ground, or null before there is one. The scenery
+        /// and the ground stream AROUND THIS, not around the middle of the screen: tilted toward the horizon the screen's
+        /// middle runs off to the map border, and a circle drawn round that point left the ground at your feet bare (the
+        /// owner, at pitch 30-35 and zoom 30: "the center is not me but somewhere in the distance").</summary>
+        public static Vector3? Focus;
+
+        private void OnDisable() => Focus = null;
 
         /// <summary>
         /// Hang a camera off a point: <paramref name="distance"/> back along the view, looking at it. Public and

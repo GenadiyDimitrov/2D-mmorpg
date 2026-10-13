@@ -1247,6 +1247,9 @@ namespace Game.Client
                 new GameObject("BiomeGround").AddComponent<BiomeGround>();
             }
 
+            // `BL-356`: a building on every town lot, and a few huts in the woods (cosmetic, client-only).
+            if (FindAnyObjectByType<Buildings>() == null) new GameObject("Buildings").AddComponent<Buildings>();
+
             // BL-344 step 5: the sun turns with the game clock (cosmetic; the server keeps its own day/night).
             if (FindAnyObjectByType<DayNight>() == null) new GameObject("DayNight").AddComponent<DayNight>();
 

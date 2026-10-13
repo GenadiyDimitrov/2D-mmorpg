@@ -102,6 +102,11 @@ namespace Game.Client
             if (_wanted.Count == 0) return;
 
             float midX = (cx0 + cx1 + 1) * 0.5f, midY = (cy0 + cy1 + 1) * 0.5f;
+            if (CameraRig.Focus.HasValue)   // `BL-356`: nearest YOU first, not the middle of a tilted view
+            {
+                var me = WorldMapper.ToServer(CameraRig.Focus.Value);
+                midX = me.x / ChunkSize; midY = me.y / ChunkSize;
+            }
             _wanted.Sort((a, b) =>
                 ((a.x + 0.5f - midX) * (a.x + 0.5f - midX) + (a.y + 0.5f - midY) * (a.y + 0.5f - midY))
                 .CompareTo((b.x + 0.5f - midX) * (b.x + 0.5f - midX) + (b.y + 0.5f - midY) * (b.y + 0.5f - midY)));
@@ -111,7 +116,8 @@ namespace Game.Client
         }
 
         /// <summary>The server-space rectangle the camera sees on the y = 0 plane, clamped to
-        /// <see cref="MaxRange"/> around the screen centre. A corner ray that never meets the ground (a
+        /// <see cref="MaxRange"/> around the screen centre — or, once there is a player, to the scenery range plus 3000
+        /// around HIM (<see cref="CameraRig.Focus"/>, `BL-356`). A corner ray that never meets the ground (a
         /// tilt above the horizon) counts as the range limit in that direction.</summary>
         private bool VisibleRect(Camera cam, out float minX, out float minY, out float maxX, out float maxY)
         {
@@ -123,6 +129,14 @@ namespace Game.Client
             var centre = WorldMapper.ToServer(plane.Raycast(mid, out float cd)
                 ? mid.GetPoint(cd)
                 : new Vector3(cam.transform.position.x, 0f, cam.transform.position.z));
+            // `BL-356`: with a player, the ground is clipped to a square round HIM, a little past the scenery's range —
+            // not round the screen's middle, which a shallow tilt sends to the map border (and the border with it).
+            float reach = MaxRange;
+            if (CameraRig.Focus.HasValue)
+            {
+                centre = WorldMapper.ToServer(CameraRig.Focus.Value);
+                reach = Mathf.Min(MaxRange, Mathf.Max(PropScatter.Range, 6000f) + 3000f);
+            }
 
             for (int i = 0; i < 4; i++)
             {
@@ -132,13 +146,16 @@ namespace Game.Client
                 else
                 {
                     var flat = new Vector3(ray.direction.x, 0f, ray.direction.z).normalized;
-                    p = centre + new Vector2(flat.x, -flat.z) * MaxRange;
+                    p = centre + new Vector2(flat.x, -flat.z) * reach;
                 }
-                p.x = Mathf.Clamp(p.x, centre.x - MaxRange, centre.x + MaxRange);
-                p.y = Mathf.Clamp(p.y, centre.y - MaxRange, centre.y + MaxRange);
+                p.x = Mathf.Clamp(p.x, centre.x - reach, centre.x + reach);
+                p.y = Mathf.Clamp(p.y, centre.y - reach, centre.y + reach);
                 minX = Mathf.Min(minX, p.x); maxX = Mathf.Max(maxX, p.x);
                 minY = Mathf.Min(minY, p.y); maxY = Mathf.Max(maxY, p.y);
             }
+            // The ground round your own feet, whatever the corners say.
+            minX = Mathf.Min(minX, centre.x - ChunkSize); maxX = Mathf.Max(maxX, centre.x + ChunkSize);
+            minY = Mathf.Min(minY, centre.y - ChunkSize); maxY = Mathf.Max(maxY, centre.y + ChunkSize);
             return true;
         }
 
