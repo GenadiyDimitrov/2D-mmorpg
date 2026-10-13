@@ -31,14 +31,17 @@ namespace Game.ClientEditor
         private readonly struct WeaponRow
         {
             public readonly string Key, Fbx;
-            public readonly float Length, Grip, Yaw;
-            public WeaponRow(string key, string fbx, float length, float grip, float yaw)
-            { Key = key; Fbx = fbx; Length = length; Grip = grip; Yaw = yaw; }
+            public readonly float Length, Grip, Yaw, Girth;
+            public WeaponRow(string key, string fbx, float length, float grip, float yaw, float girth = 1f)
+            { Key = key; Fbx = fbx; Length = length; Grip = grip; Yaw = yaw; Girth = girth; }
         }
 
-        /// <summary>Length = share of the body's height (a 1.8 m man: sword 0.95 m, staff 1.75 m). Grip = where the
+        /// <summary>Length = share of the body's height (a 1.8 m man: sword 0.95 m, staff 1.5 m). Grip = where the
         /// hand closes, as a share of the length measured from the FBX origin (negative = below it, on the handle).
-        /// Yaw turns the mesh about its long axis into the frame (the packs lay a guard / hammer head across X).</summary>
+        /// Yaw turns the mesh about its long axis into the frame (the packs lay a guard / hammer head across X).
+        /// Girth thins (or thickens) it across the long axis only — the KayKit wand and staff are chunky toy props, and
+        /// shortening them alone left them as thick as before (owner, 2026-10-13: "way bigger … thinner and about
+        /// x0.8~0.9 shorter" → ×0.85 length, ×0.6 girth).</summary>
         private static readonly WeaponRow[] WeaponRows =
         {
             new WeaponRow("sword1h", "Sword",           0.52f, -0.07f, 90f),
@@ -47,8 +50,8 @@ namespace Game.ClientEditor
             new WeaponRow("blunt2h", "Hammer_Double",   0.72f,  0.00f, 90f),
             new WeaponRow("dagger",  "Dagger",          0.30f, -0.10f, 90f),
             new WeaponRow("bow",     "Bow_Wooden",      0.75f,  0.00f, 90f),
-            new WeaponRow("wand",    "Wand",            0.30f,  0.00f, 90f),
-            new WeaponRow("staff",   "Staff",           0.97f,  0.00f, 90f),
+            new WeaponRow("wand",    "Wand",            0.26f,  0.00f, 90f, 0.6f),
+            new WeaponRow("staff",   "Staff",           0.83f,  0.00f, 90f, 0.6f),
             new WeaponRow("shield",  "Shield_Heater_2", 0.46f,  0.00f, 270f),
         };
 
@@ -142,8 +145,13 @@ namespace Game.ClientEditor
             if (fbx == null) { Debug.LogError($"[BL-103] Missing FBX: {fbxPath}"); return false; }
 
             var root = new GameObject(w.Key);
+            // The girth lives on its own node in the GRIP frame (+Y along the weapon), never on the mesh: the FBX's own
+            // transform may be turned (a Blender export's -90° X), so scaling its X/Z could squash the length instead.
+            var girth = new GameObject("girth").transform;
+            girth.SetParent(root.transform, false);
+            girth.localScale = new Vector3(w.Girth, 1f, w.Girth);
             var mesh = (GameObject)PrefabUtility.InstantiatePrefab(fbx);
-            mesh.transform.SetParent(root.transform, false);
+            mesh.transform.SetParent(girth, false);
 
             var rs = mesh.GetComponentsInChildren<Renderer>();
             if (rs.Length == 0) { Debug.LogError($"[BL-103] {w.Fbx}: no renderers."); Object.DestroyImmediate(root); return false; }
@@ -372,37 +380,59 @@ namespace Game.ClientEditor
             }
         }
 
-        private static readonly Dictionary<SkinnedMeshRenderer, float> BakeScale = new Dictionary<SkinnedMeshRenderer, float>();
-
+        /// <summary>Draws each skinned part as a plain mesh in its CURRENT pose, skinned here on the CPU — the same
+        /// linear-blend sum the GPU does (Σ weight · bone · bindpose · vertex). Headless the skin itself never redraws
+        /// after the bones move. 🔑 It used BakeMesh before, whose output units differ per part on these rigs, so each
+        /// piece was rescaled to its own bounds; that held for a one-piece body and pulled an outfit apart (boots below
+        /// the legs, the head lost). Skinning by hand has no units to guess.</summary>
         private static void BakeSkin(GameObject body)
         {
             foreach (var smr in body.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
-                if (smr.name.EndsWith("__baked")) continue;
-                var t = smr.transform.Find(smr.name + "__baked");
+                var src = smr.sharedMesh;
+                if (src == null) continue;
+                var t = body.transform.Find(smr.name + "__baked");
                 GameObject baked;
                 if (t == null)
                 {
                     baked = new GameObject(smr.name + "__baked", typeof(MeshFilter), typeof(MeshRenderer));
-                    baked.transform.SetParent(smr.transform, false);
+                    baked.transform.SetParent(body.transform, false);
                     baked.GetComponent<MeshRenderer>().sharedMaterials = smr.sharedMaterials;
-                    baked.GetComponent<MeshFilter>().sharedMesh = new Mesh();
+                    baked.GetComponent<MeshFilter>().sharedMesh = Object.Instantiate(src);
                 }
                 else baked = t.gameObject;
-                // The copy sits on the renderer. BakeMesh leaves this rig's centimetre units out, so the first bake (the
-                // idle, near the bind pose) is scaled to the renderer's own bind-pose bounds, which headless never move.
-                baked.transform.SetPositionAndRotation(smr.transform.position, smr.transform.rotation);
-                var mesh = baked.GetComponent<MeshFilter>().sharedMesh;
-                smr.enabled = true;
-                smr.BakeMesh(mesh, true);
-                smr.enabled = false;
-                if (!BakeScale.TryGetValue(smr, out float k))
+                // The copy draws in WORLD space: identity under a root that must not move it.
+                baked.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+                var ls = body.transform.lossyScale;
+                baked.transform.localScale = new Vector3(1f / ls.x, 1f / ls.y, 1f / ls.z);
+
+                var bones = smr.bones;
+                var bind = src.bindposes;
+                var skin = new Matrix4x4[bones.Length];
+                for (int i = 0; i < bones.Length; i++)
+                    skin[i] = bones[i] != null ? bones[i].localToWorldMatrix * bind[i] : Matrix4x4.identity;
+                var v = src.vertices;
+                var n = src.normals;
+                var w = src.boneWeights;
+                var outV = new Vector3[v.Length];
+                var outN = new Vector3[n.Length];
+                for (int i = 0; i < v.Length; i++)
                 {
-                    // the stale bounds are the prefab's, from before the entity-size scale was applied
-                    k = smr.bounds.size.y * EntityManager.EntityScale / Mathf.Max(1e-6f, mesh.bounds.size.y);
-                    BakeScale[smr] = k;
+                    var bw = w[i];
+                    Vector3 p = skin[bw.boneIndex0].MultiplyPoint3x4(v[i]) * bw.weight0
+                              + skin[bw.boneIndex1].MultiplyPoint3x4(v[i]) * bw.weight1
+                              + skin[bw.boneIndex2].MultiplyPoint3x4(v[i]) * bw.weight2
+                              + skin[bw.boneIndex3].MultiplyPoint3x4(v[i]) * bw.weight3;
+                    outV[i] = p;
+                    if (n.Length == v.Length)
+                        outN[i] = (skin[bw.boneIndex0].MultiplyVector(n[i]) * bw.weight0
+                                 + skin[bw.boneIndex1].MultiplyVector(n[i]) * bw.weight1).normalized;
                 }
-                baked.transform.localScale = Vector3.one * k / Mathf.Max(1e-6f, smr.transform.lossyScale.x);
+                var mesh = baked.GetComponent<MeshFilter>().sharedMesh;
+                mesh.vertices = outV;
+                if (n.Length == v.Length) mesh.normals = outN;
+                mesh.RecalculateBounds();
+                smr.enabled = false;
             }
         }
     }

@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.252.0";
+    public const string GameVersion = "0.253.0";
 
     /// <summary>RUNES STACK, UP TO A CAP (owner, 2026-10-03): opening a rune box while you hold the same rune ADDS its
     /// time to that rune instead of starting a second clock beside it. A box of this length or shorter (1h/2h) may only
@@ -238,7 +238,9 @@ public static class GameConstants
     /// show what they hold (`BL-103`). A pure addition: an old client ignores them and draws empty hands.
     /// 54 (0.252.0) — `/time`: a new `Clock` push and `LoginResult.ClockFrozenHour` (appended, default -1). A pure
     /// addition: an old client ignores both and keeps the natural clock — its sky is wrong after an admin `/time`.
-    public const int ProtocolVersion = 54;   // 54: `/time` clock push
+    /// 55 (0.253.0) — `CombatEvent.Swing` (appended, default 0): only a real blow animates, timed to attack speed.
+    /// An old client ignores it and keeps swinging on every event; a new client against an old server never swings.
+    public const int ProtocolVersion = 55;   // 55: CombatEvent.Swing
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means

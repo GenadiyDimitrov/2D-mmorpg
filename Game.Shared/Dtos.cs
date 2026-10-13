@@ -232,7 +232,13 @@ public record ChatMessage(string From, string Text, ChatChannel Channel, string?
 /// <para><paramref name="SkillId"/> (`BL-344` step 6) is the skill being RESOLVED when this fired, so the client
 /// can draw its effect (<see cref="SkillDef.Fx"/>). <c>Skill</c> cannot do that job: it is the caster's display
 /// name (a race face, sometimes with " [Reflect]" on the end). "" for basic attacks, ticks, traps, procs and the
-/// whisp. Appended, so an older client just ignores it.</para></summary>
+/// whisp. Appended, so an older client just ignores it.</para>
+///
+/// <para><paramref name="Swing"/> (protocol 55) is the attacker's SWING, in seconds — set only when this event is a
+/// blow the attacker's arm actually threw: a basic attack, or a skill it executed itself. 0 for everything else
+/// (ticks, heals over time, reflects, the kill notice). The client plays the attack animation only for a non-zero
+/// Swing, and fits the animation inside it, so a fast attacker visibly swings faster. Before it existed EVERY
+/// CombatEvent played a swing, and a DoT ticking after a disengage kept the body attacking the air.</para></summary>
 public record CombatEvent(
     Guid AttackerId,
     string AttackerName,
@@ -241,7 +247,8 @@ public record CombatEvent(
     int Damage,
     CombatOutcome Outcome,
     string? Skill = null,
-    string SkillId = "");
+    string SkillId = "",
+    float Swing = 0f);
 
 /// <summary>Server -> the owning client: exp/level progress after a kill.
 ///

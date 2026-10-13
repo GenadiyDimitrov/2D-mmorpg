@@ -1,0 +1,6 @@
+Quaternius — Modular Character Outfits - Fantasy [Standard] (CC0 1.0)
+  https://quaternius.itch.io/modular-character-outfits-fantasy
+Quaternius — Universal Base Characters [Standard] (CC0 1.0) — eye/hair textures
+  https://quaternius.itch.io/universal-base-characters
+Same skeleton as the Universal Animation Library (Animations/UAL1_Standard.fbx), so no retarget distortion.
+Free version: Peasant + Ranger, male + female. The other 10 outfits are in the paid Source version.

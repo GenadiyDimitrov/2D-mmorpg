@@ -123,7 +123,11 @@ namespace Game.ClientEditor
         /// </summary>
         private static readonly Body[] Bodies =
         {
-            new Body("humanoid", ArtDir + "/Characters/Man/Adventurer.fbx", 0f),
+            // 0.253.0 — the Quaternius outfits, on the Universal Animation Library's own skeleton (the Adventurer rig,
+            // Hips/UpperLeg.L, crossed its legs on the run: its rest pose disagreed with the clips'). "player" dresses
+            // every player; "humanoid" stays the last resort for NPCs and humanoid mobs.
+            new Body("player",   OutfitDir + "/Male_Ranger.fbx",  0f, true, "Hair_SimpleParted"),
+            new Body("humanoid", OutfitDir + "/Male_Peasant.fbx", 0f, true, "Hair_SimpleParted", "Hair_Beard"),
         };
 
         /// <summary>Where the character clips live. 🔑 <b>This folder is the whole of `BL-102`</b> — the
@@ -139,8 +143,13 @@ namespace Game.ClientEditor
             public readonly string Key;
             public readonly string Fbx;
             public readonly float Height;
+            /// <summary>A headless Quaternius outfit: gets the base character's head, eyes, brows and the hair below
+            /// (ModelSetup.Outfits.cs), and our own materials.</summary>
+            public readonly bool Outfit;
+            public readonly string[] Hair;
 
-            public Body(string key, string fbx, float height) { Key = key; Fbx = fbx; Height = height; }
+            public Body(string key, string fbx, float height, bool outfit = false, params string[] hair)
+            { Key = key; Fbx = fbx; Height = height; Outfit = outfit; Hair = hair ?? new string[0]; }
         }
 
         [MenuItem("Tools/BL-93/Build ALL prefabs (creatures + characters + props)")]
@@ -305,7 +314,7 @@ namespace Game.ClientEditor
             var clips = new List<AnimationClip>(shared);
             clips.AddRange(ClipsAt(b.Fbx));   // a body that DOES ship its own takes still contributes
 
-            var controller = BuildController(b.Key, clips);
+            var controller = BuildController(b.Key, clips, humanoid: true);
             if (controller == null) return false;
 
             var inst = (GameObject)PrefabUtility.InstantiatePrefab(fbx);
@@ -324,6 +333,9 @@ namespace Game.ClientEditor
                 var h = MeshHeight(inst);
                 if (h > 0.001f) inst.transform.localScale = Vector3.one * (b.Height / h);
             }
+
+            if (b.Outfit) DressOutfit(inst, b);
+            StoreStrides(inst, animator, controller, clips);
 
             PrefabUtility.SaveAsPrefabAsset(inst, $"{ModelsDir}/{b.Key}.prefab", out bool ok);
             Object.DestroyImmediate(inst);
@@ -455,7 +467,7 @@ namespace Game.ClientEditor
                                      .ToList();
             if (clips.Count == 0) { Debug.LogError($"[BL-93] {f.Key}: FBX has no animation clips."); return false; }
 
-            var controller = BuildController(f.Key, clips);
+            var controller = BuildController(f.Key, clips, humanoid: false);
             if (controller == null) return false;
 
             var inst = (GameObject)PrefabUtility.InstantiatePrefab(fbx);
@@ -561,7 +573,7 @@ namespace Game.ClientEditor
         /// not care where the clips came from, only what they are called, so `BL-102` cost no second
         /// state machine.</para>
         /// </summary>
-        private static AnimatorController BuildController(string key, List<AnimationClip> clips)
+        private static AnimatorController BuildController(string key, List<AnimationClip> clips, bool humanoid)
         {
             string path = $"{ModelsDir}/{key}.controller";
             AssetDatabase.DeleteAsset(path);
@@ -597,6 +609,15 @@ namespace Game.ClientEditor
                       $"attack={N(attack)} death={N(death)} cast={N(casting)}");
 
             ac.AddParameter("Speed", AnimatorControllerParameterType.Float);
+            // Floats whose DEFAULT is the payload: EntityView reads each clip's length (to fit a swing inside the
+            // server's swing time) and each leg cycle's ground speed (filled in by MeasureStride) off them at spawn.
+            AddFloat(ac, "SwingSpeed", 1f);
+            AddFloat(ac, "MoveMul", 1f);
+            AddFloat(ac, "LenMelee", attack != null ? attack.length : 0f);
+            AddFloat(ac, "LenBow", (bowShot ?? attack) != null ? (bowShot ?? attack).length : 0f);
+            AddFloat(ac, "LenSpell", (spellShot ?? attack) != null ? (spellShot ?? attack).length : 0f);
+            AddFloat(ac, "NativeWalk", 0f);
+            AddFloat(ac, "NativeRun", 0f);
             var sm = ac.layers[0].stateMachine;
 
             // Locomotion is a 1D blend tree rather than three states with thresholds: the crossfade is
@@ -606,7 +627,7 @@ namespace Game.ClientEditor
             // ⚠ The thresholds are in UNITY UNITS PER SECOND, which is what EntityView measures off the
             // drawn position (WorldMapper.Scale = 0.01, so a mob running at 132 server units/s arrives
             // here as 1.32). Getting this wrong is the difference between a creature that runs and one
-            // that moonwalks at full speed.
+            // that moonwalks at full speed. EntityView.WalkThreshold/RunThreshold mirror them.
             var locomotion = ac.CreateBlendTreeInController("Locomotion", out var tree);
             tree.blendParameter = "Speed";
             tree.blendType = BlendTreeType.Simple1D;
@@ -614,70 +635,61 @@ namespace Game.ClientEditor
             tree.AddChild(idle, 0f);
             tree.AddChild(walk, 0.7f);
             tree.AddChild(run, 1.4f);
+            locomotion.speedParameterActive = true;    // legs at the ground's pace (EntityView sets MoveMul)
+            locomotion.speedParameter = "MoveMul";
             sm.defaultState = locomotion;
+
+            // 🔑 SWINGS AND CASTS ARE PLAYED FROM CODE (EntityView.PlayAttack / SetCasting), not by triggers: a trigger
+            // set mid-swing queued, fired late and kept the body swinging after the fight, and the cast pose could only
+            // start from locomotion. A HUMANOID plays them on an upper-body layer so the legs keep running under a bow
+            // shot; a creature has no shoulders to mask, so its swing replaces locomotion on the base layer.
+            var actionSm = sm;
+            AnimatorState rest = locomotion;
+            if (humanoid)
+            {
+                var mask = UpperBodyMask($"{ModelsDir}/{key}.mask");
+                ac.AddLayer(new AnimatorControllerLayer
+                {
+                    name = "Action",
+                    defaultWeight = 1f,
+                    blendingMode = AnimatorLayerBlendingMode.Override,
+                    avatarMask = mask,
+                    stateMachine = new AnimatorStateMachine { name = "Action", hideFlags = HideFlags.HideInHierarchy },
+                });
+                var layers = ac.layers;
+                actionSm = layers[layers.Length - 1].stateMachine;
+                AssetDatabase.AddObjectToAsset(actionSm, ac);
+                rest = actionSm.AddState("Empty");
+                rest.writeDefaultValues = false;    // an empty state must leave the base layer's pose alone
+                actionSm.defaultState = rest;
+            }
 
             if (attack != null)
             {
-                ac.AddParameter("Attack", AnimatorControllerParameterType.Trigger);
-                var st = sm.AddState("Attack");
-                st.motion = attack;
+                AddSwing("Attack", attack);
+                if (bowShot != null) AddSwing("AttackBow", bowShot);
+                if (spellShot != null) AddSwing("AttackSpell", spellShot);
+                Debug.Log($"[BL-103] {key} attack styles: bow={N(bowShot)} spell={N(spellShot)} (humanoid layer: {humanoid})");
+            }
 
-                var into = locomotion.AddTransition(st);
-                into.AddCondition(AnimatorConditionMode.If, 0f, "Attack");
-                into.hasExitTime = false;
-                into.duration = 0.05f;
-
-                var back = st.AddTransition(locomotion);
-                back.hasExitTime = true;      // the swing plays out; the server already resolved the blow
-                back.exitTime = 0.9f;
+            void AddSwing(string name, AnimationClip clip)
+            {
+                var s = actionSm.AddState(name);
+                s.motion = clip;
+                s.speedParameterActive = true;     // fitted inside the server's swing time (EntityView.PlayAttack)
+                s.speedParameter = "SwingSpeed";
+                var back = s.AddTransition(rest);
+                back.hasExitTime = true;           // the swing plays out; the server already resolved the blow
+                back.exitTime = 0.95f;
                 back.duration = 0.1f;
-
-                if (bowShot != null || spellShot != null)
-                {
-                    // `BL-103` — one Attack trigger, three swings, chosen by the INT the client sets when it dresses
-                    // the body (0 melee, 1 bow, 2 spell). A missing style clip falls back to the sword swing.
-                    ac.AddParameter("AttackStyle", AnimatorControllerParameterType.Int);
-                    into.AddCondition(AnimatorConditionMode.Equals, 0f, "AttackStyle");
-                    AddStyle("AttackBow", bowShot ?? attack, 1);
-                    AddStyle("AttackSpell", spellShot ?? attack, 2);
-                }
-
-                void AddStyle(string name, AnimationClip clip, int style)
-                {
-                    var s = sm.AddState(name);
-                    s.motion = clip;
-                    var i = locomotion.AddTransition(s);
-                    i.AddCondition(AnimatorConditionMode.If, 0f, "Attack");
-                    i.AddCondition(AnimatorConditionMode.Equals, style, "AttackStyle");
-                    i.hasExitTime = false;
-                    i.duration = 0.05f;
-                    var b = s.AddTransition(locomotion);
-                    b.hasExitTime = true;
-                    b.exitTime = 0.9f;
-                    b.duration = 0.1f;
-                }
-                Debug.Log($"[BL-103] {key} attack styles: bow={N(bowShot)} spell={N(spellShot)}");
             }
 
             if (casting != null)
             {
-                // A BOOL, not a trigger: casting has a DURATION the server owns (EntityView.SetCasting
-                // is driven by the cast bar and MobCastInfo), and it ends on interrupt as well as on
-                // landing. A trigger would fire once and the pose would end whenever the clip did,
-                // which is the one thing it must not do.
-                ac.AddParameter("Casting", AnimatorControllerParameterType.Bool);
-                var st = sm.AddState("Casting");
+                // Looping, with no way out of its own: casting has a DURATION the server owns, and it ends on an
+                // interrupt as well as on landing, so EntityView.SetCasting crossfades back when told.
+                var st = actionSm.AddState("Casting");
                 st.motion = casting;
-
-                var into = locomotion.AddTransition(st);
-                into.AddCondition(AnimatorConditionMode.If, 0f, "Casting");
-                into.hasExitTime = false;
-                into.duration = 0.1f;
-
-                var back = st.AddTransition(locomotion);
-                back.AddCondition(AnimatorConditionMode.IfNot, 0f, "Casting");
-                back.hasExitTime = false;
-                back.duration = 0.1f;
             }
 
             if (death != null)
@@ -727,6 +739,73 @@ namespace Game.ClientEditor
             }
 
             return null;
+        }
+
+        private static void AddFloat(AnimatorController ac, string name, float value) =>
+            ac.AddParameter(new AnimatorControllerParameter
+            { name = name, type = AnimatorControllerParameterType.Float, defaultFloat = value });
+
+        /// <summary>Spine, head, arms and hands — everything a swing or a cast moves — and no legs or root, so the base
+        /// layer's walk keeps carrying the body underneath. Saved as an asset: a layer only references its mask.</summary>
+        private static AvatarMask UpperBodyMask(string path)
+        {
+            AssetDatabase.DeleteAsset(path);
+            var mask = new AvatarMask();
+            for (var p = AvatarMaskBodyPart.Root; p < AvatarMaskBodyPart.LastBodyPart; p++)
+                mask.SetHumanoidBodyPartActive(p, p != AvatarMaskBodyPart.Root && p != AvatarMaskBodyPart.LeftLeg
+                    && p != AvatarMaskBodyPart.RightLeg && p != AvatarMaskBodyPart.LeftFootIK && p != AvatarMaskBodyPart.RightFootIK);
+            AssetDatabase.CreateAsset(mask, path);
+            return mask;
+        }
+
+        /// <summary>How much ground one cycle of <paramref name="clip"/> covers per second, in the BODY's own units —
+        /// what EntityView divides the real speed by to set the legs' pace. Read off the left foot: during a stance it
+        /// sweeps back from its front-most to its back-most point while the body passes over it, and a cycle holds two
+        /// stances. A run's flight phase is not counted, so it reads a little short — the safe side (legs a touch fast,
+        /// never a moonwalk). 0 when the clip or the foot is missing; EntityView then leaves the cadence alone.</summary>
+        private static float MeasureStride(GameObject body, Animator animator, AnimationClip clip)
+        {
+            var foot = animator != null && animator.isHuman ? animator.GetBoneTransform(HumanBodyBones.LeftFoot) : null;
+            if (clip == null || foot == null || clip.length < 0.05f) return 0f;
+            float minZ = float.MaxValue, maxZ = float.MinValue, minX = float.MaxValue, maxX = float.MinValue;
+            AnimationMode.StartAnimationMode();
+            try
+            {
+                for (int i = 0; i < 40; i++)
+                {
+                    AnimationMode.BeginSampling();
+                    AnimationMode.SampleAnimationClip(body, clip, clip.length * i / 40f);
+                    AnimationMode.EndSampling();
+                    var p = body.transform.InverseTransformPoint(foot.position);
+                    minZ = Mathf.Min(minZ, p.z); maxZ = Mathf.Max(maxZ, p.z);
+                    minX = Mathf.Min(minX, p.x); maxX = Mathf.Max(maxX, p.x);
+                }
+            }
+            finally { AnimationMode.StopAnimationMode(); }
+            float reach = Mathf.Max(maxZ - minZ, maxX - minX);   // whichever horizontal axis the body faces along
+            return 2f * reach / clip.length;
+        }
+
+        /// <summary>Writes a parameter's default into a built controller (the leg-cycle speeds, known only once a body
+        /// exists to measure them on).</summary>
+        private static void SetFloatDefault(AnimatorController ac, string name, float value)
+        {
+            var ps = ac.parameters;
+            for (int i = 0; i < ps.Length; i++) if (ps[i].name == name) ps[i].defaultFloat = value;
+            ac.parameters = ps;
+        }
+
+        /// <summary>Measures the walk and run cycles on a freshly built humanoid and stores them in its controller.</summary>
+        private static void StoreStrides(GameObject inst, Animator animator, AnimatorController ac, List<AnimationClip> clips)
+        {
+            var walk = FindClip(clips, "walk_loop", "walk");
+            var run = FindClip(clips, "jog_fwd_loop", "run", "running");
+            float w = MeasureStride(inst, animator, walk), r = MeasureStride(inst, animator, run);
+            SetFloatDefault(ac, "NativeWalk", w);
+            SetFloatDefault(ac, "NativeRun", r);
+            EditorUtility.SetDirty(ac);
+            Debug.Log($"[BL-93] {ac.name} strides: walk {w:0.00} u/s ({N(walk)}), run {r:0.00} u/s ({N(run)})");
+            string N(AnimationClip c) => c == null ? "-" : c.name;
         }
 
         /// <summary>World-space height of the renderers under this object, used to normalise scale.</summary>

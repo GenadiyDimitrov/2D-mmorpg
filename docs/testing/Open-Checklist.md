@@ -25,6 +25,25 @@
 
 ---
 
+## §160 — 0.253.0: new bodies; swings follow attack speed; bow arrows; thinner wand/staff (2026-10-13)
+
+⚠ **Server restart + new APK.** A bow character, a melee character and a mage; mobs nearby.
+
+- `160a` [ ] - Run and walk: the legs step straight (no crossing like a catwalk, no sprinter spread) and the feet do not
+  slide on the ground at either speed, with or without a speed buff. ->
+- `160b` [ ] - Your character wears the Ranger outfit (hood, pauldron), NPCs the Peasant clothes; a head, hair and
+  hands on both, nothing floating apart. ->
+- `160c` [ ] - Bow basic attack: **every** shot raises the bow, and a thin arrow flies from you to the target each time,
+  hit or miss. ->
+- `160d` [ ] - With an attack-speed buff the swing visibly speeds up; without it, a slow weapon swings at its normal pace. ->
+- `160e` [ ] - Put a DoT on a mob, then walk away (or disengage): your body stops attacking at once and just runs. ->
+- `160f` [ ] - Cast a spell with a cast time: the casting pose shows for the whole bar and ends when it lands or is
+  interrupted; the release swing plays when it lands. ->
+- `160g` [ ] - Shoot or cast while walking (kiting): the legs keep walking under the attack. ->
+- `160h` [ ] - Wand and staff look slimmer and shorter in the hand. ->
+
+---
+
 ## §159 — 0.252.0: `/time`; a longer day; camera 0-90° and zoom 0.1-30; fainter god halo; models fade on `/invis` (2026-10-13)
 
 ⚠ **Server restart + new APK.** An admin and an ordinary player online together.

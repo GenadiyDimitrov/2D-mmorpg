@@ -13161,9 +13161,26 @@ public partial class GameLoopService : BackgroundService
         // Saved and restored, not cleared: a skill can execute another (a channel's shot, the charge's stomp).
         string outerFx = _fxSkillId;
         _fxSkillId = def.Id;
+        // The release of a skill is a swing too (a bow shot, a spell thrust), timed like the caster's basic attack:
+        // the client never slows a clip below its own speed, so this only ever quickens a fast attacker's hands.
+        var outerSwinger = _swinger; float outerSwing = _swingSeconds;
+        _swinger = caster; _swingSeconds = SwingSecondsOf(caster);
         try { ExecuteSkillCore(caster, def, levelOverride, powerOverride); }
-        finally { _fxSkillId = outerFx; }
+        finally { _fxSkillId = outerFx; _swinger = outerSwinger; _swingSeconds = outerSwing; }
     }
+
+    /// <summary>One basic-attack interval of this entity, in seconds — what <see cref="CombatEvent.Swing"/> carries.</summary>
+    private static float SwingSecondsOf(Entity e) =>
+        Math.Max(2, (int)((e.Kind == EntityKind.Player ? GameConstants.PlayerAttackIntervalTicks
+                                                       : GameConstants.MobAttackIntervalTicks)
+                          * e.EffectiveAttackSpeedMultiplier)) * GameConstants.TickSeconds;
+
+    /// <summary>Who is SWINGING while the current resolution runs, and for how long (<see cref="CombatEvent.Swing"/>).
+    /// Set around a basic attack and around ExecuteSkill, the same single-writer trick as <see cref="_fxSkillId"/>.
+    /// 🔑 Only an event whose ATTACKER is the swinger carries it: a reflect sent mid-swing names the victim as the
+    /// attacker and must not make the victim swing, and a DoT tick runs outside both and never swings at all.</summary>
+    private Entity? _swinger;
+    private float _swingSeconds;
 
     /// <summary>`BL-344` step 6 — the skill whose effect the client should draw for the CombatEvents being sent
     /// right now, or "" for none. 🔑 Set in ONE place (ExecuteSkill) instead of threaded through the ~50
@@ -16403,7 +16420,11 @@ public partial class GameLoopService : BackgroundService
         attacker.AttackCooldown = Math.Max(2,
             (int)(baseInterval * attacker.EffectiveAttackSpeedMultiplier));
 
-        ResolveBasicAttack(attacker, target);
+        // The swing lasts exactly until the next one may start, so the client fits its animation inside it.
+        var outerSwinger = _swinger; float outerSwing = _swingSeconds;
+        _swinger = attacker; _swingSeconds = attacker.AttackCooldown * GameConstants.TickSeconds;
+        try { ResolveBasicAttack(attacker, target); }
+        finally { _swinger = outerSwinger; _swingSeconds = outerSwing; }
     }
 
     // ═══ `BL-338` — MOBS ON ONE TARGET STAND APART ═══════════════════════════════════════════════
@@ -18946,7 +18967,8 @@ public partial class GameLoopService : BackgroundService
         CombatOutcome outcome, string? skill = null)
     {
         var evt = new CombatEvent(
-            attacker.Id, attacker.Name, target.Id, target.Name, damage, outcome, skill, _fxSkillId);
+            attacker.Id, attacker.Name, target.Id, target.Name, damage, outcome, skill, _fxSkillId,
+            ReferenceEquals(attacker, _swinger) && outcome != CombatOutcome.Death ? _swingSeconds : 0f);
 
         foreach (var nearby in _world.Grid.Nearby(attacker))
         {

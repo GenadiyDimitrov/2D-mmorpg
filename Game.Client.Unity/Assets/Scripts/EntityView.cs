@@ -147,7 +147,15 @@ namespace Game.Client
         // "behave exactly as this class did before the feature existed".
         private Transform _model;
         private Animator _animator;
-        private bool _hasSpeed, _hasAttack, _hasCasting, _hasDead, _hasAttackStyle;
+        private bool _hasSpeed, _hasDead, _hasSwingSpeed, _hasMoveMul;
+        // The states a swing or a cast plays in. A humanoid has an upper-body "Action" layer (legs keep running under a
+        // bow shot); a creature has no shoulders to mask, so its swing replaces locomotion on the base layer.
+        private int _actionLayer;
+        private string _restState;                          // what a swing returns to: "Empty" or "Locomotion"
+        private bool _hasAttackState, _hasCastState;
+        private float _lenMelee, _lenBow, _lenSpell;        // clip lengths, baked into parameter defaults by ModelSetup
+        private float _walkNative, _runNative;              // ground speed each leg cycle covers, model units/s
+        private bool _casting;
 
         // `BL-103` — what is in its hands. Remembered so a re-sent spawn with the same gear rebuilds nothing.
         private readonly System.Collections.Generic.List<GameObject> _held = new System.Collections.Generic.List<GameObject>();
@@ -218,6 +226,9 @@ namespace Game.Client
             // `BL-93` — a body falls over instead of just dimming. Still dims as well: a corpse has to
             // read as a corpse at top-down distance, where a lying-down mesh is a small smudge.
             if (_animator != null && _hasDead) _animator.SetBool("Dead", dead);
+            // A body that dies mid-swing must fall with its arms too: the upper-body layer would otherwise keep
+            // overriding the death pose with the rest of the swing.
+            if (dead && _animator != null && _actionLayer > 0) _animator.Play("Empty", _actionLayer, 0f);
         }
 
         /// <summary>How see-through this marker draws (`BL-82`): 1 solid, 0.7 stealthed, 0.4 invisible.
@@ -735,7 +746,27 @@ namespace Game.Client
             // nothing else rather than a console full of "parameter does not exist" — which matters
             // when the art is arriving one clip at a time.
             if (_hasSpeed) _animator.SetFloat("Speed", speed);
+
+            // Legs at the pace the ground actually moves. The blend tree picks WHICH cycle (walk or jog) but plays it at
+            // its own cadence, so a slow runner pumped its legs like a sprinter while covering half the ground. The
+            // locomotion state's speed is this multiplier: actual speed over what one cycle covers at this blend.
+            if (_hasMoveMul)
+            {
+                float mul = 1f;
+                float scale = _model.lossyScale.y;
+                if (speed > 0.05f && _runNative > 0.01f && _walkNative > 0.01f && scale > 0.0001f)
+                {
+                    // The same thresholds as the blend tree (ModelSetup: walk 0.7, run 1.4): below walk the cycle
+                    // fades out into idle, so its cadence stays the walk's own.
+                    float t = Mathf.InverseLerp(WalkThreshold, RunThreshold, speed);
+                    float native = Mathf.Lerp(_walkNative, _runNative, t) * scale;
+                    if (speed >= WalkThreshold) mul = Mathf.Clamp(speed / native, 0.6f, 2f);
+                }
+                _animator.SetFloat("MoveMul", mul);
+            }
         }
+
+        private const float WalkThreshold = 0.7f, RunThreshold = 1.4f;
 
         /// <summary>
         /// `BL-93` — give this entity a body. Called once, right after the sphere is built, and only
@@ -773,14 +804,27 @@ namespace Game.Client
             _animator = model.GetComponentInChildren<Animator>();
             if (_animator != null)
             {
+                // Every parameter is optional; the float ones double as a channel from ModelSetup, which bakes each
+                // clip's length and each leg cycle's ground speed into the parameter's DEFAULT value.
                 foreach (var p in _animator.parameters)
                 {
-                    if (p.name == "Speed") _hasSpeed = true;
-                    else if (p.name == "Attack") _hasAttack = true;
-                    else if (p.name == "Casting") _hasCasting = true;
-                    else if (p.name == "Dead") _hasDead = true;
-                    else if (p.name == "AttackStyle") _hasAttackStyle = true;
+                    switch (p.name)
+                    {
+                        case "Speed": _hasSpeed = true; break;
+                        case "Dead": _hasDead = true; break;
+                        case "SwingSpeed": _hasSwingSpeed = true; break;
+                        case "MoveMul": _hasMoveMul = true; break;
+                        case "LenMelee": _lenMelee = p.defaultFloat; break;
+                        case "LenBow": _lenBow = p.defaultFloat; break;
+                        case "LenSpell": _lenSpell = p.defaultFloat; break;
+                        case "NativeWalk": _walkNative = p.defaultFloat; break;
+                        case "NativeRun": _runNative = p.defaultFloat; break;
+                    }
                 }
+                _actionLayer = Mathf.Max(0, _animator.GetLayerIndex("Action"));
+                _restState = _actionLayer > 0 ? "Empty" : "Locomotion";
+                _hasAttackState = _animator.HasState(_actionLayer, Animator.StringToHash("Attack"));
+                _hasCastState = _animator.HasState(_actionLayer, Animator.StringToHash("Casting"));
                 if (_hasDead) _animator.SetBool("Dead", _dead);
 
                 // Off-screen entities do not need their skeletons evaluated. This is the cheapest
@@ -806,10 +850,27 @@ namespace Game.Client
         /// a full attack animation costs NO new message. The blow is resolved before the swing plays,
         /// which is backwards from how a real arm works and completely invisible at a ~150ms offset —
         /// and it buys the guarantee that nothing ever animates an attack that did not happen.</para></summary>
-        public void PlayAttack()
+        ///
+        /// <para>🔑 <b>Restarted from frame 0 on EVERY blow, never queued.</b> It used to be a trigger: a trigger set while
+        /// the previous swing was still playing waited for it to end and then fired late, so a fast bow showed every
+        /// other shot and the queue kept the body swinging after the fight. <paramref name="swing"/> is the server's
+        /// <c>CombatEvent.Swing</c> — the time until the next blow — and the clip is sped up to finish inside it (never
+        /// slowed: a slow weapon keeps its natural motion).</para></summary>
+        public void PlayAttack(float swing)
         {
-            if (_animator != null && _hasAttack && !_dead) _animator.SetTrigger("Attack");
+            if (_animator == null || !_hasAttackState || _dead || swing <= 0f) return;
+            int style = HeldWeapons.StyleFor(_heldWeapon, _heldMagic);
+            string state = style == 1 ? "AttackBow" : style == 2 ? "AttackSpell" : "Attack";
+            if (!_animator.HasState(_actionLayer, Animator.StringToHash(state))) state = "Attack";
+            float len = style == 1 ? _lenBow : style == 2 ? _lenSpell : _lenMelee;
+            if (_hasSwingSpeed)
+                _animator.SetFloat("SwingSpeed", len > 0.01f ? Mathf.Clamp(len * 0.95f / swing, 1f, 4f) : 1f);
+            _casting = false;
+            _animator.Play(state, _actionLayer, 0f);
         }
+
+        /// <summary>What this body holds — the FX layer reads it to give a bow's basic shot its arrow.</summary>
+        public WeaponType HeldWeapon => _heldWeapon;
 
         /// <summary>`BL-103` — put this weapon set in the body's hands (see <see cref="HeldWeapons"/>), and pick the
         /// swing the next "Attack" plays: a bow shot, a spell thrust for a wand or staff, the sword swing for the rest.
@@ -821,15 +882,21 @@ namespace Game.Client
             _heldWeapon = weapon; _heldMagic = magic; _heldShield = shield; _heldDressed = true;
             if (_animator == null) return;
             HeldWeapons.Dress(_animator, _model, weapon, magic, shield, _held);
-            if (_hasAttackStyle) _animator.SetInteger("AttackStyle", HeldWeapons.StyleFor(weapon, magic));
             ApplyModelFade();   // a weapon put in a faded hand fades with it
         }
 
         /// <summary>Show/hide the casting pose. Driven by <c>MobCastInfo</c> and the self cast bar —
-        /// again, both already on the wire.</summary>
+        /// again, both already on the wire.
+        ///
+        /// <para>Played from code like the swing, not through a bool transition: the old transition left only from
+        /// locomotion, so a cast that began while a queued swing was still playing never showed its pose at all.</para></summary>
         public void SetCasting(bool casting)
         {
-            if (_animator != null && _hasCasting) _animator.SetBool("Casting", casting);
+            if (_animator == null || !_hasCastState || _dead || casting == _casting) return;
+            _casting = casting;
+            if (casting) _animator.CrossFadeInFixedTime("Casting", 0.1f, _actionLayer);
+            else if (_animator.GetCurrentAnimatorStateInfo(_actionLayer).IsName("Casting"))
+                _animator.CrossFadeInFixedTime(_restState, 0.15f, _actionLayer);
         }
     }
 }

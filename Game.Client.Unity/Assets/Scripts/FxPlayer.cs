@@ -46,7 +46,12 @@ namespace Game.Client
             public Landing Landing;
             public Color Tint;
             public bool Arrow;
+            public float Size;    // the orb and its trail, ×; 1 = a spell's
         }
+
+        /// <summary>A bow's BASIC shot: the spell projectile's shape, thinner (owner, 2026-10-13: "like the magic_arrow
+        /// just a bit thinner").</summary>
+        private const float BasicArrowSize = 0.45f;
 
         private const int MaxFlights = 64;
         private readonly Flight[] _flights = new Flight[MaxFlights];
@@ -142,6 +147,19 @@ namespace Game.Client
 
             if (string.IsNullOrEmpty(e.SkillId))
             {
+                // A bow's basic attack is a SHOT: every swing (Swing > 0, so never a tick) flies an arrow, hit or miss.
+                // The crit still sparks — on arrival, where the arrow lands.
+                if (e.Swing > 0f && e.AttackerId != e.TargetId)
+                {
+                    var archer = Entities.Find(e.AttackerId);
+                    if (archer != null && archer.HeldWeapon == WeaponType.Bow)
+                    {
+                        Launch(e.TargetId, Chest(archer), Chest(target),
+                               e.Outcome == CombatOutcome.Crit ? Landing.Impact : Landing.None, ArrowTint, false,
+                               BasicArrowSize);
+                        return;
+                    }
+                }
                 // A plain basic attack: clean, except that a crit sparks (the owner's pick, 2026-10-12). Ticks,
                 // procs and traps carry a Skill label and no id, so they never land here as a crit spark.
                 if (e.Skill == null && e.Outcome == CombatOutcome.Crit)
@@ -343,7 +361,7 @@ namespace Game.Client
             }
         }
 
-        private void Launch(Guid target, Vector3 from, Vector3 to, Landing landing, Color tint, bool arrow)
+        private void Launch(Guid target, Vector3 from, Vector3 to, Landing landing, Color tint, bool arrow, float size = 1f)
         {
             float dist = (to - from).magnitude;
             float flight = Mathf.Clamp(dist / (arrow ? 30f : 20f), 0.1f, 0.4f);
@@ -353,11 +371,11 @@ namespace Game.Client
                 _flights[i] = new Flight
                 {
                     Live = true, Target = target, From = from, To = to, Start = _now, Arrive = _now + flight,
-                    NextTrail = _now, Landing = landing, Tint = tint, Arrow = arrow,
+                    NextTrail = _now, Landing = landing, Tint = tint, Arrow = arrow, Size = size,
                 };
                 var v = (to - from) / flight;
                 if (arrow) Dot(_streaks, from, v, 0.07f, flight, tint);
-                else Dot(_dots, from, v, 0.6f, flight, tint);
+                else Dot(_dots, from, v, 0.6f * size, flight, tint);
                 return;
             }
             // Every slot busy (a huge fight): skip the flight, still show what landed.
@@ -389,8 +407,8 @@ namespace Game.Client
                 {
                     f.NextTrail = now + 0.02f;
                     float t = (now - f.Start) / (f.Arrive - f.Start);
-                    Dot(_dots, Vector3.Lerp(f.From, f.To, t), UnityEngine.Random.insideUnitSphere * 0.2f,
-                        0.28f, 0.25f, f.Tint * 0.7f);
+                    Dot(_dots, Vector3.Lerp(f.From, f.To, t), UnityEngine.Random.insideUnitSphere * 0.2f * f.Size,
+                        0.28f * f.Size, 0.25f, f.Tint * 0.7f);
                 }
             }
         }
@@ -418,6 +436,7 @@ namespace Game.Client
             {
                 case "projectile": Launch(Guid.Empty, from, to, Landing.Impact, MagicTint, false); break;
                 case "arrow": Launch(Guid.Empty, from, to, Landing.Impact, ArrowTint, true); break;
+                case "basicarrow": Launch(Guid.Empty, from, to, Landing.None, ArrowTint, false, BasicArrowSize); break;
                 case "beam": Beam(from, to, HealTint); LandAt(toFeet, Landing.Heal); break;
                 case "slash": Slash(from, to, PhysicalTint); LandAt(toFeet, Landing.Impact); break;
                 case "crit": LandAt(toFeet, Landing.ImpactCrit); break;

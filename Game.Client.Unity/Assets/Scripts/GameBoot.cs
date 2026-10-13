@@ -2279,10 +2279,12 @@ namespace Game.Client
                 // is the opposite — the whole point is that the fight across the clearing looks like a
                 // fight. The server already sends this event to everyone nearby, so a full attack
                 // animation for every visible creature costs no new message and no new field.
-                if (Entities != null && e.AttackerId != Guid.Empty)
+                // Only a real blow swings (CombatEvent.Swing > 0): a DoT tick, a reflect or the kill notice carries 0,
+                // and before the field existed they kept a disengaged body attacking the air.
+                if (Entities != null && e.AttackerId != Guid.Empty && e.Swing > 0f)
                 {
                     var attacker = Entities.Find(e.AttackerId);
-                    if (attacker != null) attacker.PlayAttack();
+                    if (attacker != null) attacker.PlayAttack(e.Swing);
                 }
                 // `BL-344` step 6 — the skill's effect, also for every fight in view, for the same reason.
                 if (Fx != null) Fx.Play(e);

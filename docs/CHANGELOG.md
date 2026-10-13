@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.252.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.253.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,39 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-13 (latest) — 0.252.0: `/time`; a longer day; camera 0-90° and zoom 0.1-30; fainter god halo; models fade on `/invis`
+## 2026-10-13 (latest) — 0.253.0: new character bodies; swings that follow attack speed; a bow shoots arrows; thinner wand and staff
+
+**Server restart + new APK** (protocol 55 — an old APK still logs in but keeps the old always-swinging animation). No
+`game.db` delete.
+
+- **New bodies (CC0, Quaternius *Modular Character Outfits – Fantasy* + *Universal Base Characters*):** players wear
+  the **Ranger** outfit, NPCs and humanoid mobs the **Peasant**. They are built on the **same skeleton as the
+  animations**, which fixes the run: the old body (a different rig) crossed its feet like a catwalk and threw its legs
+  wide like a sprinter, because every clip had to be bent onto a skeleton it was not made for. Head, eyes, brows and
+  hair come from the base pack and ride the outfit's own head bone. Normal adult proportions, not chibi.
+  - The outfits are split per slot (body / legs / arms / feet / hood), which is what per-grade armour looks will swap
+    (`BL-103`). The free pack has 2 of its 12 outfits; see `BL-354`.
+- **Legs follow the ground:** the walk and jog cycles play at the speed you actually move (each cycle's stride is
+  measured off the body at build time), so a slow runner no longer pumps its legs like a sprinter, and feet stop sliding.
+- **Attacks:**
+  - **Only a real blow swings.** Before, every combat message played the attack animation: DoT ticks, heals over time,
+    reflects, even the kill notice, so a body kept attacking the air after you disengaged. The server now marks a blow
+    with its swing time (`CombatEvent.Swing`), and only that animates.
+  - **The swing speeds up with attack speed:** it is fitted inside the time until your next blow, so a fast attacker
+    visibly swings faster. A slow weapon keeps its natural motion (never slowed down).
+  - **Every shot shows:** each blow restarts the swing instead of queueing behind the last one, which is why a bow
+    raised its hand only every other shot.
+  - **Attacks and casts play on the upper body:** the legs keep walking under a bow shot or a spell, instead of the
+    whole body sliding in an attack pose.
+- **The casting pose shows.** It could only start from standing/running, so a cast that began while a queued swing
+  was still playing never showed it at all.
+- **A bow's basic attack flies an arrow**: the `magic_arrow` projectile, thinner, in arrow colour, hit or miss. A crit
+  sparks where it lands.
+- **Wand and staff ×0.85 shorter and ×0.6 thinner.**
+- Checked with headless renders (`ModelSetup.PreviewWeapons`, now skinning on the CPU so a many-piece body draws
+  whole). NOT checked on a phone yet.
+
+## 2026-10-13 — 0.252.0: `/time`; a longer day; camera 0-90° and zoom 0.1-30; fainter god halo; models fade on `/invis`
 
 **Server restart + new APK** (protocol 54 — an old APK still logs in, but its sky ignores an admin `/time`). No
 `game.db` delete.

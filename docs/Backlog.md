@@ -294,6 +294,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-351` | ⏸ | **Downloadable content** — move art out of the APK (Addressables + CDN, or Play Asset Delivery) once it passes ~100 MB; until then new asset kinds load through one function | client |
 | `BL-352` | 🔴 | **Vamp heals from the HP the target really LOST, not the damage rolled** — a 1500 hit on a 100-HP target vamps from 100; every lifesteal path (skill drains + basic-attack vamp) | combat |
 | `BL-353` | ⏸ | **Town NPCs get a level and a rank** — peasants 20-30, masters 50-60, the gatekeeper a lvl-90 mage, grand master a lvl-60 knight; 1-3k HP; mage or fighter by role | world |
+| `BL-354` | ⏸ | **Character bodies** — female bodies (needs a gender), the paid pack's other 10 outfits, armour type/grade → outfit pieces per slot | client |
 
 ---
 
@@ -2543,3 +2544,20 @@ fighter etc.. Their life will be 1~3k"*.
 - Today `NpcDef` carries only `CanDie` / `Retaliate` (`Game.Shared/WorldMap.cs`); NPCs have no level of their own.
 - ❓ To settle when picked up: a level per ROLE or per NPC; whether a retaliating NPC fights with its archetype's
   skills; whether the level shows on target-inspect.
+
+## `BL-354` ⏸ CHARACTER BODIES — FEMALE, THE OTHER 10 OUTFITS, PER-GRADE LOOKS (2026-10-13)
+
+0.253.0 swapped every body to the Quaternius outfit kit (CC0), on the animations' own skeleton. Your question that day:
+*"is good that they come undressed we can then have models for different types and grades, right?"* — yes: each outfit
+is split per slot (body / legs / arms / feet / hood), and the head is separate, so an armour piece can swap ONE slot.
+
+- ❓ **The other 10 outfits** are in the paid Source version ($20, still CC0); the free one has Peasant + Ranger only.
+  Yours to decide whether to buy it — without it there is nothing to make heavy/light/robe looks from.
+- ❓ **Female bodies need a gender on the character.** The files are in the pack (Female Ranger imports fine; Female
+  Peasant failed to import as a humanoid and needs a look), but nothing on `EntityDto` says male or female, so every
+  player is male today. A gender pick at character creation (+ a `game.db` delete) is the cost.
+- **Per-grade looks** (= the visual half of `BL-103`): a table from armour type/grade → outfit pieces per slot, the
+  client swapping the slot's mesh on the same skeleton. Blocked on the two questions above for anything beyond
+  "Ranger vs Peasant".
+- ⚠ The Ranger body is ~27k triangles (its boots alone 9k). Fine for a handful on screen; watch the phone's frame rate
+  in a crowded town before adding more pieces.
