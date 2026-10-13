@@ -11,7 +11,7 @@ namespace Game.Client
     /// the server at login, so every phone shows the same hour) and sets the ambient to match: a warm, low sun at
     /// dawn and dusk, a white one at midday, and a dim blue moon at night that still leaves the map readable.
     ///
-    /// <para><b>Cosmetic only.</b> The server's own day/night (<see cref="DayPhase"/>, 06:00-18:00) decides what
+    /// <para><b>Cosmetic only.</b> The server's own day/night (<see cref="DayPhase"/>, day 05:00-22:00) decides what
     /// spawns; this only decides what it looks like. The look is a table of keys over the 24 hours, blended
     /// linearly, so retuning it is editing numbers in <see cref="Keys"/>.</para>
     ///
@@ -97,20 +97,32 @@ namespace Game.Client
             float moon = 0.5f * total / 0.77f;
             var nightAmbient = NightTint * (0.5f * total / 0.79f);
             var twilightAmbient = Color.Lerp(nightAmbient, DayAmbient, 0.45f);
+            // Sunrise runs Dawn → Morning and sunset Dusk → Night (GameClock, 05:00-07:30 and 19:30-22:00): each passes
+            // through twilight, then the warm low sun, in the same proportions on both sides.
+            float twilight = Mathf.Lerp(moon, 0.5f, 0.5f);
             return _keys = new[]
             {
-                new Key(0.0f,  MoonLight, moon, nightAmbient, 0.35f),
-                new Key(4.5f,  MoonLight, moon, nightAmbient, 0.35f),
-                new Key(5.5f,  TwilightLight, Mathf.Lerp(moon, 0.5f, 0.5f), twilightAmbient, 0.3f),
-                new Key(6.5f,  WarmLight, 0.60f, WarmAmbient, 0.6f),
-                new Key(8.5f,  DayLight, 0.80f, DayAmbient, 0.7f),
-                new Key(15.5f, DayLight, 0.80f, DayAmbient, 0.7f),
-                new Key(17.5f, DuskLight, 0.60f, DuskAmbient, 0.6f),
-                new Key(18.5f, TwilightLight, Mathf.Lerp(moon, 0.5f, 0.5f), twilightAmbient, 0.3f),
-                new Key(19.5f, MoonLight, moon, nightAmbient, 0.35f),
-                new Key(24.0f, MoonLight, moon, nightAmbient, 0.35f),
+                new Key(0.0f,        MoonLight, moon, nightAmbient, 0.35f),
+                new Key(Dawn,        MoonLight, moon, nightAmbient, 0.35f),
+                new Key(Rise(0.25f), TwilightLight, twilight, twilightAmbient, 0.3f),
+                new Key(Rise(0.5f),  WarmLight, 0.60f, WarmAmbient, 0.6f),
+                new Key(Morning,     DayLight, 0.80f, DayAmbient, 0.7f),
+                new Key(Dusk,        DayLight, 0.80f, DayAmbient, 0.7f),
+                new Key(Set(0.5f),   DuskLight, 0.60f, DuskAmbient, 0.6f),
+                new Key(Set(0.75f),  TwilightLight, twilight, twilightAmbient, 0.3f),
+                new Key(Night,       MoonLight, moon, nightAmbient, 0.35f),
+                new Key(24.0f,       MoonLight, moon, nightAmbient, 0.35f),
             };
         }
+
+        private const float Dawn = (float)GameClock.DawnHour, Morning = (float)GameClock.MorningHour;
+        private const float Dusk = (float)GameClock.DuskHour, Night = (float)GameClock.NightHour;
+        private static float Rise(float t) => Mathf.Lerp(Dawn, Morning, t);
+        private static float Set(float t) => Mathf.Lerp(Dusk, Night, t);
+
+        // The sun is up from the middle of sunrise to the middle of sunset (06:15-20:45), so it stands south at 13:30
+        // — as it does in a real summer.
+        private const float SunUp = (Dawn + Morning) / 2f, SunDown = (Dusk + Night) / 2f;
 
         /// <summary>The look at <paramref name="hour"/> (0-24), with night at <paramref name="night"/> of midday.</summary>
         public static Look LookAt(double hour, float night)
@@ -122,15 +134,15 @@ namespace Game.Client
             var a = keys[i]; var b = keys[i + 1];
             float t = Mathf.InverseLerp(a.Hour, b.Hour, h);
 
-            // Direction. The sun rises in the east (+X), stands in the south at noon (shadows point up the
+            // Direction. The sun rises in the east (+X), stands in the south mid-arc (shadows point up the
             // screen) and sets in the west, never lower than 25° so a flat ground still gets some of it. The moon
             // crosses the same way at a steady 50°. Between them, over the twilight hours when the light is
             // dimmest, the direction swings from one to the other, so the swap is never seen.
-            float dayT = Mathf.Clamp01((h - 6f) / 12f);
+            float dayT = Mathf.Clamp01((h - SunUp) / (SunDown - SunUp));
             var sun = Quaternion.Euler(25f + 40f * Mathf.Sin(Mathf.PI * dayT), -90f + 180f * dayT, 0f);
-            float nightT = ((h - 18f + 24f) % 24f) / 12f;
+            float nightT = ((h - SunDown + 24f) % 24f) / (24f - SunDown + SunUp);
             var moonRot = Quaternion.Euler(50f, -90f + 180f * Mathf.Clamp01(nightT), 0f);
-            float dayness = Mathf.Clamp01(Mathf.Min(Mathf.InverseLerp(4.5f, 6.5f, h), Mathf.InverseLerp(19.5f, 17.5f, h)));
+            float dayness = Mathf.Clamp01(Mathf.Min(Mathf.InverseLerp(Dawn, Rise(0.5f), h), Mathf.InverseLerp(Night, Set(0.5f), h)));
 
             return new Look
             {

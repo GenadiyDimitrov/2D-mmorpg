@@ -13,8 +13,8 @@ namespace Game.ClientEditor
     /// a few props, lit by <see cref="DayNight"/> at several hours with the PHONE's quality level (one shadow
     /// cascade, hard shadows). Batchmode WITHOUT <c>-nographics</c>; the PNG goes where <c>-previewOut</c> says.
     ///
-    /// <para>Top row: 06:30 dawn, 12:00 noon, 17:45 dusk, 19:00 twilight. Bottom row: midnight at night levels
-    /// 0.12 / 0.20 / 0.30 of midday (linear), then 05:30 before dawn at 0.20.</para>
+    /// <para>Top row: 06:15 dawn, 12:00 noon, 20:45 dusk, 21:30 twilight. Bottom row: midnight at night levels
+    /// 0.12 / 0.20 / 0.30 of midday (linear), then 05:30, early dawn, at 0.20.</para>
     /// </summary>
     public static partial class ModelSetup
     {
@@ -38,7 +38,7 @@ namespace Game.ClientEditor
 
             var frames = new (double hour, float night)[]
             {
-                (6.5, DayNight.NightDefault), (12.0, DayNight.NightDefault), (17.75, DayNight.NightDefault), (19.0, DayNight.NightDefault),
+                (6.25, DayNight.NightDefault), (12.0, DayNight.NightDefault), (20.75, DayNight.NightDefault), (21.5, DayNight.NightDefault),
                 (0.0, DayNight.NightMin), (0.0, DayNight.NightDefault), (0.0, DayNight.NightMax), (5.5, DayNight.NightDefault),
             };
             RenderSheet(cam, outPath, frames.Length, f => DayNight.Apply(sun, DayNight.LookAt(frames[f].hour, frames[f].night), true));

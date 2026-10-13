@@ -30,10 +30,20 @@ public static class GameClock
     /// <summary>Length of a full in-game day, in in-game seconds (24h).</summary>
     public const double GameDaySeconds = 24 * 3600;
 
-    /// <summary>In-game hour at which day begins / night begins.
-    /// Day runs [DayStartHour, NightStartHour); night is the rest.</summary>
-    public const double DayStartHour = 6.0;    // 06:00
-    public const double NightStartHour = 18.0; // 18:00
+    /// <summary>The four hours the day turns on (owner, 2026-10-13, off real life: the sun rises between 5 and 7:30 and
+    /// sets between 19:30 and 22). Dawn → Morning is sunrise, Dusk → Night is sunset; the sky in between is full day or
+    /// full night. ONE set of numbers: the client's sky (`DayNight`), the `/time` keywords and the server's mob phase
+    /// all read these, so moving one moves all three.</summary>
+    public const double DawnHour = 5.0;      // 05:00 — the sky starts to brighten
+    public const double MorningHour = 7.5;   // 07:30 — full day
+    public const double DuskHour = 19.5;     // 19:30 — the sun starts to set
+    public const double NightHour = 22.0;    // 22:00 — full night
+
+    /// <summary>In-game hour at which day begins / night begins — what spawns. Day runs [DayStartHour,
+    /// NightStartHour); night is the rest. Night mobs own only the FULL dark (22:00-05:00, 7 of 24 hours ≈ 70 real
+    /// minutes of a 4-hour day): his ask was more of the game on the bright side.</summary>
+    public const double DayStartHour = DawnHour;
+    public const double NightStartHour = NightHour;
 
     /// <summary>The server's start time (UTC). Game time is measured from here.
     /// Set once at startup so all clients agree; `/time &lt;value&gt;` shifts it.</summary>
@@ -45,22 +55,20 @@ public static class GameClock
     /// <summary>Non-null = the clock is stopped at this hour (`/time stop`).</summary>
     public static double? FrozenHour { get; set; }
 
-    /// <summary>The named moments `/time &lt;keyword&gt;` accepts — the start of each stretch of the day. Dawn, dusk
-    /// and the two hours around them are read off the client's light keys (`DayNight.Keys`); morning and night are the
-    /// server's own phase flips, where the day/night mob populations swap.</summary>
+    /// <summary>The named moments `/time &lt;keyword&gt;` accepts — the start of each stretch of the day.</summary>
     public static readonly (string Word, double Hour)[] Keywords =
     {
         ("midnight", 0.0),
-        ("dawn", 4.5),
-        ("morning", DayStartHour),
-        ("day", DayStartHour),
+        ("dawn", DawnHour),
+        ("morning", MorningHour),
+        ("day", MorningHour),
         ("noon", 12.0),
-        ("dusk", 17.5),
-        ("evening", 17.5),
-        ("night", NightStartHour),
+        ("dusk", DuskHour),
+        ("evening", DuskHour),
+        ("night", NightHour),
     };
 
-    /// <summary>"midnight 00:00, dawn 04:30, morning/day 06:00, …" — what `/help time` prints, so it cannot trail
+    /// <summary>"midnight 00:00, dawn 05:00, morning/day 07:30, …" — what `/help time` prints, so it cannot trail
     /// <see cref="Keywords"/>.</summary>
     public static string KeywordList() =>
         string.Join(", ", Keywords.GroupBy(k => k.Hour)

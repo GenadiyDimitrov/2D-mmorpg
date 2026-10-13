@@ -28,7 +28,7 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-13 (latest) — 0.252.0: `/time`; fainter god halo; models fade on `/invis`
+## 2026-10-13 (latest) — 0.252.0: `/time`; a longer day; fainter god halo; models fade on `/invis`
 
 **Server restart + new APK** (protocol 54 — an old APK still logs in, but its sky ignores an admin `/time`). No
 `game.db` delete.
@@ -38,12 +38,15 @@ docs/changelogs/`.
 - **`/time <value>`, Admin only:** moves the game clock for the whole server; every connected player's sky jumps with
   it, and the day/night mob populations swap on the next tick when the phase flips.
   - `H:mm`, 24h: `/time 1:00`, `/time 6:31`, `/time 13:00`, `/time 18:31`. The clock keeps running from there.
-  - Keywords, the start of each stretch: `midnight` 00:00, `dawn` 04:30, `morning`/`day` 06:00, `noon` 12:00,
-    `dusk`/`evening` 17:30, `night` 18:00. (Morning and night are the server's day/night flips; dawn and dusk are
-    where the sky starts to change.)
+  - Keywords, the start of each stretch: `midnight` 00:00, `dawn` 05:00, `morning`/`day` 07:30, `noon` 12:00,
+    `dusk`/`evening` 19:30, `night` 22:00.
   - `/time stop` freezes the clock; a value typed while stopped moves it and it stays stopped. `/time start` lets it
     run again **from where it stopped**; `/time reset` puts back the natural clock.
   - Not saved: a server restart is the natural clock again.
+- **A longer day, off real life** (sunrise 5-7:30 in summer, sunset 19:30-22): the sky brightens from **05:00**, is full
+  day at **07:30**, starts to set at **19:30** and is full night at **22:00** (it was 04:30 → 08:30 and 15:30 → 19:30).
+  The sun stands south at 13:30. **Night mobs now only own the full dark, 22:00-05:00** (was 18:00-06:00): 7 game
+  hours, about 70 real minutes of a 4-hour day instead of 2 hours.
 - **The god halo is fainter** (alpha 0.42 → 0.25): it hid swarming mobs.
 - **`/invis` and stealth now fade a body wearing a model** (and its weapons) — before, only the old capsule faded.
 
