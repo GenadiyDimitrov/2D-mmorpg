@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 
@@ -48,6 +49,23 @@ namespace Game.Client.Editor
             Debug.Log($"[build] version {version} (code {PlayerSettings.Android.bundleVersionCode})");
         }
 
+        private const string AppIconPath = "Assets/Branding/AppIcon.png";
+
+        /// <summary>
+        /// The launcher icon and the name under it (owner, 2026-10-14: the cracked-star logo from
+        /// `docs/design/Assets`). Set as the DEFAULT icon, which Android uses for every density it is not
+        /// given separately. The label was "Game.Client.Unity" — Unity's project name — until now.
+        /// </summary>
+        private static void StampBranding()
+        {
+            PlayerSettings.productName = "Vardelar";
+
+            var icon = AssetDatabase.LoadAssetAtPath<Texture2D>(AppIconPath);
+            if (icon == null) { Debug.LogWarning("[build] no app icon at " + AppIconPath); return; }
+            PlayerSettings.SetIcons(NamedBuildTarget.Unknown, new[] { icon }, IconKind.Any);
+            Debug.Log("[build] app icon " + AppIconPath);
+        }
+
         [MenuItem("Build/Android APK")]
         public static void BuildAndroid()
         {
@@ -63,6 +81,7 @@ namespace Game.Client.Editor
             }
 
             StampVersion();
+            StampBranding();
 
             Debug.Log("[build] Android build starting. Scenes: " + string.Join(", ", scenes));
 

@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.258.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.258.3**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,18 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-14 (latest) — 0.258.2: the APK points at vardelar.duckdns.org; "Vardelar" is a reserved name
+## 2026-10-14 (latest) — 0.258.3: the Vardelar icon and the key art behind login
+
+**Client only — new APK** (no `game.db` delete, no server change).
+
+- **The app icon is the cracked-star logo** and the name under it reads **Vardelar** (it read `Game.Client.Unity`).
+  Both are set by the build script (`CommandLineBuild.StampBranding`) from `Assets/Branding/AppIcon.png`.
+- **Login and character select stand on the splash art** (`docs/design/Assets/Vardelar Splash Screen.jpeg` →
+  `Resources/Ui/LoginBackground.jpg`). It fills the screen and crops the overflow, so no phone shape shows a bar.
+- **Both account panels moved to the bottom of the screen** so the logo and title at the top of the art stay visible.
+  The bordered and the darker cinematic splash are in `docs/design/Assets/` but not used.
+
+## 2026-10-14 — 0.258.2: the APK points at vardelar.duckdns.org; "Vardelar" is a reserved name
 
 **Server + new APK** (no `game.db` delete).
 

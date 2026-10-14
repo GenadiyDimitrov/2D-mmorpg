@@ -37,6 +37,7 @@ namespace Game.Client
         private TextMeshProUGUI _staffBadgeText;
 
         // login
+        private GameObject _accountBackdrop;
         private RectTransform _loginPanel;
         private TMP_InputField _urlField, _userField, _passField;
         private Button _rememberButton;
@@ -101,6 +102,7 @@ namespace Game.Client
             _setupCanvas.transform.SetParent(transform, false);
             _setupRoot = (RectTransform)_setupCanvas.transform;
 
+            BuildAccountBackdrop();   // first child: everything else draws over it
             BuildStatusStrip();
             BuildLogin();
             BuildCharacterSelect();
@@ -157,6 +159,7 @@ namespace Game.Client
             // got no arrow to Cera (`121d`). Every world entry starts on the default: follow the first pinned quest.
             if (world && _builtPhase != ClientPhase.InWorld) { _arrowOff = false; _arrowQuestId = ""; }
 
+            if (_accountBackdrop != null) _accountBackdrop.SetActive(login || select);
             _loginPanel.gameObject.SetActive(login);
             _selectPanel.gameObject.SetActive(select);
             _worldRoot.gameObject.SetActive(world);
@@ -309,11 +312,37 @@ namespace Game.Client
 
         // ----- login -----------------------------------------------------------------------------
 
+        /// <summary>The key art behind login and character select (owner, 2026-10-14: the plain splash from
+        /// `docs/design/Assets`). It ENVELOPES the screen — fills it and crops the overflow — so no phone shape
+        /// shows a bar. The logo and title sit in the top ~40% of the art, which is why both account panels are
+        /// anchored to the BOTTOM of the screen rather than its centre.</summary>
+        private void BuildAccountBackdrop()
+        {
+            var tex = Resources.Load<Texture2D>("Ui/LoginBackground");
+            if (tex == null) return;   // a missing image leaves the old plain screen, never a broken one
+
+            var host = new GameObject("AccountBackdrop", typeof(RectTransform));
+            host.transform.SetParent(_root, false);
+            UiKit.Stretch((RectTransform)host.transform, 0f, 0f, 0f, 0f);
+            host.AddComponent<RectMask2D>();
+
+            var art = new GameObject("Art", typeof(RectTransform), typeof(RawImage), typeof(AspectRatioFitter));
+            art.transform.SetParent(host.transform, false);
+            var image = art.GetComponent<RawImage>();
+            image.texture = tex;
+            image.raycastTarget = false;
+            var fit = art.GetComponent<AspectRatioFitter>();
+            fit.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+            fit.aspectRatio = (float)tex.width / tex.height;
+
+            _accountBackdrop = host;
+        }
+
         private void BuildLogin()
         {
             _loginPanel = UiKit.PanelBox(_root, "LoginPanel");
-            UiKit.Place(_loginPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                        Vector2.zero, new Vector2(560f, 460f));   // +60 for the remember-me row (G4)
+            UiKit.Place(_loginPanel, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),   // below the title art
+                        new Vector2(0f, 24f), new Vector2(560f, 460f));   // +60 for the remember-me row (G4)
 
             var inner = _loginPanel.GetChild(0);
             UiKit.Place(UiKit.Rect(UiKit.Label(inner, "Sign in", 30f).gameObject),
@@ -394,8 +423,8 @@ namespace Game.Client
         private void BuildCharacterSelect()
         {
             _selectPanel = UiKit.PanelBox(_root, "CharacterSelect");
-            UiKit.Place(_selectPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                        Vector2.zero, new Vector2(700f, 480f));
+            UiKit.Place(_selectPanel, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),   // below the title art
+                        new Vector2(0f, 24f), new Vector2(700f, 460f));
 
             var inner = _selectPanel.GetChild(0);
             UiKit.Place(UiKit.Rect(UiKit.Label(inner, "Characters", 30f).gameObject),
