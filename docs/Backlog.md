@@ -299,6 +299,8 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-357` | ⏸ | **No server URL field at public release**: the login screen loses it; the address is baked into the APK (`Resources/server.txt`), a domain like `someurl.domain/game`, not an IP. Not for the Oracle friends phase | ops |
 | `BL-358` | ⏸ | **A horizon: fog + sky at the 3000 view range** — sky + fog BUILT (0.259.0); still owed: trim trees (4000-9000) and ground to just past the fog after a phone check | client |
 | `BL-359` | ⏸ | **Web accounts**: Google / confirmed-e-mail sign-up on the site; game accounts made from its panel, capped per e-mail (3? 10?) — for notifications and recovery | ops |
+| `BL-360` | 🔴 | **A Windows PC client** — test build BUILT (`publish.ps1 -Windows`, bordered resizable window); still owed: a fullscreen on/off option, keyboard shortcuts, a PC layout check | client |
+| `BL-361` | ⏸ | **An iOS client** — needs a Mac (or cloud Mac) + Xcode, an Apple Developer account ($99/yr), TestFlight for testers (HTTPS, which iOS demands, is already live) | ops |
 
 ---
 
@@ -2649,3 +2651,42 @@ makes mass account-making cost something.
 sent (confirmation and recovery for sure, news opt-in?) and through what mail service; what happens to accounts that
 exist before this lands (pre-release: a `game.db` reset is the migration). Ties to `BL-345` (registration open/close)
 and `BL-357` (public release).
+
+## `BL-360` 🔴 A WINDOWS PC CLIENT — test build BUILT; owed: fullscreen option, keys, layout (2026-10-14)
+
+Your words: *"lets try a tests pc version (if possible not forced full screen, but to be a bordered window -> options
+for fullscreen later on/off for windows environment if its hard to do - default for now bordered window)"*.
+
+**Why not the APK on the PC:** Windows Subsystem for Android was shut down (March 2025), and the APK is ARM64-only, so
+an emulator (BlueStacks, Android Studio) must translate every instruction — slow 3D, and some crash. Unity builds the
+SAME project natively for Windows instead.
+
+**Built:** `pwsh tools/publish.ps1 -Windows` (add `-NoServer` to skip the server zip) →
+`builds/Vardelar-Windows-<version>.zip`. Unzip anywhere, run `Vardelar.exe`. It opens as a **bordered, resizable
+window, 1600×900** (`CommandLineBuild.BuildWindows`), keeps running when you click another window, and connects to the
+same address the APK does (`Resources/server.txt`). The mouse already works — the Editor has always played by mouse:
+**left click = tap, right-drag = turn the camera, wheel = zoom.** ⚠ Windows remembers the window's last size and mode
+and reopens it that way; the settings above are the FIRST launch.
+
+**Still owed:**
+1. **Fullscreen on/off in Settings** (Windows only; hidden on the phone) — easy, Unity switches mode at runtime.
+   Alt+Enter already toggles it today, Unity's own shortcut.
+2. **Keyboard shortcuts** — 1-0 for the skill bar, Esc closes windows (Esc already = Back), maybe WASD.
+3. **A layout check at PC sizes** — the HUD was laid out for a landscape phone; a wide or small window may need tuning.
+4. Not part of `tools/deploy.ps1`: the site offers the APK only. Putting the zip on the site is a later decision.
+
+## `BL-361` ⏸ AN iOS CLIENT (2026-10-14)
+
+Your question: *"what to do with ios ?"* — filed, not started.
+
+**What it needs (Apple's rules, not code):**
+1. **A Mac with Xcode.** Unity only exports an Xcode project; the final build and signing happen on a Mac. A cloud Mac
+   (MacinCloud, Unity Build Automation) works without owning one. Unity's iOS module is already installed here.
+2. **An Apple Developer account, $99/year.** Without it an iPhone runs a personal build for 7 days only.
+3. **TestFlight** to hand it to testers (up to 10,000 by link). There is no "send the file" like the APK.
+
+**Already in our favour:** the Android build already compiles with IL2CPP, the compiler iOS forces, so SignalR + JSON
+have survived ahead-of-time compilation; and the server is already on HTTPS (`vardelar.duckdns.org`, Caddy), which iOS
+requires (it refuses plain `http://`). **Owed with it:** the app id + signing (as `BL-345` owes for Android), and a
+touch-layout check on iPhone/iPad screen shapes (notch, iPad 4:3).
+**When:** when the game is ready for players outside the Android circle — nothing here blocks starting earlier.

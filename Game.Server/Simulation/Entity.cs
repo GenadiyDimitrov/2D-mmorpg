@@ -1842,6 +1842,13 @@ public class Entity
     /// literally: the whisps go wherever the buffs go, by the same test, in the same place.</para></summary>
     public List<WhispInstance> Whisps { get; } = new();
 
+    /// <summary>The way this character last WALKED (radians, server x/y), so the whisps can park behind him — the server
+    /// keeps no facing of its own. Updated by <c>GameLoopService.TickWhisps</c> from the position change since its
+    /// previous tick; standing still keeps the old heading, so the escort stays where it settled. Runtime only.</summary>
+    public float WhispHeading { get; set; } = MathF.PI / 2f;
+    public float WhispLastX { get; set; } = float.NaN;
+    public float WhispLastY { get; set; }
+
     /// <summary>How many whisps may ride at once — <see cref="GameConstants.WhispSlotsBase"/> plus
     /// whatever Whisp Mastery adds. Recomputed with everything else in RecomputeDerived.</summary>
     public int WhispLimit { get; set; } = GameConstants.WhispSlotsBase;

@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.264.0";
+    public const string GameVersion = "0.265.0";
 
     /// <summary>The game's name and full title, as the chat header opens every session with (owner, 2026-10-14).</summary>
     public const string GameName = "Vardelar";
@@ -783,9 +783,11 @@ public static class GameConstants
     /// <summary>The band a whisp rides its master in — his *"Leashed 100-200 from the master"*. It
     /// parks at <see cref="WhispLeashMin"/> when he stands still and is dragged along at
     /// <see cref="WhispLeashMax"/> at the very worst, which is what produces the trailing-on-a-delay
-    /// look without a scripted delay anywhere.</summary>
-    public const float WhispLeashMin = 100f;
-    public const float WhispLeashMax = 200f;
+    /// look without a scripted delay anywhere.
+    /// <para>0.265.0: 100/200 → 45/100 — *"closer to each other and the char"* (owner, 2026-10-14). A whisp's
+    /// skill range is measured from the whisp, so this also brings it ~55 nearer to whatever he fights.</para></summary>
+    public const float WhispLeashMin = 45f;
+    public const float WhispLeashMax = 100f;
 
     /// <summary>A whisp's flying speed as a MULTIPLE of its master's current move speed, so it can
     /// always close the gap he opens — and a floor for the case where he is standing still and it is

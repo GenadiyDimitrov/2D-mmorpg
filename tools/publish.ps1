@@ -18,12 +18,16 @@
   pwsh tools/publish.ps1                 # server zip only (fast, no Unity)
   pwsh tools/publish.ps1 -Apk            # server zip + a fresh headless Unity APK
   pwsh tools/publish.ps1 -Apk -NoServer  # APK only
+  pwsh tools/publish.ps1 -Windows -NoServer   # the PC test client only (BL-360)
 #>
 [CmdletBinding()]
 param(
     # Also build the Android client. Needs the Unity Editor CLOSED (a running Unity.exe locks the
     # project and the build fails).
     [switch]$Apk,
+    # Also build the Windows test client (BL-360): builds/Vardelar-Windows-<version>.zip — unzip anywhere,
+    # run Vardelar.exe. Opens as a bordered, resizable window.
+    [switch]$Windows,
     # Skip the server side.
     [switch]$NoServer,
     # How many of each (server zip, APK) builds/ keeps; older ones are deleted at the end.
@@ -67,15 +71,15 @@ if (-not $NoServer) {
 }
 
 # ----- client -------------------------------------------------------------------------------------
-if ($Apk) {
+$unityProject = Join-Path $repo "Game.Client.Unity"
+
+# One headless Unity run of a CommandLineBuild method. Returns the log path; throws when Unity failed.
+function Invoke-UnityBuild([string]$method, [string]$buildTarget, [string]$log) {
     if (-not (Test-Path $UnityExe)) { throw "Unity not found at $UnityExe" }
     if (Get-Process Unity -ErrorAction SilentlyContinue) {
         throw "Unity.exe is running — close the Editor first, it locks the project."
     }
-
-    $unityProject = Join-Path $repo "Game.Client.Unity"
-    $log = Join-Path $env:TEMP "unitybuild-$version.log"
-    Write-Host "Unity headless build (several minutes) — log: $log" -ForegroundColor Cyan
+    Write-Host "Unity headless build $buildTarget (several minutes) — log: $log" -ForegroundColor Cyan
 
     # Start-Process -Wait, NOT the call operator: Unity.exe is a GUI-subsystem binary, so `& $UnityExe`
     # returns the instant it is launched, leaves $LASTEXITCODE empty and makes a perfectly good build
@@ -90,7 +94,8 @@ if ($Apk) {
     $unity = Start-Process -FilePath $UnityExe -PassThru -NoNewWindow -ArgumentList @(
         "-quit", "-batchmode", "-nographics",
         "-projectPath", $unityProject,
-        "-executeMethod", "Game.Client.Editor.CommandLineBuild.BuildAndroid",
+        "-buildTarget", $buildTarget,
+        "-executeMethod", "Game.Client.Editor.CommandLineBuild.$method",
         "-logFile", $log)
     $null = $unity.Handle   # cache the handle now, or ExitCode reads back empty after the exit
     $unity.WaitForExit()
@@ -100,9 +105,15 @@ if ($Apk) {
         $bad = Select-String -Path $log -Pattern "error CS|executeMethod class .* could not be found"
         if ($bad) { $bad | Select-Object -First 20 | ForEach-Object { Write-Host $_.Line -ForegroundColor Red } }
     }
+    if ($unityExit -ne 0) { throw "Unity build failed (exit $unityExit) — see $log" }
+}
+
+if ($Apk) {
+    $log = Join-Path $env:TEMP "unitybuild-$version.log"
+    Invoke-UnityBuild "BuildAndroid" "Android" $log
 
     $apkSrc = Join-Path $unityProject "builds\L2Clone.apk"
-    if ($unityExit -ne 0 -or -not (Test-Path $apkSrc)) { throw "Unity build failed (exit $unityExit) — see $log" }
+    if (-not (Test-Path $apkSrc)) { throw "Unity built no APK — see $log" }
 
     # An APK whose timestamp did not move means Unity built nothing (the classic silent failure).
     $age = (Get-Date) - (Get-Item $apkSrc).LastWriteTime
@@ -114,12 +125,31 @@ if ($Apk) {
     Write-Host "adb install -r `"$apkSrc`"" -ForegroundColor DarkGray
 }
 
+if ($Windows) {
+    $log = Join-Path $env:TEMP "unitybuild-win-$version.log"
+    $winDir = Join-Path $unityProject "builds\windows"
+    # A fresh folder, so a file a previous build left behind can never ride along in the zip.
+    if (Test-Path $winDir) { Remove-Item -Recurse -Force $winDir }
+    Invoke-UnityBuild "BuildWindows" "Win64" $log
+
+    $exe = Join-Path $winDir "Vardelar.exe"
+    if (-not (Test-Path $exe)) { throw "Unity built no Vardelar.exe — see $log" }
+
+    # Unity's debug-symbol folder is for crash dumps on THIS machine; it doubles the zip and players never need it.
+    Get-ChildItem $winDir -Directory -Filter "*_BurstDebugInformation_DoNotShip" | Remove-Item -Recurse -Force
+
+    $winZip = Join-Path $buildsDir "Vardelar-Windows-$version.zip"
+    if (Test-Path $winZip) { Remove-Item -Force $winZip }
+    Compress-Archive -Path (Join-Path $winDir "*") -DestinationPath $winZip
+    "{0}  ({1:N1} MB)" -f $winZip, ((Get-Item $winZip).Length / 1MB) | Write-Host -ForegroundColor Green
+}
+
 # ----- keep builds/ small ---------------------------------------------------------------------------
 # Only the newest $Keep server zips and $Keep APKs stay (owner, 2026-10-14: "make the /builds to have only the last
 # 3~5 servers and apks ... with the server up and running and the deploy command i wont be entering drive to manage
 # it"). Ranked by the VERSION in the file name, never the file date, so a republished old version cannot push a newer
 # one out. The live box keeps its own last 3 APKs (tools/deploy.ps1); nothing here touches it.
-foreach ($pattern in @("Game.Server-*.zip", "L2Clone-*.apk")) {
+foreach ($pattern in @("Game.Server-*.zip", "L2Clone-*.apk", "Vardelar-Windows-*.zip")) {
     $old = Get-ChildItem $buildsDir -Filter $pattern -File |
         Where-Object { $_.BaseName -match '-(\d+\.\d+\.\d+)$' } |
         Sort-Object { [version]($_.BaseName -replace '^.*-(\d+\.\d+\.\d+)$', '$1') } -Descending |

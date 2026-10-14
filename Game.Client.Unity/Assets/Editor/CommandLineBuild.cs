@@ -8,7 +8,7 @@ using UnityEngine;
 namespace Game.Client.Editor
 {
     /// <summary>
-    /// Headless Android build, driven from the command line so the Unity Editor GUI never has to be
+    /// Headless Android (and Windows test-client) build, driven from the command line so the Unity Editor GUI never has to be
     /// open. Close the Editor (freeing its RAM), then from a shell:
     ///
     ///   Unity.exe -quit -batchmode -nographics \
@@ -95,6 +95,43 @@ namespace Game.Client.Editor
         [MenuItem("Build/Android APK")]
         public static void BuildAndroid()
         {
+            StampVersion();
+            StampBranding();
+            Build(BuildTarget.Android, BuildTargetGroup.Android, OutputApk);
+        }
+
+        private const string OutputWindowsExe = "builds/windows/Vardelar.exe";
+
+        /// <summary>
+        /// `BL-360` — the PC test client: the same game, built for 64-bit Windows. The owner, 2026-10-14: *"if
+        /// possible not forced full screen, but to be a bordered window -> options for fullscreen later"*. So it
+        /// opens as an ordinary bordered, RESIZABLE window at 1600×900; a fullscreen on/off option is owed.
+        ///
+        /// ⚠ Unity remembers the last window size/mode per machine (registry, Screenmanager keys) and reapplies
+        /// it on the next launch — these settings decide the FIRST launch only.
+        ///
+        /// `runInBackground` is on: a windowed game loses focus whenever you click another window, and a paused
+        /// player stops pumping the connection. Android ignores the flag. Mouse input needs no work — the Editor
+        /// already plays by mouse (left click = tap, right drag = turn, wheel = zoom).
+        /// </summary>
+        [MenuItem("Build/Windows (test client)")]
+        public static void BuildWindows()
+        {
+            StampVersion();
+            StampBranding();
+
+            PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
+            PlayerSettings.defaultIsNativeResolution = false;
+            PlayerSettings.defaultScreenWidth = 1600;
+            PlayerSettings.defaultScreenHeight = 900;
+            PlayerSettings.resizableWindow = true;
+            PlayerSettings.runInBackground = true;
+
+            Build(BuildTarget.StandaloneWindows64, BuildTargetGroup.Standalone, OutputWindowsExe);
+        }
+
+        private static void Build(BuildTarget target, BuildTargetGroup group, string output)
+        {
             var scenes = EditorBuildSettings.scenes
                 .Where(s => s.enabled)
                 .Select(s => s.path)
@@ -106,17 +143,14 @@ namespace Game.Client.Editor
                 scenes = new[] { "Assets/Scenes/SampleScene.unity" };
             }
 
-            StampVersion();
-            StampBranding();
-
-            Debug.Log("[build] Android build starting. Scenes: " + string.Join(", ", scenes));
+            Debug.Log($"[build] {target} build starting. Scenes: " + string.Join(", ", scenes));
 
             var options = new BuildPlayerOptions
             {
                 scenes = scenes,
-                locationPathName = OutputApk,
-                target = BuildTarget.Android,
-                targetGroup = BuildTargetGroup.Android,
+                locationPathName = output,
+                target = target,
+                targetGroup = group,
                 options = BuildOptions.None,
             };
 
@@ -125,7 +159,7 @@ namespace Game.Client.Editor
 
             if (summary.result == BuildResult.Succeeded)
             {
-                Debug.Log($"[build] SUCCEEDED → {OutputApk}  ({summary.totalSize / (1024 * 1024)} MB, " +
+                Debug.Log($"[build] SUCCEEDED → {output}  ({summary.totalSize / (1024 * 1024)} MB, " +
                           $"{summary.totalTime.TotalSeconds:0}s)");
                 if (Application.isBatchMode) EditorApplication.Exit(0);
             }

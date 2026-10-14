@@ -192,8 +192,10 @@ namespace Game.Client
 
         // 0.263.0 (owner: *"can whisps be smaller circles and more higher (also if they can possess a glow like
         // effect)"*): a small bright core at about head height, inside a soft additive halo that breathes.
+        // 0.265.0 (owner, 2026-10-14: *"twice even three times as smaller ... they need to show that they are there and
+        // active not to obscure anything"*): core 9 → 4, so the halo (×WhispGlowSize) shrinks with it; bob halved.
         [Tooltip("Radius of a whisp's bright core, in SERVER units (scaled like everything else).")]
-        public float WhispRadius = 9f;
+        public float WhispRadius = 4f;
         [Tooltip("How high a whisp floats above the ground, in Unity units at Entity size 1 (a character is ~1.6).")]
         public float WhispHeight = 1.9f;
         [Tooltip("The glow halo's diameter as a multiple of the core's.")]
@@ -423,7 +425,7 @@ namespace Game.Client
                 {
                     if (orb.T == null) continue;
                     // A slow bob on top of the chase, so a whisp hovering beside its master still looks alive.
-                    var bob = new Vector3(0f, 0.08f * EntityManager.EntityScale * Mathf.Sin(Time.time * 1.7f + orb.Phase), 0f);
+                    var bob = new Vector3(0f, 0.04f * EntityManager.EntityScale * Mathf.Sin(Time.time * 1.7f + orb.Phase), 0f);
                     orb.T.position = Vector3.Lerp(orb.T.position, orb.Target + bob, t);
                     if (orb.Glow == null) continue;
                     // The halo faces the camera and breathes (±15%, about one breath every 2 s).

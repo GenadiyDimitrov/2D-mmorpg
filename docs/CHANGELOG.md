@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.264.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.265.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,26 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-14 (latest) — 0.264.0: a fog WALL; World and Entity distance split; zoom-out 20
+## 2026-10-14 (latest) — 0.265.0: whisps ride close behind you, smaller; a Windows test client
+
+Server + APK (no protocol change, no `game.db` delete). Owner: *"can whisps be closer to each other and the char as
+well -> twice even three times as smaller as now .. and "follow that char" like being always behind him -> the glow
+effect is good looking; they need to show that they are there and active not to obscure anything"*.
+
+- **Whisps park BEHIND you.** Their slots were fixed compass angles (always west of the character) while the comment
+  claimed "behind his facing" — the server keeps no facing. Now `TickWhisps` records the way you last walked
+  (`Entity.WhispHeading`, from the position change per tick; standing still or a teleport keeps the old one) and
+  `WhispSlotPoint` parks the first whisp straight behind it, the 2nd/3rd ±30° (was ±40°).
+- **Closer:** leash band 100-200 → **45-100** (`GameConstants.WhispLeashMin/Max`), so a 3-whisp escort sits ~2.6× tighter.
+  A whisp's skills are ranged from the whisp, so it is now ~55 nearer whatever you fight.
+- **Smaller:** core radius 9 → **4** (`GroundDecals.WhispRadius`); the halo is ×5 the core, so it shrinks with it; the
+  bob is halved. The glow itself is unchanged.
+- **Tooling — a Windows test client (`BL-360`).** `pwsh tools/publish.ps1 -Windows` →
+  `builds/Vardelar-Windows-<version>.zip` (`CommandLineBuild.BuildWindows`): a bordered, resizable 1600×900 window that
+  keeps running unfocused; mouse as in the Editor (left = tap, right-drag = turn, wheel = zoom), Alt+Enter = fullscreen.
+  `BL-361` files the iOS route.
+
+## 2026-10-14 — 0.264.0: a fog WALL; World and Entity distance split; zoom-out 20
 
 **Server + APK, together.** No `game.db` delete. Protocol **56 → 57** (a new `SetViewDistance` hub method; an old
 client never calls it and is sent the default 3200, so `MinAcceptedProtocol` does not move).

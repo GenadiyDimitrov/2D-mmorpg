@@ -772,7 +772,7 @@ MoveSpeed: base per race+class, NO dex term, buffed cap 250 (per-entity, raisabl
    fighter: elf 143 · human 115 · demon 112      walk = run * 0.5
    mage:    elf 114 · demon 113 · human 109      mob: walk wandering, run engaged, +100 leashed home
    ROOT/STUN = 0 · FEAR = run speed, driven · CHARM = walk speed, driven   (`BL-110`)
-   WHISP: max(masterSpeed * 1.6, 200), x3 outside the 100-200 leash band   (`BL-109`)
+   WHISP: max(masterSpeed * 1.6, 200), x3 outside the 45-100 leash band; parks 45 behind his last walk direction, extras ±30° (`BL-109`, 0.265.0)
    player = min((base * (1 + buff%) + buffFlat) * (1 - slow) * (1 - markPenalty) [+ 50 PAVED], cap)
    PAVED STREETS: +50 while RUNNING on a city's plaza/road/path and out of combat   (`BL-324`)
 ```

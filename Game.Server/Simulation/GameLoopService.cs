@@ -10927,7 +10927,21 @@ public partial class GameLoopService : BackgroundService
     private void TickWhisps(Entity master)
     {
         if (master.Whisps.Count == 0)
+        {
+            master.WhispLastX = float.NaN;   // a fresh escort starts from where he is, not from a stale step
             return;
+        }
+
+        // Which way he is walking — "behind" is the opposite. A tiny step (standing, a rounding wobble) keeps the old
+        // heading; a huge one (a teleport, a gatekeeper) is not a walk and keeps it too.
+        if (!float.IsNaN(master.WhispLastX))
+        {
+            float mx = master.X - master.WhispLastX, my = master.Y - master.WhispLastY;
+            float stepSq = mx * mx + my * my;
+            if (stepSq > 1f && stepSq < 300f * 300f) master.WhispHeading = MathF.Atan2(my, mx);
+        }
+        master.WhispLastX = master.X;
+        master.WhispLastY = master.Y;
 
         for (int i = master.Whisps.Count - 1; i >= 0; i--)
         {
@@ -10995,12 +11009,12 @@ public partial class GameLoopService : BackgroundService
     /// so none of them sits on top of the character the player is trying to look at.</summary>
     private static (float X, float Y) WhispSlotPoint(Entity master, int slot)
     {
-        // 140°, 180°, 220° — behind him, spread wide enough to tell apart at a glance. "Behind" is
-        // taken from his FACING when he has one and from due-south otherwise; a whisp does not need
-        // to be precisely placed, only to look like it belongs to him.
-        float[] offsets = { 180f, 140f, 220f };
+        // Straight behind him, then ±30° either side — a tight cluster at his back (owner, 2026-10-14: *"closer to each
+        // other and the char ... like being always behind him"*). "Behind" is the opposite of the way he last walked
+        // (`Entity.WhispHeading`). Until 0.265.0 these were FIXED compass angles (always west of him), whatever he did.
+        float[] offsets = { 180f, 150f, 210f };
         float deg = offsets[Math.Clamp(slot, 0, offsets.Length - 1)];
-        double rad = deg * Math.PI / 180.0;
+        double rad = master.WhispHeading + deg * Math.PI / 180.0;
         return (master.X + (float)Math.Cos(rad) * GameConstants.WhispLeashMin,
                 master.Y + (float)Math.Sin(rad) * GameConstants.WhispLeashMin);
     }
