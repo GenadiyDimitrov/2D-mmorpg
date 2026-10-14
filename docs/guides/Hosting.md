@@ -129,6 +129,8 @@ files*) → `oracle.key` → *Save private key* as `oracle.ppk`. PuTTY: Host `ub
 Auth → Credentials → Private key file* = `oracle.ppk`, then save the session. Right-click pastes. WinSCP: *SFTP*, host
 `<IP>`, user `ubuntu`, *Advanced → SSH → Authentication → Private key file* = `oracle.key` (it offers to convert it;
 say yes). Dragging files into `/home/ubuntu` in WinSCP replaces every `scp` line below.
+"*PuTTY key format too new*" = the PuTTY/WinSCP is older than the PuTTYgen. Update it, or in PuTTYgen *Key → Parameters
+for saving key files → PPK file version 2* and save `oracle.ppk` again.
 
 ### Step 4: prepare the machine (once, ~10 min, typed on the server)
 ```
