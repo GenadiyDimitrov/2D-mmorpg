@@ -54,7 +54,7 @@ public partial class GameLoopService : BackgroundService
         await InitZonesAsync();
         await LoadMentoringAsync();   // `BL-339` — the roster and every bond, held in memory
         SpawnNpcs();
-        _log.LogInformation("Game loop started at {Rate} ticks/sec", GameConstants.TickRate);
+        _log.LogInformation("Game loop started at {Rate} ticks/sec · L2Clone server v{Version}", GameConstants.TickRate, GameConstants.GameVersion);
 
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(GameConstants.TickSeconds));
         try

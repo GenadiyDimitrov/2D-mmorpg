@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.258.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.258.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,18 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-14 (latest) — 0.258.1: buildings stop at your horizon
+## 2026-10-14 (latest) — 0.258.2: the APK points at vardelar.duckdns.org; "Vardelar" is a reserved name
+
+**Server + new APK** (no `game.db` delete).
+
+- **A fresh install connects to `https://vardelar.duckdns.org/game`** (`Resources/server.txt`). The login field still
+  takes any address; for a cabled dev phone, type `http://127.0.0.1:5238/game` there once and the phone remembers it.
+- **"Vardelar" is reserved** (`BL-345`, the world's name, `BL-350`): no account or character may contain it, except the
+  `owner.txt` pair, so only the owner can hold it.
+- **The version is on the last boot line**: `Game loop started at 10 ticks/sec · L2Clone server v0.258.2`. The old
+  `starting.` line is still printed, but under systemd it sits above what `systemctl status` and `journalctl -f` show.
+
+## 2026-10-14 — 0.258.1: buildings stop at your horizon
 
 **New APK only** (no server change beyond the version, no `game.db` delete).
 

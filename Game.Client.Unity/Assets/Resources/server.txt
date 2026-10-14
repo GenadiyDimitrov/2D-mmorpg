@@ -1,4 +1,4 @@
 # The server address a fresh install connects to (BL-345). First non-#, non-blank line wins.
 # Players can still change it on the login screen; the phone remembers what they typed.
 # Public: https://<yourname>.duckdns.org/game   Cabled phone (adb reverse): http://127.0.0.1:5238/game
-http://127.0.0.1:5238/game
+https://vardelar.duckdns.org/game
