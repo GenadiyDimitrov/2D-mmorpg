@@ -1,13 +1,14 @@
 <#
 .SYNOPSIS
-  DEPLOY = put the already-published build from builds/ onto the LIVE server (the Oracle box), with the
+  DEPLOY = put the current version's build from builds/ onto the LIVE server (the Oracle box), with the
   players warned first. The owner's keyword (2026-10-14): "build"/"publish" only ever fill builds/;
   "deploy" / "update the server" is this script, and nothing else touches the live machine.
 
 .DESCRIPTION
   Separate from tools/publish.ps1 on purpose: publishing is free to repeat, deploying restarts a server
-  people are playing on. It ships whatever builds/ holds for the CURRENT GameConstants.GameVersion and
-  refuses if that is not there — run `pwsh tools/publish.ps1 -Apk` first.
+  people are playing on. It ships what builds/ holds for the CURRENT GameConstants.GameVersion, and when
+  that is missing it RUNS tools/publish.ps1 first (owner, 2026-10-14: "deploy" alone must be enough).
+  -Republish forces a fresh publish even when the files are there.
 
   On the server, in order:
     1. upload the zip + APK to ~/deploy and unpack the zip there (the live folder is untouched so far)
@@ -36,6 +37,7 @@ param(
     [switch]$NoApk,
     [switch]$NoServer,
     [switch]$ResetDb,
+    [switch]$Republish,
     [string]$Target = "ubuntu@vardelar.duckdns.org",
     [string]$Key = (Join-Path $HOME ".ssh\oracle.key")
 )
@@ -48,9 +50,19 @@ $version = (Select-String -Path (Join-Path $repo "Game.Shared\GameConstants.cs")
     -Pattern 'GameVersion\s*=\s*"([^"]+)"' | Select-Object -First 1).Matches[0].Groups[1].Value
 $zip = Join-Path $builds "Game.Server-$version.zip"
 $apk = Join-Path $builds "L2Clone-$version.apk"
+# Publish whatever this version is missing (or everything, with -Republish) — "deploy" alone is enough.
+$needServer = -not $NoServer -and ($Republish -or -not (Test-Path $zip))
+$needApk    = -not $NoApk    -and ($Republish -or -not (Test-Path $apk))
+if ($needServer -or $needApk) {
+    $pub = @{}
+    if ($needApk) { $pub.Apk = $true }
+    if (-not $needServer) { $pub.NoServer = $true }
+    Write-Host "builds/ lacks $version ($(if ($needServer) { 'server ' })$(if ($needApk) { 'APK' })) — publishing first." -ForegroundColor Cyan
+    & (Join-Path $PSScriptRoot "publish.ps1") @pub
+}
 $files = @()
-if (-not $NoServer) { if (-not (Test-Path $zip)) { throw "No $zip — run: pwsh tools/publish.ps1 -Apk" }; $files += $zip }
-if (-not $NoApk)    { if (-not (Test-Path $apk)) { throw "No $apk — run: pwsh tools/publish.ps1 -Apk" }; $files += $apk }
+if (-not $NoServer) { if (-not (Test-Path $zip)) { throw "Publish produced no $zip" }; $files += $zip }
+if (-not $NoApk)    { if (-not (Test-Path $apk)) { throw "Publish produced no $apk" }; $files += $apk }
 if ($files.Count -eq 0) { throw "Nothing to deploy (-NoServer and -NoApk)." }
 
 $ssh = @("-i", $Key, "-o", "ConnectTimeout=20", "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=accept-new")

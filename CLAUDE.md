@@ -317,7 +317,8 @@ fine. It bit twice before it was understood.
   Build (`dotnet build`) freely; don't `dotnet run` the game to "check" something.
 - **"Commit" means commit AND push.** Only "just commit" / "only push" means one of them.
 - 🔑 **"Build" / "publish" = `builds/` ONLY; "deploy" / "update the server" = the LIVE Oracle box** (owner, 2026-10-14).
-  Publish is `pwsh tools/publish.ps1 [-Apk]` and never touches the server. Deploy is `pwsh tools/deploy.ps1`: it ships
+  Publish is `pwsh tools/publish.ps1 [-Apk]` and never touches the server. Deploy is `pwsh tools/deploy.ps1`: **"deploy"
+  ALONE is enough** — it publishes whatever `builds/` lacks for the current version first (`-Republish` forces it), then ships
   what `builds/` holds for the current version, with a 1-minute in-game countdown (`server-command.txt`), a `game.db`
   backup, and a refusal to cross a `game.db` reset without `-ResetDb`. It restarts a server people play on, so it runs
   only when he says deploy / update the server — never as part of "build". Steps: `docs/guides/Hosting.md` step 7.
