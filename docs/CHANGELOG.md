@@ -28,6 +28,13 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
+## Unreleased — rides the next APK (fold into its entry)
+
+- **The startup screen shows the full Vardelar logo** above Unity's own (`Assets/Branding/SplashLogo.png`, from
+  `docs/design/Assets/Vardelar Full Logo.png`, 2.5 s). A placeholder until there is a company logo — swap the file.
+  `CommandLineBuild.StampBranding` forces it to import as a sprite, so a dropped-in replacement just works.
+- ⚠ Its `.meta` is created by the next headless build — commit it with that build.
+
 ## 2026-10-14 (latest) — 0.258.3: the Vardelar icon and the key art behind login
 
 **Client only — new APK** (no `game.db` delete, no server change).

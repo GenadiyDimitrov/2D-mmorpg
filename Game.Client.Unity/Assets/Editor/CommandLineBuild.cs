@@ -50,20 +50,46 @@ namespace Game.Client.Editor
         }
 
         private const string AppIconPath = "Assets/Branding/AppIcon.png";
+        private const string SplashLogoPath = "Assets/Branding/SplashLogo.png";
 
         /// <summary>
-        /// The launcher icon and the name under it (owner, 2026-10-14: the cracked-star logo from
-        /// `docs/design/Assets`). Set as the DEFAULT icon, which Android uses for every density it is not
-        /// given separately. The label was "Game.Client.Unity" — Unity's project name — until now.
+        /// The launcher icon, the name under it, and the logo on Unity's startup screen (owner, 2026-10-14:
+        /// the cracked-star logo and the full logo from `docs/design/Assets`). All placeholders — swap a file
+        /// at the same path and the next build picks it up; the startup logo becomes a company logo later.
+        /// The icon is the DEFAULT one, which Android uses for every density it is not given separately. The
+        /// label was "Game.Client.Unity" — Unity's project name — until now.
         /// </summary>
         private static void StampBranding()
         {
             PlayerSettings.productName = "Vardelar";
 
             var icon = AssetDatabase.LoadAssetAtPath<Texture2D>(AppIconPath);
-            if (icon == null) { Debug.LogWarning("[build] no app icon at " + AppIconPath); return; }
-            PlayerSettings.SetIcons(NamedBuildTarget.Unknown, new[] { icon }, IconKind.Any);
-            Debug.Log("[build] app icon " + AppIconPath);
+            if (icon == null) Debug.LogWarning("[build] no app icon at " + AppIconPath);
+            else
+            {
+                PlayerSettings.SetIcons(NamedBuildTarget.Unknown, new[] { icon }, IconKind.Any);
+                Debug.Log("[build] app icon " + AppIconPath);
+            }
+
+            // The startup screen only takes a SPRITE, and a dropped-in PNG imports as a plain texture, so the
+            // importer is set here rather than trusting whatever .meta a swapped file arrives with.
+            if (AssetImporter.GetAtPath(SplashLogoPath) is TextureImporter importer)
+            {
+                if (importer.textureType != TextureImporterType.Sprite || importer.spriteImportMode != SpriteImportMode.Single)
+                {
+                    importer.textureType = TextureImporterType.Sprite;
+                    importer.spriteImportMode = SpriteImportMode.Single;
+                    importer.SaveAndReimport();
+                }
+                var logo = AssetDatabase.LoadAssetAtPath<Sprite>(SplashLogoPath);
+                if (logo != null)
+                {
+                    PlayerSettings.SplashScreen.show = true;
+                    PlayerSettings.SplashScreen.logos = new[] { PlayerSettings.SplashScreenLogo.Create(2.5f, logo) };
+                    Debug.Log("[build] splash logo " + SplashLogoPath);
+                }
+            }
+            else Debug.LogWarning("[build] no splash logo at " + SplashLogoPath);
         }
 
         [MenuItem("Build/Android APK")]
