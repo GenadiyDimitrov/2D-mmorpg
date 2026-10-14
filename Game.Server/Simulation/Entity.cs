@@ -1096,6 +1096,14 @@ public class Entity
     /// <summary>Movement/regen state (players). Mobs use Engaged to pick walk/run.</summary>
     public MoveState MoveState { get; set; } = MoveState.Running;
 
+    /// <summary>The client's Settings → Entity distance (0.264.0, 1500-3000): how far this player is SENT entities, whisps and totems
+    /// (plus <see cref="GameConstants.FadeMargin"/>). Cosmetic reach only — never a game rule — and runtime-only: the
+    /// phone re-sends it on every world entry.</summary>
+    public float ViewDistance { get; set; } = GameConstants.ViewRange;
+
+    /// <summary>The radius the snapshot, whisp and totem pushes use for this viewer.</summary>
+    public float SendRange => ViewDistance + GameConstants.FadeMargin;
+
     /// <summary>Ticks remaining in the stand-up recovery after sitting was broken.
     /// While &gt; 0 the player can't move/cast/act.</summary>
     public int StandUpTicks { get; set; }

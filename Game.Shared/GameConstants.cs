@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.263.0";
+    public const string GameVersion = "0.264.0";
 
     /// <summary>The game's name and full title, as the chat header opens every session with (owner, 2026-10-14).</summary>
     public const string GameName = "Vardelar";
@@ -246,7 +246,10 @@ public static class GameConstants
     /// An old client ignores it and keeps swinging on every event; a new client against an old server never swings.
     /// 56 (0.254.0) — `BL-354`: `EntityDto` gained Gender / Hair / HairColor / Skin, `CreateCharacterRequest` the same
     /// four picks (all appended with defaults). An old client draws everyone male with the default look.
-    public const int ProtocolVersion = 56;   // 56: gender + appearance
+    /// 57 (0.264.0) — a new `SetViewDistance` hub method: the client's Settings → Entity distance (1500-3000), and the
+    /// server sends entities to that + `FadeMargin`. A pure addition: an old client never calls it and is sent to the
+    /// default 3200 as before.
+    public const int ProtocolVersion = 57;   // 57: per-player view distance
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
@@ -397,9 +400,21 @@ public static class GameConstants
     /// apear and disapear in the fog"*). The client's fog is fully thick before this.</summary>
     public const float FadeMargin = 200f;
 
-    /// <summary>How far the server SENDS entities: the view range plus the fog margin. Only the snapshot reads it —
-    /// every game rule (targeting, party share, auto-hunt) stays on <see cref="ViewRange"/>.</summary>
+    /// <summary>How far the server SENDS entities to a client that has not said otherwise: the view range plus the fog
+    /// margin. Only the pushes read it — every game rule (targeting, party share, auto-hunt) stays on
+    /// <see cref="ViewRange"/>. A client that sets its view distance (0.264.0) is sent to that + the margin instead.</summary>
     public const float SendRange = ViewRange + FadeMargin;
+
+    /// <summary>Settings → View distance, the slider's two ends (owner, 2026-10-14: *"render distance to 5k max
+    /// 1000~5k (default still 3k)"*), later 1500-5000. Cosmetic reach only: what you can TARGET is still <see cref="ViewRange"/>.</summary>
+    // The floor is 1500, not 1000 (owner: *"1000 is low and good device archer will see target and shoot at bad device
+    // low render archer"*): it sits above the longest attack reach in the game (~900), so nobody can be shot from out of
+    // their own view.
+    public const float MinViewDistance = 1500f, MaxViewDistance = 5000f;
+
+    /// <summary>Settings → Entity distance tops out at the server's own <see cref="ViewRange"/> (owner, 0.264.0: *"entites
+    /// to have their own slider 1500~3000"*); the WORLD distance above goes to 5000 and is client-only.</summary>
+    public const float MaxEntityDistance = ViewRange;
 
     /// <summary>Interest-management cell size. Equal to SendRange so a 3x3
     /// cell neighborhood always covers the full send circle.</summary>

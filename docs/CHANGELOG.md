@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.263.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.264.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,35 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-14 (latest) — 0.263.0: whisps are small glowing lights at head height
+## 2026-10-14 (latest) — 0.264.0: a fog WALL; World and Entity distance split; zoom-out 20
+
+**Server + APK, together.** No `game.db` delete. Protocol **56 → 57** (a new `SetViewDistance` hub method; an old
+client never calls it and is sent the default 3200, so `MinAcceptedProtocol` does not move).
+
+- **A fog wall.** Owner: *"the fog is still only on the ground and that ground one is very thin .. as i see the ground
+  roads and cities far away"* and *"if the fog is around extending upwards like a wall … this will fix the 'me seeing
+  the edge of the world as a line'"*. The roads, plazas, lots and town walls are flat URP-Unlit layers the ring fog never
+  reached, so they stood sharp past it. Now `DayNight.FitWall` stands a cylinder of fog (`L2Clone/FogWall`, the ring's
+  own colour) on the ring where it is fully thick, centred on you: fully opaque from the ground to 2 units above the
+  CAMERA, then fading into the sky over the same height again. Any line of sight down to ground beyond the ring crosses
+  it below the camera's height, so the far towns, roads and the world's edge are gone, and the horizon is fog fading
+  up. It is never closer than the camera + 3 (a low, zoomed-out camera sits outside a short ring).
+- **The ground fog is thicker:** it starts 20% of the distance inside it (3000 → from 2400, 5000 → 4000), not 50 short.
+- **World distance and Entity distance are two sliders.** Owner: *"can we separate entity render and world render"*,
+  *"entites to have their own slider 1500~3000 and world(trees/houses) 1500~5000"*, *"fog is for world render to hide
+  the missing scenary"*. **World** (1500-5000, default 3000) = ground fog, the wall, trees/rocks/grass and buildings.
+  **Entity** (1500-3000, default 3000) = creatures, players, NPCs, nameplates and NextTarget, never past the world one;
+  shorter than it, entities stop at their range in clear air. The floor is 1500, not 1000 (owner: a good phone's
+  archer must not shoot someone who cannot see him; the longest attack is ~1300).
+- **The server sends to your entity distance.** The phone sends it on world entry and when a slider moves
+  (`GameBoot.SendViewDistance` → `SetViewDistanceCmd`, clamped 1500-3000 into `Entity.ViewDistance`, runtime-only);
+  the snapshot, whisp and totem pushes use `Entity.SendRange` = it + 200. So a 1500 phone is sent about a quarter of
+  the area. Game rules (targeting, party share, auto-hunt) stay on `ViewRange` 3000. `CellGrid.Nearby` now walks as
+  many rings of cells as the radius needs (it silently capped at one cell before; only the two send pushes ever pass
+  a radius).
+- **Max zoom-out 30 → 20** (`CameraRig.MaxDistance`); a saved zoom past it clamps on the next launch.
+
+## 2026-10-14 — 0.263.0: whisps are small glowing lights at head height
 
 **APK** (server unchanged but for the version number). No `game.db` delete. Protocol unchanged (56).
 

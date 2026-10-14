@@ -6,7 +6,7 @@ namespace Game.Client
     /// Follows the player, looking at its chest. Pitch 90° (straight down, north up) is the default; one finger
     /// dragged across the world tilts it down to 0° (level with the horizon) and turns it (`BL-344` step 8).
     ///
-    /// Distance is the player's to choose: **pinch to zoom** (0.1-30, logarithmic), and the choice is
+    /// Distance is the player's to choose: **pinch to zoom** (0.1-20, logarithmic), and the choice is
     /// remembered across launches (PlayerPrefs). Guessing a distance for someone else's phone is how we
     /// ended up with two taste calls in a row.
     /// </summary>
@@ -24,7 +24,7 @@ namespace Game.Client
 
         /// <summary>The zoom range, in world units from the character's chest (owner, 2026-10-13: 0.1-30, "0 is
         /// inside the char"). At 0.1 you are inside the body; the near clip plane follows (see ApplyProjection).</summary>
-        public const float MinDistance = 0.1f, MaxDistance = 30f;
+        public const float MinDistance = 0.1f, MaxDistance = 20f;   // owner, 0.264.0: "decrease the max zoomout to 20"
 
         /// <summary>
         /// 🔑 ZOOM IS LOGARITHMIC: every step changes the distance by the same RATIO, never the same number of units.

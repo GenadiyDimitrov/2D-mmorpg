@@ -773,7 +773,7 @@ namespace Game.Client
         public void TargetClosest()
         {
             // Never into the fog: what you cannot see you cannot cycle onto (Settings → View distance).
-            float maxRange = Mathf.Min(2500f, DayNight.ViewDistance), maxRangeSq = maxRange * maxRange;
+            float maxRange = Mathf.Min(2500f, DayNight.EntityReach), maxRangeSq = maxRange * maxRange;
             if (Entities == null || !Entities.TryGetState(SelfId, out var self)) return;
 
             // Prune the retaliation memory first, so a stale entry can never win a sort below.
@@ -1971,6 +1971,8 @@ namespace Game.Client
                     _enteredAt = Time.realtimeSinceStartup;
                     Phase = ClientPhase.InWorld;
                     StatusMessage = "In world";
+                    _sentViewDistance = -1f;   // a new entry is a fresh player on the server: tell it again
+                    SendViewDistance();
                 });
             }
             catch (Exception ex) { Fail(Describe(ex)); }
@@ -3059,6 +3061,21 @@ namespace Game.Client
             if (Phase != ClientPhase.InWorld) return;
             if (IsPartyMember(targetId)) Follow(targetId);
             else Attack(targetId);
+        }
+
+        private float _sentViewDistance = -1f;
+
+        /// <summary>Settings → View distance, told to the server (0.264.0) so it sends creatures and houses out to it
+        /// (+ the fog margin) and no farther. Sent on world entry and when the slider settles on a new 50; a server too
+        /// old to know the call just keeps sending its default.</summary>
+        public async void SendViewDistance()
+        {
+            if (_net == null || Phase != ClientPhase.InWorld) return;
+            float d = DayNight.EntityReach;
+            if (Mathf.Approximately(d, _sentViewDistance)) return;
+            _sentViewDistance = d;
+            try { await _net.SetViewDistanceAsync(d); }
+            catch (Exception ex) { ClientLog.Warn("View distance: " + ex.Message); }
         }
 
         public async void SetMoveState(MoveState state)

@@ -31,27 +31,45 @@ namespace Game.Client
         {
             ShadowQuality = (Shadows)Mathf.Clamp(PlayerPrefs.GetInt(ShadowPref, (int)Shadows.Characters), 0, 2);
             NightLevel = Mathf.Clamp(PlayerPrefs.GetFloat(NightPref, NightDefault), NightMin, NightMax);
-            ViewDistance = Mathf.Clamp(PlayerPrefs.GetFloat(ViewPref, ViewMax), ViewMin, ViewMax);
+            ViewDistance = Mathf.Clamp(PlayerPrefs.GetFloat(ViewPref, ViewDefault), ViewMin, ViewMax);
+            EntityDistance = Mathf.Clamp(PlayerPrefs.GetFloat(EntityPref, EntityDefault), EntityMin, EntityMax);
         }
 
-        // ── Settings → View distance ────────────────────────────────────────────────────────────
+        // ── Settings → World distance / Entity distance ─────────────────────────────────────────
 
-        /// <summary>How far you see, in server units (owner, 2026-10-14): the fog starts just short of it and is fully
-        /// thick <see cref="FogPastView"/> past it; creatures, nameplates and buildings stop at
-        /// <see cref="DrawDistance"/>, inside that thick fog, so they walk out of the haze instead of popping. The top is
-        /// the server's <see cref="GameConstants.ViewRange"/> — it sends <see cref="GameConstants.FadeMargin"/> more,
-        /// and that margin is what the fog fades through.</summary>
-        public static float ViewDistance = ViewMax;
-        public const float ViewMin = 1000f, ViewMax = GameConstants.ViewRange;
+        /// <summary>WORLD distance, in server units: how far the ground, trees, rocks and buildings reach. The fog starts
+        /// <see cref="FogBeforeView"/> short of it and is fully thick <see cref="FogPastView"/> past it, where the fog
+        /// wall stands. 1500-5000, default 3000 (owner, 0.264.0: *"entites to have their own slider 1500~3000 and
+        /// world(trees/houses) 1500~5000"*). Client-only: the server never hears it.</summary>
+        public static float ViewDistance = ViewDefault;
+        public const float ViewMin = GameConstants.MinViewDistance, ViewMax = GameConstants.MaxViewDistance;
+        public const float ViewDefault = GameConstants.ViewRange;
         public const string ViewPref = "gfx.view";
 
-        /// <summary>Fog starts this far INSIDE the view distance (his "render 3k → fog starts at 2950")…</summary>
-        private const float FogBeforeView = 50f;
+        /// <summary>ENTITY distance: creatures, players, NPCs and their nameplates, 1500-3000, default 3000. The client tells
+        /// the server (GameBoot.SendViewDistance), which sends entities to it + <see cref="GameConstants.FadeMargin"/>.
+        /// Never past the world distance (<see cref="EntityReach"/>): nothing beyond the fog can be seen.</summary>
+        public static float EntityDistance = EntityDefault;
+        public const float EntityMin = GameConstants.MinViewDistance, EntityMax = GameConstants.MaxEntityDistance;
+        public const float EntityDefault = GameConstants.ViewRange;
+        public const string EntityPref = "gfx.entityView";
+
+        /// <summary>How far entities really reach: the entity distance, held inside the world's.</summary>
+        public static float EntityReach => Mathf.Min(EntityDistance, ViewDistance);
+
+        /// <summary>Fog starts this FRACTION of the view distance inside it (0.264.0, owner: *"that ground one is very
+        /// thin"* — it used to start only 50 short, his first ask): 3000 → from 2400, 5000 → from 4000…</summary>
+        private const float FogDepth = 0.2f;
+        private static float FogBeforeView => ViewDistance * FogDepth;
         /// <summary>…and is fully thick this far past it, still inside the margin the server sends.</summary>
         private const float FogPastView = 150f;
 
-        /// <summary>Where anything entity-shaped stops being drawn: inside the fully thick fog.</summary>
-        public static float DrawDistance => ViewDistance + GameConstants.FadeMargin;
+        /// <summary>Where entities stop being drawn. Out at the fog they stop inside the fully thick part (+ the margin, so
+        /// they walk out of the haze); with a SHORTER entity distance they stop at it, in clear air.</summary>
+        public static float DrawDistance => EntityReach >= ViewDistance ? ViewDistance + GameConstants.FadeMargin : EntityReach;
+
+        /// <summary>Where buildings stop being drawn: world scenery, inside the fully thick fog.</summary>
+        public static float WorldDrawDistance => ViewDistance + GameConstants.FadeMargin;
 
         /// <summary>Where the ring is fully thick, in server units: scenery (PropScatter) is not drawn past it.</summary>
         public static float FogEnd => ViewDistance + FogPastView;
@@ -327,6 +345,7 @@ namespace Game.Client
             Shader.SetGlobalVector(RingFogCenterId, focus ?? Vector3.zero);
             Shader.SetGlobalVector(RingFogParamsId,
                 new Vector4(start, 1f / Mathf.Max(0.001f, end - start), focus.HasValue ? 1f : 0f, 0f));
+            FitWall(cam, focus, end);
 
             var fwd = cam.transform.forward;
             float level = new Vector2(fwd.x, fwd.z).magnitude;   // cos(pitch): 1 looking at the horizon, 0 straight down
@@ -340,6 +359,78 @@ namespace Game.Client
             RenderSettings.fogStartDistance = Mathf.Max(0f, depth + start * level);
             RenderSettings.fogEndDistance = depth + end * level;
             if (!RenderSettings.fog) RenderSettings.fog = true;
+        }
+
+        // THE WALL (0.264.0, owner: *"if the fog is around extending upwards like a wall not only on ground"*).
+        private static Transform _wall;
+        private static bool _wallTried;
+        /// <summary>The wall is fully opaque over this fraction of its height, then fades to nothing at the top.</summary>
+        private const float WallOpaque = 0.5f;
+
+        /// <summary>
+        /// A cylinder of fog standing on the ring where it is fully thick (<paramref name="radius"/>, Unity units), centred
+        /// on the player. It is opaque from the ground to a little above the CAMERA, which is what hides everything beyond:
+        /// any line of sight from the camera down to ground past the ring crosses the wall below the camera's own height.
+        /// So the far roads and towns (flat unlit layers the ring fog does not reach) and the end of the world all go,
+        /// and the horizon becomes fog fading up into the sky. Its height follows the camera every frame.
+        /// </summary>
+        private static void FitWall(Camera cam, Vector3? focus, float radius)
+        {
+            if (!_wallTried)
+            {
+                _wallTried = true;
+                var shader = Resources.Load<Shader>("Shaders/FogWall") ?? Shader.Find("L2Clone/FogWall");
+                if (shader == null || !shader.isSupported) { Debug.LogWarning("[DayNight] no fog wall shader."); return; }
+                var go = new GameObject("FogWall", typeof(MeshFilter), typeof(MeshRenderer));
+                go.GetComponent<MeshFilter>().sharedMesh = WallMesh();
+                var r = go.GetComponent<MeshRenderer>();
+                r.sharedMaterial = new Material(shader) { name = "FogWall" };
+                r.shadowCastingMode = ShadowCastingMode.Off;
+                r.receiveShadows = false;
+                _wall = go.transform;
+            }
+            if (_wall == null) return;
+            bool show = focus.HasValue;
+            if (_wall.gameObject.activeSelf != show) _wall.gameObject.SetActive(show);
+            if (!show) return;
+
+            // Never closer than the CAMERA: zoomed out and tilted low, the camera sits up to 20 units behind you, which is
+            // past the ring at a short view distance (1500 → 16.5). A wall between the camera and you would fog you out.
+            var off = cam.transform.position - focus.Value;
+            radius = Mathf.Max(radius, new Vector2(off.x, off.z).magnitude + 3f);
+            float opaqueTo = Mathf.Max(2f, off.y + 2f);
+            _wall.position = new Vector3(focus.Value.x, focus.Value.y - 1f, focus.Value.z);   // 1 below: no gap at its foot
+            _wall.localScale = new Vector3(radius, (opaqueTo + 1f) / WallOpaque, radius);
+        }
+
+        /// <summary>A unit open cylinder (radius 1, height 1, 96 sides), alpha 1 up to <see cref="WallOpaque"/>, 0 at the top.</summary>
+        private static Mesh WallMesh()
+        {
+            const int sides = 96;
+            var verts = new Vector3[(sides + 1) * 3];
+            var colours = new Color[verts.Length];
+            var tris = new int[sides * 12];
+            float[] heights = { 0f, WallOpaque, 1f }, alphas = { 1f, 1f, 0f };
+            for (int i = 0; i <= sides; i++)
+            {
+                float a = i * Mathf.PI * 2f / sides;
+                for (int row = 0; row < 3; row++)
+                {
+                    verts[i * 3 + row] = new Vector3(Mathf.Cos(a), heights[row], Mathf.Sin(a));
+                    colours[i * 3 + row] = new Color(1f, 1f, 1f, alphas[row]);
+                }
+            }
+            int t = 0;
+            for (int i = 0; i < sides; i++)
+                for (int row = 0; row < 2; row++)
+                {
+                    int a0 = i * 3 + row, a1 = a0 + 1, b0 = (i + 1) * 3 + row, b1 = b0 + 1;
+                    tris[t++] = a0; tris[t++] = a1; tris[t++] = b0;
+                    tris[t++] = b0; tris[t++] = a1; tris[t++] = b1;
+                }
+            var mesh = new Mesh { name = "FogWall", vertices = verts, colors = colours, triangles = tris };
+            mesh.bounds = new Bounds(new Vector3(0f, 0.5f, 0f), new Vector3(2f, 1f, 2f));
+            return mesh;
         }
 
         /// <summary>

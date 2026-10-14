@@ -330,6 +330,9 @@ namespace Game.Client
         public Task SetMoveStateAsync(MoveState state) =>
             _connection.SendAsync("SetMoveState", (int)state);
 
+        public Task SetViewDistanceAsync(float distance) =>
+            _connection.SendAsync("SetViewDistance", distance);
+
         /// <summary>Follow a player (null = stop). Assist = attack whatever they're attacking. The server
         /// already had these; the Unity client just never exposed them, so Follow/Assist had no path.</summary>
         public Task FollowAsync(Guid? targetId) =>

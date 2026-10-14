@@ -376,6 +376,12 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task SetViewDistance(float distance)
+    {
+        _world.Commands.Enqueue(new SetViewDistanceCmd(Context.ConnectionId, distance));
+        return Task.CompletedTask;
+    }
+
     public Task CancelCast()
     {
         _world.Commands.Enqueue(new CancelCastCmd(Context.ConnectionId));

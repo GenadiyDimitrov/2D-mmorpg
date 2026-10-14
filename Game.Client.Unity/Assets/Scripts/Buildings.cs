@@ -269,8 +269,8 @@ namespace Game.Client
         private Vector3 _culledAt = new Vector3(float.MaxValue, 0f, 0f);
 
         /// <summary>The owner (2026-10-14): nothing past your horizon. A building is drawn only within
-        /// <see cref="DayNight.DrawDistance"/> of you — the same reach as the mobs and players, inside the thick fog.</summary>
-        private static float DrawRange => DayNight.DrawDistance * WorldMapper.Scale;   // Unity units
+        /// <see cref="DayNight.WorldDrawDistance"/> of you — buildings are WORLD scenery (0.264.0), inside the thick fog.</summary>
+        private static float DrawRange => DayNight.WorldDrawDistance * WorldMapper.Scale;   // Unity units: WORLD distance (0.264.0)
         private float _drawnRange = -1f;
         private const float RecullStep = 1f;   // Unity units the player moves before the set is re-checked
         private DayNight.Shadows _shadows = (DayNight.Shadows)(-1);

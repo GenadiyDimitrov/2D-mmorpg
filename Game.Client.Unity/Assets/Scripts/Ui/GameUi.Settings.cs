@@ -274,13 +274,22 @@ namespace Game.Client
                     PlayerPrefs.SetFloat(DayNight.NightPref, v);
                 }));
 
-            // Owner, 2026-10-14: how far you see. The fog starts just short of it and creatures walk out of the haze
-            // past it, instead of popping in. Lower = less to draw on a weak phone.
-            Row(inner, ref y, UiKit.SliderRow(inner, "View distance", DayNight.ViewMin, DayNight.ViewMax,
+            // Owner, 2026-10-14: how far you see. Lower = less to draw on a weak phone.
+            // 0.264.0 — split in two (owner: *"entites to have their own slider 1500~3000 and world(trees/houses)
+            // 1500~5000"*). The fog belongs to the WORLD one: it hides where the scenery stops.
+            Row(inner, ref y, UiKit.SliderRow(inner, "World distance", DayNight.ViewMin, DayNight.ViewMax,
                 DayNight.ViewDistance, "0", v =>
                 {
                     DayNight.ViewDistance = Mathf.Round(v / 50f) * 50f;
                     PlayerPrefs.SetFloat(DayNight.ViewPref, DayNight.ViewDistance);
+                    Boot.SendViewDistance();   // entities never reach past it, so the server's range can shrink with it
+                }, v => (Mathf.Round(v / 50f) * 50f).ToString("0")));
+            Row(inner, ref y, UiKit.SliderRow(inner, "Entity distance", DayNight.EntityMin, DayNight.EntityMax,
+                DayNight.EntityDistance, "0", v =>
+                {
+                    DayNight.EntityDistance = Mathf.Round(v / 50f) * 50f;
+                    PlayerPrefs.SetFloat(DayNight.EntityPref, DayNight.EntityDistance);
+                    Boot.SendViewDistance();   // the server sends creatures out to it
                 }, v => (Mathf.Round(v / 50f) * 50f).ToString("0")));
 
             // `BL-269` — extra skill squares, 0/6/12/18/24: *"need option to add more 6/12/18/24 skill slots
@@ -308,7 +317,7 @@ namespace Game.Client
                 foreach (var key in new[] { PrefPitch, PrefYaw,
                                             PrefEntity, PrefPlate, PrefUiScale, PrefBarScale, PrefDamage,
                                             PrefZones, PrefTicks, PrefBarShape, PrefExtraBars, PropScatter.Pref, DayNight.ShadowPref, DayNight.NightPref,
-                                            DayNight.ViewPref, PrefGameInfo, PrefGameInfoX, PrefGameInfoY })
+                                            DayNight.ViewPref, DayNight.EntityPref, PrefGameInfo, PrefGameInfoX, PrefGameInfoY })
                     PlayerPrefs.DeleteKey(key);
                 PlayerPrefs.Save();
                 // The two sizes come back at once — they are the ones that can make the game unusable.

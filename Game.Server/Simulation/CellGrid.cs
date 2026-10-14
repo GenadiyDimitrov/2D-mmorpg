@@ -57,16 +57,17 @@ public class CellGrid
     /// including the center entity itself.</summary>
     public IEnumerable<Entity> Nearby(Entity center) => Nearby(center, GameConstants.ViewRange);
 
-    /// <summary>All entities within <paramref name="range"/> of <paramref name="center"/>. The range may not
-    /// exceed the cell size, or the 3x3 neighbourhood would miss part of the circle.</summary>
+    /// <summary>All entities within <paramref name="range"/> of <paramref name="center"/>. Up to the cell size that is
+    /// the 3x3 neighbourhood; a longer range (a 5000 view distance, 0.264.0) walks as many rings of cells as it needs.</summary>
     public IEnumerable<Entity> Nearby(Entity center, float range)
     {
-        float rangeSq = MathF.Min(range, _cellSize) * MathF.Min(range, _cellSize);
+        float rangeSq = range * range;
+        int rings = Math.Max(1, (int)MathF.Ceiling(range / _cellSize));
         var (cx, cy) = center.Cell;
 
-        for (int dx = -1; dx <= 1; dx++)
+        for (int dx = -rings; dx <= rings; dx++)
         {
-            for (int dy = -1; dy <= 1; dy++)
+            for (int dy = -rings; dy <= rings; dy++)
             {
                 if (!_cells.TryGetValue((cx + dx, cy + dy), out var set))
                     continue;

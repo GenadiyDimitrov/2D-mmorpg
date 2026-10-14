@@ -215,6 +215,11 @@ public partial class GameLoopService : BackgroundService
                 case BufferActionCmd c: HandleBufferAction(c); break;
                 case BuySpBottleCmd c: HandleBuySpBottle(c); break;
                 case SetMoveStateCmd c: HandleSetMoveState(c); break;
+                case SetViewDistanceCmd c:
+                    // Clamped: the number comes off the phone, and it decides how much the server sends.
+                    if (TryGetPlayer(c.ConnectionId, out var viewer) && float.IsFinite(c.Distance))
+                        viewer.ViewDistance = Math.Clamp(c.Distance, GameConstants.MinViewDistance, GameConstants.MaxEntityDistance);
+                    break;
                 case CancelCastCmd c: HandleCancelCast(c); break;
                 case RemoveBuffCmd c: HandleRemoveBuff(c); break;
                 case OpenBoxCmd c: HandleOpenBox(c); break;
@@ -18837,8 +18842,9 @@ public partial class GameLoopService : BackgroundService
             // one to read. MOBS keep their level (the con-colour and the decision to engage depend on
             // it); party members' levels travel separately on PartyMemberDto, which only the party sees.
             var current = new Dictionary<Guid, EntityDto>();
-            // SendRange, not ViewRange: the extra margin is drawn inside the client's fog (GameConstants.FadeMargin).
-            foreach (var e in _world.Grid.Nearby(player, GameConstants.SendRange))
+            // The viewer's own send range (its view distance + the fog margin), never ViewRange: the margin is drawn
+            // inside the client's fog (GameConstants.FadeMargin).
+            foreach (var e in _world.Grid.Nearby(player, player.SendRange))
             {
                 // INVISIBILITY (BL-69) is enforced HERE, by omission, and that is the whole of "a
                 // buff nobody renders, targets or checks as nearby": a hidden character simply never
@@ -18985,7 +18991,7 @@ public partial class GameLoopService : BackgroundService
         List<TotemDto>? visible = null;
         if (_world.Totems.Count > 0)
         {
-            const float rangeSq = GameConstants.SendRange * GameConstants.SendRange;
+            float rangeSq = player.SendRange * player.SendRange;
             foreach (var t in _world.Totems)
             {
                 float dx = t.X - player.X, dy = t.Y - player.Y;
@@ -19028,8 +19034,8 @@ public partial class GameLoopService : BackgroundService
     private void SendWhispsIfChanged(Entity player, string connectionId, List<Task> sends)
     {
         List<WhispDto>? visible = null;
-        const float rangeSq = GameConstants.SendRange * GameConstants.SendRange;
-        foreach (var other in _world.Grid.Nearby(player, GameConstants.SendRange))
+        float rangeSq = player.SendRange * player.SendRange;
+        foreach (var other in _world.Grid.Nearby(player, player.SendRange))
         {
             if (other.Whisps.Count == 0 || other.Id == player.Id) continue;   // self is added below
             float dx = other.X - player.X, dy = other.Y - player.Y;

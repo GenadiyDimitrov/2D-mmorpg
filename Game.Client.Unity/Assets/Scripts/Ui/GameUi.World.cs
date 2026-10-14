@@ -2612,7 +2612,7 @@ namespace Game.Client
             // A plate is UI, which the fog does not touch: past the view distance (where the body is already deep in
             // the fog) it goes, unless it is your target.
             var selfView = Boot.Entities.Find(Boot.SelfId);
-            float plateReach = DayNight.ViewDistance * WorldMapper.Scale, plateReach2 = plateReach * plateReach;
+            float plateReach = DayNight.EntityReach * WorldMapper.Scale, plateReach2 = plateReach * plateReach;
             foreach (var kv in Boot.Entities.States)
             {
                 var e = kv.Value;

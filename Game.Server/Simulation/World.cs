@@ -368,6 +368,9 @@ public record BuyStatSwapsCmd(string ConnectionId, StatSwapPurchaseDto[] Picks) 
 /// <summary>Change movement state (run / walk / sit).</summary>
 public record SetMoveStateCmd(string ConnectionId, MoveState State) : IGameCommand;
 
+/// <summary>Settings → View distance (0.264.0): how far this client wants to be sent entities.</summary>
+public record SetViewDistanceCmd(string ConnectionId, float Distance) : IGameCommand;
+
 /// <summary>Player cancelled their own cast (ESC) — stops it and starts cooldown.</summary>
 public record CancelCastCmd(string ConnectionId) : IGameCommand;
 
