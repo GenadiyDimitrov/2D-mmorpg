@@ -76,7 +76,7 @@ namespace Game.Client
                     screen = t.position;
                 }
             }
-            else if (Input.GetMouseButtonDown(0))
+            else if (Input.GetMouseButtonDown(0) && !(Boot.CameraRig != null && Boot.CameraRig.MouseTurning))
             {
                 _downOverUi = UiKit.OverUi(Input.mousePosition);
                 tapped = true;

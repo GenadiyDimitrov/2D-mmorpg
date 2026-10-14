@@ -2671,7 +2671,8 @@ and reopens it that way; the settings above are the FIRST launch.
 **Still owed:**
 1. **Fullscreen on/off in Settings** (Windows only; hidden on the phone) — easy, Unity switches mode at runtime.
    Alt+Enter already toggles it today, Unity's own shortcut.
-2. **Keyboard shortcuts** — 1-0 for the skill bar, Esc closes windows (Esc already = Back), maybe WASD.
+2. ~~Keyboard shortcuts~~ — built (0.265.0): 1-0 / Shift / Ctrl bars, PageUp/Down, B C K L M windows, Enter chat;
+   right-drag locks the cursor; the bar pages by mouse drag and wheel. Still open: WASD movement, if you want it.
 3. **A layout check at PC sizes** — the HUD was laid out for a landscape phone; a wide or small window may need tuning.
 4. ~~Hosting~~ — built (0.265.0): `/pc` + the site button.
 

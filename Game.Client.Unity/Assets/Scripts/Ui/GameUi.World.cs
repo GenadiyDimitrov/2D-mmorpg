@@ -1570,6 +1570,7 @@ namespace Game.Client
             _slotMenuScrim.gameObject.SetActive(_slotMenu.gameObject.activeSelf);
 
             UpdateSkillBarSwipe();
+            UpdateHotkeys();
         }
 
         private void RefreshSelf()
@@ -2286,10 +2287,78 @@ namespace Game.Client
                     _swipeFinger = -1;
                 }
             }
+
+            // `BL-360` — THE MOUSE, for the PC build: the same swipe with the left button held (finger id -2), and the
+            // wheel over the bar pages it (CameraRig leaves the wheel alone over the HUD).
+            if (Input.touchCount > 0) return;
+            Vector2 at = Input.mousePosition;
+            if (Input.GetMouseButtonDown(0) && OverSkillBar(at)) { _swipeFinger = -2; _swipeStartX = at.x; }
+            else if (_swipeFinger == -2 && Input.GetMouseButtonUp(0))
+            {
+                float dx = at.x - _swipeStartX;
+                if (Mathf.Abs(dx) >= swipePixels) PageBy(dx < 0 ? 1 : -1);
+                _swipeFinger = -1;
+            }
+            float wheel = Input.mouseScrollDelta.y;
+            if (Mathf.Abs(wheel) > 0.01f && OverSkillBar(at)) PageBy(wheel < 0 ? 1 : -1);
         }
+
+        private bool OverSkillBar(Vector2 screen) =>
+            RectTransformUtility.RectangleContainsScreenPoint(_skillBarPanel, screen, null)
+            || (_extraSlots > 0 && _skillBarExtraPanel != null
+                && RectTransformUtility.RectangleContainsScreenPoint(_skillBarExtraPanel, screen, null));
+
+        private static readonly KeyCode[] DigitKeys =
+        {
+            KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.Alpha4, KeyCode.Alpha5,
+            KeyCode.Alpha6, KeyCode.Alpha7, KeyCode.Alpha8, KeyCode.Alpha9, KeyCode.Alpha0,
+        };
+
+        /// <summary>`BL-360` — KEYBOARD SHORTCUTS for the PC build (a phone has no keyboard, so this is inert there).
+        /// <list type="bullet">
+        /// <item>1…0 = the main bar's ten squares; Shift+1…0 = additional bar 1, Ctrl+1…0 = bar 2 (when shown).</item>
+        /// <item>PageUp / PageDown = the bar's page.</item>
+        /// <item>B = Bag, C = Character, K = Skills, L = Quests, M = Menu. Enter = type in chat. (Esc = Back, as before.)</item>
+        /// </list>
+        /// Silent while a text field has the caret — typing "1" in chat must not cast.</summary>
+        private void UpdateHotkeys()
+        {
+            if (!Input.anyKeyDown) return;
+            var selected = UnityEngine.EventSystems.EventSystem.current?.currentSelectedGameObject;
+            if (selected != null && selected.GetComponent<TMP_InputField>() is { isFocused: true }) return;
+
+            bool shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+            bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+            for (int n = 0; n < DigitKeys.Length; n++)
+            {
+                if (!Input.GetKeyDown(DigitKeys[n])) continue;
+                int bar = ctrl ? 2 : shift ? 1 : 0;
+                int visible = bar * SlotsPerPage + n;
+                if (bar == 0 ? n < _mainCount : visible - _mainCount < _extraSlots) FireSlot(visible);
+                return;
+            }
+
+            if (Input.GetKeyDown(KeyCode.PageDown)) PageBy(1);
+            else if (Input.GetKeyDown(KeyCode.PageUp)) PageBy(-1);
+            else if (Input.GetKeyDown(KeyCode.B)) ToggleWindow(_bagPanel);
+            else if (Input.GetKeyDown(KeyCode.C)) ToggleWindow(_statsPanel);
+            else if (Input.GetKeyDown(KeyCode.K)) ToggleWindow(_skillsPanel);
+            else if (Input.GetKeyDown(KeyCode.L)) ToggleWindow(_questPanel);
+            else if (Input.GetKeyDown(KeyCode.M)) ToggleWindow(_menuPanel);
+            else if ((Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+                     && _chatSubmitFrame != Time.frameCount)
+            {
+                _commandField.Select();
+                _commandField.ActivateInputField();
+            }
+        }
+
+        /// <summary>The frame a chat line was sent — the Enter that sent it must not also reopen the field (`BL-360`).</summary>
+        private int _chatSubmitFrame = -1;
 
         private void SubmitCommand()
         {
+            _chatSubmitFrame = Time.frameCount;
             if (!string.IsNullOrWhiteSpace(_commandField.text)) Boot.Say(_commandField.text);
             _commandField.text = "";
             // Drop focus so the keyboard closes and the next tap on the ground WALKS instead of

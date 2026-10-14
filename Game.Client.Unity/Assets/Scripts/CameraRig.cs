@@ -163,18 +163,44 @@ namespace Game.Client
             _dragLast = t.position;
         }
 
-        /// <summary>The Editor stand-in: hold the RIGHT mouse button and drag. The left one stays a click.</summary>
+        /// <summary>The mouse: hold the RIGHT button and drag. The left one stays a click.
+        /// <para>`BL-360` (owner, PC build: *"when i rotate the mouse goes to the 3rd monitor and then just to tap on the
+        /// screen i need to move it back"*): while turning, the cursor is HIDDEN and LOCKED to the window and the turn reads
+        /// the raw mouse delta; on release it reappears exactly where the press began. A release missed while the window
+        /// was unfocused still ends the turn (the button simply reads up next frame).</para></summary>
         private void MouseTurn()
         {
-            if (Input.GetMouseButtonDown(1)) { _dragLast = Input.mousePosition; _resetFrom = -1f; }
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+            if (Input.GetMouseButtonDown(1) && !UiKit.OverUi(Input.mousePosition))
+            {
+                _mouseTurning = true;
+                _mouseTurnFrom = Input.mousePosition;
+                _resetFrom = -1f;
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+                return;   // the lock's own jump to the centre is not a drag
+            }
+            if (!_mouseTurning) return;
+
             if (Input.GetMouseButton(1))
             {
-                Vector2 now = Input.mousePosition;
-                Drag(now - _dragLast);
-                _dragLast = now;
+                if (mouse != null) Drag(mouse.delta.ReadValue());
+                return;
             }
-            if (Input.GetMouseButtonUp(1)) PersistView();
+
+            _mouseTurning = false;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            mouse?.WarpCursorPosition(_mouseTurnFrom);
+            PersistView();
         }
+
+        private bool _mouseTurning;
+        private Vector2 _mouseTurnFrom;
+
+        /// <summary>True while the right mouse button is turning the camera — the cursor is locked, so a left click
+        /// in that time is not a tap at the screen's centre (<see cref="TouchInput"/> skips it).</summary>
+        public bool MouseTurning => _mouseTurning;
 
         private void Drag(Vector2 delta)
         {
@@ -210,8 +236,10 @@ namespace Game.Client
                 if (_pinching) Persist();
                 _pinching = false;
 
+                // Not over the HUD: the wheel there scrolls a list or pages the skill bar (`BL-360`), and zooming
+                // the world at the same time is the PC build's double action.
                 float scroll = Input.mouseScrollDelta.y;
-                if (Mathf.Abs(scroll) > 0.01f)
+                if (Mathf.Abs(scroll) > 0.01f && !UiKit.OverUi(Input.mousePosition))
                 {
                     ZoomBy(Mathf.Pow(ScrollRatio, -scroll));
                     Persist();

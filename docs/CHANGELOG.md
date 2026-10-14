@@ -50,6 +50,16 @@ effect is good looking; they need to show that they are there and active not to 
   when `builds/` lacks it; `-NoPc` skips) into `~/game/pc/` (keeps 3); the server serves the newest at **`/pc`**
   (`ApkFiles.FindPc`, saved as `Vardelar <ver> Windows.zip`), and the site shows a quieter **Download for Windows**
   button under the Android one, only while a zip is there, plus a short "Play on Windows" section.
+- **PC controls (`BL-360`, owner after the first PC run: *"we need shortcuts, drag on skillbar dont swap it, ... rotating
+  camera with right mouse to freeze the mouse"*).**
+  - **Right-drag locks the cursor** in the window, hidden, reading the raw mouse delta; on release it reappears where the
+    press began (`CameraRig.MouseTurn`, Input System `WarpCursorPosition`). It used to wander onto another monitor. A
+    left click during the turn is not a tap (`TouchInput`), and a right-drag that starts over the HUD does not turn.
+  - **The skill bar pages by mouse:** left-drag across it (the phone swipe, which read touches only) or the wheel over it.
+  - **The wheel no longer zooms over the HUD** — scrolling a list zoomed the world with it.
+  - **Keys** (`GameUi.UpdateHotkeys`, silent while typing): **1…0** main bar, **Shift+1…0** / **Ctrl+1…0** additional
+    bars 1/2, **PageUp/PageDown** bar page, **B** Bag, **C** Character, **K** Skills, **L** Quests, **M** Menu,
+    **Enter** chat; Esc = Back as before.
 
 ## 2026-10-14 — 0.264.0: a fog WALL; World and Entity distance split; zoom-out 20
 
