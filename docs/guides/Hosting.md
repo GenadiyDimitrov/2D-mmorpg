@@ -236,7 +236,7 @@ keeps running). Open `https://<yourname>.duckdns.org` in the phone's browser: yo
 On the PC, two separate steps (owner, 2026-10-14: *build/publish* never touch the live server, *deploy* is the only
 thing that does):
 ```
-pwsh tools/publish.ps1 -Apk      # builds/Game.Server-<ver>.zip + builds/L2Clone-<ver>.apk (optional:)
+pwsh tools/publish.ps1 -Apk      # builds/Game.Server-<ver>.zip + builds/L2Clone-<ver>.apk (optional: deploy does it)
 pwsh tools/deploy.ps1            # publishes whatever builds/ lacks, then puts it on the server
 ```
 `deploy.ps1` uploads both, then writes `shutdown 1` into `~/game/server-command.txt`. The server runs that line exactly
