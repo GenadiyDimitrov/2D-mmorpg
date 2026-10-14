@@ -8,13 +8,13 @@ what it costs, the setup step by step, how friends get in, and the code that had
 
 ## 1. The short answer
 
-| | |
-|---|---|
-| **Where** | An Oracle Cloud **Always Free** ARM machine (Ampere A1), Ubuntu 24.04. |
-| **Cost** | **€0 a month.** Oracle asks for a card at sign-up (identity check, not charged). The address is a free **DuckDNS** name. |
-| **What friends do** | Open `https://<yourname>.duckdns.org` on the phone → tap *Download* → install → the login screen already holds the address → register → play. |
-| **What you do per update** | `pwsh tools/publish.ps1 -Apk`, copy the zip and the APK to the box, run four lines (step 7). About two minutes. |
-| **Before friends can join** | Built in 0.258.0 (part 4). Still owed: the Android package id and signing key. |
+|                             |                                                                                                                                               |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Where**                   | An Oracle Cloud **Always Free** ARM machine (Ampere A1), Ubuntu 26.04 (or 24.04).                                                                        |
+| **Cost**                    | **€0 a month.** Oracle asks for a card at sign-up (identity check, not charged). The address is a free **DuckDNS** name.                      |
+| **What friends do**         | Open `https://<yourname>.duckdns.org` on the phone → tap *Download* → install → the login screen already holds the address → register → play. |
+| **What you do per update**  | `pwsh tools/publish.ps1 -Apk`, copy the zip and the APK to the box, run four lines (step 7). About two minutes.                               |
+| **Before friends can join** | Built in 0.258.0 (part 4). Still owed: the Android package id and signing key.                                                                |
 
 ### Why it fits
 The server is plain .NET with SQLite: no Windows-only parts, no external database. The published build **already
@@ -54,35 +54,35 @@ address.
 
    **Screen 1: Basic information**
 
-   | Setting | What you do |
-   |---|---|
-   | **Name** | Type `vardelar` (any name; only you see it). |
-   | **Create in compartment** | Leave it (your root compartment, named after your account). |
-   | **Placement → Availability domain** | Leave AD-1. If *Create* later fails with "Out of host capacity", come back here and pick AD-2 or AD-3. |
-   | **Placement → Capacity type** | **On-demand capacity.** Not *Preemptible* (Oracle may stop that one at any time). |
-   | **Placement → Fault domain** | Leave "Let Oracle choose". |
+   | Setting                                                | What you do                                                                                                                                                                                                                                                                 |
+   | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | **Name**                                               | Type `vardelar` (any name; only you see it).                                                                                                                                                                                                                                |
+   | **Create in compartment**                              | Leave it (your root compartment, named after your account).                                                                                                                                                                                                                 |
+   | **Placement → Availability domain**                    | Leave AD-1. If *Create* later fails with "Out of host capacity", come back here and pick AD-2 or AD-3.                                                                                                                                                                      |
+   | **Placement → Capacity type**                          | **On-demand capacity.** Not *Preemptible* (Oracle may stop that one at any time).                                                                                                                                                                                           |
+   | **Placement → Fault domain**                           | Leave "Let Oracle choose".                                                                                                                                                                                                                                                  |
    | **Image and shape → Shape** ⚠ do this BEFORE the image | *Change shape* → instance type **Virtual machine** → shape series **Ampere** → tick **VM.Standard.A1.Flex**. Below it set **Number of OCPUs = 2** and **Amount of memory (GB) = 12**. *Burstable* off. The row must carry the **Always Free eligible** tag. *Select shape*. |
-   | **Image and shape → Image** | *Change image* → **Ubuntu** → **Canonical Ubuntu 24.04** (the one *without* "Minimal" in the name). Under *Image build*, it must say **aarch64** (ARM); because you chose Ampere first, it offers only that. *Select image*. |
-   | **Advanced options** (bottom of the screen) | Leave all of it: instance metadata service, initialization script, live migration, Oracle Cloud Agent plugins. |
+   | **Image and shape → Image**                            | *Change image* → **Ubuntu** → **Canonical Ubuntu 26.04** (the one *without* "Minimal" in the name; if 26.04 is not listed, take 24.04, nothing else changes). If step 4's `netfilter-persistent save` then says "command not found", run `sudo apt -y install iptables-persistent` and repeat it. Under *Image build*, it must say **aarch64** (ARM); because you chose Ampere first, it offers only that. *Select image*.                                                |
+   | **Advanced options** (bottom of the screen)            | Leave all of it: instance metadata service, initialization script, live migration, Oracle Cloud Agent plugins.                                                                                                                                                              |
 
    **Screen 2: Security**
 
-   | Setting | What you do |
-   |---|---|
-   | **Shielded instance** | Off. |
-   | **Confidential computing** | Off. |
+   | Setting                    | What you do |
+   | -------------------------- | ----------- |
+   | **Shielded instance**      | Off.        |
+   | **Confidential computing** | Off.        |
 
    **Screen 3: Networking**
 
-   | Setting | What you do |
-   |---|---|
-   | **VNIC name** | Leave empty. |
-   | **Primary network** | **Create new virtual cloud network.** Leave its name and compartment. |
-   | **Subnet** | **Create new public subnet** (⚠ *public*: a private subnet can never get a public IP). Leave its name and the CIDR block. |
-   | **Private IPv4 address assignment** | Leave *Automatically assign private IPv4 address*. |
-   | **Automatically assign public IPv4 address** | **ON.** This is the address your friends reach. It is free, survives stop and reboot, and is lost only if you *terminate* the machine. |
-   | **IPv6 addresses** | Off. |
-   | **Add SSH keys** | **Generate a key pair for me** → **Download private key**. Save it as `C:\Users\genad\.ssh\oracle.key` (create the `.ssh` folder if it does not exist). ⚠ **Without this file you can never get into the machine**, and Oracle will not show it again. *Download public key* is optional. |
+   | Setting                                      | What you do                                                                                                                                                                                                                                                                               |
+   | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | **VNIC name**                                | Leave empty.                                                                                                                                                                                                                                                                              |
+   | **Primary network**                          | **Create new virtual cloud network.** Leave its name and compartment.                                                                                                                                                                                                                     |
+   | **Subnet**                                   | **Create new public subnet** (⚠ *public*: a private subnet can never get a public IP). Leave its name and the CIDR block.                                                                                                                                                                 |
+   | **Private IPv4 address assignment**          | Leave *Automatically assign private IPv4 address*.                                                                                                                                                                                                                                        |
+   | **Automatically assign public IPv4 address** | **ON.** This is the address your friends reach. It is free, survives stop and reboot, and is lost only if you *terminate* the machine.                                                                                                                                                    |
+   | **IPv6 addresses**                           | Off.                                                                                                                                                                                                                                                                                      |
+   | **Add SSH keys**                             | **Generate a key pair for me** → **Download private key**. Save it as `C:\Users\genad\.ssh\oracle.key` (create the `.ssh` folder if it does not exist). ⚠ **Without this file you can never get into the machine**, and Oracle will not show it again. *Download public key* is optional. |
 
    If the screen only says "a subnet is required" and offers no *Create new*: in another browser tab, *Menu → Networking
    → Virtual cloud networks → Start VCN Wizard → Create VCN with Internet Connectivity → Start VCN Wizard*, give it a
@@ -91,12 +91,12 @@ address.
 
    **Screen 4: Storage**
 
-   | Setting | What you do |
-   |---|---|
+   | Setting                                             | What you do                                                                      |
+   | --------------------------------------------------- | -------------------------------------------------------------------------------- |
    | **Boot volume → Specify a custom boot volume size** | Leave off (the default ~47 GB is plenty; the free allowance is 200 GB in total). |
-   | **Boot volume performance** | Leave at 10 VPUs (the free one). |
-   | **Use in-transit encryption** | Leave on. |
-   | **Block volumes** | Add none. |
+   | **Boot volume performance**                         | Leave at 10 VPUs (the free one).                                                 |
+   | **Use in-transit encryption**                       | Leave on.                                                                        |
+   | **Block volumes**                                   | Add none.                                                                        |
 
    **Screen 5: Review** → check the shape line says *VM.Standard.A1.Flex, 2 OCPU, 12 GB* → **Create**.
 
@@ -255,15 +255,15 @@ that is always up to date. Google Play needs a $25 developer account and a revie
 
 ## 4. What had to change in the code (built in 0.258.0)
 
-| # | Change | Why |
-|---|---|---|
-| 1 | **`owner.txt` is `account/Character`, and a fresh server admits only that pair.** Until that account holds that character, every other registration and character creation is refused. Once it exists, this step is skipped on every start. A missing file is written as `admin/Owner` (your dev loop), which is why step 6 writes the real one by hand first. | security |
-| 2 | **No character is born Admin any more.** Owner comes from `owner.txt`, every other rank from `/role`. | security |
-| 3 | **Reserved names**: no account or character may contain admin, owner, moderator, gamemaster, staff, support, system, server, official or developer, or be just GM / Mod / Dev / Sys / Root / God / Helper / Host / Operator / Sysop / Console. The `owner.txt` pair is exempt. | security |
-| 4 | **`/registration [open\|close]`** (Admin). Closed = no new accounts and no new characters, the owner pair excepted. Remembered in `registration.txt` beside `game.db`. A release server with no file starts **closed**. | security |
-| 5 | **Every stop saves everyone** (Ctrl+C, `systemctl stop`, an update, a host reboot), not only `/server shutdown`. Under systemd, `/server reboot` just exits and `Restart=always` brings it back. | data |
-| 6 | **`/apk`** serves the newest `apk/*.apk` beside the server, or what `apk-path.txt` names. | friends |
-| 7 | **The client's default address** comes from `Game.Client.Unity/Assets/Resources/server.txt`. The URL field stays. | friends |
+| #   | Change                                                                                                                                                                                                                                                                                                                                                         | Why      |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| 1   | **`owner.txt` is `account/Character`, and a fresh server admits only that pair.** Until that account holds that character, every other registration and character creation is refused. Once it exists, this step is skipped on every start. A missing file is written as `admin/Owner` (your dev loop), which is why step 6 writes the real one by hand first. | security |
+| 2   | **No character is born Admin any more.** Owner comes from `owner.txt`, every other rank from `/role`.                                                                                                                                                                                                                                                          | security |
+| 3   | **Reserved names**: no account or character may contain admin, owner, moderator, gamemaster, staff, support, system, server, official or developer, or be just GM / Mod / Dev / Sys / Root / God / Helper / Host / Operator / Sysop / Console. The `owner.txt` pair is exempt.                                                                                 | security |
+| 4   | **`/registration [open\|close]`** (Admin). Closed = no new accounts and no new characters, the owner pair excepted. Remembered in `registration.txt` beside `game.db`. A release server with no file starts **closed**.                                                                                                                                        | security |
+| 5   | **Every stop saves everyone** (Ctrl+C, `systemctl stop`, an update, a host reboot), not only `/server shutdown`. Under systemd, `/server reboot` just exits and `Restart=always` brings it back.                                                                                                                                                               | data     |
+| 6   | **`/apk`** serves the newest `apk/*.apk` beside the server, or what `apk-path.txt` names.                                                                                                                                                                                                                                                                      | friends  |
+| 7   | **The client's default address** comes from `Game.Client.Unity/Assets/Resources/server.txt`. The URL field stays.                                                                                                                                                                                                                                              | friends  |
 
 The self-contained Linux build planned here was dropped. You install .NET on the box the same way as in Termux
 (step 4) and run the same zip.
