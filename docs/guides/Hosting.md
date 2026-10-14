@@ -124,6 +124,12 @@ ssh -i $HOME\.ssh\oracle.key ubuntu@<IP>
 ```
 The first time it asks *"Are you sure…"*: type `yes`. You are now typing on the server. `exit` leaves.
 
+**Or with PuTTY + WinSCP.** PuTTY reads only its own `.ppk` key format: open **PuTTYgen** → *Load* (file type *All
+files*) → `oracle.key` → *Save private key* as `oracle.ppk`. PuTTY: Host `ubuntu@<IP>`, port 22, *Connection → SSH →
+Auth → Credentials → Private key file* = `oracle.ppk`, then save the session. Right-click pastes. WinSCP: *SFTP*, host
+`<IP>`, user `ubuntu`, *Advanced → SSH → Authentication → Private key file* = `oracle.key` (it offers to convert it;
+say yes). Dragging files into `/home/ubuntu` in WinSCP replaces every `scp` line below.
+
 ### Step 4: prepare the machine (once, ~10 min, typed on the server)
 ```
 sudo apt update && sudo apt -y upgrade
