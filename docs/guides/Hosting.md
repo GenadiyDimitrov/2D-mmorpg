@@ -49,17 +49,59 @@ address.
 
 ### Step 1: the Oracle account and the machine (once, ~30 min)
 1. Sign up at **cloud.oracle.com** → *Start for free*. Pick a home region near you and your friends (permanent).
-2. *Menu → Compute → Instances → Create instance.*
-   - **Image:** *Change image* → **Canonical Ubuntu 24.04** (pick the one that is *not* "Minimal").
-   - **Shape:** *Change shape* → *Ampere* → **VM.Standard.A1.Flex**, **2 OCPU, 12 GB**. It must show the *Always Free
-     eligible* tag.
-   - **Networking:** *Create new virtual cloud network* + *Create new **public** subnet* (a private subnet cannot
-     get a public IP), and **Automatically assign public IPv4 address ON** (free, survives stop/reboot, lost only on
-     terminate). IPv6 off. If it only says "a subnet is required": in another tab, *Networking → Virtual cloud networks
-     → Start VCN Wizard → Create VCN with Internet Connectivity*, defaults, then pick that VCN and its public subnet.
-   - **SSH keys:** *Generate a key pair for me* → **Download private key**. Save it as `C:\Users\genad\.ssh\oracle.key`.
-     Without this file you cannot get into the machine.
-   - *Create*. After a minute it shows **Public IP address**. That is `<IP>`.
+2. *Menu (☰, top left) → Compute → Instances → Create instance.* The form is a wizard of five screens; *Next* moves on.
+   Anything not in the tables below: **leave it as it is.**
+
+   **Screen 1: Basic information**
+
+   | Setting | What you do |
+   |---|---|
+   | **Name** | Type `vardelar` (any name; only you see it). |
+   | **Create in compartment** | Leave it (your root compartment, named after your account). |
+   | **Placement → Availability domain** | Leave AD-1. If *Create* later fails with "Out of host capacity", come back here and pick AD-2 or AD-3. |
+   | **Placement → Capacity type** | **On-demand capacity.** Not *Preemptible* (Oracle may stop that one at any time). |
+   | **Placement → Fault domain** | Leave "Let Oracle choose". |
+   | **Image and shape → Shape** ⚠ do this BEFORE the image | *Change shape* → instance type **Virtual machine** → shape series **Ampere** → tick **VM.Standard.A1.Flex**. Below it set **Number of OCPUs = 2** and **Amount of memory (GB) = 12**. *Burstable* off. The row must carry the **Always Free eligible** tag. *Select shape*. |
+   | **Image and shape → Image** | *Change image* → **Ubuntu** → **Canonical Ubuntu 24.04** (the one *without* "Minimal" in the name). Under *Image build*, it must say **aarch64** (ARM); because you chose Ampere first, it offers only that. *Select image*. |
+   | **Advanced options** (bottom of the screen) | Leave all of it: instance metadata service, initialization script, live migration, Oracle Cloud Agent plugins. |
+
+   **Screen 2: Security**
+
+   | Setting | What you do |
+   |---|---|
+   | **Shielded instance** | Off. |
+   | **Confidential computing** | Off. |
+
+   **Screen 3: Networking**
+
+   | Setting | What you do |
+   |---|---|
+   | **VNIC name** | Leave empty. |
+   | **Primary network** | **Create new virtual cloud network.** Leave its name and compartment. |
+   | **Subnet** | **Create new public subnet** (⚠ *public*: a private subnet can never get a public IP). Leave its name and the CIDR block. |
+   | **Private IPv4 address assignment** | Leave *Automatically assign private IPv4 address*. |
+   | **Automatically assign public IPv4 address** | **ON.** This is the address your friends reach. It is free, survives stop and reboot, and is lost only if you *terminate* the machine. |
+   | **IPv6 addresses** | Off. |
+   | **Add SSH keys** | **Generate a key pair for me** → **Download private key**. Save it as `C:\Users\genad\.ssh\oracle.key` (create the `.ssh` folder if it does not exist). ⚠ **Without this file you can never get into the machine**, and Oracle will not show it again. *Download public key* is optional. |
+
+   If the screen only says "a subnet is required" and offers no *Create new*: in another browser tab, *Menu → Networking
+   → Virtual cloud networks → Start VCN Wizard → Create VCN with Internet Connectivity → Start VCN Wizard*, give it a
+   name, leave the defaults, *Next → Create*. Back in the first tab, choose *Select existing virtual cloud network*, pick
+   that VCN, and pick its subnet whose name says **public**.
+
+   **Screen 4: Storage**
+
+   | Setting | What you do |
+   |---|---|
+   | **Boot volume → Specify a custom boot volume size** | Leave off (the default ~47 GB is plenty; the free allowance is 200 GB in total). |
+   | **Boot volume performance** | Leave at 10 VPUs (the free one). |
+   | **Use in-transit encryption** | Leave on. |
+   | **Block volumes** | Add none. |
+
+   **Screen 5: Review** → check the shape line says *VM.Standard.A1.Flex, 2 OCPU, 12 GB* → **Create**.
+
+   The instance page opens with state *Provisioning*; after a minute or two it turns **Running** (green). Under
+   *Instance access* (or *Primary VNIC*) it shows **Public IP address**. That is `<IP>`. The user name is `ubuntu`.
 3. **Open the door in Oracle's firewall:** on the instance page → *Subnet* link → *Security Lists* → *Default Security
    List* → *Add Ingress Rules*. Source CIDR `0.0.0.0/0`, IP protocol TCP, destination port `80`. Add it, then add a
    second rule for port `443`. (Not 5238: the game port stays private, see step 4.)
