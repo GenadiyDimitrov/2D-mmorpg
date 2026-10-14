@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.258.4**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.259.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,18 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-14 (latest) — 0.259.0: sky + fog, the login art unstretched, the server address in Setup
+## 2026-10-14 (latest) — 0.259.1: `/server shutdown` stays down under systemd
+
+**Server only** (no APK, no `game.db` delete, no protocol change).
+
+- **`/server shutdown` and `/server reboot` now differ the way `systemctl stop` and `restart` do.** A shutdown came
+  straight back up on the Oracle box, because `Restart=always` restarts *any* exit. Under systemd a shutdown now
+  exits **64** and the unit carries `RestartPreventExitStatus=64` + `SuccessExitStatus=64`, so it stays stopped
+  (cleanly, not "failed") until `sudo systemctl start game`. Reboot (66) and crashes still restart. Off systemd
+  nothing changed (shutdown exits 0, reboot relaunches itself). ⚠ The unit file must get the two lines —
+  `docs/guides/Hosting.md` step 5 — or a shutdown keeps restarting.
+
+## 2026-10-14 — 0.259.0: sky + fog, the login art unstretched, the server address in Setup
 
 **Client + server** (APK and server zip; no `game.db` delete, no protocol change).
 

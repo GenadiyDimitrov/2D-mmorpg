@@ -188,13 +188,17 @@ ExecStart=/home/ubuntu/.dotnet/dotnet /home/ubuntu/game/Game.Server.dll
 Environment=ASPNETCORE_URLS=http://127.0.0.1:5238
 Restart=always
 RestartSec=5
+RestartPreventExitStatus=64
+SuccessExitStatus=64
 TimeoutStopSec=30
 
 [Install]
 WantedBy=multi-user.target
 ```
 `127.0.0.1` means only Caddy can reach the game port; the world reaches it through HTTPS. `Restart=always` is also what
-brings the server back after `/server reboot`: under systemd it just exits and lets the service start it again.
+brings the server back after `/server reboot` (exit 66) or a crash. **`/server shutdown` exits 64**, which the two `64`
+lines turn into "stay stopped, cleanly" — exactly like `systemctl stop`: it needs a `sudo systemctl start game` to come
+back. Without them, `Restart=always` restarts a shutdown too. (A machine reboot still starts it: the unit is enabled.)
 ```
 sudo systemctl daemon-reload
 sudo systemctl enable game
@@ -284,7 +288,7 @@ that is always up to date. Google Play needs a $25 developer account and a revie
 | 2   | **No character is born Admin any more.** Owner comes from `owner.txt`, every other rank from `/role`.                                                                                                                                                                                                                                                          | security |
 | 3   | **Reserved names**: no account or character may contain admin, owner, moderator, gamemaster, staff, support, system, server, official, developer or vardelar (the game's name), or be just GM / Mod / Dev / Sys / Root / God / Helper / Host / Operator / Sysop / Console. The `owner.txt` pair is exempt.                                                                                 | security |
 | 4   | **`/registration [open\|close]`** (Admin). Closed = no new accounts and no new characters, the owner pair excepted. Remembered in `registration.txt` beside `game.db`. A release server with no file starts **closed**.                                                                                                                                        | security |
-| 5   | **Every stop saves everyone** (Ctrl+C, `systemctl stop`, an update, a host reboot), not only `/server shutdown`. Under systemd, `/server reboot` just exits and `Restart=always` brings it back.                                                                                                                                                               | data     |
+| 5   | **Every stop saves everyone** (Ctrl+C, `systemctl stop`, an update, a host reboot), not only `/server shutdown`. Under systemd, `/server reboot` exits 66 and `Restart=always` brings it back; `/server shutdown` exits 64 and stays down.                                                                                                                                                             | data     |
 | 6   | **`/apk`** serves the newest `apk/*.apk` beside the server, or what `apk-path.txt` names.                                                                                                                                                                                                                                                                      | friends  |
 | 7   | **The client's default address** comes from `Game.Client.Unity/Assets/Resources/server.txt`. The URL field stays.                                                                                                                                                                                                                                              | friends  |
 

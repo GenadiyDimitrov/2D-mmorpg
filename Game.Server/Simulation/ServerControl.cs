@@ -347,13 +347,23 @@ internal static class ServerControl
     /// needs no supervisor, which matters because he runs the server under termux-ubuntu on a phone.
     ///
     /// The exit code is distinct (66 = "restart me"); under systemd the relaunch is skipped and the
-    /// unit's <c>Restart=always</c> does the job (`BL-345`).</summary>
+    /// unit's <c>Restart=always</c> does the job (`BL-345`).
+    ///
+    /// A SHUTDOWN under systemd exits 64 = "stay down": the unit lists it in
+    /// <c>RestartPreventExitStatus</c>, so it behaves like <c>systemctl stop</c> (needs a start) while
+    /// reboot behaves like <c>systemctl restart</c>. A plain exit 0 would be restarted by
+    /// <c>Restart=always</c> — the owner's 0.259.0 shutdown came straight back up.</summary>
+    /// <summary>Must match <c>RestartPreventExitStatus=</c>/<c>SuccessExitStatus=</c> in the unit
+    /// (docs/guides/Hosting.md).</summary>
+    internal const int ShutdownExitCode = 64;
+
     internal static int Execute(Procedure kind)
     {
-        if (kind != Procedure.Reboot) return 0;
         // Under systemd (which sets INVOCATION_ID) the unit's Restart= brings us back; a copy launched
         // from here would be killed along with the old process's cgroup.
-        if (Environment.GetEnvironmentVariable("INVOCATION_ID") is { Length: > 0 }) return 66;
+        bool systemd = Environment.GetEnvironmentVariable("INVOCATION_ID") is { Length: > 0 };
+        if (kind != Procedure.Reboot) return systemd ? ShutdownExitCode : 0;
+        if (systemd) return 66;
         try
         {
             if (Environment.ProcessPath is string exe)
