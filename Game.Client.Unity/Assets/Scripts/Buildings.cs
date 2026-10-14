@@ -265,6 +265,13 @@ namespace Game.Client
 
         private readonly List<MeshRenderer> _renderers = new List<MeshRenderer>();
         private readonly List<GameObject> _hutObjects = new List<GameObject>();
+        private readonly List<(GameObject go, Vector3 at, bool hut)> _objects = new List<(GameObject, Vector3, bool)>();
+        private Vector3 _culledAt = new Vector3(float.MaxValue, 0f, 0f);
+
+        /// <summary>The owner (2026-10-14): nothing past your horizon. A building is drawn only within the server's
+        /// <see cref="GameConstants.ViewRange"/> of you — the same 3000 that decides which mobs and players you see.</summary>
+        private const float DrawRange = GameConstants.ViewRange * WorldMapper.Scale;   // Unity units
+        private const float RecullStep = 1f;   // Unity units the player moves before the set is re-checked
         private DayNight.Shadows _shadows = (DayNight.Shadows)(-1);
         private PropScatter.Level _scenery = (PropScatter.Level)(-1);
 
@@ -281,6 +288,7 @@ namespace Game.Client
                 go.transform.localScale = p.Scale;
                 foreach (var r in go.GetComponentsInChildren<MeshRenderer>()) _renderers.Add(r);
                 if (p.Hut) _hutObjects.Add(go);
+                _objects.Add((go, p.Position, p.Hut));
             }
             Debug.Log("[Buildings] " + (All.Count - missing) + " placed (" + _hutObjects.Count + " huts)"
                       + (missing > 0 ? ", " + missing + " with no model" : "") + ".");
@@ -296,10 +304,27 @@ namespace Game.Client
                 var mode = _shadows == DayNight.Shadows.All ? UnityEngine.Rendering.ShadowCastingMode.On : UnityEngine.Rendering.ShadowCastingMode.Off;
                 foreach (var r in _renderers) if (r != null) r.shadowCastingMode = mode;
             }
-            if (_scenery != PropScatter.Quality)
+            bool sceneryChanged = _scenery != PropScatter.Quality;
+            _scenery = PropScatter.Quality;
+            if (!CameraRig.Focus.HasValue)
             {
-                _scenery = PropScatter.Quality;
-                foreach (var h in _hutObjects) if (h != null) h.SetActive(_scenery != PropScatter.Level.Off);
+                if (sceneryChanged)
+                    foreach (var h in _hutObjects) if (h != null) h.SetActive(_scenery != PropScatter.Level.Off);
+                return;
+            }
+
+            // Within the view range of YOU, like the mobs; re-checked once you have moved a step, or the setting changed.
+            var me = CameraRig.Focus.Value;
+            me.y = 0f;
+            if (!sceneryChanged && (me - _culledAt).sqrMagnitude < RecullStep * RecullStep) return;
+            _culledAt = me;
+            const float range2 = DrawRange * DrawRange;
+            foreach (var (go, at, hut) in _objects)
+            {
+                if (go == null) continue;
+                float dx = at.x - me.x, dz = at.z - me.z;
+                bool show = dx * dx + dz * dz <= range2 && !(hut && _scenery == PropScatter.Level.Off);
+                if (go.activeSelf != show) go.SetActive(show);
             }
         }
     }

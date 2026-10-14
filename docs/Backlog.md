@@ -297,6 +297,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-354` | ⏸ | **Character bodies, what is left** — the paid pack's 10 outfits, armour type/grade → outfit pieces per slot, face shapes, elf ears / demon horns | client |
 | `BL-355` | ⏸ | **Appearance changes after creation as a premium service** — look cheapest, gender dearer, race/class dearest; admin-only picker built, prices + currency + what a paid race change keeps are open | economy |
 | `BL-357` | ⏸ | **No server URL field at public release**: the login screen loses it; the address is baked into the APK (`Resources/server.txt`), a domain like `someurl.domain/game`, not an IP. Not for the Oracle friends phase | ops |
+| `BL-358` | ⏸ | **A horizon: fog + sky at the 3000 view range** — nothing visible past it; trees and ground still reach 4000-9000+, buildings already stop at 3000 (0.258.1) | client |
 
 ---
 
@@ -2613,3 +2614,13 @@ Your words: *"the url field must go (can stay in apk but not directly can be som
 0.258.0) and is a **domain name** (`someurl.domain/game`), never a raw IP, so the machine behind it can move without a
 new APK. A remembered address in a player's phone (PlayerPrefs `PrefUrl`) must not override it then. Dev builds may keep
 a way to point elsewhere.
+
+## `BL-358` ⏸ A HORIZON: FOG AND SKY AT THE VIEW RANGE (2026-10-14)
+
+Your words: *"I must not see nothing past my horizon (3k range)"*, then *"later we add fog/sky etc"*.
+
+**Built so far (0.258.1):** houses and huts are drawn only within `GameConstants.ViewRange` (3000) of you, like mobs.
+**Still owed:** trees reach 4000/6500/9000 (Scenery Low/Medium/High, `PropScatter.RangeAt`) and the ground at least
+9000 (`BiomeGround.VisibleRect`), so a low camera still sees land past 3000. Cutting them hard at 3000 would show an
+edge and pop-in, so the plan is **distance fog fading into a sky colour that ends at ~3000**, then trim trees/ground
+to just past the fog. The sky itself (a skybox or gradient that follows `DayNight`) goes with it.

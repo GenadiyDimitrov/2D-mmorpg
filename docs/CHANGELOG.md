@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.258.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.258.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,17 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-13 (latest) — 0.258.0: owner.txt opens a fresh server, /registration, reserved names, a save on every stop
+## 2026-10-14 (latest) — 0.258.1: buildings stop at your horizon
+
+**New APK only** (no server change beyond the version, no `game.db` delete).
+
+- **Houses and huts are drawn only within 3000 of you** (`GameConstants.ViewRange`, the same range that decides which
+  mobs and players you see). Before, every building on the map was drawn, so a low camera saw the whole world's towns
+  standing out to the map border. Checked again each time you move ~100 units. Huts still vanish with Scenery Off.
+- ⚠ **Trees (4000/6500/9000 by Scenery) and the ground (9000+) still reach past 3000.** A proper horizon, fog that fades
+  to the sky at ~3000, is `BL-358`, not built.
+
+## 2026-10-13 — 0.258.0: owner.txt opens a fresh server, /registration, reserved names, a save on every stop
 
 **Server zip + new APK** (no `game.db` delete). (`BL-345`, the code half of the hosting guide)
 
