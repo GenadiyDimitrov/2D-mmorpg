@@ -1104,7 +1104,7 @@ namespace Game.Client
                 // the same reason Craft is: "where do I get this" is a question you ask while looking
                 // at a recipe or an empty slot, not one you walk to town to ask.
                 ("Drops",  () => { CloseWindow(_menuPanel); OpenDropSearch(); }, false),
-                ("Setup",  () => { CloseWindow(_menuPanel); ToggleWindow(_settingsPanel); }, false),
+                ("Setup",  () => { CloseWindow(_menuPanel); _serverRow.gameObject.SetActive(false); ToggleWindow(_settingsPanel); }, false),
                 ("Sound",  () => { CloseWindow(_menuPanel); OpenSoundWindow(); }, false),   // `BL-45`
                 // Options ≠ Setup: Setup is how the game LOOKS (local, PlayerPrefs), Options is what
                 // other players may do to you (server-side, per character) — M2/B11.

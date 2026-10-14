@@ -28,14 +28,36 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## Unreleased — rides the next APK (fold into its entry)
+## 2026-10-14 (latest) — 0.259.0: sky + fog, the login art unstretched, the server address in Setup
+
+**Client + server** (APK and server zip; no `game.db` delete, no protocol change).
 
 - **The startup screen shows the full Vardelar logo** above Unity's own (`Assets/Branding/SplashLogo.png`, from
   `docs/design/Assets/Vardelar Full Logo.png`, 2.5 s). A placeholder until there is a company logo — swap the file.
   `CommandLineBuild.StampBranding` forces it to import as a sprite, so a dropped-in replacement just works.
-- ⚠ Its `.meta` is created by the next headless build — commit it with that build.
+- **Server:** the landing page's Download button reads `0.258.3 · Updated 14 Oct 2026 · 71.9 MB` — the client's
+  version comes from the APK's file name (`L2Clone-<version>.apk`), left out if the name has none. The download is
+  saved as **`Vardelar 0.258.3.apk`** (updates are unaffected: Android matches by package id + signing key). An APK
+  folder now serves its **highest version by name**, not the newest file date, so several versions can sit there
+  and copying an old one in later changes nothing.
+- **Sky + fog.** A gradient sky (`Resources/Shaders/Sky.shader`) with a glow round the sun/moon, coloured by the
+  hour on the light's own keys (day blue, warm sunrise/sunset, twilight, night — the night sky follows Night
+  brightness). Linear fog in the horizon colour, thick at **3000** from the player (`GameConstants.ViewRange`, where
+  mobs and players stop being sent) and starting at 60% of it, so the ground fades into the sky instead of ending on
+  an edge. Unity's fog is by view DEPTH, so its numbers are refitted every frame to where that ring lies; a camera
+  steeper than ~80° has none (it cannot see the ring). The ground (`LitVertexColor`) and fading (`FadeLit`) shaders
+  gained fog; `GraphicsSettings` fog stripping is now **Custom, linear only** — on Automatic the build stripped every
+  fog variant because the scene's own fog is off.
+- **The login art is no longer stretched.** Its import rounded 1408×768 to a power of two (`nPOTScale` was 1), so
+  the code thought it square; it now imports at its true size. And it is shown WHOLE in its own shape: the space a
+  phone has left over is a blurred, darkened copy of the same art (a 48-px Blit stretched back up), with the sharp
+  art's edges on those sides fading to black into it (`GameUi.BuildAccountBackdrop`).
+- **The server address moved from the sign-in panel to Setup**, on a strip above the window that only the LOGIN
+  screen's Setup shows (`GameUi.BuildServerRow`); the in-game Menu → Setup never shows it. The sign-in panel is one
+  row shorter.
+- **Zone colours are OFF by default** (Settings → Zone colours). A player who already turned them on keeps them on.
 
-## 2026-10-14 (latest) — 0.258.4: a real landing page at the server's address
+## 2026-10-14 — 0.258.4: a real landing page at the server's address
 
 **Server only** (no APK, no `game.db` delete, no protocol change). Opening `https://vardelar.duckdns.org` in a browser
 used to show three lines of bare HTML. It is now a proper page: the key art as the hero, a big **Download for
@@ -5012,7 +5034,6 @@ platinum**, recorded in the entry. ⚠ **The ticket itself is still not built** 
 job (the slot ladder, the persisted slot count, the class-master dialogue, the info panel), and it
 still waits on §6's swap price and §5's cap question.
 
-
 ## 2026-09-16 — 0.152.0: `BL-256` — the warrior PvP pass, and two dead channels behind it
 
 **Needs an APK** (skill powers live in `Game.Shared`, so the client's own cards would quote the old
@@ -5084,7 +5105,6 @@ kit. The moment his damage rows land they are authored at the new scale, not the
 
 Both CSVs moved with the code in this commit (182 rows), and `SkillCsvSeed --check` is back to its one
 pre-existing line (the Warlord's unauthored Sundering Blow).
-
 
 ## 2026-09-16 — 0.151.1: `BL-255` — three daggers were three legal subclasses
 

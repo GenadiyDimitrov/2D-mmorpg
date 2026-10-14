@@ -297,7 +297,8 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-354` | ⏸ | **Character bodies, what is left** — the paid pack's 10 outfits, armour type/grade → outfit pieces per slot, face shapes, elf ears / demon horns | client |
 | `BL-355` | ⏸ | **Appearance changes after creation as a premium service** — look cheapest, gender dearer, race/class dearest; admin-only picker built, prices + currency + what a paid race change keeps are open | economy |
 | `BL-357` | ⏸ | **No server URL field at public release**: the login screen loses it; the address is baked into the APK (`Resources/server.txt`), a domain like `someurl.domain/game`, not an IP. Not for the Oracle friends phase | ops |
-| `BL-358` | ⏸ | **A horizon: fog + sky at the 3000 view range** — nothing visible past it; trees and ground still reach 4000-9000+, buildings already stop at 3000 (0.258.1) | client |
+| `BL-358` | ⏸ | **A horizon: fog + sky at the 3000 view range** — sky + fog BUILT (0.259.0); still owed: trim trees (4000-9000) and ground to just past the fog after a phone check | client |
+| `BL-359` | ⏸ | **Web accounts**: Google / confirmed-e-mail sign-up on the site; game accounts made from its panel, capped per e-mail (3? 10?) — for notifications and recovery | ops |
 
 ---
 
@@ -2614,6 +2615,8 @@ Your words: *"the url field must go (can stay in apk but not directly can be som
 0.258.0) and is a **domain name** (`someurl.domain/game`), never a raw IP, so the machine behind it can move without a
 new APK. A remembered address in a player's phone (PlayerPrefs `PrefUrl`) must not override it then. Dev builds may keep
 a way to point elsewhere.
+**Step taken (0.259.0, your ask):** the field left the sign-in panel; it is now a *Server* strip above the Setup window,
+shown only when Setup is opened from the login screen (`GameUi.BuildServerRow`). Removing it entirely is still this entry.
 
 ## `BL-358` ⏸ A HORIZON: FOG AND SKY AT THE VIEW RANGE (2026-10-14)
 
@@ -2624,3 +2627,25 @@ Your words: *"I must not see nothing past my horizon (3k range)"*, then *"later 
 9000 (`BiomeGround.VisibleRect`), so a low camera still sees land past 3000. Cutting them hard at 3000 would show an
 edge and pop-in, so the plan is **distance fog fading into a sky colour that ends at ~3000**, then trim trees/ground
 to just past the fog. The sky itself (a skybox or gradient that follows `DayNight`) goes with it.
+**Built (0.259.0):** the sky (gradient + sun/moon glow, by the hour) and the fog, thick at 3000 from you and starting at
+1800 (`DayNight.ApplySky` / `FitFog`; see CHANGELOG 0.259.0). **Still owed:** trim trees and ground to just past the
+fog, once a phone playtest says the fog distance is right — that is the performance half of this entry.
+
+## `BL-359` ⏸ WEB ACCOUNTS: GOOGLE / E-MAIL SIGN-UP ON THE SITE, GAME ACCOUNTS UNDER IT (2026-10-14)
+
+Your words: *"later the server should support google/email register with confirmation in the site .. then in account
+panel still on the site u create game accounts (the current ones - with some number limited to each email like 3 per
+mail or 10 etc ..) so we can have email notifications and stuff"*.
+
+**The shape:** two layers.
+1. **A web account** on the landing site — sign up with Google, or with an e-mail address confirmed by a link. This
+   is the person.
+2. **Game accounts** (today's login/password pairs) are created from that web account's panel on the site, up to a
+   cap per e-mail (3? 10? — yours to pick). Each game account belongs to exactly one web account.
+
+**Why:** a real, confirmed e-mail per player — notifications (and, it follows, password recovery), and a cap that
+makes mass account-making cost something.
+❓ **Open:** the cap; whether in-app Register disappears (all new accounts made on the site) or stays; which mails are
+sent (confirmation and recovery for sure, news opt-in?) and through what mail service; what happens to accounts that
+exist before this lands (pre-release: a `game.db` reset is the migration). Ties to `BL-345` (registration open/close)
+and `BL-357` (public release).

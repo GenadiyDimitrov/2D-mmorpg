@@ -136,8 +136,8 @@ for saving key files → PPK file version 2* and save `oracle.ppk` again.
 ```
 sudo apt update && sudo apt -y upgrade
 sudo apt -y install caddy sqlite3 unzip
-sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
-sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
+sudo iptables -I INPUT 4 -m state --state NEW -p tcp --dport 80 -j ACCEPT
+sudo iptables -I INPUT 4 -m state --state NEW -p tcp --dport 443 -j ACCEPT
 sudo netfilter-persistent save
 mkdir -p ~/game ~/game/apk ~/backups
 curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 10.0 --runtime aspnetcore
@@ -146,6 +146,17 @@ The last line installs the .NET runtime the same way you did in Termux, into `~/
 `~/.dotnet/dotnet Game.Server.dll`, from the same zip you already publish for the phone.
 The two `iptables` lines matter: Oracle's Ubuntu has a **second firewall inside the machine** that blocks everything
 except SSH. Forgetting it is the classic "I opened the port and it still doesn't connect".
+⚠ **Position matters:** iptables stops at the first rule that matches, and the image ends in a `REJECT` (rule 5 on
+the 2026-10 image). A rule added *after* it never runs. Check with `sudo iptables -L INPUT -n --line-numbers`: 80 and
+443 must have **smaller** numbers than `REJECT`. (The guide used to say `6`, which put them below it.)
+
+**"The site is unreachable" — check in this order** (from Windows PowerShell):
+1. `Resolve-DnsName vardelar.duckdns.org` → must show the Oracle IP. Wrong/none = DuckDNS (step 3).
+2. `Test-NetConnection vardelar.duckdns.org -Port 443` → `TcpTestSucceeded : True`. If only 22 answers, it's a
+   firewall: the iptables order above, or Oracle's Security List (step 1.3).
+3. On the server: `systemctl is-active caddy game` (both `active`), `curl -I http://127.0.0.1:5238` (game answers).
+4. Ports open but HTTPS fails = no certificate yet: `sudo journalctl -u caddy -n 30`, then `sudo systemctl restart
+   caddy` once port 80 is reachable.
 
 **HTTPS (the padlock):** Caddy gets a free certificate by itself and passes the game traffic (WebSockets included)
 through to the server. Its whole configuration is three lines:

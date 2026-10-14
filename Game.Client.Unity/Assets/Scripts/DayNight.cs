@@ -200,8 +200,113 @@ namespace Game.Client
 
         private void Update()
         {
-            Apply(_sun, LookAt(GameClock.HourOfDay(DateTime.UtcNow), NightLevel), ShadowQuality != Shadows.Off);
+            double hour = GameClock.HourOfDay(DateTime.UtcNow);
+            var look = LookAt(hour, NightLevel);
+            Apply(_sun, look, ShadowQuality != Shadows.Off);
             if (ShadowQuality != Shadows.Off) FitShadowDistance();
+            ApplySky(SkyAt(hour, NightLevel), look);
+        }
+
+        // ── sky + fog (0.259.0) ─────────────────────────────────────────────────────────────────
+
+        /// <summary>The sky's two colours at one moment. Plain sRGB, as a colour picker shows them: unlike the light
+        /// keys above, Unity converts these itself (material colours, fog colour, camera background).</summary>
+        public struct SkyLook { public Color Zenith, Horizon; }
+
+        private static readonly Color DayZenith = new Color(0.28f, 0.52f, 0.88f), DayHorizon = new Color(0.70f, 0.82f, 0.93f);
+        private static readonly Color WarmZenith = new Color(0.30f, 0.40f, 0.65f), WarmHorizon = new Color(0.96f, 0.66f, 0.44f);
+        private static readonly Color TwilightZenith = new Color(0.12f, 0.14f, 0.32f), TwilightHorizon = new Color(0.52f, 0.40f, 0.48f);
+        private static readonly Color NightZenith = new Color(0.03f, 0.05f, 0.12f), NightHorizon = new Color(0.10f, 0.13f, 0.24f);
+
+        /// <summary>The sky at <paramref name="hour"/>, on the same hours as the light keys. The night sky follows
+        /// Settings → Night brightness, so a brighter night does not sit under a black sky.</summary>
+        private static (float h, Color z, Color hz)[] _skyKeys;
+        private static float _skyKeysFor = -1f;
+
+        public static SkyLook SkyAt(double hour, float night)
+        {
+            if (_skyKeys == null || night != _skyKeysFor)
+            {
+                _skyKeysFor = night;
+                float s = Mathf.Clamp(night / NightDefault, 0.5f, 2f);
+                Color nz = NightZenith * s, nh = NightHorizon * s;
+                _skyKeys = new (float h, Color z, Color hz)[]
+                {
+                    (0f, nz, nh), (Dawn, nz, nh), (Rise(0.25f), TwilightZenith, TwilightHorizon), (Rise(0.5f), WarmZenith, WarmHorizon),
+                    (Morning, DayZenith, DayHorizon), (Dusk, DayZenith, DayHorizon), (Set(0.5f), WarmZenith, WarmHorizon),
+                    (Set(0.75f), TwilightZenith, TwilightHorizon), (Night, nz, nh), (24f, nz, nh),
+                };
+            }
+            var keys = _skyKeys;
+            float h = (float)(((hour % 24.0) + 24.0) % 24.0);
+            int i = 0;
+            while (i < keys.Length - 2 && h >= keys[i + 1].h) i++;
+            float t = Mathf.InverseLerp(keys[i].h, keys[i + 1].h, h);
+            return new SkyLook { Zenith = Color.Lerp(keys[i].z, keys[i + 1].z, t), Horizon = Color.Lerp(keys[i].hz, keys[i + 1].hz, t) };
+        }
+
+        /// <summary>The fog is fully thick at <see cref="GameConstants.ViewRange"/> from the player — the 3000 at
+        /// which the server stops sending mobs and players — and starts at 60% of it, so what pops in or out at the
+        /// edge does it inside the haze.</summary>
+        private const float FogEndFraction = 1f, FogStartFraction = 0.6f;
+
+        private static Material _skyMaterial;
+        private static bool _skyTried;
+
+        private static void ApplySky(SkyLook sky, Look look)
+        {
+            var cam = Camera.main;
+            if (cam == null) return;
+
+            if (!_skyTried)
+            {
+                _skyTried = true;
+                var shader = Resources.Load<Shader>("Shaders/Sky");
+                if (shader != null && shader.isSupported) _skyMaterial = new Material(shader);
+                else Debug.LogWarning("[DayNight] no sky shader; the background stays a flat colour.");
+            }
+            if (_skyMaterial != null)
+            {
+                _skyMaterial.SetColor("_Zenith", sky.Zenith);
+                _skyMaterial.SetColor("_Horizon", sky.Horizon);
+                // The glow takes the light's own colour, so a red dusk sun glows red and the moon glows faintly blue.
+                _skyMaterial.SetColor("_Glow", (QualitySettings.activeColorSpace == ColorSpace.Linear ? look.Colour.gamma : look.Colour) * 0.5f);
+                if (RenderSettings.skybox != _skyMaterial) RenderSettings.skybox = _skyMaterial;
+                if (cam.clearFlags != CameraClearFlags.Skybox) cam.clearFlags = CameraClearFlags.Skybox;
+            }
+            else
+            {
+                cam.clearFlags = CameraClearFlags.SolidColor;
+                cam.backgroundColor = sky.Horizon;
+            }
+
+            RenderSettings.fogColor = sky.Horizon;
+            FitFog(cam);
+        }
+
+        /// <summary>
+        /// Unity's fog grows with DEPTH along the view, not with distance from the player, so the numbers are put
+        /// where the player's ring of <see cref="GameConstants.ViewRange"/> lands in depth: the player's own depth
+        /// plus the range times how level the camera looks. Straight down that factor goes to nothing — every
+        /// point of the flat ground sits at one depth — so a steep camera has no fog at all; it cannot see the
+        /// 3000 ring anyway.
+        /// </summary>
+        private static void FitFog(Camera cam)
+        {
+            var focus = CameraRig.Focus;
+            var fwd = cam.transform.forward;
+            float level = new Vector2(fwd.x, fwd.z).magnitude;   // cos(pitch): 1 looking at the horizon, 0 straight down
+            if (!focus.HasValue || level < 0.15f)
+            {
+                if (RenderSettings.fog) RenderSettings.fog = false;
+                return;
+            }
+            float range = GameConstants.ViewRange * WorldMapper.Scale;
+            float depth = Vector3.Dot(focus.Value - cam.transform.position, fwd);
+            RenderSettings.fogMode = FogMode.Linear;
+            RenderSettings.fogStartDistance = Mathf.Max(0f, depth + range * FogStartFraction * level);
+            RenderSettings.fogEndDistance = depth + range * FogEndFraction * level;
+            if (!RenderSettings.fog) RenderSettings.fog = true;
         }
 
         /// <summary>

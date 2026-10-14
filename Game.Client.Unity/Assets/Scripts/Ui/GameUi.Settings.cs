@@ -87,7 +87,7 @@ namespace Game.Client
             // Applied here rather than only written on tap: the preference was being saved and then
             // ignored on the next launch, so "zone colours off" never survived a restart.
             if (Boot != null && Boot.Zones != null)
-                Boot.Zones.gameObject.SetActive(PlayerPrefs.GetInt(PrefZones, 1) == 1);
+                Boot.Zones.gameObject.SetActive(PlayerPrefs.GetInt(PrefZones, 0) == 1);   // off unless chosen (owner, 0.259.0)
 
             if (Boot != null && Boot.CameraRig != null)
             {
@@ -290,10 +290,32 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(sound.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(402f, 16f), new Vector2(140f, 40f));
 
+            BuildServerRow();
             RefreshSettingsLabels();
             _settingsPanel.gameObject.SetActive(false);
         }
 
+        /// <summary>
+        /// The server address (owner, 0.259.0: out of the sign-in panel, into Setup — but only the Setup opened from
+        /// the login screen; in the game it is fixed and has no business on screen). The window itself is full, so
+        /// it is a strip of its own sitting just above it: a child of the window, so it opens, closes and scales
+        /// with it, and is switched on by the login screen's Setup button only. The field is the same
+        /// <c>_urlField</c> the Login button reads.
+        /// </summary>
+        private void BuildServerRow()
+        {
+            _serverRow = UiKit.PanelBox(_settingsPanel, "ServerRow");
+            UiKit.Place(_serverRow, new Vector2(0.5f, 1f), new Vector2(0.5f, 0f), new Vector2(0f, 8f), new Vector2(640f, 58f));
+            var inner = _serverRow.GetChild(0);
+            UiKit.Place(UiKit.Rect(UiKit.Label(inner, "Server", 18f).gameObject), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
+                        new Vector2(18f, 0f), new Vector2(90f, 40f));
+            _urlField = UiKit.InputField(inner, "https://vardelar.duckdns.org/game");
+            UiKit.Place(UiKit.Rect(_urlField.gameObject), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
+                        new Vector2(110f, 0f), new Vector2(510f, 42f));
+            _serverRow.gameObject.SetActive(false);
+        }
+
+        private RectTransform _serverRow;
         private Button _damageToggle, _zoneToggle, _modelToggle, _tickToggle, _sceneryToggle, _shadowToggle;
         private Button _extraSlotsToggle, _barShapeToggle;   // `BL-269`, `BL-299`
         private Slider _uiScaleSlider, _barScaleSlider;

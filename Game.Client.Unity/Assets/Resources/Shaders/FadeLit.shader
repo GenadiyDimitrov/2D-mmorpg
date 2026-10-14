@@ -49,6 +49,7 @@ Shader "L2Clone/FadeLit"
             #pragma fragment frag
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
+            #pragma multi_compile_fog
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
@@ -73,6 +74,7 @@ Shader "L2Clone/FadeLit"
                 float3 positionWS : TEXCOORD0;
                 half3 normalWS : TEXCOORD1;
                 float2 uv : TEXCOORD2;
+                half fog : TEXCOORD3;
             };
 
             Varyings vert(Attributes i)
@@ -82,6 +84,7 @@ Shader "L2Clone/FadeLit"
                 o.positionCS = TransformWorldToHClip(o.positionWS);
                 o.normalWS = TransformObjectToWorldNormal(i.normalOS);
                 o.uv = TRANSFORM_TEX(i.uv, _BaseMap);
+                o.fog = ComputeFogFactor(o.positionCS.z);
                 return o;
             }
 
@@ -91,7 +94,7 @@ Shader "L2Clone/FadeLit"
                 half3 n = normalize(i.normalWS);
                 Light sun = GetMainLight(TransformWorldToShadowCoord(i.positionWS), i.positionWS, half4(1, 1, 1, 1));
                 half3 light = sun.color * (saturate(dot(n, sun.direction)) * sun.shadowAttenuation) + SampleSH(n);
-                return half4(albedo.rgb * light, albedo.a * _Alpha);
+                return half4(MixFog(albedo.rgb * light, i.fog), albedo.a * _Alpha);
             }
             ENDHLSL
         }

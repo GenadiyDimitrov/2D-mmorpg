@@ -3,7 +3,7 @@
 // vertex colours, hence this. It lives under Resources/ so a player build always ships it (Shader.Find can only
 // find what shipped — see UnlitMaterials).
 //
-// Deliberately Lambert and nothing else: no specular, no fog, no additional lights. The ground is a flat
+// Deliberately Lambert and nothing else: no specular, no additional lights (fog since 0.259.0: DayNight's haze at the view range). The ground is a flat
 // vertex-coloured map and the only thing lighting has to do to it is follow the sun and take a shadow.
 //
 // The vertex colours are already in the right space: BiomeGround writes Color.linear in a linear-space project,
@@ -31,6 +31,7 @@ Shader "L2Clone/LitVertexColor"
             // both, so the editor keeps working. No screen-space variant: neither renderer uses it.
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
+            #pragma multi_compile_fog
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
@@ -48,6 +49,7 @@ Shader "L2Clone/LitVertexColor"
                 float3 positionWS : TEXCOORD0;
                 half3 normalWS : TEXCOORD1;
                 half4 color : COLOR;
+                half fog : TEXCOORD2;
             };
 
             Varyings vert(Attributes i)
@@ -58,6 +60,7 @@ Shader "L2Clone/LitVertexColor"
                 o.positionCS = TransformWorldToHClip(o.positionWS);
                 o.normalWS = TransformObjectToWorldNormal(i.normalOS);
                 o.color = i.color;
+                o.fog = ComputeFogFactor(o.positionCS.z);
                 return o;
             }
 
@@ -68,7 +71,7 @@ Shader "L2Clone/LitVertexColor"
                 // edge of the shadow range instead of stopping on a line.
                 Light sun = GetMainLight(TransformWorldToShadowCoord(i.positionWS), i.positionWS, half4(1, 1, 1, 1));
                 half3 light = sun.color * (saturate(dot(n, sun.direction)) * sun.shadowAttenuation) + SampleSH(n);
-                return half4(i.color.rgb * light, 1);
+                return half4(MixFog(i.color.rgb * light, i.fog), 1);
             }
             ENDHLSL
         }

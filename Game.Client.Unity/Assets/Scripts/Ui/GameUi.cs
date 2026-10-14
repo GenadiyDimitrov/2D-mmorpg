@@ -160,6 +160,7 @@ namespace Game.Client
             if (world && _builtPhase != ClientPhase.InWorld) { _arrowOff = false; _arrowQuestId = ""; }
 
             if (_accountBackdrop != null) _accountBackdrop.SetActive(login || select);
+            if (!login && _serverRow != null && _serverRow.gameObject.activeSelf) _serverRow.gameObject.SetActive(false);
             _loginPanel.gameObject.SetActive(login);
             _selectPanel.gameObject.SetActive(select);
             _worldRoot.gameObject.SetActive(world);
@@ -313,18 +314,39 @@ namespace Game.Client
         // ----- login -----------------------------------------------------------------------------
 
         /// <summary>The key art behind login and character select (owner, 2026-10-14: the plain splash from
-        /// `docs/design/Assets`). It ENVELOPES the screen — fills it and crops the overflow — so no phone shape
-        /// shows a bar. The logo and title sit in the top ~40% of the art, which is why both account panels are
-        /// anchored to the BOTTOM of the screen rather than its centre.</summary>
+        /// `docs/design/Assets`). The art keeps its OWN shape and is shown whole (owner, 0.259.0: the old fill-and-crop
+        /// came out stretched — the import was rounding 1408×768 to a power of two, so the code thought it square).
+        /// Whatever the screen has left over is a blurred, darkened copy of the same art, and the sharp art's edges
+        /// on those sides fade to black into it, so a phone of any shape sees a soft border, never a bar or a seam.
+        /// The logo and title sit in the top ~40% of the art, which is why both account panels are anchored to the
+        /// BOTTOM of the screen rather than its centre.</summary>
         private void BuildAccountBackdrop()
         {
             var tex = Resources.Load<Texture2D>("Ui/LoginBackground");
             if (tex == null) return;   // a missing image leaves the old plain screen, never a broken one
+            float aspect = (float)tex.width / tex.height;
 
-            var host = new GameObject("AccountBackdrop", typeof(RectTransform));
+            var host = new GameObject("AccountBackdrop", typeof(RectTransform), typeof(Image));
             host.transform.SetParent(_root, false);
             UiKit.Stretch((RectTransform)host.transform, 0f, 0f, 0f, 0f);
             host.AddComponent<RectMask2D>();
+            var black = host.GetComponent<Image>();
+            black.color = Color.black;
+            black.raycastTarget = false;
+
+            // The blur: the art shrunk to a few dozen pixels and stretched back up. The texture has mipmaps, so one
+            // Blit to a tiny target averages properly instead of skipping pixels.
+            var tiny = new RenderTexture(48, Mathf.Max(8, Mathf.RoundToInt(48f / aspect)), 0) { filterMode = FilterMode.Bilinear };
+            Graphics.Blit(tex, tiny);
+            var blur = new GameObject("Blur", typeof(RectTransform), typeof(RawImage), typeof(AspectRatioFitter));
+            blur.transform.SetParent(host.transform, false);
+            var blurImage = blur.GetComponent<RawImage>();
+            blurImage.texture = tiny;
+            blurImage.color = new Color(0.38f, 0.38f, 0.38f, 1f);
+            blurImage.raycastTarget = false;
+            var blurFit = blur.GetComponent<AspectRatioFitter>();
+            blurFit.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+            blurFit.aspectRatio = aspect;
 
             var art = new GameObject("Art", typeof(RectTransform), typeof(RawImage), typeof(AspectRatioFitter));
             art.transform.SetParent(host.transform, false);
@@ -332,17 +354,66 @@ namespace Game.Client
             image.texture = tex;
             image.raycastTarget = false;
             var fit = art.GetComponent<AspectRatioFitter>();
-            fit.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
-            fit.aspectRatio = (float)tex.width / tex.height;
+            fit.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+            fit.aspectRatio = aspect;
+
+            // Fade the art's edges on the sides where the blur shows: left/right on a screen wider than the art (most
+            // phones), top/bottom on a taller one. 12% of the art's own size, black at the edge to clear inside.
+            bool wider = (float)Screen.width / Mathf.Max(1, Screen.height) > aspect;
+            var ramp = new Texture2D(64, 1, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+            for (int x = 0; x < 64; x++) ramp.SetPixel(x, 0, new Color(0f, 0f, 0f, Mathf.SmoothStep(1f, 0f, x / 63f)));
+            ramp.Apply();
+            void Edge(Vector2 min, Vector2 max, Rect uv)
+            {
+                var e = new GameObject("Fade", typeof(RectTransform), typeof(RawImage));
+                e.transform.SetParent(art.transform, false);
+                var rt = (RectTransform)e.transform;
+                rt.anchorMin = min; rt.anchorMax = max;
+                rt.offsetMin = rt.offsetMax = Vector2.zero;
+                var ri = e.GetComponent<RawImage>();
+                ri.texture = ramp;
+                ri.uvRect = uv;
+                ri.raycastTarget = false;
+            }
+            const float band = 0.12f;
+            if (wider)
+            {
+                Edge(new Vector2(0f, 0f), new Vector2(band, 1f), new Rect(0f, 0f, 1f, 1f));            // left: black at x=0
+                Edge(new Vector2(1f - band, 0f), new Vector2(1f, 1f), new Rect(1f, 0f, -1f, 1f));      // right: mirrored
+            }
+            else
+                VerticalFades(art.transform, ramp, band);
 
             _accountBackdrop = host;
+        }
+
+        /// <summary>Top and bottom fades for a screen taller than the art. A vertical ramp texture rather than a
+        /// rotated strip, since a rotated RectTransform does not stretch with its anchors.</summary>
+        private static void VerticalFades(Transform art, Texture2D horizontalRamp, float band)
+        {
+            var ramp = new Texture2D(1, 64, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+            for (int y = 0; y < 64; y++) ramp.SetPixel(0, y, horizontalRamp.GetPixel(y, 0));
+            ramp.Apply();
+            for (int side = 0; side < 2; side++)
+            {
+                var e = new GameObject("Fade", typeof(RectTransform), typeof(RawImage));
+                e.transform.SetParent(art, false);
+                var rt = (RectTransform)e.transform;
+                rt.anchorMin = side == 0 ? new Vector2(0f, 0f) : new Vector2(0f, 1f - band);
+                rt.anchorMax = side == 0 ? new Vector2(1f, band) : new Vector2(1f, 1f);
+                rt.offsetMin = rt.offsetMax = Vector2.zero;
+                var ri = e.GetComponent<RawImage>();
+                ri.texture = ramp;
+                ri.uvRect = side == 0 ? new Rect(0f, 0f, 1f, 1f) : new Rect(0f, 1f, 1f, -1f);   // black at the outer edge
+                ri.raycastTarget = false;
+            }
         }
 
         private void BuildLogin()
         {
             _loginPanel = UiKit.PanelBox(_root, "LoginPanel");
             UiKit.Place(_loginPanel, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),   // below the title art
-                        new Vector2(0f, 24f), new Vector2(560f, 460f));   // +60 for the remember-me row (G4)
+                        new Vector2(0f, 24f), new Vector2(560f, 404f));   // +60 for the remember-me row (G4); -56: the URL moved to Setup (0.259.0)
 
             var inner = _loginPanel.GetChild(0);
             UiKit.Place(UiKit.Rect(UiKit.Label(inner, "Sign in", 30f).gameObject),
@@ -351,21 +422,23 @@ namespace Game.Client
 
             // Setup BEFORE logging in (owner, 2026-09-26): a UI size that breaks the in-game menu must be
             // fixable without clearing the app's data. It opens the same unscaled window as the menu.
-            var setup = UiKit.TextButton(inner, "Setup", () => ToggleWindow(_settingsPanel), 16f);
+            // The server address lives in Setup since 0.259.0 (owner: a player never needs to see it), on a strip only
+            // the login screen's Setup shows — see BuildServerRow.
+            var setup = UiKit.TextButton(inner, "Setup", () =>
+            {
+                _serverRow.gameObject.SetActive(true);
+                ToggleWindow(_settingsPanel);
+            }, 16f);
             UiKit.Place(UiKit.Rect(setup.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
                         new Vector2(-24f, -18f), new Vector2(120f, 40f));
 
-            _urlField = UiKit.InputField(inner, "http://127.0.0.1:5238/game");
-            UiKit.Place(UiKit.Rect(_urlField.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(24f, -70f), new Vector2(512f, 46f));
-
             _userField = UiKit.InputField(inner, "username");
             UiKit.Place(UiKit.Rect(_userField.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(24f, -126f), new Vector2(512f, 46f));
+                        new Vector2(24f, -70f), new Vector2(512f, 46f));
 
             _passField = UiKit.InputField(inner, "password", password: true);
             UiKit.Place(UiKit.Rect(_passField.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(24f, -182f), new Vector2(512f, 46f));
+                        new Vector2(24f, -126f), new Vector2(512f, 46f));
 
             // G4: "save login information or not". A full-width button rather than a real checkbox —
             // the kit has no toggle, and on a phone a 46px-tall row is a far better tap target than a
@@ -373,19 +446,19 @@ namespace Game.Client
             // and has no tick or ballot-box glyph, so a prettier mark would draw as a hollow square.
             _rememberButton = UiKit.TextButton(inner, "", ToggleRememberLogin, 17f);
             UiKit.Place(UiKit.Rect(_rememberButton.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(24f, -238f), new Vector2(512f, 44f));
+                        new Vector2(24f, -182f), new Vector2(512f, 44f));
 
             var login = UiKit.TextButton(inner, "Login", () => Submit(register: false));
             UiKit.Place(UiKit.Rect(login.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(24f, -294f), new Vector2(248f, 50f));
+                        new Vector2(24f, -238f), new Vector2(248f, 50f));
 
             var register = UiKit.TextButton(inner, "Register", () => Submit(register: true));
             UiKit.Place(UiKit.Rect(register.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(288f, -294f), new Vector2(248f, 50f));
+                        new Vector2(288f, -238f), new Vector2(248f, 50f));
 
             _loginStatus = UiKit.Label(inner, "", 16f, UiKit.TextDim, TextAlignmentOptions.TopLeft);
             UiKit.Place(UiKit.Rect(_loginStatus.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(24f, -356f), new Vector2(512f, 70f));
+                        new Vector2(24f, -300f), new Vector2(512f, 70f));
 
             PaintRememberLogin();
         }

@@ -85,8 +85,16 @@ try
     // open http://<server-ip>:5238/apk. Reuses the already-allowed game port, so no extra firewall rule.
     //
     // `BL-345` — WHERE it is comes from `apk-path.txt` beside the server (first non-#, non-blank line: an
-    // .apk file, or a folder whose newest .apk is served; relative = relative to that file). No file =
+    // .apk file, or a folder whose HIGHEST-VERSION .apk is served; relative = relative to that file). No file =
     // the `apk` folder beside the server, then the repo's Unity builds folder for the dev PC.
+    //
+    // The version is the one publish.ps1 writes into the name (L2Clone-0.258.3.apk). A folder is ranked by it, not by
+    // the file's date, so copying an older APK in later never puts it in front (0.259.0); a name without a version
+    // ranks below any with one, then by date.
+    static string? ApkVersion(string fileName) =>
+        System.Text.RegularExpressions.Regex.Match(fileName, @"-(\d+(?:\.\d+)+)\.apk$",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase) is { Success: true } m ? m.Groups[1].Value : null;
+
     static string? FindApk(string contentRoot)
     {
         string? Resolve(string path)
@@ -94,7 +102,8 @@ try
             if (File.Exists(path)) return path;
             if (!Directory.Exists(path)) return null;
             return new DirectoryInfo(path).GetFiles("*.apk")
-                .OrderByDescending(f => f.LastWriteTimeUtc).FirstOrDefault()?.FullName;
+                .OrderByDescending(f => Version.TryParse(ApkVersion(f.Name), out var v) ? v : new Version(0, 0))
+                .ThenByDescending(f => f.LastWriteTimeUtc).FirstOrDefault()?.FullName;
         }
         string baseDir = AppContext.BaseDirectory;
         string cfg = Path.Combine(baseDir, "apk-path.txt");
@@ -108,8 +117,11 @@ try
     app.MapGet("/apk", () =>
     {
         var apk = FindApk(app.Environment.ContentRootPath);
+        // Saved as "Vardelar 0.258.3.apk". The name is only what the phone's Downloads shows: Android matches an
+        // update to the installed app by package id + signing key, never by file name.
         return apk is not null
-            ? Results.File(apk, "application/vnd.android.package-archive", "Vardelar.apk", enableRangeProcessing: true)
+            ? Results.File(apk, "application/vnd.android.package-archive",
+                ApkVersion(Path.GetFileName(apk)) is string v ? $"Vardelar {v}.apk" : "Vardelar.apk", enableRangeProcessing: true)
             : Results.NotFound("APK not built yet — check back in a minute.");
     });
 
@@ -124,10 +136,17 @@ try
                                    "<p><a href=\"/apk\">Download the Android client</a></p>", "text/html");
 
         var apk = FindApk(app.Environment.ContentRootPath) is string path ? new FileInfo(path) : null;
-        string download = apk is null
-            ? "<span class=\"download disabled\">Download for Android<small>not available yet, check back soon</small></span>"
-            : $"<a class=\"download\" href=\"/apk\" download>Download for Android<small>{apk.Length / 1048576.0:0.0} MB" +
-              $" · updated {apk.LastWriteTimeUtc.ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture)}</small></a>";
+        string download = "<span class=\"download disabled\">Download for Android<small>not available yet, check back soon</small></span>";
+        if (apk is not null)
+        {
+            // The client's version is the one in publish.ps1's file name (L2Clone-0.258.3.apk) — it can trail the
+            // server's own. A file without one just shows date and size.
+            var parts = new List<string>();
+            if (ApkVersion(apk.Name) is string ver) parts.Add(ver);
+            parts.Add("Updated " + apk.LastWriteTimeUtc.ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture));
+            parts.Add($"{apk.Length / 1048576.0:0.0} MB");
+            download = $"<a class=\"download\" href=\"/apk\" download>Download for Android<small>{string.Join(" · ", parts)}</small></a>";
+        }
 
         int online = world.ConnectionToEntity.Count;
         string status = $"<span class=\"dot\"></span>Server online · {online} {(online == 1 ? "player" : "players")} in the world"
