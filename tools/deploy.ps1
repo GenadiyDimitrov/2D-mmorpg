@@ -92,8 +92,12 @@ if (-not $NoServer) {
 
 # ----- upload ---------------------------------------------------------------------------------------------
 & ssh @ssh $Target "mkdir -p ~/deploy ~/backups"
-& scp @ssh @files "${Target}:deploy/"
-if ($LASTEXITCODE -ne 0) { throw "upload failed" }
+# One file per call, remote name spelled out: an MSYS scp (Git Bash's, first on PATH there) kept the whole
+# "G:\Work\...\x.apk" as the remote file name when handed a directory target, and the server half found nothing.
+foreach ($f in $files) {
+    & scp @ssh $f "${Target}:deploy/$(Split-Path -Leaf $f)"
+    if ($LASTEXITCODE -ne 0) { throw "upload of $(Split-Path -Leaf $f) failed" }
+}
 
 # ----- the server half: one bash script, written with LF (a CR would break every line of it) -------------
 $remote = @'
