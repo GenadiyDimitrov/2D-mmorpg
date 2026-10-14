@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.262.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.263.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,18 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-14 (latest) — 0.262.0: trees and rocks follow View distance and the fog ring; Game info popup; scrolling Setup; two-column Menu
+## 2026-10-14 (latest) — 0.263.0: whisps are small glowing lights at head height
+
+**APK** (server unchanged but for the version number). No `game.db` delete. Protocol unchanged (56).
+
+- Owner: *"can whisps be smaller circles and more higher (aslo if they can posses a glow like effect)"*. A whisp is now
+  a small bright core (radius 22 → 9 server units, its colour washed toward white) floating at about head height
+  (0.75 → 1.9 Unity units, × Entity size), inside a soft halo five times its size that faces the camera and breathes
+  ±15%. The halo is the skill effects' additive shader (`FxAdditive`), so it brightens what is behind it and reads at
+  night. Each whisp also bobs gently, out of step with the others. All in `GroundDecals` (`WhispRadius`, `WhispHeight`,
+  `WhispGlowSize`); positions and colours per skill are unchanged.
+
+## 2026-10-14 — 0.262.0: trees and rocks follow View distance and the fog ring; Game info popup; scrolling Setup; two-column Menu
 
 **APK** (the server is unchanged; it only carries the new version number). No `game.db` delete. Protocol unchanged (56).
 

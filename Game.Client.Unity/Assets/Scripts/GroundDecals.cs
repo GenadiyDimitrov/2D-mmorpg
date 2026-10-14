@@ -190,17 +190,64 @@ namespace Game.Client
         //  totem a whisp is flying and the position is the message.
         // ---------------------------------------------------------------------------------------
 
-        [Tooltip("Radius of a whisp orb, in SERVER units (scaled like everything else).")]
-        public float WhispRadius = 22f;
-        [Tooltip("How high a whisp floats above the ground, in Unity units.")]
-        public float WhispHeight = 0.75f;
+        // 0.263.0 (owner: *"can whisps be smaller circles and more higher (also if they can possess a glow like
+        // effect)"*): a small bright core at about head height, inside a soft additive halo that breathes.
+        [Tooltip("Radius of a whisp's bright core, in SERVER units (scaled like everything else).")]
+        public float WhispRadius = 9f;
+        [Tooltip("How high a whisp floats above the ground, in Unity units at Entity size 1 (a character is ~1.6).")]
+        public float WhispHeight = 1.9f;
+        [Tooltip("The glow halo's diameter as a multiple of the core's.")]
+        public float WhispGlowSize = 5f;
         [Tooltip("How fast a whisp orb chases the position the server last reported (per second).")]
         public float WhispChase = 12f;
 
         private sealed class Orb
         {
-            public Transform T;
+            public Transform T, Glow;
             public Vector3 Target;
+            public float Phase;   // so two whisps never breathe and bob in step
+        }
+
+        private Material _glowMaterial;
+        private bool _glowTried;
+        private readonly Dictionary<Color, Mesh> _glowMeshes = new();
+
+        /// <summary>The halo: a quad turned to the camera every frame (Update), drawn with the skill effects' additive
+        /// shader, which makes the soft round falloff from the UV and takes its colour from the VERTEX colours — hence one
+        /// small mesh per whisp colour. Null when the shader did not ship, and the whisp is then just its core.</summary>
+        private Transform MakeGlow(Transform core, Color colour)
+        {
+            if (!_glowTried)
+            {
+                _glowTried = true;
+                var shader = Resources.Load<Shader>("Shaders/FxAdditive") ?? Shader.Find("L2Clone/FxAdditive");
+                if (shader != null) _glowMaterial = new Material(shader) { name = "WhispGlow" };
+            }
+            if (_glowMaterial == null) return null;
+
+            if (!_glowMeshes.TryGetValue(colour, out var mesh))
+            {
+                var c = new Color(colour.r, colour.g, colour.b, 0.9f);
+                mesh = new Mesh
+                {
+                    name = "WhispGlow",
+                    vertices = new[] { new Vector3(-0.5f, -0.5f, 0f), new Vector3(0.5f, -0.5f, 0f), new Vector3(-0.5f, 0.5f, 0f), new Vector3(0.5f, 0.5f, 0f) },
+                    uv = new[] { new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0f, 1f), new Vector2(1f, 1f) },
+                    colors = new[] { c, c, c, c },
+                    triangles = new[] { 0, 2, 1, 2, 3, 1 },
+                };
+                _glowMeshes[colour] = mesh;
+            }
+
+            var go = new GameObject("Glow", typeof(MeshFilter), typeof(MeshRenderer));
+            go.transform.SetParent(transform, false);
+            go.GetComponent<MeshFilter>().sharedMesh = mesh;
+            var renderer = go.GetComponent<MeshRenderer>();
+            renderer.sharedMaterial = _glowMaterial;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            go.transform.position = core.position;
+            return go.transform;
         }
 
         private readonly Dictionary<string, Orb> _whisps = new();
@@ -226,7 +273,7 @@ namespace Game.Client
                 seen.Add(key);
 
                 var centre = WorldMapper.ToUnity(w.X, w.Y);
-                var target = new Vector3(centre.x, WhispHeight, centre.z);
+                var target = new Vector3(centre.x, WhispHeight * EntityManager.EntityScale, centre.z);
 
                 if (!_whisps.TryGetValue(key, out var orb))
                 {
@@ -240,13 +287,15 @@ namespace Game.Client
                     go.transform.localScale = new Vector3(r * 2f, r * 2f, r * 2f);
                     go.transform.position = target;   // a NEW orb appears where it is, it does not fly in
 
+                    // The core is the colour washed toward white — a hot centre, the colour living in the halo.
+                    var colour = WhispColour(w.SummonSkillId);
                     var renderer = go.GetComponent<Renderer>();
-                    var material = UnlitMaterials.CreateTransparent(WhispColour(w.SummonSkillId));
+                    var material = UnlitMaterials.CreateTransparent(Color.Lerp(colour, Color.white, 0.55f));
                     if (material != null) renderer.material = material;
                     renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                     renderer.receiveShadows = false;
 
-                    _whisps[key] = orb = new Orb { T = go.transform };
+                    _whisps[key] = orb = new Orb { T = go.transform, Glow = MakeGlow(go.transform, colour), Phase = Random.value * 6.283f };
                 }
                 orb.Target = target;
             }
@@ -254,7 +303,7 @@ namespace Game.Client
             foreach (var key in new List<string>(_whisps.Keys))
             {
                 if (seen.Contains(key)) continue;
-                if (_whisps[key].T != null) Destroy(_whisps[key].T.gameObject);
+                DestroyOrb(_whisps[key]);
                 _whisps.Remove(key);
             }
         }
@@ -284,9 +333,14 @@ namespace Game.Client
         /// places for the same reason.</summary>
         public void ClearWhisps()
         {
-            foreach (var orb in _whisps.Values)
-                if (orb.T != null) Destroy(orb.T.gameObject);
+            foreach (var orb in _whisps.Values) DestroyOrb(orb);
             _whisps.Clear();
+        }
+
+        private void DestroyOrb(Orb orb)
+        {
+            if (orb.T != null) Destroy(orb.T.gameObject);
+            if (orb.Glow != null) Destroy(orb.Glow.gameObject);
         }
 
         /// <summary>Drop every totem circle — on logout, or on any resync where the old set is no
@@ -363,9 +417,20 @@ namespace Game.Client
             if (_whisps.Count > 0)
             {
                 float t = 1f - Mathf.Exp(-WhispChase * Time.deltaTime);
+                var cam = Camera.main;
+                float glow = WhispRadius * WorldMapper.Scale * 2f * WhispGlowSize;
                 foreach (var orb in _whisps.Values)
-                    if (orb.T != null)
-                        orb.T.position = Vector3.Lerp(orb.T.position, orb.Target, t);
+                {
+                    if (orb.T == null) continue;
+                    // A slow bob on top of the chase, so a whisp hovering beside its master still looks alive.
+                    var bob = new Vector3(0f, 0.08f * EntityManager.EntityScale * Mathf.Sin(Time.time * 1.7f + orb.Phase), 0f);
+                    orb.T.position = Vector3.Lerp(orb.T.position, orb.Target + bob, t);
+                    if (orb.Glow == null) continue;
+                    // The halo faces the camera and breathes (±15%, about one breath every 2 s).
+                    orb.Glow.position = orb.T.position;
+                    if (cam != null) orb.Glow.rotation = cam.transform.rotation;
+                    orb.Glow.localScale = Vector3.one * (glow * (1f + 0.15f * Mathf.Sin(Time.time * 3.1f + orb.Phase)));
+                }
             }
 
             // Totems breathe. Purely cosmetic and on the client's own clock — the server's pulse
