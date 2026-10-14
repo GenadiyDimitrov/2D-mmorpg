@@ -26,6 +26,8 @@ param(
     [switch]$Apk,
     # Skip the server side.
     [switch]$NoServer,
+    # How many of each (server zip, APK) builds/ keeps; older ones are deleted at the end.
+    [int]$Keep = 4,
     [string]$Configuration = "Release",
     [string]$UnityExe = "C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Unity.exe"
 )
@@ -110,4 +112,17 @@ if ($Apk) {
     Copy-Item $apkSrc $apkDst -Force
     "{0}  ({1:N1} MB)" -f $apkDst, ((Get-Item $apkDst).Length / 1MB) | Write-Host -ForegroundColor Green
     Write-Host "adb install -r `"$apkSrc`"" -ForegroundColor DarkGray
+}
+
+# ----- keep builds/ small ---------------------------------------------------------------------------
+# Only the newest $Keep server zips and $Keep APKs stay (owner, 2026-10-14: "make the /builds to have only the last
+# 3~5 servers and apks ... with the server up and running and the deploy command i wont be entering drive to manage
+# it"). Ranked by the VERSION in the file name, never the file date, so a republished old version cannot push a newer
+# one out. The live box keeps its own last 3 APKs (tools/deploy.ps1); nothing here touches it.
+foreach ($pattern in @("Game.Server-*.zip", "L2Clone-*.apk")) {
+    $old = Get-ChildItem $buildsDir -Filter $pattern -File |
+        Where-Object { $_.BaseName -match '-(\d+\.\d+\.\d+)$' } |
+        Sort-Object { [version]($_.BaseName -replace '^.*-(\d+\.\d+\.\d+)$', '$1') } -Descending |
+        Select-Object -Skip $Keep
+    foreach ($f in $old) { Remove-Item $f.FullName -Force; Write-Host "builds/: removed $($f.Name)" -ForegroundColor DarkGray }
 }
