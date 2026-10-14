@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.260.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.261.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,39 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-14 (latest) — 0.260.0: a View distance slider the fog follows; underwear until you wear armour; admin Equip shows real items only
+## 2026-10-14 (latest) — 0.261.0: shutdown sends you out, reboot keeps you in; "new version" line; no address on screen; a fog RING
+
+**Server + APK.** No `game.db` delete. Protocol unchanged (56): nothing on the wire changed (the "update" line is an
+ordinary SYSTEM chat line, the shutdown uses the existing `ForceDisconnect`).
+
+- **Shutdown and reboot now end differently.** Owner: *"on shutdown … 60s..59s.. for player but for the server is
+  65s..64 … at 0 for player … the server kicks all players .. so they need to login again after start .. then saves
+  and shutsdown .. a reboot 60s for server == 60s for players and at 0 just saves + restarts and players reconnect"*.
+  A **shutdown** runs a hidden 5-second tail (`ServerControl.ShutdownTailSeconds`): at the players' 0 every connected
+  character is saved and removed (`ForceRemovePlayer`), the client goes to the login screen with *"The server has shut
+  down. Please log in again once it is back."*, logins and world entry are refused for the tail
+  (`ServerControl.PlayersOut`), then the process saves the rest (offline farmers) and stops. A **reboot** has no tail
+  and kicks nobody: at 0 it saves and restarts, and the phones reconnect and re-enter silently.
+- **The phone rides out a restart.** SignalR's default reconnect gave up after 42 seconds; `NetworkChannel.RideOutRestart`
+  retries at once, every 2 s for half a minute, then every 5 s, for 3 minutes.
+- **A kick now really signs you out.** Any `ForceDisconnect` that is not your own `/offline` (kick, ban, shutdown)
+  drops the socket and returns to the login screen with the reason (`GameBoot.SignOutByServer`). Before, a kicked
+  client stood on in a world that had stopped talking to it.
+- **"New version available" in chat**, right under *Client version: x*. Owner: *"if new version is available in the
+  server to say … New Version (0.260.0) available. Please update"*. Sent by the SERVER on world entry, so it reaches
+  every phone already installed, and judged against the APK the server actually OFFERS (`ApkFiles.NewerThan`, the file
+  name's version), never the server's own — a server-only release does not ask anyone to update to an APK that does
+  not exist. The `/apk` lookup moved from `Program.cs` into `ApkFiles` so both read the same file.
+- **No server address on screen.** Owner: *"i dont want the ip/domain/url shown anywhere (except the server.txt and
+  setup url box)"*. The login status reads *Connecting to world …*; connection errors have the host scrubbed out
+  (`GameBoot.Describe`) and the dev `adb reverse` hint is gone.
+- **The fog is a ring round the player.** Owner: *"fog should be a circle around player .. not flat line infront"*.
+  Unity's fog grows with depth along the view, so it drew a straight line across the screen. The ground and props
+  shader (`LitVertexColor`) now fogs by FLAT distance from the player, per pixel, off three globals `DayNight.FitFog`
+  sets every frame (`_RingFogCenter`, `_RingFogParams`, `_RingFogColor`) — same start/end as before (view −50 → +150).
+  Unity's depth fog is kept only for the imported models (characters, houses), which stop at the draw distance.
+
+## 2026-10-14 — 0.260.0: a View distance slider the fog follows; underwear until you wear armour; admin Equip shows real items only
 
 **Server + APK.** No `game.db` delete. Protocol unchanged (56): the new `EntityDto.Armor` is a defaulted addition an
 older APK ignores.

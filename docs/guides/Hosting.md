@@ -240,8 +240,10 @@ pwsh tools/publish.ps1 -Apk      # builds/Game.Server-<ver>.zip + builds/L2Clone
 pwsh tools/deploy.ps1            # publishes whatever builds/ lacks, then puts it on the server
 ```
 `deploy.ps1` uploads both, then writes `shutdown 1` into `~/game/server-command.txt`. The server runs that line exactly
-like an admin typing `/server shutdown 1`: the banner and chat count down (every second for the last minute), everyone
-is saved, and the service stops (exit 64). Then it copies `game.db` to `~/backups/predeploy-<old>-to-<new>-<time>.db`
+like an admin typing `/server shutdown 1`: the banner and chat count down (every second for the last minute); at the
+players' 0 everyone is saved and sent to the login screen, logins are refused for a 5-second tail, and the service stops
+(exit 64). (A `/server reboot` has no tail: at 0 it saves and restarts, and the phones reconnect on their own for up to
+3 minutes.) Then it copies `game.db` to `~/backups/predeploy-<old>-to-<new>-<time>.db`
 (keeps 10), rsyncs the new build over `~/game` — never `game.db*`, `owner.txt`, `registration.txt`,
 `debug-config.json`, `admin-only.flag`, `apk-path.txt` or `apk/` — puts the APK in `~/game/apk/` (keeps 3), starts
 the service and waits for `L2Clone server v<new> starting.`. The live version is recorded in `~/game/VERSION`.

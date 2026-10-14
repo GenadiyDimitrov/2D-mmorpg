@@ -292,13 +292,15 @@ public interface IAdminCommand : IGameCommand
 /// The loop adopts it only if that account has no live list yet — a list already in memory is newer
 /// than anything on disk (another character of the same account may be standing in it).
 /// <paramref name="AccountBudget"/> is the daily farm allowance, read on the same async pass and
-/// adopted under exactly the same rule (an offline farmer is already spending the live one).</summary>
+/// adopted under exactly the same rule (an offline farmer is already spending the live one).
+/// <paramref name="ClientVersion"/> is the build label the client logged in with (see ApkFiles.NewerThan).</summary>
 public record EnterWorldCommand(
     string ConnectionId,
     Entity Entity,
     TaskCompletionSource<LoginResult> Result,
     List<InventoryItem>? AccountBank = null,
-    AccountState? AccountBudget = null) : IGameCommand;
+    AccountState? AccountBudget = null,
+    string ClientVersion = "") : IGameCommand;
 
 public record LeaveCommand(string ConnectionId) : IGameCommand;
 

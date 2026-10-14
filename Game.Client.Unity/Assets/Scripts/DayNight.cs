@@ -296,19 +296,35 @@ namespace Game.Client
             }
 
             RenderSettings.fogColor = sky.Horizon;
+            Shader.SetGlobalColor(RingFogColorId, sky.Horizon);
             FitFog(cam);
         }
 
+        // THE RING (owner, 2026-10-14: *"fog should be a circle around player .. not flat line infront"*). The
+        // ground and the props (LitVertexColor) fog by their FLAT distance from the player, read per pixel off these
+        // three globals — so the haze is a ring centred on you whichever way the
+        // camera turns. Unity's own fog is a plane across the view, and is left only to the imported models (URP Lit:
+        // characters, houses), which are drawn no farther than DrawDistance anyway.
+        private static readonly int RingFogCenterId = Shader.PropertyToID("_RingFogCenter");
+        private static readonly int RingFogParamsId = Shader.PropertyToID("_RingFogParams");
+        private static readonly int RingFogColorId = Shader.PropertyToID("_RingFogColor");
+
         /// <summary>
-        /// Unity's fog grows with DEPTH along the view, not with distance from the player, so the numbers are put
-        /// where the player's ring of <see cref="ViewDistance"/> lands in depth: the player's own depth
-        /// plus the range times how level the camera looks. Straight down that factor goes to nothing — every
-        /// point of the flat ground sits at one depth — so a steep camera has no fog at all; it cannot see the
-        /// ring anyway.
+        /// The ring: centred on the player, starting <see cref="FogBeforeView"/> inside the view distance and fully
+        /// thick <see cref="FogPastView"/> past it. Then Unity's fog for the models: it grows with DEPTH along the
+        /// view, so its numbers are put where that ring lands in depth — the player's own depth plus the range times
+        /// how level the camera looks. Straight down that factor goes to nothing, so a steep camera has no model fog
+        /// at all; it cannot see the ring's far side anyway.
         /// </summary>
         private static void FitFog(Camera cam)
         {
             var focus = CameraRig.Focus;
+            float start = (ViewDistance - FogBeforeView) * WorldMapper.Scale;
+            float end = (ViewDistance + FogPastView) * WorldMapper.Scale;
+            Shader.SetGlobalVector(RingFogCenterId, focus ?? Vector3.zero);
+            Shader.SetGlobalVector(RingFogParamsId,
+                new Vector4(start, 1f / Mathf.Max(0.001f, end - start), focus.HasValue ? 1f : 0f, 0f));
+
             var fwd = cam.transform.forward;
             float level = new Vector2(fwd.x, fwd.z).magnitude;   // cos(pitch): 1 looking at the horizon, 0 straight down
             if (!focus.HasValue || level < 0.15f)
@@ -316,8 +332,6 @@ namespace Game.Client
                 if (RenderSettings.fog) RenderSettings.fog = false;
                 return;
             }
-            float start = (ViewDistance - FogBeforeView) * WorldMapper.Scale;
-            float end = (ViewDistance + FogPastView) * WorldMapper.Scale;
             float depth = Vector3.Dot(focus.Value - cam.transform.position, fwd);
             RenderSettings.fogMode = FogMode.Linear;
             RenderSettings.fogStartDistance = Mathf.Max(0f, depth + start * level);

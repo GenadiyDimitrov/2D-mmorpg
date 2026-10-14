@@ -1372,7 +1372,8 @@ namespace Game.Client
                 if (!IsConnected)
                 {
                     Phase = ClientPhase.Connecting;
-                    StatusMessage = "Connecting to " + ServerUrl + " …";
+                    // Never the address (owner, 2026-10-14): it shows only in server.txt and the Setup box.
+                    StatusMessage = "Connecting to world …";
                     await Connect();
 
                     // REMEMBER THE URL AS SOON AS IT CONNECTS, not after a successful login.
@@ -1716,7 +1717,7 @@ namespace Game.Client
                 // The same message carries a kick AND the "you are now farming offline for 2h" reply
                 // to our own /offline. Only one of those is bad news.
                 if (_offlineFarmRequested) { _offlineFarmRequested = false; StatusMessage = m; ClientLog.Info(m); }
-                else ClientLog.Error("Kicked by server: " + m);
+                else { ClientLog.Error(m); SignOutByServer(m); }
             });
             _net.Reconnecting += () => Main(() =>
             {
@@ -2139,14 +2140,22 @@ namespace Game.Client
         /// CONNECTION — keeping the socket open would leave us signed in on the server while the client
         /// showed a login form. The stored credentials are cleared too, or the reconnect handler would
         /// helpfully log us straight back in.</summary>
-        public async void Logout()
+        public void Logout() => SignOut("Signed out.", leaveWorld: true);
+
+        /// <summary>The same sign-out, forced by the server — a kick, a ban, or a shutdown sending everyone
+        /// out (owner, 2026-10-14). The server has already taken the character, so there is no world to
+        /// leave; dropping the socket is what stops the automatic reconnect from logging straight back in.
+        /// Before this a kicked client stood on in a world that had stopped talking to it.</summary>
+        private void SignOutByServer(string reason) => SignOut(reason, leaveWorld: false);
+
+        private async void SignOut(string status, bool leaveWorld)
         {
             _authUser = _authPass = null;
             _lastCharacterId = -1;
             Role = AccountRole.Player;
             SelfState = null;   // or the next character inherits this one's badge until its first tick
 
-            try { if (_net != null && _net.IsConnected && Phase == ClientPhase.InWorld) await _net.LeaveWorldAsync(); }
+            try { if (leaveWorld && _net != null && _net.IsConnected && Phase == ClientPhase.InWorld) await _net.LeaveWorldAsync(); }
             catch (Exception ex) { ClientLog.Warn("Logout (leave): " + ex.Message); }
 
             try { if (_net != null) await _net.DisposeAsync(); }
@@ -2165,7 +2174,7 @@ namespace Game.Client
                 Characters = Array.Empty<CharacterSlot>();
                 LastError = null;
                 Phase = ClientPhase.Offline;
-                StatusMessage = "Signed out.";
+                StatusMessage = status;
             });
         }
 
@@ -3330,9 +3339,17 @@ namespace Game.Client
             while (inner.InnerException != null) inner = inner.InnerException;
             string msg = inner.Message;
 
+            // The address never reaches the screen (owner, 2026-10-14) — a socket error quotes "(host:port)",
+            // so the host is scrubbed out of whatever the runtime wrote.
+            try
+            {
+                string host = new Uri(ServerUrl).Host;
+                if (host.Length > 0) msg = msg.Replace(host, "server");
+            }
+            catch (UriFormatException) { }
+
             if (msg.Contains("refused") || msg.Contains("No connection") || msg.Contains("unreachable"))
-                msg += "  — is the server running, and is the URL reachable FROM THE PHONE? "
-                     + "(cable: adb reverse tcp:5238 tcp:5238 then use 127.0.0.1; Wi-Fi: use the PC's LAN IP)";
+                msg += "  — the world server is down or out of reach. Check your connection and try again.";
             return msg;
         }
 

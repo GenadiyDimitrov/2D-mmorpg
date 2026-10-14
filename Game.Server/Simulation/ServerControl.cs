@@ -279,7 +279,8 @@ internal static class ServerControl
     {
         Kind = kind;
         AdminOnlyAfterStart = adminOnlyAfterStart;
-        DueUtc = DateTime.UtcNow.AddMinutes(minutes);
+        _playersOut = false;
+        DueUtc = DateTime.UtcNow.AddMinutes(minutes).AddSeconds(TailSeconds(kind));
         int seconds = minutes * 60;
         // The opening line IS the first announcement, so seed the ladder with it. Without this, a round
         // `/server shutdown 60` says "in 1:00h" twice — once here and once on the very next tick, when
@@ -300,6 +301,7 @@ internal static class ServerControl
         DueUtc = null;
         AdminOnlyAfterStart = false;
         _lastAnnounced = -1;
+        _playersOut = false;
 
         if (minutes <= 0)
         {
@@ -317,11 +319,32 @@ internal static class ServerControl
 
     private static int _lastAnnounced = -1;
 
+    // ─── SHUTDOWN vs REBOOT (owner, 2026-10-14) ──────────────────────────────────────────────────
+    // *"on shutdown … it say 60s..59s..58s.. for player but for the server is 65s..64..63 ... at 0 for
+    // player or 5 for server the server kicks all players .. so they need to login again after start..
+    // then saves and shutsdown .. a reboot 60s for server == 60s for players and at 0 justs saves +
+    // restarts and players reconnect"*.
+    //
+    // So a SHUTDOWN runs a hidden tail: the players' countdown ends ShutdownTailSeconds early, everyone is
+    // sent back to the login screen at their 0, logins are refused for the tail, and only then does the
+    // process save and go. A REBOOT has no tail — the clients ride the restart on their automatic
+    // reconnect and re-enter silently.
+    internal const int ShutdownTailSeconds = 5;
+
+    private static int TailSeconds(Procedure kind) => kind == Procedure.Shutdown ? ShutdownTailSeconds : 0;
+
+    private static bool _playersOut;
+
+    /// <summary>True in a shutdown's tail: the players have been sent out and nobody may come back in.</summary>
+    internal static bool PlayersOut => _playersOut;
+
     /// <summary>Called every tick. Returns the line to broadcast this tick, or null for silence; sets
-    /// <paramref name="fire"/> when the countdown has run out and the process must go down.</summary>
-    internal static string? Tick(out bool fire)
+    /// <paramref name="sendPlayersOut"/> the one tick a shutdown's player countdown reaches 0, and
+    /// <paramref name="fire"/> when the whole countdown has run out and the process must go down.</summary>
+    internal static string? Tick(out bool fire, out bool sendPlayersOut)
     {
         fire = false;
+        sendPlayersOut = false;
 
         // The admin-only window can expire on its own.
         if (AdminOnlyUntilUtc is DateTime until && until != DateTime.MaxValue && DateTime.UtcNow >= until)
@@ -337,13 +360,30 @@ internal static class ServerControl
             var kind = Kind;
             Kind = Procedure.None;
             DueUtc = null;
-            return $"The server is {Verb(kind)} NOW!";
+            _playersOut = false;
+            // A shutdown already said NOW at the players' 0; a reboot says it here.
+            return kind == Procedure.Shutdown ? null : $"The server is {Verb(kind)} NOW!";
         }
 
-        if (remaining == _lastAnnounced || !ShouldAnnounce(remaining)) return null;
-        _lastAnnounced = remaining;
-        return $"The server is {Verb(Kind)} in {Format(remaining)}!";
+        // What the PLAYERS are counting down to — the tail is the server's own business.
+        int shown = remaining - TailSeconds(Kind);
+        if (shown <= 0)
+        {
+            if (_playersOut) return null;
+            _playersOut = true;
+            sendPlayersOut = true;
+            return $"The server is {Verb(Kind)} NOW!";
+        }
+
+        if (shown == _lastAnnounced || !ShouldAnnounce(shown)) return null;
+        _lastAnnounced = shown;
+        return $"The server is {Verb(Kind)} in {Format(shown)}!";
     }
+
+    /// <summary>What a player is told as the shutdown sends them out, and when they try to log in during
+    /// the tail.</summary>
+    internal const string ShutdownKickMessage =
+        "The server has shut down. Please log in again once it is back.";
 
     /// <summary>His announcement ladder, as one predicate: whole hours above an hour · every 10 minutes
     /// from 60 down to 10 · every minute from 9 down to 1 · every second for the last 60.</summary>

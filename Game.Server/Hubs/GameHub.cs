@@ -21,8 +21,10 @@ public class GameHub : Hub
 
     /// <summary>Who this connection is. NOT what they're allowed to do — staff powers belong to the
     /// CHARACTER they enter the world with (owner), and are re-checked on the game loop against
-    /// <see cref="Entity.Role"/> for every moderation command.</summary>
-    private record AuthState(int AccountId);
+    /// <see cref="Entity.Role"/> for every moderation command.
+    /// <paramref name="ClientVersion"/> is the build label the client logged in with — kept so world entry
+    /// can tell an out-of-date phone that a newer APK is on offer.</summary>
+    private record AuthState(int AccountId, string ClientVersion = "");
 
     public GameHub(World world, PersistenceService db)
     {
@@ -37,16 +39,18 @@ public class GameHub : Hub
         if (VersionMismatch(clientVersion, request.Protocol) is string v) return new AuthResponse(false, v);
         var result = await _db.RegisterAsync(request.Username, request.Password);
         if (result.Success)
-            Sessions[Context.ConnectionId] = new AuthState(result.AccountId);
+            Sessions[Context.ConnectionId] = new AuthState(result.AccountId, clientVersion ?? "");
         return new AuthResponse(result.Success, result.Error, AccountRole.Player);
     }
 
     public async Task<AuthResponse> Login(AuthRequest request, string clientVersion = "")
     {
         if (VersionMismatch(clientVersion, request.Protocol) is string v) return new AuthResponse(false, v);
+        // A shutdown's last seconds: everyone was just sent out, nobody comes back in before it goes.
+        if (ServerControl.PlayersOut) return new AuthResponse(false, ServerControl.ShutdownKickMessage);
         var result = await _db.LoginAsync(request.Username, request.Password);
         if (result.Success)
-            Sessions[Context.ConnectionId] = new AuthState(result.AccountId);
+            Sessions[Context.ConnectionId] = new AuthState(result.AccountId, clientVersion ?? "");
         return new AuthResponse(result.Success, result.Error, AccountRole.Player);
     }
 
@@ -122,6 +126,8 @@ public class GameHub : Hub
     {
         if (!Sessions.TryGetValue(Context.ConnectionId, out var auth))
             return new LoginResult(false, "Not logged in.", Guid.Empty, 0, 0);
+        if (ServerControl.PlayersOut)
+            return new LoginResult(false, ServerControl.ShutdownKickMessage, Guid.Empty, 0, 0);
 
         // Reject only if the character is GENUINELY online on another connection. An entity that is
         // offline-farming or sitting in the link-dead grace is still in the world, but re-entering it
@@ -171,7 +177,7 @@ public class GameHub : Hub
         var tcs = new TaskCompletionSource<LoginResult>(
             TaskCreationOptions.RunContinuationsAsynchronously);
         _world.Commands.Enqueue(new EnterWorldCommand(
-            Context.ConnectionId, entity, tcs, accountBank, accountBudget));
+            Context.ConnectionId, entity, tcs, accountBank, accountBudget, auth.ClientVersion));
 
         var timeout = Task.Delay(TimeSpan.FromSeconds(5));
         var finished = await Task.WhenAny(tcs.Task, timeout);

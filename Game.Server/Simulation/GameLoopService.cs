@@ -412,6 +412,12 @@ public partial class GameLoopService : BackgroundService
             SendSystemToEntity(entity,
                 $"{entity.Role} privileges active on this character. Type /help for commands.");
         }
+        // Right under the client's own "Client version: x" line (owner, 2026-10-14). Judged against the APK
+        // this server OFFERS, so it works on every phone already installed and never fires for a server-only
+        // release. No address in it — the URL is shown nowhere but server.txt and the Setup box.
+        if (ApkFiles.NewerThan(cmd.ClientVersion) is string newer)
+            SendSystemToEntity(entity,
+                $"New version ({newer}) available. Please update — some features won't work on an older version.");
         // The anti-phishing line, on arrival and unconditionally — it also ARMS the hourly whisper
         // clock, so the first whisper of the session does not immediately repeat it.
         entity.LastScamWarningUtc = DateTime.UtcNow;
@@ -1241,13 +1247,24 @@ public partial class GameLoopService : BackgroundService
             RunServerProcedure(fileCommand, null);
         }
 
-        string? line = ServerControl.Tick(out bool fire);
+        string? line = ServerControl.Tick(out bool fire, out bool sendPlayersOut);
         if (line is not null)
         {
             BroadcastSystem(line);
             // Same text on the on-screen banner. It rides the existing "Notice" channel, so it works on
             // a client built before this — no protocol change and nothing to install.
             _ = _hub.Clients.All.SendAsync("Notice", line);
+        }
+        // A shutdown's players' 0 (see ServerControl.ShutdownTailSeconds): everyone connected leaves the world
+        // now — saved on the way out — and is sent to the login screen, so nobody's client sits retrying a
+        // server that is not coming back on its own. Offline farmers stay; the final save below covers them.
+        if (sendPlayersOut)
+        {
+            foreach (var player in _world.Entities.Values
+                         .Where(e => e.Kind == EntityKind.Player && _world.EntityToConnection.ContainsKey(e.Id))
+                         .ToList())
+                ForceRemovePlayer(player, ServerControl.ShutdownKickMessage);
+            _log.LogWarning("Shutdown: players sent out; going down in {Seconds}s.", ServerControl.ShutdownTailSeconds);
         }
         if (!fire) return;
 

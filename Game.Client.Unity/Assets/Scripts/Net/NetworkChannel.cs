@@ -154,7 +154,7 @@ namespace Game.Client
         {
             _connection = new HubConnectionBuilder()
                 .WithUrl(url)
-                .WithAutomaticReconnect()
+                .WithAutomaticReconnect(new RideOutRestart())
                 .Build();
 
             _connection.On<WorldSnapshot>("Snapshot", s => SnapshotReceived?.Invoke(s));
@@ -574,6 +574,25 @@ namespace Game.Client
         {
             if (_connection is not null)
                 await _connection.DisposeAsync();
+        }
+
+        /// <summary>
+        /// How long a dropped link keeps trying (owner, 2026-10-14: *"a reboot … at 0 just saves + restarts
+        /// and players reconnect"*). SignalR's default gives up after 0/2/10/30 s — 42 seconds in all, which
+        /// a server restart on a small box can outlast, and then the player sat on a dead screen. This
+        /// tries at once, then every 2 s for the first half-minute, then every 5 s, for three minutes:
+        /// long enough to ride out a reboot, short enough that a server that is really gone ends in the
+        /// login screen. A SHUTDOWN never gets here — it sends everyone out first (SignOutByServer).
+        /// </summary>
+        private sealed class RideOutRestart : IRetryPolicy
+        {
+            public TimeSpan? NextRetryDelay(RetryContext context)
+            {
+                if (context.ElapsedTime > TimeSpan.FromMinutes(3)) return null;
+                if (context.PreviousRetryCount == 0) return TimeSpan.Zero;
+                return context.ElapsedTime < TimeSpan.FromSeconds(30)
+                    ? TimeSpan.FromSeconds(2) : TimeSpan.FromSeconds(5);
+            }
         }
     }
 }
