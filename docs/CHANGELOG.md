@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.259.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.259.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,21 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-14 (latest) — 0.259.1: `/server shutdown` stays down under systemd
+## 2026-10-14 (latest) — 0.259.2: every chat in `/help`, and the Admin announcement
+
+**Server only** (no APK, no `game.db` delete, no protocol change).
+
+- **`/help` lists every chat channel**: plain text = Local, `!<text>` = World (with its level floor), `/w <name>
+  <text>` = whisper. There is no party or clan channel yet; those three are all of them.
+- **`!!<text>` (Admin and Owner) is an ANNOUNCEMENT**: the on-screen banner on every player's screen (the same one the
+  `/server` countdown uses) plus a `[Name] text` SYSTEM line in chat. `/announce <text>` is the typed twin. It shows in
+  the Admin section of `/help`. Below Admin, `!!x` is still World chat saying `!x`.
+- It needs no new APK: the client strips one `!` and sends the rest on World, so the server sees `!text` from an Admin
+  and turns it into the announcement. Logged to `/chatlog` as World with an `[ANNOUNCE]` prefix.
+- A staff `!<text>` was and stays ordinary World chat. No level floor, and nobody can block it. That is what existed
+  before this, and it is not on screen.
+
+## 2026-10-14 — 0.259.1: `/server shutdown` stays down under systemd
 
 **Server only** (no APK, no `game.db` delete, no protocol change).
 

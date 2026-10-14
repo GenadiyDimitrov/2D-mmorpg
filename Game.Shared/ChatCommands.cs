@@ -32,7 +32,11 @@ public static class ChatCommandCatalog
     {
         // ---- everyone ----
         new("help", "/help [command]", "this list, or everything about one command (/help stat)", AccountRole.Player),
-        new("!", "!<text>", "say it in World chat", AccountRole.Player),
+        // The chat channels (owner, 2026-10-14: *"! world and all other chats"*) — no slash, but `/help` is where a
+        // player looks for them. There is no party or clan channel yet: these three are all of them.
+        new("local", "<text>", "Local chat: everyone near you", AccountRole.Player),
+        new("!", "!<text>", "World chat: everyone online (opens at level " + GameConstants.WorldChatMinLevel + ")", AccountRole.Player),
+        new("w", "/w <name> <text>", "whisper one player", AccountRole.Player),
         new("where", "/where", "your own coordinates, to tell friends where you are", AccountRole.Player),
         new("time", "/time", "the game time and the server's clock", AccountRole.Player),
         new("return", "/return", "cast Return: back to town", AccountRole.Player),
@@ -65,6 +69,8 @@ public static class ChatCommandCatalog
         new("chatlog", "/chatlog [name] [-w] [around <15m|2h|1d|HH:mm>] [-p <n>]", "-w adds whispers; around jumps to a time", AccountRole.Moderator),
 
         // ---- Admin ----
+        new("announce", "!!<text>  or  /announce <text>", "an announcement: a banner on everyone's screen + a SYSTEM line", AccountRole.Admin,
+            "A staff '!<text>' is plain World chat (no level floor, nobody can block it); '!!' is the banner."),
         new("role", "/role <name> <player|chatmod|moderator>", "change a character's rank", AccountRole.Admin),
         new("ban", "/ban <name> [min]", "ban the whole account (60)", AccountRole.Admin),
         new("unban", "/unban <name>", "lift an account ban", AccountRole.Admin),

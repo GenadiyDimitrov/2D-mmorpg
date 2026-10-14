@@ -8860,6 +8860,11 @@ public partial class GameLoopService : BackgroundService
 
             // `/registration [open|close]` — `BL-345`. Closed refuses new accounts AND new characters to
             // everyone but the owner.txt pair; remembered beside game.db (ServerControl.SetRegistration).
+            case "announce":
+                if (arg.Trim().Length == 0) { SendSystemToEntity(admin, "Usage: !!<text>  or  /announce <text>"); break; }
+                Announce(admin, arg.Trim());
+                break;
+
             case "registration":
             {
                 string v = arg.Trim().ToLowerInvariant();
@@ -10351,6 +10356,15 @@ public partial class GameLoopService : BackgroundService
         }
 
         // (MaybeWarnScam lives below, next to the chat helpers.)
+
+        // `!!text` from an Admin = an ANNOUNCEMENT (owner, 2026-10-14). The client strips one `!` and sends the rest on
+        // World, so it arrives here as `!text` — which is why it needs no new APK. Anyone below Admin just says `!text`.
+        if (channel == ChatChannel.World && sender.Role >= AccountRole.Admin
+            && text.StartsWith('!') && text.TrimStart('!').Trim() is { Length: > 0 } announced)
+        {
+            Announce(sender, announced);
+            return;
+        }
 
         // WORLD chat has a level floor (GameConstants.WorldChatMinLevel). It is the one channel that
         // reaches every player at once, so it is the one worth making throwaway accounts for; local and
@@ -19056,6 +19070,16 @@ public partial class GameLoopService : BackgroundService
     //    APK: the characters never reach the client.
     // ⚠ PLAYER CHAT IS NOT FOLDED and must never be — he types Bulgarian, and the fold passes anything
     //    it does not recognise through untouched precisely so it cannot eat his words. See AsciiText.
+    /// <summary>An Admin's announcement (`!!text` / `/announce text`): the on-screen banner every client already shows
+    /// for a `Notice` (the `/server` countdown's), plus a SYSTEM chat line so it survives the banner fading. Logged
+    /// to the chat log as World, so `/chatlog` shows who said it.</summary>
+    private void Announce(Entity admin, string text)
+    {
+        LogChat(admin, ChatChannel.World, "", "[ANNOUNCE] " + text);
+        BroadcastSystem($"[{admin.Name}] {text}");
+        _ = _hub.Clients.All.SendAsync("Notice", AsciiText.Fold(text));
+    }
+
     private void BroadcastSystem(string text) =>
         _ = _hub.Clients.All.SendAsync("Chat", new ChatMessage("SYSTEM", AsciiText.Fold(text), ChatChannel.System));
 
