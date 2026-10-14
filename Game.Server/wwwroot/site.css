@@ -1,0 +1,141 @@
+/* The landing page (Site/index.html). Dark only: it is a night-sky key art, and the page is the art. */
+:root {
+  --bg: #0f0d0b;
+  --panel: #1a1612;
+  --line: #3a3026;
+  --text: #e9e1d3;
+  --muted: #a99c88;
+  --gold: #d9b56a;
+  --gold-hi: #f0d391;
+  --ember: #e0703a;
+  --ok: #7fc47a;
+  --off: #d06a5a;
+}
+* { box-sizing: border-box; }
+html { color-scheme: dark; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 17px/1.6 "Alegreya Sans", system-ui, sans-serif;
+}
+
+/* ---- hero: the art carries the logo, the panel sits under it ---- */
+.hero { position: relative; }
+.hero-art {
+  display: block;
+  width: 100%;
+  max-height: 78vh;
+  object-fit: cover;
+  object-position: center 30%;
+}
+.hero::after {           /* melt the art into the page */
+  content: "";
+  position: absolute; left: 0; right: 0;
+  bottom: 0; height: 40%;
+  background: linear-gradient(to bottom, transparent, var(--bg));
+  pointer-events: none;
+}
+.hero-panel {
+  position: relative; z-index: 1;
+  margin: -64px auto 0;
+  padding: 0 16px;
+  max-width: 560px;
+  text-align: center;
+}
+
+.download {
+  display: inline-block;
+  width: 100%;
+  max-width: 420px;
+  padding: 16px 24px;
+  border: 1px solid var(--gold-hi);
+  border-radius: 10px;
+  background: linear-gradient(#e2c27a, #a9823f);
+  color: #1b1408;
+  text-decoration: none;
+  font: 700 22px/1.2 Cinzel, Georgia, serif;
+  letter-spacing: .04em;
+  box-shadow: 0 0 0 4px rgba(217,181,106,.15), 0 10px 30px rgba(224,112,58,.25);
+}
+.download:hover, .download:focus-visible { background: linear-gradient(#f0d391, #b98f48); outline: none; }
+.download small {
+  display: block;
+  margin-top: 4px;
+  font: 500 14px/1.3 "Alegreya Sans", system-ui, sans-serif;
+  letter-spacing: 0;
+  color: #3a2a10;
+}
+.download.disabled {
+  background: var(--panel);
+  border-color: var(--line);
+  color: var(--muted);
+  box-shadow: none;
+  cursor: default;
+}
+.download.disabled small { color: var(--muted); }
+
+.status { margin: 14px 0 0; color: var(--muted); font-size: 15px; }
+.dot {
+  display: inline-block;
+  width: 9px; height: 9px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--ok);
+  box-shadow: 0 0 8px var(--ok);
+  vertical-align: 1px;
+}
+.closed { color: var(--off); }
+
+/* ---- content ---- */
+main { max-width: 680px; margin: 0 auto; padding: 24px 16px 8px; }
+section {
+  margin: 28px 0;
+  padding: 20px 22px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+h2 {
+  margin: 0 0 10px;
+  font: 700 21px/1.3 Cinzel, Georgia, serif;
+  color: var(--gold);
+  letter-spacing: .03em;
+}
+p { margin: 0; }
+code { color: var(--gold-hi); font-size: .92em; }
+
+.steps { margin: 0; padding: 0; list-style: none; counter-reset: step; }
+.steps li { position: relative; padding: 0 0 12px 42px; counter-increment: step; }
+.steps li:last-child { padding-bottom: 0; }
+.steps li::before {
+  content: counter(step);
+  position: absolute; left: 0; top: 1px;
+  width: 28px; height: 28px;
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+  color: var(--gold);
+  font: 700 15px/26px Cinzel, Georgia, serif;
+  text-align: center;
+}
+
+.facts { margin: 0; padding-left: 20px; }
+.facts li { margin-bottom: 6px; }
+.facts li::marker { color: var(--ember); }
+
+footer {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 8px 16px 40px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 15px;
+}
+footer .small { margin-top: 6px; font-size: 13px; opacity: .7; }
+
+@media (max-width: 480px) {
+  .hero-art { max-height: none; }
+  .hero-panel { margin-top: -28px; }
+  .download { font-size: 19px; }
+  section { padding: 18px 16px; }
+}

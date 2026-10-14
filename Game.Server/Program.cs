@@ -78,10 +78,7 @@ try
     }
 
     app.MapHub<GameHub>("/game");
-    app.MapGet("/", () => Results.Content(
-        $"<h2>Game server v{Game.Shared.GameConstants.GameVersion}</h2>" +
-        "<p>Hub: <code>/game</code></p>" +
-        "<p><a href=\"/apk\">Download the Android client (L2Clone.apk)</a></p>", "text/html"));
+    app.UseStaticFiles();   // wwwroot/: the landing page's CSS and pictures
     app.MapGet("/version", () => Game.Shared.GameConstants.GameVersion);
 
     // Serve the built APK so a phone on this LAN/VPN can download it straight from the browser (no adb):
@@ -112,8 +109,37 @@ try
     {
         var apk = FindApk(app.Environment.ContentRootPath);
         return apk is not null
-            ? Results.File(apk, "application/vnd.android.package-archive", "L2Clone.apk", enableRangeProcessing: true)
+            ? Results.File(apk, "application/vnd.android.package-archive", "Vardelar.apk", enableRangeProcessing: true)
             : Results.NotFound("APK not built yet — check back in a minute.");
+    });
+
+    // The landing page: Site/index.html with its {{TOKENS}} filled. Re-read on every request so an edit to the
+    // text shows on the next refresh. The player count is a plain read of a dictionary the game loop owns —
+    // a racy Count is harmless for a number on a web page, and it never writes, so the single-writer rule holds.
+    app.MapGet("/", (HttpContext http, World world) =>
+    {
+        string template = Path.Combine(AppContext.BaseDirectory, "Site", "index.html");
+        if (!File.Exists(template))
+            return Results.Content($"<h2>Vardelar server v{Game.Shared.GameConstants.GameVersion}</h2>" +
+                                   "<p><a href=\"/apk\">Download the Android client</a></p>", "text/html");
+
+        var apk = FindApk(app.Environment.ContentRootPath) is string path ? new FileInfo(path) : null;
+        string download = apk is null
+            ? "<span class=\"download disabled\">Download for Android<small>not available yet, check back soon</small></span>"
+            : $"<a class=\"download\" href=\"/apk\" download>Download for Android<small>{apk.Length / 1048576.0:0.0} MB" +
+              $" · updated {apk.LastWriteTimeUtc.ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture)}</small></a>";
+
+        int online = world.ConnectionToEntity.Count;
+        string status = $"<span class=\"dot\"></span>Server online · {online} {(online == 1 ? "player" : "players")} in the world"
+            + (ServerControl.RegistrationOpen ? "" : "<br><span class=\"closed\">New accounts are closed at the moment.</span>");
+
+        string html = File.ReadAllText(template)
+            .Replace("{{DOWNLOAD}}", download)
+            .Replace("{{STATUS}}", status)
+            .Replace("{{VERSION}}", Game.Shared.GameConstants.GameVersion)
+            // Behind Caddy the request arrives as plain http; the proxy's header says what the visitor used.
+            .Replace("{{ORIGIN}}", $"{(http.Request.Headers["X-Forwarded-Proto"].FirstOrDefault() ?? http.Request.Scheme)}://{http.Request.Host}");
+        return Results.Content(html, "text/html; charset=utf-8");
     });
 
     // Fail loudly, at startup, if two skills or consumables ended up sharing a skill-bar label — the same

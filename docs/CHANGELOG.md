@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.258.3**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.258.4**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -35,7 +35,24 @@ docs/changelogs/`.
   `CommandLineBuild.StampBranding` forces it to import as a sprite, so a dropped-in replacement just works.
 - ⚠ Its `.meta` is created by the next headless build — commit it with that build.
 
-## 2026-10-14 (latest) — 0.258.3: the Vardelar icon and the key art behind login
+## 2026-10-14 (latest) — 0.258.4: a real landing page at the server's address
+
+**Server only** (no APK, no `game.db` delete, no protocol change). Opening `https://vardelar.duckdns.org` in a browser
+used to show three lines of bare HTML. It is now a proper page: the key art as the hero, a big **Download for
+Android** button with the APK's size and date, a live status line (*Server online · N players in the world*, plus a
+notice when registration is closed), install steps that walk through Android's "unknown apps" prompt, how to update,
+and a short description of the game. Shared links get a preview card (`og:image` = the key art).
+
+- `Game.Server/Site/index.html` is the template. The server fills `{{DOWNLOAD}}`, `{{STATUS}}`, `{{VERSION}}` and
+  `{{ORIGIN}}` and **re-reads it on every request**, so editing the text on the server shows on the next refresh,
+  with no rebuild or restart. It sits outside `wwwroot/` so it can never be served raw.
+- `Game.Server/wwwroot/` holds `site.css`, `img/hero.jpg` (the login art, recompressed to 157 KB) and `img/icon.png`
+  (the app icon at 192 px, the favicon). Both are **copies** of the Unity branding placeholders. Swap them here too
+  when the art changes.
+- The download is now saved as `Vardelar.apk` (was `L2Clone.apk`). `/apk` and `/version` are unchanged.
+- Plain HTML + CSS, no JavaScript. Fonts are Cinzel + Alegreya Sans from Google Fonts.
+
+## 2026-10-14 — 0.258.3: the Vardelar icon and the key art behind login
 
 **Client only — new APK** (no `game.db` delete, no server change).
 

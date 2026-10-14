@@ -206,7 +206,7 @@ journalctl -u game -f
 ```
 (Use your own `account/Character` in place of `genaacc/Gena`.) The last line shows the server's console. Wait for
 `L2Clone server vX.Y.Z starting.` and the line `Owner: genaacc/Gena · registration CLOSED`, then Ctrl+C (the server
-keeps running). Open `https://<yourname>.duckdns.org` in the phone's browser: you should see *Game server vX.Y.Z*.
+keeps running). Open `https://<yourname>.duckdns.org` in the phone's browser: you should see the Vardelar landing page (key art, a *Download for Android* button, *Server online*).
 
 **Then, on the phone:**
 1. Register **that account** and create **that character**. Until you do, the server refuses every other registration

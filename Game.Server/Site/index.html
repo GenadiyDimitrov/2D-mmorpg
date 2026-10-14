@@ -1,0 +1,71 @@
+<!doctype html>
+<!--
+  The landing page at "/" (Program.cs fills the {{TOKENS}} on every request and re-reads this file each
+  time, so an edit here shows on the next refresh — no rebuild, no restart). Pictures and CSS live in
+  wwwroot/. Plain HTML + CSS on purpose: nothing here needs a script.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vardelar — War of the Lesser Gods</title>
+<meta name="description" content="Vardelar is a free online fantasy RPG for Android. Download the game and join the war.">
+<meta property="og:title" content="Vardelar — War of the Lesser Gods">
+<meta property="og:description" content="A free online fantasy RPG for Android. Download, register, play.">
+<meta property="og:image" content="{{ORIGIN}}/img/hero.jpg">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0f0d0b">
+<link rel="icon" href="/img/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Alegreya+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css?v={{VERSION}}">
+</head>
+<body>
+
+<header class="hero">
+  <img class="hero-art" src="/img/hero.jpg" alt="Vardelar — War of the Lesser Gods: two armies meet on a field of giant bones between ice and fire">
+  <div class="hero-panel">
+    {{DOWNLOAD}}
+    <p class="status">{{STATUS}}</p>
+  </div>
+</header>
+
+<main>
+  <section>
+    <h2>Install on Android</h2>
+    <ol class="steps">
+      <li><b>Tap Download</b> above. The file is called <code>Vardelar.apk</code>.</li>
+      <li><b>Open it</b> when the download finishes (from the notification, or from <i>Files → Downloads</i>).</li>
+      <li>Android will ask about <b>“unknown apps”</b>. That is normal for a game that is not on Google Play: tap
+          <i>Settings</i>, allow your browser, then go back and tap <i>Install</i>.</li>
+      <li><b>Open Vardelar</b>. The login screen already knows this server, so just register an account and make
+          a character.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Updating</h2>
+    <p>If the game says your client is out of date, or the Download button shows a date after your install,
+       come back here, download again and install it over the old one. Your account and characters live on the
+       server, so nothing is lost.</p>
+  </section>
+
+  <section>
+    <h2>The game</h2>
+    <ul class="facts">
+      <li><b>Three races</b> (Human, Elf and Demon), each with eight paths to choose from as you grow.</li>
+      <li><b>A world from level 1 to 90</b>: towns, hunting grounds, bosses and dungeons.</li>
+      <li><b>Play together</b>: parties, trading, quests, crafting, and PvP if you want it.</li>
+      <li><b>Online only</b>: everything runs on the server, so the world keeps going without you.</li>
+    </ul>
+  </section>
+</main>
+
+<footer>
+  <p>Vardelar is in early testing: expect bugs, resets and big changes. Android only.</p>
+  <p class="small">Server {{VERSION}}</p>
+</footer>
+
+</body>
+</html>

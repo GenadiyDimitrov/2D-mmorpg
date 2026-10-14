@@ -31,4 +31,10 @@
              CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- The landing page's TEMPLATE (Program.cs fills its {{TOKENS}}). Outside wwwroot/ so the static-file
+       middleware can never serve it raw at /index.html; its CSS and pictures are in wwwroot/. -->
+  <ItemGroup>
+    <Content Include="Site\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
