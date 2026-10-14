@@ -107,6 +107,10 @@ address.
    second rule for port `443`. (Not 5238: the game port stays private, see step 4.)
 4. *Billing → Upgrade and manage payment → Pay As You Go* (the reclamation catch above). Then *Billing → Budgets → Create
    budget*: amount **1**, alert at 100%, your e-mail.
+   ⚠ **The upgrade asks for about 93 € (US$100).** That is a temporary *hold* to verify the card, not a charge: the bank
+   releases it after a few days, sometimes a week or two. The card must have that much available at that moment, and
+   prepaid or virtual cards are often refused. If you skip the upgrade, the only risk is the idle check, which stops the
+   machine; you start it again from the console.
 
 ### Step 2: the address (once, ~5 min)
 1. Go to **duckdns.org**, sign in with Google.
