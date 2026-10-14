@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.259.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.259.3**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,27 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-14 (latest) — 0.259.2: every chat in `/help`, and the Admin announcement
+## 2026-10-14 (latest) — 0.259.3: a clean chat on every login and every server restart
+
+**Server + APK** (version bump: both must be redeployed together; no `game.db` delete).
+
+- **Every entry into the world opens on a fresh chat**: a login, a character switch, and the silent re-entry after a
+  server restart. ALL tabs are cleared, System included, so the `/server` shutdown countdown and anything else from the
+  last session no longer survives a restart. The chat opens on:
+  > Vardelar - War of the Lesser Gods · Welcome to the world of Vardelar. · Client version: x.y.z · Connected.
+
+  then, from the server, **staff only**: `Logged in as <Role>.` and `<Role> privileges active …`; then for everyone the
+  existing anti-phishing line (*No staff member will ask for login details …*).
+- ⚠ **This REVERSES playtest 28** (*"chat again is saved between logins. Don't reset"*). The per-character chat files
+  (`chat_<id>.log` in the app's data folder) are no longer written or read; old ones are simply ignored.
+- **Client diagnostics left the chat**: `Client v… ready. Server: …`, `Connecting to …`, `Logged in as <account>`,
+  `N character(s) on this account`, `In world at (x, y)`, `Reconnected / Session restored`, `Signed out`, and every
+  plain Unity `Debug.Log` / warning (`[Buildings] … placed`, `[UnlitMaterials] …`, TMP's missing-glyph line). Only
+  Unity ERRORS / exceptions still reach the System tab, so a crash on a phone is not silent. Everything still goes
+  to logcat.
+- `GameConstants.GameName` / `GameTitle` added for the header.
+
+## 2026-10-14 — 0.259.2: every chat in `/help`, and the Admin announcement
 
 **Server only** (no APK, no `game.db` delete, no protocol change).
 

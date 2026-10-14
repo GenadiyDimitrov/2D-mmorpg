@@ -1307,7 +1307,6 @@ namespace Game.Client
 
         private async void Start()
         {
-            ClientLog.Info("Client v" + GameConstants.GameVersion + " ready. Server: " + ServerUrl);
             if (AutoLogin) await ConnectAndLogin(Username, Password, register: false);
         }
 
@@ -1373,9 +1372,7 @@ namespace Game.Client
                 {
                     Phase = ClientPhase.Connecting;
                     StatusMessage = "Connecting to " + ServerUrl + " …";
-                    ClientLog.Info(StatusMessage);
                     await Connect();
-                    ClientLog.Good("Connected.");
 
                     // REMEMBER THE URL AS SOON AS IT CONNECTS, not after a successful login.
                     //
@@ -1417,7 +1414,6 @@ namespace Game.Client
                 }
                 PlayerPrefs.Save();
 
-                ClientLog.Good((register ? "Registered" : "Logged in") + " as " + username + ".");
                 await RefreshCharacters();
             }
             catch (Exception ex)
@@ -1834,7 +1830,6 @@ namespace Game.Client
             Restoring = true;
             try
             {
-                ClientLog.Info("Reconnected — restoring session …");
                 var auth = await _net.LoginAsync(_authUser, _authPass);
                 if (!auth.Success) { Fail("Re-login failed: " + auth.Error); return; }
 
@@ -1842,7 +1837,6 @@ namespace Game.Client
                     await EnterWorld(_lastCharacterId, silent: true);
                 else
                     await RefreshCharacters();
-                ClientLog.Good("Session restored.");
             }
             catch (Exception ex) { Fail("Restore failed: " + Describe(ex)); }
             finally { Restoring = false; }
@@ -1867,7 +1861,6 @@ namespace Game.Client
                 Characters = list.Characters ?? Array.Empty<CharacterSlot>();
                 Phase = ClientPhase.CharacterSelect;
                 StatusMessage = Characters.Length + " character(s) on this account.";
-                ClientLog.Info(StatusMessage);
             }
             catch (Exception ex) { Fail(Describe(ex)); }
         }
@@ -1946,6 +1939,11 @@ namespace Game.Client
                 // your own entity, which is then never re-sent because a standing player never changes.
                 // That is the "waiting for your entity …" bug: mobs trickled back in as they wandered,
                 // you never did.
+                // The CHAT resets here for the same reason (owner, 2026-10-14): every login, character
+                // switch and post-restart re-entry opens on the same clean header, and the server's
+                // arrival lines (role, privileges, the anti-phishing warning) must land AFTER it, not be
+                // wiped by a clear that runs when the reply comes back.
+                ClientLog.StartSession();
                 if (Entities != null) { Entities.Clear(); Entities.SetSelf(Guid.Empty); }
                 Decals?.ClearTotems();
                 Decals?.ClearWhisps();
@@ -1968,16 +1966,9 @@ namespace Game.Client
                 Main(() =>
                 {
                     if (Entities != null) Entities.SetSelf(_selfId);   // re-tints anything already spawned
-                    // Hand the chat buffer to THIS character — restores what he was saying last time
-                    // and nobody else's (playtest 28; see ClientLog.SwitchCharacter for why this and
-                    // C1's "reset on exit" are the same rule). Keyed by character id, not name, so a
-                    // rename keeps the history and two characters can never share a file.
-                    ClientLog.SwitchCharacter(characterId.ToString());
                     _enteredAt = Time.realtimeSinceStartup;
                     Phase = ClientPhase.InWorld;
                     StatusMessage = "In world";
-                    ClientLog.Good("In world at (" + Mathf.RoundToInt(result.X) + ", " + Mathf.RoundToInt(result.Y) + ")."
-                                   + (IsAdmin ? "  [" + Role + "]" : ""));
                 });
             }
             catch (Exception ex) { Fail(Describe(ex)); }
@@ -2035,16 +2026,10 @@ namespace Game.Client
             AutoHunting = false;
             AutoDelays.Clear();   // `BL-279` — per character, exactly like the marks above
             AutoConfig = new AutoHuntConfigDto(false, 60, 40, false, new AutoSkillDto[0], new string[0]);
-            // C1: the chat log is per CHARACTER too. A new character inherited the DELETED one's chat
-            // (owner) for the same reason the auto-hunt marks above did — the buffer is a singleton
-            // that outlives whoever was talking.
-            //
-            // ⚠ It is FILED now, not wiped (playtest 28: *"chat again is saved between logins. Don't
-            // reset"*). SwitchCharacter("") stores the outgoing character's chat on disk and empties the
-            // buffer, so the character screen and the next character still see a clean one — C1's
-            // requirement — while the conversation is waiting when you come back. The System tab is
-            // untouched either way: it is the diagnostics trail, not per-character.
-            ClientLog.SwitchCharacter("");
+            // C1: the chat log is per CHARACTER too, and since 2026-10-14 it is not kept at all — every
+            // entry opens on a fresh one (ClientLog.StartSession). Clearing here as well means the
+            // character screen never shows the last session's lines either.
+            ClientLog.Clear();
         }
 
         public async void LeaveWorld()
@@ -2180,7 +2165,6 @@ namespace Game.Client
                 LastError = null;
                 Phase = ClientPhase.Offline;
                 StatusMessage = "Signed out.";
-                ClientLog.Info(StatusMessage);
             });
         }
 
@@ -3353,21 +3337,8 @@ namespace Game.Client
 
         private static void Main(Action a) => UnityMainThreadDispatcher.Instance.Enqueue(a);
 
-        /// <summary>Flush the chat to disk when Android backgrounds us.
-        ///
-        /// ⚠ This is the case that actually matters on a phone: the OS kills a backgrounded app without
-        /// running OnDestroy, so waiting for a tidy exit would mean the chat only survived the relogs
-        /// you did on purpose — not the ones the phone did for you, which is most of them.</summary>
-        private void OnApplicationPause(bool paused)
-        {
-            if (paused && Phase == ClientPhase.InWorld && _lastCharacterId > 0)
-                ClientLog.SaveChat(_lastCharacterId.ToString());
-        }
-
         private async void OnDestroy()
         {
-            if (Phase == ClientPhase.InWorld && _lastCharacterId > 0)
-                ClientLog.SaveChat(_lastCharacterId.ToString());
             if (_net != null) await _net.DisposeAsync();
         }
     }

@@ -404,9 +404,14 @@ public partial class GameLoopService : BackgroundService
             // push, and nothing was telling it the party is gone). State the client needs on arrival
             // must be pushed on arrival — same rule as the EXP-bar/Progress fix.
             SendTo(entity, "Party", new PartyUpdate(Array.Empty<PartyMemberDto>()));
+        // The staff half of the session header the client opens chat with (owner, 2026-10-14): role,
+        // then its privileges — a Player sees neither.
         if (entity.IsStaff)
+        {
+            SendSystemToEntity(entity, $"Logged in as {entity.Role}.");
             SendSystemToEntity(entity,
                 $"{entity.Role} privileges active on this character. Type /help for commands.");
+        }
         // The anti-phishing line, on arrival and unconditionally — it also ARMS the hourly whisper
         // clock, so the first whisper of the session does not immediately repeat it.
         entity.LastScamWarningUtc = DateTime.UtcNow;
