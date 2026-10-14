@@ -232,20 +232,29 @@ keeps running). Open `https://<yourname>.duckdns.org` in the phone's browser: yo
    survives restarts.
 3. To make a friend staff: `/role <name> admin`.
 
-### Step 7: updating to a new version (each release, ~2 min)
-On the PC: `pwsh tools/publish.ps1 -Apk` and the same `scp` line. On the server:
+### Step 7: updating to a new version (each release) — `deploy`
+On the PC, two separate steps (owner, 2026-10-14: *build/publish* never touch the live server, *deploy* is the only
+thing that does):
 ```
-sudo systemctl stop game
-cp ~/game/game.db ~/backups/game-before-update.db
-unzip -o ~/Game.Server-*.zip -d ~/game && rm ~/Game.Server-*.zip
-mv ~/L2Clone-*.apk ~/game/apk/ && sudo systemctl start game
+pwsh tools/publish.ps1 -Apk      # builds/Game.Server-<ver>.zip + builds/L2Clone-<ver>.apk
+pwsh tools/deploy.ps1            # puts THAT version on the server, with a 1-minute countdown
 ```
-Stopping saves everyone online first. `game.db`, `owner.txt` and `registration.txt` are never in the zip, so unpacking
-over the old build overwrites nothing of yours. `/apk` serves the newest file in `~/game/apk/`. To serve one from
-elsewhere, write its path (or a folder) on one line in `~/game/apk-path.txt`.
+`deploy.ps1` uploads both, then writes `shutdown 1` into `~/game/server-command.txt`. The server runs that line exactly
+like an admin typing `/server shutdown 1`: the banner and chat count down (every second for the last minute), everyone
+is saved, and the service stops (exit 64). Then it copies `game.db` to `~/backups/predeploy-<old>-to-<new>-<time>.db`
+(keeps 10), rsyncs the new build over `~/game` — never `game.db*`, `owner.txt`, `registration.txt`,
+`debug-config.json`, `admin-only.flag`, `apk-path.txt` or `apk/` — puts the APK in `~/game/apk/` (keeps 3), starts
+the service and waits for `L2Clone server v<new> starting.`. The live version is recorded in `~/game/VERSION`.
 
-⚠ **A version whose CHANGELOG says "delete `game.db`" wipes everyone's characters**, friends included. Pre-release that is
-fine, but tell them first. The delete is `rm ~/game/game.db*` between stop and start.
+Options: `-Minutes 10` (longer warning), `-Minutes 0` (no countdown), `-NoApk` (server only), `-NoServer` (APK only, no
+restart). `/apk` serves the newest file in `~/game/apk/`. To serve one from elsewhere, write its path (or a folder) on
+one line in `~/game/apk-path.txt`.
+
+The command file works for any `/server` line, by hand too: `echo "reboot 5" > ~/game/server-command.txt`.
+
+⚠ **A version that crosses the CHANGELOG's "Last `game.db` reset" is REFUSED** (it would wipe everyone's characters).
+`pwsh tools/deploy.ps1 -ResetDb` does it on purpose: the old database is MOVED to `~/backups/reset-…`, never deleted.
+Tell your players first.
 
 ### Step 8: backups (once)
 ```

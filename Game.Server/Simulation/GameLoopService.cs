@@ -1234,6 +1234,13 @@ public partial class GameLoopService : BackgroundService
     /// 60-second autosave.</summary>
     private void TickServerControl()
     {
+        // Once a second: a `/server` line dropped in a file by the deploy script (tools/deploy.ps1).
+        if (_tick % GameConstants.TickRate == 0 && ServerControl.TakeCommandFile() is string fileCommand)
+        {
+            _log.LogWarning("server-command.txt: /server {Command}", fileCommand);
+            RunServerProcedure(fileCommand, null);
+        }
+
         string? line = ServerControl.Tick(out bool fire);
         if (line is not null)
         {
@@ -1251,6 +1258,59 @@ public partial class GameLoopService : BackgroundService
             kind == ServerControl.Procedure.Reboot ? "reboot" : "shutdown");
         Environment.ExitCode = ServerControl.Execute(kind);
         _lifetime.StopApplication();
+    }
+
+    /// <summary>`/server <shutdown|stop|reboot|restart|on|online> [minutes] [adminOnly]` — from an admin in
+    /// chat, or from <c>server-command.txt</c> (<paramref name="admin"/> null), which is how a deploy gives the
+    /// players the same countdown an admin would. Every call REPLACES the procedure before it.</summary>
+    private void RunServerProcedure(string arg, Entity? admin)
+    {
+        var parts = arg.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        string verb = parts.Length > 0 ? parts[0].ToLowerInvariant() : "";
+        string timeToken = parts.Length > 1 ? parts[1] : "";
+        bool adminOnly = parts.Length > 2 && ParseTriState(parts[2]) == true;
+        int minutes = ServerControl.ParseMinutes(timeToken);
+
+        switch (verb)
+        {
+            case "shutdown" or "stop":
+            case "reboot" or "restart":
+            {
+                var kind = verb is "reboot" or "restart"
+                    ? ServerControl.Procedure.Reboot : ServerControl.Procedure.Shutdown;
+                _shutdownKind = kind;
+                string opening = ServerControl.Schedule(kind, minutes, adminOnly);
+                BroadcastSystem(opening);
+                _ = _hub.Clients.All.SendAsync("Notice", opening);
+                if (admin is not null)
+                    SendSystemToEntity(admin, adminOnly
+                        ? $"Scheduled. It will come back STAFF ONLY — type /server on to reopen it."
+                        : "Scheduled.");
+                break;
+            }
+
+            case "on" or "online":
+            {
+                _shutdownKind = ServerControl.Procedure.None;
+                string text = ServerControl.Online(minutes);
+                BroadcastSystem(text);
+                _ = _hub.Clients.All.SendAsync("Notice", text);
+                break;
+            }
+
+            default:
+                if (admin is not null)
+                    SendSystemToEntity(admin,
+                        "Usage: /server <shutdown|reboot|on> [minutes] [adminOnly]  —  "
+                        + "minutes: '-'/'0'/blank = now, unparseable = 30. "
+                        + (ServerControl.DueUtc is DateTime due
+                            ? $"Running: {ServerControl.Kind} in "
+                              + ServerControl.Format((int)(due - DateTime.UtcNow).TotalSeconds) + "."
+                            : "Nothing scheduled."));
+                else
+                    _log.LogWarning("server-command.txt: unknown verb '{Verb}' ignored.", verb);
+                break;
+        }
     }
 
     /// <summary>What the countdown will do when it fires. Held here rather than read back out of
@@ -8817,51 +8877,8 @@ public partial class GameLoopService : BackgroundService
             // Every command REPLACES the one before it, which is why there is no "cancel" verb: `on` is
             // the cancel, and it is also the thing that reopens the door afterwards.
             case "server":
-            {
-                var parts = arg.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                string verb = parts.Length > 0 ? parts[0].ToLowerInvariant() : "";
-                string timeToken = parts.Length > 1 ? parts[1] : "";
-                bool adminOnly = parts.Length > 2 && ParseTriState(parts[2]) == true;
-                int minutes = ServerControl.ParseMinutes(timeToken);
-
-                switch (verb)
-                {
-                    case "shutdown" or "stop":
-                    case "reboot" or "restart":
-                    {
-                        var kind = verb is "reboot" or "restart"
-                            ? ServerControl.Procedure.Reboot : ServerControl.Procedure.Shutdown;
-                        _shutdownKind = kind;
-                        string opening = ServerControl.Schedule(kind, minutes, adminOnly);
-                        BroadcastSystem(opening);
-                        _ = _hub.Clients.All.SendAsync("Notice", opening);
-                        SendSystemToEntity(admin, adminOnly
-                            ? $"Scheduled. It will come back STAFF ONLY — type /server on to reopen it."
-                            : "Scheduled.");
-                        break;
-                    }
-
-                    case "on" or "online":
-                    {
-                        _shutdownKind = ServerControl.Procedure.None;
-                        string text = ServerControl.Online(minutes);
-                        BroadcastSystem(text);
-                        _ = _hub.Clients.All.SendAsync("Notice", text);
-                        break;
-                    }
-
-                    default:
-                        SendSystemToEntity(admin,
-                            "Usage: /server <shutdown|reboot|on> [minutes] [adminOnly]  —  "
-                            + "minutes: '-'/'0'/blank = now, unparseable = 30. "
-                            + (ServerControl.DueUtc is DateTime due
-                                ? $"Running: {ServerControl.Kind} in "
-                                  + ServerControl.Format((int)(due - DateTime.UtcNow).TotalSeconds) + "."
-                                : "Nothing scheduled."));
-                        break;
-                }
+                RunServerProcedure(arg, admin);
                 break;
-            }
 
             // `/registration [open|close]` — `BL-345`. Closed refuses new accounts AND new characters to
             // everyone but the owner.txt pair; remembered beside game.db (ServerControl.SetRegistration).

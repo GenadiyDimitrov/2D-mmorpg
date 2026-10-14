@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.259.3**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.259.4**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,24 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-14 (latest) — 0.259.3: a clean chat on every login and every server restart
+## 2026-10-14 (latest) — 0.259.4: `deploy` — updating the live server is its own step, with a countdown
+
+**Server** (no APK change of its own, no `game.db` delete). Owner: *"build or publish still does the apk and server in
+the /builds folder … we need a new one like 'update to server' … i want them separate as the update on server goes
+through service restart … can it do a 1min cd before shutting down"*.
+
+- **The keywords**: *build* / *publish* = `tools/publish.ps1`, `builds/` only. *deploy* / *update the server* = the new
+  **`tools/deploy.ps1`**, the only thing that touches the live box. Written into `CLAUDE.md`.
+- **`server-command.txt`** beside `game.db`: the server reads it once a second, deletes it and runs the line as if an
+  admin typed `/server <line>`. Only someone with a shell on the box can write it. The `/server` handler became one
+  method (`RunServerProcedure`) shared by chat and the file.
+- **`deploy.ps1`**: uploads `builds/Game.Server-<ver>.zip` + `L2Clone-<ver>.apk` → `shutdown 1` via the file (the
+  usual countdown, every second for the last minute, everyone saved) → waits for the service to stop → backs up
+  `game.db` → rsyncs the build over `~/game` without touching the live state files → APK into `~/game/apk/` → starts
+  the service → waits for `L2Clone server v<ver> starting.`. Refuses a jump across the last `game.db` reset unless
+  `-ResetDb`. `-Minutes N`, `-NoApk`, `-NoServer`. `docs/guides/Hosting.md` step 7 rewritten around it.
+
+## 2026-10-14 — 0.259.3: a clean chat on every login and every server restart
 
 **Server + APK** (version bump: both must be redeployed together; no `game.db` delete).
 

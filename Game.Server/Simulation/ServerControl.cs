@@ -241,6 +241,28 @@ internal static class ServerControl
         && string.Equals(owner, characterName, StringComparison.OrdinalIgnoreCase)
             ? AccountRole.Owner : stored;
 
+    // ─── THE COMMAND FILE (owner, 2026-10-14) ────────────────────────────────────────────────────
+    // *"before updating and shutting down to do a 1min cd"*. A deploy (tools/deploy.ps1) writes ONE
+    // `/server` line here — `shutdown 1` — and the game loop runs it exactly as if an admin had typed
+    // it, so the players get the same countdown and the same last save. Beside game.db, like
+    // registration.txt: only someone with a shell on the box can write it, which is the whole
+    // authorisation. Taken (read + deleted) at most once a second.
+    private static readonly string CommandFile =
+        Path.Combine(Directory.GetCurrentDirectory(), "server-command.txt");
+
+    /// <summary>The waiting command, if any — the file is deleted as it is read so it runs once.</summary>
+    internal static string? TakeCommandFile()
+    {
+        try
+        {
+            if (!File.Exists(CommandFile)) return null;
+            string text = File.ReadAllText(CommandFile).Trim();
+            File.Delete(CommandFile);
+            return text.Length == 0 ? null : text.Split('\n')[0].Trim();
+        }
+        catch { return null; }   // half-written: try again next second
+    }
+
     // ─── SCHEDULING ───────────────────────────────────────────────────────────────────────────────
 
     /// <summary>Parse his minutes token: `-`, empty or `0` = instant; a number = that many minutes;
