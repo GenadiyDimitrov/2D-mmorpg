@@ -20,6 +20,7 @@ namespace Game.Client
         public bool Locked;
 
         private Canvas _canvas;
+        private static readonly Vector3[] _corners = new Vector3[4];
 
         public void OnPointerDown(PointerEventData eventData)
         {
@@ -69,10 +70,20 @@ namespace Game.Client
 
             // Push back only as far as it takes to leave `keepVisible` on screen on each axis.
             float dx = 0f, dy = 0f;
-            if (max.x < parent.rect.xMin + keepVisible) dx = parent.rect.xMin + keepVisible - max.x;
-            else if (min.x > parent.rect.xMax - keepVisible) dx = parent.rect.xMax - keepVisible - min.x;
-            if (max.y < parent.rect.yMin + keepVisible) dy = parent.rect.yMin + keepVisible - max.y;
-            else if (min.y > parent.rect.yMax - keepVisible) dy = parent.rect.yMax - keepVisible - min.y;
+            // Kept inside the SCREEN (the root canvas), seen from the parent: the world HUD's root reaches above the
+            // screen since 0.262.0 (GameUi.HudLift), and its own rect would let a title bar slide up out of reach.
+            Rect area = parent.rect;
+            var root = _canvas != null ? _canvas.rootCanvas.transform as RectTransform : null;
+            if (root != null)
+            {
+                root.GetWorldCorners(_corners);
+                Vector2 lo = parent.InverseTransformPoint(_corners[0]), hi = parent.InverseTransformPoint(_corners[2]);
+                area = Rect.MinMaxRect(lo.x, lo.y, hi.x, hi.y);
+            }
+            if (max.x < area.xMin + keepVisible) dx = area.xMin + keepVisible - max.x;
+            else if (min.x > area.xMax - keepVisible) dx = area.xMax - keepVisible - min.x;
+            if (max.y < area.yMin + keepVisible) dy = area.yMin + keepVisible - max.y;
+            else if (min.y > area.yMax - keepVisible) dy = area.yMax - keepVisible - min.y;
 
             if (dx != 0f || dy != 0f)
                 Target.anchoredPosition = position + new Vector2(dx, dy);

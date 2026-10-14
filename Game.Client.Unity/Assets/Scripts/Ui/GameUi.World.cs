@@ -333,10 +333,11 @@ namespace Game.Client
             // Both of these are full-screen INVISIBLE containers, so neither may absorb raycasts —
             // otherwise every tap would land on "the UI" and the character would never walk anywhere.
             _worldRoot = UiKit.Rect(UiKit.Box(_root, "World", new Color(0, 0, 0, 0), blocksInput: false).gameObject);
-            UiKit.Stretch(_worldRoot, 0f, 0f, 0f, 0f);
+            // HudLift ABOVE the screen: the status strip the top offsets were authored under is gone (0.262.0).
+            UiKit.Stretch(_worldRoot, 0f, -HudLift, 0f, 0f);
             // First child = drawn first = BEHIND the panels. Nameplates belong under the UI, not over it.
             _nameplateLayer = UiKit.Rect(UiKit.Box(_worldRoot, "Nameplates", new Color(0, 0, 0, 0), blocksInput: false).gameObject);
-            UiKit.Stretch(_nameplateLayer, 0f, 0f, 0f, 0f);
+            UiKit.Stretch(_nameplateLayer, 0f, HudLift, 0f, 0f);   // the screen itself
 
             BuildSelfPanel();
             BuildTargetPanel();
@@ -1074,58 +1075,63 @@ namespace Game.Client
 
         /// <summary>The overflow menu: everything you press once a session rather than once a fight.
         ///
+        /// <para>TWO FIXED COLUMNS (owner, 0.262.0): *"make the menu bar default two columns .. 1-column -> auto
+        /// farm/offline/auto pots/quests/drops/rank/admin, 2-column -> craft/restore/options/setup/sound/leave"*.
+        /// The first is what you do in the world, the second the session and the game itself.</para>
+        ///
         /// Laid out by <see cref="LayoutMenuPanel"/> rather than at build time, because one entry (Admin)
         /// is only there for staff. Hiding it with fixed offsets left a 52px HOLE between Setup and Leave
         /// and an over-tall panel — the owner's *"don't leave a gap between the buttons, collapse it"*.</summary>
-        private readonly List<(Button Button, bool AdminOnly)> _menuButtons = new();
+        private readonly List<(Button Button, bool AdminOnly, int Column)> _menuButtons = new();
         private bool _menuLaidOutForAdmin;
 
         private void BuildMenuPanel()
         {
             _menuPanel = UiKit.PanelBox(_worldRoot, "Menu");
             UiKit.Place(_menuPanel, new Vector2(1f, 1f), new Vector2(1f, 1f),
-                        new Vector2(-12f, -100f), new Vector2(200f, 392f));
+                        new Vector2(-12f, -100f), new Vector2(400f, 392f));
             var inner = _menuPanel.GetChild(0);
 
-            var entries = new List<(string Label, Action Click, bool AdminOnly)>
+            var entries = new List<(string Label, Action Click, bool AdminOnly, int Column)>
             {
-                ("Auto Pots", () => { CloseWindow(_menuPanel); OpenAutoPotions(); }, false),
-                ("Auto Farm", () => { CloseWindow(_menuPanel); OpenAutoFarm(); }, false),
-                ("Quests", () => { CloseWindow(_menuPanel); ToggleWindow(_questPanel); }, false),
-                // Craft is on the MENU rather than at an NPC: a profession is a property of the
-                // character, every rarity of material drops in the field, and the one thing you do
-                // after a farm run is refine what you picked up — none of which wants a trip to town.
-                ("Craft",  () => { CloseWindow(_menuPanel); OpenCraftingWindow(); }, false),
-                // Restore lives on the MENU, not at a vendor (C18): binning is a field accident, and an
-                // undo you can only reach in town is no undo at all.
-                ("Restore", () => { CloseWindow(_menuPanel); OpenRestoreWindow(); }, false),
-                ("Rank",   () => { CloseWindow(_menuPanel); OpenRank(); }, false),
-                // `BL-253` — the drop database. On the MENU rather than at an NPC or inside the bag for
-                // the same reason Craft is: "where do I get this" is a question you ask while looking
-                // at a recipe or an empty slot, not one you walk to town to ask.
-                ("Drops",  () => { CloseWindow(_menuPanel); OpenDropSearch(); }, false),
-                ("Setup",  () => { CloseWindow(_menuPanel); _serverRow.gameObject.SetActive(false); ToggleWindow(_settingsPanel); }, false),
-                ("Sound",  () => { CloseWindow(_menuPanel); OpenSoundWindow(); }, false),   // `BL-45`
-                // Options ≠ Setup: Setup is how the game LOOKS (local, PlayerPrefs), Options is what
-                // other players may do to you (server-side, per character) — M2/B11.
-                ("Options", () => { CloseWindow(_menuPanel); ToggleWindow(_optionsPanel); }, false),
-                // The admin toolbox. It was labelled "Debug" while its commands were compiled out of
-                // release builds; they ship now and are gated on the account role, server-side.
-                ("Admin",  () => { CloseWindow(_menuPanel); ToggleWindow(_debugPanel); }, true),
-                // Offline sits directly above Leave because they are the same decision — "I'm done for
-                // now" — with the character either staying in the world hunting or coming out of it.
+                ("Auto Farm", () => { CloseWindow(_menuPanel); OpenAutoFarm(); }, false, 0),
+                // Offline sits right under Auto Farm because it IS Auto Farm with you gone: the character stays in
+                // the world hunting under the autopilot you just set up.
                 ("Offline", () => { CloseWindow(_menuPanel);
                                     Ask("Keep hunting offline?\n\n<size=15>Your character stays in the "
                                         + "world under the autopilot until its offline time runs out. "
                                         + "Set up Auto Farm first.</size>",
-                                        "Offline", () => Boot.StartOfflineFarm()); }, false),
-                ("Leave",  () => { CloseWindow(_menuPanel); Boot.LeaveWorld(); }, false),
+                                        "Offline", () => Boot.StartOfflineFarm()); }, false, 0),
+                ("Auto Pots", () => { CloseWindow(_menuPanel); OpenAutoPotions(); }, false, 0),
+                ("Quests", () => { CloseWindow(_menuPanel); ToggleWindow(_questPanel); }, false, 0),
+                // `BL-253` — the drop database. On the MENU rather than at an NPC or inside the bag for
+                // the same reason Craft is: "where do I get this" is a question you ask while looking
+                // at a recipe or an empty slot, not one you walk to town to ask.
+                ("Drops",  () => { CloseWindow(_menuPanel); OpenDropSearch(); }, false, 0),
+                ("Rank",   () => { CloseWindow(_menuPanel); OpenRank(); }, false, 0),
+                // The admin toolbox. It was labelled "Debug" while its commands were compiled out of
+                // release builds; they ship now and are gated on the account role, server-side.
+                ("Admin",  () => { CloseWindow(_menuPanel); ToggleWindow(_debugPanel); }, true, 0),
+
+                // Craft is on the MENU rather than at an NPC: a profession is a property of the
+                // character, every rarity of material drops in the field, and the one thing you do
+                // after a farm run is refine what you picked up — none of which wants a trip to town.
+                ("Craft",  () => { CloseWindow(_menuPanel); OpenCraftingWindow(); }, false, 1),
+                // Restore lives on the MENU, not at a vendor (C18): binning is a field accident, and an
+                // undo you can only reach in town is no undo at all.
+                ("Restore", () => { CloseWindow(_menuPanel); OpenRestoreWindow(); }, false, 1),
+                // Options ≠ Setup: Setup is how the game LOOKS (local, PlayerPrefs), Options is what
+                // other players may do to you (server-side, per character) — M2/B11.
+                ("Options", () => { CloseWindow(_menuPanel); ToggleWindow(_optionsPanel); }, false, 1),
+                ("Setup",  () => { CloseWindow(_menuPanel); _serverRow.gameObject.SetActive(false); ToggleWindow(_settingsPanel); }, false, 1),
+                ("Sound",  () => { CloseWindow(_menuPanel); OpenSoundWindow(); }, false, 1),   // `BL-45`
+                ("Leave",  () => { CloseWindow(_menuPanel); Boot.LeaveWorld(); }, false, 1),
             };
 
             foreach (var entry in entries)
             {
                 var button = UiKit.TextButton(inner, entry.Label, entry.Click, 16f);
-                _menuButtons.Add((button, entry.AdminOnly));
+                _menuButtons.Add((button, entry.AdminOnly, entry.Column));
                 // (the admin entry is found by its AdminOnly flag in _menuButtons — no field needed)
             }
 
@@ -1134,12 +1140,12 @@ namespace Game.Client
             _menuPanel.gameObject.SetActive(false);
         }
 
-        /// <summary>Stack the VISIBLE menu buttons with no holes, and shrink the panel to fit them. Only
+        /// <summary>Stack each column's VISIBLE buttons with no holes, and shrink the panel to fit them. Only
         /// re-runs when admin-ness actually changes (it is known at login, and again on a role change), so
         /// this is not per-frame work.</summary>
-        /// <para>When the column would run off the bottom of the screen (a large UI size — owner, 2026-09-26:
-        /// *"opening menu I cannot see the below drop button"*) it WRAPS into more columns, growing to the
-        /// left of the corner it is pinned to. <paramref name="force"/> = the UI size changed.</para>
+        /// <para>When a column would run off the bottom of the screen (a large UI size — owner, 2026-09-26:
+        /// *"opening menu I cannot see the below drop button"*) it WRAPS into a further column of its own,
+        /// growing to the left of the corner it is pinned to. <paramref name="force"/> = the UI size changed.</para>
         private void LayoutMenuPanel(bool force = false)
         {
             bool admin = Boot.CanUseAdminTools;
@@ -1151,28 +1157,34 @@ namespace Game.Client
             _menuLaidOutForAdmin = admin;
 
             const float rowH = 46f, rowStep = 52f, padTop = 10f, padBottom = 14f, colW = 200f;
-            int visibleCount = 0;
-            foreach (var (_, adminOnly) in _menuButtons) if (admin || !adminOnly) visibleCount++;
 
             // The canvas matches on HEIGHT, so its height in UI units IS the reference height. The panel
-            // hangs from 100 below the top; keep 12 clear at the bottom.
-            float room = UiKit.Reference.y - 100f - 12f - padTop - padBottom;
-            int perColumn = Mathf.Max(1, Mathf.Min(visibleCount, Mathf.FloorToInt((room + rowStep - rowH) / rowStep)));
-            int columns = Mathf.Max(1, Mathf.CeilToInt(visibleCount / (float)perColumn));
+            // hangs from 100 below the top of the world root, which starts HudLift above the screen; keep 12
+            // clear at the bottom.
+            float room = UiKit.Reference.y - (100f - HudLift) - 12f - padTop - padBottom;
+            int fit = Mathf.Max(1, Mathf.FloorToInt((room + rowStep - rowH) / rowStep));
 
-            int shown = 0;
-            foreach (var (button, adminOnly) in _menuButtons)
+            int columnsUsed = 0, rows = 1;
+            for (int column = 0; column < 2; column++)
             {
-                bool visible = admin || !adminOnly;
-                button.gameObject.SetActive(visible);
-                if (!visible) continue;
+                int shown = 0;
+                foreach (var (button, adminOnly, col) in _menuButtons)
+                {
+                    if (col != column) continue;
+                    bool visible = admin || !adminOnly;
+                    button.gameObject.SetActive(visible);
+                    if (!visible) continue;
 
-                int col = shown / perColumn, row = shown % perColumn;
-                UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 1f), new Vector2(0.5f, 1f),
-                            new Vector2(col * colW + colW / 2f, -padTop - row * rowStep), new Vector2(180f, rowH));
-                shown++;
+                    int x = columnsUsed + shown / fit, row = shown % fit;
+                    UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 1f), new Vector2(0.5f, 1f),
+                                new Vector2(x * colW + colW / 2f, -padTop - row * rowStep), new Vector2(180f, rowH));
+                    shown++;
+                }
+                if (shown == 0) continue;
+                columnsUsed += Mathf.CeilToInt(shown / (float)fit);
+                rows = Mathf.Max(rows, Mathf.Min(shown, fit));
             }
-            _menuPanel.sizeDelta = new Vector2(columns * colW, padTop + perColumn * rowStep + padBottom);
+            _menuPanel.sizeDelta = new Vector2(Mathf.Max(1, columnsUsed) * colW, padTop + rows * rowStep + padBottom);
         }
 
         /// <summary>

@@ -133,8 +133,9 @@ namespace Game.ClientEditor
 
         private static bool BuildPropPrefabs()
         {
-            var lit = Shader.Find("Universal Render Pipeline/Lit");
-            if (lit == null) { Debug.LogError("[BL-344] URP Lit shader not found."); return false; }
+            // 0.262.0: our own PropLit (URP Lit's property names, the player's fog RING), not URP Lit.
+            var lit = Shader.Find("L2Clone/PropLit");
+            if (lit == null) { Debug.LogError("[BL-344] L2Clone/PropLit shader not found."); return false; }
 
             Directory.CreateDirectory(NatureMats);
             var mats = new Dictionary<string, Material>();

@@ -53,6 +53,9 @@ namespace Game.Client
         /// <summary>Where anything entity-shaped stops being drawn: inside the fully thick fog.</summary>
         public static float DrawDistance => ViewDistance + GameConstants.FadeMargin;
 
+        /// <summary>Where the ring is fully thick, in server units: scenery (PropScatter) is not drawn past it.</summary>
+        public static float FogEnd => ViewDistance + FogPastView;
+
         public static void SetShadows(Shadows s)
         {
             ShadowQuality = s;
@@ -301,7 +304,7 @@ namespace Game.Client
         }
 
         // THE RING (owner, 2026-10-14: *"fog should be a circle around player .. not flat line infront"*). The
-        // ground and the props (LitVertexColor) fog by their FLAT distance from the player, read per pixel off these
+        // ground (LitVertexColor) and the scenery props (PropLit, 0.262.0) fog by their FLAT distance from the player, read per pixel off these
         // three globals — so the haze is a ring centred on you whichever way the
         // camera turns. Unity's own fog is a plane across the view, and is left only to the imported models (URP Lit:
         // characters, houses), which are drawn no farther than DrawDistance anyway.

@@ -313,7 +313,9 @@ namespace Game.Client
             // tilted near the horizon the top edge's ray meets the ground at the map border, the midpoint ran off there,
             // and the circle round it reached back toward you as a reversed arc — or, at pitch 30-31, not at all.
             if (CameraRig.Focus.HasValue) centre = WorldMapper.ToServer(CameraRig.Focus.Value);
-            float range = RangeAt[(int)Quality], range2 = range * range;
+            // Never past the fog (Settings → View distance): where the ring is fully thick a prop is the fog's own colour,
+            // so drawing it there only costs. The Scenery setting can still pull it in closer.
+            float range = Mathf.Min(RangeAt[(int)Quality], DayNight.FogEnd), range2 = range * range;
             float half = BiomeGround.ChunkSize * 0.5f;
 
             foreach (var v in _all) v.Gathered.Clear();

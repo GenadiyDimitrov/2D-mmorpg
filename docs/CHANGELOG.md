@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.261.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.262.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,36 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-14 (latest) — 0.261.0: shutdown sends you out, reboot keeps you in; "new version" line; no address on screen; a fog RING
+## 2026-10-14 (latest) — 0.262.0: trees and rocks follow View distance and the fog ring; Game info popup; scrolling Setup; two-column Menu
+
+**APK** (the server is unchanged; it only carries the new version number). No `game.db` delete. Protocol unchanged (56).
+
+- **Scenery now stops at the fog.** Owner: *"1000 render and 3000 render doesnt change the trees and stones load range ..
+  it changes only the size of circle around me and the houses/npc load .. also the fog dissapeared"*. Two causes:
+  `PropScatter` drew to the Scenery setting's own range (9000 on High) whatever the view distance was, and the nature
+  materials wore URP Lit, whose fog is Unity's DEPTH fog. So with 0.261.0's ring on the ground, the trees and rocks
+  stood clear and bright past it, and the haze no longer read as fog. Now props are drawn no farther than where the
+  ring is fully thick (`DayNight.FogEnd` = view + 150; the Scenery setting can still cut them shorter). They also wear
+  a new shader of our own, `L2Clone/PropLit` (URP Lit's property names, so the 11 nature materials only swap shaders;
+  `ModelSetup.BuildProps` now builds them with it), which fogs by the same ring as the ground. Checked headlessly: a rock
+  inside the ring renders lit and textured, one outside it renders as pure fog colour. The ring shader itself was
+  verified working in the same check; the ground was never the broken part.
+- **The top information row is gone** and is now a **Game info popup**: Setup → *Game info: ON/off* (off by default).
+  Owner: *"remove the top information row ? and it appears as a overlay popup (as rows not as bar) toggled with
+  setup>gameinfo (a movable popup window with almost transparent bacground (version to be visible etc ...))"*. One fact
+  per row (state + STALLED, net, fps, game time, local time, entities, version) on a 22%-black background. Drag it
+  anywhere; its position is remembered on the phone (Reset to defaults puts it back). The connection dot moved into it.
+  The world HUD moved up into the freed 40 units: the world root now reaches `GameUi.HudLift` above the screen instead
+  of every top offset being edited, and `DragMove` keeps windows inside the visible screen rather than that taller
+  root. The staff badge (`BL-82`) now hangs at the top-centre, and the version still shows bottom-right on the login
+  and character screens.
+- **Setup scrolls.** Owner: *"setup start to become larger (make it scrolable..)"*. The rows sit in a scroll view
+  between the title bar and the Save / Reset / Sound buttons, which stay put.
+- **The Menu is two fixed columns.** Owner: *"1-column -> auto farm/offline/auto pots/quests/drops/rank/admin, 2-column
+  -> craft/restore/options/setup/sound/leave"*. Admin still shows for staff only, with no gap. A column that would run off
+  the screen at a large UI size still wraps into an extra column of its own.
+
+## 2026-10-14 — 0.261.0: shutdown sends you out, reboot keeps you in; "new version" line; no address on screen; a fog RING
 
 **Server + APK.** No `game.db` delete. Protocol unchanged (56): nothing on the wire changed (the "update" line is an
 ordinary SYSTEM chat line, the shutdown uses the existing `ForceDisconnect`).

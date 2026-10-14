@@ -28,9 +28,18 @@ namespace Game.Client
         private Canvas _canvas;
         private RectTransform _root;
 
-        // status strip
+        // game info popup (was the status strip across the top until 0.262.0)
         private Image _statusDot, _reconnectNotice;
         private TextMeshProUGUI _statusText, _versionText;
+        private RectTransform _infoPanel;
+        private Vector2 _infoSavedAt;
+        private const string PrefGameInfo = "ui.gameInfo", PrefGameInfoX = "ui.gameInfo.x", PrefGameInfoY = "ui.gameInfo.y";
+        private static readonly Vector2 GameInfoDefaultAt = new Vector2(0f, -40f);
+
+        /// <summary>How far the world HUD moved up when the 40-unit status strip left the top of the screen (0.262.0). Every
+        /// top-anchored HUD offset was authored below that strip, so rather than edit each of them the world root reaches
+        /// this far ABOVE the screen (BuildWorld): the same thing as subtracting 40 from all of them at once.</summary>
+        private const float HudLift = 40f;
 
         // staff badge (`BL-82`) — god mode / invisibility / forced speeds, permanently on screen
         private Image _staffBadge;
@@ -108,6 +117,9 @@ namespace Game.Client
             BuildCharacterSelect();
             BuildWorld();
             BuildSkillTree();   // `BL-330` — on the root canvas: character creation opens it too
+            // The game-info popup and the staff badge float over the screens built above, under the overlays below.
+            _infoPanel.SetAsLastSibling();
+            _staffBadge.transform.SetAsLastSibling();
             BuildOverlays();
             HookFeedback();
         }
@@ -174,42 +186,50 @@ namespace Game.Client
             _builtPhase = Boot.Phase;
         }
 
-        // ----- status strip ----------------------------------------------------------------------
+        // ----- game info popup --------------------------------------------------------------------
 
+        /// <summary>
+        /// The connection / fps / clocks / version readout. It was a 40-unit strip across the top of every screen until
+        /// 0.262.0; the owner: *"remove the top information row ... a overlay popup (as rows not as bar) toggled with
+        /// setup>gameinfo (a movable popup window with almost transparent background)"*. Off unless chosen; dragging
+        /// it anywhere on its face moves it, and where it was left is remembered on the phone.
+        /// </summary>
         private void BuildStatusStrip()
         {
-            var strip = UiKit.Box(_root, "StatusStrip", UiKit.Panel);
-            var rt = UiKit.Rect(strip.gameObject);
-            rt.anchorMin = new Vector2(0f, 1f);
-            rt.anchorMax = new Vector2(1f, 1f);
-            rt.pivot = new Vector2(0.5f, 1f);
-            rt.anchoredPosition = Vector2.zero;
-            rt.sizeDelta = new Vector2(0f, 40f);
+            var panel = UiKit.Box(_root, "GameInfo", new Color(0f, 0f, 0f, 0.22f));
+            _infoPanel = UiKit.Rect(panel.gameObject);
+            _infoSavedAt = new Vector2(PlayerPrefs.GetFloat(PrefGameInfoX, GameInfoDefaultAt.x),
+                                       PlayerPrefs.GetFloat(PrefGameInfoY, GameInfoDefaultAt.y));
+            UiKit.Place(_infoPanel, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), _infoSavedAt, new Vector2(220f, 60f));
+            panel.gameObject.AddComponent<DragMove>().Target = _infoPanel;
 
-            _statusDot = UiKit.Box(strip.transform, "Dot", UiKit.Bad);
-            UiKit.Place(UiKit.Rect(_statusDot.gameObject), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
-                        new Vector2(12f, 0f), new Vector2(14f, 14f));
+            _statusDot = UiKit.Box(panel.transform, "Dot", UiKit.Bad, blocksInput: false);
+            UiKit.Place(UiKit.Rect(_statusDot.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(10f, -12f), new Vector2(12f, 12f));
 
-            _statusText = UiKit.Label(strip.transform, "", 18f, UiKit.Text, TextAlignmentOptions.Left);
-            UiKit.Place(UiKit.Rect(_statusText.gameObject), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
-                        new Vector2(34f, 0f), new Vector2(700f, 24f));
+            _statusText = UiKit.Label(panel.transform, "", 16f, UiKit.Text, TextAlignmentOptions.TopLeft);
+            UiKit.Place(UiKit.Rect(_statusText.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(30f, -6f), new Vector2(184f, 200f));
+            _statusText.textWrappingMode = TextWrappingModes.NoWrap;
+            _infoPanel.gameObject.SetActive(PlayerPrefs.GetInt(PrefGameInfo, 0) == 1);
 
-            _versionText = UiKit.Label(strip.transform, "v" + GameConstants.GameVersion, 14f,
-                                       UiKit.TextDim, TextAlignmentOptions.Right);
-            UiKit.Place(UiKit.Rect(_versionText.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
-                        new Vector2(-12f, 0f), new Vector2(120f, 20f));
+            // The version stays on the ACCOUNT screens without the popup: it is the first thing asked when a phone
+            // misbehaves, and before login there is nothing else on screen to read it from.
+            _versionText = UiKit.Label(_root, "v" + GameConstants.GameVersion, 14f, UiKit.TextDim, TextAlignmentOptions.Right);
+            UiKit.Place(UiKit.Rect(_versionText.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
+                        new Vector2(-12f, 8f), new Vector2(160f, 20f));
 
             // THE STAFF BADGE (`BL-82`): *"Add a flag for admin to see that he is in god/invis ... but
-            // now i cannot see nothing."* It lives in the strip beside the version, LEFT of it, because
-            // the whole top-left below the strip is already spoken for — vitals down to -162 and the
-            // buff rows from -170 — and a badge that only appears sometimes must not push those around.
+            // now i cannot see nothing."* It sat in the strip beside the version; with the strip gone (0.262.0)
+            // it hangs at the top-centre, the one stretch of the top edge no HUD panel uses, so a badge that only
+            // appears sometimes still pushes nothing around.
             //
             // Its background carries the alarm and the text carries the detail, so a glance is enough to
             // answer "am I god right now" without reading: red = god mode, indigo = invisible, neutral =
             // staff with nothing on. Hidden outright for an ordinary player, who has none of these.
-            _staffBadge = UiKit.Box(strip.transform, "StaffBadge", new Color(0.18f, 0.18f, 0.22f, 0.75f));
-            UiKit.Place(UiKit.Rect(_staffBadge.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
-                        new Vector2(-140f, 0f), new Vector2(250f, 26f));
+            _staffBadge = UiKit.Box(_root, "StaffBadge", new Color(0.18f, 0.18f, 0.22f, 0.75f), blocksInput: false);
+            UiKit.Place(UiKit.Rect(_staffBadge.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                        new Vector2(0f, -4f), new Vector2(250f, 26f));
             _staffBadgeText = UiKit.Label(_staffBadge.transform, "", 15f, UiKit.Text,
                                           TextAlignmentOptions.Right);
             UiKit.Stretch(UiKit.Rect(_staffBadgeText.gameObject), 8f, 0f, 8f, 0f);
@@ -220,7 +240,7 @@ namespace Game.Client
             // is better than the client pretending you had logged out.
             _reconnectNotice = UiKit.Box(_root, "Reconnecting", new Color(0.10f, 0.12f, 0.15f, 0.95f));
             UiKit.Place(UiKit.Rect(_reconnectNotice.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                        new Vector2(0f, -52f), new Vector2(380f, 44f));
+                        new Vector2(0f, -12f), new Vector2(380f, 44f));
             var notice = UiKit.Label(_reconnectNotice.transform, "Reconnecting ...", 18f,
                                      new Color(0.95f, 0.80f, 0.35f), TextAlignmentOptions.Center);
             UiKit.Stretch(UiKit.Rect(notice.gameObject), 0f, 0f, 0f, 0f);
@@ -254,11 +274,28 @@ namespace Game.Client
                 _renderFps = Mathf.Lerp(_renderFps, 1f / Time.unscaledDeltaTime,
                                         1f - Mathf.Exp(-3f * Time.unscaledDeltaTime));
 
+            bool accountScreens = !inWorld && !Boot.Restoring;
+            if (_versionText.gameObject.activeSelf != accountScreens) _versionText.gameObject.SetActive(accountScreens);
+            RefreshStaffBadge(inWorld);
+            if (!_infoPanel.gameObject.activeSelf) return;
+
+            // Dragged: remember where it was left (compared per frame, saved only when it moved).
+            if ((_infoPanel.anchoredPosition - _infoSavedAt).sqrMagnitude > 1f)
+            {
+                _infoSavedAt = _infoPanel.anchoredPosition;
+                PlayerPrefs.SetFloat(PrefGameInfoX, _infoSavedAt.x);
+                PlayerPrefs.SetFloat(PrefGameInfoY, _infoSavedAt.y);
+            }
+
+            // One fact per ROW (owner, 0.262.0: "as rows not as bar").
             string text = Boot.Phase.ToString();
             if (Boot.Phase == ClientPhase.InWorld)
             {
-                text += "  ·  net " + Boot.FramesPerSecond.ToString("0.0") + "/s"
-                      + "  ·  " + Mathf.RoundToInt(_renderFps) + " fps";
+                // A connected socket that has gone quiet looks identical to a healthy one unless we
+                // say so out loud. This is the line that made the empty-world bug visible.
+                if (!live) text += "  STALLED";
+                text += "\nnet " + Boot.FramesPerSecond.ToString("0.0") + "/s"
+                      + "\n" + Mathf.RoundToInt(_renderFps) + " fps";
                 // TWO clocks, right after the framerate (owner, 2026-08-07). They answer different
                 // questions and both get asked constantly: the GAME clock is what day/night, spawns
                 // and timed content run on (GameClock.TimeScale = 6, so a game day is 4 real hours),
@@ -267,18 +304,26 @@ namespace Game.Client
                 // GameBoot stores at login, so it cannot drift from what the server believes.
                 // ⚠ Plain text only — the TMP atlas is static and every clock/emoji glyph draws as a
                 // hollow box (see the tmp-font-atlas-is-static note).
-                // ⚠ TEMPORARY HOME: these live in the title bar because that is where the framerate
-                // is. When the title bar goes, both move out with it — keep them together.
-                text += "  ·  game " + GameClock.Format(GameClock.HourOfDay(DateTime.UtcNow))
-                      + "  ·  " + DateTime.Now.ToString("HH:mm:ss");
-                if (Boot.Entities != null) text += "  ·  entities " + Boot.Entities.Count;
-                // A connected socket that has gone quiet looks identical to a healthy one unless we
-                // say so out loud. This is the line that made the empty-world bug visible.
-                if (!live) text += "   STALLED";
+                text += "\ngame " + GameClock.Format(GameClock.HourOfDay(DateTime.UtcNow))
+                      + "\nlocal " + DateTime.Now.ToString("HH:mm:ss");
+                if (Boot.Entities != null) text += "\nentities " + Boot.Entities.Count;
             }
-            _statusText.text = text;
+            text += "\nv" + GameConstants.GameVersion;
+            if (_statusText.text != text)
+            {
+                _statusText.text = text;
+                float h = _statusText.GetPreferredValues(text, 184f, 0f).y;
+                _infoPanel.sizeDelta = new Vector2(_infoPanel.sizeDelta.x, Mathf.Ceil(h) + 12f);
+            }
+        }
 
-            RefreshStaffBadge(inWorld);
+        /// <summary>Setup → Game info: show or hide the popup, remembered on the phone.</summary>
+        private void ToggleGameInfo()
+        {
+            bool on = !_infoPanel.gameObject.activeSelf;
+            _infoPanel.gameObject.SetActive(on);
+            if (on) _infoPanel.SetAsLastSibling();
+            PlayerPrefs.SetInt(PrefGameInfo, on ? 1 : 0);
         }
 
         /// <summary>Paint the staff badge from the server's own view of you (`BL-82`).

@@ -104,10 +104,29 @@ namespace Game.Client
             _settingsPanel = UiKit.PanelBox(_setupRoot, "Settings");
             UiKit.Place(_settingsPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                         Vector2.zero, new Vector2(640f, 690f));   // grown for the camera rows, the bar-shape row, the bar size, then shadows + night; -88 for the ortho rows (0.252.0); +40 view distance
-            var inner = _settingsPanel.GetChild(0);
+            var frame = _settingsPanel.GetChild(0);
             float chrome = UiKit.WindowChrome(_settingsPanel, "Settings", () => CloseWindow(_settingsPanel));
 
-            float y = -chrome - 14f;
+            // THE ROWS SCROLL (owner, 0.262.0: *"setup start to become larger (make it scrolable..)"*): between the title
+            // bar and the Save / Reset / Sound buttons, which stay put. Every row below is placed at an absolute y down
+            // a content rect, whose height is set to the last row's once they are all built.
+            var view = UiKit.Box(frame, "Viewport", new Color(0, 0, 0, 0.001f));   // near-invisible, but catches the drag
+            var viewRect = UiKit.Stretch(UiKit.Rect(view.gameObject), 0f, chrome, 0f, SetupFooter);
+            view.gameObject.AddComponent<RectMask2D>();
+            var content = new GameObject("Content", typeof(RectTransform)).GetComponent<RectTransform>();
+            content.SetParent(viewRect, false);
+            content.anchorMin = new Vector2(0f, 1f);
+            content.anchorMax = new Vector2(1f, 1f);
+            content.pivot = new Vector2(0.5f, 1f);
+            var scroll = view.gameObject.AddComponent<ScrollRect>();
+            scroll.horizontal = false;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            scroll.scrollSensitivity = 24f;
+            scroll.viewport = viewRect;
+            scroll.content = content;
+            Transform inner = content;
+
+            float y = -14f;
 
             Row(inner, ref y, _pitchSlider = UiKit.SliderRow(inner, "Camera angle", CameraRig.MinPitch, CameraRig.MaxPitch,
                 Boot.CameraRig != null ? Boot.CameraRig.Pitch : 90f, "0", v =>
@@ -240,6 +259,11 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(shadows.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(18f, y), new Vector2(260f, 38f));
             _shadowToggle = shadows;
+            // 0.262.0 — the old top status strip, now a movable popup of its own (see BuildStatusStrip).
+            var gameInfo = UiKit.TextButton(inner, "", () => { ToggleGameInfo(); RefreshSettingsLabels(); }, 15f);
+            UiKit.Place(UiKit.Rect(gameInfo.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(292f, y), new Vector2(260f, 38f));
+            _gameInfoToggle = gameInfo;
             y -= 48f;
 
             // `BL-344` step 5 — the owner asked for "a bar or gamma as other games": how bright night is, per player.
@@ -272,7 +296,9 @@ namespace Game.Client
                         new Vector2(292f, y), new Vector2(260f, 38f));
             _extraSlotsToggle = extraSlots;
             y -= 48f;
+            content.sizeDelta = new Vector2(0f, -y);   // the scroll's whole height: down to the last row
 
+            inner = frame;   // the footer buttons stay below the scrolling rows
             var save = UiKit.TextButton(inner, "Save", () => PlayerPrefs.Save(), 16f);
             UiKit.Place(UiKit.Rect(save.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(18f, 16f), new Vector2(140f, 40f));
@@ -282,7 +308,7 @@ namespace Game.Client
                 foreach (var key in new[] { PrefPitch, PrefYaw,
                                             PrefEntity, PrefPlate, PrefUiScale, PrefBarScale, PrefDamage,
                                             PrefZones, PrefTicks, PrefBarShape, PrefExtraBars, PropScatter.Pref, DayNight.ShadowPref, DayNight.NightPref,
-                                            DayNight.ViewPref })
+                                            DayNight.ViewPref, PrefGameInfo, PrefGameInfoX, PrefGameInfoY })
                     PlayerPrefs.DeleteKey(key);
                 PlayerPrefs.Save();
                 // The two sizes come back at once — they are the ones that can make the game unusable.
@@ -326,7 +352,9 @@ namespace Game.Client
         }
 
         private RectTransform _serverRow;
-        private Button _damageToggle, _zoneToggle, _modelToggle, _tickToggle, _sceneryToggle, _shadowToggle;
+        private Button _damageToggle, _zoneToggle, _modelToggle, _tickToggle, _sceneryToggle, _shadowToggle, _gameInfoToggle;
+        /// <summary>Room under Setup's scrolling rows for its Save / Reset / Sound buttons (y 16, 40 tall).</summary>
+        private const float SetupFooter = 66f;
         private Button _extraSlotsToggle, _barShapeToggle;   // `BL-269`, `BL-299`
         private Slider _uiScaleSlider, _barScaleSlider;
         private Slider _pitchSlider, _yawSlider, _zoomSlider;   // follow the drag gesture while Settings is open (SyncCameraSliders)
@@ -367,6 +395,7 @@ namespace Game.Client
             UiKit.SetButtonText(_extraSlotsToggle, ExtraSlotsLabel);
             UiKit.SetButtonText(_sceneryToggle, "Scenery: " + PropScatter.Quality);
             UiKit.SetButtonText(_shadowToggle, DayNight.ShadowLabel);
+            UiKit.SetButtonText(_gameInfoToggle, _infoPanel != null && _infoPanel.gameObject.activeSelf ? "Game info: ON" : "Game info: off");
             UiKit.SetButtonText(_barShapeToggle, BarShapeLabel);
         }
 
