@@ -2661,7 +2661,7 @@ for fullscreen later on/off for windows environment if its hard to do - default 
 an emulator (BlueStacks, Android Studio) must translate every instruction — slow 3D, and some crash. Unity builds the
 SAME project natively for Windows instead.
 
-**Built:** `pwsh tools/publish.ps1 -Windows` (add `-NoServer` to skip the server zip) →
+**Built:** hosted like the APK — `tools/deploy.ps1` ships it to `~/game/pc/`, the site has a Download for Windows button (`/pc`). Locally: `pwsh tools/publish.ps1 -Windows` (add `-NoServer` to skip the server zip) →
 `builds/Vardelar-Windows-<version>.zip`. Unzip anywhere, run `Vardelar.exe`. It opens as a **bordered, resizable
 window, 1600×900** (`CommandLineBuild.BuildWindows`), keeps running when you click another window, and connects to the
 same address the APK does (`Resources/server.txt`). The mouse already works — the Editor has always played by mouse:
@@ -2673,7 +2673,7 @@ and reopens it that way; the settings above are the FIRST launch.
    Alt+Enter already toggles it today, Unity's own shortcut.
 2. **Keyboard shortcuts** — 1-0 for the skill bar, Esc closes windows (Esc already = Back), maybe WASD.
 3. **A layout check at PC sizes** — the HUD was laid out for a landscape phone; a wide or small window may need tuning.
-4. Not part of `tools/deploy.ps1`: the site offers the APK only. Putting the zip on the site is a later decision.
+4. ~~Hosting~~ — built (0.265.0): `/pc` + the site button.
 
 ## `BL-361` ⏸ AN iOS CLIENT (2026-10-14)
 

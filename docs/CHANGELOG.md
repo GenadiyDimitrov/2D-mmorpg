@@ -46,6 +46,10 @@ effect is good looking; they need to show that they are there and active not to 
   `builds/Vardelar-Windows-<version>.zip` (`CommandLineBuild.BuildWindows`): a bordered, resizable 1600×900 window that
   keeps running unfocused; mouse as in the Editor (left = tap, right-drag = turn, wheel = zoom), Alt+Enter = fullscreen.
   `BL-361` files the iOS route.
+- **The Windows zip is hosted like the APK (`BL-360`).** `tools/deploy.ps1` now ships it by default (publishing it first
+  when `builds/` lacks it; `-NoPc` skips) into `~/game/pc/` (keeps 3); the server serves the newest at **`/pc`**
+  (`ApkFiles.FindPc`, saved as `Vardelar <ver> Windows.zip`), and the site shows a quieter **Download for Windows**
+  button under the Android one, only while a zip is there, plus a short "Play on Windows" section.
 
 ## 2026-10-14 — 0.264.0: a fog WALL; World and Entity distance split; zoom-out 20
 

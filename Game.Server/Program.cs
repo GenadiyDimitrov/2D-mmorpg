@@ -97,6 +97,17 @@ try
             : Results.NotFound("APK not built yet — check back in a minute.");
     });
 
+    // `BL-360` — the Windows test client, the same way: the newest zip tools/deploy.ps1 put in pc/ beside the server.
+    app.MapGet("/pc", () =>
+    {
+        var zip = ApkFiles.FindPc();
+        return zip is not null
+            ? Results.File(zip, "application/zip",
+                ApkFiles.VersionOf(Path.GetFileName(zip)) is string v ? $"Vardelar {v} Windows.zip" : "Vardelar Windows.zip",
+                enableRangeProcessing: true)
+            : Results.NotFound("The Windows client is not uploaded yet.");
+    });
+
     // The landing page: Site/index.html with its {{TOKENS}} filled. Re-read on every request so an edit to the
     // text shows on the next refresh. The player count is a plain read of a dictionary the game loop owns —
     // a racy Count is harmless for a number on a web page, and it never writes, so the single-writer rule holds.
@@ -120,12 +131,25 @@ try
             download = $"<a class=\"download\" href=\"/apk\" download>Download for Android<small>{string.Join(" · ", parts)}</small></a>";
         }
 
+        // `BL-360` — the Windows button, shown only when a zip is hosted (a test client, so no "not available" stub).
+        string downloadPc = "";
+        if (ApkFiles.FindPc() is string pcPath)
+        {
+            var pc = new FileInfo(pcPath);
+            var parts = new List<string>();
+            if (ApkFiles.VersionOf(pc.Name) is string ver) parts.Add(ver);
+            parts.Add("Updated " + pc.LastWriteTimeUtc.ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture));
+            parts.Add($"{pc.Length / 1048576.0:0.0} MB");
+            downloadPc = $"<a class=\"download secondary\" href=\"/pc\" download>Download for Windows<small>{string.Join(" · ", parts)}</small></a>";
+        }
+
         int online = world.ConnectionToEntity.Count;
         string status = $"<span class=\"dot\"></span>Server online · {online} {(online == 1 ? "player" : "players")} in the world"
             + (ServerControl.RegistrationOpen ? "" : "<br><span class=\"closed\">New accounts are closed at the moment.</span>");
 
         string html = File.ReadAllText(template)
             .Replace("{{DOWNLOAD}}", download)
+            .Replace("{{DOWNLOAD_PC}}", downloadPc)
             .Replace("{{STATUS}}", status)
             .Replace("{{VERSION}}", Game.Shared.GameConstants.GameVersion)
             // Behind Caddy the request arrives as plain http; the proxy's header says what the visitor used.

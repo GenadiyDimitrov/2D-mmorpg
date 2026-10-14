@@ -245,11 +245,11 @@ players' 0 everyone is saved and sent to the login screen, logins are refused fo
 (exit 64). (A `/server reboot` has no tail: at 0 it saves and restarts, and the phones reconnect on their own for up to
 3 minutes.) Then it copies `game.db` to `~/backups/predeploy-<old>-to-<new>-<time>.db`
 (keeps 10), rsyncs the new build over `~/game` — never `game.db*`, `owner.txt`, `registration.txt`,
-`debug-config.json`, `admin-only.flag`, `apk-path.txt` or `apk/` — puts the APK in `~/game/apk/` (keeps 3), starts
+`debug-config.json`, `admin-only.flag`, `apk-path.txt`, `apk/` or `pc/` — puts the APK in `~/game/apk/` and the Windows zip in `~/game/pc/` (keeps 3 each), starts
 the service and waits for `L2Clone server v<new> starting.`. The live version is recorded in `~/game/VERSION`.
 
-Options: `-Minutes 10` (longer warning), `-Minutes 0` (no countdown), `-NoApk` (server only), `-NoServer` (APK only, no
-restart). `/apk` serves the newest file in `~/game/apk/`. To serve one from elsewhere, write its path (or a folder) on
+Options: `-Minutes 10` (longer warning), `-Minutes 0` (no countdown), `-NoApk`, `-NoPc` (skip the Windows zip, `BL-360`), `-NoServer` (clients only, no
+restart). `/pc` serves the newest zip in `~/game/pc/`, and the site shows its button only while one is there. `/apk` serves the newest file in `~/game/apk/`. To serve one from elsewhere, write its path (or a folder) on
 one line in `~/game/apk-path.txt`.
 
 The command file works for any `/server` line, by hand too: `echo "reboot 5" > ~/game/server-command.txt`.

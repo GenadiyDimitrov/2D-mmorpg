@@ -74,6 +74,17 @@ body {
   cursor: default;
 }
 .download.disabled small { color: var(--muted); }
+/* BL-360 — the Windows test client: under the Android button, quieter (outlined, smaller). */
+.download.secondary {
+  margin-top: 12px;
+  padding: 10px 24px;
+  background: var(--panel);
+  color: var(--gold-hi);
+  font-size: 17px;
+  box-shadow: none;
+}
+.download.secondary:hover, .download.secondary:focus-visible { background: rgba(217,181,106,.12); }
+.download.secondary small { color: var(--muted); }
 
 .status { margin: 14px 0 0; color: var(--muted); font-size: 15px; }
 .dot {

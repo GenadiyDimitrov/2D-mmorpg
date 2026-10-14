@@ -17,19 +17,26 @@ internal static class ApkFiles
     internal static string ContentRoot = Directory.GetCurrentDirectory();
 
     internal static string? VersionOf(string fileName) =>
-        System.Text.RegularExpressions.Regex.Match(fileName, @"-(\d+(?:\.\d+)+)\.apk$",
+        System.Text.RegularExpressions.Regex.Match(fileName, @"-(\d+(?:\.\d+)+)\.(?:apk|zip)$",
             System.Text.RegularExpressions.RegexOptions.IgnoreCase) is { Success: true } m ? m.Groups[1].Value : null;
+
+    /// <summary>The highest-version file matching <paramref name="pattern"/> in <paramref name="dir"/> (ranked by the
+    /// version in the name, then by date), or null.</summary>
+    private static string? Newest(string dir, string pattern) =>
+        !Directory.Exists(dir) ? null
+        : new DirectoryInfo(dir).GetFiles(pattern)
+            .OrderByDescending(f => Version.TryParse(VersionOf(f.Name), out var v) ? v : new Version(0, 0))
+            .ThenByDescending(f => f.LastWriteTimeUtc).FirstOrDefault()?.FullName;
+
+    /// <summary>`BL-360` — the Windows test client served at <c>/pc</c>: the newest zip in the <c>pc</c> folder beside
+    /// the server (tools/deploy.ps1 fills it, as it fills <c>apk</c>), then the repo's <c>builds/</c> on the dev PC.</summary>
+    internal static string? FindPc() =>
+        Newest(Path.Combine(AppContext.BaseDirectory, "pc"), "*.zip")
+        ?? Newest(Path.GetFullPath(Path.Combine(ContentRoot, "..", "builds")), "Vardelar-Windows-*.zip");
 
     internal static string? Find()
     {
-        string? Resolve(string path)
-        {
-            if (File.Exists(path)) return path;
-            if (!Directory.Exists(path)) return null;
-            return new DirectoryInfo(path).GetFiles("*.apk")
-                .OrderByDescending(f => Version.TryParse(VersionOf(f.Name), out var v) ? v : new Version(0, 0))
-                .ThenByDescending(f => f.LastWriteTimeUtc).FirstOrDefault()?.FullName;
-        }
+        string? Resolve(string path) => File.Exists(path) ? path : Newest(path, "*.apk");
         string baseDir = AppContext.BaseDirectory;
         string cfg = Path.Combine(baseDir, "apk-path.txt");
         if (File.Exists(cfg)
