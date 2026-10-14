@@ -772,7 +772,8 @@ namespace Game.Client
         /// the right answer.</para></summary>
         public void TargetClosest()
         {
-            const float maxRange = 2500f, maxRangeSq = maxRange * maxRange;
+            // Never into the fog: what you cannot see you cannot cycle onto (Settings → View distance).
+            float maxRange = Mathf.Min(2500f, DayNight.ViewDistance), maxRangeSq = maxRange * maxRange;
             if (Entities == null || !Entities.TryGetState(SelfId, out var self)) return;
 
             // Prune the retaliation memory first, so a stale entry can never win a sort below.

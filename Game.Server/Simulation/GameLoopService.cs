@@ -18820,7 +18820,8 @@ public partial class GameLoopService : BackgroundService
             // one to read. MOBS keep their level (the con-colour and the decision to engage depend on
             // it); party members' levels travel separately on PartyMemberDto, which only the party sees.
             var current = new Dictionary<Guid, EntityDto>();
-            foreach (var e in _world.Grid.Nearby(player))
+            // SendRange, not ViewRange: the extra margin is drawn inside the client's fog (GameConstants.FadeMargin).
+            foreach (var e in _world.Grid.Nearby(player, GameConstants.SendRange))
             {
                 // INVISIBILITY (BL-69) is enforced HERE, by omission, and that is the whole of "a
                 // buff nobody renders, targets or checks as nearby": a hidden character simply never
@@ -18967,7 +18968,7 @@ public partial class GameLoopService : BackgroundService
         List<TotemDto>? visible = null;
         if (_world.Totems.Count > 0)
         {
-            const float rangeSq = GameConstants.ViewRange * GameConstants.ViewRange;
+            const float rangeSq = GameConstants.SendRange * GameConstants.SendRange;
             foreach (var t in _world.Totems)
             {
                 float dx = t.X - player.X, dy = t.Y - player.Y;
@@ -19010,8 +19011,8 @@ public partial class GameLoopService : BackgroundService
     private void SendWhispsIfChanged(Entity player, string connectionId, List<Task> sends)
     {
         List<WhispDto>? visible = null;
-        const float rangeSq = GameConstants.ViewRange * GameConstants.ViewRange;
-        foreach (var other in _world.Grid.Nearby(player))
+        const float rangeSq = GameConstants.SendRange * GameConstants.SendRange;
+        foreach (var other in _world.Grid.Nearby(player, GameConstants.SendRange))
         {
             if (other.Whisps.Count == 0 || other.Id == player.Id) continue;   // self is added below
             float dx = other.X - player.X, dy = other.Y - player.Y;

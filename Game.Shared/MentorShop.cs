@@ -44,6 +44,9 @@ public static class MentorShop
     public static string TimedAttrId(string mythicId, AttributeType type) => $"{mythicId}_mtemp_a{(int)type}";
     /// <summary>A permanent bound copy (the Graduation shelf): "helm_t76" → "helm_t76_mbound".</summary>
     public static string PermanentId(string mythicId) => mythicId + "_mbound";
+    /// <summary>Any of the three copies above — the admin Equip tab hides them (owner, 2026-10-14: *"only the real
+    /// mythic and common nothing else .. others can be /give"*).</summary>
+    public static bool IsCopy(string id) => id.Contains("_mtemp") || id.EndsWith("_mbound");
 
     public static string ArmorBoxId(int tier) => $"box_mentor_armor_t{tier}";
     public static string SetBoxId(string weight, int tier) => $"box_mentor_{weight}_t{tier}";

@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.259.4**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.260.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,34 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-14 (latest) — 0.259.4: `deploy` — updating the live server is its own step, with a countdown
+## 2026-10-14 (latest) — 0.260.0: a View distance slider the fog follows; underwear until you wear armour; admin Equip shows real items only
+
+**Server + APK.** No `game.db` delete. Protocol unchanged (56): the new `EntityDto.Armor` is a defaulted addition an
+older APK ignores.
+
+- **The fog sits at the edge of what you see.** Owner: *"can the fog starts at 2900+ because now u render at 3k but fog
+  swallows everyone at 1800 … need a slider for the fog range+render"*. Settings → **View distance**, 1000-3000 in
+  steps of 50 (default 3000, saved on the phone). The fog starts 50 inside it and is fully thick 150 past it
+  (`DayNight.FogBeforeView` / `FogPastView`); creatures, buildings and NPCs are drawn to 200 past it
+  (`DayNight.DrawDistance`), so they walk out of the haze instead of popping in. Nameplates stop at the view distance
+  (UI is not fogged), except your target's. NextTarget never cycles into the fog.
+- **The server sends 200 further than it plays.** `GameConstants.SendRange = ViewRange + FadeMargin` (3200) is read
+  ONLY by the snapshot, totem and whisp pushes; every game rule (targeting, party share, auto-hunt) stays on
+  `ViewRange` 3000. `CellSize` = `SendRange` so the 3×3 neighbourhood still covers the circle;
+  `CellGrid.Nearby(center, range)` is the new overload.
+- **Underwear until you wear armour.** Owner: *"characters (players not npcs) when dont wear an armor to be naked
+  (underware) and equiping for now any armor to equip that adventurer set"*. The base body the head was already cut from
+  carries the underwear painted on, so `ModelSetup` now also cuts the REST of it (`HeadMesh(…, head: false)`, the same
+  seam) into a hidden `Underwear` piece on the two player bodies. `Entity.HasArmor` (any `EquipSlot.Armor` piece) rides
+  the spawn DTO; `CharacterLook.Dress` shows the underwear or the Ranger pieces (hood still off). NPCs and mobs are
+  untouched. A brand-new character's bag is empty, so they start in underwear; the creation preview still shows the outfit.
+- **Creatures past your view distance are not drawn at all** — renderers off, never the GameObject, so a corpse coming
+  back into view does not stand up (`EntityView.SetFar`).
+- **Admin Equip: the real pieces only.** Owner: *"now it show 5 battlestaves 3 attributed + 1 real + 1 temp -> i want
+  as it was before only the real mythic and common"*. The mentor shop's bound copies (`_mtemp`, `_mtemp_aN`,
+  `_mbound`; `MentorShop.IsCopy`) and anything with a clock are filtered out; they are still `/give`-able.
+
+## 2026-10-14 — 0.259.4: `deploy` — updating the live server is its own step, with a countdown
 
 **Server** (no APK change of its own, no `game.db` delete). Owner: *"build or publish still does the apk and server in
 the /builds folder … we need a new one like 'update to server' … i want them separate as the update on server goes

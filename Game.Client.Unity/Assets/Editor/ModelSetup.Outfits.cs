@@ -96,6 +96,15 @@ namespace Game.ClientEditor
                 bool body = src.name.StartsWith("SuperHero", System.StringComparison.OrdinalIgnoreCase);
                 var mesh = body ? HeadMesh(src, b.Female ? "Head_Female" : "Head_Male") : src.sharedMesh;
                 if (mesh != null) Rebind(inst, bones, src, mesh, body ? "Head" : src.name);
+                // Owner, 2026-10-14: a PLAYER with no armour on is in underwear, which is exactly this base body (shorts /
+                // bra + briefs painted on). Everything but the head, as one hidden piece; CharacterLook.Dress swaps it with
+                // the outfit. NPCs and mobs keep their clothes, so only the player bodies carry it.
+                if (body && b.Key.StartsWith("player"))
+                {
+                    var rest = HeadMesh(src, b.Female ? "Underwear_Female" : "Underwear_Male", head: false);
+                    var under = rest != null ? Rebind(inst, bones, src, rest, Game.Client.CharacterLook.UnderwearPiece) : null;
+                    if (under != null) under.SetActive(false);
+                }
             }
             for (int h = 0; h < b.Hair.Length; h++)
             {
@@ -151,8 +160,9 @@ namespace Game.ClientEditor
         }
 
         /// <summary>The triangles of the base body that its head and neck bones own (every corner ≥ half-weighted to
-        /// them), as a compacted mesh asset. Rebuilt every run so a new base body needs nothing by hand.</summary>
-        private static Mesh HeadMesh(SkinnedMeshRenderer body, string assetName)
+        /// them), as a compacted mesh asset — or, with <paramref name="head"/> false, exactly the OTHER triangles (the
+        /// underwear body), so the two meet on the same seam. Rebuilt every run so a new base body needs nothing by hand.</summary>
+        private static Mesh HeadMesh(SkinnedMeshRenderer body, string assetName, bool head = true)
         {
             var src = body.sharedMesh;
             var headBones = new HashSet<int>();
@@ -183,7 +193,8 @@ namespace Game.ClientEditor
             var all = src.triangles;
             for (int t = 0; t < all.Length; t += 3)
             {
-                if (HeadShare(all[t]) < 0.5f || HeadShare(all[t + 1]) < 0.5f || HeadShare(all[t + 2]) < 0.5f) continue;
+                bool isHead = HeadShare(all[t]) >= 0.5f && HeadShare(all[t + 1]) >= 0.5f && HeadShare(all[t + 2]) >= 0.5f;
+                if (isHead != head) continue;
                 for (int k = 0; k < 3; k++)
                 {
                     int v = all[t + k];
@@ -200,21 +211,21 @@ namespace Game.ClientEditor
                 }
             }
 
-            var head = new Mesh { name = assetName };
-            head.SetVertices(verts);
-            if (normals.Count > 0) head.SetNormals(normals);
-            if (tangents.Count > 0) head.SetTangents(tangents);
-            if (uvs.Count > 0) head.SetUVs(0, uvs);
-            head.SetTriangles(tris, 0);
-            head.boneWeights = bw.ToArray();
-            head.bindposes = src.bindposes;
-            head.RecalculateBounds();
+            var cut = new Mesh { name = assetName };
+            cut.SetVertices(verts);
+            if (normals.Count > 0) cut.SetNormals(normals);
+            if (tangents.Count > 0) cut.SetTangents(tangents);
+            if (uvs.Count > 0) cut.SetUVs(0, uvs);
+            cut.SetTriangles(tris, 0);
+            cut.boneWeights = bw.ToArray();
+            cut.bindposes = src.bindposes;
+            cut.RecalculateBounds();
 
             string path = $"{OutfitHeadDir}/{assetName}.asset";
             AssetDatabase.DeleteAsset(path);
-            AssetDatabase.CreateAsset(head, path);
-            Debug.Log($"[BL-93] head cut from {src.name}: {tris.Count / 3} of {all.Length / 3} triangles, {verts.Count} vertices.");
-            return head;
+            AssetDatabase.CreateAsset(cut, path);
+            Debug.Log($"[BL-93] {(head ? "head" : "body")} cut from {src.name}: {tris.Count / 3} of {all.Length / 3} triangles, {verts.Count} vertices.");
+            return cut;
         }
 
         private static Dictionary<string, Material> BuildOutfitMaterials()

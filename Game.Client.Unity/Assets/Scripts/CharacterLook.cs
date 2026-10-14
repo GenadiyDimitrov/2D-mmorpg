@@ -103,6 +103,22 @@ namespace Game.Client
             model.transform.localScale = Vector3.Scale(model.transform.localScale, Build(race, gender));
         }
 
+        /// <summary>The bare base body (bra/briefs or shorts), baked hidden into each PLAYER body by ModelSetup.</summary>
+        public const string UnderwearPiece = "Underwear";
+
+        /// <summary>Owner, 2026-10-14: a player wearing no armour is in underwear; any armour piece puts on the outfit
+        /// (the Ranger set — the only one the art has; per-slot and per-grade looks are `BL-103`). The hood stays off
+        /// either way. A body without an underwear piece (an NPC, a mob) is left exactly as it is.</summary>
+        public static void Dress(GameObject model, bool armored)
+        {
+            var under = model.transform.Find(UnderwearPiece);
+            if (under == null) return;
+            under.gameObject.SetActive(!armored);
+            foreach (var r in model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                if (r.name.Contains("_Ranger_") && !r.name.Contains("Head_Hood"))
+                    r.gameObject.SetActive(armored);
+        }
+
         /// <summary>(width, height, depth) multipliers for a race's body.</summary>
         public static Vector3 Build(Race race, Gender gender)
         {

@@ -2597,11 +2597,20 @@ namespace Game.Client
 
             int used = 0;
             bool targetDrawn = false;
+            // A plate is UI, which the fog does not touch: past the view distance (where the body is already deep in
+            // the fog) it goes, unless it is your target.
+            var selfView = Boot.Entities.Find(Boot.SelfId);
+            float plateReach = DayNight.ViewDistance * WorldMapper.Scale, plateReach2 = plateReach * plateReach;
             foreach (var kv in Boot.Entities.States)
             {
                 var e = kv.Value;
                 var view = Boot.Entities.Find(e.Id);
                 if (view == null) continue;
+                if (selfView != null && e.Id != Boot.TargetId)
+                {
+                    var d = view.transform.position - selfView.transform.position;
+                    if (d.x * d.x + d.z * d.z > plateReach2) continue;
+                }
 
                 var screen = cam.WorldToScreenPoint(view.transform.position + Vector3.up * NameplateHeight);
                 if (screen.z <= 0f) continue;   // behind the camera

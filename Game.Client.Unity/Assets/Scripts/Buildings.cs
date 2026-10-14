@@ -268,9 +268,10 @@ namespace Game.Client
         private readonly List<(GameObject go, Vector3 at, bool hut)> _objects = new List<(GameObject, Vector3, bool)>();
         private Vector3 _culledAt = new Vector3(float.MaxValue, 0f, 0f);
 
-        /// <summary>The owner (2026-10-14): nothing past your horizon. A building is drawn only within the server's
-        /// <see cref="GameConstants.ViewRange"/> of you — the same 3000 that decides which mobs and players you see.</summary>
-        private const float DrawRange = GameConstants.ViewRange * WorldMapper.Scale;   // Unity units
+        /// <summary>The owner (2026-10-14): nothing past your horizon. A building is drawn only within
+        /// <see cref="DayNight.DrawDistance"/> of you — the same reach as the mobs and players, inside the thick fog.</summary>
+        private static float DrawRange => DayNight.DrawDistance * WorldMapper.Scale;   // Unity units
+        private float _drawnRange = -1f;
         private const float RecullStep = 1f;   // Unity units the player moves before the set is re-checked
         private DayNight.Shadows _shadows = (DayNight.Shadows)(-1);
         private PropScatter.Level _scenery = (PropScatter.Level)(-1);
@@ -304,7 +305,8 @@ namespace Game.Client
                 var mode = _shadows == DayNight.Shadows.All ? UnityEngine.Rendering.ShadowCastingMode.On : UnityEngine.Rendering.ShadowCastingMode.Off;
                 foreach (var r in _renderers) if (r != null) r.shadowCastingMode = mode;
             }
-            bool sceneryChanged = _scenery != PropScatter.Quality;
+            bool sceneryChanged = _scenery != PropScatter.Quality || _drawnRange != DrawRange;
+            _drawnRange = DrawRange;
             _scenery = PropScatter.Quality;
             if (!CameraRig.Focus.HasValue)
             {
@@ -318,7 +320,7 @@ namespace Game.Client
             me.y = 0f;
             if (!sceneryChanged && (me - _culledAt).sqrMagnitude < RecullStep * RecullStep) return;
             _culledAt = me;
-            const float range2 = DrawRange * DrawRange;
+            float range2 = DrawRange * DrawRange;
             foreach (var (go, at, hut) in _objects)
             {
                 if (go == null) continue;

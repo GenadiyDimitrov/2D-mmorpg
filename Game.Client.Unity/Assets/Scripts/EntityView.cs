@@ -905,6 +905,44 @@ namespace Game.Client
             if (_animator == null) return;
             HeldWeapons.Dress(_animator, _model, weapon, magic, shield, _held);
             ApplyModelFade();   // a weapon put in a faded hand fades with it
+            if (_far) ApplyFar();   // …and one put in a hidden hand stays hidden
+        }
+
+        private bool _armorDressed, _armored;
+
+        /// <summary>Underwear or the outfit (owner, 2026-10-14) — see <see cref="CharacterLook.Dress"/>. Called on every
+        /// spawn DTO; only a change touches the model.</summary>
+        public void SetArmor(bool armored)
+        {
+            if (_armorDressed && armored == _armored) return;
+            _armored = armored; _armorDressed = true;
+            if (_model == null) return;
+            CharacterLook.Dress(_model.gameObject, armored);
+            ApplyModelFade();   // the pieces just switched on join a running stealth fade
+            if (_far) ApplyFar();
+        }
+
+        private bool _far;
+
+        /// <summary>Past the player's view distance, inside the thick fog (DayNight.DrawDistance): drawn by nothing.
+        /// RENDERERS off, never the GameObject — deactivating it would reset the animator and stand a corpse back up.</summary>
+        public bool Far => _far;
+
+        public void SetFar(bool far)
+        {
+            if (far == _far) return;
+            _far = far;
+            ApplyFar();
+        }
+
+        private void ApplyFar()
+        {
+            if (_model == null)
+            {
+                if (_renderer != null) _renderer.enabled = !_far;
+                return;
+            }
+            foreach (var r in _model.GetComponentsInChildren<Renderer>(true)) r.enabled = !_far;
         }
 
         /// <summary>Show/hide the casting pose. Driven by <c>MobCastInfo</c> and the self cast bar —

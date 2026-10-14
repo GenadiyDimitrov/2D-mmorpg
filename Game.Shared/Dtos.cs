@@ -123,7 +123,10 @@ public record EntityDto(
     Gender Gender = Gender.Male,
     byte Hair = 0,
     byte HairColor = 0,
-    byte Skin = 0);
+    byte Skin = 0,
+    // Owner, 2026-10-14: a player wearing NO armour piece is drawn in underwear; ANY armour piece puts the one outfit
+    // the art has on (per-slot and per-grade looks come later, `BL-103`). Spawn DTO only, like the weapon above.
+    bool Armor = false);
 
 /// <summary>What to draw over an NPC's head about quests. Sent per player, because availability is
 /// personal — level, race, class and what you have already done all decide it.</summary>

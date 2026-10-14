@@ -103,7 +103,7 @@ namespace Game.Client
             // must never be scaled by the setting it controls.
             _settingsPanel = UiKit.PanelBox(_setupRoot, "Settings");
             UiKit.Place(_settingsPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                        Vector2.zero, new Vector2(640f, 650f));   // grown for the camera rows, the bar-shape row, the bar size, then shadows + night; -88 for the ortho rows (0.252.0)
+                        Vector2.zero, new Vector2(640f, 690f));   // grown for the camera rows, the bar-shape row, the bar size, then shadows + night; -88 for the ortho rows (0.252.0); +40 view distance
             var inner = _settingsPanel.GetChild(0);
             float chrome = UiKit.WindowChrome(_settingsPanel, "Settings", () => CloseWindow(_settingsPanel));
 
@@ -250,6 +250,15 @@ namespace Game.Client
                     PlayerPrefs.SetFloat(DayNight.NightPref, v);
                 }));
 
+            // Owner, 2026-10-14: how far you see. The fog starts just short of it and creatures walk out of the haze
+            // past it, instead of popping in. Lower = less to draw on a weak phone.
+            Row(inner, ref y, UiKit.SliderRow(inner, "View distance", DayNight.ViewMin, DayNight.ViewMax,
+                DayNight.ViewDistance, "0", v =>
+                {
+                    DayNight.ViewDistance = Mathf.Round(v / 50f) * 50f;
+                    PlayerPrefs.SetFloat(DayNight.ViewPref, DayNight.ViewDistance);
+                }, v => (Mathf.Round(v / 50f) * 50f).ToString("0")));
+
             // `BL-269` — extra skill squares, 0/6/12/18/24: *"need option to add more 6/12/18/24 skill slots
             // (half of or full the 2nd and 3rd skill bars)"*. A LOOK setting like the rest of this column,
             // so it lives on the phone; what the server stores is the same 60-slot bar either way.
@@ -272,7 +281,8 @@ namespace Game.Client
             {
                 foreach (var key in new[] { PrefPitch, PrefYaw,
                                             PrefEntity, PrefPlate, PrefUiScale, PrefBarScale, PrefDamage,
-                                            PrefZones, PrefTicks, PrefBarShape, PrefExtraBars, PropScatter.Pref, DayNight.ShadowPref, DayNight.NightPref })
+                                            PrefZones, PrefTicks, PrefBarShape, PrefExtraBars, PropScatter.Pref, DayNight.ShadowPref, DayNight.NightPref,
+                                            DayNight.ViewPref })
                     PlayerPrefs.DeleteKey(key);
                 PlayerPrefs.Save();
                 // The two sizes come back at once — they are the ones that can make the game unusable.

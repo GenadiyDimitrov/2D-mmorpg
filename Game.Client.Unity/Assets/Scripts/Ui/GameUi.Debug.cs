@@ -344,6 +344,7 @@ namespace Game.Client
 
         private static IEnumerable<ItemDef> GearAt(string cat, int level) => ItemCatalog.AllItems
             .Where(d => d.ItemLevel == level && d.Rarity == ItemRarity.Mythic)
+            .Where(d => !MentorShop.IsCopy(d.Id) && d.LifetimeSeconds == 0)   // the real piece only; copies are /give
             .Where(d => cat switch
             {
                 "armor" => d.Slot is EquipSlot.Armor or EquipSlot.Shield,

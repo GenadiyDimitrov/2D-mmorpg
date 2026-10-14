@@ -1746,6 +1746,9 @@ public class Entity
     /// the passives do rather than re-walk the inventory.</summary>
     public ArmorWeight BodyArmorWeight { get; set; } = ArmorWeight.None;
 
+    /// <summary>Any armour piece equipped — the client's underwear-or-outfit switch (see EntityDto.Armor).</summary>
+    public bool HasArmor { get; set; }
+
     // ----- Shield / block (0 if no shield equipped) -----
     public bool HasShield { get; set; }
     public float BlockChance { get; set; }       // chance to block a physical hit
@@ -3359,6 +3362,7 @@ public class Entity
         HealReceivedFlat = 0; HealReceivedMod = 1f;
 
         HasShield = false;
+        HasArmor = false;
         BlockChance = 0f;
         BlockReduction = 0f;
         ShieldCritDefense = 0f;
@@ -3382,6 +3386,7 @@ public class Entity
 
             if (def.Slot == EquipSlot.Armor && def.ArmorSlot == ArmorSlot.Body)
                 BodyArmorWeight = bodyWeight = def.Weight;   // published for the cast-time gate
+            if (def.Slot == EquipSlot.Armor) HasArmor = true;   // any piece → the client draws the outfit
 
             // GRADE PENALTY (owner 2026-07-17): no longer a per-item stat scaler. The gap between your
             // grade and the WORST over-grade piece you wear becomes a CHARACTER-wide debuff, applied at
@@ -4645,7 +4650,8 @@ public class Entity
             Kind == EntityKind.Mob && Aggressive && !IsGuardMob, Title, TitleColor, SocialClanShown,
             ModelCategory, ModelRole, Warp,
             WeaponType, HasMagicWeapon, HasShield,    // `BL-103` — what the client hangs in its hands
-            Gender, Hair, HairColor, Skin);           // `BL-354` — how it looks
+            Gender, Hair, HairColor, Skin,            // `BL-354` — how it looks
+            HasArmor);                                // underwear vs the outfit
 
     /// <summary>`BL-93` — the creature's authored family/role, for the client to pick a MODEL with.
     /// Read from the template rather than stored on the entity: it never changes for the life of a
@@ -4693,7 +4699,7 @@ public class Entity
         a.Category == b.Category && a.Role == b.Role &&
         // `BL-103` — swapping a weapon or a shield changes no dynamic field, so without these an
         // equip would only reach the people who walked into view after it.
-        a.Weapon == b.Weapon && a.MagicWeapon == b.MagicWeapon && a.Shield == b.Shield &&
+        a.Weapon == b.Weapon && a.MagicWeapon == b.MagicWeapon && a.Shield == b.Shield && a.Armor == b.Armor &&
         // `BL-354` — never changes today; here so the day something does (a barber), the client is re-told.
         a.Gender == b.Gender && a.Hair == b.Hair && a.HairColor == b.HairColor && a.Skin == b.Skin;
 }

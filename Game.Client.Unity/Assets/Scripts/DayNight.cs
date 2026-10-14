@@ -31,7 +31,27 @@ namespace Game.Client
         {
             ShadowQuality = (Shadows)Mathf.Clamp(PlayerPrefs.GetInt(ShadowPref, (int)Shadows.Characters), 0, 2);
             NightLevel = Mathf.Clamp(PlayerPrefs.GetFloat(NightPref, NightDefault), NightMin, NightMax);
+            ViewDistance = Mathf.Clamp(PlayerPrefs.GetFloat(ViewPref, ViewMax), ViewMin, ViewMax);
         }
+
+        // ── Settings → View distance ────────────────────────────────────────────────────────────
+
+        /// <summary>How far you see, in server units (owner, 2026-10-14): the fog starts just short of it and is fully
+        /// thick <see cref="FogPastView"/> past it; creatures, nameplates and buildings stop at
+        /// <see cref="DrawDistance"/>, inside that thick fog, so they walk out of the haze instead of popping. The top is
+        /// the server's <see cref="GameConstants.ViewRange"/> — it sends <see cref="GameConstants.FadeMargin"/> more,
+        /// and that margin is what the fog fades through.</summary>
+        public static float ViewDistance = ViewMax;
+        public const float ViewMin = 1000f, ViewMax = GameConstants.ViewRange;
+        public const string ViewPref = "gfx.view";
+
+        /// <summary>Fog starts this far INSIDE the view distance (his "render 3k → fog starts at 2950")…</summary>
+        private const float FogBeforeView = 50f;
+        /// <summary>…and is fully thick this far past it, still inside the margin the server sends.</summary>
+        private const float FogPastView = 150f;
+
+        /// <summary>Where anything entity-shaped stops being drawn: inside the fully thick fog.</summary>
+        public static float DrawDistance => ViewDistance + GameConstants.FadeMargin;
 
         public static void SetShadows(Shadows s)
         {
@@ -245,11 +265,6 @@ namespace Game.Client
             return new SkyLook { Zenith = Color.Lerp(keys[i].z, keys[i + 1].z, t), Horizon = Color.Lerp(keys[i].hz, keys[i + 1].hz, t) };
         }
 
-        /// <summary>The fog is fully thick at <see cref="GameConstants.ViewRange"/> from the player — the 3000 at
-        /// which the server stops sending mobs and players — and starts at 60% of it, so what pops in or out at the
-        /// edge does it inside the haze.</summary>
-        private const float FogEndFraction = 1f, FogStartFraction = 0.6f;
-
         private static Material _skyMaterial;
         private static bool _skyTried;
 
@@ -286,10 +301,10 @@ namespace Game.Client
 
         /// <summary>
         /// Unity's fog grows with DEPTH along the view, not with distance from the player, so the numbers are put
-        /// where the player's ring of <see cref="GameConstants.ViewRange"/> lands in depth: the player's own depth
+        /// where the player's ring of <see cref="ViewDistance"/> lands in depth: the player's own depth
         /// plus the range times how level the camera looks. Straight down that factor goes to nothing — every
         /// point of the flat ground sits at one depth — so a steep camera has no fog at all; it cannot see the
-        /// 3000 ring anyway.
+        /// ring anyway.
         /// </summary>
         private static void FitFog(Camera cam)
         {
@@ -301,11 +316,12 @@ namespace Game.Client
                 if (RenderSettings.fog) RenderSettings.fog = false;
                 return;
             }
-            float range = GameConstants.ViewRange * WorldMapper.Scale;
+            float start = (ViewDistance - FogBeforeView) * WorldMapper.Scale;
+            float end = (ViewDistance + FogPastView) * WorldMapper.Scale;
             float depth = Vector3.Dot(focus.Value - cam.transform.position, fwd);
             RenderSettings.fogMode = FogMode.Linear;
-            RenderSettings.fogStartDistance = Mathf.Max(0f, depth + range * FogStartFraction * level);
-            RenderSettings.fogEndDistance = depth + range * FogEndFraction * level;
+            RenderSettings.fogStartDistance = Mathf.Max(0f, depth + start * level);
+            RenderSettings.fogEndDistance = depth + end * level;
             if (!RenderSettings.fog) RenderSettings.fog = true;
         }
 

@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.259.4";
+    public const string GameVersion = "0.260.0";
 
     /// <summary>The game's name and full title, as the chat header opens every session with (owner, 2026-10-14).</summary>
     public const string GameName = "Vardelar";
@@ -392,9 +392,18 @@ public static class GameConstants
     /// <summary>How far (world units) an entity can see other entities.</summary>
     public const float ViewRange = 3000f;
 
-    /// <summary>Interest-management cell size. Equal to ViewRange so a 3x3
-    /// cell neighborhood always covers the full view circle.</summary>
-    public const float CellSize = 3000f;
+    /// <summary>How far past a client's view distance a creature is still drawn, so it walks in and out of the fog
+    /// instead of popping (owner, 2026-10-14: *"+100-200 range on top for the mobs to render so they can gradually
+    /// apear and disapear in the fog"*). The client's fog is fully thick before this.</summary>
+    public const float FadeMargin = 200f;
+
+    /// <summary>How far the server SENDS entities: the view range plus the fog margin. Only the snapshot reads it —
+    /// every game rule (targeting, party share, auto-hunt) stays on <see cref="ViewRange"/>.</summary>
+    public const float SendRange = ViewRange + FadeMargin;
+
+    /// <summary>Interest-management cell size. Equal to SendRange so a 3x3
+    /// cell neighborhood always covers the full send circle.</summary>
+    public const float CellSize = SendRange;
 
     /// <summary>World size. Design target is 75000x75000; enlarged to 48000 so the
     /// level 1-80 zone ring (see WorldMap) is spread out (towns far apart, zones not

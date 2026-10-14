@@ -103,6 +103,22 @@ namespace Game.Client
                 ApplySelfVisual(self);
         }
 
+        /// <summary>The server sends everything within <see cref="GameConstants.SendRange"/>; past the player's own view
+        /// distance it is fully inside the fog, so it stops being drawn (DayNight.DrawDistance).</summary>
+        private void LateUpdate()
+        {
+            if (SelfId == Guid.Empty || !_views.TryGetValue(SelfId, out var self) || self == null) return;
+            var me = self.transform.position;
+            float reach = DayNight.DrawDistance * WorldMapper.Scale, reach2 = reach * reach;
+            foreach (var kv in _views)
+            {
+                var v = kv.Value;
+                if (v == null || v == self) continue;
+                float dx = v.transform.position.x - me.x, dz = v.transform.position.z - me.z;
+                v.SetFar(dx * dx + dz * dz > reach2);
+            }
+        }
+
         private void ApplySelfVisual(EntityView view)
         {
             view.SetOpacity(_selfAlpha);
@@ -253,6 +269,7 @@ namespace Game.Client
             if (view.IsSelf) view.SetPredictSpeed(e.Speed * WorldMapper.Scale);   // a walk tracks speed changes mid-way
             view.SetColor(ColorFor(e));
             view.SetWeapons(e.Weapon, e.MagicWeapon, e.Shield);   // `BL-103` — a no-op unless the gear changed
+            view.SetArmor(e.Armor);                                // underwear or the outfit; same
             if (view.IsSelf) ApplySelfVisual(view);   // `BL-82` — survives a respawn of the marker
             // Dead entities stay in the world (corpses are lootable/visible) but are dimmed rather
             // than hidden, so a kill is legible instead of things silently vanishing.
