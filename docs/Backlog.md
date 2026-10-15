@@ -301,7 +301,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-359` | ⏸ | **Web accounts**: Google / confirmed-e-mail sign-up on the site; game accounts made from its panel, capped per e-mail (3? 10?) — for notifications and recovery | ops |
 | `BL-360` | 🔴 | **A Windows PC client** — test build BUILT (`publish.ps1 -Windows`, bordered resizable window); still owed: a fullscreen on/off option, keyboard shortcuts, a PC layout check | client |
 | `BL-361` | ⏸ | **An iOS client** — needs a Mac (or cloud Mac) + Xcode, an Apple Developer account ($99/yr), TestFlight for testers (HTTPS, which iOS demands, is already live) | ops |
-| `BL-362` | 🔵 | **An optional FIXED group chance** — a drop group can hold its % (IG style) while items added to it share it out by weight; groups without one stay as today | loot |
+| `BL-362` | 🔵 | **Drop groups the IG way** — A: show group % + shares inside (display); B: author them that way; C: bake the formulas into a per-mob odds table (formula/hand rows) | loot |
 
 ---
 
@@ -2693,34 +2693,61 @@ requires (it refuses plain `http://`). **Owed with it:** the app id + signing (a
 touch-layout check on iPhone/iPad screen shapes (notch, iPad 4:3).
 **When:** when the game is ready for players outside the Android circle — nothing here blocks starting earlier.
 
-## `BL-362` 🔵 AN OPTIONAL FIXED GROUP CHANCE FOR DROP GROUPS (2026-10-15)
+## `BL-362` 🔵 DROP GROUPS THE IG WAY: GROUP % + SHARES INSIDE, AND TABLES BAKED FROM THE FORMULAS (2026-10-15)
 
-Your question: *"if we have a group that is 90% and have 3 items x30% and i to add another item and the group to stay
-at 90% .. a should lower the overal chance for every item inside the group ?"* — and then *"yes file it as a BL"*.
+Your words: *"for me to understand is esier to see group drops 90% of the time and then the items have their own drop
+rates (insede the group) .. than those item drop at that rate but u cannot get more than one becasue they are in a
+group"*, and then *"as you said most are formulas .. can the fromulas only be used when authoring drops then the drop
+itself is remebered as %deciaml/ or 1 to BigNumber ? ... if i say lets make a mob that drops this and that, u use the
+formulas for this and that, but the drop come out as 1/100, 1%, 0.1 or whatever"*.
 
-**Today:** a group's chance IS the sum of its rows (`MobCatalog.cs:17-20`, the roll at `GameLoopService.cs:17343`).
-Every row is that item's real per-kill chance, so adding an item never moves its siblings, but it GROWS the group.
-Holding the group at 90% means rebalancing the other rows by hand (30/30/30 → 22.5 ×4, or 30/25/25/10).
+**Today:** every row is that item's real per-kill chance, and a group's chance IS the sum of its rows (`MobCatalog.cs:17-20`,
+the roll at `GameLoopService.cs:17343`). Adding an item never moves its siblings, but it GROWS the group. Most rows are
+not written down anywhere: they are computed by formulas at spawn time, for the spawn's own level and rank
+(`MobCatalog.KillTable`, `MobCatalog.cs:1408`).
 
-**The addition:** a group MAY carry its own authored chance. When it does:
-- the group fires at THAT chance, never the sum;
-- its rows become WEIGHTS only, so an added item shares the fixed % out and every sibling shrinks in proportion
-  (3 items ×30 + a new one at weight 10 → 27/27/27/9 of the 90%);
-- an item's real chance = group % × its weight ÷ the group's total weight.
+At ×1 your form and ours are the same numbers: `group % × share = our row`, and `our rows summed = group %`. So the
+options below change what you SEE and WRITE. None of them changes how a kill is rolled.
 
-A group WITHOUT one behaves exactly as today, so no existing table changes.
+### Option A: SHOW groups your way (display only). My pick to do first.
+The inspect screen, the drop index and the BalanceMatrix dump show each group with its own chance, and its items as
+shares of it:
+```
+Weapon group: 1/50 kills
+   Sword  60%
+   Bow    30%
+   Staff  10%
+```
+No table changes. It's cheap and safe.
 
-**What must stay true:**
-- The rates still apply on top (`MobCatalog.EffectiveRate`: global × group × per-item × rune, then the level gap), and
-  above 100% the overflow is still extra weighted picks (`DropCopies`). A per-item `/droprate item` on a fixed-chance
-  group moves its SHARE, not the group's chance.
-- ONE function computes an item's real chance — the kill roll, target-inspect, the drop index and BalanceMatrix all read
-  it (`KillTable` / `EffectiveChance` today), so the number on screen stays the number rolled.
+### Option B: AUTHOR groups your way
+Every group carries its own chance, and its rows are shares (weights). Adding an item then shares the group's fixed %
+out, and every sibling shrinks in proportion (3 items ×30% of a 90% group + a new one at weight 10 → 27/27/27/9). Tuning
+one item's rarity becomes two numbers instead of one. It could also be per group: groups without their own chance stay
+summed as today.
 
-**The open question (yours):** WHICH groups use it. My recommendation is only the ones where you think "this group pays
-X% of kills, whatever is inside" (mats, scrolls, consumables). Gear groups are where you tune one item's rarity, so they
-stay summed. Nothing gets built until a table actually wants it.
+### Option C: BAKE the formulas into a table (your second question)
+The formulas run when a mob is AUTHORED, not at every spawn. A tool writes each mob's drops into a data file as plain
+odds (`1/100`, `1/2400`, `20~40/1`), and the game rolls only what is in the file. It's the same pattern as the SP prices
+and the skill faces (`SkillCsvSeed --reprice-sp` / `--gen-faces`). "Make a mob that drops this and that" = I run the
+formulas, and the rows land in the file.
+- **Each row is marked `formula` or `hand`.** A regenerate refreshes only the `formula` rows, so your hand edits are never
+  overwritten. ⚠ A formula retune then moves NOTHING until the regenerate runs. It owes a regenerate in the same commit,
+  exactly as an `ExpCurve` change owes `--reprice-sp`, and `--check` should fail on a STALE table.
+- **One block per mob per RANK** (normal / elite / boss), because elites and bosses add layers today.
+- ⚠ **The 85-90 field (`ForceZoneLevel`)** is the one place one template spans many levels. It either keeps the live
+  formula or gets a row set per level.
+- C combines with B: the file can be written in group % + shares, which is your form.
 
-Background: the comparison with IG's grouped drops (group % × internal share) and WoW-style cascades from the same
-conversation. At ×1 the two forms convert exactly; ours stores the product. The only differences are this one (who pays
-when an item is added) and the over-100% rule (we pay extra picks, IG pays more quantity of the one item picked).
+**What must stay true in every option:** the rates still apply on top (`MobCatalog.EffectiveRate`: global × group ×
+per-item × rune, then the level gap), and over 100% is still extra weighted picks (`DropCopies`). ONE function gives an
+item's real chance, read by the kill roll, target-inspect, the drop index and BalanceMatrix, so the number on screen
+stays the number rolled.
+
+**Waiting on you:** which of A / B / C, and in what order. My recommendation: **A first**. Then decide B after reading
+your drops in that view for a while. C is worth it if you want to read and hand-tune exact per-mob tables, since today
+they exist only as code. B and C together are the full IG-style data file.
+
+Background: the comparison with IG's grouped drops and WoW-style cascades from the same conversation. The two real
+differences from IG are who pays when an item is added (B), and the over-100% rule (we pay extra picks; IG pays more
+quantity of the one item picked).

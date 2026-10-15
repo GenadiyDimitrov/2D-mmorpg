@@ -8784,3 +8784,36 @@ key, set **before** friends install, because changing either one later forces ev
 
 After that you do the guide's steps 1-8 (they need your Oracle login). The first test is your own phone over mobile
 data. ⚠ Untested: the Unity SignalR client over `https://`/`wss://` on the phone.
+
+## `BL-362` — text before its 2026-10-15 rewrite (same day; the rewrite adds the display-first and baked-table options)
+
+
+Your question: *"if we have a group that is 90% and have 3 items x30% and i to add another item and the group to stay
+at 90% .. a should lower the overal chance for every item inside the group ?"* — and then *"yes file it as a BL"*.
+
+**Today:** a group's chance IS the sum of its rows (`MobCatalog.cs:17-20`, the roll at `GameLoopService.cs:17343`).
+Every row is that item's real per-kill chance, so adding an item never moves its siblings, but it GROWS the group.
+Holding the group at 90% means rebalancing the other rows by hand (30/30/30 → 22.5 ×4, or 30/25/25/10).
+
+**The addition:** a group MAY carry its own authored chance. When it does:
+- the group fires at THAT chance, never the sum;
+- its rows become WEIGHTS only, so an added item shares the fixed % out and every sibling shrinks in proportion
+  (3 items ×30 + a new one at weight 10 → 27/27/27/9 of the 90%);
+- an item's real chance = group % × its weight ÷ the group's total weight.
+
+A group WITHOUT one behaves exactly as today, so no existing table changes.
+
+**What must stay true:**
+- The rates still apply on top (`MobCatalog.EffectiveRate`: global × group × per-item × rune, then the level gap), and
+  above 100% the overflow is still extra weighted picks (`DropCopies`). A per-item `/droprate item` on a fixed-chance
+  group moves its SHARE, not the group's chance.
+- ONE function computes an item's real chance — the kill roll, target-inspect, the drop index and BalanceMatrix all read
+  it (`KillTable` / `EffectiveChance` today), so the number on screen stays the number rolled.
+
+**The open question (yours):** WHICH groups use it. My recommendation is only the ones where you think "this group pays
+X% of kills, whatever is inside" (mats, scrolls, consumables). Gear groups are where you tune one item's rarity, so they
+stay summed. Nothing gets built until a table actually wants it.
+
+Background: the comparison with IG's grouped drops (group % × internal share) and WoW-style cascades from the same
+conversation. At ×1 the two forms convert exactly; ours stores the product. The only differences are this one (who pays
+when an item is added) and the over-100% rule (we pay extra picks, IG pays more quantity of the one item picked).
