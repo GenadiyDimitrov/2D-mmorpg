@@ -301,6 +301,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-359` | ⏸ | **Web accounts**: Google / confirmed-e-mail sign-up on the site; game accounts made from its panel, capped per e-mail (3? 10?) — for notifications and recovery | ops |
 | `BL-360` | 🔴 | **A Windows PC client** — test build BUILT (`publish.ps1 -Windows`, bordered resizable window); still owed: a fullscreen on/off option, keyboard shortcuts, a PC layout check | client |
 | `BL-361` | ⏸ | **An iOS client** — needs a Mac (or cloud Mac) + Xcode, an Apple Developer account ($99/yr), TestFlight for testers (HTTPS, which iOS demands, is already live) | ops |
+| `BL-362` | 🔵 | **An optional FIXED group chance** — a drop group can hold its % (IG style) while items added to it share it out by weight; groups without one stay as today | loot |
 
 ---
 
@@ -2691,3 +2692,35 @@ have survived ahead-of-time compilation; and the server is already on HTTPS (`va
 requires (it refuses plain `http://`). **Owed with it:** the app id + signing (as `BL-345` owes for Android), and a
 touch-layout check on iPhone/iPad screen shapes (notch, iPad 4:3).
 **When:** when the game is ready for players outside the Android circle — nothing here blocks starting earlier.
+
+## `BL-362` 🔵 AN OPTIONAL FIXED GROUP CHANCE FOR DROP GROUPS (2026-10-15)
+
+Your question: *"if we have a group that is 90% and have 3 items x30% and i to add another item and the group to stay
+at 90% .. a should lower the overal chance for every item inside the group ?"* — and then *"yes file it as a BL"*.
+
+**Today:** a group's chance IS the sum of its rows (`MobCatalog.cs:17-20`, the roll at `GameLoopService.cs:17343`).
+Every row is that item's real per-kill chance, so adding an item never moves its siblings, but it GROWS the group.
+Holding the group at 90% means rebalancing the other rows by hand (30/30/30 → 22.5 ×4, or 30/25/25/10).
+
+**The addition:** a group MAY carry its own authored chance. When it does:
+- the group fires at THAT chance, never the sum;
+- its rows become WEIGHTS only, so an added item shares the fixed % out and every sibling shrinks in proportion
+  (3 items ×30 + a new one at weight 10 → 27/27/27/9 of the 90%);
+- an item's real chance = group % × its weight ÷ the group's total weight.
+
+A group WITHOUT one behaves exactly as today, so no existing table changes.
+
+**What must stay true:**
+- The rates still apply on top (`MobCatalog.EffectiveRate`: global × group × per-item × rune, then the level gap), and
+  above 100% the overflow is still extra weighted picks (`DropCopies`). A per-item `/droprate item` on a fixed-chance
+  group moves its SHARE, not the group's chance.
+- ONE function computes an item's real chance — the kill roll, target-inspect, the drop index and BalanceMatrix all read
+  it (`KillTable` / `EffectiveChance` today), so the number on screen stays the number rolled.
+
+**The open question (yours):** WHICH groups use it. My recommendation is only the ones where you think "this group pays
+X% of kills, whatever is inside" (mats, scrolls, consumables). Gear groups are where you tune one item's rarity, so they
+stay summed. Nothing gets built until a table actually wants it.
+
+Background: the comparison with IG's grouped drops (group % × internal share) and WoW-style cascades from the same
+conversation. At ×1 the two forms convert exactly; ours stores the product. The only differences are this one (who pays
+when an item is added) and the over-100% rule (we pay extra picks, IG pays more quantity of the one item picked).
