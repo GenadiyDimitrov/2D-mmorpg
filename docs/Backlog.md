@@ -2731,6 +2731,11 @@ The formulas run when a mob is AUTHORED, not at every spawn. A tool writes each 
 odds (`1/100`, `1/2400`, `20~40/1`), and the game rolls only what is in the file. It's the same pattern as the SP prices
 and the skill faces (`SkillCsvSeed --reprice-sp` / `--gen-faces`). "Make a mob that drops this and that" = I run the
 formulas, and the rows land in the file.
+- 🔑 **Your rule for it** (2026-10-15): *"so later when i add a item by hand not to go trough a formula but to see it in
+  code as part of a table"*. A hand-added item is a plain `hand` row in the mob's table, with its odds written out. No
+  formula touches it, and it sits in the same table as the formula rows, so the whole drop list reads in one place.
+  (Today a hand row is possible too, a `DropEntry` in the template's `Drops`, but the formula rows beside it are
+  invisible until spawn time.)
 - **Each row is marked `formula` or `hand`.** A regenerate refreshes only the `formula` rows, so your hand edits are never
   overwritten. ⚠ A formula retune then moves NOTHING until the regenerate runs. It owes a regenerate in the same commit,
   exactly as an `ExpCurve` change owes `--reprice-sp`, and `--check` should fail on a STALE table.
