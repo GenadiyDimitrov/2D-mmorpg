@@ -13951,12 +13951,14 @@ public partial class GameLoopService : BackgroundService
                 damage = finalDmg;
                 bankStacks = true;   // `BL-199` — the strike connected, so the pool is banked
                 BroadcastCombat(caster, target, damage, outcome, castName);
+                int hpBefore = target.Hp;
                 ApplyDamage(target, damage, caster);
                 // The skill's own LIFESTEAL (Demonic Drain, 60%). It was only ever read in the magic arm,
                 // so a physical drain hit and healed nothing. Per landed hit; MeleeVamp stays basic-only.
+                // `BL-352` — off the HP the target really LOST, never the rolled damage (see HpLost).
                 if (def.Lifesteal > 0f && damage > 0)
                 {
-                    int leech = (int)(damage * def.Lifesteal);
+                    int leech = (int)(HpLost(target, hpBefore) * def.Lifesteal);
                     if (leech > 0) HealOne(caster, caster, leech, 0, castName);   // lifesteal = a FLAT heal
                 }
                 ReflectPhysicalSkill(caster, target, damage, castName);   // BL-07
@@ -14036,6 +14038,7 @@ public partial class GameLoopService : BackgroundService
             // and the "half vs monsters" is the skill's own PveDamageMult, already applied by
             // FinalizeDamage. See SkillDef.DamageToMp.
             bool toMp = def.DamageToMp;
+            int hpBefore = target.Hp;   // `BL-352` — the vamp below reads what the hit really took
             if (_rng.NextDouble() < fail)
             {
                 damage = Math.Max(1, damage / 3);
@@ -14073,7 +14076,7 @@ public partial class GameLoopService : BackgroundService
             float spellVamp = toMp ? 0f : def.Lifesteal;
             if (spellVamp > 0f && damage > 0)
             {
-                int leech = (int)(damage * spellVamp);
+                int leech = (int)(HpLost(target, hpBefore) * spellVamp);
                 if (leech > 0) HealOne(caster, caster, leech, 0, castName);   // lifesteal = a FLAT heal
             }
         }
@@ -16786,11 +16789,14 @@ public partial class GameLoopService : BackgroundService
                     StatCalculator.CritFlatFactor(attacker.EffectiveBasicAttack, attacker.CritDamageFlat));
             }
             BroadcastCombat(attacker, target, damage, outcome, castName);
+            int hpBefore = target.Hp;
             ApplyDamage(target, damage, attacker, magicHit: magicSwing);
+            // `BL-352` — both vamps below leech off the HP the target really LOST, not the rolled hit.
+            int hpLost = HpLost(target, hpBefore);
             // Melee basic-attack vampirism (Might lvl 4 etc.) — bow attacks don't leech.
             if (attacker.MeleeVamp > 0f && damage > 0 && attacker.WeaponType != WeaponType.Bow)
             {
-                int leech = (int)(damage * attacker.MeleeVamp);
+                int leech = (int)(hpLost * attacker.MeleeVamp);
                 if (leech > 0) HealOne(attacker, attacker, leech, 0, "Vampiric");   // lifesteal = a FLAT heal
             }
             // ON-HIT PROCS (Combo Mastery). Basic attacks are one of the two damage paths that can
@@ -16805,7 +16811,7 @@ public partial class GameLoopService : BackgroundService
             // in the mastery profile; nothing here second-guesses it.
             if (attacker.ManaVamp > 0f && damage > 0)
             {
-                int mana = (int)(damage * attacker.ManaVamp);
+                int mana = (int)(hpLost * attacker.ManaVamp);
                 if (mana > 0 && attacker.Mp < attacker.MaxMp)
                 {
                     attacker.Mp = Math.Min(attacker.MaxMp, attacker.Mp + mana);
@@ -16851,6 +16857,15 @@ public partial class GameLoopService : BackgroundService
     /// an absorb shield soaks blows, a mana shield diverting mana damage into mana is a loop, and a
     /// lethal save has nothing to save from since MP simply floors at 0. One method rather than a
     /// parallel one, so the flagging and threat rules above can never drift apart between them.</param>
+    /// <summary>`BL-352` — THE HP A HIT REALLY TOOK, which is all any vampirism may leech from (owner,
+    /// 2026-10-12: *"if the enemy have 100hp left and the drain does 1500 ... only vamps % out of the 100
+    /// remaining hp"*). Read as HP BEFORE minus HP AFTER rather than <c>min(damage, hp)</c>, so it also
+    /// sees what <see cref="ApplyDamage"/> did in between: a dummy or an immortal NPC flooring at 1, a
+    /// mana shield or an absorb soaking part of it, a lethal save or an Immortality Sigil cancelling it.
+    /// Overkill heals nothing — the PvP exploit was a 10k hit on a dummy vamping 6k.</summary>
+    private static int HpLost(Entity target, int hpBefore) =>
+        Math.Max(0, Math.Max(0, hpBefore) - Math.Max(0, target.Hp));
+
     private int ApplyDamage(Entity target, int damage, Entity? attacker = null, bool reflected = false,
         bool toMp = false, bool magicHit = false)
     {

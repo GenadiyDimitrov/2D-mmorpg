@@ -27,6 +27,15 @@ ManaDrain      = targetMaxMp * power / 1000                  power is PER MILLE
   Vampirism and Mana Vampirism pay off it exactly as off a physical swing. `GameLoopService.ResolveBasicSwing`,
   `Entity.MagicSwingPower`.
 
+- 🔑 **VAMPIRISM LEECHES THE HP REALLY LOST, NOT THE HIT** (`BL-352`, 0.265.1). Every path — a skill's own
+  `Lifesteal` (Demonic Drain, Vampiric Bolt), basic-attack `MeleeVamp`, and `ManaVamp`:
+  ```
+  lost  = max(0, hpBefore) - max(0, hpAfter)        read around ApplyDamage, so floors/shields/saves count
+  leech = floor(lost * fraction)                    a 1500 hit on 100 HP leeches off 100; overkill heals nothing
+  ```
+  A dummy or an immortal NPC (floored at 1 HP) gives at most `hp - 1`; a hit an absorb or Immortality ate gives 0.
+  `GameLoopService.HpLost`.
+
 - **Defence is a DIVISOR, never a subtraction** — diminishing returns, and it can never zero a hit.
 - `pDef` / `mDef` are multiplied by a resistance coefficient first, then floored at 1:
   ```

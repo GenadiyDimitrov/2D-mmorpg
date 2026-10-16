@@ -8817,3 +8817,23 @@ stay summed. Nothing gets built until a table actually wants it.
 Background: the comparison with IG's grouped drops (group % × internal share) and WoW-style cascades from the same
 conversation. At ×1 the two forms convert exactly; ours stores the product. The only differences are this one (who pays
 when an item is added) and the over-100% rule (we pay extra picks, IG pays more quantity of the one item picked).
+
+## `BL-352` — BUILT in 0.265.1 (2026-10-16): every vamp path leeches HP before − HP after (`GameLoopService.HpLost`)
+
+Your words: *"If a skill is vamping like a Vampiric bolt and demonic drain if the enemy have 100hp left and the drain
+does 1500 ... The enemy dies but the drain only vamps % out of the 100 remaining hp not the full 1500 ... Same goes for
+any type of vamp .. If I vamp with basic attack and the hp of Bob is 100 and I do 1500 crit I should vamp the 100hp.
+(in pvp hits a npc for 10k vamps 6k of hp and turns the tides)"*. Filed on your "U can note that for vamp" — not built yet.
+
+- **The rule:** the leech is `fraction × HP the target actually lost to this hit` = `min(damage, HP before)`, never the
+  rolled damage. Overkill heals nothing.
+- 🔑 **Read it as HP BEFORE minus HP AFTER, not `min(damage, hp)`**, so it also covers an NPC that cannot die
+  (`NpcCanDie` false floors it at 1 HP, `GameLoopService.cs` ~16825) and a training dummy: hit one for 10k at 2k HP
+  and the vamp sees ~2k, not 10k. That is the PvP exploit you described.
+- **Today, all three paths multiply the full rolled damage:** physical skill lifesteal (Demonic Drain,
+  `GameLoopService.cs` ~13755 `damage * def.Lifesteal`), magic lifesteal (Vampiric Bolt, ~13867), and basic-attack
+  vamp (`MeleeVamp`, ~16585). The lingering vampiric buff (~11708) needs the same check when built.
+- Owes a `docs/Formulas.md` line in the same commit.
+
+✅ Built as written, plus `ManaVamp` (also *"any type of vamp"*). The "lingering vampiric" half of the Warlord Supports
+is a `BuffMeleeVamp` buff, so it rides the `MeleeVamp` path and is covered too.

@@ -292,7 +292,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-349` | ⏸ | **Race starting zones** — each race starts in its own territory (elves water/ice, humans an island, demons fire/lava), each class at its own spot (temple, ruins, arena, summoning circle) with low-level mobs and its own newbie guide; after `BL-346` | world |
 | `BL-350` | ⏸ | **The game's story** (world = **Vardelar**, skeleton in `docs/design/Lore.md`) — where each race comes from and what it is for, a pantheon of named gods that skills can be described by; so quests are more than "go there, kill that" | story |
 | `BL-351` | ⏸ | **Downloadable content** — move art out of the APK (Addressables + CDN, or Play Asset Delivery) once it passes ~100 MB; until then new asset kinds load through one function | client |
-| `BL-352` | 🔴 | **Vamp heals from the HP the target really LOST, not the damage rolled** — a 1500 hit on a 100-HP target vamps from 100; every lifesteal path (skill drains + basic-attack vamp) | combat |
 | `BL-353` | ⏸ | **Town NPCs get a level and a rank** — peasants 20-30, masters 50-60, the gatekeeper a lvl-90 mage, grand master a lvl-60 knight; 1-3k HP; mage or fighter by role | world |
 | `BL-354` | ⏸ | **Character bodies, what is left** — the paid pack's 10 outfits, armour type/grade → outfit pieces per slot, face shapes, elf ears / demon horns | client |
 | `BL-355` | ⏸ | **Appearance changes after creation as a premium service** — look cheapest, gender dearer, race/class dearest; admin-only picker built, prices + currency + what a paid race change keeps are open | economy |
@@ -2537,23 +2536,6 @@ be later spearated"*. My answer: overkill now (APK 49.7 MB at 0.247.0, sideloade
   `Resources.Load` sprinkled through the code.
 - Costs it brings: hosting, client/content version matching, a first-launch download screen with retry, cache
   invalidation.
-
-## `BL-352` 🔴 VAMP HEALS FROM THE HP THE TARGET REALLY LOST (2026-10-12)
-
-Your words: *"If a skill is vamping like a Vampiric bolt and demonic drain if the enemy have 100hp left and the drain
-does 1500 ... The enemy dies but the drain only vamps % out of the 100 remaining hp not the full 1500 ... Same goes for
-any type of vamp .. If I vamp with basic attack and the hp of Bob is 100 and I do 1500 crit I should vamp the 100hp.
-(in pvp hits a npc for 10k vamps 6k of hp and turns the tides)"*. Filed on your "U can note that for vamp" — not built yet.
-
-- **The rule:** the leech is `fraction × HP the target actually lost to this hit` = `min(damage, HP before)`, never the
-  rolled damage. Overkill heals nothing.
-- 🔑 **Read it as HP BEFORE minus HP AFTER, not `min(damage, hp)`**, so it also covers an NPC that cannot die
-  (`NpcCanDie` false floors it at 1 HP, `GameLoopService.cs` ~16825) and a training dummy: hit one for 10k at 2k HP
-  and the vamp sees ~2k, not 10k. That is the PvP exploit you described.
-- **Today, all three paths multiply the full rolled damage:** physical skill lifesteal (Demonic Drain,
-  `GameLoopService.cs` ~13755 `damage * def.Lifesteal`), magic lifesteal (Vampiric Bolt, ~13867), and basic-attack
-  vamp (`MeleeVamp`, ~16585). The lingering vampiric buff (~11708) needs the same check when built.
-- Owes a `docs/Formulas.md` line in the same commit.
 
 ## `BL-353` ⏸ TOWN NPCs GET A LEVEL AND A RANK (2026-10-12)
 

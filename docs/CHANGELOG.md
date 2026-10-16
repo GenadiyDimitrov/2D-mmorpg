@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.265.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.265.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,21 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-14 (latest) — 0.265.0: whisps ride close behind you, smaller; a Windows test client
+## 2026-10-16 (latest) — 0.265.1: vampirism leeches only the HP the target really lost (`BL-352`)
+
+Server only (no APK, no protocol change, no `game.db` delete). Owner, 2026-10-12: *"if the enemy have 100hp left and
+the drain does 1500 ... The enemy dies but the drain only vamps % out of the 100 remaining hp not the full 1500 ...
+Same goes for any type of vamp ... (in pvp hits a npc for 10k vamps 6k of hp and turns the tides)"*.
+
+- **All four leech paths** multiplied the ROLLED damage: a skill's own `Lifesteal` on the physical arm (Demonic Drain)
+  and the magic arm (Vampiric Bolt), basic-attack `MeleeVamp`, and the Warchanter's `ManaVamp`. Each now reads
+  `GameLoopService.HpLost` — HP before `ApplyDamage` minus HP after — so overkill heals nothing.
+- 🔑 **Before-minus-after, not `min(damage, hp)`**, so whatever `ApplyDamage` does in between counts: a training dummy
+  or an immortal NPC floors at 1 HP and gives at most `hp - 1` (the 10k-on-a-dummy exploit); a mana shield or absorb
+  that soaked part of the hit, a lethal save, or an Immortality Sigil leave less, or nothing, to leech.
+- Mana Ray still leeches nothing (unchanged). `docs/Formulas.md` has the line.
+
+## 2026-10-14 — 0.265.0: whisps ride close behind you, smaller; a Windows test client
 
 Server + APK (no protocol change, no `game.db` delete). Owner: *"can whisps be closer to each other and the char as
 well -> twice even three times as smaller as now .. and "follow that char" like being always behind him -> the glow
