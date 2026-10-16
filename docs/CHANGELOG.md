@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.268.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.269.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,34 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-16 (latest) — 0.268.0: the APK's permanent identity — package id `com.gdimitrov.mmo` + a release key (`BL-345`)
+## 2026-10-16 (latest) — 0.269.0: the bag is a grid of item cells with icons, and items DRAG (`BL-347`)
+
+APK (no server change, no protocol change, no `game.db` delete). Owner: *"We can do `BL-347` -> can reuse same icon for
+weight and armor part and weapon part .. just different colors ... And if we can make inventory to move items (drag
+drop) and item to change its slot position (like a custom bag order) and drag drop on equipment it equip it and drag
+drop from equipmnet its unequiping it ... like a normal bag"*.
+
+- **Item icons — one picture per KIND, tinted by rarity** (his first option): 27 kinds (`ItemCatalog.IconKey` — sword,
+  greatsword, blunt, greathammer, dual, bow, staff, shield, helmet, heavy/light armour, robe, gloves, boots, ring,
+  earring, necklace, rune, potion, mana potion, elixir, enchant / attribute / other scroll, box, quest, material). His
+  file: **`docs/data/item_icons.csv`** (`KIND,ICON` — a game-icons.net name, like `skill_icons.csv`);
+  `dotnet run --project tools/SkillIcons -- --items` renders them grey-and-white into `Resources/ItemIcons/`, and refuses
+  a kind with no row or an item whose kind is missing. The client multiplies the picture by the rarity colour.
+- **The bag is CELLS**, 6 across: the picture in its rarity colour on a frame of the same hue, the count bottom-right,
+  `+enchant` top-left, `L` for a locked item. **Tap** = the details window (everything the row's [Details] opened);
+  **double-tap** = the old [e]/[u] (wear / drink); Del/Brake mode puts its button on the cell's corner, same rules.
+- **Drag** (`ItemDrag` / `ItemDropTarget`): **hold ~0.3 s then drag** with a finger — a quick swipe still scrolls the
+  bag — or just drag with a mouse.
+  - **cell onto cell → the two swap places**, and the [ORDER] button switches to the new 6th order, **Custom**: your
+    order, per character, kept on the phone like the order setting itself (never the server). New loot joins after the
+    ordered items, A-Z. Every other list (vendor, keeper, trade) reads Custom the same way.
+  - **cell onto a paper-doll square → wear it** (the server picks the slot, as [e] did).
+  - **worn square onto the bag → take it off.**
+- **The paper-doll squares show the pictures too** (+enchant in the corner); the shield square under a two-hander shows
+  the weapon's picture greyed — his C14 *"the same icon greyed"*, literally.
+- `docs/CREDITS.md` covers the item glyphs (game-icons.net, CC BY 3.0).
+
+## 2026-10-16 — 0.268.0: the APK's permanent identity — package id `com.gdimitrov.mmo` + a release key (`BL-345`)
 
 APK (no server change, no protocol change, no `game.db` delete). ⚠ **Every phone uninstalls the old app ONCE**: to
 Android the new id is a different app (the old one's settings and saved login go with it; characters live on the server).

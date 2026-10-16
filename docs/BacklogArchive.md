@@ -8889,3 +8889,25 @@ Linux build (install .NET as in Termux), and the address is not hidden (hiding i
 2. Then you do the guide's steps 1-8 (they need your Oracle login). The first test is your own phone over mobile data.
    ⚠ Untested: the Unity SignalR client over `https://`/`wss://` on the phone.
 
+## `BL-347` — BUILT in 0.269.0 (2026-10-16): the bag is cells with per-kind icons tinted by rarity, and items drag
+
+Your words, 2026-10-16: *"We can do `BL-347` -> can reuse same icon for weight and armor part and weapon part .. just
+different colors ... or we can find a pkg to downald with many equipment sets so we can use actual images. And if we can
+make inventory to move items (drag drop) and item to change its slot position (like a custom bag order) and drag drop on
+equipment it equip it and drag drop from equipmnet its unequiping it ... like a normal bag"*. Built with the first route
+(game-icons.net, one picture per kind, `docs/data/item_icons.csv`); see CHANGELOG 0.269.0. A painted pack per item can
+replace it later: the icon is looked up by a key, so a per-item key is a one-line change.
+
+The entry as it stood:
+
+
+Your words: *"also can we make bl enrty to update the inventory to cells + icons and tooltip like details ? (for later
+date just mark it before i forget)"*.
+
+The inventory window becomes a grid of cells, one item per cell with its icon (stack count on the cell), and an item's
+details show as a tooltip-style panel on tap or long-press. Today the bag is ROWS (name + a details window opened from
+the row, `GameUi.Items.cs`). Item icons would follow the skill
+icons' route (`BL-331`: game-icons.net, tinted per category or grade). To settle when you pick it up: cell size and
+columns on a phone, sorting and tabs, what the panel shows, and whether equipment, warehouse and trade windows switch to
+cells too.
+

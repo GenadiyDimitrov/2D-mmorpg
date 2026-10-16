@@ -286,7 +286,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-341` | ⏸ | **Skill vampirism + skill reflect** — a buff that vamps from any spell/physical skill (later-chronicle IG), only together with reflect on skill damage; "a lot later if at all" | combat |
 | `BL-344` | 🔴 | **Visual pass** — ground, animations, entities; order + status in `design/VisualPass.md` §0; steps 1-3 built (0.243.0, 0.244.0, 0.245.0), step 4 built (0.246.0 scatter, 0.247.0 real models), step 5 built (0.248.0 light, shadows, day/night), step 6 built (0.249.0 skill FX), step 7 built (0.250.0 weapons in hand), step 8 built (0.251.0 camera turn + tilt); all eight steps built, waiting on your phone check | client |
 | `BL-346` | ⏸ | **The open-world grid map** — the world as a grid of zone cells, castle territories of several cells (farming zones, spawners, dungeons), one seamless map, impassable terrain with passages between biomes; for later | world |
-| `BL-347` | ⏸ | **Inventory as cells** — a grid of item cells with icons, and a tooltip-style details panel; for later | ui |
 | `BL-348` | ⏸ | **Hazard terrain** — harsh zones put a visible debuff on you until you leave: blizzard/wind = more misses + magic fails, lava pools = DoT, slowed attack/cast speed; the combat half of `BL-328`; answer later | world |
 | `BL-349` | ⏸ | **Race starting zones** — each race starts in its own territory (elves water/ice, humans an island, demons fire/lava), each class at its own spot (temple, ruins, arena, summoning circle) with low-level mobs and its own newbie guide; after `BL-346` | world |
 | `BL-350` | ⏸ | **The game's story** (world = **Vardelar**, skeleton in `docs/design/Lore.md`) — where each race comes from and what it is for, a pantheon of named gods that skills can be described by; so quests are more than "go there, kill that" | story |
@@ -2388,18 +2387,6 @@ What it will need:
 4. Re-placing cities, fields and spawners onto the grid (`WorldPlan` places fields by bearing and distance from their
    city, so moving a city moves its fields with it).
 5. The client's "loaded detail / range" option (`BiomeGround.MaxRange`, and props from step 4 onward).
-
-## `BL-347` ⏸ INVENTORY AS CELLS — icons and tooltip details (2026-10-12, for later)
-
-Your words: *"also can we make bl enrty to update the inventory to cells + icons and tooltip like details ? (for later
-date just mark it before i forget)"*.
-
-The inventory window becomes a grid of cells, one item per cell with its icon (stack count on the cell), and an item's
-details show as a tooltip-style panel on tap or long-press. Today the bag is ROWS (name + a details window opened from
-the row, `GameUi.Items.cs`). Item icons would follow the skill
-icons' route (`BL-331`: game-icons.net, tinted per category or grade). To settle when you pick it up: cell size and
-columns on a phone, sorting and tabs, what the panel shows, and whether equipment, warehouse and trade windows switch to
-cells too.
 
 ## `BL-348` ⏸ HAZARD TERRAIN — harsh zones debuff you until you leave (2026-10-12, answer later)
 

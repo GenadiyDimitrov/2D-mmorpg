@@ -1,13 +1,14 @@
 # Credits
 
-## Skill icons (`BL-331`)
+## Skill and item icons (`BL-331`, `BL-347`)
 
-The skill glyphs are from **[game-icons.net](https://game-icons.net)**, by Lorc, Delapouite, Skoll, Sbed, Carl Olsen,
+The skill and item glyphs are from **[game-icons.net](https://game-icons.net)**, by Lorc, Delapouite, Skoll, Sbed, Carl Olsen, Faithtoken,
 Willdabeast and the site's other contributors, licensed under
 **[Creative Commons Attribution 3.0 (CC BY 3.0)](https://creativecommons.org/licenses/by/3.0/)**.
 
 They were recoloured and framed for this game by `tools/SkillIcons` (the colour = the skill's school). Which glyph each
-skill wears is `docs/data/skill_icons.csv`.
+skill wears is `docs/data/skill_icons.csv`; each kind of ITEM, `docs/data/item_icons.csv` (`tools/SkillIcons -- --items`,
+one grey-and-white picture per kind, tinted by rarity in the game).
 
 ⚠ CC BY requires this credit to stay with the game. Before any public release it must also appear on an in-game credits
 screen, not only in this file.

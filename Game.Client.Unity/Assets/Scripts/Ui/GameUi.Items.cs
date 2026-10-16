@@ -102,6 +102,7 @@ namespace Game.Client
             Rarity = 2,      // Mythic first, then name
             RarityAsc = 3,   // Common first, then name
             Type = 4,        // weapons → armor → jewels → consumables, rarity then name inside each
+            Custom = 5,      // `BL-347` — your own drag order in the bag; lists it does not hold read it as A-Z
         }
 
         private const string OrderPref = "l2c.itemOrder";
@@ -119,7 +120,69 @@ namespace Game.Client
         private void LoadItemOrder()
         {
             int saved = PlayerPrefs.GetInt(OrderPref, (int)ItemOrder.Name);
-            _itemOrder = saved >= 0 && saved <= (int)ItemOrder.Type ? (ItemOrder)saved : ItemOrder.Name;
+            _itemOrder = saved >= 0 && saved <= (int)ItemOrder.Custom ? (ItemOrder)saved : ItemOrder.Name;
+        }
+
+        // ----- `BL-347`: YOUR OWN BAG ORDER -----------------------------------------------------------
+        //
+        //  Owner, 2026-10-16: *"item to change its slot position (like a custom bag order)"*. Dropping one bag cell on
+        //  another SWAPS them, and the bag switches to [Custom]. The order is the list of instance ids, kept per
+        //  character in PlayerPrefs like the [ORDER] choice itself — a view preference of this phone, never sent to
+        //  the server. Each move re-takes it from what is ON SCREEN, so a sold or new item never leaves a hole: new
+        //  items come in after the ordered ones, A-Z.
+
+        private readonly List<Guid> _bagCustom = new List<Guid>();
+        private string _bagCustomKey;
+
+        private void LoadBagCustom()
+        {
+            string key = "l2c.bagOrder." + (Boot != null ? Boot.CharacterName : "");
+            if (key == _bagCustomKey) return;
+            _bagCustomKey = key;
+            _bagCustom.Clear();
+            foreach (var s in PlayerPrefs.GetString(key, "").Split(','))
+                if (Guid.TryParse(s, out var id)) _bagCustom.Add(id);
+        }
+
+        private void SaveBagCustom()
+        {
+            PlayerPrefs.SetString(_bagCustomKey, string.Join(",", _bagCustom));
+            PlayerPrefs.Save();
+        }
+
+        /// <summary>Swap two bag items in the custom order (a cell dropped on a cell).</summary>
+        private void SwapInBag(Guid dragged, Guid onto)
+        {
+            LoadBagCustom();
+            var shown = ByName(Boot.Inventory ?? Array.Empty<InventoryItemDto>());   // the order on screen, whichever it is
+            _bagCustom.Clear();
+            foreach (var it in shown) if (!it.Equipped) _bagCustom.Add(it.InstanceId);
+            int a = _bagCustom.IndexOf(dragged), b = _bagCustom.IndexOf(onto);
+            if (a < 0 || b < 0 || a == b) return;
+            (_bagCustom[a], _bagCustom[b]) = (_bagCustom[b], _bagCustom[a]);
+            SaveBagCustom();
+            if (_itemOrder != ItemOrder.Custom) SetItemOrder(ItemOrder.Custom);
+            _bagRevision = -1;
+        }
+
+        /// <summary>`BL-347` — an item's picture: one per KIND (<see cref="ItemCatalog.IconKey"/>), drawn grey and white
+        /// and tinted by the caller with the rarity colour. Null = draw its letters.</summary>
+        internal static Sprite ItemSprite(ItemDef def) => LoadIcon("ItemIcons/" + ItemCatalog.IconKey(def));
+
+        /// <summary>Set the shared order, remember it, and relabel every [ORDER] button on screen.</summary>
+        private void SetItemOrder(ItemOrder order)
+        {
+            _itemOrder = order;
+            // `BL-142` — remembered across sessions, and written on the press rather than on quit:
+            // a phone app is killed, not closed, so "save at shutdown" is a save that never happens.
+            PlayerPrefs.SetInt(OrderPref, (int)_itemOrder);
+            PlayerPrefs.Save();
+            // …and EVERY button relabels, not just the one pressed — they share one setting.
+            for (int i = _orderButtons.Count - 1; i >= 0; i--)
+            {
+                if (_orderButtons[i] == null) { _orderButtons.RemoveAt(i); continue; }
+                UiKit.SetButtonText(_orderButtons[i], OrderLabel(_itemOrder));
+            }
         }
 
         private static string OrderLabel(ItemOrder o) => o switch
@@ -128,6 +191,7 @@ namespace Game.Client
             ItemOrder.NameDesc => "Z-A",
             ItemOrder.Rarity => "Rarity",
             ItemOrder.RarityAsc => "Rarity ^",
+            ItemOrder.Custom => "Custom",
             _ => "Type",
         };
 
@@ -183,8 +247,22 @@ namespace Game.Client
         private List<InventoryItemDto> ByName(IEnumerable<InventoryItemDto> items)
         {
             var list = new List<InventoryItemDto>(items);
+            // `BL-347` — [Custom]: your order first; anything it does not hold (new loot, a warehouse) after, A-Z.
+            Dictionary<Guid, int> rank = null;
+            if (_itemOrder == ItemOrder.Custom)
+            {
+                LoadBagCustom();
+                rank = new Dictionary<Guid, int>();
+                for (int i = 0; i < _bagCustom.Count; i++) rank[_bagCustom[i]] = i;
+            }
             list.Sort((a, b) =>
             {
+                if (rank != null)
+                {
+                    int ra = rank.TryGetValue(a.InstanceId, out var x) ? x : int.MaxValue;
+                    int rb = rank.TryGetValue(b.InstanceId, out var y) ? y : int.MaxValue;
+                    if (ra != rb) return ra.CompareTo(rb);
+                }
                 var da = ItemCatalog.Get(a.DefId);
                 var db = ItemCatalog.Get(b.DefId);
                 int c = CompareByOrder(da != null ? da.Name : a.DefId, da,
@@ -243,17 +321,7 @@ namespace Game.Client
             Button button = null;
             button = UiKit.TextButton(parent, OrderLabel(_itemOrder), () =>
             {
-                _itemOrder = (ItemOrder)(((int)_itemOrder + 1) % 5);
-                // `BL-142` — remembered across sessions, and written on the press rather than on quit:
-                // a phone app is killed, not closed, so "save at shutdown" is a save that never happens.
-                PlayerPrefs.SetInt(OrderPref, (int)_itemOrder);
-                PlayerPrefs.Save();
-                // …and EVERY button relabels, not just the one pressed — they share one setting.
-                for (int i = _orderButtons.Count - 1; i >= 0; i--)
-                {
-                    if (_orderButtons[i] == null) { _orderButtons.RemoveAt(i); continue; }
-                    UiKit.SetButtonText(_orderButtons[i], OrderLabel(_itemOrder));
-                }
+                SetItemOrder((ItemOrder)(((int)_itemOrder + 1) % 6));   // `BL-347`: Custom is the 6th
                 refresh?.Invoke();
             }, 14f);
             _orderButtons.Add(button);

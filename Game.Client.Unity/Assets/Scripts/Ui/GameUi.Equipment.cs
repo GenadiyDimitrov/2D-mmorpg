@@ -18,7 +18,7 @@ namespace Game.Client
     public partial class GameUi : MonoBehaviour
     {
         private RectTransform _equipColumn;
-        private readonly List<(string Key, string Name, TextMeshProUGUI Face, Button Btn)> _equipSquares = new();
+        private readonly List<(string Key, string Name, TextMeshProUGUI Face, Button Btn, Image Icon, ItemDrag Drag)> _equipSquares = new();
         private int _equipRevision = -1;
 
         // Body-slot squares within the ~320-wide column: key + label + top-left offset. Jewels have
@@ -65,9 +65,19 @@ namespace Game.Client
                             new Vector2(slot.X, slot.Y), new Vector2(EquipSq, EquipSq));
                 var btn = box.gameObject.AddComponent<Button>();
                 btn.targetGraphic = box;
+                // `BL-347` — the worn piece's picture (hidden on an empty square), under the text.
+                var icon = UiKit.Box(box.transform, "Icon", Color.white, blocksInput: false);
+                icon.preserveAspect = true;
+                UiKit.Stretch(UiKit.Rect(icon.gameObject), 3f, 3f, 3f, 3f);
+                icon.gameObject.SetActive(false);
                 var face = UiKit.Label(box.transform, slot.Name, 13f, UiKit.TextDim, TextAlignmentOptions.Center);
                 UiKit.Stretch(UiKit.Rect(face.gameObject), 2f, 2f, 2f, 2f);
-                _equipSquares.Add((slot.Key, slot.Name, face, btn));
+                // `BL-347` — drag a worn piece onto the bag list to take it off; drop a bag item here to wear it (the
+                // server picks the slot, as the [e] button always did). The square's Button keeps the tap.
+                var drag = box.gameObject.AddComponent<ItemDrag>();
+                drag.FromEquip = true;
+                box.gameObject.AddComponent<ItemDropTarget>().Drop = d => { if (!d.FromEquip) Boot.EquipItem(d.Item); };
+                _equipSquares.Add((slot.Key, slot.Name, face, btn, icon, drag));
             }
 
             UiKit.Place(UiKit.Rect(UiKit.Label(_equipColumn, "Jewels", 12f, UiKit.TextDim).gameObject),
@@ -152,18 +162,37 @@ namespace Game.Client
                 && ItemCatalog.Get(wep.DefId) is ItemDef wepDef && wepDef.OccupiesOffHand)
                 twoHander = wepDef;
 
-            foreach (var (key, name, face, btn) in _equipSquares)
+            foreach (var (key, name, face, btn, icon, drag) in _equipSquares)
             {
                 btn.onClick.RemoveAllListeners();
                 btn.interactable = true;
+                drag.Item = System.Guid.Empty;        // nothing to lift unless something is worn here
+                icon.gameObject.SetActive(false);
+                face.alignment = TextAlignmentOptions.Center;
                 if (byKey.TryGetValue(key, out var item))
                 {
                     var def = ItemCatalog.Get(item.DefId);
-                    face.text = (item.Enchant > 0 ? "+" + item.Enchant + " " : "")
-                              + (def != null ? Abbreviations.ForItem(def) : Abbreviations.For(item.DefId));
                     // Quality colour, so a worn square says what grade of the piece you have on. Falls
                     // back to the old green when the def is missing (an item id from a newer build).
-                    face.color = def != null ? RarityColour(def.Rarity) : UiKit.Good;
+                    var colour = def != null ? RarityColour(def.Rarity) : UiKit.Good;
+                    var sprite = def != null ? ItemSprite(def) : null;
+                    // `BL-347` — with a picture the square shows it and keeps only +enchant in the corner.
+                    face.text = sprite != null
+                        ? (item.Enchant > 0 ? "+" + item.Enchant : "")
+                        : (item.Enchant > 0 ? "+" + item.Enchant + " " : "")
+                          + (def != null ? Abbreviations.ForItem(def) : Abbreviations.For(item.DefId));
+                    if (sprite != null)
+                    {
+                        icon.sprite = sprite;
+                        icon.color = colour;
+                        icon.gameObject.SetActive(true);
+                        face.alignment = TextAlignmentOptions.TopLeft;
+                        face.color = UiKit.Text;
+                    }
+                    else face.color = colour;
+                    drag.Item = item.InstanceId;
+                    drag.Icon = sprite;
+                    drag.Tint = colour;
                     var captured = item;
                     btn.onClick.AddListener(() => OpenItemDetails(captured));
                 }
@@ -174,8 +203,21 @@ namespace Game.Client
                     // reads as a free slot, which is the one thing it is not: the weapon is holding it.
                     // Not clickable, because there is no second item to open — it is the same weapon
                     // already sitting in the square next to it.
-                    face.text = Abbreviations.ForItem(twoHander);
-                    face.color = Color.Lerp(RarityColour(twoHander.Rarity), UiKit.TextDim, 0.6f);
+                    var dim = Color.Lerp(RarityColour(twoHander.Rarity), UiKit.TextDim, 0.6f);
+                    var sprite = ItemSprite(twoHander);
+                    if (sprite != null)
+                    {
+                        // `BL-347` — literally his "the same icon greyed".
+                        icon.sprite = sprite;
+                        icon.color = new Color(dim.r, dim.g, dim.b, 0.45f);
+                        icon.gameObject.SetActive(true);
+                        face.text = "";
+                    }
+                    else
+                    {
+                        face.text = Abbreviations.ForItem(twoHander);
+                        face.color = dim;
+                    }
                     btn.interactable = false;
                 }
                 else

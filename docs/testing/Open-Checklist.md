@@ -25,6 +25,28 @@
 
 ---
 
+## §165 — 0.266.0-0.269.0: distance test boxes, NPC levels, the new package id, the bag as cells (2026-10-16)
+
+⚠ **0.268.0 changes the app's package id: uninstall the old app first** (characters are safe on the server; the saved
+login and settings go with the old app). Then the 0.269.0 APK, and the server for 0.266.0/0.267.0.
+
+- `165a` [ ] - Install: the old app uninstalled, the new one installs and logs in. Only ONE icon on the home screen. ->
+- `165b` [ ] - Settings → World / Entities are boxes. Type values, leave the box: a number past 100000 snaps to 100000,
+  under 1500 to 1500. Try World 10000, 20000, 50000: trees and ground reach the fog, nothing cut short. Your two
+  ranges (and the steps) for the final control → `BL-358`. ->
+- `165c` [ ] - Entities 10000+: mobs and players far off appear (the server now sends that far). Frame rate? ->
+- `165d` [ ] - NPC levels: tap a Gatekeeper (90), a Spirit Helper (~50-60), an Apothecary (~10-15), Grandmaster
+  Thorne (60). Hit one: the HP pool matches the level (a gatekeeper ~6500, a shopkeeper ~200), still never below 1. ->
+- `165e` [ ] - The bag: cells with pictures in the rarity colour, counts, +enchant, `L` on a locked item. Tap = details,
+  double-tap = wear / drink. Del / Brake mode: the button on the cell's corner. ->
+- `165f` [ ] - Hold a cell ~0.3 s then drag onto another: they swap, [ORDER] reads Custom, and the order survives a
+  relog. A quick swipe still scrolls the bag. ->
+- `165g` [ ] - [Equip] open: drag a cell onto the paper-doll → worn; drag a worn square onto the bag → off. The squares
+  show the pictures; a two-hander greys its picture in the shield square. ->
+- `165h` [ ] - PC (Windows build, when rebuilt): a mouse drag picks the item up at once, the wheel scrolls. ->
+
+---
+
 ## §164 — 0.255.0: houses in the towns, huts in the woods, a stone Anvil; scenery draws around you (`BL-356`, 2026-10-13)
 
 ⚠ **New APK only.**

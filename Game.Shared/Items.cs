@@ -3500,6 +3500,55 @@ public static class ItemCatalog
     // drop boxes, rune boxes and selection boxes had buried the potions. A RECIPE BOOK is an EquipSlot.Box only
     // so the open flow can teach it; it is not a box to a player and stays under Use.
 
+    /// <summary>`BL-347` (0.269.0) — WHICH PICTURE an item wears: one per KIND of thing, never per item (owner,
+    /// 2026-10-16: *"can reuse same icon for weight and armor part and weapon part .. just different colors"*). The
+    /// client tints it by rarity, so every grade and rarity of a sword is one PNG. A key is a row of
+    /// <c>docs/data/item_icons.csv</c>, which names its game-icons.net glyph; <c>tools/SkillIcons -- --items</c> renders
+    /// <c>Resources/ItemIcons/&lt;key&gt;.png</c> and refuses a key this method can return that has no row.</summary>
+    public static string IconKey(ItemDef def) => def == null ? "material" : def.Slot switch
+    {
+        EquipSlot.Weapon when def.IsMagicWeapon => "staff",
+        EquipSlot.Weapon => def.WeaponType switch
+        {
+            WeaponType.TwoHandedSword => "greatsword",
+            WeaponType.Blunt => "blunt",
+            WeaponType.TwoHandedBlunt => "greathammer",
+            WeaponType.Dual => "dual",
+            WeaponType.Bow => "bow",
+            _ => "sword",
+        },
+        EquipSlot.Shield => "shield",
+        EquipSlot.Armor => def.ArmorSlot switch
+        {
+            ArmorSlot.Head => "helmet",
+            ArmorSlot.Gloves => "gloves",
+            ArmorSlot.Boots => "boots",
+            _ => def.Weight switch { ArmorWeight.Heavy => "heavy_armor", ArmorWeight.Robe => "robe", _ => "light_armor" },
+        },
+        EquipSlot.Jewel => def.JewelType switch
+        {
+            JewelType.Earring => "earring",
+            JewelType.Necklace => "necklace",
+            _ => "ring",
+        },
+        EquipSlot.Rune => "rune",
+        EquipSlot.Consumable => def.Id.Contains("mana") ? "mana_potion"
+                              : def.PotionCooldownTicks > 0 ? "potion" : "elixir",
+        EquipSlot.Scroll => def.AttrScroll != AttrScrollKind.None ? "attribute_scroll"
+                          : def.ScrollKind != ScrollKind.None ? "enchant_scroll" : "scroll",
+        EquipSlot.Box => "box",
+        EquipSlot.QuestItem => "quest",
+        _ => "material",
+    };
+
+    /// <summary>Every key <see cref="IconKey"/> can return — the icon tool checks the CSV covers all of them.</summary>
+    public static readonly string[] IconKeys =
+    {
+        "sword", "greatsword", "blunt", "greathammer", "dual", "bow", "staff", "shield",
+        "helmet", "heavy_armor", "light_armor", "robe", "gloves", "boots", "ring", "earring", "necklace", "rune",
+        "potion", "mana_potion", "elixir", "enchant_scroll", "attribute_scroll", "scroll", "box", "quest", "material",
+    };
+
     public static ItemCategory CategoryOf(ItemDef def) => def == null ? ItemCategory.Mats : def.Slot switch
     {
         EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield

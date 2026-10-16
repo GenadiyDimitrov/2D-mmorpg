@@ -179,6 +179,11 @@ namespace Game.Client
         // bag / debug
         private RectTransform _bagPanel, _bagContent, _debugPanel;
         private int _bagRevision = -1;
+        private ScrollRect _bagScroll;   // `BL-347` — a cell hands it the swipes that are not a drag
+
+        // `BL-347` — the bag is a GRID of cells: 6 across the 418-wide list.
+        private const float BagCell = 64f, BagCellGap = 4f;
+        private const int BagColumns = 6;
         private ItemCategory _bagTab = ItemCategory.All;   // which C8 category the list is filtered to
         private Button[] _bagTabButtons;
         private static readonly ItemCategory[] BagTabs =
@@ -1435,7 +1440,10 @@ namespace Game.Client
             // stretches it — it just slides.
             ScrollRect scroll;
             _bagContent = UiKit.ScrollArea(inner, out scroll, 3f);
+            _bagScroll = scroll;
             _bagListRect = UiKit.Rect(scroll.transform.gameObject);
+            // `BL-347` — a worn piece dragged off the paper-doll and dropped anywhere on the list comes off.
+            scroll.gameObject.AddComponent<ItemDropTarget>().Drop = d => { if (d.FromEquip) Boot.EquipItem(d.Item); };
             UiKit.Place(_bagListRect, new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(BagListX, -chrome - 110f), new Vector2(418f, BagHeight - chrome - 126f));
 
@@ -1474,6 +1482,83 @@ namespace Game.Client
         /// Equipment bag), which is why this is not simply <see cref="InCategory"/>.</summary>
         private static bool InBagTab(ItemCategory tab, InventoryItemDto item, ItemDef def)
             => !item.Equipped && InCategory(tab, def);
+
+        /// <summary>`BL-347` — one bag cell: a rarity-coloured frame, the item's picture tinted the same colour (its letters
+        /// if it has none), the count bottom-right, +enchant top-left, [L] top-right for a locked item, and in Del/Brake
+        /// mode the fast button over the bottom-left corner. See the comment at the grid for what tap / drag do.</summary>
+        private void BuildBagCell(Transform grid, InventoryItemDto item, ItemDef def)
+        {
+            var colour = def != null ? RarityColour(def.Rarity) : UiKit.Text;
+            var frame = UiKit.Box(grid, "Cell", Color.Lerp(colour, Color.black, 0.55f));
+            var well = UiKit.Box(frame.transform, "Well", new Color(0.07f, 0.08f, 0.10f, 1f), blocksInput: false);
+            UiKit.Stretch(UiKit.Rect(well.gameObject), 2f, 2f, 2f, 2f);
+
+            var sprite = ItemSprite(def);
+            if (sprite != null)
+            {
+                var icon = UiKit.Box(well.transform, "Icon", colour, blocksInput: false);
+                icon.sprite = sprite;
+                icon.preserveAspect = true;
+                UiKit.Stretch(UiKit.Rect(icon.gameObject), 2f, 2f, 2f, 2f);
+            }
+            else
+            {
+                var letters = UiKit.Label(well.transform, def != null ? Abbreviations.ForItem(def) : item.DefId, 13f, colour,
+                                          TextAlignmentOptions.Center);
+                UiKit.Stretch(UiKit.Rect(letters.gameObject), 2f, 2f, 2f, 2f);
+            }
+
+            void Corner(string text, TextAlignmentOptions align, Color c)
+            {
+                var l = UiKit.Label(well.transform, text, 14f, c, align);
+                l.fontStyle = FontStyles.Bold;
+                l.outlineWidth = 0.25f;
+                l.outlineColor = Color.black;
+                UiKit.Stretch(UiKit.Rect(l.gameObject), 3f, 1f, 3f, 1f);
+            }
+            if (item.Quantity > 1) Corner(item.Quantity >= 10000 ? (item.Quantity / 1000) + "k" : item.Quantity.ToString(),
+                                          TextAlignmentOptions.BottomRight, UiKit.Text);
+            if (item.Enchant > 0) Corner("+" + item.Enchant, TextAlignmentOptions.TopLeft, UiKit.Text);
+            // `BL-239` — a LOCKED item says so (plain ASCII: the TMP atlas is static, a padlock glyph draws as a box).
+            bool locked = def != null && Boot.IsLocked(def, item);
+            if (locked) Corner("L", TextAlignmentOptions.TopRight, UiKit.TextDim);
+
+            var id = item.InstanceId;
+            var shown = item;
+            bool wearable = def != null && (def.Slot == EquipSlot.Weapon || def.Slot == EquipSlot.Armor ||
+                                            def.Slot == EquipSlot.Shield || def.Slot == EquipSlot.Jewel);
+            var drag = frame.gameObject.AddComponent<ItemDrag>();
+            drag.Item = id;
+            drag.Icon = sprite;
+            drag.Tint = colour;
+            drag.Scroll = _bagScroll;
+            drag.Click = () => OpenItemDetails(shown);
+            drag.DoubleClick = wearable ? () => Boot.EquipItem(id)
+                             : def != null && def.Slot == EquipSlot.Consumable ? () => Boot.UsePotion(id)
+                             : null;
+            // A cell dropped on a cell: swap the two. A worn piece dropped on a cell comes off, as on the list.
+            frame.gameObject.AddComponent<ItemDropTarget>().Drop = d =>
+            {
+                if (d.FromEquip) Boot.EquipItem(d.Item);
+                else SwapInBag(d.Item, id);
+            };
+
+            // Fast action (Del / Brake): HIDDEN unless the cycle is on; acts on the WHOLE stack with NO confirmation
+            // (owner). Never quest items, never a locked item (`BL-239`), and Brake only on what really breaks down.
+            if (_bagFastMode != BagFastMode.Off && !locked && (def == null || def.Slot != EquipSlot.QuestItem))
+            {
+                bool brake = _bagFastMode == BagFastMode.Brake;
+                if (!brake || (def != null && Crafting.BreakYield(def) != null))
+                {
+                    var act = brake
+                        ? UiKit.TextButton(frame.transform, "Brk", () => Boot.DisassembleItem(id), 12f)
+                        : UiKit.TextButton(frame.transform, "Del", () => Boot.RemoveItem(id, true), 12f);
+                    act.targetGraphic.color = brake ? BagBrakeColour : BagDeleteColour;
+                    UiKit.Place(UiKit.Rect(act.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
+                                new Vector2(0f, 0f), new Vector2(36f, 24f));
+                }
+            }
+        }
 
         // BuildDebugPanel and everything it needs now live in GameUi.Debug.cs — it grew from four
         // buttons to the full WPF-parity tool (five tabs + live tuning) and had no business sharing a
@@ -2520,100 +2605,33 @@ namespace Game.Client
             for (int i = _bagContent.childCount - 1; i >= 0; i--)
                 Destroy(_bagContent.GetChild(i).gameObject);
 
+            // `BL-347` (0.269.0) — CELLS, not rows (owner, 2026-10-12: *"update the inventory to cells + icons and tooltip
+            // like details"*; 2026-10-16: *"drag drop ... like a normal bag"*). A cell is the item's picture in its
+            // rarity colour, its count, +enchant and [L]ock. TAP = details (stats, compare, bin — all that the row's
+            // [Details] opened); DOUBLE TAP = the old [e]/[u] fast button; HOLD + DRAG (a mouse drags at once) = move it:
+            // onto another cell swaps the two (the order becomes [Custom]), onto the paper-doll wears it.
             bool anyInTab = false;
-            foreach (var item in ByName(items))          // C8: name order, same as the vendor and the keeper
+            var grid = new GameObject("Grid", typeof(RectTransform), typeof(GridLayoutGroup), typeof(LayoutElement));
+            grid.transform.SetParent(_bagContent, false);
+            var gl = grid.GetComponent<GridLayoutGroup>();
+            gl.cellSize = new Vector2(BagCell, BagCell);
+            gl.spacing = new Vector2(BagCellGap, BagCellGap);
+            gl.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            gl.constraintCount = BagColumns;
+            gl.padding = new RectOffset(4, 4, 4, 4);
+            int cells = 0;
+            foreach (var item in ByName(items))          // the shared [ORDER], same as the vendor and the keeper
             {
                 var def = ItemCatalog.Get(item.DefId);
                 if (!InBagTab(_bagTab, item, def)) continue;
                 anyInTab = true;
-                var row = UiKit.Box(_bagContent, "Item", UiKit.PanelLight);
-                row.gameObject.AddComponent<LayoutElement>().minHeight = 46f;
-
-                // The row is now name (qty) + [details] + a fast action — NOT the action inline. Reading
-                // an item and acting on it are two different intents, and cramming both into every row is
-                // what the owner called "30 buttons". Details is where the stats, set info, compare and
-                // bin-delete live (GameUi.Items.cs); the row keeps only the fast path.
-                string name = def != null ? ItemTag.RowName(def, item) : item.DefId;   // `BL-301` (T/B/U)
-                if (item.Enchant > 0) name = "+" + item.Enchant + " " + name;
-                if (item.Quantity > 1) name += "   x" + item.Quantity;
-                if (item.Equipped) name = "* " + name;
-                // `BL-239` — a LOCKED row says so. Without a mark, a locked item in Del mode is simply
-                // a row whose red button is missing, which reads as a bug rather than as protection.
-                // Plain ASCII on purpose: the TMP atlas is static, so a padlock glyph would draw as a box.
-                if (def != null && Boot.IsLocked(def, item)) name = "[L] " + name;
-
-                // QUALITY COLOUR on the bag row. The vendor, warehouse, item details and worn squares
-                // all colour by rarity; the bag — the list you look at most — was the one place still
-                // painting everything the same grey. That matters more now than it used to: the same
-                // piece exists at six qualities under ONE name, so without the colour two rows of
-                // "Electrum Blade" are indistinguishable.
-                //
-                // An EQUIPPED row stays green: "this is what you are wearing" is the more urgent fact
-                // while scanning a bag, and the "*" prefix alone is easy to miss.
-                var label = UiKit.Label(row.transform, name, 17f,
-                                        item.Equipped ? UiKit.Good
-                                                      : def != null ? RarityColour(def.Rarity) : UiKit.Text,
-                                        TextAlignmentOptions.Left);
-                UiKit.Stretch(UiKit.Rect(label.gameObject), 12f, 0f, 224f, 0f);
-
-                var id = item.InstanceId;
-                var shown = item;
-                float rightX = -8f;   // buttons grow leftward from the row's right edge
-
-                // Fast action: HIDDEN unless the cycle is on; acts on the WHOLE stack with NO
-                // confirmation (owner). Never for quest items, nor WORN gear (unequip it first).
-                //
-                // `BL-244` — two modes share this slot. DEL bins; BRAKE breaks down, and is offered
-                // only on a piece `Crafting.BreakYield` actually breaks: a Brake button on a potion
-                // would be a tap that does nothing, which is the same foot-gun as one that does the
-                // wrong thing. A row with no salvage simply shows no fast button in Brake mode.
-                // `BL-239` closes `BL-244`'s open clause — *"a locked item ignores both"*. The fast
-                // button is the one place in the game with NO confirmation step, so a lock has to take
-                // it away entirely: greying it here would still be a red button on the row under your
-                // thumb, and there is no dialogue behind it to catch the tap.
-                if (_bagFastMode != BagFastMode.Off && !item.Equipped
-                    && !(def != null && Boot.IsLocked(def, item))
-                    && (def == null || def.Slot != EquipSlot.QuestItem))
-                {
-                    bool brake = _bagFastMode == BagFastMode.Brake;
-                    bool canBrake = def != null && Crafting.BreakYield(def) != null;
-                    if (!brake || canBrake)
-                    {
-                        var act = brake
-                            ? UiKit.TextButton(row.transform, "Brk", () => Boot.DisassembleItem(id), 14f)
-                            : UiKit.TextButton(row.transform, "Del", () => Boot.RemoveItem(id, true), 14f);
-                        act.targetGraphic.color = brake ? BagBrakeColour : BagDeleteColour;
-                        UiKit.Place(UiKit.Rect(act.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
-                                    new Vector2(rightX, 0f), new Vector2(52f, 38f));
-                        rightX -= 56f;
-                    }
-                }
-
-                var details = UiKit.TextButton(row.transform, "Details", () => OpenItemDetails(shown), 14f);
-                UiKit.Place(UiKit.Rect(details.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
-                            new Vector2(rightX, 0f), new Vector2(94f, 38f));
-                rightX -= 98f;
-
-                // Fast path: [e] equips/unequips gear, [u] uses a consumable — both skip the details
-                // window. EquipSlot has no "None" (it classifies EVERY item), so the wearable slots are
-                // tested explicitly; anything else gets no fast button rather than one the server refuses.
-                bool wearable = def != null &&
-                    (def.Slot == EquipSlot.Weapon || def.Slot == EquipSlot.Armor ||
-                     def.Slot == EquipSlot.Shield || def.Slot == EquipSlot.Jewel);
-
-                if (wearable)
-                {
-                    var fast = UiKit.TextButton(row.transform, "e", () => Boot.EquipItem(id), 15f);
-                    UiKit.Place(UiKit.Rect(fast.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
-                                new Vector2(rightX, 0f), new Vector2(48f, 38f));
-                }
-                else if (def != null && def.Slot == EquipSlot.Consumable)
-                {
-                    var fast = UiKit.TextButton(row.transform, "u", () => Boot.UsePotion(id), 15f);
-                    UiKit.Place(UiKit.Rect(fast.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
-                                new Vector2(rightX, 0f), new Vector2(48f, 38f));
-                }
+                cells++;
+                BuildBagCell(grid.transform, item, def);
             }
+            // The list does not size its children (childControlHeight off), so the grid carries its own height.
+            float gridH = ((cells + BagColumns - 1) / BagColumns) * (BagCell + BagCellGap) + 8f;
+            grid.GetComponent<LayoutElement>().minHeight = gridH;
+            ((RectTransform)grid.transform).sizeDelta = new Vector2(0f, gridH);
 
             if (!anyInTab)
             {

@@ -53,6 +53,9 @@ foreach (var f in Directory.EnumerateFiles(setDir, "*.svg", SearchOption.AllDire
     icons.TryAdd(author + "/" + name, f);
 }
 
+// `BL-347` — the item icons are their own run (ItemIcons.cs): one picture per kind of item, tinted in the client.
+if (args.Contains("--items")) return ItemIcons.Run(repo, icons);
+
 // ---- the rows ------------------------------------------------------------------------------------------
 string csvPath = Path.Combine(repo, "docs", "data", "skill_icons.csv");
 var rows = new List<(string Id, string Icon, string School, int Line)>();

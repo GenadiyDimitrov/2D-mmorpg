@@ -1,0 +1,28 @@
+KIND,ICON,COMMENT
+sword,broadsword,one-handed sword
+greatsword,two-handed-sword,
+blunt,flanged-mace,one-handed blunt
+greathammer,warhammer,two-handed blunt
+dual,daggers,daggers are duals
+bow,pocket-bow,
+staff,wizard-staff,any magic weapon
+shield,checked-shield,
+helmet,visored-helm,
+heavy_armor,breastplate,body - heavy
+light_armor,leather-vest,body - light
+robe,robe,body - robe
+gloves,gauntlet,
+boots,steeltoe-boots,
+ring,diamond-ring,
+earring,earrings,
+necklace,gem-pendant,
+rune,rune-stone,War / Spell Rune
+potion,heart-bottle,healing potions
+mana_potion,magic-potion,
+elixir,bubbling-flask,any other drink (buff potions)
+enchant_scroll,scroll-unfurled,
+attribute_scroll,tied-scroll,
+scroll,scroll-quill,return / teleport and other scrolls
+box,locked-chest,
+quest,wax-seal,
+material,ore,mats and essences
