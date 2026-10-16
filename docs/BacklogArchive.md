@@ -8861,3 +8861,31 @@ fighter etc.. Their life will be 1~3k"*.
 - ❓ To settle when picked up: a level per ROLE or per NPC; whether a retaliating NPC fights with its archetype's
   skills; whether the level shows on target-inspect.
 
+## `BL-345` — DONE in 0.268.0 (2026-10-16): package id `com.gdimitrov.mmo` + a release key; the Oracle steps 1-8 were already done
+
+Your words, 2026-10-16: *"Do the `BL-345` -> "1. The Android package id and a release signing key"; Then tell me what is
+"2. Then you do the guide's steps 1-8" for?"*. 1 built (CHANGELOG 0.268.0). 2 was the one-time Oracle setup in
+`guides/Hosting.md` (account, machine, address, SSH, .NET, the systemd service, first install, nightly backup), and a
+check on the box the same day found all eight in place: `game` + `caddy` running, the 04:30 backup writing.
+
+The entry as it stood:
+
+
+Your words: *"after the visuals i want to tell me how to host so i can ask friends to join/download etc"*. The answer is
+**[guides/Hosting.md](guides/Hosting.md)**: Oracle Always Free ARM, DuckDNS, Caddy for HTTPS, systemd, nightly backup,
+€0 a month. (The earlier text of this entry is in the archive.)
+
+**Built in 0.258.0**, with your owner-bootstrap design (2026-10-13: *"server starts with /registration close ... allows
+only the owner.txt ... genaacc/Gena"*) replacing the `GAME_PUBLIC` switch: `owner.txt` = `account/Character` and a
+fresh server admits only that pair; no character born Admin; reserved staff/system names; `/registration open|close`
+(closed = no accounts and no characters); a save on every stop; `/server reboot` under systemd just exits; `/apk` from
+`apk/` or `apk-path.txt`; the client's default address from `Resources/server.txt`. You chose: no self-contained
+Linux build (install .NET as in Termux), and the address is not hidden (hiding it protects nothing).
+
+**Still owed, before friends install:**
+1. **The Android package id and a release signing key.** Today it is `com.UnityTechnologies.com.unity.template.urpblank`
+   signed with this PC's debug key. Changing either later forces every friend to uninstall. Needs your pick of id
+   (proposed `com.gdimitrov.mmo`) and a keystore password you keep. Your own phone also reinstalls once.
+2. Then you do the guide's steps 1-8 (they need your Oracle login). The first test is your own phone over mobile data.
+   ⚠ Untested: the Unity SignalR client over `https://`/`wss://` on the phone.
+

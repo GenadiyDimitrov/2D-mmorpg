@@ -60,12 +60,12 @@ That compiles the APK, installs it over USB and launches it.
 Already installed and unchanged? Just relaunch it instead of rebuilding:
 
 ```bash
-"$ADB" shell monkey -p com.UnityTechnologies.com.unity.template.urpblank -c android.intent.category.LAUNCHER 1
+"$ADB" shell monkey -p com.gdimitrov.mmo -c android.intent.category.LAUNCHER 1
 ```
 
-> That package name is still the **URP template's default** (Player Settings → Other Settings →
-> Identification). Fine for dev, but change it before any release — and note that changing it makes
-> Android treat the app as a *different* app, so uninstall the old one or you'll have two icons.
+> That package name is the release one since 0.268.0 (`BL-345`; it was the URP template's default), set by
+> `CommandLineBuild.StampSigning` along with the release key in `%USERPROFILE%\.vardelar-signing\`. A phone that
+> still has the old-id app shows two icons until that one is uninstalled.
 
 ### 5. In the app
 

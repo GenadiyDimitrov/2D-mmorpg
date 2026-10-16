@@ -310,13 +310,16 @@ On hiding the server address from players: it would not protect anything. Anyone
 traffic and read it in a minute. The protection is on the server: the owner bootstrap, closed registration, passwords
 and role checks.
 
-**Still owed, before friends install: the Android package id and signing key.** The APK is still
-`com.UnityTechnologies.com.unity.template.urpblank`, signed with a debug key Unity generated on your PC. Android installs
-an update only over a copy signed with the **same key**. If that PC dies, or you build elsewhere, the key changes and
-every friend must uninstall and reinstall. Their characters are safe on the server, but it is a nuisance. The package
-id works the same way: change it later and the phone treats the APK as a different app. The fix is one-time: a neutral
-package id (`com.gdimitrov.mmo`), and a key file of your own with a password. You back that file up forever. Lose it and
-nobody can update any more; they can only reinstall.
+**The Android package id and signing key: DONE in 0.268.0.** The APK is now `com.gdimitrov.mmo` (was Unity's template
+id), signed with a release key of your own instead of the debug key Unity generated on this PC. Android installs an
+update only over a copy with the same id AND the same key, so these two never change again. The key lives OUTSIDE the
+repo: `%USERPROFILE%\.vardelar-signing\` (`release.keystore`, alias `vardelar`, and `password.txt`).
+`CommandLineBuild.StampSigning` reads it, and **an Android build with no key there FAILS** rather than quietly signing
+with a debug key. ⚠ **Back that folder up** (a USB stick, a cloud drive). Lose it and no future APK installs over the old
+one: every phone would have to uninstall and reinstall. Characters are safe either way; they live on the server.
+
+**Once, on every phone:** the new id is a different app to Android. Uninstall the old one (its settings and saved login
+go with it), then install the 0.268.0 APK.
 
 **What is already fine and needs nothing:** passwords are stored salted and hashed (PBKDF2), not in plain text. HTTPS
 protects them on the wire once Caddy is in front. Admin commands are gated by the character's role on the server. The
@@ -325,8 +328,8 @@ version check refuses stale clients. `game.db` runs in WAL mode, so the nightly 
 ---
 
 ## 5. Order of work
-1. ✅ The code changes in part 4 (0.258.0). Owed: the package id and signing key.
-2. You do steps 1-8 above. I cannot do them for you: they need your Oracle login.
+1. ✅ The code changes in part 4 (0.258.0), and the package id + signing key (0.268.0).
+2. ✅ Steps 1-8 above (done by 2026-10-14: the `game` and `caddy` services run, the nightly backup writes).
 3. **First test, on your own phone over mobile data (Wi-Fi off):** connect to `https://<yourname>.duckdns.org/game`,
    register your owner account, create the owner character, play a minute, relog. Then `/registration open` and send
    your friends the link.

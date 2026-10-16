@@ -285,7 +285,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-333` | ⏸ | **Pet Grand Rune** (1h 75k / 2h 140k) — deferred by you: pets get higher base stats OR a rune effect, undecided | items |
 | `BL-341` | ⏸ | **Skill vampirism + skill reflect** — a buff that vamps from any spell/physical skill (later-chronicle IG), only together with reflect on skill damage; "a lot later if at all" | combat |
 | `BL-344` | 🔴 | **Visual pass** — ground, animations, entities; order + status in `design/VisualPass.md` §0; steps 1-3 built (0.243.0, 0.244.0, 0.245.0), step 4 built (0.246.0 scatter, 0.247.0 real models), step 5 built (0.248.0 light, shadows, day/night), step 6 built (0.249.0 skill FX), step 7 built (0.250.0 weapons in hand), step 8 built (0.251.0 camera turn + tilt); all eight steps built, waiting on your phone check | client |
-| `BL-345` | 🔴 | **Hosting for friends**: ANSWERED in `docs/guides/Hosting.md` (Oracle Always Free ARM + DuckDNS + Caddy HTTPS, €0). Code BUILT in 0.258.0 (owner bootstrap, `/registration`, reserved names, save on stop). Owed: Android package id + signing key, then his Oracle steps | ops |
 | `BL-346` | ⏸ | **The open-world grid map** — the world as a grid of zone cells, castle territories of several cells (farming zones, spawners, dungeons), one seamless map, impassable terrain with passages between biomes; for later | world |
 | `BL-347` | ⏸ | **Inventory as cells** — a grid of item cells with icons, and a tooltip-style details panel; for later | ui |
 | `BL-348` | ⏸ | **Hazard terrain** — harsh zones put a visible debuff on you until you leave: blizzard/wind = more misses + magic fails, lava pools = DoT, slowed attack/cast speed; the combat half of `BL-328`; answer later | world |
@@ -2363,26 +2362,6 @@ rings, debuff motes and a pillar of light when someone is raised. Every skill pi
 exceptions go in `docs/data/skill_fx.csv` (your pick). **Step 7 built 0.250.0**: weapons in hand (one mesh per
 weapon type, `HeldWeapons.cs`, VisualPass §0.6; `BL-103` keeps the tier and rarity half). Next: step 8 (camera rotation).
 
-## `BL-345` 🔴 HOSTING FOR FRIENDS — code BUILT in 0.258.0; owed: the package id and signing key (2026-10-12, rewritten 2026-10-13)
-
-Your words: *"after the visuals i want to tell me how to host so i can ask friends to join/download etc"*. The answer is
-**[guides/Hosting.md](guides/Hosting.md)**: Oracle Always Free ARM, DuckDNS, Caddy for HTTPS, systemd, nightly backup,
-€0 a month. (The earlier text of this entry is in the archive.)
-
-**Built in 0.258.0**, with your owner-bootstrap design (2026-10-13: *"server starts with /registration close ... allows
-only the owner.txt ... genaacc/Gena"*) replacing the `GAME_PUBLIC` switch: `owner.txt` = `account/Character` and a
-fresh server admits only that pair; no character born Admin; reserved staff/system names; `/registration open|close`
-(closed = no accounts and no characters); a save on every stop; `/server reboot` under systemd just exits; `/apk` from
-`apk/` or `apk-path.txt`; the client's default address from `Resources/server.txt`. You chose: no self-contained
-Linux build (install .NET as in Termux), and the address is not hidden (hiding it protects nothing).
-
-**Still owed, before friends install:**
-1. **The Android package id and a release signing key.** Today it is `com.UnityTechnologies.com.unity.template.urpblank`
-   signed with this PC's debug key. Changing either later forces every friend to uninstall. Needs your pick of id
-   (proposed `com.gdimitrov.mmo`) and a keystore password you keep. Your own phone also reinstalls once.
-2. Then you do the guide's steps 1-8 (they need your Oracle login). The first test is your own phone over mobile data.
-   ⚠ Untested: the Unity SignalR client over `https://`/`wss://` on the phone.
-
 ## `BL-346` ⏸ THE OPEN-WORLD GRID MAP — zone cells, castle territories, one seamless world (2026-10-12, for later)
 
 Your words: *"i want the map to be in a grid order with 50k x 50k in cells .. and each cell to be its own zone -> a
@@ -2663,7 +2642,7 @@ Your question: *"what to do with ios ?"* — filed, not started.
 
 **Already in our favour:** the Android build already compiles with IL2CPP, the compiler iOS forces, so SignalR + JSON
 have survived ahead-of-time compilation; and the server is already on HTTPS (`vardelar.duckdns.org`, Caddy), which iOS
-requires (it refuses plain `http://`). **Owed with it:** the app id + signing (as `BL-345` owes for Android), and a
+requires (it refuses plain `http://`). **Owed with it:** the app id + signing (as `BL-345` did for Android in 0.268.0), and a
 touch-layout check on iPhone/iPad screen shapes (notch, iPad 4:3).
 **When:** when the game is ready for players outside the Android circle — nothing here blocks starting earlier.
 

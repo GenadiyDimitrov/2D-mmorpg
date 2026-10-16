@@ -92,11 +92,45 @@ namespace Game.Client.Editor
             else Debug.LogWarning("[build] no splash logo at " + SplashLogoPath);
         }
 
+        /// <summary>`BL-345` (0.268.0) — the app's permanent identity. Android knows an app by this id AND the key that
+        /// signed it: change either and every phone must uninstall before it can install the new one. Was Unity's
+        /// template id (`com.UnityTechnologies.com.unity.template.urpblank`) on this PC's throwaway debug key.</summary>
+        public const string AndroidPackageId = "com.gdimitrov.mmo";
+
+        /// <summary>The release key lives OUTSIDE the repo, beside its password: <c>%USERPROFILE%\.vardelar-signing\</c>
+        /// (<c>release.keystore</c>, alias <c>vardelar</c>, and <c>password.txt</c>). Never commit either.</summary>
+        private static readonly string SigningDir =
+            System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".vardelar-signing");
+
+        /// <summary>
+        /// `BL-345` — the package id, and the release key. ⚠ NO KEY = NO BUILD, deliberately: falling back to the debug
+        /// key would make an APK no friend's phone can install over the one it has (a silent "uninstall first").
+        /// Lose the key and the same holds for every future build — keep a copy of the folder somewhere safe.
+        /// </summary>
+        private static void StampSigning()
+        {
+            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, AndroidPackageId);
+
+            string keystore = System.IO.Path.Combine(SigningDir, "release.keystore");
+            string passFile = System.IO.Path.Combine(SigningDir, "password.txt");
+            if (!System.IO.File.Exists(keystore) || !System.IO.File.Exists(passFile))
+                throw new BuildFailedException($"[build] no release key: {keystore} + password.txt are needed (BL-345)");
+            string pass = System.IO.File.ReadAllText(passFile).Trim();
+
+            PlayerSettings.Android.useCustomKeystore = true;
+            PlayerSettings.Android.keystoreName = keystore;
+            PlayerSettings.Android.keystorePass = pass;
+            PlayerSettings.Android.keyaliasName = "vardelar";
+            PlayerSettings.Android.keyaliasPass = pass;
+            Debug.Log($"[build] package {AndroidPackageId}, signed with {keystore}");
+        }
+
         [MenuItem("Build/Android APK")]
         public static void BuildAndroid()
         {
             StampVersion();
             StampBranding();
+            StampSigning();
             Build(BuildTarget.Android, BuildTargetGroup.Android, OutputApk);
         }
 

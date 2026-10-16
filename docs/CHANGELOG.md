@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.267.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.268.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,22 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-16 (latest) — 0.267.0: town NPCs get a level and an archetype from their rank (`BL-353`)
+## 2026-10-16 (latest) — 0.268.0: the APK's permanent identity — package id `com.gdimitrov.mmo` + a release key (`BL-345`)
+
+APK (no server change, no protocol change, no `game.db` delete). ⚠ **Every phone uninstalls the old app ONCE**: to
+Android the new id is a different app (the old one's settings and saved login go with it; characters live on the server).
+
+- **Package id** `com.UnityTechnologies.com.unity.template.urpblank` (Unity's template) → **`com.gdimitrov.mmo`**, the id
+  proposed in `BL-345` and set in code (`CommandLineBuild.AndroidPackageId`) as well as in ProjectSettings.
+- **Release key** in place of this PC's debug key: `%USERPROFILE%\.vardelar-signing\release.keystore` (PKCS12, RSA 2048,
+  100 years, alias `vardelar`) + `password.txt`, OUTSIDE the repo. `CommandLineBuild.StampSigning` reads both, and **an
+  Android build with no key FAILS** rather than falling back to a debug key whose APK no phone could update over.
+  Certificate SHA-256 `29:5E:F0:F7:D4:3B:AD:EC:F1:6F:47:D3:65:E8:35:DE:69:62:60:F3:43:9D:41:81:C9:7A:2E:22:D7:83:40:80`.
+  🔑 **Back that folder up** — lose it and no future APK installs over a friend's copy.
+- `BL-345` closes: its other half, the guide's steps 1-8 (the Oracle machine, address, service, backups), was already
+  done; checked on the box today. `guides/Hosting.md` and `guides/UnityClient.md` (the adb launch line) updated.
+
+## 2026-10-16 — 0.267.0: town NPCs get a level and an archetype from their rank (`BL-353`)
 
 Server only (no APK, no protocol change, no `game.db` delete). Owner: *"not all to have 40 hp .. for now u can have some
 rule like a archtype-rank to put some lvls -> like pesant-shop 10-15 lvl, master/grandmaster higer lvl as nobility or
