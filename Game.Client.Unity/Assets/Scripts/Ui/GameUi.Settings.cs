@@ -277,20 +277,22 @@ namespace Game.Client
             // Owner, 2026-10-14: how far you see. Lower = less to draw on a weak phone.
             // 0.264.0 — split in two (owner: *"entites to have their own slider 1500~3000 and world(trees/houses)
             // 1500~5000"*). The fog belongs to the WORLD one: it hides where the scenery stops.
-            Row(inner, ref y, UiKit.SliderRow(inner, "World distance", DayNight.ViewMin, DayNight.ViewMax,
-                DayNight.ViewDistance, "0", v =>
-                {
-                    DayNight.ViewDistance = Mathf.Round(v / 50f) * 50f;
-                    PlayerPrefs.SetFloat(DayNight.ViewPref, DayNight.ViewDistance);
-                    Boot.SendViewDistance();   // entities never reach past it, so the server's range can shrink with it
-                }, v => (Mathf.Round(v / 50f) * 50f).ToString("0")));
-            Row(inner, ref y, UiKit.SliderRow(inner, "Entity distance", DayNight.EntityMin, DayNight.EntityMax,
-                DayNight.EntityDistance, "0", v =>
-                {
-                    DayNight.EntityDistance = Mathf.Round(v / 50f) * 50f;
-                    PlayerPrefs.SetFloat(DayNight.EntityPref, DayNight.EntityDistance);
-                    Boot.SendViewDistance();   // the server sends creatures out to it
-                }, v => (Mathf.Round(v / 50f) * 50f).ToString("0")));
+            // 0.266.0 — the sliders became typed BOXES for his distance test (owner, 2026-10-16: *"have a box and are
+            // unlimited (or to 100k or something) so i can test distances .. then ill give ranges"*). They go back to a
+            // stepped choice once he has picked the ranges.
+            DistanceBox(inner, ref y, 18f, "World", DayNight.ViewMin, DayNight.ViewMax, () => DayNight.ViewDistance, v =>
+            {
+                DayNight.ViewDistance = v;
+                PlayerPrefs.SetFloat(DayNight.ViewPref, v);
+                Boot.SendViewDistance();   // entities never reach past it, so the server's range can shrink with it
+            });
+            DistanceBox(inner, ref y, 292f, "Entities", DayNight.EntityMin, DayNight.EntityMax, () => DayNight.EntityDistance, v =>
+            {
+                DayNight.EntityDistance = v;
+                PlayerPrefs.SetFloat(DayNight.EntityPref, v);
+                Boot.SendViewDistance();   // the server sends creatures out to it
+            });
+            y -= 48f;
 
             // `BL-269` — extra skill squares, 0/6/12/18/24: *"need option to add more 6/12/18/24 skill slots
             // (half of or full the 2nd and 3rd skill bars)"*. A LOOK setting like the rest of this column,
@@ -406,6 +408,28 @@ namespace Game.Client
             UiKit.SetButtonText(_shadowToggle, DayNight.ShadowLabel);
             UiKit.SetButtonText(_gameInfoToggle, _infoPanel != null && _infoPanel.gameObject.activeSelf ? "Game info: ON" : "Game info: off");
             UiKit.SetButtonText(_barShapeToggle, BarShapeLabel);
+        }
+
+        /// <summary>0.266.0 — a label and a whole-number box at <paramref name="x"/> on the current row (the caller moves
+        /// <paramref name="y"/> on). The value applies when the box is left, clamped to its range; a bad entry shows the
+        /// value that stands.</summary>
+        private static void DistanceBox(Transform parent, ref float y, float x, string title, float min, float max,
+                                        System.Func<float> get, System.Action<float> set)
+        {
+            var label = UiKit.Label(parent, title, 15f, UiKit.Text, TMPro.TextAlignmentOptions.Left);
+            UiKit.Place(UiKit.Rect(label.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(x, y - 8f), new Vector2(90f, 22f));
+            var box = UiKit.InputField(parent, min.ToString("0") + "-" + max.ToString("0"), size: 15f);
+            box.contentType = TMPro.TMP_InputField.ContentType.IntegerNumber;
+            box.characterLimit = 6;
+            box.text = get().ToString("0");
+            UiKit.Place(UiKit.Rect(box.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(x + 92f, y), new Vector2(168f, 38f));
+            box.onEndEdit.AddListener(s =>
+            {
+                if (int.TryParse(s, out int n)) set(Mathf.Clamp(n, min, max));
+                box.text = get().ToString("0");
+            });
         }
 
         private static void Row(Transform parent, ref float y, Slider slider)

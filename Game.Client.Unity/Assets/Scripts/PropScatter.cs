@@ -46,10 +46,11 @@ namespace Game.Client
         public const string Pref = "gfx.scenery";
         public static Level Quality = Level.High;
         private static readonly float[] DensityAt = { 0f, 0.35f, 0.65f, 1f };
-        private static readonly float[] RangeAt = { 0f, 4000f, 6500f, 9000f };   // server units from the screen centre
 
         /// <summary>How far from the player scenery is drawn at the current setting, in server units.</summary>
-        public static float Range => RangeAt[(int)Quality];
+        // 0.266.0 (the distance test): the WORLD distance's fog decides how far, not the Scenery level, which now only thins
+        // the density — a fixed 9000 would have left a 100k world bare past it.
+        public static float Range => Quality == Level.Off ? 0f : DayNight.FogEnd;
 
         public static void LoadQuality() =>
             Quality = (Level)Mathf.Clamp(PlayerPrefs.GetInt(Pref, (int)Level.High), 0, 3);
@@ -315,7 +316,7 @@ namespace Game.Client
             if (CameraRig.Focus.HasValue) centre = WorldMapper.ToServer(CameraRig.Focus.Value);
             // Never past the fog (Settings → View distance): where the ring is fully thick a prop is the fog's own colour,
             // so drawing it there only costs. The Scenery setting can still pull it in closer.
-            float range = Mathf.Min(RangeAt[(int)Quality], DayNight.FogEnd), range2 = range * range;
+            float range = Range, range2 = range * range;
             float half = BiomeGround.ChunkSize * 0.5f;
 
             foreach (var v in _all) v.Gathered.Clear();

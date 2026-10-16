@@ -296,7 +296,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-354` | ⏸ | **Character bodies, what is left** — the paid pack's 10 outfits, armour type/grade → outfit pieces per slot, face shapes, elf ears / demon horns | client |
 | `BL-355` | ⏸ | **Appearance changes after creation as a premium service** — look cheapest, gender dearer, race/class dearest; admin-only picker built, prices + currency + what a paid race change keeps are open | economy |
 | `BL-357` | ⏸ | **No server URL field at public release**: the login screen loses it; the address is baked into the APK (`Resources/server.txt`), a domain like `someurl.domain/game`, not an IP. Not for the Oracle friends phase | ops |
-| `BL-358` | ⏸ | **A horizon: fog + sky at the 3000 view range** — sky + fog BUILT (0.259.0); still owed: trim trees (4000-9000) and ground to just past the fog after a phone check | client |
+| `BL-358` | ❓ | **A horizon: fog + sky at the view range** — sky + fog BUILT (0.259.0); 0.266.0 = a 100k distance TEST build; ❓ your two ranges, then cycle buttons | client |
 | `BL-359` | ⏸ | **Web accounts**: Google / confirmed-e-mail sign-up on the site; game accounts made from its panel, capped per e-mail (3? 10?) — for notifications and recovery | ops |
 | `BL-360` | 🔴 | **A Windows PC client** — test build BUILT (`publish.ps1 -Windows`, bordered resizable window); still owed: a fullscreen on/off option, keyboard shortcuts, a PC layout check | client |
 | `BL-361` | ⏸ | **An iOS client** — needs a Mac (or cloud Mac) + Xcode, an Apple Developer account ($99/yr), TestFlight for testers (HTTPS, which iOS demands, is already live) | ops |
@@ -2615,6 +2615,14 @@ to just past the fog. The sky itself (a skybox or gradient that follows `DayNigh
 **Built (0.259.0):** the sky (gradient + sun/moon glow, by the hour) and the fog, thick at 3000 from you and starting at
 1800 (`DayNight.ApplySky` / `FitFog`; see CHANGELOG 0.259.0). **Still owed:** trim trees and ground to just past the
 fog, once a phone playtest says the fog distance is right — that is the performance half of this entry.
+
+**0.266.0 — the distance TEST (2026-10-16).** Your words: *"5k is limited ... build me a version where this world and
+entity distances have a box and are unlimited (or to 100k or something) so i can test distances .. then ill give
+ranges and we can make the sliders to those ranges (also can the sliders have a step? ... 1k5,2k,2k5,3k ... or a sycle
+button ... or even less 1500,3000,5000)"*. Built: Settings → World / Entities are typed boxes, 1500-100000, and the
+trees and ground now follow the world distance (CHANGELOG 0.266.0). **❓ Owed by you: the two ranges.** Then they become
+**a cycle button** each (my pick: fewer taps than a stepped slider on a phone, and it reads the value at a glance), over
+the steps you name — your `1500 / 3000 / 5000` style or the 500-steps.
 
 ## `BL-359` ⏸ WEB ACCOUNTS: GOOGLE / E-MAIL SIGN-UP ON THE SITE, GAME ACCOUNTS UNDER IT (2026-10-14)
 

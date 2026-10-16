@@ -342,6 +342,10 @@ namespace Game.Client
             var focus = CameraRig.Focus;
             float start = (ViewDistance - FogBeforeView) * WorldMapper.Scale;
             float end = (ViewDistance + FogPastView) * WorldMapper.Scale;
+            // 0.266.0 (the distance test): the scene's far clip is 1000 units = 100k server units, which a 100k world
+            // distance plus its fog and a pulled-back camera would cut through. Never below the scene's own 1000.
+            float clip = Mathf.Max(1000f, end + 50f);
+            if (!Mathf.Approximately(cam.farClipPlane, clip)) cam.farClipPlane = clip;
             Shader.SetGlobalVector(RingFogCenterId, focus ?? Vector3.zero);
             Shader.SetGlobalVector(RingFogParamsId,
                 new Vector4(start, 1f / Mathf.Max(0.001f, end - start), focus.HasValue ? 1f : 0f, 0f));

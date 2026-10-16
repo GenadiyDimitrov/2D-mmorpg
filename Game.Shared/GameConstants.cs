@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.265.1";
+    public const string GameVersion = "0.266.0";
 
     /// <summary>The game's name and full title, as the chat header opens every session with (owner, 2026-10-14).</summary>
     public const string GameName = "Vardelar";
@@ -410,11 +410,15 @@ public static class GameConstants
     // The floor is 1500, not 1000 (owner: *"1000 is low and good device archer will see target and shoot at bad device
     // low render archer"*): it sits above the longest attack reach in the game (~900), so nobody can be shot from out of
     // their own view.
-    public const float MinViewDistance = 1500f, MaxViewDistance = 5000f;
+    // 0.266.0 — the TOP is a TEST range, not a ruling (owner, 2026-10-16: *"build me a version where this world and entity
+    // distances have a box and are unlimited (or to 100k or something) so i can test distances .. then ill give ranges"*).
+    // Both go back to his numbers once he has measured, and the boxes become stepped choices then.
+    public const float MinViewDistance = 1500f, MaxViewDistance = 100000f;
 
-    /// <summary>Settings → Entity distance tops out at the server's own <see cref="ViewRange"/> (owner, 0.264.0: *"entites
-    /// to have their own slider 1500~3000"*); the WORLD distance above goes to 5000 and is client-only.</summary>
-    public const float MaxEntityDistance = ViewRange;
+    /// <summary>Settings → Entity distance: 1500-3000 from 0.264.0 (owner: *"entites to have their own slider
+    /// 1500~3000"*); 100000 for the 0.266.0 test, where the server sends entities as far as the phone asks (the grid's
+    /// multi-ring `Nearby` covers any range). Every game RULE (targeting, party share) stays on <see cref="ViewRange"/>.</summary>
+    public const float MaxEntityDistance = 100000f;
 
     /// <summary>Interest-management cell size. Equal to SendRange so a 3x3
     /// cell neighborhood always covers the full send circle.</summary>

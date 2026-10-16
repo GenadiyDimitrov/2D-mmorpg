@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.265.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.266.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,26 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-16 (latest) — 0.265.1: vampirism leeches only the HP the target really lost (`BL-352`)
+## 2026-10-16 (latest) — 0.266.0: a distance TEST build — World and Entity distance are typed boxes up to 100,000
+
+Server + APK (no protocol change, no `game.db` delete). Owner: *"the world view distance i feel like 5k is limited ...
+build me a version where this world and entity distances have a box and are unlimited (or to 100k or something) so i
+can test distances .. then ill give ranges and we can make the sliders to those ranges"*. ⚠ **The ranges here are a
+test, not a ruling**: once he gives his numbers, the boxes become stepped choices (`BL-358`).
+
+- **Settings → World / Entities**: two whole-number boxes side by side (were sliders), 1500-100000 each. A value
+  applies when you leave the box, clamped to the range; a bad entry snaps back to the value that stands.
+- **Server**: entities are sent out to whatever the phone asks, up to 100000 (`GameConstants.MaxEntityDistance`, was
+  the 3000 `ViewRange`). Every game RULE — targeting, party share, auto-hunt — still uses 3000. A 100k reach walks ~32
+  rings of grid cells per player, which is fine for one tester and is exactly what the ranges he picks will cap.
+- **Client, so the world really reaches that far:** trees/rocks now go to the fog (`PropScatter.Range` =
+  `DayNight.FogEnd`; the Scenery level only thins the density now — its fixed 4000/6500/9000 would have left the land bare
+  past 9000); the ground goes to the fog + 3000 (was capped at 16000); and the camera's far clip grows with the fog (the
+  scene's 1000 units is exactly 100k server units, so the wall at 100k + the fog would have been cut).
+- ⚠ **What to expect at the top end**: props grow with the AREA — 100k is ~120× the trees of 9000. Lower Scenery to thin
+  them if the phone chokes; that is part of what the test is measuring.
+
+## 2026-10-16 — 0.265.1: vampirism leeches only the HP the target really lost (`BL-352`)
 
 Server only (no APK, no protocol change, no `game.db` delete). Owner, 2026-10-12: *"if the enemy have 100hp left and
 the drain does 1500 ... The enemy dies but the drain only vamps % out of the 100 remaining hp not the full 1500 ...
