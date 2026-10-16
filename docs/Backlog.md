@@ -292,7 +292,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-349` | ⏸ | **Race starting zones** — each race starts in its own territory (elves water/ice, humans an island, demons fire/lava), each class at its own spot (temple, ruins, arena, summoning circle) with low-level mobs and its own newbie guide; after `BL-346` | world |
 | `BL-350` | ⏸ | **The game's story** (world = **Vardelar**, skeleton in `docs/design/Lore.md`) — where each race comes from and what it is for, a pantheon of named gods that skills can be described by; so quests are more than "go there, kill that" | story |
 | `BL-351` | ⏸ | **Downloadable content** — move art out of the APK (Addressables + CDN, or Play Asset Delivery) once it passes ~100 MB; until then new asset kinds load through one function | client |
-| `BL-353` | ⏸ | **Town NPCs get a level and a rank** — peasants 20-30, masters 50-60, the gatekeeper a lvl-90 mage, grand master a lvl-60 knight; 1-3k HP; mage or fighter by role | world |
 | `BL-354` | ⏸ | **Character bodies, what is left** — the paid pack's 10 outfits, armour type/grade → outfit pieces per slot, face shapes, elf ears / demon horns | client |
 | `BL-355` | ⏸ | **Appearance changes after creation as a premium service** — look cheapest, gender dearer, race/class dearest; admin-only picker built, prices + currency + what a paid race change keeps are open | economy |
 | `BL-357` | ⏸ | **No server URL field at public release**: the login screen loses it; the address is baked into the APK (`Resources/server.txt`), a domain like `someurl.domain/game`, not an IP. Not for the Oracle friends phase | ops |
@@ -2536,21 +2535,6 @@ be later spearated"*. My answer: overkill now (APK 49.7 MB at 0.247.0, sideloade
   `Resources.Load` sprinkled through the code.
 - Costs it brings: hosting, client/content version matching, a first-launch download screen with retry, cache
   invalidation.
-
-## `BL-353` ⏸ TOWN NPCs GET A LEVEL AND A RANK (2026-10-12)
-
-Your words, beside `BL-352`: *"Npcs can have lvls like peasants are 20~30 masters are 50~60 .. (rank in npcs -
-gatekeeper is a mage of highest rank 90 as they posses the power to warp space and time, guild receptionist is weak,
-and grand master is an high order knight can be 60) Mindweaver and spirit healers are mages while grandmaster is
-fighter etc.. Their life will be 1~3k"*.
-
-- **What it means:** each `NpcRole` gets a level and an archetype (mage / fighter), and its stats come from them,
-  like a mob's. Your sketch: peasants 20-30, masters 50-60, grand master a lvl-60 fighter (a high-order knight),
-  gatekeeper a lvl-90 mage (warps space and time), guild receptionist weak, Mindweaver and spirit healers mages.
-  HP 1-3k.
-- Today `NpcDef` carries only `CanDie` / `Retaliate` (`Game.Shared/WorldMap.cs`); NPCs have no level of their own.
-- ❓ To settle when picked up: a level per ROLE or per NPC; whether a retaliating NPC fights with its archetype's
-  skills; whether the level shows on target-inspect.
 
 ## `BL-354` ⏸ CHARACTER BODIES — WHAT IS LEFT: MORE OUTFITS, PER-GRADE LOOKS, FACES, EARS/HORNS (2026-10-13)
 

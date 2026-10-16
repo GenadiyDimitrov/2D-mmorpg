@@ -407,7 +407,8 @@ public static class WorldMap
 
                 case "greymarsh":
                     // The 3rd-class master: Greymarsh is the first town whose band spans the level-40 change.
-                    yield return At("master_class3", "Grandmaster Thorne", TownLayout.XDoor.Church1, NpcRole.ClassChange);
+                    // `BL-353`: his *"grand master is an high order knight can be 60"*.
+                    yield return At("master_class3", "Grandmaster Thorne", TownLayout.XDoor.Church1, NpcRole.ClassChange) with { Level = 60 };
                     yield return At($"{ResetterId}_{t.Key}", MindwrightName(t.Key), TownLayout.XDoor.Church2, NpcRole.SkillReset);
                     // `BL-272` part 2 — the T52 ESSENCE SHOP, in the one town whose band (40-60) is T52's, in the
                     // Apothecary's building (*"apoth(+ essence one) is his own"*).
@@ -416,7 +417,7 @@ public static class WorldMap
 
                 case "frostmere":
                     // The 4th-class master: the only town whose neighbours reach the level-76 ascension.
-                    yield return At("master_class4", "Archmaster Sevrin", TownLayout.XDoor.Church1, NpcRole.ClassChange);
+                    yield return At("master_class4", "Archmaster Sevrin", TownLayout.XDoor.Church1, NpcRole.ClassChange) with { Level = 80 };   // `BL-353`: mine, above the Grandmaster
                     yield return At($"{ResetterId}_{t.Key}", MindwrightName(t.Key), TownLayout.XDoor.Church2, NpcRole.SkillReset);
                     // The SP BROKER at the Keeper's side door — SP bottles are a 76+ concept.
                     yield return At("sp_broker", "Ledgerkeep Mora", TownLayout.XDoor.KeeperSide, NpcRole.SpExchange);
@@ -766,8 +767,72 @@ public enum NpcRole { QuestGiver = 0, ClassChange = 1, Vendor = 2, Teleporter = 
 /// already the true/true pair by construction: they die and they hit back. Rebuilding them as NPCs to
 /// carry these two booleans would throw all of that away to arrive back where they started. What the
 /// guards were actually missing is the PvP gate, which was written but unreachable — see CanPvpHit.</param>
+/// <param name="Level">`BL-353` (0.267.0) — an AUTHORED level for this one NPC; 0 = the rank rule's pick
+/// (<see cref="NpcRanks"/>). His words: *"Its per NPC -> just the 1st inisialize is the rule one"*.</param>
 public record NpcDef(string Id, string Name, float X, float Y, NpcRole Role,
-                     bool CanDie = false, bool Retaliate = false);
+                     bool CanDie = false, bool Retaliate = false, int Level = 0);
+
+/// <summary>`BL-353` — where an NPC stands in town society, which decides its level band and whether it is a mage or a
+/// fighter. Its stats then come off the mob curve at that level, like any creature's.</summary>
+public enum NpcRank { Object = 0, Commoner = 1, Artisan = 2, Master = 3, Knight = 4, Archmage = 5 }
+
+/// <summary>`BL-353` (0.267.0) — THE FIRST-INITIALISE RULE for an NPC's level and archetype. Owner, 2026-10-16: *"some
+/// rule like a archtype-rank to put some lvls -> like pesant-shop 10-15 lvl, master/grandmaster higer lvl as nobility or
+/// atleast knight order ... Its per NPC -> just the 1st inisialize is the rule one"*; and earlier (2026-10-12) *"gatekeeper
+/// is a mage of highest rank 90 as they posses the power to warp space and time, guild receptionist is weak, and grand
+/// master is an high order knight can be 60) Mindweaver and spirit healers are mages while grandmaster is fighter"*.
+/// An NPC authored with its own <see cref="NpcDef.Level"/> keeps it; everyone else gets a stable pick inside the band
+/// (the same NPC is the same level on every boot). An escort or a fighting NPC is authored on its own later.</summary>
+public static class NpcRanks
+{
+    /// <summary>The bands. ⚠ Mine where he named none: artisans 20-30, masters 50-60 (his 2026-10-12 sketch), knights
+    /// 50-60 with the Grandmaster pinned at his 60, the Archmaster at 80.</summary>
+    public static (int Min, int Max) Band(NpcRank rank) => rank switch
+    {
+        NpcRank.Commoner => (10, 15),
+        NpcRank.Artisan  => (20, 30),
+        NpcRank.Master   => (50, 60),
+        NpcRank.Knight   => (50, 60),
+        NpcRank.Archmage => (90, 90),
+        _                => (1, 1),     // the Anvil: a thing, not a person
+    };
+
+    /// <summary>The rank by what the NPC does. Quest givers split three ways: the Guild Receptionist (`hunter_*`) is a
+    /// commoner, the recipe givers are artisans, the Elder and the High Priest are masters.</summary>
+    public static NpcRank RankOf(NpcDef npc) => npc.Role switch
+    {
+        NpcRole.Anvil       => NpcRank.Object,
+        NpcRole.Teleporter  => NpcRank.Archmage,
+        NpcRole.ClassChange => NpcRank.Knight,
+        NpcRole.SkillReset  => NpcRank.Master,
+        NpcRole.Buffer      => NpcRank.Master,
+        NpcRole.CraftMaster => NpcRank.Artisan,
+        NpcRole.QuestGiver  => npc.Id.StartsWith("hunter_") ? NpcRank.Commoner
+                             : npc.Id.StartsWith("recipe_") ? NpcRank.Artisan
+                             : NpcRank.Master,
+        _                   => NpcRank.Commoner,   // vendors, keepers, the SP broker, the mentor steward
+    };
+
+    /// <summary>Mage or fighter: the gatekeepers, Mindwrights, Spirit Helpers and the priests are mages; the class
+    /// masters (a knight order) and every working trade are fighters.</summary>
+    public static BaseClass ArchetypeOf(NpcDef npc) => npc.Role switch
+    {
+        NpcRole.Teleporter or NpcRole.SkillReset or NpcRole.Buffer => BaseClass.Mage,
+        NpcRole.QuestGiver when RankOf(npc) == NpcRank.Master       => BaseClass.Mage,
+        _                                                           => BaseClass.Fighter,
+    };
+
+    /// <summary>The NPC's level: its authored one, else a pick inside its rank's band that never changes between boots
+    /// (a hash of the id — `string.GetHashCode` is randomised per process, so it is not used).</summary>
+    public static int LevelOf(NpcDef npc)
+    {
+        if (npc.Level > 0) return npc.Level;
+        var (min, max) = Band(RankOf(npc));
+        uint h = 2166136261;
+        foreach (char c in npc.Id) h = (h ^ c) * 16777619;
+        return min + (int)(h % (uint)(max - min + 1));
+    }
+}
 
 /// <summary>A safe zone (city/castle). Id is referenced by teleports later.</summary>
 /// <param name="GatedByCityId">Empty for a city — every gatekeeper offers it, which is what makes the

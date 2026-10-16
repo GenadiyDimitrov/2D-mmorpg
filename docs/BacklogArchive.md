@@ -8837,3 +8837,27 @@ any type of vamp .. If I vamp with basic attack and the hp of Bob is 100 and I d
 
 ✅ Built as written, plus `ManaVamp` (also *"any type of vamp"*). The "lingering vampiric" half of the Warlord Supports
 is a `BuffMeleeVamp` buff, so it rides the `MeleeVamp` path and is covered too.
+## `BL-353` — BUILT in 0.267.0 (2026-10-16): a rank rule gives every town NPC a level and an archetype (`NpcRanks`)
+
+Your answer, 2026-10-16: *"My idea of the LVL for NPCs is more like not all to have 40 hp .. The townguards and watchtowers
+have their own lvls.. Currently NPCs(except guars) are immortal and they dont reataliate.. Later if we have some sort of
+escort missions or npc figinth missions, those npcs will be authored/designed on their own .. So for now u can have some rule
+like a archtype-rank to put some lvls -> like pesant-shop 10-15 lvl, master/grandmaster higer lvl as nobility or atleast
+knight order ... Its per NPC -> just the 1st inisialize is the rule one"*. Built as that rule — see CHANGELOG 0.267.0.
+
+The entry as it stood:
+
+
+Your words, beside `BL-352`: *"Npcs can have lvls like peasants are 20~30 masters are 50~60 .. (rank in npcs -
+gatekeeper is a mage of highest rank 90 as they posses the power to warp space and time, guild receptionist is weak,
+and grand master is an high order knight can be 60) Mindweaver and spirit healers are mages while grandmaster is
+fighter etc.. Their life will be 1~3k"*.
+
+- **What it means:** each `NpcRole` gets a level and an archetype (mage / fighter), and its stats come from them,
+  like a mob's. Your sketch: peasants 20-30, masters 50-60, grand master a lvl-60 fighter (a high-order knight),
+  gatekeeper a lvl-90 mage (warps space and time), guild receptionist weak, Mindweaver and spirit healers mages.
+  HP 1-3k.
+- Today `NpcDef` carries only `CanDie` / `Retaliate` (`Game.Shared/WorldMap.cs`); NPCs have no level of their own.
+- ❓ To settle when picked up: a level per ROLE or per NPC; whether a retaliating NPC fights with its archetype's
+  skills; whether the level shows on target-inspect.
+

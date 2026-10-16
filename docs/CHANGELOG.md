@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.266.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.267.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,32 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-16 (latest) — 0.266.0: a distance TEST build — World and Entity distance are typed boxes up to 100,000
+## 2026-10-16 (latest) — 0.267.0: town NPCs get a level and an archetype from their rank (`BL-353`)
+
+Server only (no APK, no protocol change, no `game.db` delete). Owner: *"not all to have 40 hp .. for now u can have some
+rule like a archtype-rank to put some lvls -> like pesant-shop 10-15 lvl, master/grandmaster higer lvl as nobility or
+atleast knight order ... Its per NPC -> just the 1st inisialize is the rule one"*.
+
+- **`NpcRanks` (`Game.Shared/WorldMap.cs`)** — the rule. Rank by what the NPC does → a level band; the NPC's stats then
+  come off the MOB curve at that level, like any creature's (HP = `40 + 0.8·L²`). Every NPC was level 1 = 40 HP.
+
+  | rank | who | level | archetype | HP |
+  |---|---|---|---|---|
+  | Commoner | vendors, keepers, Guild Receptionists, mentor stewards, the Assayer, the SP broker | 10-15 | fighter | 120-220 |
+  | Artisan | Master Crafters, the three recipe givers | 20-30 | fighter | 360-670 |
+  | Master | Spirit Helpers, Mindwrights, Elder Marius, High Priest Oren | 50-60 | mage | 2.0-2.9k |
+  | Knight | class masters: Vael (rule, 54), Grandmaster Thorne **60** (his), Archmaster Sevrin **80** (mine) | 50-60 | fighter | 2.4k / 2.9k / 5.2k |
+  | Archmage | every Gatekeeper | 90 (his) | mage | 6.5k |
+  | Object | the Anvil | 1 | — | 40 |
+
+- **Per NPC, the rule only first**: `NpcDef.Level` set = that NPC's own level (Thorne and Sevrin use it); 0 = the rule,
+  which picks inside the band off a hash of the id, so the same NPC is the same level on every boot.
+- Archetype is stored as the NPC's `BaseClass` — nothing reads it yet (NPCs still neither die nor fight back); it is
+  there for the fighting/escort NPCs you will author. The guards are mobs and keep their own levels (`BL-79`).
+- ⚠ Mine where you named none: the Artisan band, the Archmaster's 80. The 1-3k HP of your first sketch is what the curve
+  gives masters and knights; commoners come out lower (~200).
+
+## 2026-10-16 — 0.266.0: a distance TEST build — World and Entity distance are typed boxes up to 100,000
 
 Server + APK (no protocol change, no `game.db` delete). Owner: *"the world view distance i feel like 5k is limited ...
 build me a version where this world and entity distances have a box and are unlimited (or to 100k or something) so i

@@ -21432,7 +21432,8 @@ public partial class GameLoopService : BackgroundService
                 X = npc.X,
                 Y = npc.Y,
                 Speed = 0,
-                Level = 1,
+                Level = NpcRanks.LevelOf(npc),      // `BL-353` — off the mob curve at it, like any creature
+                BaseClass = NpcRanks.ArchetypeOf(npc),
                 NpcId = npc.Id,
                 NpcRole = npc.Role,
                 NpcCanDie = npc.CanDie,          // `BL-115` — false everywhere today
