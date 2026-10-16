@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.269.0";
+    public const string GameVersion = "0.270.0";
 
     /// <summary>The game's name and full title, as the chat header opens every session with (owner, 2026-10-14).</summary>
     public const string GameName = "Vardelar";
@@ -405,20 +405,26 @@ public static class GameConstants
     /// <see cref="ViewRange"/>. A client that sets its view distance (0.264.0) is sent to that + the margin instead.</summary>
     public const float SendRange = ViewRange + FadeMargin;
 
-    /// <summary>Settings → View distance, the slider's two ends (owner, 2026-10-14: *"render distance to 5k max
-    /// 1000~5k (default still 3k)"*), later 1500-5000. Cosmetic reach only: what you can TARGET is still <see cref="ViewRange"/>.</summary>
+    /// <summary>Settings → World distance: how far the ground, trees and buildings reach, and where the fog stands.
+    /// Cosmetic reach only: what you can TARGET is still <see cref="ViewRange"/>.</summary>
+    // 0.270.0 — his ranges after the 0.266.0 test (owner, 2026-10-16, `BL-358`): the WORLD is 3000-20000 in five steps,
+    // default 10k — *"the 20k is overkill but when we have mountains and elevations it will oscure the vision and you
+    // wond see the worlds end"*. Client-only: the server never hears it.
+    public static readonly float[] WorldDistanceSteps = { 3000f, 6000f, 10000f, 15000f, 20000f };
+    public const float WorldDistanceDefault = 10000f;
+    public const float MinWorldDistance = 3000f, MaxWorldDistance = 20000f;
+
+    /// <summary>Settings → Entity distance (0.270.0, `BL-358`): 1500-5000 in four steps, default 4000. Owner: *"5_000 max
+    /// (over 10k is over kill - 10k is to much and it will allow some1 with high end machine to spot some1 with lower
+    /// end, 15k fps drops)"*. The server sends entities this far (+ <see cref="FadeMargin"/>) and clamps the phone's number
+    /// to <see cref="MinEntityDistance"/>-<see cref="MaxEntityDistance"/>. Every game RULE (targeting, party share) stays
+    /// on <see cref="ViewRange"/>.</summary>
+    public static readonly float[] EntityDistanceSteps = { 1500f, 2750f, 4000f, 5000f };
+    public const float EntityDistanceDefault = 4000f;
     // The floor is 1500, not 1000 (owner: *"1000 is low and good device archer will see target and shoot at bad device
     // low render archer"*): it sits above the longest attack reach in the game (~900), so nobody can be shot from out of
     // their own view.
-    // 0.266.0 — the TOP is a TEST range, not a ruling (owner, 2026-10-16: *"build me a version where this world and entity
-    // distances have a box and are unlimited (or to 100k or something) so i can test distances .. then ill give ranges"*).
-    // Both go back to his numbers once he has measured, and the boxes become stepped choices then.
-    public const float MinViewDistance = 1500f, MaxViewDistance = 100000f;
-
-    /// <summary>Settings → Entity distance: 1500-3000 from 0.264.0 (owner: *"entites to have their own slider
-    /// 1500~3000"*); 100000 for the 0.266.0 test, where the server sends entities as far as the phone asks (the grid's
-    /// multi-ring `Nearby` covers any range). Every game RULE (targeting, party share) stays on <see cref="ViewRange"/>.</summary>
-    public const float MaxEntityDistance = 100000f;
+    public const float MinEntityDistance = 1500f, MaxEntityDistance = 5000f;
 
     /// <summary>Interest-management cell size. Equal to SendRange so a 3x3
     /// cell neighborhood always covers the full send circle.</summary>

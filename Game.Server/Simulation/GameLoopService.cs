@@ -218,7 +218,7 @@ public partial class GameLoopService : BackgroundService
                 case SetViewDistanceCmd c:
                     // Clamped: the number comes off the phone, and it decides how much the server sends.
                     if (TryGetPlayer(c.ConnectionId, out var viewer) && float.IsFinite(c.Distance))
-                        viewer.ViewDistance = Math.Clamp(c.Distance, GameConstants.MinViewDistance, GameConstants.MaxEntityDistance);
+                        viewer.ViewDistance = Math.Clamp(c.Distance, GameConstants.MinEntityDistance, GameConstants.MaxEntityDistance);
                     break;
                 case CancelCastCmd c: HandleCancelCast(c); break;
                 case RemoveBuffCmd c: HandleRemoveBuff(c); break;

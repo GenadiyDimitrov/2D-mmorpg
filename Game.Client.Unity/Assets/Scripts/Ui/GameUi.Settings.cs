@@ -277,21 +277,32 @@ namespace Game.Client
             // Owner, 2026-10-14: how far you see. Lower = less to draw on a weak phone.
             // 0.264.0 — split in two (owner: *"entites to have their own slider 1500~3000 and world(trees/houses)
             // 1500~5000"*). The fog belongs to the WORLD one: it hides where the scenery stops.
-            // 0.266.0 — the sliders became typed BOXES for his distance test (owner, 2026-10-16: *"have a box and are
-            // unlimited (or to 100k or something) so i can test distances .. then ill give ranges"*). They go back to a
-            // stepped choice once he has picked the ranges.
-            DistanceBox(inner, ref y, 18f, "World", DayNight.ViewMin, DayNight.ViewMax, () => DayNight.ViewDistance, v =>
+            // 0.266.0 — typed boxes for his distance test; 0.270.0 (`BL-358`) — his ranges, as a CYCLE button each: one tap
+            // moves to the next step and wraps, and the button reads the step. World 3k/6k/10k/15k/20k, Entities
+            // 1.5k/2.75k/4k/5k. Entities never reach past the world (*"no point enemy to load at 5k if your world is at
+            // 3k"*): the server is sent DayNight.EntityReach, and the button says when the world is holding it back.
+            var world = UiKit.TextButton(inner, "", () =>
             {
-                DayNight.ViewDistance = v;
-                PlayerPrefs.SetFloat(DayNight.ViewPref, v);
-                Boot.SendViewDistance();   // entities never reach past it, so the server's range can shrink with it
-            });
-            DistanceBox(inner, ref y, 292f, "Entities", DayNight.EntityMin, DayNight.EntityMax, () => DayNight.EntityDistance, v =>
+                var steps = GameConstants.WorldDistanceSteps;
+                DayNight.ViewDistance = steps[(DayNight.StepIndex(steps, DayNight.ViewDistance) + 1) % steps.Length];
+                PlayerPrefs.SetFloat(DayNight.ViewPref, DayNight.ViewDistance);
+                Boot.SendViewDistance();   // entities never reach past it, so the server's range moves with it
+                RefreshSettingsLabels();
+            }, 15f);
+            UiKit.Place(UiKit.Rect(world.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(18f, y), new Vector2(260f, 38f));
+            _worldDistToggle = world;
+            var entities = UiKit.TextButton(inner, "", () =>
             {
-                DayNight.EntityDistance = v;
-                PlayerPrefs.SetFloat(DayNight.EntityPref, v);
+                var steps = GameConstants.EntityDistanceSteps;
+                DayNight.EntityDistance = steps[(DayNight.StepIndex(steps, DayNight.EntityDistance) + 1) % steps.Length];
+                PlayerPrefs.SetFloat(DayNight.EntityPref, DayNight.EntityDistance);
                 Boot.SendViewDistance();   // the server sends creatures out to it
-            });
+                RefreshSettingsLabels();
+            }, 15f);
+            UiKit.Place(UiKit.Rect(entities.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(292f, y), new Vector2(260f, 38f));
+            _entityDistToggle = entities;
             y -= 48f;
 
             // `BL-269` — extra skill squares, 0/6/12/18/24: *"need option to add more 6/12/18/24 skill slots
@@ -367,6 +378,7 @@ namespace Game.Client
         /// <summary>Room under Setup's scrolling rows for its Save / Reset / Sound buttons (y 16, 40 tall).</summary>
         private const float SetupFooter = 66f;
         private Button _extraSlotsToggle, _barShapeToggle;   // `BL-269`, `BL-299`
+        private Button _worldDistToggle, _entityDistToggle;   // `BL-358`
         private Slider _uiScaleSlider, _barScaleSlider;
         private Slider _pitchSlider, _yawSlider, _zoomSlider;   // follow the drag gesture while Settings is open (SyncCameraSliders)
 
@@ -408,29 +420,20 @@ namespace Game.Client
             UiKit.SetButtonText(_shadowToggle, DayNight.ShadowLabel);
             UiKit.SetButtonText(_gameInfoToggle, _infoPanel != null && _infoPanel.gameObject.activeSelf ? "Game info: ON" : "Game info: off");
             UiKit.SetButtonText(_barShapeToggle, BarShapeLabel);
+            UiKit.SetButtonText(_worldDistToggle, "World: " + DistanceLabel(GameConstants.WorldDistanceSteps,
+                DayNight.ViewStepNames, DayNight.ViewDistance));
+            string ent = "Entities: " + DistanceLabel(GameConstants.EntityDistanceSteps, DayNight.EntityStepNames,
+                DayNight.EntityDistance);
+            if (DayNight.EntityReach < DayNight.EntityDistance) ent += " (world " + Km(DayNight.EntityReach) + ")";
+            UiKit.SetButtonText(_entityDistToggle, ent);
         }
 
-        /// <summary>0.266.0 — a label and a whole-number box at <paramref name="x"/> on the current row (the caller moves
-        /// <paramref name="y"/> on). The value applies when the box is left, clamped to its range; a bad entry shows the
-        /// value that stands.</summary>
-        private static void DistanceBox(Transform parent, ref float y, float x, string title, float min, float max,
-                                        System.Func<float> get, System.Action<float> set)
-        {
-            var label = UiKit.Label(parent, title, 15f, UiKit.Text, TMPro.TextAlignmentOptions.Left);
-            UiKit.Place(UiKit.Rect(label.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(x, y - 8f), new Vector2(90f, 22f));
-            var box = UiKit.InputField(parent, min.ToString("0") + "-" + max.ToString("0"), size: 15f);
-            box.contentType = TMPro.TMP_InputField.ContentType.IntegerNumber;
-            box.characterLimit = 6;
-            box.text = get().ToString("0");
-            UiKit.Place(UiKit.Rect(box.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(x + 92f, y), new Vector2(168f, 38f));
-            box.onEndEdit.AddListener(s =>
-            {
-                if (int.TryParse(s, out int n)) set(Mathf.Clamp(n, min, max));
-                box.text = get().ToString("0");
-            });
-        }
+        /// <summary>0.270.0 — a distance step as the button reads it: "Normal 10k".</summary>
+        private static string DistanceLabel(float[] steps, string[] names, float v) =>
+            names[DayNight.StepIndex(steps, v)] + " " + Km(v);
+
+        /// <summary>3000 → "3k", 2750 → "2.75k".</summary>
+        private static string Km(float v) => (v / 1000f).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "k";
 
         private static void Row(Transform parent, ref float y, Slider slider)
         {

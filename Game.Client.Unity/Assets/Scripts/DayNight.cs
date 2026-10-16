@@ -31,28 +31,42 @@ namespace Game.Client
         {
             ShadowQuality = (Shadows)Mathf.Clamp(PlayerPrefs.GetInt(ShadowPref, (int)Shadows.Characters), 0, 2);
             NightLevel = Mathf.Clamp(PlayerPrefs.GetFloat(NightPref, NightDefault), NightMin, NightMax);
-            ViewDistance = Mathf.Clamp(PlayerPrefs.GetFloat(ViewPref, ViewDefault), ViewMin, ViewMax);
-            EntityDistance = Mathf.Clamp(PlayerPrefs.GetFloat(EntityPref, EntityDefault), EntityMin, EntityMax);
+            // A value saved by an older build (the 0.266.0 test boxes took anything) lands on the nearest step.
+            ViewDistance = NearestStep(GameConstants.WorldDistanceSteps, PlayerPrefs.GetFloat(ViewPref, ViewDefault));
+            EntityDistance = NearestStep(GameConstants.EntityDistanceSteps, PlayerPrefs.GetFloat(EntityPref, EntityDefault));
         }
 
         // ── Settings → World distance / Entity distance ─────────────────────────────────────────
 
         /// <summary>WORLD distance, in server units: how far the ground, trees, rocks and buildings reach. The fog starts
         /// <see cref="FogBeforeView"/> short of it and is fully thick <see cref="FogPastView"/> past it, where the fog
-        /// wall stands. 1500-5000, default 3000 (owner, 0.264.0: *"entites to have their own slider 1500~3000 and
-        /// world(trees/houses) 1500~5000"*). Client-only: the server never hears it.</summary>
+        /// wall stands. One of <see cref="GameConstants.WorldDistanceSteps"/> (3k-20k, default 10k — 0.270.0, `BL-358`).
+        /// Client-only: the server never hears it.</summary>
         public static float ViewDistance = ViewDefault;
-        public const float ViewMin = GameConstants.MinViewDistance, ViewMax = GameConstants.MaxViewDistance;
-        public const float ViewDefault = GameConstants.ViewRange;
+        public const float ViewDefault = GameConstants.WorldDistanceDefault;
         public const string ViewPref = "gfx.view";
+        public static readonly string[] ViewStepNames = { "Very low", "Low", "Normal", "High", "Very high" };
 
-        /// <summary>ENTITY distance: creatures, players, NPCs and their nameplates, 1500-3000, default 3000. The client tells
-        /// the server (GameBoot.SendViewDistance), which sends entities to it + <see cref="GameConstants.FadeMargin"/>.
+        /// <summary>ENTITY distance: creatures, players, NPCs and their nameplates — one of
+        /// <see cref="GameConstants.EntityDistanceSteps"/> (1500-5000, default 4000). The client tells the server
+        /// (GameBoot.SendViewDistance), which sends entities to it + <see cref="GameConstants.FadeMargin"/>.
         /// Never past the world distance (<see cref="EntityReach"/>): nothing beyond the fog can be seen.</summary>
         public static float EntityDistance = EntityDefault;
-        public const float EntityMin = GameConstants.MinViewDistance, EntityMax = GameConstants.MaxEntityDistance;
-        public const float EntityDefault = GameConstants.ViewRange;
+        public const float EntityDefault = GameConstants.EntityDistanceDefault;
         public const string EntityPref = "gfx.entityView";
+        public static readonly string[] EntityStepNames = { "Very close", "Close", "Normal", "Far" };
+
+        /// <summary>The step nearest <paramref name="v"/>.</summary>
+        public static float NearestStep(float[] steps, float v) => steps[StepIndex(steps, v)];
+
+        /// <summary>The index of the step nearest <paramref name="v"/>.</summary>
+        public static int StepIndex(float[] steps, float v)
+        {
+            int best = 0;
+            for (int i = 1; i < steps.Length; i++)
+                if (Mathf.Abs(steps[i] - v) < Mathf.Abs(steps[best] - v)) best = i;
+            return best;
+        }
 
         /// <summary>How far entities really reach: the entity distance, held inside the world's.</summary>
         public static float EntityReach => Mathf.Min(EntityDistance, ViewDistance);

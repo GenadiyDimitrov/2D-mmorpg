@@ -8911,3 +8911,32 @@ icons' route (`BL-331`: game-icons.net, tinted per category or grade). To settle
 columns on a phone, sorting and tabs, what the panel shows, and whether equipment, warehouse and trade windows switch to
 cells too.
 
+
+## `BL-358` — BUILT in 0.270.0 (2026-10-16): World and Entities are cycle buttons over your steps
+
+Your words, 2026-10-16: *"World ranges: 15_000 max is ok; min 3_000; steps: 3,6,10,15,20k ... entity ranges: 5_000 max
+(over 10k is over kill ...) steps: 1500,2750,4000,5000"*, then *"no point enemy to load at 5k if your world is at 3k"*.
+The sky + fog (0.259.0), trees and ground following the fog (0.266.0) and now the ranges close it; see CHANGELOG 0.270.0.
+
+The entry as it stood:
+
+
+Your words: *"I must not see nothing past my horizon (3k range)"*, then *"later we add fog/sky etc"*.
+
+**Built so far (0.258.1):** houses and huts are drawn only within `GameConstants.ViewRange` (3000) of you, like mobs.
+**Still owed:** trees reach 4000/6500/9000 (Scenery Low/Medium/High, `PropScatter.RangeAt`) and the ground at least
+9000 (`BiomeGround.VisibleRect`), so a low camera still sees land past 3000. Cutting them hard at 3000 would show an
+edge and pop-in, so the plan is **distance fog fading into a sky colour that ends at ~3000**, then trim trees/ground
+to just past the fog. The sky itself (a skybox or gradient that follows `DayNight`) goes with it.
+**Built (0.259.0):** the sky (gradient + sun/moon glow, by the hour) and the fog, thick at 3000 from you and starting at
+1800 (`DayNight.ApplySky` / `FitFog`; see CHANGELOG 0.259.0). **Still owed:** trim trees and ground to just past the
+fog, once a phone playtest says the fog distance is right — that is the performance half of this entry.
+
+**0.266.0 — the distance TEST (2026-10-16).** Your words: *"5k is limited ... build me a version where this world and
+entity distances have a box and are unlimited (or to 100k or something) so i can test distances .. then ill give
+ranges and we can make the sliders to those ranges (also can the sliders have a step? ... 1k5,2k,2k5,3k ... or a sycle
+button ... or even less 1500,3000,5000)"*. Built: Settings → World / Entities are typed boxes, 1500-100000, and the
+trees and ground now follow the world distance (CHANGELOG 0.266.0). **❓ Owed by you: the two ranges.** Then they become
+**a cycle button** each (my pick: fewer taps than a stepped slider on a phone, and it reads the value at a glance), over
+the steps you name — your `1500 / 3000 / 5000` style or the 500-steps.
+

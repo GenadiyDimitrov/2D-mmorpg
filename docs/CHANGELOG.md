@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.269.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.270.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,25 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-16 (latest) — 0.269.0: the bag is a grid of item cells with icons, and items DRAG (`BL-347`)
+## 2026-10-16 (latest) — 0.270.0: World / Entity distance are cycle buttons over your steps (`BL-358`)
+
+APK + server (the server's clamp moved; no protocol change, no `game.db` delete). Owner, after the 0.266.0 test:
+*"World ranges: 15_000 max is ok; min 3_000; steps: 3,6,10,15,20k (very narrow/verry low,narrow/low, normal/default,
+wide/hight,very wide/hight) -> the 20k is overkill but when we have mountains and elevations it will oscure the vision
+and you wond see the worlds end"* and *"entity ranges: 5_000 max (over 10k is over kill - 10k is to much and it will
+allow some1 with high end machine to spot some1 with lower end, 15k fps drops); steps: 1500,2750,4000,5000"*.
+
+- **Settings → World** is one button: *Very low 3k → Low 6k → Normal 10k → High 15k → Very high 20k*, a tap moves one
+  step and wraps. Default **Normal 10k** (was 3k).
+- **Settings → Entities**: *Very close 1.5k → Close 2.75k → Normal 4k → Far 5k*. Default **Normal 4k** (was 3k).
+- **Entities never load past the world** (his: *"no point enemy to load at 5k if your world is at 3k"*) — already the
+  rule since 0.264.0 (`DayNight.EntityReach` = the smaller of the two is what the server is sent); the button now says
+  so: *Entities: Far 5k (world 3k)*.
+- The steps live in `GameConstants.WorldDistanceSteps` / `EntityDistanceSteps`; the server clamps the phone's number to
+  1500-5000 (was 1500-100000 for the test). A value an older build saved lands on the nearest step.
+- Every game RULE (targeting, party share, auto-hunt) stays on the 3000 `ViewRange`, as before.
+
+## 2026-10-16 — 0.269.0: the bag is a grid of item cells with icons, and items DRAG (`BL-347`)
 
 APK (no server change, no protocol change, no `game.db` delete). Owner: *"We can do `BL-347` -> can reuse same icon for
 weight and armor part and weapon part .. just different colors ... And if we can make inventory to move items (drag

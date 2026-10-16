@@ -36,9 +36,9 @@ namespace Game.Client
         /// zooms out or how low it tilts toward the horizon.</summary>
         public float MaxRange = 16000f;
 
-        /// <summary>0.266.0 (the distance test): with a player, the ground follows the WORLD distance out to this, not
-        /// <see cref="MaxRange"/>, so a 100k view still stands on land.</summary>
-        private const float TestReach = GameConstants.MaxViewDistance + 6000f;
+        /// <summary>With a player, the ground follows the WORLD distance out to this (0.266.0), not <see cref="MaxRange"/>,
+        /// so the farthest world step (20k) still stands on land.</summary>
+        private const float GroundReach = GameConstants.MaxWorldDistance + 6000f;
 
         /// <summary>Chunks built per frame. A full screen at the widest zoom is ~120 chunks, so the
         /// first frames fill in over about a quarter of a second rather than in one hitch.</summary>
@@ -139,7 +139,7 @@ namespace Game.Client
             if (CameraRig.Focus.HasValue)
             {
                 centre = WorldMapper.ToServer(CameraRig.Focus.Value);
-                reach = Mathf.Min(TestReach, Mathf.Max(DayNight.FogEnd, 6000f) + 3000f);
+                reach = Mathf.Min(GroundReach, Mathf.Max(DayNight.FogEnd, 6000f) + 3000f);
             }
 
             for (int i = 0; i < 4; i++)

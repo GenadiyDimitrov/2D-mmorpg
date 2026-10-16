@@ -293,7 +293,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-354` | ⏸ | **Character bodies, what is left** — the paid pack's 10 outfits, armour type/grade → outfit pieces per slot, face shapes, elf ears / demon horns | client |
 | `BL-355` | ⏸ | **Appearance changes after creation as a premium service** — look cheapest, gender dearer, race/class dearest; admin-only picker built, prices + currency + what a paid race change keeps are open | economy |
 | `BL-357` | ⏸ | **No server URL field at public release**: the login screen loses it; the address is baked into the APK (`Resources/server.txt`), a domain like `someurl.domain/game`, not an IP. Not for the Oracle friends phase | ops |
-| `BL-358` | ❓ | **A horizon: fog + sky at the view range** — sky + fog BUILT (0.259.0); 0.266.0 = a 100k distance TEST build; ❓ your two ranges, then cycle buttons | client |
 | `BL-359` | ⏸ | **Web accounts**: Google / confirmed-e-mail sign-up on the site; game accounts made from its panel, capped per e-mail (3? 10?) — for notifications and recovery | ops |
 | `BL-360` | 🔴 | **A Windows PC client** — test build BUILT (`publish.ps1 -Windows`, bordered resizable window); still owed: a fullscreen on/off option, keyboard shortcuts, a PC layout check | client |
 | `BL-361` | ⏸ | **An iOS client** — needs a Mac (or cloud Mac) + Xcode, an Apple Developer account ($99/yr), TestFlight for testers (HTTPS, which iOS demands, is already live) | ops |
@@ -2552,27 +2551,6 @@ new APK. A remembered address in a player's phone (PlayerPrefs `PrefUrl`) must n
 a way to point elsewhere.
 **Step taken (0.259.0, your ask):** the field left the sign-in panel; it is now a *Server* strip above the Setup window,
 shown only when Setup is opened from the login screen (`GameUi.BuildServerRow`). Removing it entirely is still this entry.
-
-## `BL-358` ⏸ A HORIZON: FOG AND SKY AT THE VIEW RANGE (2026-10-14)
-
-Your words: *"I must not see nothing past my horizon (3k range)"*, then *"later we add fog/sky etc"*.
-
-**Built so far (0.258.1):** houses and huts are drawn only within `GameConstants.ViewRange` (3000) of you, like mobs.
-**Still owed:** trees reach 4000/6500/9000 (Scenery Low/Medium/High, `PropScatter.RangeAt`) and the ground at least
-9000 (`BiomeGround.VisibleRect`), so a low camera still sees land past 3000. Cutting them hard at 3000 would show an
-edge and pop-in, so the plan is **distance fog fading into a sky colour that ends at ~3000**, then trim trees/ground
-to just past the fog. The sky itself (a skybox or gradient that follows `DayNight`) goes with it.
-**Built (0.259.0):** the sky (gradient + sun/moon glow, by the hour) and the fog, thick at 3000 from you and starting at
-1800 (`DayNight.ApplySky` / `FitFog`; see CHANGELOG 0.259.0). **Still owed:** trim trees and ground to just past the
-fog, once a phone playtest says the fog distance is right — that is the performance half of this entry.
-
-**0.266.0 — the distance TEST (2026-10-16).** Your words: *"5k is limited ... build me a version where this world and
-entity distances have a box and are unlimited (or to 100k or something) so i can test distances .. then ill give
-ranges and we can make the sliders to those ranges (also can the sliders have a step? ... 1k5,2k,2k5,3k ... or a sycle
-button ... or even less 1500,3000,5000)"*. Built: Settings → World / Entities are typed boxes, 1500-100000, and the
-trees and ground now follow the world distance (CHANGELOG 0.266.0). **❓ Owed by you: the two ranges.** Then they become
-**a cycle button** each (my pick: fewer taps than a stepped slider on a phone, and it reads the value at a glance), over
-the steps you name — your `1500 / 3000 / 5000` style or the 500-steps.
 
 ## `BL-359` ⏸ WEB ACCOUNTS: GOOGLE / E-MAIL SIGN-UP ON THE SITE, GAME ACCOUNTS UNDER IT (2026-10-14)
 

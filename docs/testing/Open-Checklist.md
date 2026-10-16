@@ -25,16 +25,25 @@
 
 ---
 
+## §166 — 0.270.0: World / Entities are cycle buttons over your steps (`BL-358`, 2026-10-16)
+
+⚠ **Server restart + new APK.** Replaces 165b/165c (the test boxes are gone).
+
+- `166a` [ ] - Settings → World: each tap goes Very low 3k → Low 6k → Normal 10k → High 15k → Very high 20k → back to 3k.
+  A fresh install starts on Normal 10k. Trees and ground reach the fog at every step. ->
+- `166b` [ ] - Settings → Entities: Very close 1.5k → Close 2.75k → Normal 4k → Far 5k → back. Fresh install = Normal 4k. ->
+- `166c` [ ] - World Very low 3k + Entities Far 5k: the Entities button reads *Far 5k (world 3k)*, and no mob shows past
+  the fog. Raise the world again: mobs out to 5k come back. ->
+- `166d` [ ] - Frame rate in a city and a busy field at World Normal 10k / Entities Normal 4k (the new defaults). ->
+
+---
+
 ## §165 — 0.266.0-0.269.0: distance test boxes, NPC levels, the new package id, the bag as cells (2026-10-16)
 
 ⚠ **0.268.0 changes the app's package id: uninstall the old app first** (characters are safe on the server; the saved
 login and settings go with the old app). Then the 0.269.0 APK, and the server for 0.266.0/0.267.0.
 
 - `165a` [ ] - Install: the old app uninstalled, the new one installs and logs in. Only ONE icon on the home screen. ->
-- `165b` [ ] - Settings → World / Entities are boxes. Type values, leave the box: a number past 100000 snaps to 100000,
-  under 1500 to 1500. Try World 10000, 20000, 50000: trees and ground reach the fog, nothing cut short. Your two
-  ranges (and the steps) for the final control → `BL-358`. ->
-- `165c` [ ] - Entities 10000+: mobs and players far off appear (the server now sends that far). Frame rate? ->
 - `165d` [ ] - NPC levels: tap a Gatekeeper (90), a Spirit Helper (~50-60), an Apothecary (~10-15), Grandmaster
   Thorne (60). Hit one: the HP pool matches the level (a gatekeeper ~6500, a shopkeeper ~200), still never below 1. ->
 - `165e` [ ] - The bag: cells with pictures in the rarity colour, counts, +enchant, `L` on a locked item. Tap = details,
