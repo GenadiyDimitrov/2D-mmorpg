@@ -174,7 +174,7 @@ namespace Game.Client
                     var def = ItemCatalog.Get(item.DefId);
                     // Quality colour, so a worn square says what grade of the piece you have on. Falls
                     // back to the old green when the def is missing (an item id from a newer build).
-                    var colour = def != null ? RarityColour(def.Rarity) : UiKit.Good;
+                    var colour = def != null ? ItemColour(def) : UiKit.Good;
                     var sprite = def != null ? ItemSprite(def) : null;
                     // `BL-347` — with a picture the square shows it and keeps only +enchant in the corner.
                     face.text = sprite != null
@@ -203,7 +203,7 @@ namespace Game.Client
                     // reads as a free slot, which is the one thing it is not: the weapon is holding it.
                     // Not clickable, because there is no second item to open — it is the same weapon
                     // already sitting in the square next to it.
-                    var dim = Color.Lerp(RarityColour(twoHander.Rarity), UiKit.TextDim, 0.6f);
+                    var dim = Color.Lerp(ItemColour(twoHander), UiKit.TextDim, 0.6f);
                     var sprite = ItemSprite(twoHander);
                     if (sprite != null)
                     {

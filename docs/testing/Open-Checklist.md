@@ -25,6 +25,19 @@
 
 ---
 
+## §167 — 0.270.1: bag cells coloured by grade, grey frame on commons, T/B/U corner (`BL-347`, 2026-10-16)
+
+⚠ **Server restart + new APK** (version bump only on the server).
+
+- `167a` [ ] - Bag with mythic gear of several grades: the icons read F greyish light green, E green, D greyish light blue,
+  C blue, B yellow, A orange, S red. Do the colours tell apart well enough? (Too close? Name the pair.) ->
+- `167b` [ ] - A common weapon next to a mythic of the same grade: same icon colour, but the common has a GREY frame. ->
+- `167c` [ ] - A temporary (2-hour box) piece shows **T** bottom-left; a newbie loaner shows **T/B**; a plain drop shows
+  nothing. ->
+- `167d` [ ] - Potions, scrolls, runes keep their old colours. Worn gear on the paper doll uses the grade colours. ->
+
+---
+
 ## §166 — 0.270.0: World / Entities are cycle buttons over your steps (`BL-358`, 2026-10-16)
 
 ⚠ **Server restart + new APK.** Replaces 165b/165c (the test boxes are gone).

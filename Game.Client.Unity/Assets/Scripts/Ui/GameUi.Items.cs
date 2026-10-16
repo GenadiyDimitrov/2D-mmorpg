@@ -1761,6 +1761,33 @@ namespace Game.Client
             _                    => new Color(0.85f, 0.85f, 0.85f),   // Common — plain
         };
 
+        /// <summary>`BL-347` follow-up (owner, 2026-10-16) — one colour per GRADE step F, E, D, C, B, A, S, so ten mythic
+        /// staves of different grades stop looking alike: *"lighter green (not lime, more grayish), green, light blue (less
+        /// blue, more grayish), blue, yellow, orange, current red"*. Indexed like <see cref="GradePenalty.GradeNames"/>.</summary>
+        private static readonly Color[] GradeColours =
+        {
+            new Color(0.62f, 0.76f, 0.60f),   // F — greyish light green
+            new Color(0.30f, 0.76f, 0.32f),   // E — green
+            new Color(0.62f, 0.74f, 0.84f),   // D — greyish light blue
+            new Color(0.32f, 0.52f, 1.00f),   // C — blue
+            new Color(1.00f, 0.88f, 0.25f),   // B — yellow
+            new Color(1.00f, 0.55f, 0.15f),   // A — orange
+            new Color(1.00f, 0.30f, 0.35f),   // S — the old Mythic red
+        };
+
+        /// <summary>The colour an item's ICON wears: its grade's (<see cref="ItemCatalog.GradeLabel"/>; a mixed box takes
+        /// its top grade), or the rarity colour for an item with no grade (potions, scrolls, runes, most mats).</summary>
+        public static Color ItemColour(ItemDef def)
+        {
+            var label = ItemCatalog.GradeLabel(def);
+            if (label == ItemCatalog.NoGrade) return RarityColour(def.Rarity);
+            int step = Array.IndexOf(GradePenalty.GradeNames, label.Split('/')[0]);
+            return step >= 0 ? GradeColours[step] : RarityColour(def.Rarity);
+        }
+
+        /// <summary>The grey frame that marks a graded COMMON (its icon still wears the grade colour).</summary>
+        public static readonly Color CommonFrame = new Color(0.50f, 0.50f, 0.52f);
+
         /// <summary>Wrap a name in its quality colour for a TextMeshPro label.</summary>
         public static string Coloured(string text, ItemRarity r)
         {

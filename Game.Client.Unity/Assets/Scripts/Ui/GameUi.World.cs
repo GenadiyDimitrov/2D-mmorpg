@@ -1483,13 +1483,16 @@ namespace Game.Client
         private static bool InBagTab(ItemCategory tab, InventoryItemDto item, ItemDef def)
             => !item.Equipped && InCategory(tab, def);
 
-        /// <summary>`BL-347` — one bag cell: a rarity-coloured frame, the item's picture tinted the same colour (its letters
-        /// if it has none), the count bottom-right, +enchant top-left, [L] top-right for a locked item, and in Del/Brake
-        /// mode the fast button over the bottom-left corner. See the comment at the grid for what tap / drag do.</summary>
+        /// <summary>`BL-347` — one bag cell: the item's picture tinted by its GRADE (<see cref="ItemColour"/>; its letters if
+        /// it has none), a frame of the same colour — GREY for a graded common, so a common and a mythic of one grade
+        /// differ — the count bottom-right, +enchant top-left, [L] top-right for a locked item, T/B/U bottom-left (the
+        /// list row's letters), and in Del/Brake mode the fast button over the bottom-left corner. See the comment at the
+        /// grid for what tap / drag do.</summary>
         private void BuildBagCell(Transform grid, InventoryItemDto item, ItemDef def)
         {
-            var colour = def != null ? RarityColour(def.Rarity) : UiKit.Text;
-            var frame = UiKit.Box(grid, "Cell", Color.Lerp(colour, Color.black, 0.55f));
+            var colour = def != null ? ItemColour(def) : UiKit.Text;
+            bool commonGear = def != null && def.Rarity == ItemRarity.Common && ItemCatalog.HasGrade(def);
+            var frame = UiKit.Box(grid, "Cell", commonGear ? CommonFrame : Color.Lerp(colour, Color.black, 0.55f));
             var well = UiKit.Box(frame.transform, "Well", new Color(0.07f, 0.08f, 0.10f, 1f), blocksInput: false);
             UiKit.Stretch(UiKit.Rect(well.gameObject), 2f, 2f, 2f, 2f);
 
@@ -1522,6 +1525,9 @@ namespace Game.Client
             // `BL-239` — a LOCKED item says so (plain ASCII: the TMP atlas is static, a padlock glyph draws as a box).
             bool locked = def != null && Boot.IsLocked(def, item);
             if (locked) Corner("L", TextAlignmentOptions.TopRight, UiKit.TextDim);
+            // T = timed, B = bound, U = untradable — the same letters as a list row (`BL-301`), without the brackets.
+            var tags = def != null ? ItemTag.Letters(def, item).Trim('(', ')') : "";
+            if (tags.Length > 0) Corner(tags, TextAlignmentOptions.BottomLeft, UiKit.TextDim);
 
             var id = item.InstanceId;
             var shown = item;

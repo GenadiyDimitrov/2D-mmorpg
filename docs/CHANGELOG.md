@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.270.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.270.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,24 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-16 (latest) — 0.270.0: World / Entity distance are cycle buttons over your steps (`BL-358`)
+## 2026-10-16 (latest) — 0.270.1: bag cells are coloured by GRADE, commons get a grey frame, T/B/U in the corner (`BL-347`)
+
+APK + server restart (the version gates the handshake; no server code changed, no `game.db` delete). Owner, on 0.269.0:
+*"now if i have 10 mythic stafs i cannot see which is which grade ... color them like that -> F,E,D,C,B,A,S (mythics) ->
+lighter green(not lime just more graysh),green,light Blue(not like aqua just less blue more grayish),Blue,Yellow,Orange,
+Current Red"* and *"For commons can u add a Gray border or something to show its a common -> or can be C/T/B text on the
+corners to see its timed and bound"*.
+
+- **An item's icon wears its GRADE colour** (`GameUi.ItemColour`): F greyish light green, E green, D greyish light blue,
+  C blue, B yellow, A orange, S the old Mythic red. The grade is `ItemCatalog.GradeLabel` — gear, essences, and boxes of
+  gear (a mixed box takes its top grade). Items with no grade (potions, scrolls, runes, most mats) keep their rarity colour.
+- **The frame**: the grade colour, darkened, for a mythic; **grey** for a graded common — so a common and a mythic of one
+  grade read differently.
+- **Bottom-left: T / B / U** — timed, bound, untradable — the list row's letters (`BL-301`) without the brackets. The
+  grey frame already marks a common, so there is no separate C. (The Del/Brk button covers that corner while its mode is on.)
+- The paper doll's worn icons use the same grade colours.
+
+## 2026-10-16 — 0.270.0: World / Entity distance are cycle buttons over your steps (`BL-358`)
 
 APK + server (the server's clamp moved; no protocol change, no `game.db` delete). Owner, after the 0.266.0 test:
 *"World ranges: 15_000 max is ok; min 3_000; steps: 3,6,10,15,20k (very narrow/verry low,narrow/low, normal/default,
