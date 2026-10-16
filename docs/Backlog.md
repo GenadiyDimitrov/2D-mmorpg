@@ -2388,18 +2388,23 @@ What it will need:
 5. The client's "loaded detail / range" option (`BiomeGround.MaxRange`, and props from step 4 onward).
 
 **The sketch board** (2026-10-16): `docs/design/WorldGrid.html`, published at
-https://claude.ai/artifact/Aou5ndma8Z89TW6TDTMb4z. Part 1 draws today's 48k world under a 12.5k / 25k / 50k grid
-(my recommendation: **25k**, about one city with its fields per cell; at 50k today's whole world fits inside one cell).
-Part 2 is a puzzle board: add cells at the edges, and give each one a name, biome, level band, territory, flags
-(town / castle / dungeon / boss / race start / draft) and its borders (open / passage / wall). The cells are saved as
-rows in the artifact's database (`cells/c_<x>_<y>`), so Claude can read them back. Seeded with today's five cities
-and the three `BL-349` race starts as drafts.
+https://claude.ai/artifact/Aou5ndma8Z89TW6TDTMb4z. Your ruling (2026-10-16): **cells are small, zones are big** —
+*"make the puzzle each to represent 10k or even 5k sized cell and ill make each 5x5/10x10 or more later to be in one
+teritory"*. Built at **10k per cell, 5 × 5 cells = one 50k zone** (a board setting, 5k/10k; at 10k a city's safe zone
+or a field fits in one cell, at 5k a city spans four). The board: add cells at the edges, give each a name, biome,
+level band, territory, flags (town / castle / dungeon / boss / race start / draft) and borders (open / passage /
+wall). **The cell editor** (your *"like a real map generator"*): a selected cell opens large to place spawners from the
+real mob roster (mobs, count, radius, levels, rank), single props, scatter areas (forest / rocks / clearing as a
+density over the biome's own scatter) and landmarks; drag to move. Saved as rows: `cells/c_<x>_<y>` (the cell),
+`detail/c_<x>_<y>` (what is inside it), `meta/board` (cell size). **Seeded from the 0.270 world**: today's map cut
+into its 5 × 5 cells with all 125 camps as spawners and the towns as landmarks. The `BL-349` race-start sketches were
+dropped from the board; that entry still holds them.
 
 **Later, your ask: the board becomes the map's source** (*"i add tiles with mobs ranges and spawns, biome type, etc
 then i tell u ... update tiles xy and u update it"*). It is the same two-way contract as the skill CSVs: you edit a
 cell on the board (or tell me "update tile 2,1"), I read the rows and regenerate the world data from them (a
-`tools/` generator writing a `WorldGrid.g.cs`, the way `--gen-faces` writes `SkillFaces.g.cs`). This needs the board
-to gain mob/spawn fields per cell, and the grid itself (items 1-4 above) to exist in code first.
+`tools/` generator writing a `WorldGrid.g.cs`, the way `--gen-faces` writes `SkillFaces.g.cs`). The board now holds
+spawners per cell; what is still owed is the grid itself in code (items 1-4 above) and that generator.
 
 ## `BL-348` ⏸ HAZARD TERRAIN — harsh zones debuff you until you leave (2026-10-12, answer later)
 
