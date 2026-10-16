@@ -1,0 +1,431 @@
+<title>Vardelar World Grid</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:wght@500;700&family=Alegreya+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a survey-sheet page. The two maps sit on the game's own void colour in both themes; the page around them follows the viewer's theme. */
+:root{
+  --bg:#F2F4F0; --card:#FFFFFF; --ink:#1D282C; --muted:#5C6B6F; --rule:#CCD4CE;
+  --accent:#1F6F77; --warn:#B4452E;
+  --void:#17171A; --void-ink:#E6E8E4; --void-muted:#9AA19C; --void-rule:#34363A;
+  /* the ground colours BiomeGround.cs paints, mid-blend */
+  --b-meadow:#436128; --b-moor:#5A513A; --b-ash:#47423F; --b-marsh:#36402A;
+  --b-highland:#5F4633; --b-snow:#A7B1C1; --b-lava:#B03E12; --b-water:#2E6A86; --b-sea:#1C3550;
+  --display:Alegreya,Georgia,serif; --body:"Alegreya Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#111618; --card:#182023; --ink:#E1E7E5; --muted:#93A2A5; --rule:#2D383B;
+    --accent:#67BDC4; --warn:#E0735A; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111618; --card:#182023; --ink:#E1E7E5; --muted:#93A2A5; --rule:#2D383B;
+  --accent:#67BDC4; --warn:#E0735A; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 56px}
+main{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:44px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-size:2.3rem;line-height:1.1}
+h2{font-size:1.6rem}
+h3{font-size:1.1rem}
+p{margin:0;max-width:68ch}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{display:flex;flex-direction:column;gap:12px}
+.quote{font-family:var(--display);font-style:italic;color:var(--muted);border-left:2px solid var(--rule);padding-left:14px}
+section{display:flex;flex-direction:column;gap:16px}
+.split{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:860px){.split{grid-template-columns:1fr}}
+.side{display:flex;flex-direction:column;gap:14px;min-width:0}
+.sheet{background:var(--void);border-radius:6px;padding:8px;color:var(--void-ink)}
+.sheet svg{display:block;width:100%;height:auto}
+.scroll{overflow-x:auto}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:5px;overflow:hidden}
+.seg button{font:500 13px/1 var(--mono);padding:8px 12px;border:0;background:var(--card);color:var(--ink);cursor:pointer}
+.seg button+button{border-left:1px solid var(--rule)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--card)}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.fact{background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.fact b{font:500 1.35rem/1.2 var(--mono);font-variant-numeric:tabular-nums}
+.fact span{font-size:13px;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px}
+.sw{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.note{background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.note.rec{border-color:var(--accent)}
+.num{font-family:var(--mono);font-size:13px;color:var(--muted)}
+/* board panel */
+.panel{background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.panel label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.panel input,.panel select,.panel textarea{font:15px/1.3 var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--rule);border-radius:4px;padding:7px 8px;width:100%}
+.panel textarea{min-height:70px;resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.edges{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.flags{display:flex;flex-wrap:wrap;gap:6px}
+.flags label{flex-direction:row;align-items:center;gap:6px;border:1px solid var(--rule);border-radius:999px;padding:4px 10px;color:var(--ink);cursor:pointer}
+.flags input{width:auto}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{font:500 14px/1 var(--body);padding:8px 12px;border-radius:4px;border:1px solid var(--rule);background:var(--bg);color:var(--ink);cursor:pointer}
+.btn.danger{border-color:var(--warn);color:var(--warn)}
+.status{font:12px/1.3 var(--mono);color:var(--muted)}
+.hint{font-size:14px;color:var(--muted)}
+.tile{cursor:pointer}
+.slot{cursor:pointer}
+.slot:hover rect{stroke:var(--void-ink)}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;vertical-align:top;padding:7px 8px;border-bottom:1px solid var(--rule)}
+th{font:500 11px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td:first-child{white-space:nowrap;font-weight:700}
+@media (max-width:560px){.facts{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:no-preference){.tile rect{transition:stroke .15s}}
+</style>
+
+<main>
+  <header class="lede">
+    <span class="eyebrow">BL-346 · open-world grid · sketch</span>
+    <h1>Vardelar World Grid</h1>
+    <p class="quote">"I want the map to be in a grid order with 50k x 50k in cells .. and each cell to be its own zone, several zones can be a castle territory ... a real open world map."</p>
+    <p>The server is already one seamless world: one coordinate space, 3,000-unit interest cells streamed around you, no map loads. So the grid is a <b>data</b> job, not a new engine. This page has two parts: today's world drawn under a grid, so the cell size can be chosen by eye, and a board where you lay cells out like puzzle pieces.</p>
+  </header>
+
+  <section aria-labelledby="today-h">
+    <span class="eyebrow">1 · what exists today</span>
+    <h2 id="today-h">Today's 48k world, under the grid</h2>
+    <div class="split">
+      <div class="sheet scroll"><svg id="todaySvg" viewBox="0 0 560 560" role="img" aria-label="The current overworld with a grid overlay"></svg></div>
+      <div class="side">
+        <div class="actions">
+          <span class="hint">Cell size</span>
+          <div class="seg" id="sizeSeg" role="group" aria-label="Cell size">
+            <button type="button" data-size="12500">12.5k</button>
+            <button type="button" data-size="25000">25k</button>
+            <button type="button" data-size="50000">50k</button>
+          </div>
+        </div>
+        <div class="facts">
+          <div class="fact"><b id="fWalk">–</b><span>to walk across one cell at 250 speed</span></div>
+          <div class="fact"><b id="fUsed">–</b><span>cells today's content touches</span></div>
+          <div class="fact"><b id="fFit">–</b><span>of today's world fits in one cell</span></div>
+        </div>
+        <p id="sizeText" class="hint"></p>
+        <div class="legend" id="legend"></div>
+        <p class="num">Read off the code: 6 towns (Towns.cs), 31 generated fields (WorldPlan), 3 hand-placed areas. Field boxes are their bounds, coloured by Biomes.cs. Dungeons live in the negative quadrant and are left out.</p>
+      </div>
+    </div>
+    <div class="note rec">
+      <h3>My recommendation: 25k per cell</h3>
+      <p>At 50k one cell is bigger than everything built so far, so a territory of several cells means authoring several of today's worlds before it feels filled. At 25k one city and its fields is about one cell, a castle territory of 2 to 4 cells is reachable, and crossing a cell still takes over a minute and a half on foot. 12.5k cuts the cities in pieces. The board below only stores grid positions, so this choice can change later without redrawing it.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="board-h">
+    <span class="eyebrow">2 · the puzzle board</span>
+    <h2 id="board-h">Lay out the cells</h2>
+    <p>Click a <b>+</b> next to a cell to add a piece, click a cell to edit it. Borders between two cells are <b>open</b> (the biomes blend), a <b>passage</b> (a wall with a gap, like your lava-to-snow pass) or a <b>wall</b>. Cells with the same territory name share an outline colour. What you change is saved for both of us; I read it back when we build.</p>
+    <div class="split">
+      <div class="sheet scroll"><svg id="boardSvg" viewBox="0 0 400 300" role="img" aria-label="World grid board"></svg></div>
+      <div class="side">
+        <div class="panel" id="panel">
+          <p class="hint" id="panelEmpty">Select a cell to edit it, or a + to add one.</p>
+          <form id="cellForm" hidden>
+            <div class="actions"><h3 id="cellTitle">Cell</h3><span class="num" id="cellPos"></span></div>
+            <label for="fName">Name<input id="fName" maxlength="40"></label>
+            <div class="row2">
+              <label for="fBiome">Biome<select id="fBiome"></select></label>
+              <label for="fTerr">Territory<input id="fTerr" list="terrList" maxlength="30"><datalist id="terrList"></datalist></label>
+            </div>
+            <div class="row2">
+              <label for="fLo">Levels from<input id="fLo" type="number" min="1" max="99"></label>
+              <label for="fHi">to<input id="fHi" type="number" min="1" max="99"></label>
+            </div>
+            <div class="flags" id="flags"></div>
+            <div class="edges" id="edges"></div>
+            <label for="fNotes">Notes<textarea id="fNotes" maxlength="600"></textarea></label>
+            <div class="actions">
+              <button type="button" class="btn danger" id="delBtn">Remove cell</button>
+              <span id="delConfirm" hidden><button type="button" class="btn danger" id="delYes">Yes, remove</button> <button type="button" class="btn" id="delNo">Keep</button></span>
+            </div>
+          </form>
+          <span class="status" id="status">Connecting to the saved board…</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="code-h">
+    <span class="eyebrow">3 · what a cell becomes in code</span>
+    <h2 id="code-h">From board to game</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>On the board</th><th>In the game</th></tr></thead>
+      <tbody>
+        <tr><td>Cell + name</td><td>A zone id over a square of the world; teleports and the map window name it.</td></tr>
+        <tr><td>Biome</td><td>The ground colour. Biomes.cs moves onto the cell; the client's ground already blends neighbours.</td></tr>
+        <tr><td>Levels</td><td>The band its fields are planned for. WorldPlan places fields by bearing and distance from their city, so moving a city moves its fields.</td></tr>
+        <tr><td>Territory</td><td>The castle that owns these cells, ready for castles and the vault.</td></tr>
+        <tr><td>Wall / passage</td><td>Gameplay, not paint: the server needs movement collision and mob pathing around them. This is the one genuinely new system.</td></tr>
+        <tr><td>Start flag</td><td>BL-349's race starting zones: each race spawns in its own territory.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+</main>
+
+<script>
+(() => {
+const BIOMES = [
+  ["meadow","Meadow"],["moor","Moor"],["ash","Ash"],["marsh","Marsh"],["highland","Highland"],
+  ["snow","Snow"],["lava","Lava"],["water","Water / coast (new)"],["sea","Open sea (impassable, new)"]
+];
+const FLAGS = [["town","Town"],["castle","Castle"],["dungeon","Dungeon"],["boss","Boss"],["start","Race start"],["draft","Draft idea"]];
+const EDGE_KINDS = [["open","Open, blends"],["pass","Passage"],["wall","Wall"]];
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const biomeColor = b => css("--b-" + (b || "meadow")) || "#436128";
+const NS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+const $ = id => document.getElementById(id);
+
+/* ---------------- 1. today's world (read off the code, 2026-10-16) ---------------- */
+const TOWNS = [
+  ["Brackenford",24000,24000,3500,"meadow","1-16"],["Stonewatch",24000,10000,2000,"moor","16-40"],
+  ["Greymarsh",36000,33000,3000,"marsh","40-60"],["Ironreach Keep",24000,38000,2200,"highland","60-75"],
+  ["Frostmere",12000,15000,3000,"snow","76-90"],["Training Outpost",24000,5000,400,"moor",""]
+];
+// name, biome, minX, minY, maxX, maxY
+const FIELDS = [
+ ["Bracken Hollow","meadow",16977,21400,19777,26600],["Bracken Downs","meadow",28223,21400,31023,26600],
+ ["Greyhollow Moor","moor",26729,7400,29529,12600],["Stonewatch Ridge","moor",21400,12729,26600,15529],
+ ["Ashen Barrens","ash",18471,7400,21271,12600],["Sunward Moor","moor",28980,4068,32853,9014],
+ ["Highstone Ridge","moor",34209,3964,37681,9068],["Emberdust Barrens","ash",39318,3934,42602,9085],
+ ["Thornfen Moor","moor",29174,9419,32634,14527],["Ravencrag Ridge","moor",34345,9406,37539,14574],
+ ["Palewind Barrens","ash",39418,9403,42498,14587],["Mistlow Moor","moor",28675,15229,33230,19667],
+ ["Bleakspur Ridge","moor",33919,15056,37991,19891],["Cinderflat Barrens","ash",39081,14985,42850,19981],
+ ["Marsh Shallows","marsh",39762,30400,42562,35600],["Blackwater Mire","marsh",33400,36762,38600,39562],
+ ["Sunken Hollow","marsh",34600,26300,37400,29100],["Ironreach March","highland",17061,35359,20959,40600],
+ ["Redhorn Highlands","lava",27200,36600,31150,39400],["Sunland Crags","highland",22600,30850,25400,34800],
+ ["Frostmere Wastes","snow",3450,11011,7880,18752],["Radiant Expanse","snow",9400,19479,14600,23398],
+ ["Dawnbreak Summit","snow",8248,7050,15989,10880],["Shellback Flats","marsh",29438,30400,32238,35600],
+ ["Harpy Fen","marsh",39773,24730,44270,29227],["Swarming Mire","marsh",39973,36973,44070,41070],
+ ["Ironshell Drifts","snow",16479,12400,19279,17600],["Stormcrest Ridge","snow",3444,19059,7941,23556],
+ ["Rimeskitter Hollow","snow",3644,6644,7741,10741],
+ ["Training Grounds","moor",21500,1600,27900,5900],["Sunken Vale","meadow",18350,43100,29650,46900],
+ ["Wyrmfall Basin","snow",1350,25100,12650,28900]
+];
+const WORLD = 48000, VIEW = 56000, PX = 560 / VIEW, PAD = 4000;   // draw 0..48k with room for a 50k cell
+const tx = v => (v + PAD) * PX;
+
+let cellSize = 25000;
+try { const s = +localStorage.getItem("wg.size"); if ([12500,25000,50000].includes(s)) cellSize = s; } catch (e) {}
+
+function drawToday() {
+  const svg = $("todaySvg"); svg.textContent = "";
+  el("rect", {x:tx(0), y:tx(0), width:WORLD*PX, height:WORLD*PX, fill:"#202124", stroke:css("--void-rule")}, svg);
+  for (const f of FIELDS)
+    el("rect", {x:tx(f[2]), y:tx(f[3]), width:(f[4]-f[2])*PX, height:(f[5]-f[3])*PX, fill:biomeColor(f[1]), opacity:.9, rx:2}, svg)
+      .appendChild(Object.assign(document.createElementNS(NS,"title"), {textContent:f[0]}));
+  const used = new Set();
+  const mark = (x0,y0,x1,y1) => { for (let cx=Math.floor(x0/cellSize); cx<=Math.floor(x1/cellSize); cx++) for (let cy=Math.floor(y0/cellSize); cy<=Math.floor(y1/cellSize); cy++) used.add(cx+","+cy); };
+  FIELDS.forEach(f => mark(f[2],f[3],f[4],f[5]));
+  TOWNS.forEach(t => mark(t[1]-t[3],t[2]-t[3],t[1]+t[3],t[2]+t[3]));
+  for (const k of used) { const [cx,cy] = k.split(",").map(Number);
+    el("rect", {x:tx(cx*cellSize), y:tx(cy*cellSize), width:cellSize*PX, height:cellSize*PX, fill:"#ffffff", opacity:.05}, svg); }
+  const g = el("g", {stroke:"#E6E8E4", "stroke-opacity":.55, "stroke-width":1, "stroke-dasharray":"4 4", fill:"none"}, svg);
+  const span = Math.max(WORLD, Math.ceil(WORLD / cellSize) * cellSize);
+  for (let v = 0; v <= span; v += cellSize) {
+    el("line", {x1:tx(v), y1:tx(0), x2:tx(v), y2:tx(span)}, g);
+    el("line", {x1:tx(0), y1:tx(v), x2:tx(span), y2:tx(v)}, g);
+  }
+  for (const t of TOWNS) {
+    el("circle", {cx:tx(t[1]), cy:tx(t[2]), r:Math.max(3, t[3]*PX), fill:"#D9CBA8", stroke:"#17171A", "stroke-width":1.5}, svg);
+    if (t[3] >= 2000) {
+      const lbl = el("text", {x:tx(t[1]), y:tx(t[2]) - t[3]*PX - 5, "text-anchor":"middle", fill:"#E6E8E4", "font-size":12, "font-family":"Alegreya Sans, sans-serif", "font-weight":700, "paint-order":"stroke", stroke:"#17171A", "stroke-width":3}, svg);
+      lbl.textContent = t[0] + " " + t[5];
+    }
+  }
+  el("text", {x:tx(0), y:tx(WORLD) + 16, fill:"#9AA19C", "font-size":11, "font-family":"IBM Plex Mono, monospace"}, svg).textContent = "0";
+  el("text", {x:tx(WORLD), y:tx(WORLD) + 16, "text-anchor":"end", fill:"#9AA19C", "font-size":11, "font-family":"IBM Plex Mono, monospace"}, svg).textContent = "48,000";
+
+  const secs = cellSize / 250;
+  $("fWalk").textContent = secs >= 120 ? (secs/60).toFixed(1) + " min" : Math.round(secs) + " s";
+  $("fUsed").textContent = used.size;
+  const fit = Math.min(1, (cellSize*cellSize) / (WORLD*WORLD));
+  $("fFit").textContent = Math.round(fit*100) + "%";
+  $("sizeText").textContent = {
+    12500: "12.5k: each city is cut across 2 to 4 cells. Fine-grained, but a cell no longer means one place.",
+    25000: "25k: roughly one city and its fields per cell. Brackenford sits on a corner because today's map was centred on it; the grid map would place cities inside cells.",
+    50000: "50k (your number): today's whole world fits inside one cell with room to spare."
+  }[cellSize];
+  document.querySelectorAll("#sizeSeg button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.size === cellSize));
+}
+$("legend").innerHTML = BIOMES.slice(0,7).map(([k,n]) => `<span><i class="sw" style="background:var(--b-${k})"></i>${n}</span>`).join("") +
+  `<span><i class="sw" style="background:#D9CBA8;border-radius:50%"></i>Town (safe radius)</span>`;
+$("sizeSeg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  cellSize = +b.dataset.size; try { localStorage.setItem("wg.size", cellSize); } catch (e) {}
+  drawToday(); drawBoard();
+});
+
+/* ---------------- 2. the board (db: collection "cells", one doc per cell) ---------------- */
+const T = 110;                       // board tile size in svg units
+let db = null, canWrite = false;
+const cells = new Map();             // "x,y" -> body
+let selected = null;                 // "x,y" or null
+const docId = (x,y) => `c_${x}_${y}`;
+const key = (x,y) => x + "," + y;
+const status = t => { $("status").textContent = t; };
+
+const TERR_COLORS = ["#E8B04A","#6FC3C9","#D8798F","#9BC46A","#B79BE0","#E58A55","#7FA6E6","#E0D36A"];
+function terrColor(name) {
+  if (!name) return null;
+  const names = [...new Set([...cells.values()].map(c => c.territory).filter(Boolean))].sort();
+  return TERR_COLORS[names.indexOf(name) % TERR_COLORS.length];
+}
+
+function drawBoard() {
+  const svg = $("boardSvg"); svg.textContent = "";
+  const all = [...cells.values()];
+  let minX = 0, minY = 0, maxX = 0, maxY = 0;
+  if (all.length) { minX = Math.min(...all.map(c=>c.x)) - 1; maxX = Math.max(...all.map(c=>c.x)) + 1; minY = Math.min(...all.map(c=>c.y)) - 1; maxY = Math.max(...all.map(c=>c.y)) + 1; }
+  const W = (maxX-minX+1)*T, H = (maxY-minY+1)*T;
+  svg.setAttribute("viewBox", `0 0 ${W+16} ${H+16}`);
+  svg.style.minWidth = Math.min(900, (maxX-minX+1)*70) + "px";
+  const px = x => 8 + (x-minX)*T, py = y => 8 + (y-minY)*T;
+
+  // + slots
+  const slots = all.length ? new Set() : new Set(["0,0"]);
+  for (const c of all) for (const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]) { const k = key(c.x+dx,c.y+dy); if (!cells.has(k)) slots.add(k); }
+  for (const k of slots) {
+    const [x,y] = k.split(",").map(Number);
+    const g = el("g", {class:"slot", tabindex:0, role:"button", "aria-label":`Add a cell at ${x}, ${y}`}, svg);
+    el("rect", {x:px(x)+8, y:py(y)+8, width:T-16, height:T-16, rx:6, fill:"none", stroke:"#55585E", "stroke-dasharray":"5 5", "stroke-width":1.5}, g);
+    el("text", {x:px(x)+T/2, y:py(y)+T/2+9, "text-anchor":"middle", fill:"#8C9196", "font-size":28, "font-family":"IBM Plex Mono, monospace"}, g).textContent = "+";
+    const add = () => addCell(x,y);
+    g.addEventListener("click", add); g.addEventListener("keydown", e => { if (e.key==="Enter"||e.key===" ") { e.preventDefault(); add(); } });
+  }
+  // tiles
+  for (const c of all) {
+    const g = el("g", {class:"tile", tabindex:0, role:"button", "aria-label":`Edit ${c.name || "cell"}`}, svg);
+    const x = px(c.x), y = py(c.y);
+    el("rect", {x, y, width:T, height:T, fill:biomeColor(c.biome)}, g);
+    if ((c.flags||[]).includes("draft")) {
+      const id = "hatch";
+      if (!svg.querySelector("#"+id)) { const d = el("defs",{},svg); const p = el("pattern",{id, width:8, height:8, patternUnits:"userSpaceOnUse", patternTransform:"rotate(45)"},d); el("rect",{width:3,height:8,fill:"#000",opacity:.22},p); svg.insertBefore(d, svg.firstChild); }
+      el("rect", {x, y, width:T, height:T, fill:"url(#hatch)"}, g);
+    }
+    const tc = terrColor(c.territory);
+    if (tc) el("rect", {x:x+4, y:y+4, width:T-8, height:T-8, fill:"none", stroke:tc, "stroke-width":3, rx:3}, g);
+    if (key(c.x,c.y) === selected) el("rect", {x:x+1, y:y+1, width:T-2, height:T-2, fill:"none", stroke:"#FFFFFF", "stroke-width":2.5}, g);
+    const light = c.biome === "snow";
+    const ink = light ? "#1D282C" : "#F1F2EE", sub = light ? "#3A4650" : "#C9CEC8";
+    const words = (c.name || "Unnamed").split(" "); const lines = [""];
+    for (const w of words) { if ((lines[lines.length-1] + " " + w).trim().length > 13 && lines[lines.length-1]) lines.push(w); else lines[lines.length-1] = (lines[lines.length-1] + " " + w).trim(); }
+    lines.slice(0,3).forEach((ln,i) => el("text", {x:x+12, y:y+26+i*15, fill:ink, "font-size":14, "font-weight":700, "font-family":"Alegreya Sans, sans-serif"}, g).textContent = ln);
+    const band = c.lo ? `${c.lo}${c.hi ? "–"+c.hi : ""}` : "";
+    el("text", {x:x+12, y:y+T-28, fill:sub, "font-size":11, "font-family":"IBM Plex Mono, monospace"}, g).textContent = band ? "lv " + band : "";
+    const fl = (c.flags||[]).filter(f => f!=="draft").map(f => FLAGS.find(F=>F[0]===f)?.[1]).filter(Boolean).join(" · ");
+    el("text", {x:x+12, y:y+T-13, fill:sub, "font-size":10, "font-family":"IBM Plex Mono, monospace"}, g).textContent = fl.length > 18 ? fl.slice(0,17)+"…" : fl;
+    const pick = () => select(c.x,c.y);
+    g.addEventListener("click", pick); g.addEventListener("keydown", e => { if (e.key==="Enter"||e.key===" ") { e.preventDefault(); pick(); } });
+  }
+  // borders between neighbours
+  for (const c of all) {
+    for (const [dir,dx,dy] of [["e",1,0],["s",0,1]]) {
+      if (!cells.has(key(c.x+dx,c.y+dy))) continue;
+      const kind = c[dir] || "open"; if (kind === "open") continue;
+      const x = px(c.x), y = py(c.y);
+      const [x1,y1,x2,y2] = dir==="e" ? [x+T,y,x+T,y+T] : [x,y+T,x+T,y+T];
+      const st = {stroke:"#0B0B0D", "stroke-width":7, "stroke-linecap":"round"};
+      if (kind === "wall") el("line", {x1,y1,x2,y2,...st}, svg);
+      else { const mx=(x1+x2)/2, my=(y1+y2)/2, gap=14, h = dir==="e";
+        el("line", {x1,y1,x2:h?mx:mx-gap,y2:h?my-gap:my,...st}, svg);
+        el("line", {x1:h?mx:mx+gap,y1:h?my+gap:my,x2,y2,...st}, svg); }
+    }
+  }
+}
+
+function neighbourEdge(x,y,dir) {     // returns [ownerKey, field] for the border on side dir of (x,y)
+  if (dir==="e") return [key(x,y),"e"]; if (dir==="s") return [key(x,y),"s"];
+  if (dir==="w") return [key(x-1,y),"e"]; return [key(x,y-1),"s"];
+}
+
+function select(x,y) {
+  selected = key(x,y); const c = cells.get(selected);
+  $("panelEmpty").hidden = true; $("cellForm").hidden = false; $("delConfirm").hidden = true; $("delBtn").hidden = false;
+  $("cellTitle").textContent = c.name || "Unnamed cell"; $("cellPos").textContent = `grid ${x}, ${y}`;
+  $("fName").value = c.name || ""; $("fBiome").value = c.biome || "meadow"; $("fTerr").value = c.territory || "";
+  $("fLo").value = c.lo || ""; $("fHi").value = c.hi || ""; $("fNotes").value = c.notes || "";
+  document.querySelectorAll("#flags input").forEach(i => i.checked = (c.flags||[]).includes(i.value));
+  const ed = $("edges"); ed.textContent = "";
+  for (const [dir,label,dx,dy] of [["n","Top border",0,-1],["e","Right border",1,0],["s","Bottom border",0,1],["w","Left border",-1,0]]) {
+    const nb = cells.get(key(x+dx,y+dy)); if (!nb) continue;
+    const [ok,f] = neighbourEdge(x,y,dir);
+    const lab = document.createElement("label"); lab.htmlFor = "edge-"+dir; lab.textContent = `${label}, to ${nb.name || "neighbour"}`;
+    const s = document.createElement("select"); s.id = "edge-"+dir;
+    s.innerHTML = EDGE_KINDS.map(([k,n]) => `<option value="${k}">${n}</option>`).join("");
+    s.value = cells.get(ok)[f] || "open"; s.disabled = !canWrite;
+    s.addEventListener("change", () => save(ok, {[f]: s.value}));
+    lab.appendChild(s); ed.appendChild(lab);
+  }
+  $("terrList").innerHTML = [...new Set([...cells.values()].map(c=>c.territory).filter(Boolean))].map(t => `<option value="${t.replace(/"/g,"&quot;")}">`).join("");
+  $("cellForm").querySelectorAll("input,select,textarea,button").forEach(i => { if (i.closest("#edges")) return; i.disabled = !canWrite; });
+  drawBoard();
+}
+
+const pending = new Map(); let writing = Promise.resolve();
+function save(k, patch, immediate) {
+  const c = cells.get(k); if (!c) return;
+  Object.assign(c, patch); drawBoard();
+  if (!db || !canWrite) return;
+  clearTimeout(pending.get(k));
+  const run = () => { pending.delete(k); writing = writing.then(() => db.collection("cells").doc(docId(c.x,c.y)).set({...cells.get(k)}))
+      .then(() => status("Saved."), e => { status(e && e.code === "invalid_argument" ? "This view can read the board but not change it." : "Could not save: " + (e && e.message || e)); if (e && e.code==="invalid_argument") { canWrite = false; } }); };
+  if (immediate) run(); else pending.set(k, setTimeout(run, 600));
+  status("Saving…");
+}
+
+function addCell(x,y) {
+  if (!canWrite) { status(db ? "This view can read the board but not change it." : "Open this page signed in on claude.ai to add cells."); return; }
+  const k = key(x,y);
+  cells.set(k, {x, y, name:"New cell", biome:"meadow", territory:"", lo:null, hi:null, flags:["draft"], notes:"", e:"open", s:"open"});
+  save(k, {}, true); select(x,y); $("fName").focus(); $("fName").select();
+}
+
+// form wiring
+$("fBiome").innerHTML = BIOMES.map(([k,n]) => `<option value="${k}">${n}</option>`).join("");
+$("flags").innerHTML = FLAGS.map(([k,n]) => `<label for="flag-${k}"><input type="checkbox" id="flag-${k}" value="${k}">${n}</label>`).join("");
+const cur = () => selected && cells.get(selected);
+$("fName").addEventListener("input", e => { if (!cur()) return; $("cellTitle").textContent = e.target.value || "Unnamed cell"; save(selected, {name:e.target.value}); });
+$("fTerr").addEventListener("input", e => cur() && save(selected, {territory:e.target.value.trim()}));
+$("fNotes").addEventListener("input", e => cur() && save(selected, {notes:e.target.value}));
+$("fBiome").addEventListener("change", e => cur() && save(selected, {biome:e.target.value}, true));
+for (const id of ["fLo","fHi"]) $(id).addEventListener("input", e => { if (!cur()) return; const v = parseInt(e.target.value,10); save(selected, {[id==="fLo"?"lo":"hi"]: Number.isFinite(v) ? v : null}); });
+$("flags").addEventListener("change", () => cur() && save(selected, {flags:[...document.querySelectorAll("#flags input:checked")].map(i=>i.value)}, true));
+$("cellForm").addEventListener("submit", e => e.preventDefault());
+$("delBtn").addEventListener("click", () => { $("delBtn").hidden = true; $("delConfirm").hidden = false; });
+$("delNo").addEventListener("click", () => { $("delBtn").hidden = false; $("delConfirm").hidden = true; });
+$("delYes").addEventListener("click", () => {
+  const c = cur(); if (!c) return; const k = selected;
+  cells.delete(k); selected = null; $("cellForm").hidden = true; $("panelEmpty").hidden = false; drawBoard();
+  clearTimeout(pending.get(k));
+  writing = writing.then(() => db.collection("cells").doc(docId(c.x,c.y)).delete()).then(() => status("Removed."), e => status("Could not remove: " + (e && e.message || e)));
+});
+
+drawToday(); drawBoard();
+
+(async () => {
+  db = window.claude ? await window.claude.use("db") : null;
+  if (!db) { status("Open this page signed in on claude.ai to see and edit the saved board."); return; }
+  canWrite = true;
+  db.collection("cells").onSnapshot(snap => {
+    const seen = new Set();
+    for (const d of snap.docs) { const b = d.data(); if (!b || typeof b.x !== "number") continue; const k = key(b.x,b.y); seen.add(k);
+      if (!pending.get(k) || d.metadata.hasPendingWrites) cells.set(k, {...b}); }
+    for (const k of [...cells.keys()]) if (!seen.has(k) && !snap.metadata.hasPendingWrites) cells.delete(k);
+    if (selected && !cells.has(selected)) { selected = null; $("cellForm").hidden = true; $("panelEmpty").hidden = false; }
+    drawBoard();
+    status(snap.empty ? "The board is empty. Click + to place the first cell." : `${snap.size} cells on the board.`);
+  }, e => status("Lost the connection to the saved board (" + e.code + "). Reload to reconnect."));
+})();
+})();
+</script>

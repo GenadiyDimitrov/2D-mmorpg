@@ -2387,6 +2387,20 @@ What it will need:
    city, so moving a city moves its fields with it).
 5. The client's "loaded detail / range" option (`BiomeGround.MaxRange`, and props from step 4 onward).
 
+**The sketch board** (2026-10-16): `docs/design/WorldGrid.html`, published at
+https://claude.ai/artifact/Aou5ndma8Z89TW6TDTMb4z. Part 1 draws today's 48k world under a 12.5k / 25k / 50k grid
+(my recommendation: **25k**, about one city with its fields per cell; at 50k today's whole world fits inside one cell).
+Part 2 is a puzzle board: add cells at the edges, and give each one a name, biome, level band, territory, flags
+(town / castle / dungeon / boss / race start / draft) and its borders (open / passage / wall). The cells are saved as
+rows in the artifact's database (`cells/c_<x>_<y>`), so Claude can read them back. Seeded with today's five cities
+and the three `BL-349` race starts as drafts.
+
+**Later, your ask: the board becomes the map's source** (*"i add tiles with mobs ranges and spawns, biome type, etc
+then i tell u ... update tiles xy and u update it"*). It is the same two-way contract as the skill CSVs: you edit a
+cell on the board (or tell me "update tile 2,1"), I read the rows and regenerate the world data from them (a
+`tools/` generator writing a `WorldGrid.g.cs`, the way `--gen-faces` writes `SkillFaces.g.cs`). This needs the board
+to gain mob/spawn fields per cell, and the grid itself (items 1-4 above) to exist in code first.
+
 ## `BL-348` ⏸ HAZARD TERRAIN — harsh zones debuff you until you leave (2026-10-12, answer later)
 
 Your words: *"when we adding more ground details (we talked about slowing speed in water when sweebing etc ...) but also
