@@ -10,7 +10,7 @@
   --void:#17171A; --void-ink:#E6E8E4; --void-muted:#9AA19C; --void-rule:#34363A;
   /* the ground colours BiomeGround.cs paints, mid-blend */
   --b-meadow:#436128; --b-moor:#5A513A; --b-ash:#47423F; --b-marsh:#36402A;
-  --b-highland:#5F4633; --b-snow:#A7B1C1; --b-lava:#B03E12; --b-water:#2E6A86; --b-sea:#1C3550;
+  --b-highland:#5F4633; --b-snow:#A7B1C1; --b-lava:#B03E12; --b-water:#2E6A86; --b-sea:#1C3550; --b-mountain:#5E5B58;
   --display:Alegreya,Georgia,serif; --body:"Alegreya Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
   color-scheme:light;
 }
@@ -69,6 +69,11 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .flags{display:flex;flex-wrap:wrap;gap:6px}
 .flags label{flex-direction:row;align-items:center;gap:6px;border:1px solid var(--rule);border-radius:999px;padding:4px 10px;color:var(--ink);cursor:pointer}
 .flags input{width:auto}
+.panel label.check{flex-direction:row;align-items:center;gap:6px;color:var(--ink)}
+.panel label.check input{width:auto}
+.find label{font-size:13px;color:var(--muted);display:inline-flex;align-items:center;gap:4px}
+.find input{width:5.5em;font:15px/1.3 var(--mono);color:var(--ink);background:var(--card);border:1px solid var(--rule);border-radius:4px;padding:6px 7px}
+.btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--card)}
 .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .btn{font:500 14px/1 var(--body);padding:8px 12px;border-radius:4px;border:1px solid var(--rule);background:var(--bg);color:var(--ink);cursor:pointer}
 .btn.primary{border-color:var(--accent);color:var(--accent)}
@@ -98,7 +103,16 @@ td:first-child{white-space:nowrap;font-weight:700}
   <section aria-labelledby="board-h">
     <span class="eyebrow">1 · the board</span>
     <h2 id="board-h">Cells and borders</h2>
-    <p>Click a <b>+</b> to add a cell at the edge, or click a cell to edit it. Borders between two cells are <b>open</b> (the biomes blend), a <b>passage</b> (a wall with a gap) or a <b>wall</b>. Cells with the same territory share an outline colour. The faint lines mark the 50k zones.</p>
+    <p>Click a <b>+</b> to add a cell at the edge, or click a cell to edit it. Borders between two cells are <b>open</b> (the biomes blend), a <b>passage</b> (a wall with a gap) or a <b>wall</b>. Cells with the same territory share an outline colour. The faint lines mark the 50k zones. To change several cells at once, Shift- or Ctrl-click them (or turn on <b>Select several</b> on a phone). A side with no cell next to it is the edge of the map: a wall.</p>
+    <div class="actions find" role="search" aria-label="Find a cell">
+      <span class="hint">Find cell</span>
+      <label for="findX">x <input id="findX" type="number" step="1"></label>
+      <label for="findY">y <input id="findY" type="number" step="1"></label>
+      <button type="button" class="btn" id="findBtn">Find</button>
+      <button type="button" class="btn primary" id="findAdd" hidden>Add it</button>
+      <span class="num" id="findNote" aria-live="polite"></span>
+      <button type="button" class="btn" id="multiBtn" aria-pressed="false">Select several</button>
+    </div>
     <div class="actions">
       <span class="hint">Cell size</span>
       <div class="seg" id="boardSizeSeg" role="group" aria-label="Board cell size">
@@ -130,6 +144,25 @@ td:first-child{white-space:nowrap;font-weight:700}
               <a class="btn primary" href="#editor" id="openEditor">Open the cell editor ↓</a>
               <button type="button" class="btn danger" id="delBtn">Remove cell</button>
               <span id="delConfirm" hidden><button type="button" class="btn danger" id="delYes">Yes, remove it and its contents</button> <button type="button" class="btn" id="delNo">Keep</button></span>
+            </div>
+          </form>
+          <form id="bulkForm" hidden>
+            <h3 id="bulkTitle">Several cells</h3>
+            <p class="hint">Only what you fill in changes. A field left on "keep" or empty stays as each cell has it. Names, flags, borders and contents stay per cell.</p>
+            <div class="row2">
+              <label for="bBiome">Biome<select id="bBiome"></select></label>
+              <label for="bTerr">Territory<input id="bTerr" list="terrList" maxlength="30" placeholder="keep"></label>
+            </div>
+            <label class="check" for="bTerrClear"><input type="checkbox" id="bTerrClear">Clear the territory</label>
+            <div class="row2">
+              <label for="bLo">Levels from<input id="bLo" type="number" min="1" max="99" placeholder="keep"></label>
+              <label for="bHi">to<input id="bHi" type="number" min="1" max="99" placeholder="keep"></label>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn primary" id="bApply">Apply to all</button>
+              <button type="button" class="btn" id="bNone">Deselect</button>
+              <button type="button" class="btn danger" id="bDel">Remove cells</button>
+              <span id="bDelConfirm" hidden><button type="button" class="btn danger" id="bDelYes">Yes, remove them and their contents</button> <button type="button" class="btn" id="bDelNo">Keep</button></span>
             </div>
           </form>
           <span class="status" id="status">Connecting to the saved board…</span>
@@ -226,7 +259,7 @@ td:first-child{white-space:nowrap;font-weight:700}
 const ROSTER = [["ridgeback_pup","Ridgeback Pup",1,0,"Animal","Melee"],["fox","Fox",4,0,"Animal","Melee"],["goblin_scout","Goblin Scout",8,0,"Humanoid","Melee"],["ashen_wolf","Ashen Wolf",10,1,"Animal","Melee"],["werewolf","Werewolf",12,1,"Humanoid","Melee"],["hook_spider","Hook Spider",14,1,"Insect","Melee"],["orc_archer","Orc Archer",16,1,"Humanoid","Archer"],["skeleton_grunt","Skeleton Grunt",18,1,"Undead","Melee"],["shield_skeleton","Shield Skeleton",20,1,"Undead","Melee"],["grizzly_bear","Grizzly Bear",22,1,"Animal","Melee"],["cinder_imp","Cinder Imp",24,1,"Demon","Melee"],["watcher_eye","Watcher Eye",26,1,"MagicCreature","Mage"],["lizardman_warrior","Lizardman Warrior",28,1,"Humanoid","Melee"],["marauder_recruit","Marauder Recruit",30,1,"Humanoid","Melee"],["grave_robber_fighter","Grave Robber Fighter",32,1,"Humanoid","Melee"],["mantis_worker","Mantis Worker",32,1,"Insect","Melee"],["medusa","Medusa",34,1,"Humanoid","Melee"],["plunder_beetle","Plunder Beetle",34,1,"Insect","Melee"],["wyrm","Wyrm",35,1,"Dragon","Melee"],["marsh_mantis_soldier","Marsh Mantis Soldier",37,1,"Insect","Melee"],["fen_lizardman_archer","Fen Lizardman Archer",39,1,"Humanoid","Archer"],["dune_orc_archer","Dune Orc Archer",40,1,"Humanoid","Archer"],["demo_goblin_raider","Goblin Raider",40,0,"Humanoid","Melee"],["demo_curve_40","Standard Marker (Lv 40)",40,0,"Humanoid","Melee"],["harpy","Harpy",42,1,"Humanoid","Melee"],["ridge_orc_overlord","Ridge Orc Overlord",42,1,"Humanoid","Melee"],["grave_lich","Grave Lich",44,1,"Undead","Melee"],["fomor_brute","Fomor Brute",45,1,"Humanoid","Melee"],["demo_goblin_raider_elder","Goblin Elder Raider",45,0,"Humanoid","Melee"],["demo_curve_45","Standard Marker (Lv 45)",45,0,"Humanoid","Melee"],["marsh_marauder","Marsh Marauder",46,1,"Humanoid","Melee"],["warped_drake","Warped Drake",47,1,"Dragon","Melee"],["amber_basilisk","Amber Basilisk",48,1,"Animal","Melee"],["wildhorn_grunt","Wildhorn Grunt",48,1,"Humanoid","Melee"],["mantis_follower","Mantis Follower",50,1,"Insect","Melee"],["ravener","Ravener",50,1,"Demon","Melee"],["marauder_warrior","Marauder Warrior",51,1,"Humanoid","Melee"],["fallen_angel","Fallen Angel",52,1,"Demon","Melee"],["thornback","Thornback",53,1,"Animal","Melee"],["gaze_hound","Gaze Hound",54,1,"Animal","Melee"],["ash_orc_soldier","Ash Orc Soldier",55,1,"Humanoid","Melee"],["mirror_wraith","Hall of Mirrors Wraith",56,1,"Undead","Melee"],["mirror_ghost","Mirror Ghost",56,1,"Undead","Melee"],["dune_orc_porter","Dune Orc Porter",57,0,"Humanoid","Melee"],["aether_wisp","Aether Wisp",58,1,"MagicCreature","Mage"],["gloomhusk_treant","Gloomhusk Treant",58,1,"Plant","Melee"],["hexward_golem","Hexward Golem",58,1,"MagicCreature","Melee"],["hollow_one","Hollow One",58,1,"Humanoid","Melee"],["marsh_harpy","Marsh Harpy",58,1,"Humanoid","Melee"],["mire_swarmling","Mire Swarmling",58,1,"Insect","Melee"],["mudskitter","Mudskitter",58,1,"Animal","Melee"],["shellback_crawler","Shellback Crawler",58,1,"Insect","Melee"],["demo_lich","Cairn Lich",60,0,"Undead","Mage"],["sand_ratman","Sand Ratman",60,1,"Humanoid","Melee"],["demo_curve_60","Standard Marker (Lv 60)",60,0,"Humanoid","Mage"],["valley_treant","Valley Treant",60,0,"Plant","Melee"],["cursed_blade","Cursed Blade",61,1,"Undead","Melee"],["bogwood","Bogwood",62,0,"Plant","Melee"],["fen_lizardman","Fen Lizardman",62,1,"Humanoid","Melee"],["obsidian_knight","Obsidian Knight",63,1,"Humanoid","Melee"],["crimson_drake","Crimson Drake",64,1,"Dragon","Melee"],["wildhorn_scout","Wildhorn Scout",64,1,"Humanoid","Melee"],["dread_knight","Dread Knight",65,1,"Undead","Melee"],["spiteful_ghost","Spiteful Ghost",66,1,"Undead","Melee"],["wildhorn_elder","Wildhorn Elder",66,1,"Humanoid","Melee"],["highland_kookaburra","Highland Kookaburra",67,0,"Animal","Melee"],["highland_buffalo","Highland Buffalo",68,0,"Animal","Melee"],["highland_buffalo_tamed","Highland Buffalo (Tamed)",68,0,"Animal","Melee"],["dread_archer","Dread Archer",69,1,"Undead","Archer"],["dire_beast","Dire Beast",70,1,"Animal","Melee"],["revenant_minion","Revenant Minion",71,1,"Demon","Melee"],["redhorn_footman","Redhorn Footman",72,1,"Humanoid","Melee"],["redhorn_elite","Redhorn Elite",73,1,"Humanoid","Melee"],["sunland_orc_scout","Sunland Orc Scout",73,1,"Humanoid","Melee"],["redhorn_recruit","Redhorn Recruit",74,1,"Humanoid","Melee"],["sunland_orc_warrior","Sunland Orc Warrior",75,1,"Humanoid","Melee"],["redhorn_soldier","Redhorn Soldier",76,1,"Humanoid","Melee"],["sunland_orc_commander","Sunland Orc Commander",76,1,"Humanoid","Melee"],["sunland_orc_captain","Sunland Orc Captain",77,1,"Humanoid","Melee"],["emberwyrm_matriarch","Emberwyrm Matriarch",78,1,"Dragon","Melee"],["frost_swarmling","Frost Swarmling",78,1,"Insect","Melee"],["frostward_golem","Frostward Golem",78,1,"MagicCreature","Melee"],["ironshell_crawler","Ironshell Crawler",78,1,"Insect","Melee"],["redhorn_general","Redhorn General",78,1,"Humanoid","Melee"],["rimebark_treant","Rimebark Treant",78,1,"Plant","Melee"],["rimeskitter","Rimeskitter",78,1,"Animal","Melee"],["storm_harpy","Storm Harpy",78,1,"Humanoid","Melee"],["emberwyrm_drake","Emberwyrm Drake",79,1,"Dragon","Melee"],["demo_seraph","Fallen Seraph",80,0,"Angel","Melee"],["demo_seraph_rune","Fallen Seraph, Runebearer",80,0,"Angel","Melee"],["scarlet_mantis","Scarlet Mantis",80,1,"Insect","Melee"],["demo_curve_80","Standard Marker (Lv 80)",80,0,"Humanoid","Melee"],["guard_town_fighter","Town Warden",80,1,"Humanoid","Melee"],["guard_town_tank","Town Watchman",80,1,"Humanoid","Melee"],["wrathborn_demon","Wrathborn Demon",80,1,"Demon","Melee"],["radiant_scout","Radiant Scout",81,1,"Angel","Melee"],["radiant_berserker","Radiant Berserker",82,1,"Angel","Melee"],["radiant_mage","Radiant Mage",82,1,"Angel","Mage"],["splinter_mantis_drone","Splinter Mantis Drone",83,1,"Insect","Melee"],["needle_mantis_overseer","Needle Mantis Overseer",84,1,"Insect","Melee"],["splinter_mantis_walker","Splinter Mantis Walker",84,1,"Insect","Melee"],["disciple_of_the_dawn","Disciple of the Dawn",85,1,"Humanoid","Melee"],["drake_leader","Drake Leader",85,1,"Dragon","Melee"],["guard_field_archer","Field Longbow",90,1,"Humanoid","Archer"],["guard_field_tank","Field Warden",90,1,"Humanoid","Melee"]];
 const MOB = Object.fromEntries(ROSTER.map(m => [m[0], m]));
 const BIOMES = [["meadow","Meadow"],["moor","Moor"],["ash","Ash"],["marsh","Marsh"],["highland","Highland"],
-  ["snow","Snow"],["lava","Lava"],["water","Water / coast (new)"],["sea","Open sea (impassable, new)"]];
+  ["snow","Snow"],["lava","Lava"],["water","Water / coast (new)"],["sea","Open sea (impassable, new)"],["mountain","Mountains (impassable, new)"]];
 const FLAGS = [["town","Town"],["castle","Castle"],["dungeon","Dungeon"],["boss","Boss"],["start","Race start"],["draft","Draft idea"]];
 const EDGE_KINDS = [["open","Open, blends"],["pass","Passage"],["wall","Wall"]];
 const PROP_KINDS = [["tree","Tree"],["pine","Pine"],["deadtree","Dead tree"],["twisted","Twisted tree"],["bush","Bush"],["rock","Rock"],["grass","Grass"],["flower","Flowers"]];
@@ -247,6 +280,7 @@ let db = null, canWrite = false;
 const cells = new Map();        // "x,y" -> body
 let cellSize = 10000;
 let selected = null;            // "x,y"
+let picked = new Set(), multiMode = false;   // the board's selection; 2+ = the bulk form
 let detail = null, detailUnsub = null, detailDirty = false;
 let tool = "select", selItem = null;   // {list, id}
 const key = (x,y) => x + "," + y;
@@ -332,7 +366,7 @@ function drawBoard() {
   if (all.length) { minX = Math.min(...all.map(c=>c.x)) - 1; maxX = Math.max(...all.map(c=>c.x)) + 1; minY = Math.min(...all.map(c=>c.y)) - 1; maxY = Math.max(...all.map(c=>c.y)) + 1; }
   const W = (maxX-minX+1)*T, H = (maxY-minY+1)*T;
   svg.setAttribute("viewBox", `0 0 ${W+16} ${H+16}`);
-  svg.style.minWidth = Math.min(900, (maxX-minX+1)*64) + "px";
+  svg.style.minWidth = (maxX-minX+1)*64 + "px";
   const px = x => 8 + (x-minX)*T, py = y => 8 + (y-minY)*T;
   const defs = el("defs", {}, svg);
   const pat = el("pattern", {id:"hatch", width:8, height:8, patternUnits:"userSpaceOnUse", patternTransform:"rotate(45)"}, defs);
@@ -349,13 +383,13 @@ function drawBoard() {
     g.addEventListener("click", add); g.addEventListener("keydown", e => { if (e.key==="Enter"||e.key===" ") { e.preventDefault(); add(); } });
   }
   for (const c of all) {
-    const g = el("g", {class:"tile", tabindex:0, role:"button", "aria-label":`Edit ${c.name || "cell"}`}, svg);
+    const g = el("g", {class:"tile", tabindex:0, role:"button", "aria-label":`Edit ${c.name || "cell"}`, "data-k":key(c.x,c.y)}, svg);
     const x = px(c.x), y = py(c.y);
     el("rect", {x, y, width:T, height:T, fill:biomeColor(c.biome)}, g);
     if ((c.flags||[]).includes("draft")) el("rect", {x, y, width:T, height:T, fill:"url(#hatch)"}, g);
     const tc = terrColor(c.territory);
     if (tc) el("rect", {x:x+4, y:y+4, width:T-8, height:T-8, fill:"none", stroke:tc, "stroke-width":3, rx:3}, g);
-    if (key(c.x,c.y) === selected) el("rect", {x:x+1.5, y:y+1.5, width:T-3, height:T-3, fill:"none", stroke:"#FFFFFF", "stroke-width":3}, g);
+    if (picked.has(key(c.x,c.y))) el("rect", {x:x+1.5, y:y+1.5, width:T-3, height:T-3, fill:"none", stroke:"#FFFFFF", "stroke-width":3}, g);
     const light = c.biome === "snow";
     const ink = light ? "#1D282C" : "#F1F2EE", sub = light ? "#3A4650" : "#C9CEC8";
     const lines = [""];
@@ -365,8 +399,7 @@ function drawBoard() {
     txt(g, {x:x+12, y:y+T-28, fill:sub, "font-size":12, "font-family":"IBM Plex Mono, monospace"}, band);
     const fl = (c.flags||[]).filter(f => f!=="draft").map(f => (FLAGS.find(F=>F[0]===f)||[])[1]).filter(Boolean).join(" · ");
     txt(g, {x:x+12, y:y+T-13, fill:sub, "font-size":11, "font-family":"IBM Plex Mono, monospace"}, fl.length > 17 ? fl.slice(0,16)+"…" : fl);
-    const pick = () => select(c.x,c.y);
-    g.addEventListener("click", pick); g.addEventListener("keydown", e => { if (e.key==="Enter"||e.key===" ") { e.preventDefault(); pick(); } });
+    g.addEventListener("click", e => pickCell(c.x,c.y,e)); g.addEventListener("keydown", e => { if (e.key==="Enter"||e.key===" ") { e.preventDefault(); pickCell(c.x,c.y,e); } });
   }
   // 50k zone lines
   const zg = el("g", {stroke:"#E6E8E4", "stroke-opacity":.35, "stroke-width":1.5, "stroke-dasharray":"2 6", "pointer-events":"none"}, svg);
@@ -413,11 +446,90 @@ function fillCellForm() {
 
 function select(x,y) {
   const k = key(x,y); const changed = k !== selected;
-  selected = k;
-  $("panelEmpty").hidden = true; $("cellForm").hidden = false; $("delConfirm").hidden = true; $("delBtn").hidden = false;
+  selected = k; picked = new Set([k]);
+  $("panelEmpty").hidden = true; $("bulkForm").hidden = true; $("cellForm").hidden = false; $("delConfirm").hidden = true; $("delBtn").hidden = false;
+  $("edEmpty").textContent = ED_EMPTY;
   fillCellForm(); drawBoard();
   if (changed) openDetail(x,y);
 }
+
+/* ---------- several cells at once ---------- */
+const ED_EMPTY = $("edEmpty").textContent;
+function pickCell(x,y,e) {
+  const k = key(x,y);
+  if (!(multiMode || (e && (e.shiftKey || e.ctrlKey || e.metaKey)))) { select(x,y); return; }
+  if (picked.has(k)) picked.delete(k); else picked.add(k);
+  if (picked.size >= 2) showBulk();
+  else if (picked.size === 1) { const [a,b] = [...picked][0].split(",").map(Number); select(a,b); }
+  else clearPick();
+}
+function showBulk() {
+  if (selected) { closeDetail(); selected = null; }
+  $("panelEmpty").hidden = true; $("cellForm").hidden = true; $("bulkForm").hidden = false;
+  $("bulkTitle").textContent = `${picked.size} cells selected`;
+  $("bDelConfirm").hidden = true; $("bDel").hidden = false;
+  $("terrList").innerHTML = territories().map(t => `<option value="${esc(t)}">`).join("");
+  $("bulkForm").querySelectorAll("input,select,button").forEach(i => { if (i.id !== "bNone") i.disabled = !canWrite; });
+  $("edBody").hidden = true; $("edEmpty").hidden = false;
+  $("edEmpty").textContent = `More than one cell selected (${picked.size}). The cell editor opens one cell at a time, so select a single cell to place things inside it.`;
+  drawBoard();
+}
+function clearPick() {
+  closeDetail(); selected = null; picked = new Set();
+  $("cellForm").hidden = true; $("bulkForm").hidden = true; $("panelEmpty").hidden = false;
+  $("edBody").hidden = true; $("edEmpty").hidden = false; $("edEmpty").textContent = ED_EMPTY;
+  drawBoard();
+}
+$("bBiome").innerHTML = `<option value="">keep</option>` + BIOMES.map(([k,n]) => `<option value="${k}">${n}</option>`).join("");
+$("bTerrClear").addEventListener("change", e => { $("bTerr").disabled = e.target.checked || !canWrite; });
+$("bApply").addEventListener("click", () => {
+  const patch = {};
+  if ($("bBiome").value) patch.biome = $("bBiome").value;
+  if ($("bTerrClear").checked) patch.territory = ""; else if ($("bTerr").value.trim()) patch.territory = $("bTerr").value.trim();
+  for (const [id,f] of [["bLo","lo"],["bHi","hi"]]) { const v = parseInt($(id).value,10); if (Number.isFinite(v)) patch[f] = v; }
+  if (!Object.keys(patch).length) { status("Nothing to apply: every field is on keep."); return; }
+  for (const k of picked) saveCell(k, patch, true);
+});
+$("bNone").addEventListener("click", clearPick);
+$("bDel").addEventListener("click", () => { $("bDel").hidden = true; $("bDelConfirm").hidden = false; });
+$("bDelNo").addEventListener("click", () => { $("bDel").hidden = false; $("bDelConfirm").hidden = true; });
+$("bDelYes").addEventListener("click", () => {
+  if (!db || !canWrite) return;
+  const gone = [...picked].map(k => cells.get(k)).filter(Boolean);
+  for (const c of gone) { const k = key(c.x,c.y); cells.delete(k); clearTimeout(cellTimers.get(k)); cellTimers.delete(k);
+    cellWrites = cellWrites.then(() => db.collection("cells").doc(docId(c.x,c.y)).delete())
+      .then(() => db.collection("detail").doc(docId(c.x,c.y)).delete()); }
+  cellWrites = cellWrites.then(() => status(`Removed ${gone.length} cells.`), e => readOnly(e));
+  clearPick();
+});
+$("multiBtn").addEventListener("click", () => { multiMode = !multiMode; $("multiBtn").setAttribute("aria-pressed", multiMode); });
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape" || picked.size < 2 || e.target.closest("input,textarea,select")) return;
+  clearPick();
+});
+
+/* ---------- find a cell by x, y ---------- */
+let findTarget = null;
+function scrollToCell(x,y) {
+  const g = $("boardSvg").querySelector(`[data-k="${key(x,y)}"]`);
+  if (g) g.scrollIntoView({behavior:"smooth", block:"center", inline:"center"});
+}
+function findCell() {
+  const x = parseInt($("findX").value,10), y = parseInt($("findY").value,10);
+  $("findAdd").hidden = true; findTarget = null;
+  if (!Number.isFinite(x) || !Number.isFinite(y)) { $("findNote").textContent = "Type an x and a y."; return; }
+  if (cells.has(key(x,y))) { $("findNote").textContent = ""; select(x,y); scrollToCell(x,y); return; }
+  findTarget = [x,y];
+  $("findNote").textContent = `No cell at ${x}, ${y}.`;
+  $("findAdd").hidden = !canWrite;
+}
+$("findBtn").addEventListener("click", findCell);
+for (const id of ["findX","findY"]) $(id).addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); findCell(); } });
+$("findAdd").addEventListener("click", () => {
+  if (!findTarget) return; const [x,y] = findTarget;
+  addCell(x,y); scrollToCell(x,y);
+  $("findAdd").hidden = true; $("findNote").textContent = `Added ${x}, ${y}.`; findTarget = null;
+});
 
 const cellTimers = new Map(); let cellWrites = Promise.resolve();
 function saveCell(k, patch, immediate) {
@@ -457,8 +569,7 @@ $("delBtn").addEventListener("click", () => { $("delBtn").hidden = true; $("delC
 $("delNo").addEventListener("click", () => { $("delBtn").hidden = false; $("delConfirm").hidden = true; });
 $("delYes").addEventListener("click", () => {
   const c = cur(); if (!c || !db) return; const k = selected;
-  cells.delete(k); clearTimeout(cellTimers.get(k)); closeDetail(); selected = null;
-  $("cellForm").hidden = true; $("panelEmpty").hidden = false; drawBoard();
+  cells.delete(k); clearTimeout(cellTimers.get(k)); clearPick();
   cellWrites = cellWrites.then(() => db.collection("cells").doc(docId(c.x,c.y)).delete())
     .then(() => db.collection("detail").doc(docId(c.x,c.y)).delete())
     .then(() => status("Removed."), e => readOnly(e));
@@ -699,7 +810,13 @@ setTool("select"); drawToday(); drawBoard(); setCellSize(10000, false);
     for (const d of snap.docs) { const b = d.data(); if (!b || typeof b.x !== "number") continue; const k = key(b.x,b.y); seen.add(k);
       if (!cellTimers.has(k)) cells.set(k, JSON.parse(JSON.stringify(b))); }
     if (!snap.metadata.hasPendingWrites) for (const k of [...cells.keys()]) if (!seen.has(k) && !cellTimers.has(k)) cells.delete(k);
-    if (selected && !cells.has(selected)) { closeDetail(); selected = null; $("cellForm").hidden = true; $("panelEmpty").hidden = false; $("edBody").hidden = true; $("edEmpty").hidden = false; }
+    for (const k of [...picked]) if (!cells.has(k)) picked.delete(k);
+    if (selected && !cells.has(selected)) clearPick();
+    else if (!selected && !$("bulkForm").hidden) {
+      if (picked.size >= 2) showBulk();
+      else if (picked.size === 1) { const [a,b] = [...picked][0].split(",").map(Number); select(a,b); }
+      else clearPick();
+    }
     drawBoard(); if (selected) { const a = document.activeElement; if (!a || !a.closest("#cellForm")) fillCellForm(); drawEditor(); }
     status(snap.empty ? "The board is empty. Click + to place the first cell." : `${snap.size} cells on the board.`);
   }, e => status("Lost the connection to the saved board (" + e.code + "). Reload to reconnect."));

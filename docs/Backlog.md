@@ -2406,6 +2406,21 @@ cell on the board (or tell me "update tile 2,1"), I read the rows and regenerate
 `tools/` generator writing a `WorldGrid.g.cs`, the way `--gen-faces` writes `SkillFaces.g.cs`). The board now holds
 spawners per cell; what is still owed is the grid itself in code (items 1-4 above) and that generator.
 
+**Holes, islands and the map's edge** (ruled 2026-10-20, *"i agree with the 3 rules"*). The generator must follow these:
+1. **An empty slot is VOID**: impassable and unrendered. It is not sea. A side with no cell next to it is a wall (the
+   board already draws it as "edge of the map"). Sea and **Mountains** are biomes you paint deliberately, both
+   impassable. Mountains was added to the board 2026-10-20, *"so i can make island that have a mountains not abyss nor sea"*.
+2. **An island is legal; an unreachable cell is a WARNING, not an error.** The generator lists every cell you can't walk
+   to from a race start through open borders and passages, marked "reachable only by teleport". A cell that is
+   unreachable AND has no teleport target is the real bug.
+3. **Coordinates are fixed**: cell (x,y) always covers x·size … (x+1)·size, so removing a cell never moves its neighbours.
+4. ❓ *Proposed, not ruled*: **past the last cell, the client keeps drawing the edge cell's own biome** (sea runs to the
+   horizon, a range keeps going), so ONE cell of sea or mountain hides the edge at every World distance setting. That
+   matters because the setting is the player's (3k-20k today, `GameConstants.WorldDistanceSteps`) and may grow. Without
+   it you need as many impassable cells as the largest view distance: 2 at 10k cells and 20k view. ⚠ Mountains are only
+   flat grey ground today. The ground has no height yet, so a mountain cell blocks walking but hides nothing until it
+   is built as real terrain.
+
 ## `BL-348` ⏸ HAZARD TERRAIN — harsh zones debuff you until you leave (2026-10-12, answer later)
 
 Your words: *"when we adding more ground details (we talked about slowing speed in water when sweebing etc ...) but also
