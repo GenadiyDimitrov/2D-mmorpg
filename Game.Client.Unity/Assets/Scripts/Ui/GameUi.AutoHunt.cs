@@ -77,8 +77,8 @@ namespace Game.Client
         private Slider _autoMpHealSlider;
         private bool _autoMpHealOn;
 
-        // farming-range ring drawn in the world (a border-only circle showing the farm radius)
-        private LineRenderer _farmRing;
+        // farming-range ring drawn in the world: a short see-through golden WALL standing on the farm radius
+        private Transform _farmRing;
         private bool _showFarmRange;
         private const string PrefFarmRing = "autofarm.showRange";
 
@@ -94,20 +94,75 @@ namespace Game.Client
 
         // ----- farming-range ring ----------------------------------------------------------------
 
+        /// <summary>Height of the farm wall, Unity units (≈ knee height on a character).</summary>
+        private const float FarmRingHeight = 0.6f;
+        private static readonly Color FarmRingColour = new Color(1f, 0.82f, 0.25f, 0.55f);
+
+        /// <summary>
+        /// The farm radius as a short golden CYLINDER WALL, strongest at the ground and fading out upward (owner,
+        /// 2026-10-20: *"like short cilinder semi-visible golden or green"*). It replaced a LineRenderer whose
+        /// yellow never showed: URP's Unlit ignores vertex colour, so the line drew in the material's white.
+        ///
+        /// <para>One unit cylinder built once and SCALED to the radius each frame, so nothing is rebuilt as the
+        /// player walks. Both windings are in the mesh, so the far side of the wall shows through the near side
+        /// and from inside the ring as well. The fade is a 1×32 alpha texture on the base map, which URP's Unlit
+        /// does honour (vertex colour it does not).</para>
+        /// </summary>
         private void BuildFarmRing()
         {
             _showFarmRange = PlayerPrefs.GetInt(PrefFarmRing, 0) == 1;
 
             var go = new GameObject("FarmRangeRing");
-            _farmRing = go.AddComponent<LineRenderer>();
-            _farmRing.useWorldSpace = true;
-            _farmRing.loop = true;
-            _farmRing.widthMultiplier = 0.35f;
-            // The IL2CPP-safe shader (a raw Shader.Find would render magenta on the phone).
-            _farmRing.material = new Material(UnlitMaterials.Shader);
-            _farmRing.startColor = _farmRing.endColor = new Color(1f, 0.9f, 0.2f, 0.9f);
-            _farmRing.positionCount = 0;
+            go.AddComponent<MeshFilter>().sharedMesh = BuildFarmWallMesh(64);
+            var renderer = go.AddComponent<MeshRenderer>();
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            // The IL2CPP-safe, alpha-respecting unlit (a raw Shader.Find would render magenta on the phone).
+            var material = UnlitMaterials.CreateTransparent(FarmRingColour);
+            if (material != null)
+            {
+                var fade = new Texture2D(1, 32, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+                for (int y = 0; y < 32; y++)
+                {
+                    float a = 1f - y / 31f;
+                    fade.SetPixel(0, y, new Color(1f, 1f, 1f, a * a));
+                }
+                fade.Apply();
+                if (material.HasProperty("_BaseMap")) material.SetTexture("_BaseMap", fade);
+                material.mainTexture = fade;
+                renderer.sharedMaterial = material;
+            }
+            _farmRing = go.transform;
             go.SetActive(false);
+        }
+
+        /// <summary>An open cylinder of radius 1 and height 1 standing on y = 0, v running 0 (ground) → 1 (top).</summary>
+        private static Mesh BuildFarmWallMesh(int segs)
+        {
+            var verts = new Vector3[(segs + 1) * 2];
+            var uvs = new Vector2[verts.Length];
+            for (int i = 0; i <= segs; i++)
+            {
+                float a = i / (float)segs * Mathf.PI * 2f;
+                var p = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
+                verts[i * 2] = p;
+                verts[i * 2 + 1] = p + Vector3.up;
+                uvs[i * 2] = new Vector2(i / (float)segs, 0f);
+                uvs[i * 2 + 1] = new Vector2(i / (float)segs, 1f);
+            }
+            var tris = new int[segs * 12];
+            for (int i = 0, t = 0; i < segs; i++)
+            {
+                int b0 = i * 2, t0 = b0 + 1, b1 = b0 + 2, t1 = b0 + 3;
+                // outward face, then the same quad wound the other way for the inside
+                tris[t++] = b0; tris[t++] = t0; tris[t++] = b1;
+                tris[t++] = b1; tris[t++] = t0; tris[t++] = t1;
+                tris[t++] = b0; tris[t++] = b1; tris[t++] = t0;
+                tris[t++] = b1; tris[t++] = t1; tris[t++] = t0;
+            }
+            var mesh = new Mesh { name = "FarmWall", vertices = verts, uv = uvs, triangles = tris };
+            mesh.RecalculateBounds();
+            return mesh;
         }
 
         /// <summary>Draw the farm-radius ring around the player while the toggle is on. Called each frame
@@ -139,15 +194,10 @@ namespace Game.Client
             Vector3 c = Boot.AutoConfig != null && Boot.AutoConfig.StaticSpot
                 ? WorldMapper.ToUnity(Boot.FarmCenter.x, Boot.FarmCenter.y)
                 : self.transform.position;
-            c.y = 0.05f;
+            c.y = 0.02f;
 
-            const int segs = 64;
-            if (_farmRing.positionCount != segs) _farmRing.positionCount = segs;
-            for (int i = 0; i < segs; i++)
-            {
-                float a = i / (float)segs * Mathf.PI * 2f;
-                _farmRing.SetPosition(i, c + new Vector3(Mathf.Cos(a) * radius, 0f, Mathf.Sin(a) * radius));
-            }
+            _farmRing.position = c;
+            _farmRing.localScale = new Vector3(radius, FarmRingHeight, radius);
         }
 
         // ----- auto-potions ----------------------------------------------------------------------

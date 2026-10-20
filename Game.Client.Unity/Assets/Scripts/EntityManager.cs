@@ -79,7 +79,7 @@ namespace Game.Client
             var live = new List<EntityDto>(States.Values);
             foreach (var kv in _views) if (kv.Value != null) Destroy(kv.Value.gameObject);
             _views.Clear();
-            foreach (var e in live) Upsert(e);
+            foreach (var e in live) Upsert(e, NetClock.Now);
         }
 
         /// <summary>The marker is smaller than a fingertip, so the tap target is deliberately bigger
@@ -151,9 +151,10 @@ namespace Game.Client
         public void ApplyDelta(SnapshotDelta delta)
         {
             if (delta == null) return;
+            double at = NetClock.Observe(delta.Tick);   // the server moment every position below belongs to
 
             if (delta.Spawns != null)
-                foreach (var e in delta.Spawns) Upsert(e);
+                foreach (var e in delta.Spawns) Upsert(e, at);
 
             if (delta.Updates != null)
                 foreach (var lean in delta.Updates)
@@ -176,7 +177,7 @@ namespace Game.Client
                         // The teleport counter rides the lean update too — a blink changes nothing
                         // static, so this is the ONLY packet that ever carries it in flight.
                         Warp = lean.Warp,
-                    });
+                    }, at);
                 }
 
             if (delta.Despawns != null)
@@ -189,7 +190,7 @@ namespace Game.Client
         {
             if (entities == null) return;
             var seen = new HashSet<Guid>();
-            foreach (var e in entities) { seen.Add(e.Id); Upsert(e); }
+            foreach (var e in entities) { seen.Add(e.Id); Upsert(e, NetClock.Now); }
 
             var stale = new List<Guid>();
             foreach (var kv in _views) if (!seen.Contains(kv.Key)) stale.Add(kv.Key);
@@ -215,6 +216,7 @@ namespace Game.Client
             foreach (var kv in _views) if (kv.Value != null) Destroy(kv.Value.gameObject);
             _views.Clear();
             States.Clear();
+            NetClock.Reset();
         }
 
         /// <summary>Start predicting your own walk to a destination, at the speed the server last
@@ -244,7 +246,7 @@ namespace Game.Client
                 view.CancelPrediction();
         }
 
-        private void Upsert(EntityDto e)
+        private void Upsert(EntityDto e, double serverTime)
         {
             // `BL-354` — a new BODY on a live entity (an admin re-roll to another race, a look change): the model was
             // picked and dressed once, at Create, so rebuild the whole view. Rare, and a rebuilt self is re-acquired by
@@ -265,7 +267,7 @@ namespace Game.Client
 
             view.IsSelf = e.Id == SelfId;
             byte warpBefore = view.LastWarp;   // `BL-344` — read before SetTarget takes the new one
-            view.SetTarget(WorldMapper.ToUnity(e.X, e.Y), e.Warp);
+            view.SetTarget(WorldMapper.ToUnity(e.X, e.Y), e.Warp, serverTime);
             if (view.IsSelf) view.SetPredictSpeed(e.Speed * WorldMapper.Scale);   // a walk tracks speed changes mid-way
             view.SetColor(ColorFor(e));
             view.SetWeapons(e.Weapon, e.MagicWeapon, e.Shield);   // `BL-103` — a no-op unless the gear changed

@@ -20,25 +20,26 @@ namespace Game.Client
 
         private const float HalfHeight = 0.75f;   // lifts the billboard so its base sits on the ground
 
-        /// <summary>
-        /// How far BEHIND the newest server position we render, in seconds.
-        ///
-        /// This is the whole trick of snapshot interpolation: by deliberately staying one update in
-        /// the past, we always have a position on BOTH sides of the moment being drawn, so movement
-        /// is an exact interpolation between two known facts rather than a guess at the present. The
-        /// cost is a fixed, invisible delay; the gain is that jitter in arrival times stops being
-        /// visible at all.
-        ///
-        /// 150ms covers the server's 100ms tick plus normal jitter. Too small and the buffer runs dry
-        /// (which looks like the old stutter); too large and the world feels laggy to control.
-        /// </summary>
-        private const float InterpolationDelay = 0.15f;
-
-        /// <summary>The two most recent server positions and when each ARRIVED. Two is enough: we only
-        /// ever draw between the newest pair, and keeping a longer history would only add latency.</summary>
-        private Vector3 _fromPos, _toPos;
-        private float _fromTime, _toTime;
+        /// <summary>The newest server position (for the prediction's checks in SetTarget) — what is DRAWN comes
+        /// from the sample buffer below.</summary>
+        private Vector3 _toPos;
         private bool _hasFrom;
+
+        /// <summary>
+        /// 🔑 THE SAMPLE BUFFER, stamped with SERVER time (0.271.0). Each position carries the tick the server
+        /// produced it on (<see cref="NetClock"/>), and <see cref="Update"/> draws the moment
+        /// <see cref="NetClock.RenderTime"/> between the two samples that bracket it.
+        ///
+        /// <para>It replaced a two-sample interpolator timed by ARRIVAL: the segment's length was the gap between
+        /// two packets landing. A phone's network delivers in bursts — two deltas in one frame, then nothing for
+        /// 200ms — so every mob raced through one segment and froze in the next. That was the owner's *"fps is 60
+        /// but the animation jitters"*, and why your own character joined in near mobs: in a melee chase the
+        /// server, not the prediction, is what moves you.</para>
+        /// </summary>
+        private const int MaxSamples = 12;
+        private readonly double[] _sTime = new double[MaxSamples];
+        private readonly Vector3[] _sPos = new Vector3[MaxSamples];
+        private int _sCount;
 
         // ----- client-side prediction (SELF ONLY) -------------------------------------------------
         private bool _predicting;
@@ -204,9 +205,10 @@ namespace Game.Client
 
             // Seed the buffer with where Create already placed us. Without this the first Update has
             // no samples and the entity would sit at the origin until its second server position.
-            _fromPos = _toPos = _predictPos = transform.position;
-            _fromTime = _toTime = Time.time;
+            _toPos = _predictPos = transform.position;
             _hasFrom = true;
+            _sCount = 0;
+            PushSample(NetClock.Now, transform.position);
         }
 
         public void SetColor(Color color)
@@ -377,13 +379,10 @@ namespace Game.Client
 
         /// <summary>
         /// Record a newly arrived server position (ground plane); height is added here.
-        ///
-        /// The PREVIOUS target becomes the segment's start, and the arrival times become the segment's
-        /// duration — so playback speed is set by how fast updates actually came, not by a constant we
-        /// picked. An entity that was sent twice in 100ms and one sent twice in 400ms both move at
-        /// exactly the speed the server described.
+        /// <paramref name="serverTime"/> is when the SERVER was at it (<see cref="NetClock.Observe"/>), which is
+        /// what places it in the buffer — never the moment its packet happened to land.
         /// </summary>
-        public void SetTarget(Vector3 groundPos, byte warp)
+        public void SetTarget(Vector3 groundPos, byte warp, double serverTime)
         {
             // 🔑 A TELEPORT IS DECLARED, NOT MEASURED (playtest 29: *"phase shift don't visually update
             // my position"*). The server bumps EntityDto.Warp on every reposition that is not the walk
@@ -399,7 +398,7 @@ namespace Game.Client
             if (_hasWarp && warp != _warp)
             {
                 _warp = warp;
-                SnapTo(groundPos);
+                SnapTo(groundPos, serverTime);
                 return;
             }
             _warp = warp;
@@ -458,15 +457,64 @@ namespace Game.Client
             const float teleportDistance = 5f;
             if (_hasFrom && (next - _toPos).sqrMagnitude > teleportDistance * teleportDistance)
             {
-                SnapTo(groundPos);
+                SnapTo(groundPos, serverTime);
                 return;
             }
 
-            _fromPos = _hasFrom ? _toPos : next;
-            _fromTime = _hasFrom ? _toTime : Time.time;
             _toPos = next;
-            _toTime = Time.time;
             _hasFrom = true;
+            PushSample(serverTime, next);
+        }
+
+        /// <summary>Append one stamped position. Two rules make a delta stream into a timeline:
+        /// <list type="bullet">
+        /// <item>A sample no newer than the last REPLACES it — the same tick twice, or two arrival-timed samples
+        /// (an old server) landing in one frame.</item>
+        /// <item>🔑 A GAP IS A STANDSTILL. The server sends only what changed, so an entity silent for a while
+        /// was standing exactly where it was last sent until the tick before this sample. Without the held
+        /// point the first step after a pause would be smeared across the whole pause, as a slow creep.</item>
+        /// </list></summary>
+        private void PushSample(double time, Vector3 pos)
+        {
+            // A clock that jumped BACK (a restarted server, or the first stamped delta landing on samples taken
+            // on the local clock): the old timeline means nothing on the new one, so start over.
+            if (_sCount > 0 && time < _sTime[_sCount - 1] - 1.0) _sCount = 0;
+            if (_sCount > 0)
+            {
+                double last = _sTime[_sCount - 1];
+                if (time <= last) { _sPos[_sCount - 1] = pos; return; }
+                if (time - last > GameConstants.TickSeconds * 1.5f)
+                    AppendSample(time - GameConstants.TickSeconds, _sPos[_sCount - 1]);
+            }
+            AppendSample(time, pos);
+        }
+
+        private void AppendSample(double time, Vector3 pos)
+        {
+            if (_sCount == MaxSamples) DropOldestSample();
+            _sTime[_sCount] = time;
+            _sPos[_sCount] = pos;
+            _sCount++;
+        }
+
+        private void DropOldestSample()
+        {
+            Array.Copy(_sTime, 1, _sTime, 0, _sCount - 1);
+            Array.Copy(_sPos, 1, _sPos, 0, _sCount - 1);
+            _sCount--;
+        }
+
+        /// <summary>Where the server had this entity at <paramref name="time"/>: linear between the two samples
+        /// around it, the oldest before the buffer, and the NEWEST once it runs dry — holding at the last thing
+        /// we actually know rather than extrapolating somewhere the server never said. Samples wholly behind
+        /// the render time are dropped as it passes them (it only moves forward).</summary>
+        private Vector3 SampleAt(double time)
+        {
+            if (_sCount == 0) return transform.position;
+            while (_sCount >= 2 && _sTime[1] <= time) DropOldestSample();
+            if (_sCount == 1 || time <= _sTime[0]) return _sPos[0];
+            float k = (float)((time - _sTime[0]) / (_sTime[1] - _sTime[0]));
+            return Vector3.Lerp(_sPos[0], _sPos[1], k);
         }
 
         /// <summary>Begin predicting a walk to <paramref name="groundTarget"/> at
@@ -539,12 +587,15 @@ namespace Game.Client
 
         /// <summary>Put the entity AT a position with no interpolation — for spawns, teleports and
         /// re-entry, where sliding in from wherever it used to be would be a lie.</summary>
-        public void SnapTo(Vector3 groundPos)
+        public void SnapTo(Vector3 groundPos) => SnapTo(groundPos, NetClock.Now);
+
+        private void SnapTo(Vector3 groundPos, double serverTime)
         {
             var at = groundPos + Vector3.up * HalfHeight;
-            _fromPos = _toPos = _predictPos = at;
-            _fromTime = _toTime = Time.time;
+            _toPos = _predictPos = at;
             _hasFrom = true;
+            _sCount = 0;                     // the old timeline is a path it never walked
+            PushSample(serverTime, at);
             // A snap is the one case where the server is deliberately overriding us, so any prediction
             // and any accumulated error are wrong by definition — drop both rather than let them drag
             // the character back off the point we were just told to be at.
@@ -555,7 +606,7 @@ namespace Game.Client
         }
 
         /// <summary>
-        /// SNAPSHOT INTERPOLATION: draw where the entity WAS <see cref="InterpolationDelay"/> ago,
+        /// SNAPSHOT INTERPOLATION: draw where the entity WAS <see cref="NetClock.Delay"/> ago,
         /// interpolated linearly between the two server positions that bracket that moment.
         ///
         /// What this replaces and why it mattered: the old code chased the newest position with
@@ -585,42 +636,11 @@ namespace Game.Client
             // the moment the two disagree by more than ReconcileSnapDistance.
             if (!_hasFrom) return;
 
-            // 🔴 SELF IS DELAYED TOO, and that is not the regression it looks like.
-            //
-            // Self was given a delay of ZERO to keep the tap responsive. But zero delay makes this
-            // interpolation DEGENERATE: renderAt is now, and _toTime is the instant the newest sample
-            // arrived, so t is always 1. Self never interpolated at all — it jumped straight to each
-            // arriving position and sat there, a 10Hz staircase of ~0.25-unit hops. That is a
-            // permanent, visible jitter on every metre the SERVER moves you (an attack chase, the tail
-            // of a walk after a skill cancels the prediction) and it survived all three attempts at
-            // the rubber-band, because it was never the rubber-band.
-            //
-            // Responsiveness does not come from the delay any more — it comes from PREDICTION, which
-            // draws your own walks on your own clock. So self can afford to render the past like
-            // everything else for the motion it does not predict, and does.
-            float span = _toTime - _fromTime;
-
-            // 🔴 THE DELAY IS ONE SAMPLE INTERVAL, MEASURED — never a constant.
-            //
-            // This was `(Time.time - InterpolationDelay - _fromTime) / span` with a fixed 150ms delay,
-            // against samples arriving every 100ms and a buffer holding exactly TWO of them. Rendering
-            // 150ms in the past needs a sample at least 150ms old; the oldest one we keep is 100ms old.
-            // So at every arrival t clamped to 0 and the position FROZE for 50ms, then interpolated for
-            // 50ms, then froze again — starved half of every cycle.
-            //
-            // For self that was the visible bug: the base position is frozen while the prediction error
-            // keeps decaying, so the character slips BACKWARDS during the frozen half and jumps forward
-            // when it unfreezes. Walking with a step back on every frame, exactly as reported — and it
-            // was in the interpolator the whole time, not in the prediction anyone kept rewriting.
-            //
-            // Starting the segment at _toTime makes the lag exactly one inter-arrival interval, whatever
-            // that interval turns out to be: t = 0 (at _fromPos) the instant a sample lands, reaching
-            // _toPos one span later, just as the next one arrives. Self-adjusting, so a change to the
-            // server's send rate can never desynchronise it again. When an update is genuinely late the
-            // clamp holds at _toPos — the newest thing we actually know — instead of freezing at an
-            // older one.
-            float t = span > 0.0001f ? Mathf.Clamp01((Time.time - _toTime) / span) : 1f;
-            var basePos = Vector3.Lerp(_fromPos, _toPos, t);
+            // 🔑 EVERY ENTITY, SELF INCLUDED, IS DRAWN AT THE SAME SERVER MOMENT: NetClock.RenderTime, a fixed
+            // delay behind the newest tick. Responsiveness for self comes from PREDICTION, not from rendering
+            // self any sooner — a zero delay made the interpolation degenerate (a 10Hz staircase of hops), and a
+            // delay measured from packet arrival was the "fps is 60 but it jitters" of 0.271.0 (see _sTime).
+            var basePos = SampleAt(NetClock.RenderTime);
 
             if (!IsSelf)
             {
@@ -745,7 +765,9 @@ namespace Game.Client
             // Every parameter is optional. A prefab whose controller only has "Speed" gets walking and
             // nothing else rather than a console full of "parameter does not exist" — which matters
             // when the art is arriving one clip at a time.
-            if (_hasSpeed) _animator.SetFloat("Speed", speed);
+            // Damped (0.1s): the blend tree reads Speed every frame, and a raw per-frame value lets one short
+            // frame flick the legs between idle and walk — which reads as the animation itself jittering.
+            if (_hasSpeed) _animator.SetFloat("Speed", speed, 0.1f, dt);
             if (_actionLayer > 0) UpdateActionWeight();
 
             // Legs at the pace the ground actually moves. The blend tree picks WHICH cycle (walk or jog) but plays it at
@@ -958,5 +980,55 @@ namespace Game.Client
             else if (_animator.GetCurrentAnimatorStateInfo(_actionLayer).IsName("Casting"))
                 _animator.CrossFadeInFixedTime(_restState, 0.15f, _actionLayer);
         }
+    }
+
+    /// <summary>
+    /// 🔑 THE SERVER'S CLOCK, as this client can see it (0.271.0). Every <see cref="SnapshotDelta"/> carries the
+    /// tick it describes; this turns that into seconds and tracks how far the server runs ahead of
+    /// <c>Time.timeAsDouble</c>, so <see cref="EntityView"/> can draw every entity at one server moment.
+    ///
+    /// <para>The offset follows the FASTEST packets: a sample that says the server is further ahead than we
+    /// thought is believed quickly (that packet simply had a clean path), one that says it is behind is
+    /// believed slowly (it was most likely delayed). So a burst of late packets moves nothing, and the slow
+    /// half still absorbs real drift between the server's 10Hz timer and this device's clock.</para>
+    /// </summary>
+    public static class NetClock
+    {
+        /// <summary>How far behind the newest tick we draw. One tick (100ms) to have a sample on both sides,
+        /// plus 100ms for a packet to arrive late without the buffer running dry. Too small and a late packet
+        /// is a visible stall again; every millisecond more is a millisecond the world lags your taps.</summary>
+        public const double Delay = 0.2;
+
+        private static long _lastTick;
+        private static double _offset;
+        private static bool _has;
+
+        /// <summary>The server's time now, in seconds (tick × 0.1 — a double holds that to the microsecond for
+        /// centuries of uptime). Before any stamped delta (an older server) it is the local clock, so
+        /// arrival-time playback still works.</summary>
+        public static double Now => Time.timeAsDouble + (_has ? _offset : 0.0);
+
+        /// <summary>The moment every entity is drawn at.</summary>
+        public static double RenderTime => Now - Delay;
+
+        /// <summary>A delta arrived stamped <paramref name="tick"/>: learn from it, and return the server time
+        /// its positions belong to. 0 = an unstamped (older) server: answered with <see cref="Now"/>.</summary>
+        public static double Observe(long tick)
+        {
+            if (tick <= 0) return Now;
+            // A tick going BACKWARDS is a restarted server: learn the offset afresh (EntityView.PushSample
+            // drops a timeline that jumps back the same way).
+            if (tick < _lastTick) _has = false;
+            _lastTick = tick;
+
+            double server = tick * (double)GameConstants.TickSeconds;
+            double sample = server - Time.timeAsDouble;
+            if (!_has) { _offset = sample; _has = true; }
+            else _offset += (sample - _offset) * (sample > _offset ? 0.5 : 0.01);
+            return server;
+        }
+
+        /// <summary>Forget the server (logout / a new connection): the next delta defines the clock afresh.</summary>
+        public static void Reset() { _lastTick = 0; _has = false; }
     }
 }

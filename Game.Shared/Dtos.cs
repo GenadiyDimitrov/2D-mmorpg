@@ -166,8 +166,12 @@ public record EntityLean(
 ///   Updates  = entities still in view whose dynamic fields changed — lean.
 ///   Despawns = entities that LEFT view (or were removed).
 /// An entity absent from all three is UNCHANGED — the client keeps what it has (unlike WorldSnapshot,
-/// where absence meant "removed"). This stops re-sending ~11 static fields per entity 10×/second.</summary>
-public record SnapshotDelta(EntityDto[] Spawns, EntityLean[] Updates, Guid[] Despawns);
+/// where absence meant "removed"). This stops re-sending ~11 static fields per entity 10×/second.
+///
+/// <para><c>Tick</c> = the server tick this frame describes. The client plays positions back on THIS clock,
+/// never on arrival time: a phone's network bunches packets, and timing a move by when its packet landed made
+/// every mob speed up and stall (0.271.0). 0 = an older server, and the client falls back to arrival time.</para></summary>
+public record SnapshotDelta(EntityDto[] Spawns, EntityLean[] Updates, Guid[] Despawns, long Tick = 0);
 
 /// <summary>Server -&gt; Client: one planted totem, as the ground needs to draw it.
 ///

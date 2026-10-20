@@ -18938,7 +18938,8 @@ public partial class GameLoopService : BackgroundService
                 new SnapshotDelta(
                     spawns?.ToArray() ?? Array.Empty<EntityDto>(),
                     updates?.ToArray() ?? Array.Empty<EntityLean>(),
-                    despawns?.ToArray() ?? Array.Empty<Guid>())));
+                    despawns?.ToArray() ?? Array.Empty<Guid>(),
+                    _tick)));
         }
 
         // Drop diff state for connections that are gone (logout / disconnect), so it doesn't leak.

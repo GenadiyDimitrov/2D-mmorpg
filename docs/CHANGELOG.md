@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.270.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.271.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,27 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-16 (latest) — 0.270.1: bag cells are coloured by GRADE, commons get a grey frame, T/B/U in the corner (`BL-347`)
+## 2026-10-20 (latest) — 0.271.0: smooth movement on a jittery network; the farm ring is a golden wall
+
+APK + server (the snapshot gains a field; both directions stay compatible, no protocol bump, no `game.db` delete). Owner:
+*"mobs animation jitter - fps is 60 but the animation jitters -> when char get to the juttering mobs he statr to jutter
+as well"* and *"can we make the "auto-farm white ground ring" like short cilinder semi-visible golden or green ?"*.
+
+- **Why mobs jittered at 60 fps:** a move was timed by when its packet *arrived*. Each segment lasted as long as the gap
+  between two packets landing. A phone's network delivers in bursts (two deltas in one frame, then nothing for 200 ms), so
+  a mob raced through one segment and froze in the next. Your own character joined in near mobs because in a melee chase
+  the server moves you, not the prediction.
+- **Fix:** every `SnapshotDelta` now carries the server **tick**. The client keeps a short buffer of positions stamped with
+  server time, tracks the server's clock (`NetClock`), and draws every entity at one moment **0.2 s behind** the newest
+  tick (was about 0.1 s). That 0.1 s is what lets a packet arrive late without a stall. Since the server sends only what
+  changed, a gap in an entity's updates is read as standing still.
+- The animator's walk/idle speed is damped over 0.1 s, so one uneven frame no longer flicks the legs.
+- **The auto-farm ring** is now a knee-high **golden see-through wall**, strongest at the ground and fading upward. The
+  old line was meant to be yellow but drew white: URP's Unlit ignores vertex colour.
+- **A miss aggroes** (re-checked, no change): on a local server a level-1 bot's first swing on a level-40 Goblin Raider
+  missed, and the mob struck back in the same tick. The 0.214.2 fix holds for basic attacks. See `168c`.
+
+## 2026-10-16 — 0.270.1: bag cells are coloured by GRADE, commons get a grey frame, T/B/U in the corner (`BL-347`)
 
 APK + server restart (the version gates the handshake; no server code changed, no `game.db` delete). Owner, on 0.269.0:
 *"now if i have 10 mythic stafs i cannot see which is which grade ... color them like that -> F,E,D,C,B,A,S (mythics) ->

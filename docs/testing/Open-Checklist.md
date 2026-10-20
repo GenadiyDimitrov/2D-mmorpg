@@ -25,6 +25,22 @@
 
 ---
 
+## §168 — 0.271.0: smooth movement on a jittery network; the farm ring is a golden wall (2026-10-20)
+
+⚠ **Server restart + new APK.**
+
+- `168a` [ ] - Stand among walking mobs on the phone (mobile data is the harshest test): do they walk smoothly now, with
+  no speed-up/freeze? Fight one in melee: does your own character stay smooth while chasing it? Everything now lags
+  0.2 s behind the server instead of ~0.1 s. Do you notice it? ->
+- `168b` [ ] - Auto-farm on, range toggle on: the circle is a knee-high golden wall, see-through, fading upward. Height,
+  colour and strength OK? (Name it: taller/shorter, green instead, stronger/fainter.) ->
+- `168c` [ ] ? - **"1st miss still aggro mobs"**: I could not reproduce it. On a local server a level-1 bot's first swing
+  on a level-40 Goblin Raider missed, and the mob hit back in the same tick. What exactly did you see? (Which class,
+  weapon, a skill or a basic attack, auto-farm or manual, did the mob stand still or walk away?) Or did you mean the
+  opposite: that a miss should NOT aggro? ->
+
+---
+
 ## §167 — 0.270.1: bag cells coloured by grade, grey frame on commons, T/B/U corner (`BL-347`, 2026-10-16)
 
 ⚠ **Server restart + new APK** (version bump only on the server).
