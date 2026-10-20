@@ -43,6 +43,7 @@ section{display:flex;flex-direction:column;gap:16px}
 .sheet{background:var(--void);border-radius:6px;padding:8px;color:var(--void-ink)}
 .sheet svg{display:block;width:100%;height:auto;touch-action:none}
 .scroll{overflow-x:auto}
+#boardWrap{max-height:min(70vh,720px);overflow:auto;overscroll-behavior:contain}
 .seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--rule);border-radius:5px;overflow:hidden}
 .seg button{font:500 13px/1 var(--mono);padding:8px 11px;border:0;background:var(--card);color:var(--ink);cursor:pointer}
 .seg button+button{border-left:1px solid var(--rule)}
@@ -122,7 +123,7 @@ td:first-child{white-space:nowrap;font-weight:700}
       <span class="num" id="boardSizeNote"></span>
     </div>
     <div class="split">
-      <div class="sheet scroll"><svg id="boardSvg" viewBox="0 0 400 300" role="img" aria-label="World grid board"></svg></div>
+      <div class="sheet scroll" id="boardWrap"><svg id="boardSvg" viewBox="0 0 400 300" role="img" aria-label="World grid board"></svg></div>
       <div class="side">
         <div class="panel" id="panel">
           <p class="hint" id="panelEmpty">Select a cell to edit it, or a + to add one.</p>
