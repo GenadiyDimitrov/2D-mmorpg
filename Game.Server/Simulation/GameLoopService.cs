@@ -16074,7 +16074,7 @@ public partial class GameLoopService : BackgroundService
             caster.Engaged = true;
         }
 
-        Retaliate(target, caster);
+        Retaliate(target, caster);   // a skill ALWAYS provokes — landed, missed or resisted (`168c`)
     }
 
     private void Retaliate(Entity victim, Entity attacker)
@@ -16082,8 +16082,9 @@ public partial class GameLoopService : BackgroundService
         // Being targeted by an offensive action always provokes a mob — even a non-damaging
         // one (debuff/CC) — so add a little threat (damage adds the rest in ApplyDamage).
         // Training dummies never aggro.
-        // 🔴 NOT 1 (§104.1): 1 sat exactly on ThreatFloor, so the first decay pruned it and a MISS never
-        //    held aggro — the mob answered only the first swing that landed. See GameConstants.ProvokeThreat.
+        // 🔴 NOT 1 (§104.1): 1 sat exactly on ThreatFloor, so the first decay pruned it. See GameConstants.ProvokeThreat.
+        // ⚠ A MISSED BASIC ATTACK NEVER GETS HERE (`168c`, 0.271.1): ResolveBasicAttack and the cleave skip this call
+        //   when the swing missed. A SKILL always comes here, landed, missed or resisted — his rule, both halves.
         if (victim.Kind == EntityKind.Mob && !victim.Dead && !victim.TrainingDummy)
             AddThreat(victim, attacker, GameConstants.ProvokeThreat);
 
@@ -16673,9 +16674,12 @@ public partial class GameLoopService : BackgroundService
         if (attacker.Kind == EntityKind.Player)
             AdvanceActionQuests(attacker, QuestActions.UseSkill);
 
-        ResolveBasicSwing(attacker, target);
-
-        Retaliate(target, attacker);
+        // 🔑 A MISS IS NOT NOTICED (owner, 2026-10-20: *"the mob should NOT aggro a player that misses it until the 1st
+        //    successful hit"* … *"only basick attack .. landed/resistes skills should aggro"*). This reverses 0.214.2 for
+        //    the BASIC ATTACK only, which had read his *"if i miss 10 times and then hit .. he will start to attack at the
+        //    hit"* as a complaint. It was the rule. A skill still provokes whatever it did (AfterOffensiveSkill).
+        if (ResolveBasicSwing(attacker, target))
+            Retaliate(target, attacker);
 
         if (target.Hp <= 0)
             Kill(target, attacker);
@@ -16712,8 +16716,7 @@ public partial class GameLoopService : BackgroundService
             if (extra <= 0) break;
             if (ReferenceEquals(victim, target) || victim.Dead) continue;
             extra--;
-            ResolveBasicSwing(attacker, victim);
-            Retaliate(victim, attacker);
+            if (ResolveBasicSwing(attacker, victim)) Retaliate(victim, attacker);   // a miss is not noticed (`168c`)
             if (victim.Hp <= 0) Kill(victim, attacker);
         }
     }

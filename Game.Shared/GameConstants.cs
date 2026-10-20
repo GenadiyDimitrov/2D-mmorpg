@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.271.0";
+    public const string GameVersion = "0.271.1";
 
     /// <summary>The game's name and full title, as the chat header opens every session with (owner, 2026-10-14).</summary>
     public const string GameName = "Vardelar";
@@ -668,12 +668,14 @@ public static class GameConstants
     /// a long tail of entities that once threw a debuff and left.</summary>
     public const float ThreatFloor = 1f;
 
-    /// <summary>§104.1 — the threat a hostile act that dealt NO damage leaves behind: a MISSED swing, a
-    /// debuff, a CC (<c>Retaliate</c>). It was a flat 1 — EQUAL to <see cref="ThreatFloor"/> — so the first
-    /// one-second decay (×0.99) took it to 0.99 and pruned it, the mob lost its only target and went home.
-    /// Owner, 2026-09-25: *"if i miss 10 times and then hit .. he will start to attack at the hit (11th
-    /// time)"*. 10 outlives the floor for ~4 minutes of decay; walking out of view or past the leash still
-    /// ends the fight the ordinary way, and against real damage (hundreds a hit) it never decides a table.</summary>
+    /// <summary>§104.1 — the threat a hostile act that dealt NO damage leaves behind: any SKILL that missed, was
+    /// resisted or landed no damage — a debuff, a CC, a taunt (<c>Retaliate</c>). It was a flat 1 — EQUAL to <see cref="ThreatFloor"/> — so the first one-second
+    /// decay (×0.99) pruned it. 10 outlives the floor for ~4 minutes of decay; walking out of view or past the
+    /// leash still ends the fight the ordinary way, and against real damage it never decides a table.
+    /// ⚠ A MISSED BASIC ATTACK IS NOT ONE OF THESE (owner, 2026-10-20, `168c`): *"the mob should NOT aggro a player that misses it
+    /// until the 1st successful hit"*. 0.214.2 had read his *"if i miss 10 times and then hit .. he will start to
+    /// attack at the hit (11th time)"* as a bug report and made a miss provoke; 0.271.1 put it back for the swing only
+    /// (*"only basick attack .. landed/resistes skills should aggro"*).</summary>
     public const float ProvokeThreat = 10f;
 
     /// <summary>What a mob that walked to YOU owes you, as a fraction of its own max HP.

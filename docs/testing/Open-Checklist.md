@@ -25,7 +25,7 @@
 
 ---
 
-## §168 — 0.271.0: smooth movement on a jittery network; the farm ring is a golden wall (2026-10-20)
+## §168 — 0.271.0-0.271.1: smooth movement on a jittery network; the farm ring is a golden wall; a missed swing does not aggro (2026-10-20)
 
 ⚠ **Server restart + new APK.**
 
@@ -34,10 +34,11 @@
   0.2 s behind the server instead of ~0.1 s. Do you notice it? ->
 - `168b` [ ] - Auto-farm on, range toggle on: the circle is a knee-high golden wall, see-through, fading upward. Height,
   colour and strength OK? (Name it: taller/shorter, green instead, stronger/fainter.) ->
-- `168c` [ ] ? - **"1st miss still aggro mobs"**: I could not reproduce it. On a local server a level-1 bot's first swing
-  on a level-40 Goblin Raider missed, and the mob hit back in the same tick. What exactly did you see? (Which class,
-  weapon, a skill or a basic attack, auto-farm or manual, did the mob stand still or walk away?) Or did you mean the
-  opposite: that a miss should NOT aggro? ->
+- `168c` [ ] - **0.271.1 (server):** a passive mob ignores your basic-attack MISSES and turns on you at the first swing that
+  lands. A skill still aggroes whether it lands, misses or is resisted. Try a passive mob a few levels above you, so
+  misses are common. ->
+  (answered: *"the mob should NOT aggro a player that misses it until the 1st successful hit .."* · *"only basick attack
+  .. landed/resistes skills should aggro"*)
 
 ---
 

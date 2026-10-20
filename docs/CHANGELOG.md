@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.271.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.271.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,21 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-20 (latest) — 0.271.0: smooth movement on a jittery network; the farm ring is a golden wall
+## 2026-10-20 (latest) — 0.271.1: a missed BASIC ATTACK does not aggro
+
+Server only (no APK, no `game.db` delete). Owner, on `168c`: *"the mob should NOT aggro a player that misses it until the
+1st successful hit .."* and *"only basick attack .. landed/resistes skills should aggro"*.
+
+- **A basic swing that misses no longer provokes the mob.** No threat, no turn. The creature answers the first swing that
+  lands. The blunt cleave's extra victims follow the same rule. This undoes 0.214.2, which read his *"if i miss 10 times
+  and then hit .. he will start to attack at the hit"* as a bug. It was the rule.
+- **Skills are unchanged:** a skill provokes whether it lands, misses or is resisted. A blow that fails into a basic swing
+  (`BL-193`) is still a skill.
+- Checked live: a level-1 bot missed a level-40 Goblin Raider seven times without a reaction. Its eighth swing landed and
+  the Raider struck back in the same tick.
+- An aggressive mob still attacks on sight. That is its own scan, not your swing.
+
+## 2026-10-20 — 0.271.0: smooth movement on a jittery network; the farm ring is a golden wall
 
 APK + server (the snapshot gains a field; both directions stay compatible, no protocol bump, no `game.db` delete). Owner:
 *"mobs animation jitter - fps is 60 but the animation jitters -> when char get to the juttering mobs he statr to jutter
@@ -46,7 +60,8 @@ as well"* and *"can we make the "auto-farm white ground ring" like short cilinde
 - **The auto-farm ring** is now a knee-high **golden see-through wall**, strongest at the ground and fading upward. The
   old line was meant to be yellow but drew white: URP's Unlit ignores vertex colour.
 - **A miss aggroes** (re-checked, no change): on a local server a level-1 bot's first swing on a level-40 Goblin Raider
-  missed, and the mob struck back in the same tick. The 0.214.2 fix holds for basic attacks. See `168c`.
+  missed, and the mob struck back in the same tick. The 0.214.2 fix holds for basic attacks. See `168c`. (Reversed for
+  the basic attack in 0.271.1: that was not what he wanted.)
 
 ## 2026-10-16 — 0.270.1: bag cells are coloured by GRADE, commons get a grey frame, T/B/U in the corner (`BL-347`)
 
