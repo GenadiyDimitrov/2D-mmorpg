@@ -84,7 +84,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{display:inline-flex;align-items:center;gap:6px;font-size:14px;border:1px solid var(--rule);border-radius:999px;padding:3px 4px 3px 10px;background:var(--bg)}
 .chip button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:2px 6px}
-.tile,.slot,.item{cursor:pointer}
+.tile,.slot,.item,.nbr{cursor:pointer}
+.nbr:hover,.nbr:focus-visible{opacity:.8;outline:none}
 .slot:hover rect{stroke:var(--void-ink)}
 table{border-collapse:collapse;width:100%;font-size:15px}
 th,td{text-align:left;vertical-align:top;padding:7px 8px;border-bottom:1px solid var(--rule)}
@@ -198,7 +199,7 @@ td:first-child{white-space:nowrap;font-weight:700}
             <span class="status" id="edStatus"></span>
           </div>
           <div class="legend" id="edLegend"></div>
-          <p class="num">Positions are in game units from the cell's top-left corner; the faint grid is 1,000 units. The biome still scatters its own props everywhere. A scatter area thickens that (forest, rocks) or clears it.</p>
+          <p class="num">Click a neighbour's strip at the rim to open that cell here. Positions are in game units from the cell's top-left corner; the faint grid is 1,000 units. The biome still scatters its own props everywhere. A scatter area thickens that (forest, rocks) or clears it.</p>
         </div>
       </div>
     </div>
@@ -638,7 +639,15 @@ function drawEditor() {
   // neighbours' ground at the rim
   for (const [dx,dy,rx,ry,rw,rh] of [[0,-1,0,-M,S,M],[1,0,S,0,M,S],[0,1,0,S,S,M],[-1,0,-M,0,M,S]]) {
     const nb = cells.get(key(x+dx,y+dy));
-    el("rect", {x:rx, y:ry, width:rw, height:rh, fill: nb ? biomeColor(nb.biome) : "#0E0E10", opacity: nb ? .45 : 1}, svg);
+    const r = el("rect", {x:rx, y:ry, width:rw, height:rh, fill: nb ? biomeColor(nb.biome) : "#0E0E10", opacity: nb ? .45 : 1}, svg);
+    if (!nb) continue;
+    // a neighbour's strip is a button: it opens that cell here
+    Object.entries({class:"nbr", tabindex:0, role:"button", "aria-label":`Open ${nb.name || "the neighbouring cell"}`}).forEach(([k,v]) => r.setAttribute(k, v));
+    el("title", {}, r).textContent = `Open ${nb.name || "cell"} (${x+dx}, ${y+dy})`;
+    const go = () => { const sy = scrollY; select(x+dx, y+dy); scrollTo(scrollX, sy); };
+    r.addEventListener("pointerdown", e => e.stopPropagation());
+    r.addEventListener("click", go);
+    r.addEventListener("keydown", e => { if (e.key==="Enter"||e.key===" ") { e.preventDefault(); go(); } });
   }
   el("rect", {x:0, y:0, width:S, height:S, fill:biomeColor(c.biome)}, svg);
   const g1 = el("g", {stroke:"#FFFFFF", "stroke-opacity":.08, "stroke-width":S/500}, svg);
@@ -655,7 +664,7 @@ function drawEditor() {
       el("line", {x1:vert?L[0]:mid+gap,y1:vert?mid+gap:L[1],x2:L[2],y2:L[3], stroke:"#0B0B0D", "stroke-width":S/90}, svg); }
     const lbl = nb ? `${nb.name} · ${kind === "pass" ? "passage" : kind}` : "edge of the map";
     const pos = {n:[S/2,-M*0.35,0],s:[S/2,S+M*0.62,0],e:[S+M*0.6,S/2,90],w:[-M*0.4,S/2,-90]}[dir];
-    txt(svg, {x:pos[0], y:pos[1], "text-anchor":"middle", fill:"#E6E8E4", "font-size":FS*0.8, "font-family":ff, transform:`rotate(${pos[2]} ${pos[0]} ${pos[1]})`}, lbl);
+    txt(svg, {x:pos[0], y:pos[1], "text-anchor":"middle", fill:"#E6E8E4", "font-size":FS*0.8, "font-family":ff, "pointer-events":"none", transform:`rotate(${pos[2]} ${pos[0]} ${pos[1]})`}, lbl);
   }
   const sel = s => selItem && selItem.list === s.list && selItem.id === s.id;
   const hit = (g, ref) => { g.setAttribute("class","item"); g.addEventListener("pointerdown", e => startDrag(e, ref)); };
