@@ -413,6 +413,10 @@ row → the code moves; a skill is retuned in chat → the row moves in the SAME
   column (`DEBUFF ONLY (2)` vs `dmg+1 debuff`) is that axis. ⚠ It is **not** an effect-type rule —
   an earlier five-bucket version keyed on the effect and he rejected it.
 
+## Published pages (claude.ai artifacts)
+`docs/design/Artifacts.md` lists every published page with its link and source file. **A newly published page gets its
+row there in the same commit.** They are private to the owner until he shares them from the page's Share menu.
+
 ## Style
 Keep changes consistent with the above. Prefer C# .NET idioms. For web/UI work the
 owner prefers ASP.NET + HTML/CSS, JavaScript only as a last resort.
