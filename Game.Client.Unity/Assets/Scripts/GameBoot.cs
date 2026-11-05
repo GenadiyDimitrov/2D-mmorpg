@@ -1171,6 +1171,7 @@ namespace Game.Client
             // -1 would mean "as fast as the platform allows", which on mobile means cooking the
             // battery for frames nobody asked for. 60 is the honest target for a game this simple.
             Application.targetFrameRate = 60;
+            DisplaySettings.Load();   // `BL-364`: the player's cap, vsync and render scale override that 60
 
             // `BL-268` — LANDSCAPE BOTH WAYS, NEVER PORTRAIT (owner, 2026-09-23). ProjectSettings already
             // allowed both landscapes, but with `useOSAutorotation: 1` Unity declares `userLandscape`,

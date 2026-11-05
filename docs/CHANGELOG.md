@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.273.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.273.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,26 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-11-05 (latest) — 0.273.1: every key is rebindable, and WASD / the arrows walk (`BL-364` items 1-2)
+## 2026-11-05 (latest) — 0.273.2: render scale, frame-rate cap, fullscreen, mouse settings, and a smaller desktop start (`BL-364` items 5-9)
+
+Client only: no server change, no `game.db` delete. These were the five items on my half of the list, which you kept.
+`BL-364` is now fully built. All of the settings below live in the new `DisplaySettings.cs`, are saved on the device, and
+are applied at start.
+
+- **Render scale 0.5-1.0×** (all platforms, the phone too). The 3D world is drawn at that fraction of the screen's
+  pixels and stretched. The HUD stays sharp. It is the biggest frame-rate lever on a large browser window.
+- **Frame rate:** 30 / 60 / 120, plus "unlimited" on Windows. The phone offers 30 / 60 / 120. **On Windows, VSync**
+  is a toggle of its own; with it on, the monitor sets the pace and the cap is ignored. ❓ **The browser's default changed
+  from 60 to "screen rate"** (`targetFrameRate = -1`), because that is Unity's advice for WebGL. Any fixed number in a
+  browser runs on a timer, which paces frames less evenly than the screen's own refresh. Windows and the phone keep 60.
+- **Desktop section** (Windows and a desktop browser): *Fullscreen* (on Windows a borderless full-screen window; in the
+  browser the page's fullscreen, which Esc leaves); *Size* on Windows, which steps through your monitor's sizes from 1024
+  wide up; *Mouse turn speed* and *Wheel zoom speed* (0.25-3×); *Invert mouse Y*. The mouse settings affect only the
+  mouse. A finger's drag and a pinch are unchanged.
+- **A smaller start on a desktop:** UI size 0.8 and skill bar 0.8 until you move those sliders. The phone keeps 1.
+  *Reset to defaults* now also resets the settings above, and on a desktop it returns to 0.8.
+
+## 2026-11-05 — 0.273.1: every key is rebindable, and WASD / the arrows walk (`BL-364` items 1-2)
 
 Client only: no server change, no `game.db` delete. Owner: *"I want settings for shortcuts -> I want to be able to change
 the shortcuts of hotbar (main + additional) - as well as arrow/wasd keys for move"*.

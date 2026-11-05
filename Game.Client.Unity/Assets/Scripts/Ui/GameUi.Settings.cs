@@ -1,3 +1,4 @@
+using System.Linq;
 using Game.Shared;
 using TMPro;
 using UnityEngine;
@@ -45,6 +46,11 @@ namespace Game.Client
         private const float BarScaleMin = 1.25f, BarScaleMax = 5f, BarScaleDefault = 2.5f;
         /// <summary>The stored bar scale the slider calls ×1.</summary>
         private const float BarScaleShown = 2.5f;
+
+        /// <summary>`BL-364` item 9 — a DESKTOP starts smaller: the same 800-unit layout on a 1080-tall monitor is a phone
+        /// layout blown up across a desk. 0.8 UI and a 0.8 bar until the player moves the sliders; the phone keeps 1.</summary>
+        private static float UiScaleFirst => HoverTip.Wanted ? 0.8f : 1f;
+        private static float BarScaleFirst => HoverTip.Wanted ? 2f : BarScaleDefault;
         /// <summary>What skill-bar ×1 is in the bar's own build units (SlotSize 78 etc.).</summary>
         private const float BarScaleBase = 1f / 3f;
         private float _uiScale = 1f;
@@ -72,9 +78,9 @@ namespace Game.Client
         /// player's chosen scale rather than built at the default and resized a frame later.</summary>
         private void LoadLookPrefs()
         {
-            _uiScale = Mathf.Clamp(PlayerPrefs.GetFloat(PrefUiScale, 1f), UiScaleMin, UiScaleMax);
+            _uiScale = Mathf.Clamp(PlayerPrefs.GetFloat(PrefUiScale, UiScaleFirst), UiScaleMin, UiScaleMax);
             UiKit.Reference = new Vector2(UiKit.Reference.x, UiKit.ReferenceHeightAtX1 / _uiScale);
-            _barScale = Mathf.Clamp(PlayerPrefs.GetFloat(PrefBarScale, BarScaleDefault), BarScaleMin, BarScaleMax);
+            _barScale = Mathf.Clamp(PlayerPrefs.GetFloat(PrefBarScale, BarScaleFirst), BarScaleMin, BarScaleMax);
 
             EntityManager.EntityScale = PlayerPrefs.GetFloat(PrefEntity, EntityManager.EntityScale);
             NameplateHeight = PlayerPrefs.GetFloat(PrefPlate, NameplateHeight);
@@ -319,6 +325,28 @@ namespace Game.Client
             _extraSlotsToggle = extraSlots;
             y -= 48f;
 
+            // `BL-364` items 5-6 — render scale and the frame-rate cap, on every platform (the phone too).
+            Row(inner, ref y, UiKit.SliderRow(inner, "Render scale (x)", DisplaySettings.RenderScaleMin,
+                DisplaySettings.RenderScaleMax, DisplaySettings.RenderScale, "0.00", v =>
+                {
+                    DisplaySettings.SetRenderScale(v);
+                    PlayerPrefs.SetFloat(DisplaySettings.RenderScalePref, v);
+                }));
+            _fpsToggle = SettingsButton(inner, 18f, y, () =>
+            {
+                var steps = DisplaySettings.FpsSteps;
+                int next = steps[(System.Array.IndexOf(steps, DisplaySettings.FpsCap) + 1) % steps.Length];
+                DisplaySettings.SetFpsCap(next);
+                PlayerPrefs.SetInt(DisplaySettings.FpsPref, next);
+            });
+            if (DisplaySettings.IsWindows)
+                _vsyncToggle = SettingsButton(inner, 292f, y, () =>
+                {
+                    DisplaySettings.SetVSync(!DisplaySettings.VSync);
+                    PlayerPrefs.SetInt(DisplaySettings.VSyncPref, DisplaySettings.VSync ? 1 : 0);
+                });
+            y -= 48f;
+
             // `BL-364` — the DESKTOP section: shown only where there is a mouse and keyboard (Windows, a desktop browser).
             if (HoverTip.Wanted)
             {
@@ -329,6 +357,34 @@ namespace Game.Client
                 var keys = UiKit.TextButton(inner, "Keys…", () => OpenKeysWindow(), 15f);
                 UiKit.Place(UiKit.Rect(keys.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                             new Vector2(18f, y), new Vector2(260f, 38f));
+                // Item 7. The state flips a frame later (a browser asks the page first), so the label follows in
+                // RefreshDisplayLabels, which watches the screen rather than trusting the click.
+                _fullscreenToggle = SettingsButton(inner, 292f, y, DisplaySettings.ToggleFullscreen);
+                y -= 48f;
+                if (DisplaySettings.IsWindows)
+                {
+                    _resolutionToggle = SettingsButton(inner, 18f, y, DisplaySettings.NextResolution);
+                    y -= 48f;
+                }
+
+                // Item 8 — the mouse.
+                Row(inner, ref y, UiKit.SliderRow(inner, "Mouse turn speed (x)", DisplaySettings.MouseScaleMin,
+                    DisplaySettings.MouseScaleMax, DisplaySettings.TurnSpeed, "0.00", v =>
+                    {
+                        DisplaySettings.TurnSpeed = v;
+                        PlayerPrefs.SetFloat(DisplaySettings.TurnPref, v);
+                    }));
+                Row(inner, ref y, UiKit.SliderRow(inner, "Wheel zoom speed (x)", DisplaySettings.MouseScaleMin,
+                    DisplaySettings.MouseScaleMax, DisplaySettings.WheelSpeed, "0.00", v =>
+                    {
+                        DisplaySettings.WheelSpeed = v;
+                        PlayerPrefs.SetFloat(DisplaySettings.WheelPref, v);
+                    }));
+                _invertToggle = SettingsButton(inner, 18f, y, () =>
+                {
+                    DisplaySettings.InvertY = !DisplaySettings.InvertY;
+                    PlayerPrefs.SetInt(DisplaySettings.InvertPref, DisplaySettings.InvertY ? 1 : 0);
+                });
                 y -= 48f;
             }
             content.sizeDelta = new Vector2(0f, -y);   // the scroll's whole height: down to the last row
@@ -343,14 +399,15 @@ namespace Game.Client
                 foreach (var key in new[] { PrefPitch, PrefYaw,
                                             PrefEntity, PrefPlate, PrefUiScale, PrefBarScale, PrefDamage,
                                             PrefZones, PrefTicks, PrefBarShape, PrefExtraBars, PropScatter.Pref, DayNight.ShadowPref, DayNight.NightPref,
-                                            DayNight.ViewPref, DayNight.EntityPref, PrefGameInfo, PrefGameInfoX, PrefGameInfoY })
+                                            DayNight.ViewPref, DayNight.EntityPref, PrefGameInfo, PrefGameInfoX, PrefGameInfoY }
+                                            .Concat(DisplaySettings.AllPrefs))
                     PlayerPrefs.DeleteKey(key);
                 PlayerPrefs.Save();
                 // The two sizes come back at once — they are the ones that can make the game unusable.
                 // The rest (camera, shape...) still waits for a restart, as before.
                 // (setting the slider runs its handler, so the label, the live apply and the pref follow)
-                _uiScaleSlider.value = 1f;
-                _barScaleSlider.value = BarScaleDefault / BarScaleShown;
+                _uiScaleSlider.value = UiScaleFirst;
+                _barScaleSlider.value = BarScaleFirst / BarScaleShown;
                 ClientLog.Info("Look settings reset — UI and skill bar size now, the rest after a restart.");
             }, 16f);
             UiKit.Place(UiKit.Rect(reset.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
@@ -401,6 +458,7 @@ namespace Game.Client
         private void SyncCameraSliders()
         {
             var rig = Boot != null ? Boot.CameraRig : null;
+            WatchDisplayLabels();   // `BL-364`
             if (rig == null || _pitchSlider == null || !_settingsPanel.gameObject.activeSelf) return;
             if (Mathf.Abs(_pitchSlider.value - rig.Pitch) > 0.5f) _pitchSlider.value = rig.Pitch;
             if (Mathf.Abs(Mathf.DeltaAngle(_yawSlider.value, rig.Yaw)) > 0.5f) _yawSlider.value = rig.Yaw;
@@ -439,6 +497,7 @@ namespace Game.Client
                 DayNight.EntityDistance);
             if (DayNight.EntityReach < DayNight.EntityDistance) ent += " (world " + Km(DayNight.EntityReach) + ")";
             UiKit.SetButtonText(_entityDistToggle, ent);
+            RefreshDisplayLabels();
         }
 
         /// <summary>0.270.0 — a distance step as the button reads it: "Normal 10k".</summary>
@@ -447,6 +506,41 @@ namespace Game.Client
 
         /// <summary>3000 → "3k", 2750 → "2.75k".</summary>
         private static string Km(float v) => (v / 1000f).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "k";
+
+        // ----- `BL-364` display + mouse rows ----------------------------------------------------
+
+        private Button _fpsToggle, _vsyncToggle, _fullscreenToggle, _resolutionToggle, _invertToggle;
+        private Vector3Int _displaySeen = new Vector3Int(-1, -1, -1);   // width, height, fullscreen the labels were drawn for
+
+        /// <summary>A 260-wide toggle/cycle button at (x, y) whose click is followed by a label refresh.</summary>
+        private Button SettingsButton(Transform parent, float x, float y, System.Action onClick)
+        {
+            var b = UiKit.TextButton(parent, "", () => { onClick(); RefreshSettingsLabels(); }, 15f);
+            UiKit.Place(UiKit.Rect(b.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(x, y), new Vector2(260f, 38f));
+            return b;
+        }
+
+        private void RefreshDisplayLabels()
+        {
+            _displaySeen = new Vector3Int(Screen.width, Screen.height, Screen.fullScreen ? 1 : 0);
+            if (_fpsToggle != null)
+                UiKit.SetButtonText(_fpsToggle, "Frame rate: " + DisplaySettings.FpsLabel
+                                    + (DisplaySettings.VSync ? " (vsync)" : ""));
+            if (_vsyncToggle != null) UiKit.SetButtonText(_vsyncToggle, DisplaySettings.VSync ? "VSync: ON" : "VSync: off");
+            if (_fullscreenToggle != null)
+                UiKit.SetButtonText(_fullscreenToggle, Screen.fullScreen ? "Fullscreen: ON" : "Fullscreen: off");
+            if (_resolutionToggle != null) UiKit.SetButtonText(_resolutionToggle, "Size: " + DisplaySettings.ResolutionLabel);
+            if (_invertToggle != null) UiKit.SetButtonText(_invertToggle, DisplaySettings.InvertY ? "Invert mouse Y: ON" : "Invert mouse Y: off");
+        }
+
+        /// <summary>Fullscreen and the window size change a frame (or a browser prompt) after the click, and Esc / the
+        /// window's own buttons change them without one — so an open Settings redraws them when the screen changes.</summary>
+        private void WatchDisplayLabels()
+        {
+            if (_settingsPanel == null || !_settingsPanel.gameObject.activeSelf) return;
+            if (_displaySeen != new Vector3Int(Screen.width, Screen.height, Screen.fullScreen ? 1 : 0)) RefreshDisplayLabels();
+        }
 
         private static void Row(Transform parent, ref float y, Slider slider)
         {

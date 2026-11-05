@@ -298,7 +298,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-361` | ⏸ | **An iOS client** — needs a Mac (or cloud Mac) + Xcode, an Apple Developer account ($99/yr), TestFlight for testers (HTTPS, which iOS demands, is already live) | ops |
 | `BL-362` | 🔵 | **Drop groups the IG way** — A: show group % + shares inside (display); B: author them that way; C: bake the formulas into a per-mob odds table (formula/hand rows) | loot |
 | `BL-363` | 🔴 | **A browser (WebGL) client** — test build BUILT (0.272.0, `/play/`, logs in + moves, 60 MB); owed: your FPS in a real browser, deploy, a WebGL quality preset | client |
-| `BL-364` | 🔴 | **Desktop/browser CONTROLS + SETTINGS** — rebindable bar keys + WASD/arrow movement, Alt+click cancels a buff, hover shows its popup; render scale, FPS cap, window/fullscreen, mouse, big-screen defaults | client |
 | `BL-365` | 🔴 | **A minimap + world map** — a corner minimap (you, party, mobs, NPCs, your heading) and a full map window (zones, towns, your position); desktop first, phone too | client |
 
 ---
@@ -2744,43 +2743,6 @@ CHANGELOG.
 4. Leave the .NET SignalR DLLs out of the WebGL build (the browser never uses them). That trims the 16 MB of code.
 5. Clean up the browser-only rough edges: `screen.orientation.lock()` logs an error on desktop, and three URP debug
    shaders are unsupported on WebGL (harmless).
-
-## `BL-364` 🔴 DESKTOP / BROWSER CONTROLS + SETTINGS — your list is in, ready to build (2026-11-05)
-
-Your words: *"then we will need browser/windows only settings so its playable"* … *"do a bl for windows/brawser(apk if
-applicable) settings"*. Your list (2026-11-05), titled *"Browser (Windows app if aplicable)(Android app if aplicable)"*,
-came as two halves, **yours** and **mine**. You kept my five, so both halves are ruled. The old text is archived. The map
-was the fourth item on your half; it is a feature of its own and is now `BL-365`.
-
-**Applies to:** the browser (`BL-363`) and Windows (`BL-360`). The phone gets the items marked *APK too*. The desktop
-section of Settings is shown only on Windows and WebGL. `BL-360`'s owed fullscreen and shortcut settings are covered here.
-
-**Your half:**
-1. ✅ **0.273.1 BUILT.** **Rebindable shortcuts.** *"I want to be able to change the shortcuts of hotbar (main + additional)"*: every square of
-   the main bar and of both additional bars gets its own key, which you can change. Today these are fixed: 1…0, Shift+1…0
-   and Ctrl+1…0 (`GameUi.UpdateHotkeys`, 0.265.0). The window keys (B C K L M, Enter, PgUp/PgDn) go in the same list.
-   Bindings are saved per device in `PlayerPrefs`. A key already bound elsewhere is unbound from there, and you are told.
-2. ✅ **0.273.1 BUILT.** **Keyboard movement.** *"as well as arrow/wasd keys for move"*: WASD and the arrows move you relative to the camera,
-   and are rebindable like the bar. ⚠ **This does not exist today.** Movement is tap-to-walk only. The server takes a
-   point (`Move(x, y)`), so a held key sends a short point ahead of you, refreshed while it is held, and letting go stops
-   you. W/A/S/D are free today (the window keys are B C K L M).
-3. ✅ **0.273.0 BUILT.** **Alt + click a buff cancels it.** *"alt + click on buff should remove it"*: the mouse version of the phone's
-   hold-to-cancel (`GameUi.Feedback` `SquareAt` → `OnHold`). It follows the same rules: debuffs cannot be cancelled, and
-   a collapsed group is removed whole.
-4. ✅ **0.273.0 BUILT.** **Hovering a buff shows its popup.** *"hover over buffs to show/hide the popup"*: the pointer entering a square shows
-   the popup and leaving hides it. A tap still opens it on the phone.
-
-**My half (ruled by keeping it):**
-5. **Render scale** (URP, 0.5-1.0×). The biggest FPS lever in a browser with a big canvas. *APK too.*
-6. **Frame-rate cap** 30 / 60 / 120 / unlimited, plus vsync on Windows. Today every platform is fixed at
-   `Application.targetFrameRate = 60`. *APK too* (30 / 60 / 120).
-7. **Window:** windowed / fullscreen and resolution on Windows; a fullscreen button in the browser.
-8. **Mouse:** camera-turn sensitivity, invert Y, wheel zoom speed.
-9. **Big-screen defaults:** a smaller UI and skill bar on a desktop's first launch, so it doesn't look like a stretched
-   phone layout.
-
-**Build order (mine):** the right-click camera bug first (in `Open-Checklist` My Finds, not here). Then 3 + 4 (small),
-1 + 2 (the key list and movement go together), 5-8 in the Settings section, and 9 last, once the section exists.
 
 ## `BL-365` 🔴 A MINIMAP + A WORLD MAP (2026-11-05)
 

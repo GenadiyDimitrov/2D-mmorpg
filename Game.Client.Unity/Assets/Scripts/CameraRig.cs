@@ -206,10 +206,10 @@ namespace Game.Client
             if (Input.GetMouseButton(1))
             {
 #if UNITY_WEBGL && !UNITY_EDITOR
-                if (PointerLock_IsLocked() != 0) Drag(new Vector2(PointerLock_TakeX(), -PointerLock_TakeY()));
-                else if (mouse != null) Drag(mouse.delta.ReadValue());
+                if (PointerLock_IsLocked() != 0) MouseDrag(new Vector2(PointerLock_TakeX(), -PointerLock_TakeY()));
+                else if (mouse != null) MouseDrag(mouse.delta.ReadValue());
 #else
-                if (mouse != null) Drag(mouse.delta.ReadValue());
+                if (mouse != null) MouseDrag(mouse.delta.ReadValue());
 #endif
                 return;
             }
@@ -248,6 +248,11 @@ namespace Game.Client
             Pitch = Mathf.Clamp(Pitch - delta.y / Mathf.Max(1, Screen.height) * PitchPerScreen, MinPitch, MaxPitch);
         }
 
+        /// <summary>`BL-364` — the right-drag turn through the player's mouse settings (turn speed, invert Y). A finger's
+        /// drag goes straight to <see cref="Drag"/> and is not affected.</summary>
+        private void MouseDrag(Vector2 delta) =>
+            Drag(new Vector2(delta.x, DisplaySettings.InvertY ? -delta.y : delta.y) * DisplaySettings.TurnSpeed);
+
         private void PersistView()
         {
             PlayerPrefs.SetFloat(PitchKey, Pitch);
@@ -281,7 +286,7 @@ namespace Game.Client
                 float scroll = Input.mouseScrollDelta.y;
                 if (Mathf.Abs(scroll) > 0.01f && !UiKit.OverUi(Input.mousePosition))
                 {
-                    ZoomBy(Mathf.Pow(ScrollRatio, -scroll));
+                    ZoomBy(Mathf.Pow(ScrollRatio, -scroll * DisplaySettings.WheelSpeed));   // `BL-364`: wheel speed
                     Persist();
                 }
             }

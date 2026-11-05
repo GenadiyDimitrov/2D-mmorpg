@@ -25,6 +25,24 @@
 
 ---
 
+## §172 — 0.273.2: render scale, frame rate, fullscreen, mouse, smaller desktop start (`BL-364`) (2026-11-05)
+
+⚠ **New APK too** (render scale and the FPS cap are on the phone as well).
+
+- `172a` [ ] - Settings → *Render scale*: drag it to 0.5. Does the world go softer while the HUD stays sharp, and does the
+  frame rate rise (browser especially)? Is it kept after a restart? On the phone too. ->
+- `172b` [ ] - *Frame rate*: step through 30 / 60 / 120 (and "unlimited" on Windows). Does the game follow? Windows:
+  *VSync: ON*. Does the cap stop mattering? ❓ The browser now starts at "screen rate" instead of 60. Is it smoother or
+  worse than 0.272 was? ->
+- `172c` [ ] - *Fullscreen* in the browser and on Windows: on, off, and Esc out of the browser's fullscreen. Does the
+  button's label keep up? Windows: *Size* steps through your monitor's sizes. ->
+- `172d` [ ] - *Mouse turn speed*, *Wheel zoom speed*, *Invert mouse Y*. Do they change the right-drag and the wheel, and
+  leave the phone's finger drag and pinch alone? ->
+- `172e` [ ] - ❓ My numbers: a fresh desktop install starts at **UI 0.8 and skill bar 0.8**. Clear your settings (Reset to
+  defaults) on Windows and in the browser: is that the right size for a monitor, or name better ones? ->
+
+---
+
 ## §171 — 0.273.1: rebindable keys, WASD / arrow walking (desktop, `BL-364`) (2026-11-05)
 
 ⚠ **Windows build and browser** (`/play/`).
