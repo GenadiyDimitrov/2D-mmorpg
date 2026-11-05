@@ -19,6 +19,7 @@
   pwsh tools/publish.ps1 -Apk            # server zip + a fresh headless Unity APK
   pwsh tools/publish.ps1 -Apk -NoServer  # APK only
   pwsh tools/publish.ps1 -Windows -NoServer   # the PC test client only (BL-360)
+  pwsh tools/publish.ps1 -Web -NoServer       # the browser client only (BL-363)
 #>
 [CmdletBinding()]
 param(
@@ -28,6 +29,8 @@ param(
     # Also build the Windows test client (BL-360): builds/Vardelar-Windows-<version>.zip — unzip anywhere,
     # run Vardelar.exe. Opens as a bordered, resizable window.
     [switch]$Windows,
+    # Also build the browser client (BL-363): builds/Vardelar-Web-<version>.zip, served at /play.
+    [switch]$Web,
     # Skip the server side.
     [switch]$NoServer,
     # How many of each (server zip, APK) builds/ keeps; older ones are deleted at the end.
@@ -144,12 +147,29 @@ if ($Windows) {
     "{0}  ({1:N1} MB)" -f $winZip, ((Get-Item $winZip).Length / 1MB) | Write-Host -ForegroundColor Green
 }
 
+if ($Web) {
+    # BL-363 — the browser client. Unity writes the page + Build/ into Game.Client.Unity/builds/webgl, which a LOCAL
+    # server already serves at /play (ApkFiles.FindPlayDir); the zip is what tools/deploy.ps1 will ship.
+    $log = Join-Path $env:TEMP "unitybuild-web-$version.log"
+    $webDir = Join-Path $unityProject "builds\webgl"
+    if (Test-Path $webDir) { Remove-Item -Recurse -Force $webDir }
+    Invoke-UnityBuild "BuildWebGL" "WebGL" $log
+
+    if (-not (Test-Path (Join-Path $webDir "index.html"))) { throw "Unity built no WebGL page — see $log" }
+    $webZip = Join-Path $buildsDir "Vardelar-Web-$version.zip"
+    if (Test-Path $webZip) { Remove-Item -Force $webZip }
+    Compress-Archive -Path (Join-Path $webDir "*") -DestinationPath $webZip
+    $mb = (Get-ChildItem $webDir -Recurse -File | Measure-Object Length -Sum).Sum / 1MB
+    "{0}  ({1:N1} MB zipped, {2:N1} MB download)" -f $webZip, ((Get-Item $webZip).Length / 1MB), $mb | Write-Host -ForegroundColor Green
+}
+
+
 # ----- keep builds/ small ---------------------------------------------------------------------------
 # Only the newest $Keep server zips and $Keep APKs stay (owner, 2026-10-14: "make the /builds to have only the last
 # 3~5 servers and apks ... with the server up and running and the deploy command i wont be entering drive to manage
 # it"). Ranked by the VERSION in the file name, never the file date, so a republished old version cannot push a newer
 # one out. The live box keeps its own last 3 APKs (tools/deploy.ps1); nothing here touches it.
-foreach ($pattern in @("Game.Server-*.zip", "L2Clone-*.apk", "Vardelar-Windows-*.zip")) {
+foreach ($pattern in @("Game.Server-*.zip", "L2Clone-*.apk", "Vardelar-Windows-*.zip", "Vardelar-Web-*.zip")) {
     $old = Get-ChildItem $buildsDir -Filter $pattern -File |
         Where-Object { $_.BaseName -match '-(\d+\.\d+\.\d+)$' } |
         Sort-Object { [version]($_.BaseName -replace '^.*-(\d+\.\d+\.\d+)$', '$1') } -Descending |

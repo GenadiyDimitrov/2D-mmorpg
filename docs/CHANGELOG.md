@@ -28,7 +28,28 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-10-20 (latest) — 0.271.1: a missed BASIC ATTACK does not aggro
+## 2026-11-05 (latest) — 0.272.0: the game runs in a BROWSER (`BL-363`, test client)
+
+No `game.db` delete, and no new APK is needed: the protocol is unchanged (57), so the phone and Windows builds connect as
+before. Owner: *"Can we make the game browser as well ?"* … *"let's try. We already have a website"*.
+
+- **A WebGL build of the same client**, served by the game server at **`/play/`**. A "Play in browser" button appears on
+  the site while one is hosted. It is about 60 MB on the first visit and loads from the browser's cache after that.
+- **The wire, re-seated:** `NetworkChannel` now talks through `IHubLink` (`Scripts/Net/HubLink.cs`). Native builds keep the
+  .NET SignalR client, unchanged. A browser has no threads or sockets for that client, so the WebGL build drives
+  Microsoft's JavaScript SignalR client in the page (`Plugins/WebGL/SignalRBridge.jslib`) and hands every message across
+  as JSON. The server cannot tell the two apart. Both use the same reconnect policy (3 minutes), written in both files.
+- `GameBoot`: in a browser the server address is always the page's own origin (`/game`). The one `Task.Delay`
+  (offline farm) became `Awaitable.WaitForSecondsAsync`, because a browser has no timer thread.
+- Build: `pwsh tools/publish.ps1 -Web [-NoServer]` writes `builds/Vardelar-Web-<ver>.zip`. A local server serves Unity's
+  output directly (`Game.Client.Unity/builds/webgl`). `tools/deploy.ps1` now ships it too, unpacked whole into
+  `~/game/play/` (`-NoWeb` skips it). The page template is `Assets/WebGLTemplates/Vardelar`.
+- **Checked here, headless Edge against a local server:** the page loads, logs in as admin, lists the character, enters the
+  world (HUD, NPCs, quest tracker), and a ground click moves the character. The bridge reported no decode errors.
+  ⚠ The headless run draws on the CPU (3 fps), so **real frame rate is still unmeasured**. It needs a real browser on a
+  real GPU.
+
+## 2026-10-20 — 0.271.1: a missed BASIC ATTACK does not aggro
 
 Server only (no APK, no `game.db` delete). Owner, on `168c`: *"the mob should NOT aggro a player that misses it until the
 1st successful hit .."* and *"only basick attack .. landed/resistes skills should aggro"*.

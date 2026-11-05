@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Game.Shared;
-using Microsoft.AspNetCore.SignalR.Client;
 
 namespace Game.Client
 {
@@ -13,7 +12,7 @@ namespace Game.Client
     /// </summary>
     public class NetworkChannel : IAsyncDisposable
     {
-        private HubConnection _connection;
+        private IHubLink _connection;
 
         public event Action<WorldSnapshot> SnapshotReceived;
         /// <summary>The LIVE world feed. The server stopped sending full "Snapshot" frames long ago —
@@ -148,14 +147,12 @@ namespace Game.Client
         public event Action Reconnecting;
         public event Action Reconnected;
 
-        public bool IsConnected => _connection?.State == HubConnectionState.Connected;
+        public bool IsConnected => _connection?.IsConnected == true;
 
         public async Task ConnectAsync(string url)
         {
-            _connection = new HubConnectionBuilder()
-                .WithUrl(url)
-                .WithAutomaticReconnect(new RideOutRestart())
-                .Build();
+            // `BL-363` — the .NET SignalR client on native builds, the page's JavaScript one in a browser.
+            _connection = HubLinkCalls.CreateForPlatform();
 
             _connection.On<WorldSnapshot>("Snapshot", s => SnapshotReceived?.Invoke(s));
             _connection.On<SnapshotDelta>("SnapshotDelta", d => SnapshotDeltaReceived?.Invoke(d));
@@ -212,15 +209,11 @@ namespace Game.Client
             _connection.On<PartyInviteDto>("PartyInvite", i => PartyInviteReceived?.Invoke(i));
             _connection.On<PartyBuffInfo>("PartyBuffInfo", b => PartyBuffInfoReceived?.Invoke(b));
             _connection.On<string>("ForceDisconnect", reason => ForceDisconnected?.Invoke(reason));
-            _connection.Closed += ex =>
-            {
-                Disconnected?.Invoke(ex?.Message ?? "Connection closed.");
-                return Task.CompletedTask;
-            };
-            _connection.Reconnecting += _ => { Reconnecting?.Invoke(); return Task.CompletedTask; };
-            _connection.Reconnected += _ => { Reconnected?.Invoke(); return Task.CompletedTask; };
+            _connection.Closed += ex => Disconnected?.Invoke(ex?.Message ?? "Connection closed.");
+            _connection.Reconnecting += () => Reconnecting?.Invoke();
+            _connection.Reconnected += () => Reconnected?.Invoke();
 
-            await _connection.StartAsync();
+            await _connection.StartAsync(url);
         }
 
         // ----- Auth + character flow -----
@@ -577,25 +570,6 @@ namespace Game.Client
         {
             if (_connection is not null)
                 await _connection.DisposeAsync();
-        }
-
-        /// <summary>
-        /// How long a dropped link keeps trying (owner, 2026-10-14: *"a reboot … at 0 just saves + restarts
-        /// and players reconnect"*). SignalR's default gives up after 0/2/10/30 s — 42 seconds in all, which
-        /// a server restart on a small box can outlast, and then the player sat on a dead screen. This
-        /// tries at once, then every 2 s for the first half-minute, then every 5 s, for three minutes:
-        /// long enough to ride out a reboot, short enough that a server that is really gone ends in the
-        /// login screen. A SHUTDOWN never gets here — it sends everyone out first (SignOutByServer).
-        /// </summary>
-        private sealed class RideOutRestart : IRetryPolicy
-        {
-            public TimeSpan? NextRetryDelay(RetryContext context)
-            {
-                if (context.ElapsedTime > TimeSpan.FromMinutes(3)) return null;
-                if (context.PreviousRetryCount == 0) return TimeSpan.Zero;
-                return context.ElapsedTime < TimeSpan.FromSeconds(30)
-                    ? TimeSpan.FromSeconds(2) : TimeSpan.FromSeconds(5);
-            }
         }
     }
 }

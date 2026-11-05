@@ -164,6 +164,32 @@ namespace Game.Client.Editor
             Build(BuildTarget.StandaloneWindows64, BuildTargetGroup.Standalone, OutputWindowsExe);
         }
 
+        private const string OutputWebGl = "builds/webgl";
+
+        /// <summary>
+        /// `BL-363` — the browser client: the same game as a WebGL build, served by the game server at /play. It
+        /// talks through the page's JavaScript SignalR client (`Plugins/WebGL/SignalRBridge.jslib`, the
+        /// `WebGLTemplates/Vardelar` page), because a browser has no threads or sockets for the .NET one.
+        ///
+        /// Gzip, with the loader's decompression FALLBACK on: the server sends the right Content-Encoding for
+        /// `.gz` files (Program.cs, /play), and if anything in front of it strips that, the page still loads, a
+        /// little slower. `runInBackground` keeps the connection pumping while the tab is not focused.
+        /// </summary>
+        [MenuItem("Build/WebGL (browser client)")]
+        public static void BuildWebGL()
+        {
+            StampVersion();
+            StampBranding();
+
+            PlayerSettings.WebGL.template = "PROJECT:Vardelar";
+            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
+            PlayerSettings.WebGL.decompressionFallback = true;
+            PlayerSettings.WebGL.nameFilesAsHashes = false;
+            PlayerSettings.runInBackground = true;
+
+            Build(BuildTarget.WebGL, BuildTargetGroup.WebGL, OutputWebGl);
+        }
+
         private static void Build(BuildTarget target, BuildTargetGroup group, string output)
         {
             var scenes = EditorBuildSettings.scenes

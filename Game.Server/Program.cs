@@ -108,6 +108,50 @@ try
             : Results.NotFound("The Windows client is not uploaded yet.");
     });
 
+    // `BL-363` — the browser client: a WebGL build served as plain files at /play/. Same origin as /game, so the
+    // page's SignalR connection needs no CORS. Unity gzips the big files (`.gz`); they go out with
+    // Content-Encoding: gzip and the type of the file inside, so the browser unpacks them itself (the loader's
+    // own fallback covers anything in front of us that strips the header). no-cache + ETag: a new build is
+    // picked up on the next visit, an unchanged one costs a 304. ⚠ The rewrite of the response type matters for
+    // .wasm: a browser only STREAM-compiles code served as application/wasm.
+    // ONE route: routing matches "/play" and "/play/" alike, so a separate redirect route looped on itself. The
+    // page's relative URLs (Build/…) need the trailing slash, hence the redirect on the bare path only.
+    app.MapGet("/play/{**path}", (HttpContext http, string? path) =>
+    {
+        if (string.IsNullOrEmpty(path) && !http.Request.Path.Value!.EndsWith('/')) return Results.Redirect("/play/");
+        string? root = ApkFiles.FindPlayDir();
+        if (root is null) return Results.NotFound("The browser client is not uploaded yet.");
+        string full = Path.GetFullPath(Path.Combine(root, string.IsNullOrEmpty(path) ? "index.html" : path));
+        if (!full.StartsWith(Path.GetFullPath(root) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+            || !File.Exists(full))
+            return Results.NotFound();
+
+        string name = Path.GetFileName(full);
+        // `.unityweb` is what Unity calls a gzipped file when the loader's decompression fallback is on
+        // (CommandLineBuild.BuildWebGL) — the same gzip bytes, so it goes out the same way.
+        foreach (var ext in new[] { ".gz", ".unityweb" })
+            if (name.EndsWith(ext, StringComparison.OrdinalIgnoreCase))
+            {
+                http.Response.Headers.ContentEncoding = "gzip";
+                name = name[..^ext.Length];
+                break;
+            }
+        string type = Path.GetExtension(name).ToLowerInvariant() switch
+        {
+            ".html" => "text/html; charset=utf-8",
+            ".js" => "application/javascript",
+            ".wasm" => "application/wasm",
+            ".css" => "text/css",
+            ".png" => "image/png",
+            ".json" => "application/json",
+            _ => "application/octet-stream",
+        };
+        http.Response.Headers.CacheControl = "no-cache";
+        var info = new FileInfo(full);
+        var etag = new Microsoft.Net.Http.Headers.EntityTagHeaderValue($"\"{info.Length:x}-{info.LastWriteTimeUtc.Ticks:x}\"");
+        return Results.File(full, type, lastModified: info.LastWriteTimeUtc, entityTag: etag);
+    });
+
     // The landing page: Site/index.html with its {{TOKENS}} filled. Re-read on every request so an edit to the
     // text shows on the next refresh. The player count is a plain read of a dictionary the game loop owns —
     // a racy Count is harmless for a number on a web page, and it never writes, so the single-writer rule holds.
@@ -142,6 +186,9 @@ try
             parts.Add($"{pc.Length / 1048576.0:0.0} MB");
             downloadPc = $"<a class=\"download secondary\" href=\"/pc\" download>Download for Windows<small>{string.Join(" · ", parts)}</small></a>";
         }
+        // `BL-363` — shown only while a browser build is hosted, beside the Windows button.
+        if (ApkFiles.FindPlayDir() is not null)
+            downloadPc += "<a class=\"download secondary\" href=\"/play/\">Play in browser<small>test client · desktop</small></a>";
 
         int online = world.ConnectionToEntity.Count;
         string status = $"<span class=\"dot\"></span>Server online · {online} {(online == 1 ? "player" : "players")} in the world"

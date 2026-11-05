@@ -1204,6 +1204,11 @@ namespace Game.Client
                     break;
                 }
             ServerUrl = PlayerPrefs.GetString(PrefUrl, ServerUrl);
+#if UNITY_WEBGL && !UNITY_EDITOR
+            // `BL-363` — a browser build plays on the server that served the page (/play), always: same origin, so
+            // no CORS, and a remembered address from another site can never strand it.
+            ServerUrl = new Uri(new Uri(Application.absoluteURL), "/game").ToString();
+#endif
             RememberLogin = PlayerPrefs.GetInt(PrefRemember, 1) == 1;
             // `BL-93` — before ANYTHING spawns. Read late and the first creatures into view would be
             // built with the wrong shape and keep it until they walked out and back.
@@ -2105,7 +2110,7 @@ namespace Game.Client
 
                 // The unbind happens on the server's next TICK. Asking for the list before that comes
                 // back with no offline timer on the row we just left, which reads as "it didn't work".
-                await Task.Delay(400);
+                await Awaitable.WaitForSecondsAsync(0.4f);   // BL-363: Task.Delay needs a timer thread a browser lacks
 
                 CharacterSlot[] fresh;
                 try { fresh = (await _net.ListCharactersAsync()).Characters ?? Array.Empty<CharacterSlot>(); }

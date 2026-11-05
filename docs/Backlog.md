@@ -297,7 +297,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-360` | 🔴 | **A Windows PC client** — test build BUILT (`publish.ps1 -Windows`, bordered resizable window); still owed: a fullscreen on/off option, keyboard shortcuts, a PC layout check | client |
 | `BL-361` | ⏸ | **An iOS client** — needs a Mac (or cloud Mac) + Xcode, an Apple Developer account ($99/yr), TestFlight for testers (HTTPS, which iOS demands, is already live) | ops |
 | `BL-362` | 🔵 | **Drop groups the IG way** — A: show group % + shares inside (display); B: author them that way; C: bake the formulas into a per-mob odds table (formula/hand rows) | loot |
-| `BL-363` | 🔴 | **A browser (WebGL) client** — play from a link on the site, no install; needs a JS SignalR transport behind `NetworkChannel` + no background threads | client |
+| `BL-363` | 🔴 | **A browser (WebGL) client** — test build BUILT (0.272.0, `/play/`, logs in + moves, 60 MB); owed: your FPS in a real browser, deploy, a WebGL quality preset | client |
 
 ---
 
@@ -2710,7 +2710,7 @@ Background: the comparison with IG's grouped drops and WoW-style cascades from t
 differences from IG are who pays when an item is added (B), and the over-100% rule (we pay extra picks; IG pays more
 quantity of the one item picked).
 
-## `BL-363` 🔴 A BROWSER (WebGL) CLIENT — test build first (2026-11-05)
+## `BL-363` 🔴 A BROWSER (WebGL) CLIENT — test build BUILT (0.272.0); owed: real-browser FPS, deploy, quality (2026-11-05)
 
 Your words: *"Can we make the game browser as well ? We can download it for android and can play on windows, does that
 mean it's possie a browser?"* … *"Backlog it … And let's try. We already have a website"*.
@@ -2731,3 +2731,14 @@ defaults lower on WebGL), phones in a browser will struggle (desktop is the targ
 before the browser allows pointer lock.
 
 **Step 1 — the spike:** the JS transport + one WebGL build that logs in and moves. Measure size and FPS, then decide.
+✅ **Step 1 built (0.272.0):** it logs in, enters the world and moves (headless Edge, local server). Size **60 MB**. See the
+CHANGELOG.
+
+**Still owed:**
+1. **Your FPS reading in a real browser.** The headless check drew on the CPU, so its number means nothing. Open
+   `/play/` on your PC once it is deployed (or against a local server) and compare it with the Windows build.
+2. **Deploy:** `tools/deploy.ps1` already ships it (`~/game/play/`). Nothing is live until you say deploy.
+3. A quality preset for WebGL (fog, view distance, shadows) if step 1 shows it is slow.
+4. Leave the .NET SignalR DLLs out of the WebGL build (the browser never uses them). That trims the 16 MB of code.
+5. Clean up the browser-only rough edges: `screen.orientation.lock()` logs an error on desktop, and three URP debug
+   shaders are unsupported on WebGL (harmless).

@@ -34,6 +34,19 @@ internal static class ApkFiles
         Newest(Path.Combine(AppContext.BaseDirectory, "pc"), "*.zip")
         ?? Newest(Path.GetFullPath(Path.Combine(ContentRoot, "..", "builds")), "Vardelar-Windows-*.zip");
 
+    /// <summary>`BL-363` — the browser client's folder served at <c>/play</c>: <c>play/</c> beside the server
+    /// (tools/deploy.ps1 unpacks it there), then Unity's own output on the dev PC. Null when neither has a page.</summary>
+    internal static string? FindPlayDir()
+    {
+        foreach (var dir in new[]
+                 {
+                     Path.Combine(AppContext.BaseDirectory, "play"),
+                     Path.GetFullPath(Path.Combine(ContentRoot, "..", "Game.Client.Unity", "builds", "webgl")),
+                 })
+            if (File.Exists(Path.Combine(dir, "index.html"))) return dir;
+        return null;
+    }
+
     internal static string? Find()
     {
         string? Resolve(string path) => File.Exists(path) ? path : Newest(path, "*.apk");

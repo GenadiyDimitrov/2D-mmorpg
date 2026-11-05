@@ -19,6 +19,7 @@
     4. rsync the new build over ~/game — NEVER the live state: game.db*, owner.txt, registration.txt,
        debug-config.json, admin-only.flag, apk-path.txt, apk/
     5. copy the APK into ~/game/apk/ and the Windows zip into ~/game/pc/ (each keeps the newest 3; BL-360),
+       unpack the browser client into ~/game/play/ (BL-363; swapped whole, needs no restart),
        `systemctl start game`, and wait for the
        `L2Clone server v<new> starting.` line. No line = the deploy reports FAILED.
 
@@ -32,6 +33,7 @@
   pwsh tools/deploy.ps1 -NoApk           # server only
   pwsh tools/deploy.ps1 -NoServer        # clients only: no restart at all
   pwsh tools/deploy.ps1 -NoPc            # skip the Windows test client (BL-360)
+  pwsh tools/deploy.ps1 -NoServer -NoApk -NoPc   # the browser client only (BL-363), no restart
 #>
 [CmdletBinding()]
 param(
@@ -39,6 +41,8 @@ param(
     [switch]$NoApk,
     # Skip the Windows test client (BL-360), served at /pc like the APK at /apk.
     [switch]$NoPc,
+    # Skip the browser client (BL-363), served at /play.
+    [switch]$NoWeb,
     [switch]$NoServer,
     [switch]$ResetDb,
     [switch]$Republish,
@@ -55,23 +59,27 @@ $version = (Select-String -Path (Join-Path $repo "Game.Shared\GameConstants.cs")
 $zip = Join-Path $builds "Game.Server-$version.zip"
 $apk = Join-Path $builds "L2Clone-$version.apk"
 $pc  = Join-Path $builds "Vardelar-Windows-$version.zip"
+$web = Join-Path $builds "Vardelar-Web-$version.zip"
 # Publish whatever this version is missing (or everything, with -Republish) — "deploy" alone is enough.
 $needServer = -not $NoServer -and ($Republish -or -not (Test-Path $zip))
 $needApk    = -not $NoApk    -and ($Republish -or -not (Test-Path $apk))
 $needPc     = -not $NoPc     -and ($Republish -or -not (Test-Path $pc))
-if ($needServer -or $needApk -or $needPc) {
+$needWeb    = -not $NoWeb    -and ($Republish -or -not (Test-Path $web))
+if ($needServer -or $needApk -or $needPc -or $needWeb) {
     $pub = @{}
     if ($needApk) { $pub.Apk = $true }
     if ($needPc)  { $pub.Windows = $true }
+    if ($needWeb) { $pub.Web = $true }
     if (-not $needServer) { $pub.NoServer = $true }
-    Write-Host "builds/ lacks $version ($(if ($needServer) { 'server ' })$(if ($needApk) { 'APK ' })$(if ($needPc) { 'Windows' })) — publishing first." -ForegroundColor Cyan
+    Write-Host "builds/ lacks $version ($(if ($needServer) { 'server ' })$(if ($needApk) { 'APK ' })$(if ($needPc) { 'Windows ' })$(if ($needWeb) { 'Web' })) — publishing first." -ForegroundColor Cyan
     & (Join-Path $PSScriptRoot "publish.ps1") @pub
 }
 $files = @()
 if (-not $NoServer) { if (-not (Test-Path $zip)) { throw "Publish produced no $zip" }; $files += $zip }
 if (-not $NoApk)    { if (-not (Test-Path $apk)) { throw "Publish produced no $apk" }; $files += $apk }
 if (-not $NoPc)     { if (-not (Test-Path $pc))  { throw "Publish produced no $pc" };  $files += $pc }
-if ($files.Count -eq 0) { throw "Nothing to deploy (-NoServer, -NoApk and -NoPc)." }
+if (-not $NoWeb)    { if (-not (Test-Path $web)) { throw "Publish produced no $web" }; $files += $web }
+if ($files.Count -eq 0) { throw "Nothing to deploy (-NoServer, -NoApk, -NoPc and -NoWeb)." }
 
 $ssh = @("-i", $Key, "-o", "ConnectTimeout=20", "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=accept-new")
 
@@ -102,7 +110,7 @@ foreach ($f in $files) {
 # ----- the server half: one bash script, written with LF (a CR would break every line of it) -------------
 $remote = @'
 set -euo pipefail
-VER="$1"; MIN="$2"; SERVER="$3"; APK="$4"; RESET="$5"; LIVE="${6:-unknown}"; PC="${7:-0}"
+VER="$1"; MIN="$2"; SERVER="$3"; APK="$4"; RESET="$5"; LIVE="${6:-unknown}"; PC="${7:-0}"; WEB="${8:-0}"
 G=~/game; D=~/deploy
 
 if [ "$APK" = 1 ]; then
@@ -118,6 +126,15 @@ if [ "$PC" = 1 ]; then
   { ls "$G"/pc/*.zip 2>/dev/null || true; } | sort -V | head -n -3 | xargs -r rm --
   rm -f "$D/Vardelar-Windows-$VER.zip"
   echo "Windows client $VER is served by /pc."
+fi
+if [ "$WEB" = 1 ]; then
+  # Unpack beside, then swap: a page being loaded never sees half a build. No restart needed — /play reads files.
+  rm -rf "$G/play.new"; mkdir -p "$G/play.new"
+  unzip -q -o "$D/Vardelar-Web-$VER.zip" -d "$G/play.new"
+  rm -rf "$G/play.old"; [ -d "$G/play" ] && mv "$G/play" "$G/play.old"
+  mv "$G/play.new" "$G/play"; rm -rf "$G/play.old"
+  rm -f "$D/Vardelar-Web-$VER.zip"
+  echo "Browser client $VER is served by /play."
 fi
 [ "$SERVER" = 1 ] || exit 0
 
@@ -150,7 +167,7 @@ done
 { ls ~/backups/predeploy-*.db 2>/dev/null || true; } | sort | head -n -10 | sed 's/\.db$//' | while read -r b; do rm -f "$b".db "$b".db-wal "$b".db-shm; done
 
 rsync -a --exclude='game.db*' --exclude=owner.txt --exclude=registration.txt --exclude=debug-config.json \
-      --exclude=admin-only.flag --exclude=apk-path.txt --exclude='apk/' --exclude='pc/' --exclude='server-command.txt*' --exclude=VERSION \
+      --exclude=admin-only.flag --exclude=apk-path.txt --exclude='apk/' --exclude='pc/' --exclude='play/' --exclude='server-command.txt*' --exclude=VERSION \
       "$D/$VER/" "$G/"
 rm -rf "$D/$VER" "$D/Game.Server-$VER.zip"
 
@@ -171,6 +188,6 @@ $tmp = Join-Path ([IO.Path]::GetTempPath()) "deploy-remote.sh"
 & scp @ssh $tmp "${Target}:deploy/deploy-remote.sh"
 if ($LASTEXITCODE -ne 0) { throw "upload of the remote script failed" }
 
-& ssh @ssh $Target "bash ~/deploy/deploy-remote.sh $version $Minutes $([int](-not $NoServer)) $([int](-not $NoApk)) $([int]($crossesReset -and $ResetDb.IsPresent)) $(if ($live) { $live } else { 'unknown' }) $([int](-not $NoPc))"
+& ssh @ssh $Target "bash ~/deploy/deploy-remote.sh $version $Minutes $([int](-not $NoServer)) $([int](-not $NoApk)) $([int]($crossesReset -and $ResetDb.IsPresent)) $(if ($live) { $live } else { 'unknown' }) $([int](-not $NoPc)) $([int](-not $NoWeb))"
 if ($LASTEXITCODE -ne 0) { throw "deploy FAILED on the server (see above)" }
 Write-Host "Deploy of $version finished." -ForegroundColor Green
