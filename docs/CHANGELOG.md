@@ -28,7 +28,23 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-11-05 (latest) — 0.272.0: the game runs in a BROWSER (`BL-363`, test client)
+## 2026-11-05 (latest) — 0.272.1: right-drag turns the camera endlessly in the BROWSER too
+
+Browser build only: no server change, no `game.db` delete, no new APK. The Windows build already locked correctly. Owner:
+*"the mouse is moving jsut invisible .. when i release the right click it just appear on other monitors ... also mouse
+right click its not infinite rotation"*, then *"on windows build the mouse rotation works fine (it locks) -> the problem
+is only on browser"*.
+
+- **The cause:** a web page gets pointer lock only INSIDE the input event that asks for it. Unity's `Cursor.lockState`
+  asks one event late, on the release, so in the browser the cursor was only hidden. It kept moving, left the canvas onto
+  your other monitors, and the turn stopped when it reached the edge of the screen.
+- **The fix:** `Plugins/WebGL/PointerLock.jslib` asks for the lock inside the right-button press itself. It does so only
+  when the cursor is not over the HUD (`CameraRig` tells it every frame). While locked, the turn reads the browser's raw
+  movement, scaled by the screen's pixel ratio, so it turns at the same speed as the Windows build. On release the lock
+  ends and the cursor reappears where you pressed. If the browser refuses the lock (for example, just after you pressed
+  Esc), the old edge-bound turn still works. Windows and the phone are unchanged.
+
+## 2026-11-05 — 0.272.0: the game runs in a BROWSER (`BL-363`, test client)
 
 No `game.db` delete, and no new APK is needed: the protocol is unchanged (57), so the phone and Windows builds connect as
 before. Owner: *"Can we make the game browser as well ?"* … *"let's try. We already have a website"*.

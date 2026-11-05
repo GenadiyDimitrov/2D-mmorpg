@@ -21,8 +21,19 @@
 
 ## My Finds — next pass (write here)
 
-- [ ] **Right-drag camera (2026-11-05, browser):** *"Its good that u lock the mouse when rightclick to rotate -> but the problem is that the mouse is moving jsut invisible .. when i release the right click it just appear on other monitors ... also mouse right click its not infinite rotation"*. Diagnosis: in a browser, Unity only HIDES the cursor; the real pointer lock is granted only inside the click event, and Unity asks for it one event later (the release). So the hidden cursor travels, leaves the canvas, and the turn stops at the screen edge. Fix owed: request the lock from JavaScript on the right-button press and read the raw movement while locked. ❓ Does the Windows build do it too, or only the browser? ->
 - [ ] ->
+
+---
+
+## §169 — 0.272.1: right-drag turns the camera endlessly in the browser (2026-11-05)
+
+⚠ **Browser build only** (`/play/`); Windows and the phone are unchanged.
+
+- `169a` [ ] - Your find: *"the mouse is moving jsut invisible .. when i release the right click it just appear on other
+  monitors ... also mouse right click its not infinite rotation"*. In the browser, hold the right button and drag far in
+  one direction. Does the camera keep turning with no end, and does the cursor stay off your other monitors? On release,
+  does it reappear where you pressed? Is the turn speed the same as on Windows? Right-press over the skill bar or a
+  window: nothing should lock. ->
 
 ---
 

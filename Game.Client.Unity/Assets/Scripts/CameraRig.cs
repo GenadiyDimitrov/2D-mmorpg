@@ -94,6 +94,9 @@ namespace Game.Client
                 Distance = PlayerPrefs.GetFloat(DistanceKey, Distance);
             Distance = Mathf.Clamp(Distance, MinDistance, MaxDistance);
             _savedDistance = Distance;
+#if UNITY_WEBGL && !UNITY_EDITOR
+            PointerLock_Init();   // the right-drag turn's browser lock (see MouseTurn)
+#endif
         }
 
         /// <summary>The compass: swing back to north-up, straight down. Animated, so you see which way
@@ -167,33 +170,70 @@ namespace Game.Client
         /// <para>`BL-360` (owner, PC build: *"when i rotate the mouse goes to the 3rd monitor and then just to tap on the
         /// screen i need to move it back"*): while turning, the cursor is HIDDEN and LOCKED to the window and the turn reads
         /// the raw mouse delta; on release it reappears exactly where the press began. A release missed while the window
-        /// was unfocused still ends the turn (the button simply reads up next frame).</para></summary>
+        /// was unfocused still ends the turn (the button simply reads up next frame).</para>
+        /// <para>🔑 THE BROWSER is different (owner, 2026-11-05: *"the mouse is moving just invisible .. when i release the
+        /// right click it just appear on other monitors ... its not infinite rotation"*; Windows was fine). A page gets
+        /// pointer lock only INSIDE the input event that asks for it, and <c>Cursor.lockState</c> asks one event late (the
+        /// release), so the cursor was only hidden. `Plugins/WebGL/PointerLock.jslib` asks inside the right-button press
+        /// itself, gated by <c>PointerLock_Allow</c> (set here every frame: not over the HUD), and the turn reads the
+        /// browser's raw movement while locked. If the browser refuses the lock, the old edge-bound turn still works.</para></summary>
         private void MouseTurn()
         {
             var mouse = UnityEngine.InputSystem.Mouse.current;
+#if UNITY_WEBGL && !UNITY_EDITOR
+            if (!_mouseTurning)
+            {
+                // A lock left over from a press Unity never saw (focus lost mid-click) must not trap the cursor.
+                if (PointerLock_IsLocked() != 0) PointerLock_Release();
+                PointerLock_Allow(UiKit.OverUi(Input.mousePosition) ? 0 : 1);
+            }
+#endif
             if (Input.GetMouseButtonDown(1) && !UiKit.OverUi(Input.mousePosition))
             {
                 _mouseTurning = true;
                 _mouseTurnFrom = Input.mousePosition;
                 _resetFrom = -1f;
+#if UNITY_WEBGL && !UNITY_EDITOR
+                PointerLock_TakeX(); PointerLock_TakeY();   // the lock was taken in the press itself; start from zero
+#else
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
+#endif
                 return;   // the lock's own jump to the centre is not a drag
             }
             if (!_mouseTurning) return;
 
             if (Input.GetMouseButton(1))
             {
+#if UNITY_WEBGL && !UNITY_EDITOR
+                if (PointerLock_IsLocked() != 0) Drag(new Vector2(PointerLock_TakeX(), -PointerLock_TakeY()));
+                else if (mouse != null) Drag(mouse.delta.ReadValue());
+#else
                 if (mouse != null) Drag(mouse.delta.ReadValue());
+#endif
                 return;
             }
 
             _mouseTurning = false;
+#if UNITY_WEBGL && !UNITY_EDITOR
+            PointerLock_Release();   // the browser puts the cursor back where the press began
+#else
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             mouse?.WarpCursorPosition(_mouseTurnFrom);
+#endif
             PersistView();
         }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // 🔴 Only in a WebGL player: an `__Internal` import is a static link under IL2CPP (the 0.272.0 APK failed on one).
+        [System.Runtime.InteropServices.DllImport("__Internal")] private static extern void PointerLock_Init();
+        [System.Runtime.InteropServices.DllImport("__Internal")] private static extern void PointerLock_Allow(int on);
+        [System.Runtime.InteropServices.DllImport("__Internal")] private static extern int PointerLock_IsLocked();
+        [System.Runtime.InteropServices.DllImport("__Internal")] private static extern float PointerLock_TakeX();
+        [System.Runtime.InteropServices.DllImport("__Internal")] private static extern float PointerLock_TakeY();
+        [System.Runtime.InteropServices.DllImport("__Internal")] private static extern void PointerLock_Release();
+#endif
 
         private bool _mouseTurning;
         private Vector2 _mouseTurnFrom;
@@ -255,6 +295,9 @@ namespace Game.Client
         {
             if (Mathf.Approximately(_savedDistance, Distance)) return;
             _savedDistance = Distance;
+#if UNITY_WEBGL && !UNITY_EDITOR
+            PointerLock_Init();   // the right-drag turn's browser lock (see MouseTurn)
+#endif
             PlayerPrefs.SetFloat(DistanceKey, Distance);
             PlayerPrefs.Save();
         }
