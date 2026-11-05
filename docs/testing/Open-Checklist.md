@@ -25,6 +25,20 @@
 
 ---
 
+## §170 — 0.273.0: hover a buff to read it, Alt+click to cancel it (desktop, `BL-364`) (2026-11-05)
+
+⚠ **Windows build and browser** (`/play/`). The phone should behave exactly as before.
+
+- `170a` [ ] - Your ask: *"hover over buffs to show/hide the popup"*. Rest the pointer on one of your buffs: does its card
+  appear, and vanish when you move off? Move along the row: does it follow from buff to buff without flickering? Do the
+  same on a party member's effects. A plain click should still open the card and keep it open until you click elsewhere. ->
+- `170b` [ ] - Your ask: *"alt + click on buff should remove it"*. Alt+click a buff: is it gone? Alt+click a debuff: it
+  stays, and its card shows. Alt+click a collapsed group: all of it goes. In the browser, check that pressing Alt does not
+  also open the browser's menu. ->
+- `170c` [ ] - On the phone: tap a buff (card), hold a buff (cancelled). Same as before? ->
+
+---
+
 ## §169 — 0.272.1: right-drag turns the camera endlessly in the browser (2026-11-05)
 
 ⚠ **Browser build only** (`/play/`); Windows and the phone are unchanged.

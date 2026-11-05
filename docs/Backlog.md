@@ -2764,10 +2764,10 @@ section of Settings is shown only on Windows and WebGL. `BL-360`'s owed fullscre
    and are rebindable like the bar. ⚠ **This does not exist today.** Movement is tap-to-walk only. The server takes a
    point (`Move(x, y)`), so a held key sends a short point ahead of you, refreshed while it is held, and letting go stops
    you. W/A/S/D are free today (the window keys are B C K L M).
-3. **Alt + click a buff cancels it.** *"alt + click on buff should remove it"*: the mouse version of the phone's
+3. ✅ **0.273.0 BUILT.** **Alt + click a buff cancels it.** *"alt + click on buff should remove it"*: the mouse version of the phone's
    hold-to-cancel (`GameUi.Feedback` `SquareAt` → `OnHold`). It follows the same rules: debuffs cannot be cancelled, and
    a collapsed group is removed whole.
-4. **Hovering a buff shows its popup.** *"hover over buffs to show/hide the popup"*: the pointer entering a square shows
+4. ✅ **0.273.0 BUILT.** **Hovering a buff shows its popup.** *"hover over buffs to show/hide the popup"*: the pointer entering a square shows
    the popup and leaving hides it. A tap still opens it on the phone.
 
 **My half (ruled by keeping it):**

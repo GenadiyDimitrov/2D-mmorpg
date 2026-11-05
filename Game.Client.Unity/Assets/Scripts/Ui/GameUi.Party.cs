@@ -306,6 +306,12 @@ namespace Game.Client
                 press.OnTap = () => ShowPartyBuff(row, fx);
                 press.OnHold = () => ShowPartyBuff(row, fx);
                 box.gameObject.AddComponent<DragMove>().Target = _partyPanel;
+                if (HoverTip.Wanted)   // `BL-364`: hover shows the card on a desktop, as on your own bar
+                {
+                    var hover = box.gameObject.AddComponent<HoverTip>();
+                    hover.OnEnter = () => HoverBuffPopup(fx, () => ShowPartyBuff(row, fx));
+                    hover.OnExit = () => UnhoverBuffPopup(fx);
+                }
 
                 fx.Icon = UiKit.Box(box.transform, "Icon", Color.white, blocksInput: false);
                 UiKit.Stretch(UiKit.Rect(fx.Icon.gameObject), 2f, 2f, 2f, 2f);
@@ -373,7 +379,11 @@ namespace Game.Client
             if (view.Suppressed)
                 desc = "INACTIVE — their weapon does not meet this skill's requirement, so it is granting "
                      + "nothing right now." + (desc.Length > 0 ? "\n\n" + desc : "");
-            ShowBuffPopup(view.Name, view.Level, view.Stacks, desc, info.SecondsLeft, _partyPopupFooter);
+            // A hovered card stays a hover card when its text arrives (`BL-364`); ShowBuffPopup would pin it.
+            var hoverOwner = _buffPopupHover ? _buffPopupHoverOwner : null;
+            System.Action show = () => ShowBuffPopup(view.Name, view.Level, view.Stacks, desc, info.SecondsLeft,
+                                                     _partyPopupFooter);
+            if (hoverOwner != null) HoverBuffPopup(hoverOwner, show); else show();
         }
 
         // ----- the hold menu ---------------------------------------------------------------------

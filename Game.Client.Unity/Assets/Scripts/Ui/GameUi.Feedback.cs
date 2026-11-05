@@ -280,6 +280,32 @@ namespace Game.Client
         private RectTransform _buffPopup, _buffPopupBackdrop;
         private TextMeshProUGUI _buffPopupTitle, _buffPopupBody;
 
+        /// <summary>`BL-364` — the popup was opened by a mouse HOVER: no backdrop, it lets the pointer through (so
+        /// it cannot cover the square and make it flicker), and leaving the square that opened it hides it. A
+        /// click shows the ordinary pinned card instead. <see cref="_buffPopupHoverOwner"/> is that square, so a
+        /// DIFFERENT square being left or recycled does not close it.</summary>
+        private bool _buffPopupHover;
+        private object _buffPopupHoverOwner;
+        private CanvasGroup _buffPopupGroup;
+
+        /// <summary>Alt held — Alt+click a buff cancels it on a desktop (`BL-364`), the mouse twin of hold.</summary>
+        private static bool AltHeld => Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
+
+        /// <summary>Hover-open the card for <paramref name="owner"/>; <paramref name="show"/> fills it.</summary>
+        private void HoverBuffPopup(object owner, System.Action show)
+        {
+            show();
+            _buffPopupHover = true;
+            _buffPopupHoverOwner = owner;
+            _buffPopupBackdrop.gameObject.SetActive(false);
+            _buffPopupGroup.blocksRaycasts = false;
+        }
+
+        private void UnhoverBuffPopup(object owner)
+        {
+            if (_buffPopupHover && ReferenceEquals(_buffPopupHoverOwner, owner)) HideBuffPopup();
+        }
+
         private readonly List<BuffSquare> _buffSquares = new List<BuffSquare>();
 
         private const int BuffsPerRow = 6;
@@ -331,6 +357,7 @@ namespace Game.Client
             close.onClick.AddListener(HideBuffPopup);
 
             _buffPopup = UiKit.PanelBox(_worldRoot, "BuffPopup");
+            _buffPopupGroup = _buffPopup.gameObject.AddComponent<CanvasGroup>();
             UiKit.Place(_buffPopup, new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(12f, -396f), new Vector2(360f, 150f));
             var inner = _buffPopup.GetChild(0);
@@ -348,7 +375,8 @@ namespace Game.Client
 
         private void ShowBuffPopup(BuffSquare square) =>
             ShowBuffPopup(square.BuffName, square.Level, square.Stacks, square.Description, square.Seconds,
-                          square.IsDebuff ? "(a debuff — it cannot be dismissed)" : "Press and HOLD the icon to cancel.");
+                          square.IsDebuff ? "(a debuff — it cannot be dismissed)"
+                          : HoverTip.Wanted ? "Alt+click the icon to cancel." : "Press and HOLD the icon to cancel.");
 
         /// <summary>The detail card, for any buff — your own bar's or a party member's (whose footer names
         /// who carries it, and who cannot be cancelled from here).</summary>
@@ -357,6 +385,9 @@ namespace Game.Client
         {
             if (_buffPopup == null) return;
             _partyPopupKey = null;   // a party card re-arms this after the call; anything else disarms it
+            _buffPopupHover = false; // a hover re-arms this after the call (HoverBuffPopup); a click pins the card
+            _buffPopupHoverOwner = null;
+            _buffPopupGroup.blocksRaycasts = true;
             // The RUNG belongs in the title, beside the name, spelled the way the Known tab spells it
             // (owner, playtest 27). Only when the buff actually has a ladder — "Frenzy Lv.1" on a
             // one-level buff is noise, not information.
@@ -396,6 +427,8 @@ namespace Game.Client
         private void HideBuffPopup()
         {
             if (_buffPopup == null) return;
+            _buffPopupHover = false;
+            _buffPopupHoverOwner = null;
             _buffPopup.gameObject.SetActive(false);
             _buffPopupBackdrop.gameObject.SetActive(false);
         }
@@ -618,14 +651,9 @@ namespace Game.Client
                 // Closes over the SQUARE, not over a position in a list that reshuffles every time a
                 // buff expires.
                 var press = box.gameObject.AddComponent<PressAndHold>();
-                press.OnTap = () =>
-                {
-                    if (square.Keys.Count == 0) return;
-                    ShowBuffPopup(square);
-                };
                 // HOLD cancels — buffs only. A debuff is not yours to dismiss, so holding one just
                 // shows its details rather than doing nothing silently.
-                press.OnHold = () =>
+                void Cancel()
                 {
                     if (square.Keys.Count == 0) return;
                     if (square.IsDebuff) { ShowBuffPopup(square); return; }
@@ -634,7 +662,26 @@ namespace Game.Client
                     // collapsing it at all.
                     foreach (var key in square.Keys) Boot.RemoveBuff(key);
                     HideBuffPopup();
+                }
+                press.OnTap = () =>
+                {
+                    if (square.Keys.Count == 0) return;
+                    // `BL-364`: Alt+click is the mouse's hold (owner: *"alt + click on buff should remove it"*).
+                    if (AltHeld) { Cancel(); return; }
+                    ShowBuffPopup(square);
                 };
+                press.OnHold = Cancel;
+                // `BL-364`: on a desktop the pointer resting on a square shows its card, leaving hides it.
+                if (HoverTip.Wanted)
+                {
+                    var hover = box.gameObject.AddComponent<HoverTip>();
+                    hover.OnEnter = () =>
+                    {
+                        if (square.Keys.Count == 0) return;
+                        HoverBuffPopup(square, () => ShowBuffPopup(square));
+                    };
+                    hover.OnExit = () => UnhoverBuffPopup(square);
+                }
 
                 square.Icon = UiKit.Box(box.transform, "Icon", Color.white, blocksInput: false);
                 UiKit.Stretch(UiKit.Rect(square.Icon.gameObject), 3f, 3f, 3f, 3f);

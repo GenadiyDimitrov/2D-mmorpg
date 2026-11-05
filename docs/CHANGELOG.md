@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.271.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.273.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,21 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-11-05 (latest) — 0.272.1: right-drag turns the camera endlessly in the BROWSER too
+## 2026-11-05 (latest) — 0.273.0: on a desktop, hover a buff to read it and Alt+click it to cancel (`BL-364` items 3-4)
+
+Client only: no server change, no `game.db` delete. The phone behaves exactly as before. This opens `BL-364` (desktop and
+browser controls + settings); its other items follow as 0.273.x builds.
+
+- **Hover shows the card.** Owner: *"hover over buffs to show/hide the popup"*. On Windows and in a desktop browser, the
+  pointer resting on a buff square shows its card, and moving off hides it. This works on your own buff bar and on a
+  party member's effects. A hovered card lets the pointer through, so it can never cover the square and flicker. A click
+  still opens the ordinary card, which stays until you click elsewhere. The new `Ui/HoverTip.cs` is added only where
+  there is a mouse (`Application.isMobilePlatform` is false), because on a phone every tap would also count as a hover.
+- **Alt+click cancels a buff.** Owner: *"alt + click on buff should remove it"*. It is the mouse version of the phone's
+  press-and-hold and keeps the same rules: a debuff cannot be cancelled (Alt+click just shows its card), and a collapsed
+  group is removed whole. On a desktop the card's footer now reads *"Alt+click the icon to cancel."* Holding still works.
+
+## 2026-11-05 — 0.272.1: right-drag turns the camera endlessly in the BROWSER too
 
 Browser build only: no server change, no `game.db` delete, no new APK. The Windows build already locked correctly. Owner:
 *"the mouse is moving jsut invisible .. when i release the right click it just appear on other monitors ... also mouse
