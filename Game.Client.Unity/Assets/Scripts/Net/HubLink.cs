@@ -121,8 +121,11 @@ namespace Game.Client
     /// options the .NET JSON hub protocol uses (camelCase, case-insensitive). Everything runs on the ONE
     /// browser thread, so the callbacks need no marshalling — consumers still go through
     /// <see cref="UnityMainThreadDispatcher"/>, which is harmless here.
-    /// It compiles on every platform (a <c>DllImport("__Internal")</c> is only a declaration) so the
-    /// Editor type-check covers it; only <see cref="HubLinkCalls.CreateForPlatform"/> picks it.
+    /// The class compiles on every platform so the Editor type-check covers it; only
+    /// <see cref="HubLinkCalls.CreateForPlatform"/> picks it.
+    /// 🔴 The <c>DllImport("__Internal")</c> externs exist ONLY in a WebGL player. Under IL2CPP an
+    /// <c>__Internal</c> import is a STATIC link — Android's linker demands the symbol and failed the 0.272.0
+    /// APK on it (it is not "only a declaration") — so every other platform gets throwing stubs instead.
     /// </summary>
     public sealed class WebGlHubLink : IHubLink
     {
@@ -130,11 +133,20 @@ namespace Game.Client
         private delegate void ResultCb(int id, int ok, IntPtr text);
         private delegate void StateCb(int kind, IntPtr text);
 
+#if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")] private static extern void HubLink_Init(MessageCb onMessage, ResultCb onResult, StateCb onState);
         [DllImport("__Internal")] private static extern void HubLink_Start(int id, string url, string methodsJson);
         [DllImport("__Internal")] private static extern void HubLink_Send(int id, string method, string argsJson);
         [DllImport("__Internal")] private static extern void HubLink_Invoke(int id, string method, string argsJson);
         [DllImport("__Internal")] private static extern void HubLink_Stop();
+#else
+        private static Exception NotWebGl() => new PlatformNotSupportedException("WebGlHubLink runs only in a WebGL player.");
+        private static void HubLink_Init(MessageCb onMessage, ResultCb onResult, StateCb onState) => throw NotWebGl();
+        private static void HubLink_Start(int id, string url, string methodsJson) => throw NotWebGl();
+        private static void HubLink_Send(int id, string method, string argsJson) => throw NotWebGl();
+        private static void HubLink_Invoke(int id, string method, string argsJson) => throw NotWebGl();
+        private static void HubLink_Stop() => throw NotWebGl();
+#endif
 
         private static readonly JsonSerializerOptions Json = new JsonSerializerOptions
         {

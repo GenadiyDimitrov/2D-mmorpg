@@ -298,6 +298,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-361` | ⏸ | **An iOS client** — needs a Mac (or cloud Mac) + Xcode, an Apple Developer account ($99/yr), TestFlight for testers (HTTPS, which iOS demands, is already live) | ops |
 | `BL-362` | 🔵 | **Drop groups the IG way** — A: show group % + shares inside (display); B: author them that way; C: bake the formulas into a per-mob odds table (formula/hand rows) | loot |
 | `BL-363` | 🔴 | **A browser (WebGL) client** — test build BUILT (0.272.0, `/play/`, logs in + moves, 60 MB); owed: your FPS in a real browser, deploy, a WebGL quality preset | client |
+| `BL-364` | ❓ | **Desktop/browser-only SETTINGS** — a Settings section shown only on Windows + WebGL (APK where it applies): window/fullscreen, frame rate, render scale, mouse, big-screen defaults; ❓ your list | client |
 
 ---
 
@@ -2742,3 +2743,26 @@ CHANGELOG.
 4. Leave the .NET SignalR DLLs out of the WebGL build (the browser never uses them). That trims the 16 MB of code.
 5. Clean up the browser-only rough edges: `screen.orientation.lock()` logs an error on desktop, and three URP debug
    shaders are unsupported on WebGL (harmless).
+
+## `BL-364` ❓ DESKTOP / BROWSER-ONLY SETTINGS — waiting on your list (2026-11-05)
+
+Your words: *"then we will need browser/windows only settings so its playable"* … *"it is playable -> i havent said its
+not .. its not yet ready, its not less playable than a phone or a windows"* … *"do a bl for windows/brawser(apk if
+applicable) settings"*.
+
+**What it is:** the Settings window was built for the phone. The Windows build (`BL-360`) and the browser build (`BL-363`)
+need settings that only mean something there, shown in a section that exists only on those platforms. Where one also
+makes sense on the phone (frame rate, render scale), the APK gets it too.
+
+**Where things stand (0.272.0):** the only per-platform code is the WebGL server address (`GameBoot.Awake`). Every
+platform is capped at `Application.targetFrameRate = 60`. There is no quality level, render scale, resolution,
+fullscreen or vsync setting, and no mouse sensitivity. `BL-360` already owes a fullscreen on/off.
+
+**My first list (a proposal, not ruled):**
+1. **Window:** fullscreen / windowed and resolution on Windows; a fullscreen toggle in the browser.
+2. **Frame rate:** cap 30 / 60 / 120 / unlimited; vsync on Windows. (APK: 30 / 60 / 120 for high-refresh phones.)
+3. **Render scale** (URP, 0.5-1.0×): the main FPS lever in a browser on a big canvas. (APK: applies too.)
+4. **Mouse:** camera-turn sensitivity, invert Y, wheel zoom speed.
+5. **Big-screen defaults:** a smaller UI and skill bar on first launch on a desktop.
+
+❓ **Owed by you:** the settings you have in mind. They replace or extend this list.

@@ -48,6 +48,9 @@ before. Owner: *"Can we make the game browser as well ?"* … *"let's try. We al
   world (HUD, NPCs, quest tracker), and a ground click moves the character. The bridge reported no decode errors.
   ⚠ The headless run draws on the CPU (3 fps), so **real frame rate is still unmeasured**. It needs a real browser on a
   real GPU.
+- 🔴 **Fixed before deploy: the Android build would not LINK.** The bridge's `DllImport("__Internal")` externs were
+  compiled into every platform, and under IL2CPP an `__Internal` import is a static link, so the APK failed with
+  `undefined symbol: HubLink_Init`. They now exist only in a WebGL player; other platforms get throwing stubs.
 
 ## 2026-10-20 — 0.271.1: a missed BASIC ATTACK does not aggro
 
