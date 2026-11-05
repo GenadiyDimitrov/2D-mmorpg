@@ -8940,3 +8940,28 @@ trees and ground now follow the world distance (CHANGELOG 0.266.0). **❓ Owed b
 **a cycle button** each (my pick: fewer taps than a stepped slider on a phone, and it reads the value at a glance), over
 the steps you name — your `1500 / 3000 / 5000` style or the 500-steps.
 
+
+## `BL-364` — REWRITTEN 2026-11-05: your list arrived; the map split out as `BL-365`
+
+The entry as it stood:
+
+Your words: *"then we will need browser/windows only settings so its playable"* … *"it is playable -> i havent said its
+not .. its not yet ready, its not less playable than a phone or a windows"* … *"do a bl for windows/brawser(apk if
+applicable) settings"*.
+
+**What it is:** the Settings window was built for the phone. The Windows build (`BL-360`) and the browser build (`BL-363`)
+need settings that only mean something there, shown in a section that exists only on those platforms. Where one also
+makes sense on the phone (frame rate, render scale), the APK gets it too.
+
+**Where things stand (0.272.0):** the only per-platform code is the WebGL server address (`GameBoot.Awake`). Every
+platform is capped at `Application.targetFrameRate = 60`. There is no quality level, render scale, resolution,
+fullscreen or vsync setting, and no mouse sensitivity. `BL-360` already owes a fullscreen on/off.
+
+**My first list (a proposal, not ruled):**
+1. **Window:** fullscreen / windowed and resolution on Windows; a fullscreen toggle in the browser.
+2. **Frame rate:** cap 30 / 60 / 120 / unlimited; vsync on Windows. (APK: 30 / 60 / 120 for high-refresh phones.)
+3. **Render scale** (URP, 0.5-1.0×): the main FPS lever in a browser on a big canvas. (APK: applies too.)
+4. **Mouse:** camera-turn sensitivity, invert Y, wheel zoom speed.
+5. **Big-screen defaults:** a smaller UI and skill bar on first launch on a desktop.
+
+❓ **Owed by you:** the settings you have in mind. They replace or extend this list.
