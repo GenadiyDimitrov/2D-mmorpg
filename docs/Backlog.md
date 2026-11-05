@@ -297,6 +297,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-360` | 🔴 | **A Windows PC client** — test build BUILT (`publish.ps1 -Windows`, bordered resizable window); still owed: a fullscreen on/off option, keyboard shortcuts, a PC layout check | client |
 | `BL-361` | ⏸ | **An iOS client** — needs a Mac (or cloud Mac) + Xcode, an Apple Developer account ($99/yr), TestFlight for testers (HTTPS, which iOS demands, is already live) | ops |
 | `BL-362` | 🔵 | **Drop groups the IG way** — A: show group % + shares inside (display); B: author them that way; C: bake the formulas into a per-mob odds table (formula/hand rows) | loot |
+| `BL-363` | 🔴 | **A browser (WebGL) client** — play from a link on the site, no install; needs a JS SignalR transport behind `NetworkChannel` + no background threads | client |
 
 ---
 
@@ -2708,3 +2709,25 @@ they exist only as code. B and C together are the full IG-style data file.
 Background: the comparison with IG's grouped drops and WoW-style cascades from the same conversation. The two real
 differences from IG are who pays when an item is added (B), and the over-100% rule (we pay extra picks; IG pays more
 quantity of the one item picked).
+
+## `BL-363` 🔴 A BROWSER (WebGL) CLIENT — test build first (2026-11-05)
+
+Your words: *"Can we make the game browser as well ? We can download it for android and can play on windows, does that
+mean it's possie a browser?"* … *"Backlog it … And let's try. We already have a website"*.
+
+**Why it is not just another export:** Android and Windows run real .NET; a WebGL build runs in ONE browser thread with
+no sockets of its own. The game would build and never connect.
+1. **The transport.** `NetworkChannel.cs` uses the .NET SignalR client (`Microsoft.AspNetCore.SignalR.Client`), which
+   needs threads + .NET's WebSocket stack. On WebGL it is replaced by the official **JavaScript** SignalR client in the
+   page, bridged through a `.jslib`. Everything else talks to `NetworkChannel`'s events and `Send*Async`, so the rest of
+   the client does not change. Android/Windows keep the .NET client.
+2. **No background threads.** `Task.Run` / `new Thread` in `GameBoot`, `GameUi`, `ClientLog`,
+   `UnityMainThreadDispatcher` become main-thread work on WebGL.
+3. **Hosting.** The server serves the build at `/play` beside `/apk` and `/pc`, same origin, so no CORS. The site
+   gets a "Play in browser" button.
+
+**Known costs:** a 30-60 MB first download (cached after), lower frame rate than the Windows build (fog/view distance
+defaults lower on WebGL), phones in a browser will struggle (desktop is the target), and right-drag camera needs a click
+before the browser allows pointer lock.
+
+**Step 1 — the spike:** the JS transport + one WebGL build that logs in and moves. Measure size and FPS, then decide.
