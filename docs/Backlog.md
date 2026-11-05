@@ -2756,11 +2756,11 @@ was the fourth item on your half; it is a feature of its own and is now `BL-365`
 section of Settings is shown only on Windows and WebGL. `BL-360`'s owed fullscreen and shortcut settings are covered here.
 
 **Your half:**
-1. **Rebindable shortcuts.** *"I want to be able to change the shortcuts of hotbar (main + additional)"*: every square of
+1. ✅ **0.273.1 BUILT.** **Rebindable shortcuts.** *"I want to be able to change the shortcuts of hotbar (main + additional)"*: every square of
    the main bar and of both additional bars gets its own key, which you can change. Today these are fixed: 1…0, Shift+1…0
    and Ctrl+1…0 (`GameUi.UpdateHotkeys`, 0.265.0). The window keys (B C K L M, Enter, PgUp/PgDn) go in the same list.
    Bindings are saved per device in `PlayerPrefs`. A key already bound elsewhere is unbound from there, and you are told.
-2. **Keyboard movement.** *"as well as arrow/wasd keys for move"*: WASD and the arrows move you relative to the camera,
+2. ✅ **0.273.1 BUILT.** **Keyboard movement.** *"as well as arrow/wasd keys for move"*: WASD and the arrows move you relative to the camera,
    and are rebindable like the bar. ⚠ **This does not exist today.** Movement is tap-to-walk only. The server takes a
    point (`Move(x, y)`), so a held key sends a short point ahead of you, refreshed while it is held, and letting go stops
    you. W/A/S/D are free today (the window keys are B C K L M).

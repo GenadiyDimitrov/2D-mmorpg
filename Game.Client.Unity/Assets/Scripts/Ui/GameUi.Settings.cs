@@ -318,6 +318,19 @@ namespace Game.Client
                         new Vector2(292f, y), new Vector2(260f, 38f));
             _extraSlotsToggle = extraSlots;
             y -= 48f;
+
+            // `BL-364` — the DESKTOP section: shown only where there is a mouse and keyboard (Windows, a desktop browser).
+            if (HoverTip.Wanted)
+            {
+                var head = UiKit.Label(inner, "Desktop", 16f, UiKit.Accent, TextAlignmentOptions.BottomLeft);
+                UiKit.Place(UiKit.Rect(head.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                            new Vector2(18f, y), new Vector2(400f, 30f));
+                y -= 36f;
+                var keys = UiKit.TextButton(inner, "Keys…", () => OpenKeysWindow(), 15f);
+                UiKit.Place(UiKit.Rect(keys.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                            new Vector2(18f, y), new Vector2(260f, 38f));
+                y -= 48f;
+            }
             content.sizeDelta = new Vector2(0f, -y);   // the scroll's whole height: down to the last row
 
             inner = frame;   // the footer buttons stay below the scrolling rows

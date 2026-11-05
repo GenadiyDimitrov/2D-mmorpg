@@ -289,7 +289,7 @@ namespace Game.Client
         private CanvasGroup _buffPopupGroup;
 
         /// <summary>Alt held — Alt+click a buff cancels it on a desktop (`BL-364`), the mouse twin of hold.</summary>
-        private static bool AltHeld => Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
+        private static bool AltHeld => KeyBind.AltHeld;
 
         /// <summary>Hover-open the card for <paramref name="owner"/>; <paramref name="show"/> fills it.</summary>
         private void HoverBuffPopup(object owner, System.Action show)

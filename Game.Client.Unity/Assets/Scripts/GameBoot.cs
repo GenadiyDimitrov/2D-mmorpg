@@ -2380,7 +2380,21 @@ namespace Game.Client
         public bool IsCasting => !string.IsNullOrEmpty(CastingSkill)
                                  && Time.realtimeSinceStartup < CastEndsAt;
 
-        public async void Move(float serverX, float serverY)
+        /// <summary>Why a move was refused. A held movement key re-sends its order several times a second, so from the
+        /// keys (`BL-364`) the same reason is said at most once every 3 seconds instead of flooding the chat.</summary>
+        private void MoveWarn(bool fromKeys, string why)
+        {
+            if (fromKeys && why == _lastKeyMoveWarn && Time.unscaledTime - _lastKeyMoveWarnAt < 3f) return;
+            if (fromKeys) { _lastKeyMoveWarn = why; _lastKeyMoveWarnAt = Time.unscaledTime; }
+            ClientLog.Warn(why);
+        }
+        private string _lastKeyMoveWarn;
+        private float _lastKeyMoveWarnAt;
+
+        /// <summary>Walk to a server point. <paramref name="fromKeys"/> = the order comes from WASD/arrows (`BL-364`):
+        /// no destination ring (the point is only a little ahead of you and moves every few frames), and its
+        /// refusals are not repeated.</summary>
+        public async void Move(float serverX, float serverY, bool fromKeys = false)
         {
             if (Phase != ClientPhase.InWorld) return;
 
@@ -2393,7 +2407,7 @@ namespace Game.Client
             // IG one — "casting roots you, ESC cancels".
             if (IsCasting)
             {
-                ClientLog.Warn("Can't move while casting — tap the cast bar (or press Back) to cancel.");
+                MoveWarn(fromKeys, "Can't move while casting — tap the cast bar (or press Back) to cancel.");
                 return;
             }
 
@@ -2403,7 +2417,7 @@ namespace Game.Client
             // you then chose answered "Too far". The walk-to-talk below is the sanctioned way in.
             if (Ui != null && Ui.NpcWindowOpen)
             {
-                ClientLog.Warn("Close the window first — you can't walk away mid-conversation.");
+                MoveWarn(fromKeys, "Close the window first — you can't walk away mid-conversation.");
                 return;
             }
 
@@ -2412,7 +2426,7 @@ namespace Game.Client
             // corpse slid around on your own screen while standing still on everyone else's.
             if (Entities != null && Entities.TryGetState(SelfId, out var deadCheck) && deadCheck.Dead)
             {
-                ClientLog.Warn("You are dead — you can't move.");
+                MoveWarn(fromKeys, "You are dead — you can't move.");
                 return;
             }
 
@@ -2424,7 +2438,7 @@ namespace Game.Client
                             && selfState.Speed <= 0.01f;
             if (sitting || immobile)
             {
-                ClientLog.Warn(sitting ? "Stand up first — you can't move while sitting."
+                MoveWarn(fromKeys, sitting ? "Stand up first — you can't move while sitting."
                                        : "You can't move right now.");
                 return;
             }
@@ -2448,7 +2462,7 @@ namespace Game.Client
                     var tapped = WorldDomain.At(serverX, serverY);
                     if (tapped != domain && tapped.Contains(serverX, serverY))
                     {
-                        ClientLog.Warn("You can't walk to " + tapped.Name + " — only a teleport goes there.");
+                        MoveWarn(fromKeys, "You can't walk to " + tapped.Name + " — only a teleport goes there.");
                         return;
                     }
                     var stop = domain.Clamp(serverX, serverY);
@@ -2458,7 +2472,7 @@ namespace Game.Client
 
             // Drop the destination ring here rather than in TouchInput, so EVERY move order shows one
             // — including any future ones that don't come from a tap.
-            if (Marker != null) Marker.ShowAt(WorldMapper.ToUnity(serverX, serverY));
+            if (Marker != null && !fromKeys) Marker.ShowAt(WorldMapper.ToUnity(serverX, serverY));
 
             // PREDICT IMMEDIATELY. Waiting for the server's first position means every step you take
             // starts a round trip late, and no amount of smoothing hides that on the character you are

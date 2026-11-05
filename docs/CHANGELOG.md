@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.273.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.273.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,26 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-11-05 (latest) — 0.273.0: on a desktop, hover a buff to read it and Alt+click it to cancel (`BL-364` items 3-4)
+## 2026-11-05 (latest) — 0.273.1: every key is rebindable, and WASD / the arrows walk (`BL-364` items 1-2)
+
+Client only: no server change, no `game.db` delete. Owner: *"I want settings for shortcuts -> I want to be able to change
+the shortcuts of hotbar (main + additional) - as well as arrow/wasd keys for move"*.
+
+- **The Keys window** (Settings → Desktop → Keys…; the Desktop section shows only on Windows and in a desktop browser).
+  It lists every shortcut: movement, all 30 squares of the main bar and both extra bars, the bar's page, the five window
+  keys and chat. Each one has two key boxes. Click a box, then press the new key, with Shift, Ctrl or Alt if you want
+  them. Esc cancels and Backspace clears. A key that was already bound elsewhere is taken from there, and the line at the
+  top says where it came from. *Reset keys* restores the defaults. The keys are saved on the device (`PlayerPrefs`
+  `keys.<id>`), in `Ui/KeyBindings.cs`. Esc stays Back and cannot be rebound, because it is also the phone's Back button.
+- **The defaults are 0.265.0's keys, plus movement.** One change: **in a browser, extra bar 2 defaults to Alt+1…0**, not
+  Ctrl+1…0, because the browser takes Ctrl+1…9 to switch tabs before the game sees them. Windows keeps Ctrl.
+- **WASD and the arrows walk you relative to the camera**: W is up the screen, whichever way the camera is turned, and
+  turning the camera while you walk turns the walk. The server only takes a destination, so a held key sends a point
+  0.6 s of walking ahead of you, re-sent every 0.25 s or as soon as the direction changes. Letting go sends the spot
+  you are on, which stops you. Keyboard walks drop no destination ring. If you cannot move (casting, sitting, in an NPC
+  window), the reason is said once every 3 seconds, not on every re-send. Typing in a text field stops the walk.
+
+## 2026-11-05 — 0.273.0: on a desktop, hover a buff to read it and Alt+click it to cancel (`BL-364` items 3-4)
 
 Client only: no server change, no `game.db` delete. The phone behaves exactly as before. This opens `BL-364` (desktop and
 browser controls + settings); its other items follow as 0.273.x builds.

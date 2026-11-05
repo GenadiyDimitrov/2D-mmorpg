@@ -147,6 +147,7 @@ namespace Game.Client
 
             RefreshStatusStrip();
             SyncCameraSliders();   // `BL-344` step 8: the drag moves what the sliders show
+            UpdateKeyCapture();    // `BL-364`: the Keys window waits for a key here, login screen included
 
             // Screens are BUILT once and shown/hidden; only the visible one is refreshed. Rebuilding
             // per frame is what makes an immediate-mode UI expensive, and it is the habit worth

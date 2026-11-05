@@ -25,6 +25,24 @@
 
 ---
 
+## §171 — 0.273.1: rebindable keys, WASD / arrow walking (desktop, `BL-364`) (2026-11-05)
+
+⚠ **Windows build and browser** (`/play/`).
+
+- `171a` [ ] - Your ask: *"as well as arrow/wasd keys for move"*. Hold W, then the arrows: do you walk, and do you stop the
+  moment you let go? Turn the camera with the right button while holding W: does the walk turn with it? Hold W+D: do you
+  walk diagonally? Is it smooth, or does it stutter every quarter-second? ->
+- `171b` [ ] - Your ask: *"I want to be able to change the shortcuts of hotbar (main + additional)"*. Settings → Desktop →
+  Keys…: rebind a main-bar square to another key (try one with Shift or Alt), then use it in the world. Bind a key that is
+  already used: does the top line say where it was taken from, and is the old box now empty? Restart the game: are your
+  keys kept? Does Reset keys bring back the defaults? ->
+- `171c` [ ] - ❓ My choice, not yours: **in the browser the 3rd bar defaults to Alt+1…0**, because the browser takes
+  Ctrl+1…9 to switch tabs. Does Alt+1 work in your browser, or does the browser grab that too? Keep it, or name other keys. ->
+- `171d` [ ] - While typing in chat, W and the digits only type and never walk or cast. Esc while a key box is waiting
+  cancels the box only, and does not also close the window. ->
+
+---
+
 ## §170 — 0.273.0: hover a buff to read it, Alt+click to cancel it (desktop, `BL-364`) (2026-11-05)
 
 ⚠ **Windows build and browser** (`/play/`). The phone should behave exactly as before.

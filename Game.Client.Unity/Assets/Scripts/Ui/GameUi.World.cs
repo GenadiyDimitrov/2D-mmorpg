@@ -360,6 +360,7 @@ namespace Game.Client
             BuildTargetWindow();
             BuildSettingsWindow();
             BuildSoundWindow();   // `BL-45`
+            BuildKeysWindow();    // `BL-364`
             BuildOptionsWindow();
             BuildQuestWindow();
             BuildDialogWindow();
@@ -2399,51 +2400,6 @@ namespace Game.Client
             || (_extraSlots > 0 && _skillBarExtraPanel != null
                 && RectTransformUtility.RectangleContainsScreenPoint(_skillBarExtraPanel, screen, null));
 
-        private static readonly KeyCode[] DigitKeys =
-        {
-            KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.Alpha4, KeyCode.Alpha5,
-            KeyCode.Alpha6, KeyCode.Alpha7, KeyCode.Alpha8, KeyCode.Alpha9, KeyCode.Alpha0,
-        };
-
-        /// <summary>`BL-360` — KEYBOARD SHORTCUTS for the PC build (a phone has no keyboard, so this is inert there).
-        /// <list type="bullet">
-        /// <item>1…0 = the main bar's ten squares; Shift+1…0 = additional bar 1, Ctrl+1…0 = bar 2 (when shown).</item>
-        /// <item>PageUp / PageDown = the bar's page.</item>
-        /// <item>B = Bag, C = Character, K = Skills, L = Quests, M = Menu. Enter = type in chat. (Esc = Back, as before.)</item>
-        /// </list>
-        /// Silent while a text field has the caret — typing "1" in chat must not cast.</summary>
-        private void UpdateHotkeys()
-        {
-            if (!Input.anyKeyDown) return;
-            var selected = UnityEngine.EventSystems.EventSystem.current?.currentSelectedGameObject;
-            if (selected != null && selected.GetComponent<TMP_InputField>() is { isFocused: true }) return;
-
-            bool shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-            bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
-            for (int n = 0; n < DigitKeys.Length; n++)
-            {
-                if (!Input.GetKeyDown(DigitKeys[n])) continue;
-                int bar = ctrl ? 2 : shift ? 1 : 0;
-                int visible = bar * SlotsPerPage + n;
-                if (bar == 0 ? n < _mainCount : visible - _mainCount < _extraSlots) FireSlot(visible);
-                return;
-            }
-
-            if (Input.GetKeyDown(KeyCode.PageDown)) PageBy(1);
-            else if (Input.GetKeyDown(KeyCode.PageUp)) PageBy(-1);
-            else if (Input.GetKeyDown(KeyCode.B)) ToggleWindow(_bagPanel);
-            else if (Input.GetKeyDown(KeyCode.C)) ToggleWindow(_statsPanel);
-            else if (Input.GetKeyDown(KeyCode.K)) ToggleWindow(_skillsPanel);
-            else if (Input.GetKeyDown(KeyCode.L)) ToggleWindow(_questPanel);
-            else if (Input.GetKeyDown(KeyCode.M)) ToggleWindow(_menuPanel);
-            else if ((Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
-                     && _chatSubmitFrame != Time.frameCount)
-            {
-                _commandField.Select();
-                _commandField.ActivateInputField();
-            }
-        }
-
         /// <summary>The frame a chat line was sent — the Enter that sent it must not also reopen the field (`BL-360`).</summary>
         private int _chatSubmitFrame = -1;
 
@@ -3071,7 +3027,8 @@ namespace Game.Client
         /// wantsToQuit veto.</summary>
         private void UpdateBackButton()
         {
-            if (Input.GetKeyDown(KeyCode.Escape)) AskBack();
+            // `BL-364`: the Esc that cancels a key capture is the capture's, not Back's.
+            if (Input.GetKeyDown(KeyCode.Escape) && !KeyCaptureOwnsEsc) AskBack();
         }
 
         private void AskBack()
