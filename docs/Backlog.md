@@ -300,7 +300,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-363` | 🔴 | **A browser (WebGL) client** — test build BUILT (0.272.0, `/play/`, logs in + moves, 60 MB); owed: your FPS in a real browser, deploy, a WebGL quality preset | client |
 | `BL-368` | 🔴 | **PC launcher / patcher** — `Vardelar-Launcher.exe` downloads only the changed files (≈30 of 163 MB per version), then starts the game; starting `Vardelar.exe` directly hands off to the launcher | client |
 | `BL-369` | 🔴 | **Web: always the newest build, smaller downloads** — hashed file names + `index.html` never cached, Brotli instead of Gzip, a "new version — Reload" button in an open tab | client |
-| `BL-370` | 🔵 | **Discussion: how far do we keep expanding the Windows / web clients?** | client |
+| `BL-370` | 🔵 | **Discussion: how far do we keep expanding the Windows / web clients?** — ✅ RULED: phone first, one game, no platform-exclusive features; open only until `BL-368` is settled | client |
 
 ---
 
@@ -2801,3 +2801,39 @@ the answer: `BL-368` launcher, `BL-369` web updates, `BL-363`'s FPS reading and 
 for the discussion: is the phone still the main client and PC/web a convenience, or are all three equal (which decides
 whether every UI feature owes a desktop layout)? And does each new client platform cost more upkeep per release than it
 brings in players?
+
+### ✅ RULED 2026-11-06: phone first, ONE game, every platform equal in content
+
+Your words when you raised it: *"my idea was an android inspiration game .. but when we started it was wpf .. so we made
+a windows app ... then i saw hordes.io and i wanted web (which is convenient to test) … if we make a real crossplatform
+game .. isn't it overkill and hard to manage … but in the same time i like players to have option"*. Your ruling: *"write
+this into 370 . but lets discuss the 368 dont close it yet"*.
+
+**The fact behind the ruling:** these are not three games. There is one server and one Unity client, and Android, web and
+Windows are three build targets of it. Gameplay, balance, skills, quests, the server and the CSVs cost nothing extra per
+platform. The ongoing cost is: every new UI window has to work with touch AND mouse, each release is tested on 3
+targets, WebGL's limits (memory, FPS, one thread), and keeping every client on the server's version (`BL-369`).
+
+**The rules:**
+1. **Android is the MAIN platform** and goes to the Play Store. A new feature is designed for the phone screen first.
+   (Play Store note: a new personal developer account must run a closed test, about 12 testers for 14 days, before a
+   public release, and needs a privacy policy and a data-safety form.)
+2. **Web is an EQUAL client, with the same content.** It is the easiest way in for new players (open a link, play) and the
+   fastest test loop. It gets its own layout, never its own content.
+3. **Windows is the least valuable of the three:** the web already reaches PC players, and the zip only adds frame rate.
+   It keeps building while it costs one `publish.ps1` flag. If a platform is ever dropped, it is this one. Whether it
+   earns a launcher is `BL-368`, **still open for discussion**.
+4. 🔑 **NO FEATURE EXCLUSIVE TO ONE PLATFORM.** Desktop may get conveniences (hotkeys, hover cards, a larger map, more
+   settings). It never gets content or power the phone lacks. "Expand PC/web" means expand controls and layout, never
+   the game.
+5. **A UI feature owes a desktop layout only where the phone layout is awkward with a mouse.** Otherwise the phone layout
+   is the layout.
+6. **iOS (`BL-361`) waits until Android is live.**
+
+**Security, which was the other question:** the server is authoritative, so which platform a client runs on barely
+matters. Every client (APK, WebGL, Windows) can be decompiled, so none may carry a secret. The real risk is BOTS: PC and
+web make scripting easier, and Android gets botted through emulators anyway. The answer is on the server (rate limits,
+movement checks, sanity checks), and auto-hunt already takes away much of the reason to bot. Web only adds HTTPS/WSS and a
+careful login token. Chat is drawn in the Unity canvas, not as HTML, so browser XSS does not apply.
+
+**Why it stays open:** only until `BL-368` is settled. Then this entry moves to the archive.
