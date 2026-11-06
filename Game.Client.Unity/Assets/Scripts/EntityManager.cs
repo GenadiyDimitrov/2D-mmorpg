@@ -327,15 +327,20 @@ namespace Game.Client
             // answers for this creature (which is every creature until art lands) nothing below has
             // any effect and the client is byte-for-byte what it was. That is the fallback: not a
             // placeholder mesh, not an error — the previous release.
+            //
+            // `BL-371` — the prefab may arrive LATER (GameAssets): the sphere stands in until then, and AttachModel
+            // catches the late body up on everything Upsert set meanwhile (weapons, outfit, death, fade, far).
+            // ⚠ The view can be gone by then — a look change or the models toggle rebuilds it — and a dead view's
+            // body must not be built at all.
             if (ModelsEnabled)
             {
-                var prefab = ModelLibrary.Prefab(e);
-                if (prefab != null)
+                ModelLibrary.Prefab(e, prefab =>
                 {
+                    if (prefab == null || view == null || !ModelsEnabled) return;
                     var model = Instantiate(prefab);
                     CharacterLook.Apply(model, e);   // `BL-354` — hair, colours, race build; before parenting
                     view.AttachModel(model);
-                }
+                });
             }
             return view;
         }
@@ -370,38 +375,29 @@ namespace Game.Client
     /// members inside one. A new mob inherits a model for free because it already had to declare a
     /// category.</para>
     ///
-    /// <para>⚠ <b>Why <c>Resources.Load</c> and not Addressables:</b> the Addressables package is not
-    /// in this project's manifest, and adding it is an Editor decision the owner has not made. The key
-    /// STRINGS here are already Addressables-shaped ("Models/xxx"), and every load in the client goes
-    /// through <see cref="Load"/> — so the day content moves to a download-on-demand catalog served off
-    /// the game server, this is one function body, not a rewrite. That seam costs nothing today, which
-    /// is the only reason it is here.</para>
+    /// <para>🔑 <b>ASYNCHRONOUS since 0.276.0 (`BL-371` stage 1).</b> The owner decided for Addressables on
+    /// 2026-11-06 (*"shouldnt we lay the ground work now for the asset bundles?"*), so the old note here —
+    /// "Resources because adding the package is an Editor decision he has not made" — is retired. Every key goes
+    /// through <see cref="GameAssets"/>, which is callback-shaped: the body keeps its placeholder sphere until the
+    /// prefab arrives, and the key STRINGS ("Models/xxx") are already the addresses stage 2's bundles will use.</para>
     /// </summary>
     public static class ModelLibrary
     {
-        /// <summary>Resolved prefabs, INCLUDING the misses. Caching null matters more than caching the
-        /// hits: until art lands every lookup misses, and a miss that is not remembered is a
-        /// filesystem probe per spawn, forever, on a phone.</summary>
-        private static readonly Dictionary<string, GameObject> Cache = new Dictionary<string, GameObject>();
+        /// <summary>The best prefab for this entity, or null to keep the sphere. May answer at once (cached) or
+        /// frames later — see <see cref="GameAssets"/>.</summary>
+        public static void Prefab(EntityDto e, System.Action<GameObject> done) => FirstHit(Keys(e).GetEnumerator(), done);
 
-        /// <summary>The best prefab for this entity, or null to keep the sphere.</summary>
-        public static GameObject Prefab(EntityDto e)
+        /// <summary>Walks the fallback chain ONE KEY AT A TIME, asking for the next only once the last has missed:
+        /// asking for them all at once would load the general bodies for every creature that has a specific one.
+        /// <see cref="GameAssets"/> caches the misses, so a second walk of a warm chain answers on the spot.</summary>
+        private static void FirstHit(IEnumerator<string> keys, System.Action<GameObject> done)
         {
-            foreach (var key in Keys(e))
+            if (!keys.MoveNext()) { done(null); return; }
+            GameAssets.Load<GameObject>(keys.Current, prefab =>
             {
-                var prefab = Load(key);
-                if (prefab != null) return prefab;
-            }
-            return null;
-        }
-
-        /// <summary>The single load call in the client — see the Addressables note on the class.</summary>
-        private static GameObject Load(string key)
-        {
-            if (Cache.TryGetValue(key, out var cached)) return cached;
-            var prefab = Resources.Load<GameObject>(key);
-            Cache[key] = prefab;
-            return prefab;
+                if (prefab != null) done(prefab);
+                else FirstHit(keys, done);
+            });
         }
 
         /// <summary>Most specific first. Mobs are keyed by the server's family/role; players and NPCs
@@ -446,14 +442,13 @@ namespace Game.Client
 
         /// <summary>`BL-354` — a player's body from the bare picks: the character-creation preview has no DTO yet.
         /// The same chain <see cref="Keys"/> walks for a spawned player, so the preview cannot disagree with the world.</summary>
-        public static GameObject PlayerPrefab(Race race, BaseClass cls, Gender gender)
+        public static void PlayerPrefab(Race race, BaseClass cls, Gender gender, System.Action<GameObject> done) =>
+            FirstHit(WithHumanoid(PlayerKeys(race, cls, gender)).GetEnumerator(), done);
+
+        private static IEnumerable<string> WithHumanoid(IEnumerable<string> keys)
         {
-            foreach (var key in PlayerKeys(race, cls, gender))
-            {
-                var prefab = Load(key);
-                if (prefab != null) return prefab;
-            }
-            return Load("Models/humanoid");
+            foreach (var k in keys) yield return k;
+            yield return "Models/humanoid";
         }
 
         private static IEnumerable<string> PlayerKeys(Race race, BaseClass baseClass, Gender gender)

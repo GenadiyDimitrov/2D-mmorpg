@@ -167,6 +167,7 @@ namespace Game.Client
             // The tree sits on the root canvas, outside both screens, so a phase change has to close it — one
             // opened at character creation must not follow you into the world.
             if (Boot.Phase != _builtPhase) CloseWindow(_treePanel);
+            RefreshSkillTreeIcons();   // `BL-371`: pictures that landed after it was drawn
             // The quest arrow's pick is per CHARACTER, but these fields live on the UI for the whole app session —
             // an arrow turned off on one character used to stay off on the next, which is how a brand-new character
             // got no arrow to Cera (`121d`). Every world entry starts on the default: follow the first pinned quest.
@@ -368,14 +369,22 @@ namespace Game.Client
         /// on those sides fade to black into it, so a phone of any shape sees a soft border, never a bar or a seam.
         /// The logo and title sit in the top ~40% of the art, which is why both account panels are anchored to the
         /// BOTTOM of the screen rather than its centre.</summary>
-        private void BuildAccountBackdrop()
+        ///
+        /// <para>`BL-371` — the art comes through <see cref="GameAssets"/> and may land a few frames after the screens
+        /// are built, so it is put in as the root's FIRST child when it does, and takes the current screen's visibility.</para>
+        private void BuildAccountBackdrop() => GameAssets.Load<Texture2D>("Ui/LoginBackground", tex =>
         {
-            var tex = Resources.Load<Texture2D>("Ui/LoginBackground");
-            if (tex == null) return;   // a missing image leaves the old plain screen, never a broken one
+            if (this == null || _root == null) return;
+            if (tex != null) BuildAccountBackdrop(tex);   // a missing image leaves the old plain screen, never a broken one
+        });
+
+        private void BuildAccountBackdrop(Texture2D tex)
+        {
             float aspect = (float)tex.width / tex.height;
 
             var host = new GameObject("AccountBackdrop", typeof(RectTransform), typeof(Image));
             host.transform.SetParent(_root, false);
+            host.transform.SetAsFirstSibling();   // everything else draws over it
             UiKit.Stretch((RectTransform)host.transform, 0f, 0f, 0f, 0f);
             host.AddComponent<RectMask2D>();
             var black = host.GetComponent<Image>();
@@ -671,8 +680,10 @@ namespace Game.Client
             UiKit.SetButtonText(_skinButton, "Skin: " + Appearance.SkinToneNames[_skin]);
 
             if (_preview == null) return;
-            _previewImage.enabled = _preview.Show(Races[_raceIndex], Classes[_classIndex], _gender, _hair, _hairColor, _skin);
             _preview.SetVisible(_createPanel.gameObject.activeSelf);   // a body built while closed must not animate
+            // `BL-371` — the body can arrive a few frames later; the frame shows once it is known whether there is one.
+            _preview.Show(Races[_raceIndex], Classes[_classIndex], _gender, _hair, _hairColor, _skin,
+                          ok => { if (_previewImage != null) _previewImage.enabled = ok; });
         }
 
         private void RefreshCharacterSelect()

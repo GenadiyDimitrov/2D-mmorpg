@@ -276,23 +276,42 @@ namespace Game.Client
         private DayNight.Shadows _shadows = (DayNight.Shadows)(-1);
         private PropScatter.Level _scenery = (PropScatter.Level)(-1);
 
+        /// <summary>`BL-371` — every building model is asked for once (GameAssets) and each lot is placed when ITS model
+        /// lands, so a town fills in over the first frames rather than all at once. Each landing forces a re-cull, so
+        /// <see cref="Update"/> puts the new ones under the view-distance and scenery rules on the next frame.</summary>
         private void Awake()
         {
-            var cache = new Dictionary<string, GameObject>();
-            int missing = 0;
+            var byModel = new Dictionary<string, List<Placed>>();
             foreach (var p in All)
             {
-                if (!cache.TryGetValue(p.Model, out var prefab))
-                    cache[p.Model] = prefab = Resources.Load<GameObject>("Buildings/" + p.Model);
-                if (prefab == null) { missing++; continue; }
-                var go = Instantiate(prefab, p.Position, p.Rotation, transform);
-                go.transform.localScale = p.Scale;
-                foreach (var r in go.GetComponentsInChildren<MeshRenderer>()) _renderers.Add(r);
-                if (p.Hut) _hutObjects.Add(go);
-                _objects.Add((go, p.Position, p.Hut));
+                if (!byModel.TryGetValue(p.Model, out var lots)) byModel[p.Model] = lots = new List<Placed>();
+                lots.Add(p);
             }
-            Debug.Log("[Buildings] " + (All.Count - missing) + " placed (" + _hutObjects.Count + " huts)"
-                      + (missing > 0 ? ", " + missing + " with no model" : "") + ".");
+            int left = byModel.Count, missing = 0;
+            foreach (var kv in byModel)
+            {
+                var lots = kv.Value;
+                GameAssets.Load<GameObject>("Buildings/" + kv.Key, prefab =>
+                {
+                    if (this == null) return;
+                    if (prefab == null) missing += lots.Count;
+                    else foreach (var p in lots) Place(prefab, p);
+                    _shadows = (DayNight.Shadows)(-1);   // the new renderers take the shadow setting…
+                    _drawnRange = -1f;                   // …and the cull, on the next Update
+                    if (--left == 0)
+                        Debug.Log("[Buildings] " + (All.Count - missing) + " placed (" + _hutObjects.Count + " huts)"
+                                  + (missing > 0 ? ", " + missing + " with no model" : "") + ".");
+                });
+            }
+        }
+
+        private void Place(GameObject prefab, Placed p)
+        {
+            var go = Instantiate(prefab, p.Position, p.Rotation, transform);
+            go.transform.localScale = p.Scale;
+            foreach (var r in go.GetComponentsInChildren<MeshRenderer>()) _renderers.Add(r);
+            if (p.Hut) _hutObjects.Add(go);
+            _objects.Add((go, p.Position, p.Hut));
         }
 
         private void Update()

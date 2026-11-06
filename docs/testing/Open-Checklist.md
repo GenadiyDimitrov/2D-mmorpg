@@ -25,6 +25,20 @@
 
 ---
 
+## §179 — 0.276.0: every asset loads through one async loader (`BL-371` stage 1, 2026-11-06)
+
+Nothing should look different. Anything that does is a bug in this version.
+
+- `179a` [ ] - Log in and walk around town and the fields: bodies, weapons, buildings, trees/rocks, music, sounds, login
+  art. Is everything there as before? (A sphere or placeholder may flash for a frame on the first spawn; it should not stay.) ->
+- `179b` [ ] - Character creation: click quickly through race, body, hair and colour. Does the preview keep up without an
+  empty frame or a wrong body left standing? ->
+- `179c` [ ] - Open Skills, the skill tree, the bag and the paper doll right after logging in. Do the pictures all show
+  (not stuck on letters)? ->
+- `179d` [ ] - Swap weapons quickly (e.g. sword → bow → sword). Does the body end up holding only the last one? ->
+
+---
+
 ## §178 — 0.275.0: key binding, bar hover, map detail + city view (`BL-366`, `BL-367`, 2026-11-06)
 
 - `178a` [ ] - 🐞 your find: Keys window, bind a bar key (say 1) while that bar square holds a skill. Does the skill

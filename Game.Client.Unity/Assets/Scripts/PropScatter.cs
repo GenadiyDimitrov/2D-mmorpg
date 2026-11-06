@@ -146,6 +146,8 @@ namespace Game.Client
         private readonly Matrix4x4[] _batch = new Matrix4x4[1023];
         private Material _placeholderMaterial;
         private bool _linear;
+        private bool _modelsReady;     // `BL-371`: every kind has at least its placeholder — chunks may be rolled
+        private bool _rerollPending;   // a kind's models changed: re-roll the live chunks (once, in LateUpdate)
 
         /// <summary>Set by <see cref="BiomeGround"/>: re-roll every live chunk (quality change).</summary>
         public System.Action<PropScatter> RerollAll;
@@ -172,7 +174,7 @@ namespace Game.Client
         public void ChunkBuilt(Vector2Int key)
         {
             var list = _pool.Count > 0 ? _pool.Pop() : new List<Placed>();
-            if (Quality != Level.Off) Roll(key, list);
+            if (Quality != Level.Off && _modelsReady) Roll(key, list);   // not ready: the re-roll on arrival fills it
             _chunks[key] = list;
         }
 
@@ -293,6 +295,7 @@ namespace Game.Client
 
         private void LateUpdate()
         {
+            if (_rerollPending) { _rerollPending = false; OnQualityChanged(); }   // `BL-371`: models landed
             if (Quality == Level.Off || _chunks.Count == 0) return;
             var cam = Camera.main;
             if (cam == null) return;
@@ -362,23 +365,59 @@ namespace Game.Client
 
         // ── models ──────────────────────────────────────────────────────────────────────────────
 
+        /// <summary>`BL-371` — the models come through <see cref="GameAssets"/> and land LATER, so this runs in steps:
+        /// (1) the shipped placeholder material; (2) with it, a placeholder shape for EVERY kind, and the world can be
+        /// scattered; (3) each kind's real prefabs replace its placeholder as they land, and the live chunks re-roll once
+        /// that frame (a kind's model count feeds the roll, so a chunk rolled on the placeholder must be rolled again).
+        /// Until step 2 nothing is rolled at all (<see cref="_modelsReady"/>).</summary>
         private void LoadModels()
         {
-            for (int k = 0; k < _parts.Length; k++)
+            for (int k = 0; k < _parts.Length; k++) { _parts[k] = new List<Variant>(); _modelOf[k] = new List<int>(); }
+            GameAssets.Load<Material>("Props/PropPlaceholder", shipped =>
             {
-                _parts[k] = new List<Variant>();
-                _modelOf[k] = new List<int>();
-                var kind = (PropKind)k;
-                var prefabs = Resources.LoadAll<GameObject>("Props/" + kind);
-                int model = 0;
-                foreach (var prefab in prefabs)
-                    if (AddPrefab(kind, prefab, model)) model++;
-                if (model == 0) { AddPlaceholder(kind); model = 1; }
-                _modelCount[k] = model;
+                if (this == null) return;
+                _placeholderMaterial = shipped != null ? shipped : RuntimePlaceholderMaterial();
+                for (int k = 0; k < _parts.Length; k++) { AddPlaceholder((PropKind)k); _modelCount[k] = 1; }
+                _modelsReady = true;
+                _rerollPending = true;
+
+                int left = _parts.Length, real = 0;
+                for (int k = 0; k < _parts.Length; k++)
+                {
+                    var kind = (PropKind)k;
+                    GameAssets.LoadAll<GameObject>("Props/" + kind, prefabs =>
+                    {
+                        if (this == null) return;
+                        if (UseModels(kind, prefabs)) real++;
+                        if (--left == 0)
+                            Debug.Log("[PropScatter] " + real + " of " + _parts.Length + " prop kinds have models; the rest are placeholders.");
+                    });
+                }
+            });
+        }
+
+        /// <summary>A kind's real prefabs in place of its placeholder. False (placeholder kept) when none has a mesh.</summary>
+        private bool UseModels(PropKind kind, GameObject[] prefabs)
+        {
+            int k = (int)kind;
+            var oldParts = _parts[k];
+            var oldOwners = _modelOf[k];
+            _parts[k] = new List<Variant>();
+            _modelOf[k] = new List<int>();
+            int count = _all.Count, model = 0;
+            foreach (var prefab in prefabs)
+                if (AddPrefab(kind, prefab, model)) model++;
+            if (model == 0)
+            {
+                _all.RemoveRange(count, _all.Count - count);   // nothing usable: put the placeholder back
+                _parts[k] = oldParts;
+                _modelOf[k] = oldOwners;
+                return false;
             }
-            int real = 0;
-            for (int k = 0; k < _parts.Length; k++) if (_parts[k].Count > 0 && _parts[k][0].Materials[0] != _placeholderMaterial) real++;
-            Debug.Log("[PropScatter] " + real + " of " + _parts.Length + " prop kinds have models; the rest are placeholders.");
+            foreach (var v in oldParts) _all.Remove(v);
+            _modelCount[k] = model;
+            _rerollPending = true;
+            return true;
         }
 
         /// <summary>Every mesh in the prefab becomes a part, its transform taken relative to the root and
@@ -449,17 +488,18 @@ namespace Game.Client
 
         // ── placeholders: primitive shapes, vertex-coloured, 1 unit tall ────────────────────────
 
-        private Material PlaceholderMaterial()
+        /// <summary>The placeholder material. 🔑 Normally the shipped ASSET <c>Props/PropPlaceholder</c> (loaded in
+        /// <see cref="LoadModels"/>) with instancing on, not only a runtime material: the build strips shader
+        /// variants no shipped material uses (GraphicsSettings "Strip Unused"), and a material made at
+        /// runtime is invisible to that check, so the instanced variant would be missing on the phone.</summary>
+        private Material PlaceholderMaterial() =>
+            _placeholderMaterial != null ? _placeholderMaterial : (_placeholderMaterial = RuntimePlaceholderMaterial());
+
+        /// <summary>The fallback when the shipped asset is missing. The shader is CORE (stays on Resources).</summary>
+        private static Material RuntimePlaceholderMaterial()
         {
-            if (_placeholderMaterial != null) return _placeholderMaterial;
-            // A shipped ASSET with instancing on, not only a runtime material: the build strips shader
-            // variants no shipped material uses (GraphicsSettings "Strip Unused"), and a material made at
-            // runtime is invisible to that check, so the instanced variant would be missing on the phone.
-            var shipped = Resources.Load<Material>("Props/PropPlaceholder");
-            if (shipped != null) return _placeholderMaterial = shipped;
             var shader = Resources.Load<Shader>("Shaders/LitVertexColor") ?? Shader.Find("L2Clone/LitVertexColor") ?? Shader.Find("Sprites/Default");
-            _placeholderMaterial = new Material(shader) { enableInstancing = true };
-            return _placeholderMaterial;
+            return new Material(shader) { enableInstancing = true };
         }
 
         private void AddPlaceholder(PropKind kind)

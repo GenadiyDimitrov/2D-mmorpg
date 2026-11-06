@@ -856,7 +856,23 @@ namespace Game.Client
                 // camera is looking at.
                 _animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
             }
+
+            // `BL-371` — a body that arrived LATE (GameAssets) missed the spawn DTO's weapons and outfit: they were
+            // set on the sphere, which had no hands. Dress it now. A body that arrives at once comes before them, so
+            // neither flag is set yet and nothing is done twice.
+            if (_heldDressed && _animator != null)
+                HeldWeapons.Dress(_animator, _model, _heldWeapon, _heldMagic, _heldShield, _held, OnWeaponHung);
+            if (_armorDressed) CharacterLook.Dress(_model.gameObject, _armored);
             ApplyModelFade();
+            ApplyFar();
+        }
+
+        /// <summary>A weapon prefab arrived after its body (`BL-371`): fade and hide it like the rest of the body.</summary>
+        private void OnWeaponHung()
+        {
+            if (this == null) return;
+            ApplyModelFade();
+            if (_far) ApplyFar();
         }
 
         /// <summary>Re-seat the model on the ground after the root's scale changes. See AttachModel.</summary>
@@ -925,9 +941,9 @@ namespace Game.Client
             if (_heldDressed && weapon == _heldWeapon && magic == _heldMagic && shield == _heldShield) return;
             _heldWeapon = weapon; _heldMagic = magic; _heldShield = shield; _heldDressed = true;
             if (_animator == null) return;
-            HeldWeapons.Dress(_animator, _model, weapon, magic, shield, _held);
+            HeldWeapons.Dress(_animator, _model, weapon, magic, shield, _held, OnWeaponHung);
             ApplyModelFade();   // a weapon put in a faded hand fades with it
-            if (_far) ApplyFar();   // …and one put in a hidden hand stays hidden
+            if (_far) ApplyFar();   // …and one put in a hidden hand stays hidden (OnWeaponHung repeats both for a late one)
         }
 
         private bool _armorDressed, _armored;

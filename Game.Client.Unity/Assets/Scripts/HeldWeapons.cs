@@ -24,7 +24,6 @@ namespace Game.Client
     public static class HeldWeapons
     {
         private const string Dir = "Weapons/";
-        private static readonly Dictionary<string, GameObject> Cache = new Dictionary<string, GameObject>();
 
         /// <summary>Animator <c>AttackStyle</c> values: which swing the "Attack" trigger plays.</summary>
         public const int StyleMelee = 0, StyleBow = 1, StyleSpell = 2;
@@ -48,22 +47,24 @@ namespace Game.Client
         public static int StyleFor(WeaponType w, bool magic) =>
             w == WeaponType.Bow ? StyleBow : magic ? StyleSpell : StyleMelee;
 
-        public static GameObject Prefab(string key)
-        {
-            if (string.IsNullOrEmpty(key)) return null;
-            if (Cache.TryGetValue(key, out var cached)) return cached;
-            var prefab = Resources.Load<GameObject>(Dir + key);
-            Cache[key] = prefab;
-            return prefab;
-        }
+        /// <summary>`BL-371` — which dressing a <c>held</c> list is on. A weapon prefab can arrive frames after it was asked
+        /// for (GameAssets), and by then the body may have been re-dressed (a weapon swap): a late weapon from the OLD
+        /// dressing must not be hung next to the new one. Keyed weakly by the list, so a destroyed body leaves nothing.</summary>
+        private sealed class Dressing { public int Number; }
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<List<GameObject>, Dressing> Dressings =
+            new System.Runtime.CompilerServices.ConditionalWeakTable<List<GameObject>, Dressing>();
 
         /// <summary>Hang this weapon set on <paramref name="animator"/>'s hands, replacing whatever
-        /// <paramref name="held"/> holds. Returns false when the body has no hands (nothing was drawn).</summary>
+        /// <paramref name="held"/> holds. Returns false when the body has no hands (nothing was drawn). The meshes
+        /// may arrive LATER (`BL-371`); <paramref name="hung"/> runs after each one is hung, so the caller can fade or
+        /// hide it like the rest of the body.</summary>
         public static bool Dress(Animator animator, Transform modelRoot, WeaponType w, bool magic, bool shield,
-                                 List<GameObject> held)
+                                 List<GameObject> held, System.Action hung = null)
         {
             foreach (var go in held) if (go != null) Object.Destroy(go);
             held.Clear();
+            var dressing = Dressings.GetOrCreateValue(held);
+            int number = ++dressing.Number;
             if (animator == null || !animator.isHuman) return false;
 
             string key = KeyFor(w, magic);
@@ -72,18 +73,27 @@ namespace Game.Client
                 // Everything rides the RIGHT hand, the bow included: the only shot take we have (UAL's Pistol_Shoot)
                 // raises the right arm, and a bow in the left would hang at the hip through the shot. A real archer
                 // holds it left-handed; a draw clip from a later library is when it moves.
-                Hang(animator, modelRoot, key, false, held);
-                if (w == WeaponType.Dual) Hang(animator, modelRoot, key, true, held);
+                Hang(animator, modelRoot, key, false, held, dressing, number, hung);
+                if (w == WeaponType.Dual) Hang(animator, modelRoot, key, true, held, dressing, number, hung);
             }
-            if (shield) Hang(animator, modelRoot, "shield", true, held);
+            if (shield) Hang(animator, modelRoot, "shield", true, held, dressing, number, hung);
             return true;
         }
 
-        private static void Hang(Animator animator, Transform modelRoot, string key, bool left, List<GameObject> held)
+        private static void Hang(Animator animator, Transform modelRoot, string key, bool left, List<GameObject> held,
+                                 Dressing dressing, int number, System.Action hung)
         {
-            var prefab = Prefab(key);
+            GameAssets.Load<GameObject>(Dir + key, prefab =>
+            {
+                if (dressing.Number != number || animator == null || modelRoot == null) return;   // re-dressed or gone
+                if (Hang(animator, modelRoot, prefab, left, held)) hung?.Invoke();
+            });
+        }
+
+        private static bool Hang(Animator animator, Transform modelRoot, GameObject prefab, bool left, List<GameObject> held)
+        {
             var socket = Socket(animator, left);
-            if (prefab == null || socket == null) return;
+            if (prefab == null || socket == null) return false;
 
             var go = Object.Instantiate(prefab, socket, false);
             go.name = prefab.name;
@@ -95,6 +105,7 @@ namespace Game.Client
             go.transform.localPosition = Vector3.zero;
             go.transform.localRotation = Quaternion.identity;
             held.Add(go);
+            return true;
         }
 
         /// <summary>The grip frame on one hand, built once per body and kept as a child of the hand bone.</summary>

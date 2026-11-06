@@ -26,6 +26,13 @@ namespace Game.Client
         private ScrollRect _treeScroll;
         /// <summary>The pick: race index (== Races.Length is the Swaps &amp; Sigils tab), Fighter/Mage, 2nd, 3rd.</summary>
         private int _treeRace, _treeBase, _treeSecond, _treeThird;
+        private int _treeIcons = -1;   // `BL-371`: the IconsRevision the rows were drawn with
+
+        /// <summary>Per frame: an open tree whose pictures landed after it was drawn draws again (`BL-371`).</summary>
+        private void RefreshSkillTreeIcons()
+        {
+            if (_treePanel != null && _treePanel.gameObject.activeSelf && _treeIcons != IconsRevision) RenderSkillTree();
+        }
 
         private const string TreeExtras = "Swaps & Sigils";
 
@@ -71,6 +78,7 @@ namespace Game.Client
 
         private void RenderSkillTree()
         {
+            _treeIcons = IconsRevision;
             for (int i = _treeContent.childCount - 1; i >= 0; i--)
                 Destroy(_treeContent.GetChild(i).gameObject);
 

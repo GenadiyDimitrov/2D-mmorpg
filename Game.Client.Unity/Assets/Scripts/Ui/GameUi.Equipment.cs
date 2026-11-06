@@ -121,7 +121,7 @@ namespace Game.Client
             if (_equipColumn == null || !_equipColumn.gameObject.activeSelf) return;
 
             var items = Boot.Inventory ?? System.Array.Empty<InventoryItemDto>();
-            int rev = 17;
+            int rev = 17 + IconsRevision * 7307;   // `BL-371` — pictures that landed after the squares were drawn
             foreach (var it in items) if (it.Equipped) rev = rev * 31 + it.InstanceId.GetHashCode() + it.Enchant;
             if (rev == _equipRevision) return;
             _equipRevision = rev;

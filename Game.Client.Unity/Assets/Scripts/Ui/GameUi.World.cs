@@ -2522,7 +2522,8 @@ namespace Game.Client
             int revision = items.Length * 17 + (int)_bagTab * 7919 + (int)_bagFastMode * 104729
                          + (int)(Boot.Gold % 1_000_000) + (int)(Boot.Platinum % 1_000_000) * 7
                          + Boot.LockRevision * 1013    // `BL-239` — a lock removes the fast button
-                         + Boot.PickupRevision * 2027; // `BL-241` — a filter change relabels [Pick]
+                         + Boot.PickupRevision * 2027  // `BL-241` — a filter change relabels [Pick]
+                         + IconsRevision * 7307;       // `BL-371` — pictures that landed after the cells were built
             foreach (var item in items)
                 revision = revision * 31 + item.InstanceId.GetHashCode()
                          + (item.Equipped ? 1 : 0) + item.Quantity * 7 + item.Enchant;

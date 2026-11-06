@@ -37,6 +37,7 @@ namespace Game.Client
         private float _nextCheck;
         private readonly Dictionary<string, AudioClip[]> _tracks = new Dictionary<string, AudioClip[]>();
         private readonly Dictionary<string, int> _lastIndex = new Dictionary<string, int>();
+        private readonly HashSet<string> _loading = new HashSet<string>();   // places whose tracks are on their way
 
         private void Awake()
         {
@@ -90,8 +91,25 @@ namespace Game.Client
         }
 
         /// <summary>Crossfade to another track of the current place: the playing source becomes the fading one.</summary>
+        ///
+        /// <para>`BL-371` — a place whose tracks have not arrived yet (GameAssets) keeps the CURRENT track playing and
+        /// asks for them; when they land, this runs again if you are still there. So walking into town fades over once
+        /// the town's music is in, never into a gap.</para>
         private void Next()
         {
+            if (!string.IsNullOrEmpty(_place) && !_tracks.ContainsKey(_place))
+            {
+                string place = _place;
+                if (!_loading.Add(place)) return;   // asked already: Update calls this every frame while a track ends
+                GameAssets.LoadAll<AudioClip>("Music/" + place, clips =>
+                {
+                    if (this == null) return;
+                    _loading.Remove(place);
+                    _tracks[place] = clips;
+                    if (_place == place) Next();
+                });
+                return;
+            }
             var clip = Pick(_place);
             var old = _a;
             _a = _b;
@@ -105,12 +123,7 @@ namespace Game.Client
         /// <summary>A track from the folder, never the one just played when there is a choice.</summary>
         private AudioClip Pick(string place)
         {
-            if (string.IsNullOrEmpty(place)) return null;
-            if (!_tracks.TryGetValue(place, out var clips))
-            {
-                clips = Resources.LoadAll<AudioClip>("Music/" + place) ?? new AudioClip[0];
-                _tracks[place] = clips;
-            }
+            if (string.IsNullOrEmpty(place) || !_tracks.TryGetValue(place, out var clips)) return null;   // Next() loads them
             if (clips.Length == 0) return null;
             int last = _lastIndex.TryGetValue(place, out var l) ? l : -1;
             int i = Random.Range(0, clips.Length);

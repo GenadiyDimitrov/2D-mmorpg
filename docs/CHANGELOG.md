@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.275.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.276.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,34 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-11-06 (latest) — 0.275.0: map detail + city view (`BL-366`), bar hover card (`BL-367`), key-capture fix
+## 2026-11-06 (latest) — 0.276.0: every asset arrives through one async loader (`BL-371` stage 1)
+
+Client only (the version moves because the APK changes). No `game.db` delete. **Nothing should look different** — if
+anything does, it is a bug in this version.
+
+- **`GameAssets`** (new, `Scripts/GameAssets.cs`) is the one door for every non-core asset: `Load<T>(path, callback)` and
+  `LoadAll<T>(folder, callback)`, a cache that keeps the misses too, and one shared load when two callers ask for the
+  same thing. The callback may run at once (cached) or frames later, and may hand over null. Still backed by
+  `Resources` today: a single asset through `Resources.LoadAsync`, a folder handed over on the next frame, so every
+  playtest already runs the "arrives later" path that stage 2's Addressables bundles will. In the editor's headless
+  tools (outside play mode) it stays synchronous.
+- **Routed through it, each caller now copes with "arrives later":**
+  - **Bodies** (`ModelLibrary`): the sphere stands in until the prefab lands; the fallback chain asks one key at a time.
+    A late body is dressed on arrival with the weapons, outfit, death pose, fade and far-hide it missed.
+  - **Weapons** (`HeldWeapons`): hung when the mesh lands; a weapon from an older dressing (a quick swap) is dropped.
+  - **Character-creation preview:** the old body stays on the stage until the new pick's body arrives (no empty frame).
+  - **Buildings:** each lot is placed when its model lands and re-culled the next frame.
+  - **Props:** the placeholders appear first, each kind's real models replace them as they land, one re-roll per frame.
+  - **Music:** a place whose tracks have not arrived keeps the current track and crossfades once they are in.
+  - **Sounds:** every cue is asked for at boot; a cue still loading is skipped that once (a late hit sound is wrong).
+  - **Icons** (skills, actions, items): letters until the picture lands. The bar, buffs and party pick it up by
+    themselves; the Skills window, skill tree, bag and paper doll redraw once a batch of pictures has landed.
+  - **Login art:** put behind the screens when it lands.
+- **Stay on `Resources` (core):** the shaders and `server.txt`.
+- `ModelLibrary`'s old note ("Resources because adding Addressables is a decision the owner has not made") is replaced:
+  he decided on 2026-11-06. **Next: stage 2** (the Addressables package, batchmode setup, `publish.ps1`).
+
+## 2026-11-06 — 0.275.0: map detail + city view (`BL-366`), bar hover card (`BL-367`), key-capture fix
 
 Client only (the version moves because the APK changes). No `game.db` delete.
 

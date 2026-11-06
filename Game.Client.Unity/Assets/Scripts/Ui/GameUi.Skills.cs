@@ -241,7 +241,8 @@ namespace Game.Client
             int revision = _skillsTab * 7919 + Boot.LearnedRevision * 104729 + Boot.SkillPoints
                          + (Boot.ActiveClass != null ? Boot.ActiveClass.Level * 13 : 0)
                          + (_pendingAssign != null ? _pendingAssign.GetHashCode() : 0)
-                         + BarStamp() + SwapStageStamp();
+                         + BarStamp() + SwapStageStamp()
+                         + IconsRevision * 7307;   // `BL-371`: pictures that landed after the rows were built
             if (revision == _skillsRevision) return;
             _skillsRevision = revision;
 
@@ -866,19 +867,38 @@ namespace Game.Client
             return SkillCatalog.Get(token) != null ? SkillSprite(token) : null;
         }
 
+        /// <summary>`BL-371` — a picture through <see cref="GameAssets"/>: null (draw the letters) until it has ARRIVED,
+        /// the sprite from then on. Per-frame surfaces (the bar, buffs, party) pick it up on their next frame by
+        /// themselves; the windows that build their rows once fold <see cref="IconsRevision"/> into their own revision.</summary>
         private static Sprite LoadIcon(string path)
         {
             if (SkillSprites.TryGetValue(path, out var cached)) return cached;
-            var tex = Resources.Load<Texture2D>(path);
-            Sprite sprite = null;
-            if (tex != null)
+            if (IconsAsked.Add(path))
             {
-                tex.wrapMode = TextureWrapMode.Clamp;
-                sprite = Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100f);
+                _iconsLoading++;
+                GameAssets.Load<Texture2D>(path, tex =>
+                {
+                    Sprite sprite = null;
+                    if (tex != null)
+                    {
+                        tex.wrapMode = TextureWrapMode.Clamp;
+                        sprite = Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100f);
+                        _iconsNew = true;
+                    }
+                    SkillSprites[path] = sprite;
+                    if (--_iconsLoading == 0 && _iconsNew) { _iconsNew = false; IconsRevision++; }
+                });
             }
-            SkillSprites[path] = sprite;
-            return sprite;
+            return SkillSprites.TryGetValue(path, out cached) ? cached : null;   // a cached load answers at once
         }
+
+        private static readonly HashSet<string> IconsAsked = new HashSet<string>();
+        private static int _iconsLoading;
+        private static bool _iconsNew;
+
+        /// <summary>Bumped when a batch of pictures has landed (once the loads in flight reach zero, so a window opening
+        /// on forty new icons rebuilds once, not forty times). A window that builds rows once adds this to its revision.</summary>
+        internal static int IconsRevision { get; private set; }
 
         /// <summary>`BL-327` — the FACE this character wears for a skill (docs/data/skill_faces.csv): its class
         /// lineage first, then its race, then the blank row. The server resolves the same face for the cast

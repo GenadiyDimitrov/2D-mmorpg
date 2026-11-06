@@ -93,6 +93,7 @@ namespace Game.Client
                 src.spatialBlend = 0f;
                 _voices[i] = src;
             }
+            foreach (var cue in Gain.Keys) Request(cue);   // `BL-371`: on their way before the first blow
         }
 
         private void OnDestroy() { if (Instance == this) Instance = null; }
@@ -272,12 +273,23 @@ namespace Game.Client
             src.Play();
         }
 
+        /// <summary>`BL-371` — a cue's clips, or none while they are still on their way (GameAssets). A sound is an
+        /// EVENT: played late it would land on the wrong blow, so a cue that has not arrived is simply not heard that
+        /// once. <see cref="Awake"/> asks for every known cue at boot, so in practice only the first moments are quiet.</summary>
         private AudioClip[] ClipsOf(string cue)
         {
             if (_clips.TryGetValue(cue, out var clips)) return clips;
-            clips = Resources.LoadAll<AudioClip>("Sounds/" + cue) ?? new AudioClip[0];
-            _clips[cue] = clips;
-            return clips;
+            Request(cue);
+            return _clips.TryGetValue(cue, out clips) ? clips : NoClips;   // a cached folder answers at once
+        }
+
+        private static readonly AudioClip[] NoClips = new AudioClip[0];
+        private readonly HashSet<string> _asked = new HashSet<string>();
+
+        private void Request(string cue)
+        {
+            if (!_asked.Add(cue)) return;
+            GameAssets.LoadAll<AudioClip>("Sounds/" + cue, clips => { if (this != null) _clips[cue] = clips; });
         }
 
         // ----- Per frame: projectiles landing, and your footsteps ------------------------------------------

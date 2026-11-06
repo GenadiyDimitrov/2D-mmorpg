@@ -82,16 +82,33 @@ namespace Game.Client
             l.shadows = LightShadows.None;
         }
 
-        /// <summary>Put this look on the stage. Returns false when no prefab answers (a build without models), and
-        /// the caller hides the frame rather than showing an empty box.</summary>
-        public bool Show(Race race, BaseClass cls, Gender gender, int hair, int hairColor, int skin)
+        private int _request;          // `BL-371`: the newest pick; an older body arriving late is dropped
+        private bool _visible = true;  // SetVisible's answer, for a body that arrives after it was given
+
+        /// <summary>Put this look on the stage. <paramref name="shown"/> answers false when no prefab answers (a build
+        /// without models), and the caller hides the frame rather than showing an empty box.
+        ///
+        /// <para>`BL-371` — the body may arrive LATER (GameAssets), so the old one stays on the stage until the new one
+        /// is there: a quick run through the hair colours never flashes an empty frame. Outside play mode (the
+        /// editor's look sheet) the load is synchronous and the body is on the stage when this returns.</para></summary>
+        public void Show(Race race, BaseClass cls, Gender gender, int hair, int hairColor, int skin,
+                         System.Action<bool> shown = null)
+        {
+            int request = ++_request;
+            ModelLibrary.PlayerPrefab(race, cls, gender, prefab =>
+            {
+                if (this == null || request != _request) return;   // gone, or a newer pick already asked
+                bool ok = Build(prefab, race, cls, gender, hair, hairColor, skin);
+                shown?.Invoke(ok);
+            });
+        }
+
+        private bool Build(GameObject prefab, Race race, BaseClass cls, Gender gender, int hair, int hairColor, int skin)
         {
             if (_model != null) Kill(_model);
             _held.Clear();   // they were children of the old body's hands
             _model = null;
             _animator = null;
-
-            var prefab = ModelLibrary.PlayerPrefab(race, cls, gender);
             if (prefab == null) return false;
 
             _model = Instantiate(prefab);
@@ -114,6 +131,7 @@ namespace Game.Client
                 HeldWeapons.Dress(_animator, _model.transform, mage ? WeaponType.TwoHandedBlunt : WeaponType.Sword,
                                   mage, false, _held);
             }
+            _model.SetActive(_visible);   // a body built while the form is closed must not animate
             return true;
         }
 
@@ -130,6 +148,7 @@ namespace Game.Client
         /// <summary>The camera only renders while the form is open.</summary>
         public void SetVisible(bool on)
         {
+            _visible = on;
             if (_cam != null) _cam.enabled = on;
             if (_model != null) _model.SetActive(on);
         }
