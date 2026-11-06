@@ -300,7 +300,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-363` | 🔴 | **A browser (WebGL) client** — test build BUILT (0.272.0, `/play/`, logs in + moves, 60 MB); owed: your FPS in a real browser, deploy, a WebGL quality preset | client |
 | `BL-368` | ⏸ | **PC launcher / patcher** — PARKED: itch.io (free delta updates, `butler` in `deploy.ps1`) when PC players appear; own launcher only if itch.io is not acceptable | client |
 | `BL-369` | 🔴 | **Web: always the newest build, smaller downloads** — hashed file names + `index.html` never cached, Brotli instead of Gzip, a "new version — Reload" button in an open tab | client |
-| `BL-371` | ⏸ | **Asset bundles (Addressables) when the client grows** — so an update/web load fetches only changed or needed bundles; trigger: a build ≈150 MB, Android near Play's base limit, or a slow web first load | client |
+| `BL-371` | 🔴 | **Asset bundles (Addressables)** — stage 1 async loader + stage 2 local bundles NOW (part of every test); stage 3 download-on-demand at the trigger (≈150 MB build, Play's base limit, slow web first load) | client |
 
 ---
 
@@ -2836,3 +2836,30 @@ separate bundles, each with its own version and cache.
 
 **Trigger:** a build passes **about 150 MB**, OR the Android build nears Play's base limit, OR the web's first load feels
 too long to you. Whichever comes first. Today: 70 MB Windows zip, 60 MB web.
+
+### 🔴 RE-RULED 2026-11-06: stages 1 + 2 NOW, stage 3 at the trigger
+
+Your words: *"shouldnt we lay the ground work now for the asset bundles ? shouldnt we use it and become part of the tests
+.. not later when the app becomes 150mb and we change all the models/animation"* … *"mark it"*.
+
+**Why now:** the expensive part is not the bundles. It is that every caller assumes an asset exists the moment it asks.
+That is cheap to fix at today's ~15 real call sites and grows with every asset added. Once the async path is in, every
+playtest exercises it.
+
+**What exists (read 2026-11-06):** `ModelLibrary` in `EntityManager.cs` already sends every model load through one
+function, with Addressables-shaped keys (`"Models/xxx"`). Its comment says the package was not added because *"adding it
+is an Editor decision the owner has not made"*. **This ruling is that decision.** But the function is SYNCHRONOUS, so it
+is not bundle-ready. Resources is 53 MB: **Music 37 MB**, SkillIcons 10 MB, Sounds 4 MB, Models under 1 MB. Call sites:
+`Buildings`, `EntityManager` (ModelLibrary), `HeldWeapons`, `Music` (LoadAll), `PropScatter` (LoadAll + placeholder
+material), `Sfx` (LoadAll), `GameUi` (login background), `GameUi.Skills` (icons). Shaders (`BiomeGround`, `DayNight`,
+`EntityView`, `FxPlayer`, `GroundDecals`, `PropScatter`) and `server.txt` (`GameBoot`) stay CORE in Resources.
+
+| Stage | What | When |
+|---|---|---|
+| **1. One async loader** | `GameAssets`: callback + cache (hits and misses), single and LoadAll, still backed by Resources. Every non-core load goes through it. Callers tolerate "arrives later": models keep the placeholder sphere until the prefab arrives, icons fill in, music/sfx start when loaded. No behaviour change visible. | Now, one version |
+| **2. Real bundles, shipped INSIDE the build** | Add the Addressables package (`Packages/manifest.json`), settings + folder-based groups created by an editor script run in batchmode (the Editor is never opened), so dropping a file into `Music/` is enough. `publish.ps1` builds the content before the player for Android, Windows and WebGL. Local bundles only, no server hosting. `GameAssets`' body switches to Addressables. | Right after stage 1 |
+| **3. Download on demand** | The server hosts bundles + catalog beside `/play`, zones fetch their assets on approach, Android uses Play Asset Delivery, catalog versioning. | At the trigger above |
+
+**Not now, on purpose:** stage 3. Before release there is nothing worth downloading on demand, and it adds a new class of
+bugs (catalog mismatch, stale caches) for no player benefit. Stages 1 + 2 cover most of the runtime paths under test.
+**Risk:** stage 2's batchmode setup is the step most likely to cost an extra build or two; builds get somewhat slower.
