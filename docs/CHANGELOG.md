@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.277.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.277.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,24 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-11-06 (latest) — 0.277.1: a published client is built against the CURRENT `Game.Shared`
+## 2026-11-06 (latest) — 0.277.2: the browser client really caches, and the world opens dressed
+
+No `game.db` delete. Needs a deploy (server fix) and a publish (client prefetch).
+
+- **The bug** (owner: *"it takes about 20 s to load the 3d models and skills and buffs ... each time i refresh the
+  page"*): measured with headless Edge against the live box. A refresh re-downloaded `webgl.data` (7.8 MB) and every
+  bundle (~20 MB) as full `200`s, although Unity logged each one as "stored in the browser cache". Unity's loader
+  revalidates its cache with `If-Modified-Since` whenever the file had a `Last-Modified`. The deployed files carry the
+  zip's local time read as UTC, so they sit ~2 h **in the future** after every deploy, and ASP.NET (correctly) ignores
+  a future `If-Modified-Since`. **Fix:** `/play` sends the ETag only (`Program.cs`); the loader then sends
+  `If-None-Match` and gets a `304`, which was checked with curl against the live server.
+- **Prefetch** (owner: *"a bit weird to be a sphere and no models ... download the assets on the background and cache
+  them so they are instantly usable"*): `GameAssets.Prefetch()` runs at boot. It downloads every bundle except Music in
+  parallel while you are on the login screen, and it keeps them loaded. `EnterWorld` waits on it with
+  *"Loading game data … N%"*, so a cold first visit opens on a dressed world, and a warm one passes straight through.
+  A silent re-entry (reconnect) never waits. Music stays on demand: one bundle per track, the largest files.
+
+## 2026-11-06 — 0.277.1: a published client is built against the CURRENT `Game.Shared`
 
 Tooling only. No `game.db` delete. Nothing in the game changes.
 

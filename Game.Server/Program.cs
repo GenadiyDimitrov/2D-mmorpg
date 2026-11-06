@@ -149,7 +149,11 @@ try
         http.Response.Headers.CacheControl = "no-cache";
         var info = new FileInfo(full);
         var etag = new Microsoft.Net.Http.Headers.EntityTagHeaderValue($"\"{info.Length:x}-{info.LastWriteTimeUtc.Ticks:x}\"");
-        return Results.File(full, type, lastModified: info.LastWriteTimeUtc, entityTag: etag);
+        // 🔴 NO Last-Modified (2026-11-06): Unity's loader revalidates its cache with If-Modified-Since whenever
+        // Last-Modified is present and with the ETag only otherwise. The deployed files carry the zip's LOCAL time
+        // read as UTC, so they sit ~2 h in the future after every deploy; ASP.NET rightly ignores a future
+        // If-Modified-Since and answered 200, so every refresh re-downloaded ~28 MB. The ETag alone gives a clean 304.
+        return Results.File(full, type, entityTag: etag);
     });
 
     // The landing page: Site/index.html with its {{TOKENS}} filled. Re-read on every request so an edit to the

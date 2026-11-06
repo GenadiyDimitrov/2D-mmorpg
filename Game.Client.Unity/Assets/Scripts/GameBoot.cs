@@ -1314,6 +1314,7 @@ namespace Game.Client
 
         private async void Start()
         {
+            GameAssets.Prefetch();   // the bundles download while the player is on the login screen
             if (AutoLogin) await ConnectAndLogin(Username, Password, register: false);
         }
 
@@ -1940,6 +1941,15 @@ namespace Game.Client
             {
                 if (!silent) Phase = ClientPhase.Entering;
                 StatusMessage = silent ? "Reconnecting …" : "Entering world …";
+
+                // Owner, 2026-11-06: "it's a bit weird to be a sphere and no models". Hold the entry until the
+                // prefetched bundles are in, so the world opens fully dressed. A warm cache passes straight through.
+                while (!silent && !GameAssets.PrefetchDone)
+                {
+                    StatusMessage = $"Loading game data … {GameAssets.PrefetchProgress * 100f:0}%";
+                    await Awaitable.WaitForSecondsAsync(0.1f);   // BL-363: no Task.Delay in a browser
+                }
+                if (!silent) StatusMessage = "Entering world …";
 
                 // Wipe the old world BEFORE the request goes out, not after it returns. The server starts
                 // streaming the moment the character is in the world, and those frames can land while we

@@ -110,6 +110,54 @@ namespace Game.Client
             });
         }
 
+        /// <summary>The folders whose bundles <see cref="Prefetch"/> brings in up front: everything the world and the
+        /// windows draw. <c>Music</c> is left out on purpose — one bundle per track, the largest files there are, and
+        /// only the track for the place you stand in is ever needed.</summary>
+        private static readonly string[] PrefetchLabels =
+            { "Models", "Buildings", "Props", "Weapons", "Sounds", "Ui", "SkillIcons", "ItemIcons", "ActionIcons" };
+
+        private static AsyncOperationHandle _prefetch;
+        private static bool _prefetchStarted, _prefetchDone;
+
+        /// <summary>True once every prefetched bundle is in (or the prefetch failed — the per-asset loads still work,
+        /// they are just slower). Always true outside play mode.</summary>
+        public static bool PrefetchDone => _prefetchDone || !Application.isPlaying;
+
+        /// <summary>0..1 for a loading bar.</summary>
+        public static float PrefetchProgress =>
+            PrefetchDone ? 1f : _prefetch.IsValid() ? _prefetch.GetDownloadStatus().Percent : 0f;
+
+        /// <summary>Owner, 2026-11-06: <i>"download the assets on the background and cache them so they are instantly
+        /// usable, like a normal game"</i>. Started at boot, so the bundles download IN PARALLEL while the player is
+        /// on the login screen, instead of one by one as the world first asks for each. The handle is kept for the
+        /// life of the app, which keeps the bundles LOADED: every later <see cref="Load{T}"/> then reads from memory.
+        /// The browser keeps them in its cache between visits, so a refresh only revalidates them.</summary>
+        public static void Prefetch()
+        {
+            if (_prefetchStarted || !Application.isPlaying) return;
+            _prefetchStarted = true;
+            AsyncOperationHandle<IList<IResourceLocation>> locate;
+            try { locate = Addressables.LoadResourceLocationsAsync((IEnumerable<object>)PrefetchLabels, Addressables.MergeMode.Union); }
+            catch (Exception ex) { Debug.LogException(ex); _prefetchDone = true; return; }
+            locate.Completed += h =>
+            {
+                var locations = h.Status == AsyncOperationStatus.Succeeded && h.Result != null
+                    ? new List<IResourceLocation>(h.Result) : null;
+                Addressables.Release(h);
+                if (locations == null || locations.Count == 0) { _prefetchDone = true; return; }
+                float started = Time.realtimeSinceStartup;
+                _prefetch = Addressables.DownloadDependenciesAsync(locations, false);
+                _prefetch.Completed += d =>
+                {
+                    _prefetchDone = true;
+                    if (d.Status != AsyncOperationStatus.Succeeded)
+                        Debug.LogWarning($"[assets] prefetch failed — {d.OperationException?.Message}");
+                    else
+                        Debug.Log($"[assets] prefetch done: {locations.Count} assets in {Time.realtimeSinceStartup - started:0.0}s");
+                };
+            };
+        }
+
         /// <summary>The asset if it has ALREADY arrived (true, with null meaning "there is none"), without asking for it.
         /// For a per-frame caller that only wants to know whether it can draw yet.</summary>
         public static bool TryGet<T>(string path, out T asset) where T : Object
