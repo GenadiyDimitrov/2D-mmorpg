@@ -148,6 +148,29 @@ namespace Game.Client
             return image;
         }
 
+        /// <summary>A vertical scrollbar for <paramref name="scroll"/>, filling <paramref name="parent"/> inset by the margins
+        /// (owner, 2026-11-06: *"add a scrollbar to settings so i see there is something below"*). Hidden while the content
+        /// fits. The handle can be dragged; the wheel and the content drag keep working as before.</summary>
+        public static Scrollbar VerticalScrollbar(Transform parent, ScrollRect scroll,
+                                                  float left, float top, float right, float bottom)
+        {
+            var track = Box(parent, "Scrollbar", BarBg);
+            Stretch(Rect(track.gameObject), left, top, right, bottom);
+            var area = new GameObject("Sliding Area", typeof(RectTransform)).GetComponent<RectTransform>();
+            area.SetParent(track.transform, false);
+            Stretch(area, 2f, 2f, 2f, 2f);
+            var handle = Box(area, "Handle", Border);
+            Stretch(Rect(handle.gameObject), 0f, 0f, 0f, 0f);
+
+            var bar = track.gameObject.AddComponent<Scrollbar>();
+            bar.handleRect = Rect(handle.gameObject);
+            bar.targetGraphic = handle;
+            bar.direction = Scrollbar.Direction.BottomToTop;
+            scroll.verticalScrollbar = bar;
+            scroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide;
+            return bar;
+        }
+
         /// <summary>A panel: filled box with a 1px border drawn as a slightly larger box behind it.
         /// Cheaper and more predictable than a sliced sprite we would have to author in the Editor.</summary>
         public static RectTransform PanelBox(Transform parent, string name)

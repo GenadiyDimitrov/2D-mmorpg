@@ -470,7 +470,7 @@ namespace Game.Client
             // fixable without clearing the app's data. It opens the same unscaled window as the menu.
             // The server address lives in Setup since 0.259.0 (owner: a player never needs to see it), on a strip only
             // the login screen's Setup shows — see BuildServerRow.
-            var setup = UiKit.TextButton(inner, "Setup", () =>
+            var setup = UiKit.TextButton(inner, "Settings", () =>
             {
                 _serverRow.gameObject.SetActive(true);
                 ToggleWindow(_settingsPanel);

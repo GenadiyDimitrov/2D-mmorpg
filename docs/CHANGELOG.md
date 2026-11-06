@@ -28,15 +28,17 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-11-06 (latest) — 0.273.3: the browser right-drag lock holds every time, Keys is on the menu, bar squares show their key, buff potions only while farming
+## 2026-11-06 (latest) — 0.273.3: the browser right-drag lock holds every time, Settings (renamed from Setup) gets a scrollbar + Keys, bar squares show their key, buff potions only while farming
 
 Owner, first test of 0.273.2:
 
 - **Web right-drag worked "ocasionally".** The browser grants pointer lock asynchronously after the right-button
   press; when it landed before Unity's next frame read the press, `CameraRig.MouseTurn`'s "leftover lock" cleanup
   released it at once and the turn fell back to the old edge-bound one. The cleanup now runs only with the button up.
-- **"Where is the custom settings to change the keys?"** The Keys button sat at the foot of Setup's scroll. It is now
-  on the Menu (desktop only) and in Setup's footer next to Sound.
+- **"Where is the custom settings to change the keys?"** The Keys button sat at the foot of Setup's scroll. It is now in
+  the window's footer next to Sound (desktop only). Then, his follow-up: **Setup is renamed Settings** (Menu and login
+  screen), **Sound left the Menu** (it lives in Settings' footer), and **Settings has a scrollbar** on its right edge so
+  the rows below the fold show (`UiKit.VerticalScrollbar`, hidden while everything fits).
 - **Bar squares show their KEY**, not a fixed 1-10: `1`, `S+1`, `C+1` / `A+1` (browser), whatever you bound; blank when
   nothing is bound, so a phone shows none. Rebinding updates them at once.
 - **Buff potions/scrolls are auto-used only while auto-farm is ON**, like the auto-skills (*"not in town if i cancel a

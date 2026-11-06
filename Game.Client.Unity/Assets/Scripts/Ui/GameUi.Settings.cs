@@ -117,7 +117,7 @@ namespace Game.Client
             // bar and the Save / Reset / Sound buttons, which stay put. Every row below is placed at an absolute y down
             // a content rect, whose height is set to the last row's once they are all built.
             var view = UiKit.Box(frame, "Viewport", new Color(0, 0, 0, 0.001f));   // near-invisible, but catches the drag
-            var viewRect = UiKit.Stretch(UiKit.Rect(view.gameObject), 0f, chrome, 0f, SetupFooter);
+            var viewRect = UiKit.Stretch(UiKit.Rect(view.gameObject), 0f, chrome, 16f, SetupFooter);   // 16 = the scrollbar
             view.gameObject.AddComponent<RectMask2D>();
             var content = new GameObject("Content", typeof(RectTransform)).GetComponent<RectTransform>();
             content.SetParent(viewRect, false);
@@ -130,6 +130,7 @@ namespace Game.Client
             scroll.scrollSensitivity = 24f;
             scroll.viewport = viewRect;
             scroll.content = content;
+            UiKit.VerticalScrollbar(frame, scroll, 640f - 2f - 14f - 4f, chrome + 4f, 4f, SetupFooter + 4f);
             Transform inner = content;
 
             float y = -14f;

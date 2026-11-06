@@ -29,7 +29,8 @@
 
 - `173a` [ ] - Browser: right-drag the camera 15-20 times in a row, quick and slow. Does EVERY drag turn endlessly with the
   cursor coming back where you pressed? ->
-- `173b` [ ] - Desktop: Menu → *Keys*, and Setup → *Keys* (footer, next to Sound). Do both open the Keys window? ->
+- `173b` [ ] - Menu → *Settings* (renamed from Setup; Sound and Keys are gone from the Menu). Is there a scrollbar on the
+  right, and does dragging it scroll? Footer: *Sound*, and *Keys* on desktop. Login screen button reads *Settings*? ->
 - `173c` [ ] - The bar squares' corner shows the bound key (`1`, `S+1`, `A+1` in the browser, `C+1` on Windows). Rebind one:
   does the square change at once? Clear both keys of one: is its corner blank? On the phone, are all corners blank? ->
 - `173d` [ ] - Auto-farm OFF in town, a buff potion armed: cancel the buff. Is it NOT re-drunk? Turn auto-farm on: is it
