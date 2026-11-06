@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.273.4**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.273.5**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,17 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-11-06 (latest) — 0.273.4: Sound / Options / Keys open from inside Settings, fewer look rows, browser Quit goes to the main page
+## 2026-11-06 (latest) — 0.273.5: Settings rows in headed groups
+
+Client only. Owner: *"can u make the settings body a tabs or groups (like the desktop one)?"* — groups, headed like
+Desktop's, in one scroll:
+
+- **General** — Sound | Options, Damage numbers | DoT/HoT in chat.
+- **Interface** — UI size, Skill bar size, Bar shape | Extra bars, Game info.
+- **Graphics** — 3D models | Scenery, Shadows, Night brightness, World | Entities distance, Render scale, Frame rate | VSync.
+- **Desktop** — unchanged (desktop/browser only).
+
+## 2026-11-06 — 0.273.4: Sound / Options / Keys open from inside Settings, fewer look rows, browser Quit goes to the main page
 
 Client only: no server change, no `game.db` delete. Owner, on 0.273.3's Settings:
 

@@ -137,28 +137,14 @@ namespace Game.Client
             // 0.273.4 (owner, 2026-11-06) — the other windows open from HERE, as rows of the window, not from the footer:
             // Sound and Options here; Keys in the Desktop group below. Options shows in the world only (its switches are
             // the character's, kept on the server), so the login screen's Settings leaves that square empty.
+            // 0.273.5 (owner: *"make the settings body a tabs or groups (like the desktop one)"*) — four headed groups:
+            // General, Interface, Graphics, Desktop.
+            Group(inner, ref y, "General");
             SettingsLink(inner, 18f, y, "Sound", () => OpenSoundWindow());
             _settingsOptionsLink = SettingsLink(inner, 292f, y, "Options", () => ToggleWindow(_optionsPanel));
             y -= 48f;
             // Camera angle / zoom / rotation, entity size, nameplate height and zone colours were removed the same day:
             // the camera is the drag, the pinch and the wheel; the other three are fixed (EntityScale 0.9, 0.85, off).
-
-            // Both sizes apply LIVE. That is safe only because this window sits on its own fixed canvas:
-            // the game UI rescales behind the slider while the slider itself stays under your finger.
-            Row(inner, ref y, _uiScaleSlider = UiKit.SliderRow(inner, "UI size (x)", UiScaleMin, UiScaleMax,
-                _uiScale, "0.00", v =>
-                {
-                    ApplyUiScale(v);
-                    PlayerPrefs.SetFloat(PrefUiScale, v);
-                }));
-
-            Row(inner, ref y, _barScaleSlider = UiKit.SliderRow(inner, "Skill bar size (x)", BarScaleMin / BarScaleShown,
-                BarScaleMax / BarScaleShown, _barScale / BarScaleShown, "0.00", v =>
-                {
-                    _barScale = v * BarScaleShown;
-                    ApplyBarLayout();
-                    PlayerPrefs.SetFloat(PrefBarScale, _barScale);
-                }));
 
             var damage = UiKit.TextButton(inner, "", () =>
             {
@@ -184,6 +170,46 @@ namespace Game.Client
             _tickToggle = ticks;
             y -= 48f;
 
+            Group(inner, ref y, "Interface");
+            // Both sizes apply LIVE. That is safe only because this window sits on its own fixed canvas:
+            // the game UI rescales behind the slider while the slider itself stays under your finger.
+            Row(inner, ref y, _uiScaleSlider = UiKit.SliderRow(inner, "UI size (x)", UiScaleMin, UiScaleMax,
+                _uiScale, "0.00", v =>
+                {
+                    ApplyUiScale(v);
+                    PlayerPrefs.SetFloat(PrefUiScale, v);
+                }));
+
+            Row(inner, ref y, _barScaleSlider = UiKit.SliderRow(inner, "Skill bar size (x)", BarScaleMin / BarScaleShown,
+                BarScaleMax / BarScaleShown, _barScale / BarScaleShown, "0.00", v =>
+                {
+                    _barScale = v * BarScaleShown;
+                    ApplyBarLayout();
+                    PlayerPrefs.SetFloat(PrefBarScale, _barScale);
+                }));
+
+            // `BL-269` — extra skill squares, 0/6/12/18/24: *"need option to add more 6/12/18/24 skill slots
+            // (half of or full the 2nd and 3rd skill bars)"*. A LOOK setting like the rest of this column,
+            // so it lives on the phone; what the server stores is the same 60-slot bar either way.
+            // `BL-299` — and the SHAPE beside it: 2x5 / 1x10 / 5x2. `BL-321`: the extras are now 0/1/2 whole bars in that shape.
+            var barShape = UiKit.TextButton(inner, "", () => { CycleBarShape(); RefreshSettingsLabels(); }, 15f);
+            UiKit.Place(UiKit.Rect(barShape.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(18f, y), new Vector2(260f, 38f));
+            _barShapeToggle = barShape;
+            var extraSlots = UiKit.TextButton(inner, "", () => { CycleExtraSlots(); RefreshSettingsLabels(); }, 15f);
+            UiKit.Place(UiKit.Rect(extraSlots.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(292f, y), new Vector2(260f, 38f));
+            _extraSlotsToggle = extraSlots;
+            y -= 48f;
+
+            // 0.262.0 — the old top status strip, now a movable popup of its own (see BuildStatusStrip).
+            var gameInfo = UiKit.TextButton(inner, "", () => { ToggleGameInfo(); RefreshSettingsLabels(); }, 15f);
+            UiKit.Place(UiKit.Rect(gameInfo.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(18f, y), new Vector2(260f, 38f));
+            _gameInfoToggle = gameInfo;
+            y -= 48f;
+
+            Group(inner, ref y, "Graphics");
             // `BL-93` — 3D models on/off. This is the low-end quality preset, not a debug switch: OFF
             // is the exact client that shipped before models existed (flat unlit spheres, one draw
             // call, no skinning), so a device that cannot carry rigged meshes still has a game. It
@@ -220,11 +246,6 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(shadows.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(18f, y), new Vector2(260f, 38f));
             _shadowToggle = shadows;
-            // 0.262.0 — the old top status strip, now a movable popup of its own (see BuildStatusStrip).
-            var gameInfo = UiKit.TextButton(inner, "", () => { ToggleGameInfo(); RefreshSettingsLabels(); }, 15f);
-            UiKit.Place(UiKit.Rect(gameInfo.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(292f, y), new Vector2(260f, 38f));
-            _gameInfoToggle = gameInfo;
             y -= 48f;
 
             // `BL-344` step 5 — the owner asked for "a bar or gamma as other games": how bright night is, per player.
@@ -266,20 +287,6 @@ namespace Game.Client
             _entityDistToggle = entities;
             y -= 48f;
 
-            // `BL-269` — extra skill squares, 0/6/12/18/24: *"need option to add more 6/12/18/24 skill slots
-            // (half of or full the 2nd and 3rd skill bars)"*. A LOOK setting like the rest of this column,
-            // so it lives on the phone; what the server stores is the same 60-slot bar either way.
-            // `BL-299` — and the SHAPE beside it: 2x5 / 1x10 / 5x2. `BL-321`: the extras are now 0/1/2 whole bars in that shape.
-            var barShape = UiKit.TextButton(inner, "", () => { CycleBarShape(); RefreshSettingsLabels(); }, 15f);
-            UiKit.Place(UiKit.Rect(barShape.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(18f, y), new Vector2(260f, 38f));
-            _barShapeToggle = barShape;
-            var extraSlots = UiKit.TextButton(inner, "", () => { CycleExtraSlots(); RefreshSettingsLabels(); }, 15f);
-            UiKit.Place(UiKit.Rect(extraSlots.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(292f, y), new Vector2(260f, 38f));
-            _extraSlotsToggle = extraSlots;
-            y -= 48f;
-
             // `BL-364` items 5-6 — render scale and the frame-rate cap, on every platform (the phone too).
             Row(inner, ref y, UiKit.SliderRow(inner, "Render scale (x)", DisplaySettings.RenderScaleMin,
                 DisplaySettings.RenderScaleMax, DisplaySettings.RenderScale, "0.00", v =>
@@ -305,10 +312,7 @@ namespace Game.Client
             // `BL-364` — the DESKTOP section: shown only where there is a mouse and keyboard (Windows, a desktop browser).
             if (HoverTip.Wanted)
             {
-                var head = UiKit.Label(inner, "Desktop", 16f, UiKit.Accent, TextAlignmentOptions.BottomLeft);
-                UiKit.Place(UiKit.Rect(head.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                            new Vector2(18f, y), new Vector2(400f, 30f));
-                y -= 36f;
+                Group(inner, ref y, "Desktop");
                 SettingsLink(inner, 18f, y, "Keys", () => OpenKeysWindow());
                 // Item 7. The state flips a frame later (a browser asks the page first), so the label follows in
                 // RefreshDisplayLabels, which watches the screen rather than trusting the click.
@@ -407,6 +411,16 @@ namespace Game.Client
             _serverRow.gameObject.SetActive(fromLogin);
             _settingsOptionsLink.gameObject.SetActive(!fromLogin);
             ToggleWindow(_settingsPanel);
+        }
+
+        /// <summary>A group header in the Settings rows ("General", "Desktop" …). A gap above it except at the top.</summary>
+        private static void Group(Transform parent, ref float y, string title)
+        {
+            if (y < -14f) y -= 8f;
+            var head = UiKit.Label(parent, title, 16f, UiKit.Accent, TextAlignmentOptions.BottomLeft);
+            UiKit.Place(UiKit.Rect(head.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(18f, y), new Vector2(400f, 30f));
+            y -= 36f;
         }
 
         /// <summary>A 260-wide button in the Settings rows that opens another window.</summary>

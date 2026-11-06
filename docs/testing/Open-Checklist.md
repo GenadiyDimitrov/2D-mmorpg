@@ -25,6 +25,13 @@
 
 ---
 
+## §175 — 0.273.5: Settings in groups (2026-11-06)
+
+- `175a` [ ] - Settings shows headed groups *General / Interface / Graphics / Desktop* (Desktop only on PC/browser). Is
+  every row under the right header, nothing overlapping, and does the scroll reach the last row? ->
+
+---
+
 ## §174 — 0.273.4: Sound / Options / Keys inside Settings, fewer look rows, browser Quit (2026-11-06)
 
 - `174a` [ ] - In the world: Menu → *Settings*. First row *Sound | Options*, both open their window ON TOP of Settings? Is
