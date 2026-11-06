@@ -298,6 +298,9 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-361` | ⏸ | **An iOS client** — needs a Mac (or cloud Mac) + Xcode, an Apple Developer account ($99/yr), TestFlight for testers (HTTPS, which iOS demands, is already live) | ops |
 | `BL-362` | 🔵 | **Drop groups the IG way** — A: show group % + shares inside (display); B: author them that way; C: bake the formulas into a per-mob odds table (formula/hand rows) | loot |
 | `BL-363` | 🔴 | **A browser (WebGL) client** — test build BUILT (0.272.0, `/play/`, logs in + moves, 60 MB); owed: your FPS in a real browser, deploy, a WebGL quality preset | client |
+| `BL-368` | 🔴 | **PC launcher / patcher** — `Vardelar-Launcher.exe` downloads only the changed files (≈30 of 163 MB per version), then starts the game; starting `Vardelar.exe` directly hands off to the launcher | client |
+| `BL-369` | 🔴 | **Web: always the newest build, smaller downloads** — hashed file names + `index.html` never cached, Brotli instead of Gzip, a "new version — Reload" button in an open tab | client |
+| `BL-370` | 🔵 | **Discussion: how far do we keep expanding the Windows / web clients?** | client |
 
 ---
 
@@ -2742,3 +2745,59 @@ CHANGELOG.
 4. Leave the .NET SignalR DLLs out of the WebGL build (the browser never uses them). That trims the 16 MB of code.
 5. Clean up the browser-only rough edges: `screen.orientation.lock()` logs an error on desktop, and three URP debug
    shaders are unsupported on WebGL (harmless).
+
+## `BL-368` 🔴 PC LAUNCHER / PATCHER — DOWNLOAD ONLY WHAT CHANGED (2026-11-06)
+
+Your words: *"can we make so web and pc have some sort of updated ? that only updates the different files from your
+current version and the new one ? so not always i need to download the full client"* … *"my idea was the player start
+vardelar-launcher.exe starts the updater .. it checks if the game is up to date starts the actual game exe (or run a dll
+dunno ..) user cannot start directly the game as now ?"*
+
+**Measured (0.274.0 → 0.275.0, file by file):** 29 files / **30 MB** changed, **140 MB** unchanged (`UnityPlayer.dll`,
+the Mono runtime, D3D, most assets). An update would be about 10-15 MB instead of the 70 MB zip. About 13 MB of the 30 is
+Unity's own package DLLs, which are re-stamped on every build without real changes. We can deal with that later.
+
+**The flow (your design, one change):**
+1. The player starts **`Vardelar-Launcher.exe`**: a small window, "Checking… downloading 12 MB… 40%". It reads
+   `/pc/manifest.json` (path, size, SHA-256 per file), hashes the local files (cached by size + date), downloads what
+   differs, deletes files the new version no longer has, then starts `Vardelar.exe -launched` and closes.
+2. **Starting `Vardelar.exe` directly is NOT a hard block.** The game sees no `-launched` flag, starts the launcher and
+   quits, so the player lands in the normal flow a second later. Real enforcement already exists: the server refuses an
+   incompatible protocol (`GameConstants.ClientRejectionReason`) and tells an older client a newer version exists at
+   login (`ApkFiles.NewerThan`).
+3. **Exe, not a DLL:** a Unity player cannot be hosted from another process. It stays an exe and gets a flag.
+4. **The launcher updates itself:** the manifest carries its version. When that changes, it downloads its replacement,
+   swaps it in and restarts. The zip stays only for a first install.
+
+**Pieces:** `tools/Launcher` (a small .NET window app, outside `Game.sln` like `tools/SmokeTest`, single-file publish);
+`publish.ps1 -Windows` writes the manifest and the loose files beside the zip; `deploy.ps1` uploads only the files whose
+hash changed into `~/game/pc/files/`; the site's PC button offers the launcher; and the game checks for the `-launched`
+flag at start.
+
+## `BL-369` 🔴 WEB: ALWAYS THE NEWEST BUILD, SMALLER DOWNLOADS (2026-11-06)
+
+Same ask as `BL-368`, for `/play/`. **A file-level patch is not possible here:** Unity packs all the code into one
+`.wasm` and all the assets into one `.data`, and both change on every build (measured 0.274.0 → 0.275.0: all 5 files,
+63 MB). The browser is already the updater, since a page load gets whatever `/play/` holds. What is owed:
+1. **Never a stale copy:** `webGLNameFilesAsHashes: 1`, and nginx sends `index.html` with `Cache-Control: no-cache`, so
+   a refresh always loads the newest build. Unchanged files stay cached (`webGLDataCaching` is already on).
+2. **Smaller every time:** Brotli instead of Gzip (`webGLCompressionFormat` 1 → 0, plus nginx headers for `.br`). It is
+   still a full download, just a smaller one.
+3. **An open tab after a deploy:** the web client shows "New version — Reload" when the server says it is newer.
+   Reloading is the whole update.
+4. Already owed by `BL-363` item 4: leave the .NET SignalR DLLs out of the WebGL build.
+
+**Not now:** real per-asset updates on web would need **Addressables**: models, textures and sounds moved into
+separately cached bundles, with every `Resources.Load` becoming asynchronous. That is a big refactor, worth it only when
+the asset size starts to hurt.
+
+## `BL-370` 🔵 DISCUSSION: HOW FAR DO WE KEEP EXPANDING THE WINDOWS / WEB CLIENTS? (2026-11-06)
+
+Your words: *"mark one mre bl entiry do discuss .. should we continue expand window/web .."*
+
+To discuss in a fresh session. Already built: the Windows client (`BL-360`), the browser client (`BL-363`), desktop
+settings, keys and hover tips (`BL-364`), and the minimap and world map (`BL-365`/`BL-366`). Open threads that hang on
+the answer: `BL-368` launcher, `BL-369` web updates, `BL-363`'s FPS reading and quality preset, `BL-361` iOS. Questions
+for the discussion: is the phone still the main client and PC/web a convenience, or are all three equal (which decides
+whether every UI feature owes a desktop layout)? And does each new client platform cost more upkeep per release than it
+brings in players?
