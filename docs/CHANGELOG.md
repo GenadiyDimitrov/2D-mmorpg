@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.274.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.275.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,30 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-11-06 (latest) — 0.274.1: the compass next to the minimap is gone
+## 2026-11-06 (latest) — 0.275.0: map detail + city view (`BL-366`), bar hover card (`BL-367`), key-capture fix
+
+Client only (the version moves because the APK changes). No `game.db` delete.
+
+- **Fix — binding a key no longer fires it.** In the Keys window, the key you pressed to bind also ran that key's action
+  (a bar skill): `UpdateKeyCapture` runs before `UpdateHotkeys` in the same frame and had already cleared the capture.
+  The hotkeys now stay silent on the frame a capture ends too (`GameUi.Keys.KeyCaptureOwnsKeys`, which also covers the
+  Esc that cancels a capture, as before).
+- **`BL-367` — hover a bar square for its skill card** (desktop). The Skills window's card text is one builder now
+  (`GameUi.SkillDetail.SkillDetailBody` / `SkillDetailTitle`), used by the window and by a new tooltip card that sits
+  beside the pointer, sized to its text, never a raycast target. Items and empty squares show nothing.
+- **`BL-366` — map detail.**
+  - `MapTexture` paints the world roads (300 wide), each town's main roads, the plazas and every building footprint on
+    top of the ground once the last row is done. Map colours are a step lighter than the 3D ground so a road reads on a
+    brown biome. Side paths (70 wide, under one texel) are left to the city view.
+  - World map: NPCs outside the towns get a yellow dot and their name (shown with the field names).
+  - **City view:** a `+` beside each town's name zooms the world map onto that town and draws its `TownLayout` plan on
+    top, sharp (roads, paths, plaza, buildings in their 3D colours) with a dot per NPC. `−  <town> (world map)` returns to
+    where you were; zooming out by hand also leaves it. Inside a town, the minimap's `+` at its closest range opens the
+    city view of the town you stand in. (His ❓ "automatic or a button" — built as the button; see the archive entry.)
+  - **Names:** on a desktop the pointer names the NPC (or party member) under it on the world map and any minimap dot
+    (mobs and players with their level). On a phone, a tap on the world map shows the name for 2.5 s.
+
+## 2026-11-06 — 0.274.1: the compass next to the minimap is gone
 
 Client only. No `game.db` delete. Owner: *"remove the compass(reset) next to the minimap"*.
 

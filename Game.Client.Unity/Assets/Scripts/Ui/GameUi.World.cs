@@ -363,6 +363,7 @@ namespace Game.Client
             BuildTradePanel();
             BuildFeedback();
             BuildSkillDetail();
+            BuildSkillHover();   // `BL-367`
             BuildStatsWindow();
             BuildTargetWindow();
             BuildSettingsWindow();
@@ -690,6 +691,13 @@ namespace Game.Client
                 press.OnTap = () => FireSlot(index);
                 press.OnHold = () => OpenSlotMenu(index);
                 press.Enabled = () => button.interactable;
+                // `BL-367`: on a desktop the pointer resting on a square shows the skill's card.
+                if (HoverTip.Wanted)
+                {
+                    var hover = button.gameObject.AddComponent<HoverTip>();
+                    hover.OnEnter = () => HoverSkillSlot(index);
+                    hover.OnExit = () => UnhoverSkillSlot(index);
+                }
                 UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                             at, new Vector2(slot, slot));
                 _slotButtons[i] = button;
@@ -1583,6 +1591,7 @@ namespace Game.Client
             RefreshSkillBar();
             RefreshMinimap();     // `BL-365`
             RefreshWorldMap();
+            RefreshMapTip();      // `BL-366`: names under the pointer
             RefreshConsole();
             RefreshTitlesTab();
             RefreshBag();
@@ -3002,7 +3011,7 @@ namespace Game.Client
         private void UpdateBackButton()
         {
             // `BL-364`: the Esc that cancels a key capture is the capture's, not Back's.
-            if (Input.GetKeyDown(KeyCode.Escape) && !KeyCaptureOwnsEsc) AskBack();
+            if (Input.GetKeyDown(KeyCode.Escape) && !KeyCaptureOwnsKeys) AskBack();
         }
 
         private void AskBack()

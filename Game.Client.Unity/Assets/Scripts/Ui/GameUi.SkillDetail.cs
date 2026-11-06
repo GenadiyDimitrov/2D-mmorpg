@@ -52,12 +52,22 @@ namespace Game.Client
         {
             var def = SkillCatalog.Get(skillId);
             if (def == null) return;
+            _detailTitle.text = SkillDetailTitle(def, level);
+            _detailBody.text = SkillDetailBody(def, level);
+            OpenWindow(_detailPanel);
+            UiKit.RefitScroll(_detailBody, _detailScroll, toTop: true);
+        }
 
-            // NameAt / HasLevelNames — a rank-named rung ("Grade C") already says which step it is,
-            // so appending "Lv.4" to it would say the opposite. See SkillDef.HasLevelNames.
-            _detailTitle.text = SkillNameAt(def, level)
-                              + (def.MaxLevel > 1 && !def.HasLevelNames ? "   Lv." + ShownLevel(def.Id, level) : "");
+        /// <summary>NameAt / HasLevelNames — a rank-named rung ("Grade C") already says which step it is,
+        /// so appending "Lv.4" to it would say the opposite. See SkillDef.HasLevelNames.</summary>
+        private string SkillDetailTitle(SkillDef def, int level) =>
+            SkillNameAt(def, level)
+            + (def.MaxLevel > 1 && !def.HasLevelNames ? "   Lv." + ShownLevel(def.Id, level) : "");
 
+        /// <summary>The card's text — ONE builder for the Skills window's popup and the bar's hover card
+        /// (`BL-367`), so the two can never describe a skill differently.</summary>
+        private string SkillDetailBody(SkillDef def, int level)
+        {
             var text = new StringBuilder();
             // ⚠ DescriptionAt, not Description — the card claimed to describe THIS level (see the
             // summary above) while printing level 1's prose. Restore Spirit is where it showed:
@@ -138,9 +148,69 @@ namespace Game.Client
             if (def.Replaces != null && def.Replaces.Length > 0)
                 text.AppendLine(Line("Replaces", string.Join(", ", def.Replaces)));
 
-            _detailBody.text = text.ToString().TrimEnd();
-            OpenWindow(_detailPanel);
-            UiKit.RefitScroll(_detailBody, _detailScroll, toTop: true);
+            return text.ToString().TrimEnd();
+        }
+
+        // ----- `BL-367`: the bar's HOVER card (desktop) -------------------------------------------
+
+        private RectTransform _skillHover;
+        private TextMeshProUGUI _skillHoverTitle, _skillHoverBody;
+        private int _skillHoverSlot = -1;
+        private const float SkillHoverW = 440f;
+
+        /// <summary>A tooltip, not a window: no chrome, no back-stack entry, never a raycast target (so it
+        /// cannot steal the pointer from the slot under it and flicker), sized to its text.</summary>
+        private void BuildSkillHover()
+        {
+            _skillHover = UiKit.PanelBox(_worldRoot, "SkillHover");
+            var group = _skillHover.gameObject.AddComponent<CanvasGroup>();
+            group.blocksRaycasts = false;
+            group.interactable = false;
+            var inner = _skillHover.GetChild(0);
+
+            _skillHoverTitle = UiKit.Label(inner, "", 17f, UiKit.Accent, TextAlignmentOptions.TopLeft);
+            UiKit.Place(UiKit.Rect(_skillHoverTitle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(12f, -10f), new Vector2(SkillHoverW - 24f, 24f));
+            _skillHoverBody = UiKit.Label(inner, "", 14f, UiKit.Text, TextAlignmentOptions.TopLeft);
+            _skillHover.gameObject.SetActive(false);
+        }
+
+        /// <summary>The pointer came onto bar square <paramref name="slotOnPage"/>: show its skill's card
+        /// beside the pointer. An empty square, an item or the basic attack has no skill card and shows nothing.</summary>
+        private void HoverSkillSlot(int slotOnPage)
+        {
+            if (_skillHover == null) return;
+            var def = SkillCatalog.Get(TokenAt(slotOnPage));
+            if (def == null) { _skillHoverSlot = -1; _skillHover.gameObject.SetActive(false); return; }
+            int level = Boot.Learned.TryGetValue(def.Id, out var lv) ? lv : 1;
+
+            _skillHoverTitle.text = SkillDetailTitle(def, level);
+            _skillHoverBody.text = SkillDetailBody(def, level);
+
+            // Measured, as the buff card is: TMP's preferred height at the real wrap width.
+            const float bodyTop = 38f, pad = 12f;
+            float bodyW = SkillHoverW - 24f;
+            float bodyH = Mathf.Clamp(_skillHoverBody.GetPreferredValues(_skillHoverBody.text, bodyW, 0f).y, 20f, 560f);
+            UiKit.Place(UiKit.Rect(_skillHoverBody.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(12f, -bodyTop), new Vector2(bodyW, bodyH));
+            var size = new Vector2(SkillHoverW, bodyTop + bodyH + pad);
+            _skillHover.sizeDelta = size;
+
+            // Beside the POINTER, not the square: the bar can sit anywhere at any scale, and the pointer is
+            // always where the eye is. Above-right of it by default, flipped where that would leave the screen.
+            PlaceNearScreenPoint(_skillHover, size, Input.mousePosition, 18f);
+            _skillHoverSlot = slotOnPage;
+            _skillHover.gameObject.SetActive(true);
+            _skillHover.SetAsLastSibling();
+        }
+
+        /// <summary>Leaving a square hides the card only if it is still THAT square's — the enter of the next
+        /// square can arrive before the exit of the last.</summary>
+        private void UnhoverSkillSlot(int slotOnPage)
+        {
+            if (_skillHover == null || _skillHoverSlot != slotOnPage) return;
+            _skillHoverSlot = -1;
+            _skillHover.gameObject.SetActive(false);
         }
 
         /// <summary>One "label: a, b, c" block, or nothing at all when the list is empty — a heading

@@ -17,12 +17,15 @@ namespace Game.Client
             = new System.Collections.Generic.List<(KeyBindings.KeyAction, int, Button)>();
 
         /// <summary>The box waiting for a key (null = none), and the frame a capture ended — the Esc that cancels a
-        /// capture must not also walk the Back stack (<see cref="UpdateBackButton"/> reads <see cref="KeyCaptureOwnsEsc"/>).</summary>
+        /// capture must not also walk the Back stack (<see cref="UpdateBackButton"/> reads <see cref="KeyCaptureOwnsKeys"/>).</summary>
         private KeyBindings.KeyAction _captureAction;
         private int _captureSlot;
         private int _captureEndFrame = -1;
 
-        private bool KeyCaptureOwnsEsc => _captureAction != null || _captureEndFrame == Time.frameCount;
+        /// <summary>True while a capture waits AND on the frame it ended: the key that ended it was the capture's, not a
+        /// hotkey. <see cref="UpdateKeyCapture"/> runs before <see cref="UpdateHotkeys"/> in the same frame, so without the
+        /// second half the key you just bound also fired its new (or old) action — a bar skill (2026-11-06 find).</summary>
+        private bool KeyCaptureOwnsKeys => _captureAction != null || _captureEndFrame == Time.frameCount;
 
         private const string KeysHelp = "Click a box, then press the new key (with Shift / Ctrl / Alt if you want them). "
                                         + "Esc cancels, Backspace clears.";
@@ -175,7 +178,7 @@ namespace Game.Client
         {
             var selected = UnityEngine.EventSystems.EventSystem.current?.currentSelectedGameObject;
             bool typing = selected != null && selected.GetComponent<TMP_InputField>() is { isFocused: true };
-            if (typing || _captureAction != null) { StopKeyMove(); return; }
+            if (typing || KeyCaptureOwnsKeys) { StopKeyMove(); return; }
 
             UpdateKeyMove();
             if (!Input.anyKeyDown) return;

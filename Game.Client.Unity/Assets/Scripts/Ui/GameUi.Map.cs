@@ -33,6 +33,8 @@ namespace Game.Client
         private RawImage _miniTerrain;
         private Button _miniZoomIn, _miniZoomOut;
         private readonly List<Image> _miniDotPool = new List<Image>();
+        private readonly List<string> _miniDotNames = new List<string>();   // `BL-366`: parallel to the pool, for the hover
+        private SafeZone _miniTown;   // the town you stand in (its "+" opens the city view), or null
         private bool _miniShown = true, _miniRotate;
         private int _miniRange = 1;
 
@@ -97,7 +99,12 @@ namespace Game.Client
             UiKit.Place(_miniNorth, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(22f, 22f));
 
             // Range: two small buttons on the lower-left rim. ASCII only — the atlas has no minus sign or magnifier.
-            _miniZoomIn = UiKit.TextButton(_mini, "+", () => SetMiniRange(_miniRange - 1), 18f);
+            // `BL-366`: at the closest range, inside a town, "+" goes one step further — the city view.
+            _miniZoomIn = UiKit.TextButton(_mini, "+", () =>
+            {
+                if (_miniRange == 0 && _miniTown != null) OpenCityView(_miniTown);
+                else SetMiniRange(_miniRange - 1);
+            }, 18f);
             UiKit.Place(UiKit.Rect(_miniZoomIn.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(-6f, 24f), new Vector2(30f, 30f));
             _miniZoomOut = UiKit.TextButton(_mini, "-", () => SetMiniRange(_miniRange + 1), 18f);
@@ -115,7 +122,7 @@ namespace Game.Client
 
         private void RefreshMiniZoomButtons()
         {
-            _miniZoomIn.interactable = _miniRange > 0;
+            _miniZoomIn.interactable = _miniRange > 0 || _miniTown != null;
             _miniZoomOut.interactable = _miniRange < MiniRanges.Length - 1;
         }
 
@@ -154,6 +161,9 @@ namespace Game.Client
             bool show = _miniShown && has;
             if (_mini.gameObject.activeSelf != show) _mini.gameObject.SetActive(show);
             if (!show) return;
+
+            var town = TownAt(me);
+            if (town != _miniTown) { _miniTown = town; RefreshMiniZoomButtons(); }
 
             float yaw = _miniRotate && Boot.CameraRig != null ? Boot.CameraRig.Yaw : 0f;
             float radius = MiniSize / 2f - 3f;
@@ -200,6 +210,8 @@ namespace Game.Client
                                  : e.Kind == EntityKind.Npc ? DotNpc
                                  : e.Aggressive ? DotAggro : DotMob;
                     float size = party ? 9f : e.Kind == EntityKind.Mob ? 5f : 7f;
+                    while (_miniDotNames.Count <= used) _miniDotNames.Add(null);
+                    _miniDotNames[used] = e.Kind == EntityKind.Npc ? e.Name : e.Name + "  Lv " + e.Level;
                     var dot = MiniDot(used++);
                     dot.color = colour;
                     var rt = dot.rectTransform;
@@ -265,6 +277,7 @@ namespace Game.Client
             var input = view.gameObject.AddComponent<MapViewInput>();
             input.Pan = PanWorldMap;
             input.Zoom = ZoomWorldMap;
+            input.Click = TapWorldMap;   // `BL-366`: a tap names what is under it
 
             var contentGo = new GameObject("Content", typeof(RectTransform), typeof(RawImage));
             contentGo.transform.SetParent(_mapView, false);
@@ -273,6 +286,7 @@ namespace Game.Client
             var ground = contentGo.GetComponent<RawImage>();
             ground.texture = MapTexture.Texture;
             ground.raycastTarget = false;
+            BuildMapPlans();   // `BL-366`: plans + NPCs, behind the town and field labels
 
             // Towns: name in white. Fields: name + level band, dimmer, shown only when zoomed in enough to read.
             foreach (var town in Towns.All)
@@ -288,6 +302,7 @@ namespace Game.Client
                 MapMarker(label.rectTransform, town.X, town.Y, new Vector2(240f, 26f)).pivot = new Vector2(0.5f, 0f);
                 label.rectTransform.anchoredPosition = new Vector2(0f, 6f);
                 _mapLabels.Add((label, true));
+                AddCityButton(town);   // `BL-366`
             }
             foreach (var field in RegionMap.Fields)
             {
@@ -310,6 +325,8 @@ namespace Game.Client
             var self = UiKit.Box(_mapContent, "You", DotSelfParty, blocksInput: false);
             self.sprite = MapTexture.Arrow;
             _mapSelf = MapMarker(self.rectTransform, 0f, 0f, new Vector2(22f, 22f));
+            BuildCityBack(_mapView);   // over the content, so it never pans away
+            BuildMapTip();
 
             _mapStatus = UiKit.Label(inner, "", 14f, UiKit.TextDim, TextAlignmentOptions.Left);
             UiKit.Place(_mapStatus.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(14f, 8f), new Vector2(240f, 40f));
@@ -421,6 +438,7 @@ namespace Game.Client
             _mapContent.anchoredPosition = new Vector2((MapTexture.WorldW / 2f - _mapCentre.x) * _mapZoom,
                                                        (_mapCentre.y - MapTexture.WorldH / 2f) * _mapZoom);
 
+            RefreshMapCity();   // `BL-366`
             bool fields = _mapZoom >= FieldLabelZoom;
             foreach (var (label, town) in _mapLabels)
                 if (!town && label.enabled != fields) label.enabled = fields;
@@ -463,14 +481,322 @@ namespace Game.Client
                 : total > 0 ? "Party in view: " + used + " / " + total
                 : "";
         }
+
+        // ----- `BL-366`: NPCs, the city view, names under the pointer ------------------------------
+        //
+        // His words (2026-11-06): roads outside towns; NPC positions outside towns; a city view with houses and NPC
+        // positions behind "+" on each city and "-" to leave it; hovering the city view or a minimap dot names it.
+        //
+        // The city view is the world map ZOOMED onto one town with its plan drawn crisp on top (the same TownLayout the
+        // 3D town is built from). Below CityShowZoom the plan is just the painted texels and the town's NPCs are hidden,
+        // so the world view stays one marker per town. Inside a town the minimap's "+" at its closest range opens it.
+
+        /// <summary>The plan overlay and the town NPC dots appear at this zoom (a 6000-wide city = 240 UI px).</summary>
+        private const float CityShowZoom = 0.04f;
+
+        private readonly List<(RectTransform Plan, SafeZone Town)> _mapPlans = new List<(RectTransform, SafeZone)>();
+        private readonly List<(GameObject Dot, bool InTown)> _mapNpcDots = new List<(GameObject, bool)>();
+        /// <summary>Everything on the world map that answers "what is this?": NPCs (in-town ones only in the city view).</summary>
+        private readonly List<(Vector2 Pos, string Name, bool InTown)> _mapNames = new List<(Vector2, string, bool)>();
+        private SafeZone _mapCity;                 // the town the city view is on (null = the world)
+        private float _mapZoomBeforeCity;
+        private Vector2 _mapCentreBeforeCity;
+        private bool _mapFollowBeforeCity;
+        private Button _mapCityBack;
+
+        /// <summary>The town (with a plan) whose wall <paramref name="p"/> is inside, or null.</summary>
+        private static SafeZone TownAt(Vector2 p)
+        {
+            foreach (var t in Towns.All)
+                if (TownLayout.HasPlan(t) && (p - new Vector2(t.X, t.Y)).sqrMagnitude <= t.Radius * t.Radius) return t;
+            return null;
+        }
+
+        /// <summary>The plans first (behind every marker), then the NPCs. Called from BuildWorldMap before the labels.</summary>
+        private void BuildMapPlans()
+        {
+            foreach (var plan in TownLayout.Plans)
+            {
+                var town = Towns.ById(plan.TownId);
+                if (town == null || !MapTexture.InOverworld(town.X, town.Y)) continue;
+                var go = new GameObject("Plan", typeof(RectTransform));
+                go.transform.SetParent(_mapContent, false);
+                var root = MapMarker((RectTransform)go.transform, town.X, town.Y, Vector2.zero);
+
+                // Children in WORLD units off the town centre (UI y up = server y down); the root's scale is the zoom.
+                Vector2 Local(Vec2 v) => new Vector2(v.X - town.X, town.Y - v.Y);
+                Image Piece(Color col, Vector2 at, Vector2 size, float uiDeg, Sprite sprite = null)
+                {
+                    var img = UiKit.Box(root, "P", col, blocksInput: false);
+                    if (sprite != null) img.sprite = sprite;
+                    var rt = img.rectTransform;
+                    rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
+                    rt.anchoredPosition = at;
+                    rt.sizeDelta = size;
+                    rt.localRotation = Quaternion.Euler(0f, 0f, uiDeg);
+                    return img;
+                }
+
+                var road = new Color(0.62f, 0.54f, 0.40f);
+                var path = new Color(0.50f, 0.43f, 0.32f);
+                foreach (var s in plan.Roads)
+                {
+                    Vector2 a = Local(s.A), b = Local(s.B), d = b - a;
+                    Piece(s.Path ? path : road, (a + b) / 2f, new Vector2(d.magnitude + s.Width, s.Width),
+                          Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg);
+                }
+                Piece(new Color(0.70f, 0.63f, 0.48f), Local(plan.Centre), Vector2.one * plan.PlazaRadius * 2f, 0f, MapTexture.Circle);
+                foreach (var lot in plan.Lots)
+                {
+                    // An edge under a smaller fill, as the 3D town does. A server angle turns clockwise on the map = -z in the UI.
+                    Piece(new Color(0.10f, 0.12f, 0.13f), Local(lot.Centre), new Vector2(lot.W, lot.H), -lot.AngleDeg);
+                    Piece(LotColour(lot.Kind), Local(lot.Centre), new Vector2(lot.W - 36f, lot.H - 36f), -lot.AngleDeg);
+                }
+                go.SetActive(false);
+                _mapPlans.Add((root, town));
+            }
+
+            // NPCs. Out in the world: a dot and a name, shown with the field names. In a town: a dot for the city view.
+            foreach (var npc in WorldMap.Npcs)
+            {
+                if (!MapTexture.InOverworld(npc.X, npc.Y)) continue;
+                bool inTown = TownAt(new Vector2(npc.X, npc.Y)) != null;
+                var dot = UiKit.Box(_mapContent, "Npc", DotNpc, blocksInput: false);
+                dot.sprite = MapTexture.Circle;
+                MapMarker(dot.rectTransform, npc.X, npc.Y, new Vector2(inTown ? 10f : 9f, inTown ? 10f : 9f));
+                _mapNpcDots.Add((dot.gameObject, inTown));
+                _mapNames.Add((new Vector2(npc.X, npc.Y), npc.Name, inTown));
+                if (inTown) { dot.gameObject.SetActive(false); continue; }
+
+                var label = UiKit.Label(_mapContent, npc.Name, 12f, DotNpc, TextAlignmentOptions.Top);
+                label.outlineWidth = 0.2f;
+                label.outlineColor = new Color32(0, 0, 0, 255);
+                MapMarker(label.rectTransform, npc.X, npc.Y, new Vector2(180f, 18f)).pivot = new Vector2(0.5f, 1f);
+                label.rectTransform.anchoredPosition = new Vector2(0f, -6f);
+                _mapLabels.Add((label, false));   // with the field names: only once zoomed in enough to read
+            }
+        }
+
+        /// <summary>The "+" beside a town's name on the world map.</summary>
+        private void AddCityButton(SafeZone town)
+        {
+            if (!TownLayout.HasPlan(town)) return;
+            var plus = UiKit.TextButton(_mapContent, "+", () => OpenCityView(town), 16f);
+            MapMarker(UiKit.Rect(plus.gameObject), town.X, town.Y, new Vector2(26f, 26f)).pivot = new Vector2(0f, 0f);
+            UiKit.Rect(plus.gameObject).anchoredPosition = new Vector2(10f, 6f);
+            _mapCityButtons.Add(plus.gameObject);
+        }
+
+        private readonly List<GameObject> _mapCityButtons = new List<GameObject>();
+
+        private void BuildCityBack(Transform view)
+        {
+            _mapCityBack = UiKit.TextButton(view, "", ExitCityView, 15f);
+            UiKit.Place(UiKit.Rect(_mapCityBack.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(8f, -8f),
+                        new Vector2(260f, 36f));
+            _mapCityBack.gameObject.SetActive(false);
+        }
+
+        /// <summary>The world map, on <paramref name="town"/>'s plan. From a world-map "+" or the minimap's.</summary>
+        private void OpenCityView(SafeZone town)
+        {
+            if (!_mapPanel.gameObject.activeSelf) OpenWorldMap();
+            if (_mapCity == null)
+            {
+                _mapZoomBeforeCity = _mapZoom;
+                _mapCentreBeforeCity = _mapCentre;
+                _mapFollowBeforeCity = _mapFollow;
+            }
+            _mapCity = town;
+            _mapFollow = false;
+            _mapCentre = new Vector2(town.X, town.Y);
+            var view = _mapView.rect.size;
+            float fit = Mathf.Min(view.x, view.y) / (town.Radius * 2.2f);
+            _mapZoom = Mathf.Clamp(fit, CityShowZoom, MapMaxZoom);
+            UiKit.SetButtonText(_mapCityBack, "-   " + town.Name + "  (world map)");
+        }
+
+        private void ExitCityView()
+        {
+            if (_mapCity == null) return;
+            _mapCity = null;
+            _mapZoom = _mapZoomBeforeCity > 0f && _mapZoomBeforeCity < CityShowZoom ? _mapZoomBeforeCity : MapFitZoom() * 3f;
+            _mapCentre = _mapCentreBeforeCity;
+            _mapFollow = _mapFollowBeforeCity;
+        }
+
+        /// <summary>Per frame while the map is open, after the zoom is settled.</summary>
+        private void RefreshMapCity()
+        {
+            // Zooming out of a city by hand leaves it, exactly as "-" does (minus the restore).
+            if (_mapCity != null && _mapZoom < CityShowZoom * 0.999f) _mapCity = null;
+            if (_mapCityBack.gameObject.activeSelf != (_mapCity != null)) _mapCityBack.gameObject.SetActive(_mapCity != null);
+
+            bool city = _mapZoom >= CityShowZoom;
+            foreach (var plus in _mapCityButtons)
+                if (plus.activeSelf == city) plus.SetActive(!city);   // in the city view, "-" is the way out
+            var viewSize = _mapView.rect.size;
+            foreach (var (plan, town) in _mapPlans)
+            {
+                // Only the plans near the view: five towns, but each is hundreds of images.
+                bool near = city && Mathf.Abs(town.X - _mapCentre.x) * _mapZoom < viewSize.x / 2f + town.Radius * _mapZoom
+                                 && Mathf.Abs(town.Y - _mapCentre.y) * _mapZoom < viewSize.y / 2f + town.Radius * _mapZoom;
+                if (plan.gameObject.activeSelf != near) plan.gameObject.SetActive(near);
+                if (near) plan.localScale = new Vector3(_mapZoom, _mapZoom, 1f);
+            }
+            foreach (var (dot, inTown) in _mapNpcDots)
+                if (inTown && dot.activeSelf != city) dot.SetActive(city);
+        }
+
+        // ----- the name under the pointer (hover on a desktop, a tap anywhere) ------------------------
+
+        private RectTransform _mapTip;
+        private TextMeshProUGUI _mapTipLabel;
+        private string _mapTipShown;
+        private string _mapTapName;
+        private Vector2 _mapTapAt;
+        private float _mapTapUntil;
+
+        private void BuildMapTip()
+        {
+            _mapTip = UiKit.PanelBox(_worldRoot, "MapTip");
+            var group = _mapTip.gameObject.AddComponent<CanvasGroup>();
+            group.blocksRaycasts = false;
+            group.interactable = false;
+            _mapTipLabel = UiKit.Label(_mapTip.GetChild(0), "", 14f, UiKit.Text, TextAlignmentOptions.Center);
+            UiKit.Stretch(_mapTipLabel.rectTransform, 8f, 4f, 8f, 4f);
+            _mapTip.gameObject.SetActive(false);
+        }
+
+        /// <summary>A tap on the world map (a phone's hover): name what is under it for a moment.</summary>
+        private void TapWorldMap(Vector2 screen)
+        {
+            var name = WorldMapNameAt(screen);
+            if (name == null) return;
+            _mapTapName = name;
+            _mapTapAt = screen;
+            _mapTapUntil = Time.unscaledTime + 2.5f;
+        }
+
+        /// <summary>The world-map marker within ~10 UI px of a screen point, or null.</summary>
+        private string WorldMapNameAt(Vector2 screen)
+        {
+            if (_mapPanel == null || !_mapPanel.gameObject.activeInHierarchy || _mapZoom <= 0f) return null;
+            if (!RectTransformUtility.RectangleContainsScreenPoint(_mapView, screen, null)) return null;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(_mapView, screen, null, out var local)) return null;
+            var off = local - _mapView.rect.center;
+            var world = new Vector2(_mapCentre.x + off.x / _mapZoom, _mapCentre.y - off.y / _mapZoom);
+            bool city = _mapZoom >= CityShowZoom;
+            float best = 10f / _mapZoom;
+            best *= best;
+            string name = null;
+            foreach (var (pos, n, inTown) in _mapNames)
+            {
+                if (inTown && !city) continue;
+                float d = (pos - world).sqrMagnitude;
+                if (d < best) { best = d; name = n; }
+            }
+            if (Boot.Party != null && Boot.Entities != null)
+                foreach (var m in Boot.Party)
+                {
+                    if (m.Id == Boot.SelfId) continue;
+                    var v = Boot.Entities.Find(m.Id);
+                    if (v == null) continue;
+                    var p = WorldMapper.ToServer(v.transform.position);
+                    float d = (p - world).sqrMagnitude;
+                    if (d < best) { best = d; name = m.Name; }
+                }
+            return name;
+        }
+
+        /// <summary>The minimap dot within ~7 UI px of the pointer, or null. The dots layer turns with the minimap, so the
+        /// pointer is read in ITS space.</summary>
+        private string MinimapNameAt(Vector2 screen)
+        {
+            if (_mini == null || !_mini.gameObject.activeInHierarchy) return null;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(_miniDots, screen, null, out var local)) return null;
+            float radius = MiniSize / 2f - 3f;
+            if (local.sqrMagnitude > radius * radius) return null;
+            float best = 7f * 7f;
+            string name = null;
+            for (int i = 0; i < _miniDotNames.Count && i < _miniDotPool.Count; i++)
+            {
+                if (!_miniDotPool[i].enabled) continue;
+                float d = (_miniDotPool[i].rectTransform.anchoredPosition - local).sqrMagnitude;
+                if (d < best) { best = d; name = _miniDotNames[i]; }
+            }
+            return name;
+        }
+
+        private void RefreshMapTip()
+        {
+            if (_mapTip == null) return;
+            string text = null;
+            Vector2 at = default;
+            if (HoverTip.Wanted)
+            {
+                at = Input.mousePosition;
+                text = MinimapNameAt(at) ?? WorldMapNameAt(at);
+            }
+            if (text == null && _mapTapName != null && Time.unscaledTime < _mapTapUntil
+                && _mapPanel.gameObject.activeInHierarchy)
+            {
+                text = _mapTapName;
+                at = _mapTapAt;
+            }
+
+            if (text == null)
+            {
+                if (_mapTip.gameObject.activeSelf) _mapTip.gameObject.SetActive(false);
+                _mapTipShown = null;
+                return;
+            }
+            if (text != _mapTipShown)
+            {
+                _mapTipLabel.text = text;
+                _mapTipShown = text;
+                var pref = _mapTipLabel.GetPreferredValues(text, 400f, 0f);
+                _mapTip.sizeDelta = new Vector2(Mathf.Min(pref.x, 400f) + 16f, pref.y + 8f);
+            }
+            PlaceNearScreenPoint(_mapTip, _mapTip.sizeDelta, at, 14f);
+            if (!_mapTip.gameObject.activeSelf)
+            {
+                _mapTip.gameObject.SetActive(true);
+                _mapTip.SetAsLastSibling();
+            }
+        }
+
+        /// <summary>Put a card above-right of a screen point (flipped where it would leave the screen). Shared by the map's
+        /// name tip and the skill bar's hover card (`BL-367`).</summary>
+        private void PlaceNearScreenPoint(RectTransform card, Vector2 size, Vector2 screen, float gap)
+        {
+            var root = _worldRoot;
+            card.anchorMin = card.anchorMax = root.pivot;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(root, screen, null, out var p)) return;
+            var r = root.rect;
+            bool right = p.x + gap + size.x <= r.xMax;
+            bool up = p.y + gap + size.y <= r.yMax;
+            card.pivot = new Vector2(right ? 0f : 1f, up ? 0f : 1f);
+            var at = p + new Vector2(right ? gap : -gap, up ? gap : -gap);
+            at.x = Mathf.Clamp(at.x, r.xMin + (right ? 0f : size.x), r.xMax - (right ? size.x : 0f));
+            at.y = Mathf.Clamp(at.y, r.yMin + (up ? 0f : size.y), r.yMax - (up ? size.y : 0f));
+            card.anchoredPosition = at;
+        }
     }
 
     /// <summary>The world map's input: drag to pan, the wheel to zoom, two fingers to pinch. It only reports; GameUi does
     /// the arithmetic.</summary>
-    public sealed class MapViewInput : MonoBehaviour, IDragHandler, IScrollHandler
+    public sealed class MapViewInput : MonoBehaviour, IDragHandler, IScrollHandler, IPointerClickHandler
     {
         public Action<Vector2> Pan;
         public Action<float, Vector2?> Zoom;
+        public Action<Vector2> Click;
+
+        /// <summary>A tap or click that was not the end of a drag.</summary>
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (!eventData.dragging) Click?.Invoke(eventData.position);
+        }
         private float _pinchFrom;
 
         public void OnDrag(PointerEventData eventData)

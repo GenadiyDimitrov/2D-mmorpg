@@ -25,9 +25,9 @@ namespace Game.Client
         private static Texture2D _texture;
         private static Color32[] _pixels;
         private static int _nextRow;
-        private static bool _dirtySinceApply;
+        private static bool _dirtySinceApply, _detailed;
 
-        public static bool Ready => _texture != null && _nextRow >= Size;
+        public static bool Ready => _texture != null && _nextRow >= Size && _detailed;
 
         public static Texture2D Texture
         {
@@ -64,6 +64,12 @@ namespace Game.Client
                     _pixels[j * Size + i] = BiomeGround.ColourAt((i + 0.5f) * stepX, y);
                 _dirtySinceApply = true;
             }
+            if (_nextRow >= Size && !_detailed)
+            {
+                PaintDetail();   // `BL-366` — once, on the finished ground; a few ms
+                _detailed = true;
+                _dirtySinceApply = true;
+            }
             // Upload at most every 8 rows (and at the end): one Apply per row would cost more than the painting.
             if (_dirtySinceApply && (_nextRow % 8 == 0 || _nextRow >= Size))
             {
@@ -73,6 +79,90 @@ namespace Game.Client
             }
         }
 
+
+        // ----- `BL-366`: roads and town plans on top of the ground ----------------------------------
+        //
+        // Painted ONCE, after the last ground row, from the same shared data the 3D ground is built from
+        // (WorldMap.Roads, TownLayout.Plans) — so the map shows the road you are standing on. One texel is ~94 world
+        // units, so every shape is drawn with a one-texel soft edge and at least ~1.5 texels wide (a 300-wide road is
+        // 3 texels; a side path, 70 wide, is under one and is left to the city view, which draws it crisp).
+        //
+        // Map colours are a step LIGHTER than the 3D ground's (GameUi.BuildTownPlans): at this size a road the colour
+        // of dry earth vanishes into a brown biome.
+
+        private static readonly Color MapRoad = new Color(0.62f, 0.54f, 0.40f);
+        private static readonly Color MapPlaza = new Color(0.70f, 0.63f, 0.48f);
+        private static readonly Color MapLot = new Color(0.28f, 0.27f, 0.27f);
+
+        private static void PaintDetail()
+        {
+            foreach (var r in WorldMap.Roads)
+                for (int i = 0; i < r.Points.Length - 1; i++)
+                    Strip(r.Points[i].X, r.Points[i].Y, r.Points[i + 1].X, r.Points[i + 1].Y, 300f, MapRoad);
+            foreach (var plan in TownLayout.Plans)
+            {
+                foreach (var s in plan.Roads)
+                    if (!s.Path) Strip(s.A.X, s.A.Y, s.B.X, s.B.Y, s.Width, MapRoad);
+                Disc(plan.Centre.X, plan.Centre.Y, plan.PlazaRadius, MapPlaza);
+                foreach (var lot in plan.Lots)
+                    Box(lot.Centre.X, lot.Centre.Y, lot.W, lot.H, lot.AngleDeg, MapLot);
+            }
+        }
+
+        private static float Texel => WorldW / Size;
+
+        private static void Strip(float ax, float ay, float bx, float by, float width, Color col)
+        {
+            float half = Mathf.Max(width / 2f, Texel * 0.75f);
+            float dx = bx - ax, dy = by - ay, len2 = Mathf.Max(dx * dx + dy * dy, 1f);
+            Paint(Mathf.Min(ax, bx) - half, Mathf.Min(ay, by) - half, Mathf.Max(ax, bx) + half, Mathf.Max(ay, by) + half,
+                  (x, y) =>
+                  {
+                      float t = Mathf.Clamp01(((x - ax) * dx + (y - ay) * dy) / len2);
+                      float ex = x - (ax + t * dx), ey = y - (ay + t * dy);
+                      return Edge(half - Mathf.Sqrt(ex * ex + ey * ey));
+                  }, col);
+        }
+
+        private static void Disc(float cx, float cy, float r, Color col) =>
+            Paint(cx - r, cy - r, cx + r, cy + r,
+                  (x, y) => Edge(r - Mathf.Sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy))), col);
+
+        /// <summary>A rotated rectangle — TownLot's rule: local (lx, ly) turned by <paramref name="angleDeg"/> in server axes.</summary>
+        private static void Box(float cx, float cy, float w, float h, float angleDeg, Color col)
+        {
+            float t = angleDeg * Mathf.Deg2Rad, cs = Mathf.Cos(t), sn = Mathf.Sin(t);
+            float hw = Mathf.Max(w / 2f, Texel * 0.6f), hh = Mathf.Max(h / 2f, Texel * 0.6f), reach = hw + hh;
+            Paint(cx - reach, cy - reach, cx + reach, cy + reach, (x, y) =>
+            {
+                float dx = x - cx, dy = y - cy;
+                float lx = dx * cs + dy * sn, ly = -dx * sn + dy * cs;   // the inverse turn
+                return Edge(hw - Mathf.Abs(lx)) * Edge(hh - Mathf.Abs(ly));
+            }, col);
+        }
+
+        /// <summary>Coverage of a texel whose centre is <paramref name="inside"/> world units inside an edge.</summary>
+        private static float Edge(float inside) => Mathf.Clamp01(inside / Texel + 0.5f);
+
+        /// <summary>Blend <paramref name="col"/> into every texel of a world-space box by its coverage.</summary>
+        private static void Paint(float minX, float minY, float maxX, float maxY, System.Func<float, float, float> cover, Color col)
+        {
+            float step = Texel;
+            int i0 = Mathf.Max(0, Mathf.FloorToInt(minX / step)), i1 = Mathf.Min(Size - 1, Mathf.CeilToInt(maxX / step));
+            // Row j's centre is y = H − (j + 0.5)·step, so a world y range maps to rows the other way round.
+            int j0 = Mathf.Max(0, Mathf.FloorToInt((WorldH - maxY) / step)), j1 = Mathf.Min(Size - 1, Mathf.CeilToInt((WorldH - minY) / step));
+            for (int j = j0; j <= j1; j++)
+            {
+                float y = WorldH - (j + 0.5f) * step;
+                for (int i = i0; i <= i1; i++)
+                {
+                    float a = cover((i + 0.5f) * step, y);
+                    if (a <= 0f) continue;
+                    int k = j * Size + i;
+                    _pixels[k] = Color32.Lerp(_pixels[k], (Color32)col, a);
+                }
+            }
+        }
         /// <summary>A server position as a UV on <see cref="Texture"/>.</summary>
         public static Vector2 Uv(float x, float y) => new Vector2(x / WorldW, 1f - y / WorldH);
 

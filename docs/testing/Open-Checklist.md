@@ -21,10 +21,24 @@
 
 ## My Finds — next pass (write here)
 
-- [ ] 🐞 (2026-11-06, yours) *"assigning keys should not execute skills ..."*: in the Keys window, the key you press
-  to bind also fires that key's current action (a bar skill). While a capture is waiting, the key must go to the capture
-  only. (Filed with `BL-367`.) ->
 - [ ] ->
+
+---
+
+## §178 — 0.275.0: key binding, bar hover, map detail + city view (`BL-366`, `BL-367`, 2026-11-06)
+
+- `178a` [ ] - 🐞 your find: Keys window, bind a bar key (say 1) while that bar square holds a skill. Does the skill
+  stay uncast? And does Esc still only cancel the capture, without closing the window? ->
+- `178b` [ ] - PC / browser: rest the pointer on a bar square with a skill. Does the same card as the Skills window
+  appear beside the pointer, and go away when you move off? Nothing on an item or an empty square? ->
+- `178c` [ ] - Minimap and world map: do the roads between towns and the towns' own streets, plaza and buildings show
+  on the ground? Are they readable, or too light / too dark? ->
+- `178d` [ ] - World map, zoomed in: do the NPCs out in the world (e.g. the Training Outpost) show a yellow dot and name? ->
+- `178e` [ ] - World map: the `+` beside a town's name opens the city view (houses, paths, NPC dots)? Does
+  `−  <town> (world map)` bring you back to where you were? Does hovering (PC) or tapping (phone) an NPC dot name it? ->
+- `178f` [ ] - Stand inside a town, minimap at its closest range: does its `+` open the city view of that town?
+  You asked "automatic or a button" — I built the button. Want it automatic? ->
+- `178g` [ ] - PC: hover a minimap dot. Do you get the NPC's name, or the mob/player with its level? ->
 
 ---
 

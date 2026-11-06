@@ -9030,3 +9030,57 @@ its own right, not a setting, and it belongs on the phone as much as on a deskto
 3. **Later, not now:** marks you place yourself, quest targets, click-to-walk on the map.
 
 ❓ **Owed by you:** confirm or change 1-3. Unless you say otherwise, I build 1 and 2 after `BL-364`.
+
+## `BL-366` — BUILT in 0.275.0 (2026-11-06): roads, NPCs, the city view, hover names
+
+All five parts. Roads (the world roads and each town's main roads), plazas and building footprints are painted into the
+map texture, so both maps show them. NPCs outside the towns get a yellow dot and their name on the world map (the name
+shows at the same zoom as the field names). Each town on the world map has a `+` beside its name that opens the **city
+view**: the map zoomed onto that town with its plan drawn sharp (roads, side paths, plaza, every building in its colour)
+and a dot for every NPC. A `−  <town> (world map)` button at the top-left goes back to where you were; zooming out by
+hand leaves it too. Inside a town, the minimap's `+` at its closest range opens the city view of the town you stand in.
+Hovering (desktop) names the NPC under the pointer in the city view, and names any minimap dot (NPCs by name, mobs and
+players with their level). On a phone, a tap on the world map shows the name for a moment.
+
+Your ❓ (switch automatically when you walk in, or only with a button?) I answered with **the button only**: a minimap
+that changed by itself every time you crossed a town wall would fight the range you picked. Say if you want it automatic.
+
+## `BL-366` 🔴 MAP + MINIMAP DETAIL: ROADS, NPCs, A CITY VIEW, HOVER NAMES (2026-11-06)
+
+Your words (2026-11-06, after `BL-365` shipped):
+- *"map and minimap to have more "details outside towns" like roads not only ground"*
+- *"map to have npc positions if outside towns"*
+- *"map details when inside town it can switch to city view with houses and npc position (bigger minimap) - with "- and
+  +" buttons -> "-" exites the city view and "+" on each city to show detailed map incide the city"*
+- *"map with city view hovering over showing name of npc"*
+- *"minimap hovering over the dots also shows name of npc/monsters"*
+
+**What exists to build on:** `MapTexture` paints only `BiomeGround.ColourAt`. The roads are already shared data
+(`WorldMap.Roads`, 600 wide), so they can be painted into the same texture on both maps. The towns' houses and
+NPC spots are `TownLayout` (shared). Hover is `HoverTip` (desktop only, `HoverTip.Wanted`).
+
+**The parts:**
+1. **Roads** painted on the map and minimap textures.
+2. **NPCs outside towns** marked on the world map (towns stay a single marker at world zoom).
+3. **City view:** a `+` on each town marker on the world map opens that town's plan (houses + NPC positions, drawn
+   large). `−` goes back to the world. When you are **inside** a town, the minimap can switch to the city view itself
+   (bigger). ❓ Do you want it to switch automatically when you walk in, or only with a button?
+4. **Hover names in the city view:** pointing at an NPC shows its name.
+5. **Hover names on minimap dots:** NPCs and monsters (and players?). Desktop only; a phone has no hover.
+
+
+## `BL-367` — BUILT in 0.275.0 (2026-11-06): hovering a bar slot shows the skill's card
+
+On a desktop, resting the pointer on a bar square that holds a skill shows the same card the Skills window opens (one
+text builder now serves both, so they cannot disagree), beside the pointer, sized to its text. Moving off hides it.
+Items and empty squares show nothing. The key-capture bug filed with it is fixed in the same version.
+
+## `BL-367` 🔴 HOVER A SKILL-BAR SLOT = THE SKILL'S CARD (desktop) (2026-11-06)
+
+Your words: *"hovering over skillbar shows details (popup with skill details like the skill window do)"*.
+
+On a desktop (`HoverTip.Wanted`), pointing at a filled bar slot shows the same skill card the Skills window shows,
+and it closes when you move off. Buffs and party buffs already work this way (`BL-364`). Phones keep what they do now.
+
+The bug you named with it (*"assigning keys should not execute skills"*) is in the checklist under My Finds, since it
+is a bug and not a feature.
