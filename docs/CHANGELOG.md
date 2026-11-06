@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.276.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.277.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,27 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-11-06 (latest) — 0.277.0: the assets ship as Addressables bundles inside the build (`BL-371` stage 2)
+## 2026-11-06 (latest) — 0.277.1: a published client is built against the CURRENT `Game.Shared`
+
+Tooling only. No `game.db` delete. Nothing in the game changes.
+
+- **The bug:** Unity compiles against `Assets/Plugins/Game.Shared.dll`, and only the `netstandard2.1` build of
+  `Game.Shared` writes that file. `publish.ps1` never built it: the server publish builds `net8.0` only, and `-NoServer`
+  builds nothing at all. So every client was compiled against whatever the last `Game.sln` build had left there. In the
+  0.277.0 publish, all three clients stamped themselves **`v0.276.0`** (`[build] version 0.276.0 (code 27600)` in every
+  log, and in the corner of the login screen). That is the "bundleVersion lags one build" seen in earlier publishes. The
+  same gap would also ship stale DTOs after a wire change if no `Game.sln` build came in between.
+- **The fix:** `publish.ps1` builds `Game.Shared -f netstandard2.1` before any Unity run, and after each run it checks
+  that the log says `[build] version <this version>`. If the log names any other version, the publish stops.
+- **0.277.0's first Android + WebGL content builds, checked:** all three logs have `[addressables] content built for
+  <target>` and `[build] SUCCEEDED`. The APK holds `assets/aa/` (`catalog.bin`, `settings.json`, 18 `Android/*.bundle`).
+  `builds/webgl` holds `StreamingAssets/aa/` (42 MB, 18 bundles). Headless Edge on a local `/play/` got 200 for
+  `settings.json`, `catalog.bin` and every bundle it asked for, logged in, and entered the world. The body, held weapon,
+  props, buildings, mantis models and skill icon all render, with no spheres. The only 404 was `favicon.ico`. On a
+  second visit, Unity's browser cache revalidates and aborts each body download (`ERR_ABORTED`), the same as for
+  `webgl.data`. That is expected.
+
+## 2026-11-06 — 0.277.0: the assets ship as Addressables bundles inside the build (`BL-371` stage 2)
 
 Client only. No `game.db` delete. **Nothing should look different**, as in 0.276.0. The difference is under the hood.
 

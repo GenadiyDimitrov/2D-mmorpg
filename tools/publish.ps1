@@ -76,6 +76,15 @@ if (-not $NoServer) {
 # ----- client -------------------------------------------------------------------------------------
 $unityProject = Join-Path $repo "Game.Client.Unity"
 
+# 0.277.1 — Unity compiles against Assets/Plugins/Game.Shared.dll, which only the netstandard2.1 build of Game.Shared
+# writes (its CopyToUnityPlugins target). The server publish above builds net8.0 alone and -NoServer builds nothing, so
+# every client was built against whatever Game.sln last left there: stamped one version behind ("[build] version
+# 0.276.0" in a 0.277.0 publish) and, after a DTO change with no Game.sln build in between, compiled on stale wire types.
+if ($Apk -or $Windows -or $Web) {
+    dotnet build (Join-Path $repo "Game.Shared\Game.Shared.csproj") -f netstandard2.1 -c $Configuration --nologo -v q -clp:ErrorsOnly
+    if ($LASTEXITCODE -ne 0) { throw "Game.Shared (netstandard2.1) build failed" }
+}
+
 # One headless Unity run of a CommandLineBuild method. Returns the log path; throws when Unity failed.
 function Invoke-UnityBuild([string]$method, [string]$buildTarget, [string]$log) {
     if (-not (Test-Path $UnityExe)) { throw "Unity not found at $UnityExe" }
@@ -112,6 +121,12 @@ function Invoke-UnityBuild([string]$method, [string]$buildTarget, [string]$log) 
         if ($bad) { $bad | Select-Object -First 20 | ForEach-Object { Write-Host $_.Line -ForegroundColor Red } }
     }
     if ($unityExit -ne 0) { throw "Unity build failed (exit $unityExit) — see $log" }
+
+    # The stamp CommandLineBuild.StampVersion logs is GameVersion as Unity compiled it — any other number means the
+    # client was built against a stale Game.Shared.dll, so it is refused rather than shipped under this version's name.
+    if (-not (Select-String -Path $log -SimpleMatch "[build] version $version " -Quiet)) {
+        throw "The client was stamped with a different version than $version (stale Assets/Plugins/Game.Shared.dll?) — see $log"
+    }
 }
 
 if ($Apk) {
