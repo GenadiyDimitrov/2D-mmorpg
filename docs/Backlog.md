@@ -298,9 +298,9 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-361` | ⏸ | **An iOS client** — needs a Mac (or cloud Mac) + Xcode, an Apple Developer account ($99/yr), TestFlight for testers (HTTPS, which iOS demands, is already live) | ops |
 | `BL-362` | 🔵 | **Drop groups the IG way** — A: show group % + shares inside (display); B: author them that way; C: bake the formulas into a per-mob odds table (formula/hand rows) | loot |
 | `BL-363` | 🔴 | **A browser (WebGL) client** — test build BUILT (0.272.0, `/play/`, logs in + moves, 60 MB); owed: your FPS in a real browser, deploy, a WebGL quality preset | client |
-| `BL-368` | 🔴 | **PC launcher / patcher** — `Vardelar-Launcher.exe` downloads only the changed files (≈30 of 163 MB per version), then starts the game; starting `Vardelar.exe` directly hands off to the launcher | client |
+| `BL-368` | ⏸ | **PC launcher / patcher** — PARKED: itch.io (free delta updates, `butler` in `deploy.ps1`) when PC players appear; own launcher only if itch.io is not acceptable | client |
 | `BL-369` | 🔴 | **Web: always the newest build, smaller downloads** — hashed file names + `index.html` never cached, Brotli instead of Gzip, a "new version — Reload" button in an open tab | client |
-| `BL-370` | 🔵 | **Discussion: how far do we keep expanding the Windows / web clients?** — ✅ RULED: phone first, one game, no platform-exclusive features; open only until `BL-368` is settled | client |
+| `BL-371` | ⏸ | **Asset bundles (Addressables) when the client grows** — so an update/web load fetches only changed or needed bundles; trigger: a build ≈150 MB, Android near Play's base limit, or a slow web first load | client |
 
 ---
 
@@ -2746,7 +2746,19 @@ CHANGELOG.
 5. Clean up the browser-only rough edges: `screen.orientation.lock()` logs an error on desktop, and three URP debug
    shaders are unsupported on WebGL (harmless).
 
-## `BL-368` 🔴 PC LAUNCHER / PATCHER — DOWNLOAD ONLY WHAT CHANGED (2026-11-06)
+## `BL-368` ⏸ PC LAUNCHER / PATCHER — DOWNLOAD ONLY WHAT CHANGED (2026-11-06)
+
+### ⏸ PARKED 2026-11-06, with a trigger: the itch.io route first
+
+Your ruling: *"park it with the trigger, go itch.io route later"*. Why: an update saves about 50 MB (10-20 s on broadband)
+for a platform `BL-370` ranked lowest. A small unsigned exe that downloads exes gets flagged by SmartScreen and antivirus
+unless it is code-signed (~$200-400/yr). A bug in it blocks players from playing at all.
+- **Now:** the zip, plus the server's existing "a newer version exists" message at login.
+- **When real PC players appear (not testers):** publish through **itch.io**. Its free app does delta updates, and
+  uploads go through `butler`, a command-line tool that `deploy.ps1` can call. About an hour of work.
+- **If PC becomes serious:** Steam ($100 once: delta updates, a signed client, a store page).
+- **Our own launcher (the design below):** only if itch.io turns out not to be acceptable.
+- When the client grows large, the fix is `BL-371` (asset bundles), not a launcher.
 
 Your words: *"can we make so web and pc have some sort of updated ? that only updates the different files from your
 current version and the new one ? so not always i need to download the full client"* … *"my idea was the player start
@@ -2791,49 +2803,36 @@ Same ask as `BL-368`, for `/play/`. **A file-level patch is not possible here:**
 separately cached bundles, with every `Resources.Load` becoming asynchronous. That is a big refactor, worth it only when
 the asset size starts to hurt.
 
-## `BL-370` 🔵 DISCUSSION: HOW FAR DO WE KEEP EXPANDING THE WINDOWS / WEB CLIENTS? (2026-11-06)
 
-Your words: *"mark one mre bl entiry do discuss .. should we continue expand window/web .."*
+## `BL-371` ⏸ WHEN THE CLIENT GROWS TOWARD 1 GB: ASSET BUNDLES (ADDRESSABLES), NOT A LAUNCHER (2026-11-06)
 
-To discuss in a fresh session. Already built: the Windows client (`BL-360`), the browser client (`BL-363`), desktop
-settings, keys and hover tips (`BL-364`), and the minimap and world map (`BL-365`/`BL-366`). Open threads that hang on
-the answer: `BL-368` launcher, `BL-369` web updates, `BL-363`'s FPS reading and quality preset, `BL-361` iOS. Questions
-for the discussion: is the phone still the main client and PC/web a convenience, or are all three equal (which decides
-whether every UI feature owes a desktop layout)? And does each new client platform cost more upkeep per release than it
-brings in players?
+Your words: *"my only concern is once the app gets big enough with a lot of content and models/animations .. now its 70mb
+.. later it can be 1gb .. players wont download 1gb each update .. nor wait the web do download it"*
 
-### ✅ RULED 2026-11-06: phone first, ONE game, every platform equal in content
+**You are right, and a launcher would not fix it.** Today everything under `Assets/Resources` (53 MB, loaded by 18
+`Resources.Load` calls in 14 files) ships as ONE packed block inside every build. Change one model and the web reloads
+the whole block. Android and Windows are no better off, because Unity reshuffles its packed files between builds. At
+1 GB no updater can make that small, since the files it compares have all changed.
 
-Your words when you raised it: *"my idea was an android inspiration game .. but when we started it was wpf .. so we made
-a windows app ... then i saw hordes.io and i wanted web (which is convenient to test) … if we make a real crossplatform
-game .. isn't it overkill and hard to manage … but in the same time i like players to have option"*. Your ruling: *"write
-this into 370 . but lets discuss the 368 dont close it yet"*.
+**The real answer is Addressables** (Unity's own asset-bundle system): models, animations, textures and sounds move into
+separate bundles, each with its own version and cache.
+- **Updates:** a bundle that did not change is byte-identical, so it is not downloaded again. On every platform an update
+  is only the bundles that changed, plus the code.
+- **Web first load:** the page loads only the core (UI, the starting town, the player's own body) and fetches a zone's
+  bundles as you walk toward it. A 1 GB game still opens in a 60 MB-ish first load.
+- **Android:** Play caps the base download (around 200 MB). Above that the game needs Play Asset Delivery, which takes
+  Addressables bundles as they are. Play already sends delta updates of the app itself.
+- **Windows / itch.io / Steam:** their delta patchers work well once unchanged bundles stay identical.
 
-**The fact behind the ruling:** these are not three games. There is one server and one Unity client, and Android, web and
-Windows are three build targets of it. Gameplay, balance, skills, quests, the server and the CSVs cost nothing extra per
-platform. The ongoing cost is: every new UI window has to work with touch AND mouse, each release is tested on 3
-targets, WebGL's limits (memory, FPS, one thread), and keeping every client on the server's version (`BL-369`).
+**What it costs:** every `Resources.Load` becomes asynchronous (an asset arrives a few frames later, or after a download),
+`publish.ps1` builds the bundles, and the server hosts them beside `/play`. The work grows with every new
+`Resources.Load`, so it is cheaper to do it at 150 MB than at 1 GB.
 
-**The rules:**
-1. **Android is the MAIN platform** and goes to the Play Store. A new feature is designed for the phone screen first.
-   (Play Store note: a new personal developer account must run a closed test, about 12 testers for 14 days, before a
-   public release, and needs a privacy policy and a data-safety form.)
-2. **Web is an EQUAL client, with the same content.** It is the easiest way in for new players (open a link, play) and the
-   fastest test loop. It gets its own layout, never its own content.
-3. **Windows is the least valuable of the three:** the web already reaches PC players, and the zip only adds frame rate.
-   It keeps building while it costs one `publish.ps1` flag. If a platform is ever dropped, it is this one. Whether it
-   earns a launcher is `BL-368`, **still open for discussion**.
-4. 🔑 **NO FEATURE EXCLUSIVE TO ONE PLATFORM.** Desktop may get conveniences (hotkeys, hover cards, a larger map, more
-   settings). It never gets content or power the phone lacks. "Expand PC/web" means expand controls and layout, never
-   the game.
-5. **A UI feature owes a desktop layout only where the phone layout is awkward with a mouse.** Otherwise the phone layout
-   is the layout.
-6. **iOS (`BL-361`) waits until Android is live.**
+**Cheap things to do before it (only if wanted):**
+1. Route every asset load through one loader class that is already callback-based, so the switch later touches one file
+   instead of every caller.
+2. Size discipline: compressed textures (ASTC on Android), streamed Vorbis for music, mesh compression. These keep the
+   number small for longer.
 
-**Security, which was the other question:** the server is authoritative, so which platform a client runs on barely
-matters. Every client (APK, WebGL, Windows) can be decompiled, so none may carry a secret. The real risk is BOTS: PC and
-web make scripting easier, and Android gets botted through emulators anyway. The answer is on the server (rate limits,
-movement checks, sanity checks), and auto-hunt already takes away much of the reason to bot. Web only adds HTTPS/WSS and a
-careful login token. Chat is drawn in the Unity canvas, not as HTML, so browser XSS does not apply.
-
-**Why it stays open:** only until `BL-368` is settled. Then this entry moves to the archive.
+**Trigger:** a build passes **about 150 MB**, OR the Android build nears Play's base limit, OR the web's first load feels
+too long to you. Whichever comes first. Today: 70 MB Windows zip, 60 MB web.
