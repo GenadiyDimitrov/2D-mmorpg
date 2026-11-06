@@ -25,6 +25,18 @@
 
 ---
 
+## §174 — 0.273.4: Sound / Options / Keys inside Settings, fewer look rows, browser Quit (2026-11-06)
+
+- `174a` [ ] - In the world: Menu → *Settings*. First row *Sound | Options*, both open their window ON TOP of Settings? Is
+  *Options* gone from the Menu? Desktop group button reads *Keys* (no dots)? Footer only *Save* / *Reset to defaults*? ->
+- `174b` [ ] - Login screen → *Settings*: is the *Options* square empty (no character yet) while Sound works? ->
+- `174c` [ ] - Settings no longer has camera angle/zoom/rotation, entity size, nameplate height or zone colours. Do
+  characters and nameplates look right (size 0.9, plates 0.85), and does the camera still come back where you left it
+  after a relog? ->
+- `174d` [ ] - Browser, in the world with nothing open: Esc → *Quit*. Does it log out and land on the game's main page? ->
+
+---
+
 ## §173 — 0.273.3: browser right-drag every time, Keys on the menu, key tags on the bar, buff potions only farming (2026-11-06)
 
 - `173a` [ ] - Browser: right-drag the camera 15-20 times in a row, quick and slow. Does EVERY drag turn endlessly with the

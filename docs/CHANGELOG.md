@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.273.3**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.273.4**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,24 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-11-06 (latest) — 0.273.3: the browser right-drag lock holds every time, Settings (renamed from Setup) gets a scrollbar + Keys, bar squares show their key, buff potions only while farming
+## 2026-11-06 (latest) — 0.273.4: Sound / Options / Keys open from inside Settings, fewer look rows, browser Quit goes to the main page
+
+Client only: no server change, no `game.db` delete. Owner, on 0.273.3's Settings:
+
+- **Sound and Keys left the footer**; they are rows of the window now, like the Desktop group's Keys button (renamed
+  from *Keys…* to *Keys*): *Sound | Options* is the first row, *Keys* stays in the Desktop group. The footer is only
+  *Save* / *Reset to defaults*.
+- **Options moved into Settings and off the Menu.** Its window now sits on the Settings canvas so it opens above it. The
+  button shows only in the world — the login screen's Settings has no character for its switches to belong to — and a
+  window left open closes when you leave the world.
+- **Removed from Settings:** camera angle, zoom and rotation (the drag, pinch and wheel still do it, and the camera still
+  remembers where you left it), entity size (fixed at 0.9), nameplate height (fixed at **0.85**, was 0.9) and zone
+  colours (always off). Their old saved values are deleted at start, so a device that once moved them starts at those
+  defaults. UI size and skill bar size stay.
+- **Quit in the browser** goes to the game's main page (`/`) after the usual graceful logout — a web page cannot quit,
+  and you quit rather than logged out. New `Plugins/WebGL/PageNav.jslib`; Android and Windows still quit the app.
+
+## 2026-11-06 — 0.273.3: the browser right-drag lock holds every time, Settings (renamed from Setup) gets a scrollbar + Keys, bar squares show their key, buff potions only while farming
 
 Owner, first test of 0.273.2:
 

@@ -146,7 +146,7 @@ namespace Game.Client
             }
 
             RefreshStatusStrip();
-            SyncCameraSliders();   // `BL-344` step 8: the drag moves what the sliders show
+            WatchDisplayLabels();   // `BL-364`: fullscreen / window size change behind an open Settings
             UpdateKeyCapture();    // `BL-364`: the Keys window waits for a key here, login screen included
 
             // Screens are BUILT once and shown/hidden; only the visible one is refreshed. Rebuilding
@@ -174,6 +174,8 @@ namespace Game.Client
 
             if (_accountBackdrop != null) _accountBackdrop.SetActive(login || select);
             if (!login && _serverRow != null && _serverRow.gameObject.activeSelf) _serverRow.gameObject.SetActive(false);
+            // Options lives on the setup canvas now (opens from Settings) but belongs to a character in the world.
+            if (!world && _optionsPanel != null && _optionsPanel.gameObject.activeSelf) CloseWindow(_optionsPanel);
             _loginPanel.gameObject.SetActive(login);
             _selectPanel.gameObject.SetActive(select);
             _worldRoot.gameObject.SetActive(world);
@@ -472,8 +474,7 @@ namespace Game.Client
             // the login screen's Setup shows — see BuildServerRow.
             var setup = UiKit.TextButton(inner, "Settings", () =>
             {
-                _serverRow.gameObject.SetActive(true);
-                ToggleWindow(_settingsPanel);
+                OpenSettings(fromLogin: true);
             }, 16f);
             UiKit.Place(UiKit.Rect(setup.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
                         new Vector2(-24f, -18f), new Vector2(120f, 40f));

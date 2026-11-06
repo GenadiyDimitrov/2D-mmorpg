@@ -28,7 +28,7 @@ namespace Game.Client
         /// pivot does the work. It matters the moment the camera tilts: at 2.5D a plate anchored at
         /// the feet drifts down over the body, so this is the knob that puts it back on the head.
         /// </summary>
-        public float NameplateHeight = 0.9f;
+        public float NameplateHeight = 0.85f;   // fixed since 0.273.4 (owner: 0.85), no longer a setting
 
         /// <summary>Screen-space gap between the entity and the bottom of its plate, so neither the
         /// name nor the HP bar is drawn across the marker itself.</summary>
@@ -1133,10 +1133,9 @@ namespace Game.Client
                 // Restore lives on the MENU, not at a vendor (C18): binning is a field accident, and an
                 // undo you can only reach in town is no undo at all.
                 ("Restore", () => { CloseWindow(_menuPanel); OpenRestoreWindow(); }, false, 1),
-                // Options ≠ Setup: Setup is how the game LOOKS (local, PlayerPrefs), Options is what
-                // other players may do to you (server-side, per character) — M2/B11.
-                ("Options", () => { CloseWindow(_menuPanel); ToggleWindow(_optionsPanel); }, false, 1),
-                ("Settings", () => { CloseWindow(_menuPanel); _serverRow.gameObject.SetActive(false); ToggleWindow(_settingsPanel); }, false, 1),
+                // Options (what other players may do to you, server-side — M2/B11) opens from inside Settings
+                // since 0.273.4 (owner: *"add the Options as well in Settings and remove it from main menu"*).
+                ("Settings", () => { CloseWindow(_menuPanel); OpenSettings(fromLogin: false); }, false, 1),
                 ("Leave",  () => { CloseWindow(_menuPanel); Boot.LeaveWorld(); }, false, 1),
             };
 
@@ -3157,7 +3156,16 @@ namespace Game.Client
             yield return new WaitForSecondsRealtime(0.6f);
 
             _quitConfirmed = true;
+#if UNITY_WEBGL && !UNITY_EDITOR
+            PageNav_GoHome();   // a web page cannot quit: back to the game's main page (owner, 2026-11-06)
+#else
             Application.Quit();
+#endif
         }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // 🔴 Only in a WebGL player: an `__Internal` import is a static link under IL2CPP (the 0.272.0 APK failed on one).
+        [System.Runtime.InteropServices.DllImport("__Internal")] private static extern void PageNav_GoHome();
+#endif
     }
 }

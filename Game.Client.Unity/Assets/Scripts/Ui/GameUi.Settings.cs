@@ -82,18 +82,17 @@ namespace Game.Client
             UiKit.Reference = new Vector2(UiKit.Reference.x, UiKit.ReferenceHeightAtX1 / _uiScale);
             _barScale = Mathf.Clamp(PlayerPrefs.GetFloat(PrefBarScale, BarScaleFirst), BarScaleMin, BarScaleMax);
 
-            EntityManager.EntityScale = PlayerPrefs.GetFloat(PrefEntity, EntityManager.EntityScale);
-            NameplateHeight = PlayerPrefs.GetFloat(PrefPlate, NameplateHeight);
+            // 0.273.4 (owner, 2026-11-06): entity size, nameplate height and zone colours are no longer settings — fixed at
+            // 0.9 / 0.85 / off. The old keys are DELETED, not just ignored, so a phone that once moved them starts clean.
+            foreach (var key in new[] { PrefEntity, PrefPlate, PrefZones }) PlayerPrefs.DeleteKey(key);
             _showDamageNumbers = PlayerPrefs.GetInt(PrefDamage, 1) == 1;
             _showTickLines = PlayerPrefs.GetInt(PrefTicks, 0) == 1;
             PropScatter.LoadQuality();   // so the Settings label is right before the ground exists
             DayNight.LoadPrefs();
             Sfx.LoadPrefs();
 
-            // Applied here rather than only written on tap: the preference was being saved and then
-            // ignored on the next launch, so "zone colours off" never survived a restart.
-            if (Boot != null && Boot.Zones != null)
-                Boot.Zones.gameObject.SetActive(PlayerPrefs.GetInt(PrefZones, 0) == 1);   // off unless chosen (owner, 0.259.0)
+            // Zone colours: always off (0.259.0 made off the default; 0.273.4 took the toggle away).
+            if (Boot != null && Boot.Zones != null) Boot.Zones.gameObject.SetActive(false);
 
             if (Boot != null && Boot.CameraRig != null)
             {
@@ -135,43 +134,14 @@ namespace Game.Client
 
             float y = -14f;
 
-            Row(inner, ref y, _pitchSlider = UiKit.SliderRow(inner, "Camera angle", CameraRig.MinPitch, CameraRig.MaxPitch,
-                Boot.CameraRig != null ? Boot.CameraRig.Pitch : 90f, "0", v =>
-                {
-                    if (Boot.CameraRig != null) Boot.CameraRig.Pitch = v;
-                    PlayerPrefs.SetFloat(PrefPitch, v);
-                }));
-
-            // The slider holds the LOGARITHMIC position (0..1), the label the distance: equal slides are equal-looking
-            // zoom steps, the same as a pinch (CameraRig.ZoomToSlider).
-            Row(inner, ref y, _zoomSlider = UiKit.SliderRow(inner, "Camera zoom", 0f, 1f,
-                CameraRig.ZoomToSlider(Boot.CameraRig != null ? Boot.CameraRig.Distance : 20f), "0", v =>
-                {
-                    if (Boot.CameraRig != null) Boot.CameraRig.SetZoom(CameraRig.SliderToZoom(v));
-                }, v => CameraRig.SliderToZoom(v).ToString(CameraRig.SliderToZoom(v) < 1f ? "0.0" : "0")));
-
-            // Yaw: this slider, or (`BL-344` step 8) one finger dragged sideways across the world.
-            Row(inner, ref y, _yawSlider = UiKit.SliderRow(inner, "Camera rotation", 0f, 360f,
-                Boot.CameraRig != null ? Boot.CameraRig.Yaw : 0f, "0", v =>
-                {
-                    if (Boot.CameraRig != null) Boot.CameraRig.Yaw = v;
-                    PlayerPrefs.SetFloat(PrefYaw, v);
-                }));
-
-            Row(inner, ref y, UiKit.SliderRow(inner, "Entity size", 0.3f, 3f,
-                EntityManager.EntityScale, "0.00", v =>
-                {
-                    EntityManager.EntityScale = v;
-                    if (Boot.Entities != null) Boot.Entities.ApplyEntityScale();
-                    PlayerPrefs.SetFloat(PrefEntity, v);
-                }));
-
-            Row(inner, ref y, UiKit.SliderRow(inner, "Nameplate height", 0f, 3f,
-                NameplateHeight, "0.00", v =>
-                {
-                    NameplateHeight = v;
-                    PlayerPrefs.SetFloat(PrefPlate, v);
-                }));
+            // 0.273.4 (owner, 2026-11-06) — the other windows open from HERE, as rows of the window, not from the footer:
+            // Sound and Options here; Keys in the Desktop group below. Options shows in the world only (its switches are
+            // the character's, kept on the server), so the login screen's Settings leaves that square empty.
+            SettingsLink(inner, 18f, y, "Sound", () => OpenSoundWindow());
+            _settingsOptionsLink = SettingsLink(inner, 292f, y, "Options", () => ToggleWindow(_optionsPanel));
+            y -= 48f;
+            // Camera angle / zoom / rotation, entity size, nameplate height and zone colours were removed the same day:
+            // the camera is the drag, the pinch and the wheel; the other three are fixed (EntityScale 0.9, 0.85, off).
 
             // Both sizes apply LIVE. That is safe only because this window sits on its own fixed canvas:
             // the game UI rescales behind the slider while the slider itself stays under your finger.
@@ -210,24 +180,8 @@ namespace Game.Client
                 RefreshSettingsLabels();
             }, 15f);
             UiKit.Place(UiKit.Rect(ticks.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(292f, y - 48f), new Vector2(260f, 38f));
-            _tickToggle = ticks;
-
-            // Boot.Zones is a HELD reference. This used to call FindAnyObjectByType<ZoneOverlay>(),
-            // which does not return INACTIVE objects — so the first tap hid the overlay and every tap
-            // after it found nothing to un-hide. The colours could be turned off exactly once, for the
-            // lifetime of the app.
-            var zones = UiKit.TextButton(inner, "", () =>
-            {
-                var overlay = Boot.Zones;
-                if (overlay == null) return;
-                overlay.gameObject.SetActive(!overlay.gameObject.activeSelf);
-                PlayerPrefs.SetInt(PrefZones, overlay.gameObject.activeSelf ? 1 : 0);
-                RefreshSettingsLabels();
-            }, 15f);
-            UiKit.Place(UiKit.Rect(zones.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(292f, y), new Vector2(260f, 38f));
-            _zoneToggle = zones;
+            _tickToggle = ticks;
             y -= 48f;
 
             // `BL-93` — 3D models on/off. This is the low-end quality preset, not a debug switch: OFF
@@ -355,9 +309,7 @@ namespace Game.Client
                 UiKit.Place(UiKit.Rect(head.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                             new Vector2(18f, y), new Vector2(400f, 30f));
                 y -= 36f;
-                var keys = UiKit.TextButton(inner, "Keys…", () => OpenKeysWindow(), 15f);
-                UiKit.Place(UiKit.Rect(keys.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                            new Vector2(18f, y), new Vector2(260f, 38f));
+                SettingsLink(inner, 18f, y, "Keys", () => OpenKeysWindow());
                 // Item 7. The state flips a frame later (a browser asks the page first), so the label follows in
                 // RefreshDisplayLabels, which watches the screen rather than trusting the click.
                 _fullscreenToggle = SettingsButton(inner, 292f, y, DisplaySettings.ToggleFullscreen);
@@ -398,8 +350,8 @@ namespace Game.Client
             var reset = UiKit.TextButton(inner, "Reset to defaults", () =>
             {
                 foreach (var key in new[] { PrefPitch, PrefYaw,
-                                            PrefEntity, PrefPlate, PrefUiScale, PrefBarScale, PrefDamage,
-                                            PrefZones, PrefTicks, PrefBarShape, PrefExtraBars, PropScatter.Pref, DayNight.ShadowPref, DayNight.NightPref,
+                                            PrefUiScale, PrefBarScale, PrefDamage,
+                                            PrefTicks, PrefBarShape, PrefExtraBars, PropScatter.Pref, DayNight.ShadowPref, DayNight.NightPref,
                                             DayNight.ViewPref, DayNight.EntityPref, PrefGameInfo, PrefGameInfoX, PrefGameInfoY }
                                             .Concat(DisplaySettings.AllPrefs))
                     PlayerPrefs.DeleteKey(key);
@@ -413,17 +365,6 @@ namespace Game.Client
             }, 16f);
             UiKit.Place(UiKit.Rect(reset.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(150f, 16f), new Vector2(200f, 40f));
-
-            // `BL-45` — sound has a window of its own (this one is full); this is the way to it from the login screen.
-            var sound = UiKit.TextButton(inner, "Sound", () => OpenSoundWindow(), 16f);
-            UiKit.Place(UiKit.Rect(sound.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                        new Vector2(362f, 16f), new Vector2(120f, 40f));
-            if (HoverTip.Wanted)   // the Keys window, in sight without scrolling (2026-11-06)
-            {
-                var keysFoot = UiKit.TextButton(inner, "Keys", () => OpenKeysWindow(), 16f);
-                UiKit.Place(UiKit.Rect(keysFoot.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                            new Vector2(494f, 16f), new Vector2(120f, 40f));
-            }
 
             BuildServerRow();
             RefreshSettingsLabels();
@@ -451,26 +392,30 @@ namespace Game.Client
         }
 
         private RectTransform _serverRow;
-        private Button _damageToggle, _zoneToggle, _modelToggle, _tickToggle, _sceneryToggle, _shadowToggle, _gameInfoToggle;
-        /// <summary>Room under Setup's scrolling rows for its Save / Reset / Sound buttons (y 16, 40 tall).</summary>
+        private Button _settingsOptionsLink;   // shown only while in the world (OpenSettings)
+        private Button _damageToggle, _modelToggle, _tickToggle, _sceneryToggle, _shadowToggle, _gameInfoToggle;
+        /// <summary>Room under Setup's scrolling rows for its Save / Reset buttons (y 16, 40 tall).</summary>
         private const float SetupFooter = 66f;
         private Button _extraSlotsToggle, _barShapeToggle;   // `BL-269`, `BL-299`
         private Button _worldDistToggle, _entityDistToggle;   // `BL-358`
         private Slider _uiScaleSlider, _barScaleSlider;
-        private Slider _pitchSlider, _yawSlider, _zoomSlider;   // follow the drag gesture while Settings is open (SyncCameraSliders)
 
-        /// <summary>`BL-344` step 8: the drag and the compass move the camera behind the sliders' back, so
-        /// an open Settings window pulls the numbers back off the rig. Setting <c>value</c> runs the row's
-        /// handler, which only writes the same numbers back — harmless.</summary>
-        private void SyncCameraSliders()
+        /// <summary>Open (or close) Settings. <paramref name="fromLogin"/>: the login screen's copy shows the server
+        /// address and hides Options, which needs a character in the world.</summary>
+        private void OpenSettings(bool fromLogin)
         {
-            var rig = Boot != null ? Boot.CameraRig : null;
-            WatchDisplayLabels();   // `BL-364`
-            if (rig == null || _pitchSlider == null || !_settingsPanel.gameObject.activeSelf) return;
-            if (Mathf.Abs(_pitchSlider.value - rig.Pitch) > 0.5f) _pitchSlider.value = rig.Pitch;
-            if (Mathf.Abs(Mathf.DeltaAngle(_yawSlider.value, rig.Yaw)) > 0.5f) _yawSlider.value = rig.Yaw;
-            float zoomAt = CameraRig.ZoomToSlider(rig.Distance);   // a pinch moves it too
-            if (Mathf.Abs(_zoomSlider.value - zoomAt) > 0.005f) _zoomSlider.value = zoomAt;
+            _serverRow.gameObject.SetActive(fromLogin);
+            _settingsOptionsLink.gameObject.SetActive(!fromLogin);
+            ToggleWindow(_settingsPanel);
+        }
+
+        /// <summary>A 260-wide button in the Settings rows that opens another window.</summary>
+        private Button SettingsLink(Transform parent, float x, float y, string label, System.Action onClick)
+        {
+            var b = UiKit.TextButton(parent, label, () => onClick(), 15f);
+            UiKit.Place(UiKit.Rect(b.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(x, y), new Vector2(260f, 38f));
+            return b;
         }
 
         /// <summary>Resize the GAME canvas now. Every panel is anchored, so changing the scaler's design
@@ -489,8 +434,6 @@ namespace Game.Client
 
             UiKit.SetButtonText(_damageToggle, _showDamageNumbers ? "Damage numbers: ON" : "Damage numbers: off");
             UiKit.SetButtonText(_tickToggle, _showTickLines ? "DoT/HoT in chat: ON" : "DoT/HoT in chat: off");
-            bool zonesOn = Boot.Zones != null && Boot.Zones.gameObject.activeSelf;
-            UiKit.SetButtonText(_zoneToggle, zonesOn ? "Zone colours: ON" : "Zone colours: off");
             UiKit.SetButtonText(_modelToggle,
                 EntityManager.ModelsEnabled ? "3D models: ON" : "3D models: off (faster)");
             UiKit.SetButtonText(_extraSlotsToggle, ExtraSlotsLabel);
@@ -572,7 +515,8 @@ namespace Game.Client
 
         private void BuildOptionsWindow()
         {
-            _optionsPanel = UiKit.PanelBox(_worldRoot, "Options");
+            // On the setup canvas since 0.273.4: it opens from Settings, which sits above the game canvas.
+            _optionsPanel = UiKit.PanelBox(_setupRoot, "Options");
             UiKit.Place(_optionsPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                         Vector2.zero, new Vector2(560f, 400f));
             var inner = _optionsPanel.GetChild(0);
