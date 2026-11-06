@@ -5834,8 +5834,8 @@ public partial class GameLoopService : BackgroundService
         return h > 0 ? $"{h}h {m:00}m" : m > 0 ? $"{m}m {s:00}s" : $"{s}s";
     }
 
-    /// <summary>Per-tick automation for a player (called before UpdateAction). Auto-potions always
-    /// run; the hunt loop (target/engage/auto-skill) runs only when AutoHuntEnabled.</summary>
+    /// <summary>Per-tick automation for a player (called before UpdateAction). HP/MP auto-potions always
+    /// run; buff potions and the hunt loop (target/engage/auto-skill) only when AutoHuntEnabled.</summary>
     private void AutoPilot(Entity p)
     {
         AutoPotions(p);
@@ -6175,6 +6175,11 @@ public partial class GameLoopService : BackgroundService
                  p.Mp * 100 < p.MaxMp * p.AutoMpPotionPct &&
                  BestManaPotion(p) is InventoryItem mpPot)
             UsePotion(p, mpPot, quiet: true);
+
+        // Buff potions/scrolls run ONLY while auto-farming, like the auto-skills (owner, 2026-11-06: *"auto potions
+        // (buffs only) should work only in auto-farm as the skills do .. not in town if i cancel a buff it rebuffs with
+        // a potion"*). HP/MP above stay always-on: they are a safety net, a buff is a choice.
+        if (!p.AutoHuntEnabled) return;
 
         // The BUFFS tab (BL-04) takes over the moment it has been configured. It is per-FAMILY, which
         // the old per-ITEM list could not be, so it is a replacement rather than a filter on top.

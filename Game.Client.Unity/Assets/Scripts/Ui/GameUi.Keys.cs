@@ -113,6 +113,7 @@ namespace Game.Client
                 UiKit.SetButtonText(button, waiting ? "press a key…" : action.Keys[slot].Display());
                 button.targetGraphic.color = waiting ? new Color(0.20f, 0.45f, 0.25f, 0.95f) : UiKit.PanelLight;
             }
+            if (_pageLabel != null) RefreshSkillBar();   // the squares' corner tags are the bound keys
         }
 
         private void BeginKeyCapture(KeyBindings.KeyAction action, int slot)

@@ -392,7 +392,7 @@ namespace Game.Client
             inner = frame;   // the footer buttons stay below the scrolling rows
             var save = UiKit.TextButton(inner, "Save", () => PlayerPrefs.Save(), 16f);
             UiKit.Place(UiKit.Rect(save.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                        new Vector2(18f, 16f), new Vector2(140f, 40f));
+                        new Vector2(18f, 16f), new Vector2(120f, 40f));
 
             var reset = UiKit.TextButton(inner, "Reset to defaults", () =>
             {
@@ -411,12 +411,18 @@ namespace Game.Client
                 ClientLog.Info("Look settings reset — UI and skill bar size now, the rest after a restart.");
             }, 16f);
             UiKit.Place(UiKit.Rect(reset.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                        new Vector2(170f, 16f), new Vector2(220f, 40f));
+                        new Vector2(150f, 16f), new Vector2(200f, 40f));
 
             // `BL-45` — sound has a window of its own (this one is full); this is the way to it from the login screen.
             var sound = UiKit.TextButton(inner, "Sound", () => OpenSoundWindow(), 16f);
             UiKit.Place(UiKit.Rect(sound.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                        new Vector2(402f, 16f), new Vector2(140f, 40f));
+                        new Vector2(362f, 16f), new Vector2(120f, 40f));
+            if (HoverTip.Wanted)   // the Keys window, in sight without scrolling (2026-11-06)
+            {
+                var keysFoot = UiKit.TextButton(inner, "Keys", () => OpenKeysWindow(), 16f);
+                UiKit.Place(UiKit.Rect(keysFoot.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
+                            new Vector2(494f, 16f), new Vector2(120f, 40f));
+            }
 
             BuildServerRow();
             RefreshSettingsLabels();

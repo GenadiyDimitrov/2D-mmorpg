@@ -184,7 +184,10 @@ namespace Game.Client
             if (!_mouseTurning)
             {
                 // A lock left over from a press Unity never saw (focus lost mid-click) must not trap the cursor.
-                if (PointerLock_IsLocked() != 0) PointerLock_Release();
+                // 🔴 ONLY with the button UP (owner, 0.273.2: *"it works ocasionally"*): the lock is granted
+                // asynchronously from the mousedown, and when it landed before Unity's next frame read the press, this
+                // line released the brand-new lock — the turn then fell back to the edge-bound one. A coin toss per drag.
+                if (PointerLock_IsLocked() != 0 && !Input.GetMouseButton(1)) PointerLock_Release();
                 PointerLock_Allow(UiKit.OverUi(Input.mousePosition) ? 0 : 1);
             }
 #endif

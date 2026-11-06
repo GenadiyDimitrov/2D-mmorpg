@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.273.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.273.3**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,21 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-11-05 (latest) — 0.273.2: render scale, frame-rate cap, fullscreen, mouse settings, and a smaller desktop start (`BL-364` items 5-9)
+## 2026-11-06 (latest) — 0.273.3: the browser right-drag lock holds every time, Keys is on the menu, bar squares show their key, buff potions only while farming
+
+Owner, first test of 0.273.2:
+
+- **Web right-drag worked "ocasionally".** The browser grants pointer lock asynchronously after the right-button
+  press; when it landed before Unity's next frame read the press, `CameraRig.MouseTurn`'s "leftover lock" cleanup
+  released it at once and the turn fell back to the old edge-bound one. The cleanup now runs only with the button up.
+- **"Where is the custom settings to change the keys?"** The Keys button sat at the foot of Setup's scroll. It is now
+  on the Menu (desktop only) and in Setup's footer next to Sound.
+- **Bar squares show their KEY**, not a fixed 1-10: `1`, `S+1`, `C+1` / `A+1` (browser), whatever you bound; blank when
+  nothing is bound, so a phone shows none. Rebinding updates them at once.
+- **Buff potions/scrolls are auto-used only while auto-farm is ON**, like the auto-skills (*"not in town if i cancel a
+  buff it rebuffs with a potion"*). HP/MP auto-potions still run always. (`GameLoopService.AutoPotions`)
+
+## 2026-11-05 — 0.273.2: render scale, frame-rate cap, fullscreen, mouse settings, and a smaller desktop start (`BL-364` items 5-9)
 
 Client only: no server change, no `game.db` delete. These were the five items on my half of the list, which you kept.
 `BL-364` is now fully built. All of the settings below live in the new `DisplaySettings.cs`, are saved on the device, and

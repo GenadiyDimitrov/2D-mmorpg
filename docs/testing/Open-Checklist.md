@@ -25,6 +25,18 @@
 
 ---
 
+## §173 — 0.273.3: browser right-drag every time, Keys on the menu, key tags on the bar, buff potions only farming (2026-11-06)
+
+- `173a` [ ] - Browser: right-drag the camera 15-20 times in a row, quick and slow. Does EVERY drag turn endlessly with the
+  cursor coming back where you pressed? ->
+- `173b` [ ] - Desktop: Menu → *Keys*, and Setup → *Keys* (footer, next to Sound). Do both open the Keys window? ->
+- `173c` [ ] - The bar squares' corner shows the bound key (`1`, `S+1`, `A+1` in the browser, `C+1` on Windows). Rebind one:
+  does the square change at once? Clear both keys of one: is its corner blank? On the phone, are all corners blank? ->
+- `173d` [ ] - Auto-farm OFF in town, a buff potion armed: cancel the buff. Is it NOT re-drunk? Turn auto-farm on: is it
+  drunk then? HP/MP potions still drink with auto-farm off? ->
+
+---
+
 ## §172 — 0.273.2: render scale, frame rate, fullscreen, mouse, smaller desktop start (`BL-364`) (2026-11-05)
 
 ⚠ **New APK too** (render scale and the FPS cap are on the phone as well).

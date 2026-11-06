@@ -44,6 +44,14 @@ namespace Game.Client
             return (Ctrl ? "Ctrl+" : "") + (Shift ? "Shift+" : "") + (Alt ? "Alt+" : "") + KeyName(Key);
         }
 
+        /// <summary>The skill-bar square's corner tag (owner, 2026-11-06: *"the small numbers on the left should be the
+        /// key"*): "1", "S+1", "C+1", "A+1" — the full "Shift+" does not fit a 78-px square. Empty when unbound.</summary>
+        public string Short()
+        {
+            if (IsNone) return "";
+            return (Ctrl ? "C+" : "") + (Shift ? "S+" : "") + (Alt ? "A+" : "") + KeyName(Key);
+        }
+
         private static string KeyName(KeyCode k)
         {
             if (k >= KeyCode.Alpha0 && k <= KeyCode.Alpha9) return ((int)(k - KeyCode.Alpha0)).ToString();

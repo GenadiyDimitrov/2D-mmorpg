@@ -79,8 +79,15 @@ namespace Game.Client
         private int _mainCount = SlotsPerPage;
         private Button _pagePrev, _pageNext;
         private readonly TextMeshProUGUI[] _slotHotkeys = new TextMeshProUGUI[MaxVisibleSlots];
-        private static readonly string[] SlotNumbers =
-            { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" };
+        /// <summary>The bound key of visible square <paramref name="visible"/> (first key, else the second), "" if none or
+        /// on a phone, which has no keyboard.</summary>
+        private static string SlotKeyTag(int visible)
+        {
+            if (!HoverTip.Wanted) return "";
+            var a = KeyBindings.Get(KeyBindings.BarSlot(visible / SlotsPerPage, visible % SlotsPerPage));
+            if (a == null) return "";
+            return !a.Keys[0].IsNone ? a.Keys[0].Short() : a.Keys[1].Short();
+        }
 
         private static bool IsVertical(BarShape s) => s == BarShape.Column5x2;
         /// <summary>Pages of the bar: five, whatever the shape.</summary>
@@ -697,7 +704,7 @@ namespace Game.Client
                 // Slot number, top-left, like the WPF squares.
                 var hotkey = UiKit.Label(button.transform, "", 12f, UiKit.TextDim);   // `BL-299`: set per refresh
                 UiKit.Place(UiKit.Rect(hotkey.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                            new Vector2(4f, -2f), new Vector2(20f, 16f));
+                            new Vector2(4f, -2f), new Vector2(60f, 16f));   // wide enough for "S+0" / "PgDn"
                 _slotHotkeys[i] = hotkey;
 
                 // "A" = the auto-hunt repeats this one. Bottom-RIGHT, because the top-left corner is
@@ -1131,11 +1138,15 @@ namespace Game.Client
                 ("Options", () => { CloseWindow(_menuPanel); ToggleWindow(_optionsPanel); }, false, 1),
                 ("Setup",  () => { CloseWindow(_menuPanel); _serverRow.gameObject.SetActive(false); ToggleWindow(_settingsPanel); }, false, 1),
                 ("Sound",  () => { CloseWindow(_menuPanel); OpenSoundWindow(); }, false, 1),   // `BL-45`
+                // Desktop only (skipped below on a phone) — it was buried at the foot of Setup's scroll (2026-11-06,
+                // *"where is the custom settings to change the keys ?"*).
+                ("Keys",   () => { CloseWindow(_menuPanel); OpenKeysWindow(); }, false, 1),
                 ("Leave",  () => { CloseWindow(_menuPanel); Boot.LeaveWorld(); }, false, 1),
             };
 
             foreach (var entry in entries)
             {
+                if (entry.Label == "Keys" && !HoverTip.Wanted) continue;
                 var button = UiKit.TextButton(inner, entry.Label, entry.Click, 16f);
                 _menuButtons.Add((button, entry.AdminOnly, entry.Column));
                 // (the admin entry is found by its AdminOnly flag in _menuButtons — no field needed)
@@ -1972,9 +1983,9 @@ namespace Game.Client
             {
                 int index = BarIndexOf(i);
                 string token = bar != null && index < bar.Length ? bar[index] : null;
-                // `BL-299` — the number is the square's place in its bar of ten, which a five-square
-                // block no longer lines up with, so it follows the index rather than the cell.
-                _slotHotkeys[i].text = SlotNumbers[index % SlotsPerPage];
+                // The corner tag is the square's KEY (owner, 2026-11-06), blank when none is bound — and a phone
+                // binds none, so it shows nothing there. Visible square i is bar i/10, square i%10 (UpdateHotkeys).
+                _slotHotkeys[i].text = SlotKeyTag(i);
 
                 bool usable;
                 _slotFaces[i].text = SlotFace(token, out usable);
