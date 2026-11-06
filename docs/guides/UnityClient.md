@@ -266,7 +266,7 @@ The code side is done and shipped; the client draws spheres until a prefab exist
 of what the Editor session has to do.** The first one takes about fifteen minutes.
 
 > **Read this once before starting.** You never write code and you never touch a scene that gets saved.
-> You are creating **one file** — `Assets/Resources/Models/humanoid.prefab` — and everything below is
+> You are creating **one file** — `Assets/Content/Models/humanoid.prefab` — and everything below is
 > how to make that file correctly. If a step's window is not where the guide says, use
 > **Window → Layouts → Default** to put the Editor back to the standard arrangement this guide assumes.
 
@@ -305,11 +305,12 @@ there is no error message.
 1. Find the **Project** window (bottom-left by default). It is the file browser.
 2. Click the **`Assets`** folder once to select it.
 3. **Right-click `Assets` → Create → Folder.** A new folder appears with its name highlighted for
-   editing. Type **`Resources`** and press **Enter**.
-   - If `Assets/Resources` already exists, skip this and use it.
-4. **Right-click the `Resources` folder you just made → Create → Folder.** Type **`Models`**, Enter.
+   editing. Type **`Content`** and press **Enter**.
+   - If `Assets/Content` already exists (it does since 0.277.0), skip this and use it.
+4. **Right-click the `Content` folder → Create → Folder.** Type **`Models`**, Enter (it exists already too).
+   Anything under `Assets/Content/<Folder>/` becomes an Addressables entry by itself (`AddressablesSetup`, `BL-371`).
 
-You should now have **`Assets/Resources/Models`**. Capital `R`, capital `M`, no space, no `s` on Model.
+You should now have **`Assets/Content/Models`**. Capital `C`, capital `M`, no space, no `s` on Model.
 
 ---
 
@@ -401,7 +402,7 @@ Animator with an empty Controller is fine and the model will simply stand still.
 ### Step 8 — turn it into the prefab file
 
 1. Make sure the object you want is selected in the **Hierarchy**.
-2. **Drag it from the Hierarchy into the `Assets/Resources/Models` folder** in the Project window.
+2. **Drag it from the Hierarchy into the `Assets/Content/Models` folder** in the Project window.
 3. A new item appears in `Models` with a **blue cube icon** — that is the prefab. The Hierarchy entry
    turns blue too.
 
@@ -411,7 +412,7 @@ Animator with an empty Controller is fine and the model will simply stand still.
    → Rename).
 2. Type **`humanoid`** — lower case, no capitals, no spaces — and press **Enter**.
 
-The file is now `Assets/Resources/Models/humanoid.prefab`. **That one name is picked up by every
+The file is now `Assets/Content/Models/humanoid.prefab`. **That one name is picked up by every
 player, NPC and humanoid mob in the game at once**, which is exactly what a proof of concept wants to
 see before anyone commissions nine families.
 
@@ -442,7 +443,7 @@ the Editor or open another scene, choose **Don't Save**. Neither loses your pref
    prefab is already a file (Step 10).
 2. Build and install the APK the usual way — **`pwsh tools/publish.ps1 -Apk`**, see
    [Publishing.md](Publishing.md). ⚠ **The `-Apk` switch is not optional**: without it the script
-   builds the server zip only and no APK is produced. **A new prefab needs a new APK**: `Resources` is
+   builds the server zip only and no APK is produced. **A new prefab needs a new APK**: `Content/` (its Addressables bundles) is
    compiled into the build, so nothing in the Editor reaches the phone without one.
 3. On the phone, log in.
 4. Open **Settings** and check **`3D models: ON`** (it is the default).
@@ -459,7 +460,7 @@ it is also the fastest way to tell whether models are what is costing you frames
 The loader walks from **most specific to least** and takes the first file it finds, so you peel groups
 off the universal fallback by adding better-named files. **No code changes, ever.**
 
-| File in `Assets/Resources/Models/` | Who uses it                                                                                                |
+| File in `Assets/Content/Models/` | Who uses it                                                                                                |
 | ---------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `player_<race>_<class>.prefab`     | that one race+class, e.g. `player_demon_mage` (races: `human`, `elf`, `demon`; classes: `fighter`, `mage`) |
 | `player_<class>.prefab`            | every character of that base class                                                                         |
@@ -626,7 +627,7 @@ authored take names and the matcher reads them.
 ```
 
 That is the same command as the creatures — `BuildAll` now does both halves. Then
-**`pwsh tools/publish.ps1 -Apk`**, because `Resources` ships inside the build.
+**`pwsh tools/publish.ps1 -Apk`**, because `Content/` ships inside the build (as Addressables bundles).
 
 #### What the builder does so you don't have to click it
 
@@ -658,7 +659,7 @@ character half, leaving the existing prefab exactly as it is — so running it t
 | Log says `No animation files in …/Animations` | The folder is empty, or the FBXs went in one level deeper than you thought.                                         |
 | Log says `not one animation clip in them`     | The export dropped the take. On Mixamo that is downloading the wrong format — use **FBX Binary**, **Without Skin**. |
 | Log says `could not build a Humanoid avatar`  | That file's skeleton is not a biped. Replace the file; nothing else is wrong.                                       |
-| Builds fine, body still slides in a T-pose    | You did not build a new APK. `Resources` is compiled into the build.                                                |
+| Builds fine, body still slides in a T-pose    | You did not build a new APK. `Content/` is bundled into the build.                                                  |
 | Body folds into a heap when it plays          | The **body's** rig is not Humanoid. Its Rig tab must say Humanoid + Create From This Model.                         |
 
 ### Animator parameters — all optional
@@ -682,8 +683,8 @@ the **Parameters** tab on the left.
 
 | What you see                                   | What it is                                                                                                                   |
 | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Still spheres                                  | The path or the name is wrong. It must be exactly `Assets/Resources/Models/humanoid.prefab` — check the capital `R` and `M`. |
-| Still spheres, name is right                   | You didn't build a new APK. `Resources` ships inside the build.                                                              |
+| Still spheres                                  | The path or the name is wrong. It must be exactly `Assets/Content/Models/humanoid.prefab` — check the capital `R` and `M`. |
+| Still spheres, name is right                   | You did not build a new APK. `Content/` ships inside the build.                                                              |
 | Model is enormous or microscopic               | Step 6.5 — the prefab's own Scale is what tunes size.                                                                        |
 | Model is buried in the ground / floating       | Step 7b — the model's pivot is not at its feet.                                                                              |
 | Model lies on its face                         | Rotation. Select the prefab, set Rotation X to `-90` or `0` and see which stands it up.                                      |

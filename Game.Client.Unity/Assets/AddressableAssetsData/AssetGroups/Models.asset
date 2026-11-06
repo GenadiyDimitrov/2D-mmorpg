@@ -1,0 +1,149 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Models
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Models
+  m_GUID: 6ff8fddf7d4199149a15a3f3c868c0de
+  m_SerializeEntries:
+  - m_GUID: 11c834ebe805d4541a738682c1be2fed
+    m_Address: Models/humanoid
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Models
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1df61741ddcc66046b1f9bbf82152073
+    m_Address: Models/humanoid
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Models
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2307c1b4f22d2f14c89cc42ae94f5900
+    m_Address: Models/mob_dragon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Models
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 28e85ec1373461d4c9c71bae99294267
+    m_Address: Models/mob_animal
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Models
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3573d5e09b3d3b1418ca63ca36d85883
+    m_Address: Models/npc_female
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Models
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 379d9bd8bb219a64fbf9d5eb72c46abb
+    m_Address: Models/npc_female
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Models
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3ad718edbd80c0a4fbbb1e85d3d42a75
+    m_Address: Models/mob_undead
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Models
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3b9e7e40677207c4d9267a331c506738
+    m_Address: Models/npc_anvil
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Models
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 50c8e0a8b2808da4e8d1a7edff4369ae
+    m_Address: Models/mob_animal
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Models
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5608de5aae9bc014ab64d39d19945ca1
+    m_Address: Models/mob_insect
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Models
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 57603811e5b491548bc558921e39213a
+    m_Address: Models/player
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Models
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7b7c31dec4206a04d991fef8aa5c4dc3
+    m_Address: Models/player_female
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Models
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a193ad336aaa7674fa859151a90b376a
+    m_Address: Models/mob_undead
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Models
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: aa0e38efcf9e2114885e11d192398ddc
+    m_Address: Models/player_female
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Models
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b83d29f1dad03b7489844cac4b94b115
+    m_Address: Models/player
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Models
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c6e07f1cc7a824144983d1ca7cd3aa6c
+    m_Address: Models/humanoid
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Models
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d8125868e89077a45b4755b4fb61414a
+    m_Address: Models/npc_female
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Models
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d8e0e29e5fecb0e4a80ebed96369adba
+    m_Address: Models/player_female
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Models
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ec7d93cd2e6417148ae56a493c07e986
+    m_Address: Models/mob_insect
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Models
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fc9b6cab91394bc4382d95beb5a31eff
+    m_Address: Models/player
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Models
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ff67dbfbd4c6eb2498696042d33d1ff5
+    m_Address: Models/mob_dragon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Models
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: be28006e82f62884bb1ede481dea0e4f, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: c69bee3562fc173469f0fae430e29f6e, type: 2}
+    - {fileID: 11400000, guid: 49098ffe6a6b3c54283626fcf075861a, type: 2}

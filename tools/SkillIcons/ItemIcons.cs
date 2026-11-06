@@ -8,7 +8,7 @@ using SkiaSharp;
 /// One picture per KIND of item (<see cref="ItemCatalog.IconKey"/>), never per item — his *"can reuse same icon for weight
 /// and armor part and weapon part .. just different colors"*. Each kind is a row of docs/data/item_icons.csv
 /// (`KIND,ICON,COMMENT`, ICON a game-icons.net name as in skill_icons.csv), rendered GREY-AND-WHITE into
-/// Resources/ItemIcons/&lt;kind&gt;.png: the client multiplies it by the item's rarity colour, so the frame comes out a dark
+/// Content/ItemIcons/&lt;kind&gt;.png: the client multiplies it by the item's rarity colour, so the frame comes out a dark
 /// shade of that colour and the glyph the colour itself. Glyphs: game-icons.net, CC BY 3.0 (docs/CREDITS.md).
 /// </summary>
 internal static class ItemIcons
@@ -42,7 +42,7 @@ internal static class ItemIcons
         foreach (var e in errors.Distinct()) Console.WriteLine("🔴 " + e);
         if (errors.Count > 0) { Console.WriteLine($"{errors.Count} error(s) — nothing written."); return 1; }
 
-        string dir = Path.Combine(repo, "Game.Client.Unity", "Assets", "Resources", "ItemIcons");
+        string dir = Path.Combine(repo, "Game.Client.Unity", "Assets", "Content", "ItemIcons");
         Directory.CreateDirectory(dir);
         var keep = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var r in rows)

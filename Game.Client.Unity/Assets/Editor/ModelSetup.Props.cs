@@ -8,7 +8,7 @@ using UnityEngine.Rendering;
 namespace Game.ClientEditor
 {
     /// <summary>
-    /// `BL-344` step 4: the scenery props. Builds <c>Resources/Props/&lt;Kind&gt;/&lt;Model&gt;.prefab</c>
+    /// `BL-344` step 4: the scenery props. Builds <c>Content/Props/&lt;Kind&gt;/&lt;Model&gt;.prefab</c>
     /// from the Quaternius Stylized Nature MegaKit, headlessly, for <c>PropScatter</c> to instance.
     ///
     /// <code>
@@ -40,7 +40,7 @@ namespace Game.ClientEditor
         private const string NatureFbx = NatureDir + "/FBX";
         private const string NatureTex = NatureDir + "/Textures";
         private const string NatureMats = NatureDir + "/Materials";
-        private const string PropsDir = "Assets/Resources/Props";
+        private const string PropsDir = "Assets/Content/Props";
 
         /// <summary>One material, by the name the FBXs use for it. Texture is a file in
         /// <see cref="NatureTex"/>; MaxSize caps that texture's import.</summary>

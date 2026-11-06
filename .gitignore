@@ -68,3 +68,14 @@ Desktop.ini
 
 # `BL-331`: the game-icons.net set, cloned on first run of tools/SkillIcons (only the rendered PNGs are committed)
 tools/SkillIcons/.game-icons/
+
+# BL-371 - Addressables writes these on EVERY content build (per-platform content state + the generated link.xml);
+# they are build output, rebuilt each time, and would churn every commit.
+Game.Client.Unity/Assets/AddressableAssetsData/*/
+!Game.Client.Unity/Assets/AddressableAssetsData/AssetGroups/
+!Game.Client.Unity/Assets/AddressableAssetsData/AssetGroupTemplates/
+!Game.Client.Unity/Assets/AddressableAssetsData/DataBuilders/
+Game.Client.Unity/Assets/AddressableAssetsData/link.xml*
+Game.Client.Unity/Assets/AddressableAssetsData/Windows.meta
+Game.Client.Unity/Assets/AddressableAssetsData/Android.meta
+Game.Client.Unity/Assets/AddressableAssetsData/WebGL.meta

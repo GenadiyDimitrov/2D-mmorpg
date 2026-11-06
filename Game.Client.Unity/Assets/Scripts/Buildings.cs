@@ -10,7 +10,7 @@ namespace Game.Client
     /// building, nothing collides (his `BL-319` answer 1 — walls are visual until `BL-323`), and moving a town or a lot
     /// in Game.Shared moves its building with it, because every placement here is a pure function of that data.
     ///
-    /// <para><b>The models</b> are <c>Resources/Buildings/&lt;Name&gt;_&lt;W&gt;x&lt;D&gt;</c>, assembled headlessly from the
+    /// <para><b>The models</b> are <c>Content/Buildings/&lt;Name&gt;_&lt;W&gt;x&lt;D&gt;</c>, assembled headlessly from the
     /// Quaternius Medieval Village kit by <c>ModelSetup.BuildBuildings</c>, one baked mesh each. The name's
     /// <c>WxD</c> is the WALL footprint in metres (the roof overhangs it), front door on +Z — that suffix is the whole
     /// contract between the two halves.</para>

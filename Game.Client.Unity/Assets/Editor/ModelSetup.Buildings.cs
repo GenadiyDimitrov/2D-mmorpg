@@ -37,7 +37,7 @@ namespace Game.ClientEditor
         private const string VillageTex = VillageDir + "/Textures";
         private const string VillageMats = VillageDir + "/Materials";
         private const string VillageBaked = VillageDir + "/Baked";
-        private const string BuildingsDir = "Assets/Resources/Buildings";
+        private const string BuildingsDir = "Assets/Content/Buildings";
 
         /// <summary>The kit's material names → texture (null = flat colour) and tint.</summary>
         private static readonly (string Name, string Texture, Color Tint)[] VillageMaterials =
@@ -259,7 +259,7 @@ namespace Game.ClientEditor
             }
 
             if (AssetDatabase.IsValidFolder(BuildingsDir)) AssetDatabase.DeleteAsset(BuildingsDir);
-            AssetDatabase.CreateFolder("Assets/Resources", "Buildings");
+            AssetDatabase.CreateFolder("Assets/Content", "Buildings");
             if (AssetDatabase.IsValidFolder(VillageBaked)) AssetDatabase.DeleteAsset(VillageBaked);
             AssetDatabase.CreateFolder(VillageDir, "Baked");
 

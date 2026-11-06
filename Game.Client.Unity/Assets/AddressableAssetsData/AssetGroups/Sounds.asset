@@ -1,0 +1,797 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Sounds
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Sounds
+  m_GUID: 680b55236aecd9b4084e2326fac52920
+  m_SerializeEntries:
+  - m_GUID: 000a769681cb1a1499a7749da6930c21
+    m_Address: Sounds/loot_gold/item_coins_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 058269e2adb37044188b8dab6188cfaa
+    m_Address: Sounds/cast_start/magical_2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0c711da448b14094aa322b55f9395cc6
+    m_Address: Sounds/crit/impactPunch_heavy_004
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0ec939a61843f1142bbe667576dd1e3c
+    m_Address: Sounds/cast_start/magical_4
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0ef94cc0e48545c4b9d6f0da56d86258
+    m_Address: Sounds/spell_fail/impactGlass_light_002
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1070951bc6fc4cb4fb64dc4fc6fd881c
+    m_Address: Sounds/loot_item/handleSmallLeather2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1675583848d340d4f98c660c51472846
+    m_Address: Sounds/cast_start/magical_7
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1764652e01972b74eb0a3658c4aeed9b
+    m_Address: Sounds/spell_hit/spell_fire_04
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 18eac77b218d402439d8cb69fca324f4
+    m_Address: Sounds/buff/bell_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2421b47c95e12ea4c85301da58c1ab90
+    m_Address: Sounds/block/impactPlate_medium_001
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 24b3dc8c2ccfeba4795bc17d14a4f752
+    m_Address: Sounds/body_fall/impactSoft_heavy_000
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2559ac3468cf17c489ab587ec8e0713f
+    m_Address: Sounds/swing/swish-1
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 259f9653fb47f474cae477fcb0fb2e40
+    m_Address: Sounds/debuff/weird_04
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2839d7a165ebdee43a6a64a4ad4362f3
+    m_Address: Sounds/mob_hurt/hurt_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2967aa4fc13947e4b8f6fcca596be2ff
+    m_Address: Sounds/body_fall/impactSoft_heavy_004
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 29ff2f88d48769f4c82547a4ad0961b1
+    m_Address: Sounds/crit/impactPunch_heavy_001
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2a54526ab625e6d46aac43614c549c7e
+    m_Address: Sounds/hit_blade/blade_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2ca1bf0765394b94a8a9f0d7f826773f
+    m_Address: Sounds/miss/cloth4
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 324f1ded297394047a4524ddc4849e2f
+    m_Address: Sounds/mob_hurt/hurt_04
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 34f1ad141c8f9b443a73fb2cb3270f90
+    m_Address: Sounds/mob_hurt/grunt_02
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 352af0b902ff4364daf656639d73d81c
+    m_Address: Sounds/step_stone/footstep_concrete_000
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3948fd44d606e03449a357992ded5417
+    m_Address: Sounds/spell_hit/spell_fire_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3960ac6da52b885418bef2512640e430
+    m_Address: Sounds/mob_hurt/grunt_03
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3b0904b4f04279f40a2b7705de0a33fd
+    m_Address: Sounds/spell_fail/impactGlass_light_004
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3dd71e79f6b1599439200825af27fc6e
+    m_Address: Sounds/swing/swish-10
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 438ee728f4d57aa43a119ade0b367d6b
+    m_Address: Sounds/player_hurt/hit2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4585c6e480ef8024bada7617ec8c793a
+    m_Address: Sounds/hit_blade/knifeSlice2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 45938df47c03b9747912f660140c0206
+    m_Address: Sounds/spell_cast/spell_02
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 46a278d4a99ed3d41bfb841d4f0778f4
+    m_Address: Sounds/loot_gold/handleCoins
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 470477d0cf9a8644cac7b92c0414e300
+    m_Address: Sounds/swing/swish-6
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 47ea88f4cb3e737429fa2a0c31663e0f
+    m_Address: Sounds/hit_blunt/impactPunch_medium_001
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 480b5c0342de0bd428a8f13a535bb338
+    m_Address: Sounds/hit_blade/blade_02
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4898c3fb3bb84ae4999ec5c4a2ca72bc
+    m_Address: Sounds/hit_blunt/impactPunch_medium_002
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 49ac8261a1dca0044983540c198f4f63
+    m_Address: Sounds/ui_click/click_001
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4af834220575633468f06d08afb7deb0
+    m_Address: Sounds/sit/clothBelt2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4bdd7691e8e1768458ca1b437077b520
+    m_Address: Sounds/miss/cloth1
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4e33063982b8bec49a9aba248edf9bf5
+    m_Address: Sounds/death/creature_die_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5010d0c2840853348a28b3fd3d79191e
+    m_Address: Sounds/hit_blade/knifeSlice
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 552bbd8604dd56d4c8413cf9f48f65f8
+    m_Address: Sounds/player_hurt/hit3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 55e81d24094a8df47853b93495a83098
+    m_Address: Sounds/spell_fail/impactGlass_light_003
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 56e83c6207d69a544a91f0d36790ef81
+    m_Address: Sounds/step_grass/footstep_grass_004
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5c486e5dc4ad06244be09201a504176f
+    m_Address: Sounds/spell_hit/spell_fire_02
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6002b899f67cef047a2ea5fcf2c2f3e8
+    m_Address: Sounds/arrow_hit/impactSoft_medium_004
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6311a4cc2abedc046b24e1c23803ff34
+    m_Address: Sounds/swing/swish-4
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 63357648893acbe419c65bdd4f45c3c0
+    m_Address: Sounds/heal/Cure3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6438b914184544c45a6a00254043d4e5
+    m_Address: Sounds/loot_gold/item_coins_03
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 665fb8c15c159a3409179772f8c86f37
+    m_Address: Sounds/heal/Cure1
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6862620971ff1ba4eb5abda25fa0f150
+    m_Address: Sounds/cast_start/magical_5
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6ae340f69f463d54da2d731a7d76f8d6
+    m_Address: Sounds/step_stone/footstep_concrete_003
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6fbca3661e5bbf14fb88959412d32610
+    m_Address: Sounds/step_grass/footstep_grass_001
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 70d8c9a9eeac8274cbb70b7e758ae048
+    m_Address: Sounds/loot_gold/item_coins_04
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 74748ceaa1cf1ff4aaf686d75a91a0d1
+    m_Address: Sounds/block/impactPlate_medium_004
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 778a95420ecdaa94dafe9e75066eec05
+    m_Address: Sounds/buff/bell_02
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7944333733922dc44b401c9fee50f5d2
+    m_Address: Sounds/ui_click/click_002
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7c7cf7bc546c8314080f3d1507f55ce6
+    m_Address: Sounds/swing/swish-5
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7d9e8522b72a6de4c85094a626963ae4
+    m_Address: Sounds/arrow_hit/impactSoft_medium_003
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7e1591f1635acd4448455c9227dea067
+    m_Address: Sounds/spell_fail/impactGlass_light_000
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7ea72e12c95951b4ca163baa371f1c4e
+    m_Address: Sounds/arrow_hit/impactSoft_medium_000
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7ffc5d0aa1ab89f458d9c70229db9732
+    m_Address: Sounds/mana/glass_004
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8272f3c9a5109e34189f23d7ff3536fd
+    m_Address: Sounds/step_stone/footstep_concrete_002
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 848dcafce2c9f334f8fc9745a1296049
+    m_Address: Sounds/player_death/die1
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 87f443d4768aebc4eabee51c047de806
+    m_Address: Sounds/swing/swish-8
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8b9b971c780aa2c4ab1821eeb05cb4c8
+    m_Address: Sounds/step_grass/footstep_grass_002
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8bb0a5bd8d369b44e8796528ce7832d0
+    m_Address: Sounds/swing/swish-7
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8d1083a9845c85a4f9f95a358abffd53
+    m_Address: Sounds/block/impactPlate_medium_002
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 91ba899e60fafeb40b9b20313533ff19
+    m_Address: Sounds/body_fall/impactSoft_heavy_003
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 91d93381c1aba1444b24c272f0610c83
+    m_Address: Sounds/swing/swish-3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 946364a892c6cf0428bb69832b977c6b
+    m_Address: Sounds/cast_start/magical_1
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 94d39c17f36e6584ca18f0b5ed0f85d2
+    m_Address: Sounds/ui_click/click_003
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 97a21c7a39d4cca419746dee1a8daa48
+    m_Address: Sounds/mana/glass_005
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 98310682c8a65e345bbf5f19303e10f5
+    m_Address: Sounds/bow_shot/pluck_001
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 985ce2aaea5a3294db1126db4bc5dd4e
+    m_Address: Sounds/body_fall/impactSoft_heavy_001
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 986d9ca0937dfbe4eb388c4065c0af74
+    m_Address: Sounds/crit/impactPunch_heavy_002
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 99c1f0f923fc9274fa0a571ed40e6b48
+    m_Address: Sounds/spell_hit/spell_fire_06
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9a88c60bd572cab4390d16b913dd52c6
+    m_Address: Sounds/arrow_hit/impactSoft_medium_002
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9d88f8bee691e244e906e2772bad89f9
+    m_Address: Sounds/miss/cloth3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9f406a689ac226e448fba25bb108bec7
+    m_Address: Sounds/hit_blunt/impactPunch_medium_004
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a11842edf984fc743aa4381442206a6d
+    m_Address: Sounds/step_grass/footstep_grass_000
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a4748a404b625a846b459aa1bf03c633
+    m_Address: Sounds/loot_item/handleSmallLeather
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a588c9f5833b7bc42b6ccd3c038c237c
+    m_Address: Sounds/player_hurt/hit5
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a7f06a5a374967f419625548b9f2be0e
+    m_Address: Sounds/swing/swish-9
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a925fe91a72a2b241aba51b9623a5590
+    m_Address: Sounds/step_grass/footstep_grass_003
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a98517646e4178940875377bdb2b8cab
+    m_Address: Sounds/swing/swish-11
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a99fb35141a021f459689fdcd79ee29f
+    m_Address: Sounds/block/impactPlate_medium_003
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: aa36bc815e2a28b4781a576772a24b07
+    m_Address: Sounds/loot_gold/item_coins_02
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: aad913dfcf823cd47ad8ad2773b853ed
+    m_Address: Sounds/crit/impactPunch_heavy_000
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: afd5c665474c7fe4cbe171fc8a36ff6c
+    m_Address: Sounds/hit_blunt/impactPunch_medium_003
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b2f3d2d177cbb36418fbfbae8965d5e8
+    m_Address: Sounds/spell_hit/spell_fire_07
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b821cb7463926e34e9e94672182ed9d6
+    m_Address: Sounds/crit/impactPunch_heavy_003
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b8ecb398b8407d74ab60a5ec09124d21
+    m_Address: Sounds/mob_hurt/hurt_03
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bdd862905b3c4fd4ea8ab53d53b295de
+    m_Address: Sounds/death_self/jingles_PIZZI07
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c2ef71fe3b7e06c419aafec29dbe0950
+    m_Address: Sounds/step_stone/footstep_concrete_001
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c5126ce7b12c70a49bf6325800a3c360
+    m_Address: Sounds/arrow_hit/impactSoft_medium_001
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c577585d717a5ea40a3ce950b3f0a112
+    m_Address: Sounds/hit_blade/blade_03
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c5c38e9afaeb0374e8911f21612ae12a
+    m_Address: Sounds/ui_click/click_004
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ca3181231230027488f9c4e75c821e8f
+    m_Address: Sounds/loot_item/dropLeather
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cbf7caf31273c2246b947bba4ae8da70
+    m_Address: Sounds/heal/Cure2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cc08c19346287e94e80d106df3346478
+    m_Address: Sounds/player_hurt/hit1
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cc0b57d26f3173344920fd159fb607ec
+    m_Address: Sounds/debuff/weird_03
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cd09fa39c71989049836b518181b06ec
+    m_Address: Sounds/body_fall/impactSoft_heavy_002
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d1a15b9e855ca6b4d9d6e3b428c38216
+    m_Address: Sounds/hit_blade/chop
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d21c55c760c384041a201bf322117cb6
+    m_Address: Sounds/debuff/weird_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d2acd677b0970f447a82d09ac2b77e90
+    m_Address: Sounds/mob_hurt/grunt_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d38297f1542c21e44a129972b3b9a4ba
+    m_Address: Sounds/sit/clothBelt
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d39906d54fe2c4940960cbe9d8cd2610
+    m_Address: Sounds/buff/bell_03
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d3c60878ec808b14e87e8f513a001826
+    m_Address: Sounds/miss/cloth2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d52e9f7d0a6666640a4295d00c8bd6f4
+    m_Address: Sounds/swing/swish-13
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d72aa518a99535143bbc0773d0948958
+    m_Address: Sounds/mob_hurt/hurt_05
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d72b7310c9c093d4d8c0c0b7361cdfb5
+    m_Address: Sounds/heal/Cure4
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d7c5bd6d6b8e8a4479ca258bbf577b43
+    m_Address: Sounds/mana/glass_006
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d9e2b49595eb5474496de430a0b6483b
+    m_Address: Sounds/step_stone/footstep_concrete_004
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: da0deb5dc22040c44b2a8becc0fcf62e
+    m_Address: Sounds/bow_shot/pluck_002
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e03c6949c6ebf5545958e81f4e87c677
+    m_Address: Sounds/swing/swish-12
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e03ee641fe3ec744db1b24b9cb1dae69
+    m_Address: Sounds/mob_hurt/hurt_02
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e435f7d96f76e9a4c99d65d4b70d42de
+    m_Address: Sounds/debuff/weird_05
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ead54cc9006e76d4b87d0df5b6b0b150
+    m_Address: Sounds/spell_fail/impactGlass_light_001
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: eae2d7d249612d142b849412c474ce03
+    m_Address: Sounds/spell_hit/spell_fire_05
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ec1074756cdb8c64f9cd98f1e6b04a57
+    m_Address: Sounds/levelup/jingles_STEEL00
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f0436091be5fafb4e97f3ec21cdbe21b
+    m_Address: Sounds/loot_gold/handleCoins2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f114448a2de04184f9fdd376f62572ab
+    m_Address: Sounds/block/impactPlate_medium_000
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f1d01959eef75fe4f849d48cab60dfbb
+    m_Address: Sounds/player_hurt/hit4
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f259c2f126e1e884ab7c7470b95ed925
+    m_Address: Sounds/spell_cast/spell_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f306d3461c776e240ac4f0d1b3001883
+    m_Address: Sounds/cast_start/magical_3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f3a35baf0e9011d41a15caf8117b20cf
+    m_Address: Sounds/hit_blunt/impactPunch_medium_000
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f436f5b2924241148bd860176149b12c
+    m_Address: Sounds/debuff/weird_02
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f5f43a098517124469cdeb04ec402fcd
+    m_Address: Sounds/swing/swish-2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f766db03f40d7a044acb6471eead6d13
+    m_Address: Sounds/ui_click/click_005
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f97dfdd7d89b2b247bb0a748f7b27c84
+    m_Address: Sounds/cast_start/magical_6
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fea372cbb161ec643a8a987291a702e2
+    m_Address: Sounds/spell_hit/spell_fire_03
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sounds
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: be28006e82f62884bb1ede481dea0e4f, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 49a06c51306ffc14eaa975eefe209c8b, type: 2}
+    - {fileID: 11400000, guid: 4db2b74bbc5e5474ab20214c82e9b040, type: 2}

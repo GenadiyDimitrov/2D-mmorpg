@@ -7,7 +7,7 @@ namespace Game.Client
     /// <summary>
     /// `BL-45` — the background music: one track at a time, picked by WHERE YOU STAND, crossfaded when that changes.
     ///
-    /// <para>🔑 <b>A PLACE IS A FOLDER</b>, like the effects: <c>Resources/Music/&lt;place&gt;/</c>, every track in it
+    /// <para>🔑 <b>A PLACE IS A FOLDER</b>, like the effects: <c>Content/Music/&lt;place&gt;/</c>, every track in it
     /// a candidate, played in a shuffled order and crossfaded into the next when one ends. Places: <c>field</c>,
     /// <c>dungeon</c> (inside a dungeon or its entrance), and three town regions — <see cref="TownMusic"/> says which
     /// city plays which. The login screen plays the starting town's. An empty folder is silence.</para>

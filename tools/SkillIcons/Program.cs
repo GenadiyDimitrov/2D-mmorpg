@@ -16,8 +16,8 @@ using SkiaSharp;
 //    1. clones the game-icons.net set into tools/SkillIcons/.game-icons/ on first use (gitignored);
 //    2. checks every row (a known skill, an icon that exists, a school that exists) and lists every
 //       class-CSV skill with no row — those draw as initials in the game until they get one;
-//    3. renders one 128x128 PNG per row into Game.Client.Unity/Assets/Resources/SkillIcons/<id>.png, or
-//       Resources/ActionIcons/<id>.png for an action,
+//    3. renders one 128x128 PNG per row into Game.Client.Unity/Assets/Content/SkillIcons/<id>.png, or
+//       Content/ActionIcons/<id>.png for an action,
 //       deleting PNGs whose row is gone;
 //    4. writes docs/design/SkillIcons.html — every icon grouped by class file, for review.
 //
@@ -110,8 +110,8 @@ foreach (var e in errors) Console.WriteLine("🔴 " + e);
 if (errors.Count > 0) { Console.WriteLine($"{errors.Count} error(s) — nothing written."); return 1; }
 
 // ---- render ----------------------------------------------------------------------------------------------
-// Skills → Resources/SkillIcons/<skill id>.png; actions (`action:<id>` rows) → Resources/ActionIcons/<id>.png.
-string resources = Path.Combine(repo, "Game.Client.Unity", "Assets", "Resources");
+// Skills → Content/SkillIcons/<skill id>.png; actions (`action:<id>` rows) → Content/ActionIcons/<id>.png.
+string resources = Path.Combine(repo, "Game.Client.Unity", "Assets", "Content");
 string skillDir = Path.Combine(resources, "SkillIcons"), actionDir = Path.Combine(resources, "ActionIcons");
 Directory.CreateDirectory(skillDir);
 Directory.CreateDirectory(actionDir);

@@ -1,0 +1,89 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Buildings
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Buildings
+  m_GUID: affcd658b547a5a4386e495665b3601e
+  m_SerializeEntries:
+  - m_GUID: 1f94a2951b6423a4bbdb08e00ce67f81
+    m_Address: Buildings/Townhouse_4x4
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Buildings
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1fbed49d2aeee49418a4a16112a0f673
+    m_Address: Buildings/Stonehouse_4x6
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Buildings
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5f8b818f13c860246a9a388b2fc60448
+    m_Address: Buildings/Yard_4x4
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Buildings
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 76cdea70fb7a4914b9ec320c7a830e9e
+    m_Address: Buildings/Pavilion_4x4
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Buildings
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 804886d287d3c6b42a752b18d74fb182
+    m_Address: Buildings/Chapel_4x8
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Buildings
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 87975ebecc1b12049b65cd21b8986eca
+    m_Address: Buildings/Shop_6x6
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Buildings
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a3ba45c1eabe6784490c84ed1d1cb289
+    m_Address: Buildings/Hut_4x4
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Buildings
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d8c671f183d98df4dae67ec595e0c81f
+    m_Address: Buildings/Guild_8x8
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Buildings
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e4d4f9935583ff940b25157c4d192522
+    m_Address: Buildings/Longhouse_4x8
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Buildings
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e9f58a34bdf460244af133f6e7ac8f03
+    m_Address: Buildings/Hall_6x10
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Buildings
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f33206e524e12fe459053551238cbf9e
+    m_Address: Buildings/Cottage_4x4
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Buildings
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: be28006e82f62884bb1ede481dea0e4f, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: b5494d01d8f88444cbb925b5a9c05d5a, type: 2}
+    - {fileID: 11400000, guid: f01bc9e4d3e021246ab441acefbc7df1, type: 2}

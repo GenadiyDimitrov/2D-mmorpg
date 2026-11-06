@@ -1,0 +1,77 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Weapons
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Weapons
+  m_GUID: d4b9cce8b433adc41b1f0a50b457b7e3
+  m_SerializeEntries:
+  - m_GUID: 0756dc957b3a2834da6590185c5da608
+    m_Address: Weapons/sword2h
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Weapons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 23c01f1fc9b6b584f8ea22babea1c0f7
+    m_Address: Weapons/blunt2h
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Weapons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2e68b6b9baa886c4da18846b2e9b1ad4
+    m_Address: Weapons/bow
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Weapons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 32005e4a7516b7947849422e046cbd41
+    m_Address: Weapons/wand
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Weapons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 958e9b0170e109b44a751b3db0223b39
+    m_Address: Weapons/shield
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Weapons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 970756f65c0b67e408bc73c18a764441
+    m_Address: Weapons/staff
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Weapons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b00abc7af400e2449a902451b6100a15
+    m_Address: Weapons/sword1h
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Weapons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bd561adf367646541b918bcd0e3e0dd5
+    m_Address: Weapons/blunt1h
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Weapons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f933b04c70979a348bb10160bb915cf3
+    m_Address: Weapons/dagger
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Weapons
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: be28006e82f62884bb1ede481dea0e4f, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: a9490069b5f962d4ab7cd9fbfa1829a8, type: 2}
+    - {fileID: 11400000, guid: b83e8f4f34a331d4eb22ede4663238ae, type: 2}

@@ -20,13 +20,13 @@ namespace Game.ClientEditor
     /// its own axis. Nothing here is guessed per rig: the hand frame is the runtime's job.</para>
     ///
     /// <para>Sources (both CC0) in <c>Art/Models/Weapons/SOURCES.txt</c>. Only the prefabs under
-    /// <c>Resources/Weapons/</c> ship, with their FBX and our own materials.</para>
+    /// <c>Content/Weapons/</c> ship, with their FBX and our own materials.</para>
     /// </summary>
     public static partial class ModelSetup
     {
         private const string WeaponArt = ArtDir + "/Weapons";
         private const string WeaponMats = WeaponArt + "/Materials";
-        private const string WeaponsDir = "Assets/Resources/Weapons";
+        private const string WeaponsDir = "Assets/Content/Weapons";
 
         private readonly struct WeaponRow
         {
@@ -95,7 +95,7 @@ namespace Game.ClientEditor
 
             Directory.CreateDirectory(WeaponMats);
             if (AssetDatabase.IsValidFolder(WeaponsDir)) AssetDatabase.DeleteAsset(WeaponsDir);
-            AssetDatabase.CreateFolder("Assets/Resources", "Weapons");
+            AssetDatabase.CreateFolder("Assets/Content", "Weapons");
 
             var mats = new Dictionary<string, Material>();
             int built = 0;

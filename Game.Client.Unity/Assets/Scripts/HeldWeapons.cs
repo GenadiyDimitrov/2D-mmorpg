@@ -8,7 +8,7 @@ namespace Game.Client
     /// `BL-103` / `BL-344` step 7 — what a character holds. The server sends the weapon TYPE (+ magic, + shield) on
     /// the spawn DTO; this turns it into meshes on the humanoid's hand bones.
     ///
-    /// <para>🔑 <b>One prefab per type</b>, <c>Resources/Weapons/&lt;key&gt;</c>, built by <c>ModelSetup.BuildWeapons</c>.
+    /// <para>🔑 <b>One prefab per type</b>, <c>Content/Weapons/&lt;key&gt;</c>, built by <c>ModelSetup.BuildWeapons</c>.
     /// Every prefab shares ONE frame, so the code below never needs to know which weapon it is hanging: the root is
     /// the GRIP, +Y runs along the weapon (blade, head or bow limb up), +Z is the edge / striking face / the side the
     /// arrow flies to, and a shield's face looks down −X. Lengths are in the humanoid body's own units.</para>

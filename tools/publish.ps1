@@ -104,8 +104,11 @@ function Invoke-UnityBuild([string]$method, [string]$buildTarget, [string]$log) 
     $unity.WaitForExit()
     $unityExit = $unity.ExitCode
 
+    # `BL-371` stage 2: every CommandLineBuild method builds the Addressables bundles for its target FIRST (and syncs the
+    # Assets/Content folders into their groups), then the player, which copies them into StreamingAssets. A failed
+    # content build stops the player build — its "[build] FAILED: Addressables" line is caught here.
     if (Test-Path $log) {
-        $bad = Select-String -Path $log -Pattern "error CS|executeMethod class .* could not be found"
+        $bad = Select-String -Path $log -Pattern "error CS|executeMethod class .* could not be found|\[build\] FAILED"
         if ($bad) { $bad | Select-Object -First 20 | ForEach-Object { Write-Host $_.Line -ForegroundColor Red } }
     }
     if ($unityExit -ne 0) { throw "Unity build failed (exit $unityExit) — see $log" }

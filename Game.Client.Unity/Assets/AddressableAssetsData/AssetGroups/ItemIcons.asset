@@ -1,0 +1,185 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: ItemIcons
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: ItemIcons
+  m_GUID: 1445bf93578a5204b88917c62a7bb098
+  m_SerializeEntries:
+  - m_GUID: 280eaa5768aff5f40b35668ef4a28b64
+    m_Address: ItemIcons/bow
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2880192432c232648bdc3a14c684d712
+    m_Address: ItemIcons/potion
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 43f62f509e01a324eb9b62107d7f60d4
+    m_Address: ItemIcons/dual
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4b802ce664f05124e84d48aa903659a6
+    m_Address: ItemIcons/material
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4ba34833420693f4fb77bf0253a745d0
+    m_Address: ItemIcons/shield
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4c934419aa9ab3e4e93ef421f575c17a
+    m_Address: ItemIcons/necklace
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 51419e2a5ddfc5443890cffac664f813
+    m_Address: ItemIcons/enchant_scroll
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5d4c15c8919a0934592ec2eb5882e90a
+    m_Address: ItemIcons/mana_potion
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6a20455507ecd5b41a599d358145a9c6
+    m_Address: ItemIcons/quest
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6b3412dbc2bc6ef45ac52b9f516de65a
+    m_Address: ItemIcons/staff
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6f28b161b6523f148aa717f8b095f082
+    m_Address: ItemIcons/attribute_scroll
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 83928772f92a7574896b49bdea3734e1
+    m_Address: ItemIcons/light_armor
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8a4a6a4d7e35f954fa923e11090aa837
+    m_Address: ItemIcons/helmet
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 99be85c181f61b34c8ebb02bb11640a2
+    m_Address: ItemIcons/elixir
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a0981408c7146544682df93126162528
+    m_Address: ItemIcons/rune
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b06097c48bae0b54aa155a17850e608c
+    m_Address: ItemIcons/boots
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b79351866b10ff147b8179fef293bf10
+    m_Address: ItemIcons/greathammer
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c2d2a8b5f27856d4c81cbc0ca7630af8
+    m_Address: ItemIcons/heavy_armor
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c35b1abbee676c649951c75a4d1c8587
+    m_Address: ItemIcons/ring
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d290efe97cdd82245b768d17046b4136
+    m_Address: ItemIcons/scroll
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dffe1530975d35f4799e1da03bfa4413
+    m_Address: ItemIcons/robe
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e26a6eb57e1d2f344b166611a0c338e1
+    m_Address: ItemIcons/sword
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e45e79f0307e60d4dafcda9bdc3c6b44
+    m_Address: ItemIcons/blunt
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: eaea8ad5bf009f7429dd6f4ba13e4da5
+    m_Address: ItemIcons/box
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: eaf6c35629c44cc4ba984c6ca06ca307
+    m_Address: ItemIcons/earring
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: eb17376227034c844b89f69fdc1390f3
+    m_Address: ItemIcons/greatsword
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ec293ac20ec5e274aa1527fc8f991e1f
+    m_Address: ItemIcons/gloves
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ItemIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: be28006e82f62884bb1ede481dea0e4f, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 3354a420fe20be34eb33cc5db14d7e0b, type: 2}
+    - {fileID: 11400000, guid: 00952d9cca738e04ba184d8365bc7833, type: 2}

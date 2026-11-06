@@ -364,7 +364,7 @@ namespace Game.Client
     ///
     /// <para>🔑 <b>THE FALLBACK CHAIN IS THE WHOLE DESIGN.</b> Every lookup walks from the most
     /// specific key it could possibly want down to the most general, and stops at the first hit. So
-    /// ONE file — <c>Resources/Models/humanoid.prefab</c> — already gives every player, every NPC and
+    /// ONE file — <c>Content/Models/humanoid.prefab</c> — already gives every player, every NPC and
     /// every humanoid mob in the game a body, and each more specific prefab added later peels one
     /// group off the general case without touching a line of code. The art can arrive in any order,
     /// over any number of months, and the client is correct at every point in between.</para>
@@ -379,7 +379,8 @@ namespace Game.Client
     /// 2026-11-06 (*"shouldnt we lay the ground work now for the asset bundles?"*), so the old note here —
     /// "Resources because adding the package is an Editor decision he has not made" — is retired. Every key goes
     /// through <see cref="GameAssets"/>, which is callback-shaped: the body keeps its placeholder sphere until the
-    /// prefab arrives, and the key STRINGS ("Models/xxx") are already the addresses stage 2's bundles will use.</para>
+    /// prefab arrives, and the key STRINGS ("Models/xxx") are the Addressables addresses (stage 2, 0.277.0: the
+    /// prefabs live in <c>Assets/Content/Models/</c> and ship as a bundle).</para>
     /// </summary>
     public static class ModelLibrary
     {

@@ -35,9 +35,9 @@ namespace Game.ClientEditor
 
             var caster = new Vector3(-2.2f, 0f, 0f);
             var target = new Vector3(2.2f, 0f, 0f);
-            Place("Assets/Resources/Models/humanoid.prefab", caster, 90f);
-            Place("Assets/Resources/Models/humanoid.prefab", target, 270f);
-            Place("Assets/Resources/Models/mob_animal.prefab", new Vector3(0f, 0f, 3f), 180f);
+            Place("Assets/Content/Models/humanoid.prefab", caster, 90f);
+            Place("Assets/Content/Models/humanoid.prefab", target, 270f);
+            Place("Assets/Content/Models/mob_animal.prefab", new Vector3(0f, 0f, 3f), 180f);
 
             var sun = new GameObject("Sun").AddComponent<Light>();
             sun.type = LightType.Directional;

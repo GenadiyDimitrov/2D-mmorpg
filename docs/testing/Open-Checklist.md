@@ -25,6 +25,18 @@
 
 ---
 
+## §180 — 0.277.0: the assets ship as bundles inside the build (`BL-371` stage 2, 2026-11-06)
+
+Nothing should look different here either. This is the first build whose models, sounds, music and icons come out of
+Addressables bundles instead of `Resources`, so §179's rows are the real test. Play them on THIS build.
+
+- `180a` [ ] - On the **phone (APK)**: log in and play a few minutes. Bodies, weapons, buildings, props, music, sounds,
+  skill and item icons, the login picture: all there? ->
+- `180b` [ ] - The same in the **browser** (`/play`) and the **Windows** client. Anything missing on one platform only? ->
+- `180c` [ ] - Is the first login any slower than 0.276.0? (A second or so to open the bundles is expected; more is not.) ->
+
+---
+
 ## §179 — 0.276.0: every asset loads through one async loader (`BL-371` stage 1, 2026-11-06)
 
 Nothing should look different. Anything that does is a bug in this version.

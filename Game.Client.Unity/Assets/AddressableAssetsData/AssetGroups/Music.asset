@@ -1,0 +1,77 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Music
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Music
+  m_GUID: 5720f76a76027c94d948156edc49b772
+  m_SerializeEntries:
+  - m_GUID: 332475b9a5b1b5e428bec038dff00e34
+    m_Address: Music/town_middle/The_Old_Tower_Inn
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Music
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3603ecbf85fd0ef4695f2291761968f9
+    m_Address: Music/dungeon/dungeon002
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Music
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3cafc3487dd29464b91a00bbd3ebd14b
+    m_Address: Music/town_middle/Kings_Feast
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Music
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 62c3546eacfee0744bb3a40a6e24b6e9
+    m_Address: Music/field/Exploration
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Music
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 79a994346dc04df41b4fc6a01f53ad13
+    m_Address: Music/town_north/Ice_Village
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Music
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7f97460de3d0ef5428d38dfe55e297ce
+    m_Address: Music/field/forest_of_hope
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Music
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8554e76324e0ab94c99cfef35b52a0dc
+    m_Address: Music/town_south/Market_Day
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Music
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: aae07e84ccfdea446a80858f8dde414f
+    m_Address: Music/field/beautiful_forest
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Music
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fdae34820488ab544b82e4813677ef91
+    m_Address: Music/dungeon/dark_cavern_ambient_002
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Music
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: be28006e82f62884bb1ede481dea0e4f, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 224d5f38700f986419a1e3052e81249d, type: 2}
+    - {fileID: 11400000, guid: 399ee605ded106541bb86c44bb894d48, type: 2}

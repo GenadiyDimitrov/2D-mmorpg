@@ -28,7 +28,37 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-11-06 (latest) — 0.276.0: every asset arrives through one async loader (`BL-371` stage 1)
+## 2026-11-06 (latest) — 0.277.0: the assets ship as Addressables bundles inside the build (`BL-371` stage 2)
+
+Client only. No `game.db` delete. **Nothing should look different**, as in 0.276.0. The difference is under the hood.
+
+- **The package:** `com.unity.addressables` **2.11.2** (the maintained 2.x line for Unity 6; 3.x/4.x skipped on purpose).
+- **The folders moved:** `Assets/Resources/{Models, Buildings, Weapons, Props, Music, Sounds, SkillIcons, ActionIcons,
+  ItemIcons, Ui}` → **`Assets/Content/…`**, with their `.meta` files, so every GUID and prefab reference survives.
+  `Resources/` keeps only the CORE: the shaders and `server.txt`. Nothing ships twice: in a Windows build,
+  `resources.assets` fell to ~3.4 MB and the content is 32 MB of bundles in `StreamingAssets/aa`.
+- **`AddressablesSetup`** (new, `Assets/Editor/AddressablesSetup.cs`) creates the settings and keeps them in step BY CODE.
+  One group per folder. Every file is an entry whose address is its path under `Content/` without an extension
+  (`"Models/humanoid"`, `"Sounds/crit/impactPunch_heavy_004"`, the same keys as before), labelled with its top folder.
+  **Dropping a file into a folder is enough:** it re-syncs on every import under `Content/` and again at the start of
+  every build. Music packs one bundle per track (a new track leaves the others' bundles untouched); every other folder
+  is one bundle. LZ4, local build/load paths. Headless: `-executeMethod Game.Client.Editor.AddressablesSetup.Setup`.
+- **`GameAssets`' body is Addressables now.** A key is looked up as a LOCATION first and only then loaded, so an unknown
+  key is a cached null, never an exception. That matters because `ModelLibrary`'s fallback chain misses on purpose. A
+  folder = its top folder's label, filtered by path prefix (recursive, as `Resources.LoadAll` was). Outside play mode
+  (the headless preview tools) it reads `Assets/Content` through the AssetDatabase synchronously, so a preview never
+  needs built bundles.
+- **Builds:** `CommandLineBuild` builds the bundles for the target BEFORE the player, for Android, Windows and WebGL
+  alike. If the content build fails, no player is built. `publish.ps1` catches that line. The automatic second content
+  build inside the player build is switched off. WebGL needs no server change: `/play` serves the catalog and the
+  `.bundle` files as plain files.
+- **Paths that moved with it:** the `ModelSetup.*` builders, `AudioImport` (the Music/Sounds import rules),
+  `tools/SkillIcons` (renders into `Content/SkillIcons`, `Content/ActionIcons`, `Content/ItemIcons`), and the Unity guide.
+- **Verified headless:** the setup run (715 entries), `PreviewCreation` + `PreviewWeapons` in edit mode (bodies and all
+  ten weapon sets render), and a full Windows content + player build. Android and WebGL were not built for this version.
+  Their first publish is the first real run of their content build.
+
+## 2026-11-06 — 0.276.0: every asset arrives through one async loader (`BL-371` stage 1)
 
 Client only (the version moves because the APK changes). No `game.db` delete. **Nothing should look different** — if
 anything does, it is a bug in this version.

@@ -66,11 +66,11 @@ namespace Game.ClientEditor
         }
 
         /// <summary>Where the built prefabs + controllers go — the ONLY thing that has to be in
-        /// <c>Resources/</c>, because <c>ModelLibrary.Load</c> asks for them by key.</summary>
-        private const string ModelsDir = "Assets/Resources/Models";
+        /// <c>Content/</c> (an Addressables group, `BL-371`), because <c>ModelLibrary.Load</c> asks for them by key.</summary>
+        private const string ModelsDir = "Assets/Content/Models";
 
-        /// <summary>Where the source FBXs live (`BL-344` step 1). 🔴 <b>Everything under a
-        /// <c>Resources/</c> folder ships in the APK whether anything uses it or not</b>; a prefab's
+        /// <summary>Where the source FBXs live (`BL-344` step 1). 🔴 <b>Everything under
+        /// <c>Content/</c> ships in the build whether anything uses it or not</b> (it is all addressable); a prefab's
         /// FBX ships anyway as its dependency, so the sources sit OUTSIDE it and only the art a prefab
         /// actually references reaches the phone. Spare monsters wait here at zero APK cost.</summary>
         private const string ArtDir = "Assets/Art/Models";

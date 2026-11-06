@@ -1,0 +1,137 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: ActionIcons
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: ActionIcons
+  m_GUID: a3ec17309eab0f1439c17552fee0ffd3
+  m_SerializeEntries:
+  - m_GUID: 01ac6be0ce47fd94d8f9fc9518ba26fa
+    m_Address: ActionIcons/party_kick
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ActionIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 091373686068691448f7cda5b6c517b0
+    m_Address: ActionIcons/party_leader
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ActionIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 27f7094de0aa9514d955ede2069ee5e7
+    m_Address: ActionIcons/friend_list
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ActionIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3e7b122c1776c8944b0c30a9e61539dc
+    m_Address: ActionIcons/party_leave
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ActionIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3f339ae3c57cf5c4e82bab5c998d1ae8
+    m_Address: ActionIcons/follow_target
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ActionIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 64f7a06de2bd43b4b872f0ce8074a2cf
+    m_Address: ActionIcons/friend_add
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ActionIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7da04073bf751524692ee5c4ca163737
+    m_Address: ActionIcons/trade_target
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ActionIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 85e775c2d77e82a41bda8f1dbc1d6c54
+    m_Address: ActionIcons/target_closest
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ActionIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8a3d35f689d740543bac8fde2062cc80
+    m_Address: ActionIcons/whisper_target
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ActionIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 934f3afa0e4d1af45933c31e921443a1
+    m_Address: ActionIcons/like_target
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ActionIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 93d0bf516436f0347ac88a6ff5168a7d
+    m_Address: ActionIcons/unequip_all
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ActionIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bbedffeca193edc4aa3441afa5808a29
+    m_Address: ActionIcons/sit_stand
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ActionIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c026a69eefa09c4459ef898d94614257
+    m_Address: ActionIcons/assist_target
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ActionIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c116764ec119aee498efd878f996b5d5
+    m_Address: ActionIcons/unblock_target
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ActionIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c1309707015d8344c9ae1e5c941e62ab
+    m_Address: ActionIcons/friend_remove
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ActionIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c3ad7abffde5f954bbc606143897be44
+    m_Address: ActionIcons/run_walk
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ActionIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cebfe6737b0147440975fab45fbd2a70
+    m_Address: ActionIcons/block_target
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ActionIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dc1f028f804058b43a4b364d558c0ffe
+    m_Address: ActionIcons/party_invite
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ActionIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dc4dbca7d69dc8745ab5d6c53ed0aecb
+    m_Address: ActionIcons/basic_attack
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - ActionIcons
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: be28006e82f62884bb1ede481dea0e4f, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 2634f7f6720924144b2a02af4a850cd2, type: 2}
+    - {fileID: 11400000, guid: 10ff5589904079943b4a2be5e96d105d, type: 2}

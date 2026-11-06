@@ -86,9 +86,9 @@ namespace Game.ClientEditor
             ground.transform.position = new Vector3(-30f, 0f, 20f);
 
             // Characters in their idle pose, and some scenery around them.
-            Place("Assets/Resources/Models/humanoid.prefab", new Vector3(-1.2f, 0f, 0f), 0f);
-            Place("Assets/Resources/Models/humanoid.prefab", new Vector3(1.3f, 0f, 0.6f), 200f);
-            Place("Assets/Resources/Models/mob_animal.prefab", new Vector3(3.5f, 0f, -1.5f), 120f);
+            Place("Assets/Content/Models/humanoid.prefab", new Vector3(-1.2f, 0f, 0f), 0f);
+            Place("Assets/Content/Models/humanoid.prefab", new Vector3(1.3f, 0f, 0.6f), 200f);
+            Place("Assets/Content/Models/mob_animal.prefab", new Vector3(3.5f, 0f, -1.5f), 120f);
             Prop("Tree", 0, new Vector3(-5f, 0f, 3f), 4.2f);
             Prop("Tree", 1, new Vector3(6f, 0f, 4.5f), 4.0f);
             Prop("Pine", 0, new Vector3(-8f, 0f, -2f), 4.5f);

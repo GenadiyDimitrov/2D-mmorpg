@@ -30,7 +30,7 @@ namespace Game.Client
     /// however many chunks are on screen. Props farther than the quality's range from the screen centre
     /// are not drawn.</para>
     ///
-    /// <para><b>Models:</b> each kind draws the prefabs in <c>Resources/Props/&lt;Kind&gt;/</c> (built
+    /// <para><b>Models:</b> each kind draws the prefabs in <c>Content/Props/&lt;Kind&gt;/</c> (built
     /// headlessly from the nature pack) and falls back to a primitive placeholder while that folder is
     /// empty, so the scatter can be judged before any art exists.</para>
     /// </summary>

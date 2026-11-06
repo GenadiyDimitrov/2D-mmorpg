@@ -842,14 +842,14 @@ namespace Game.Client
 
         private static readonly Dictionary<string, Sprite> SkillSprites = new Dictionary<string, Sprite>();
 
-        /// <summary>`BL-331` — a skill's PICTURE: <c>Resources/SkillIcons/&lt;skill id&gt;.png</c>, rendered by
+        /// <summary>`BL-331` — a skill's PICTURE: <c>Content/SkillIcons/&lt;skill id&gt;.png</c>, rendered by
         /// <c>tools/SkillIcons</c> from docs/data/skill_icons.csv. Null when the skill has none yet, and every caller
         /// falls back to the letters — so icons can arrive a few at a time. Loaded once per id (a miss is
         /// cached too: the bar refreshes every frame).</summary>
         internal static Sprite SkillSprite(string skillId) =>
             string.IsNullOrEmpty(skillId) ? null : LoadIcon("SkillIcons/" + skillId);
 
-        /// <summary>An ACTION's picture (<c>Resources/ActionIcons/&lt;action id&gt;.png</c>, the `action:` rows of the
+        /// <summary>An ACTION's picture (<c>Content/ActionIcons/&lt;action id&gt;.png</c>, the `action:` rows of the
         /// same CSV). Null = draw its letters.</summary>
         internal static Sprite ActionSprite(string actionId) =>
             string.IsNullOrEmpty(actionId) ? null : LoadIcon("ActionIcons/" + actionId);

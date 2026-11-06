@@ -300,7 +300,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-363` | 🔴 | **A browser (WebGL) client** — test build BUILT (0.272.0, `/play/`, logs in + moves, 60 MB); owed: your FPS in a real browser, deploy, a WebGL quality preset | client |
 | `BL-368` | ⏸ | **PC launcher / patcher** — PARKED: itch.io (free delta updates, `butler` in `deploy.ps1`) when PC players appear; own launcher only if itch.io is not acceptable | client |
 | `BL-369` | 🔴 | **Web: always the newest build, smaller downloads** — hashed file names + `index.html` never cached, Brotli instead of Gzip, a "new version — Reload" button in an open tab | client |
-| `BL-371` | 🔴 | **Asset bundles (Addressables)** — ✅ stage 1 async loader BUILT 0.276.0; stage 2 local bundles NEXT (part of every test); stage 3 download-on-demand at the trigger (≈150 MB build, Play's base limit, slow web first load) | client |
+| `BL-371` | 🔴 | **Asset bundles (Addressables)** — ✅ stage 1 async loader BUILT 0.276.0; ✅ stage 2 local bundles BUILT 0.277.0; stage 3 download-on-demand at the trigger (≈150 MB build, Play's base limit, slow web first load) | client |
 
 ---
 
@@ -2857,7 +2857,7 @@ material), `Sfx` (LoadAll), `GameUi` (login background), `GameUi.Skills` (icons)
 | Stage | What | When |
 |---|---|---|
 | **1. One async loader** ✅ **BUILT 0.276.0** | `GameAssets`: callback + cache (hits and misses), single and LoadAll, still backed by Resources. Every non-core load goes through it. Callers tolerate "arrives later": models keep the placeholder sphere until the prefab arrives, icons fill in, music/sfx start when loaded. No behaviour change visible. | Now, one version |
-| **2. Real bundles, shipped INSIDE the build** | Add the Addressables package (`Packages/manifest.json`), settings + folder-based groups created by an editor script run in batchmode (the Editor is never opened), so dropping a file into `Music/` is enough. `publish.ps1` builds the content before the player for Android, Windows and WebGL. Local bundles only, no server hosting. `GameAssets`' body switches to Addressables. | Right after stage 1 |
+| **2. Real bundles, shipped INSIDE the build** ✅ **BUILT 0.277.0** (Addressables 2.11.2, `Assets/Content/`, `AddressablesSetup`) | Add the Addressables package (`Packages/manifest.json`), settings + folder-based groups created by an editor script run in batchmode (the Editor is never opened), so dropping a file into `Music/` is enough. `publish.ps1` builds the content before the player for Android, Windows and WebGL. Local bundles only, no server hosting. `GameAssets`' body switches to Addressables. | Right after stage 1 |
 | **3. Download on demand** | The server hosts bundles + catalog beside `/play`, zones fetch their assets on approach, Android uses Play Asset Delivery, catalog versioning. | At the trigger above |
 
 **Not now, on purpose:** stage 3. Before release there is nothing worth downloading on demand, and it adds a new class of

@@ -1,0 +1,143 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Props
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Props
+  m_GUID: d8f7fa2703178e741acbb4284e091891
+  m_SerializeEntries:
+  - m_GUID: 250e38f752d6e724590da9c7fba84b4e
+    m_Address: Props/DeadTree/DeadTree_4
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Props
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 336c4fc3f5c9f2a43805db94755245c5
+    m_Address: Props/Bush/Bush_Common
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Props
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3c623bf7312393b43982f83ca8f5e9f3
+    m_Address: Props/Rock/Rock_Medium_3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Props
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4ba754d07e1be3547978860f19d8598f
+    m_Address: Props/Grass/Grass_Common_Short
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Props
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 518773de73837244fb28d55976623be1
+    m_Address: Props/Tree/CommonTree_3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Props
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 52dff5ec270cd9544bee9eee64a29e4b
+    m_Address: Props/Bush/Bush_Common_Flowers
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Props
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 55c995acb0aca494795008c86076e3b1
+    m_Address: Props/Flower/Flower_4_Group
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Props
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6578f050931493c4db1a0ca8e4d03b2b
+    m_Address: Props/Pine/Pine_4
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Props
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6f1c2a9e4b7d4e0a9c3b5d8e2f1a7c40
+    m_Address: Props/PropPlaceholder
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Props
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7ddef452fb7a4b74189c0e0115773914
+    m_Address: Props/TwistedTree/TwistedTree_1
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Props
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8bbc504efbefb734a8922146b92c5960
+    m_Address: Props/Grass/Grass_Common_Tall
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Props
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8bd1afe2f08759d409f34cea760c6f82
+    m_Address: Props/DeadTree/DeadTree_5
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Props
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 999472797f3b5904294aaa61ab68c6f3
+    m_Address: Props/TwistedTree/TwistedTree_2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Props
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9f8f106e213156a42aedc40f6895f88d
+    m_Address: Props/Rock/Rock_Medium_2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Props
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b1272ad5c3ef2af46b17d451eba93c49
+    m_Address: Props/Pine/Pine_5
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Props
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ce31c0ca53339f64cbf2afa547ef05a8
+    m_Address: Props/DryGrass/Grass_Wispy_Tall
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Props
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d11fd5a04eed00e4cb220c23f5b73613
+    m_Address: Props/Tree/CommonTree_5
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Props
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d6715272dcff9514a9328cea6bcf4eed
+    m_Address: Props/Flower/Flower_3_Group
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Props
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e572d0746fa6d2e458f786ca6e0b466d
+    m_Address: Props/Rock/Rock_Medium_1
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Props
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f977100449bcef64786f71a848531319
+    m_Address: Props/DryGrass/Grass_Wispy_Short
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Props
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: be28006e82f62884bb1ede481dea0e4f, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: ff5a3e387bcfa164986ab7a635e004e9, type: 2}
+    - {fileID: 11400000, guid: 46aaf0c845b24004890b6e489d101126, type: 2}

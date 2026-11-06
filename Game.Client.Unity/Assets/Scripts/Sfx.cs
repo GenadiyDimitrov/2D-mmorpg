@@ -9,7 +9,7 @@ namespace Game.Client
     /// `BL-45` — the game's sound effects. Client-only: every cue is read off a message the client already gets
     /// (the combat event, the progress push, the gold push, a loot line) — the server knows nothing about sound.
     ///
-    /// <para>🔑 <b>A CUE IS A FOLDER.</b> <c>Resources/Sounds/&lt;cue&gt;/</c> holds the clips, and every clip in it
+    /// <para>🔑 <b>A CUE IS A FOLDER.</b> <c>Content/Sounds/&lt;cue&gt;/</c> holds the clips, and every clip in it
     /// is a random variant of that cue. Changing a sound = dropping a file in (or out of) a folder; no code, no
     /// table. An empty or missing folder is silence, never an error. Where each clip came from:
     /// <c>docs/CREDITS.md</c>.</para>

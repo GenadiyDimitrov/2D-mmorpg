@@ -205,6 +205,16 @@ namespace Game.Client.Editor
 
             Debug.Log($"[build] {target} build starting. Scenes: " + string.Join(", ", scenes));
 
+            // `BL-371` stage 2 — the bundles FIRST, for this target, and no player without them: a player whose
+            // StreamingAssets lacks the catalog boots into a world of placeholder spheres and silence.
+            string contentError = AddressablesSetup.BuildContent();
+            if (contentError != null)
+            {
+                Debug.LogError("[build] FAILED: Addressables content build — " + contentError);
+                if (Application.isBatchMode) EditorApplication.Exit(1);
+                return;
+            }
+
             var options = new BuildPlayerOptions
             {
                 scenes = scenes,
