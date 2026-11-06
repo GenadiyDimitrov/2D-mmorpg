@@ -25,6 +25,21 @@
 
 ---
 
+## §176 — 0.274.0: minimap + world map (`BL-365`, 2026-11-06)
+
+- `176a` [ ] - In the world, a round minimap sits top-right under the buttons. Does it show the ground colours around
+  you within ~1 s, an arrow that turns with you, and dots: green party, white players, yellow NPCs, orange/red mobs?
+  Do **+ / -** change the range? On the phone, is it in the way of anything? ->
+- `176b` [ ] - Tap the minimap (or press **N**, or Menu → **Map**). Does the world map open on you, and do towns and
+  fields (zoom in) sit where they really are? Do drag, the wheel, pinch, **+ / -** and **Me** work? ->
+- `176c` [ ] - Map footer: does **Rotate: on** turn the minimap with the camera, with N following north? Does
+  **Minimap: off** hide it, and do both survive a restart? ->
+- `176d` [ ] - In a dungeon: the minimap shows dots on dark ground, and the map says *Underground*? ->
+- `176e` [ ] - The compass (after turning the camera) now sits left of the minimap, and the quest tracker under it.
+  Do they overlap anything? ->
+
+---
+
 ## §175 — 0.273.5: Settings in groups (2026-11-06)
 
 - `175a` [ ] - Settings shows headed groups *General / Interface / Graphics / Desktop* (Desktop only on PC/browser). Is

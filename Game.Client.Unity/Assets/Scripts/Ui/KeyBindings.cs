@@ -122,7 +122,7 @@ namespace Game.Client
         public const string MoveForward = "move.fwd", MoveBack = "move.back", MoveLeft = "move.left", MoveRight = "move.right";
         public const string PageNext = "bar.page.next", PagePrev = "bar.page.prev";
         public const string Bag = "win.bag", Character = "win.char", Skills = "win.skills", Quests = "win.quests",
-                            Menu = "win.menu", Chat = "chat";
+                            Menu = "win.menu", Map = "win.map", Chat = "chat";
 
         public static string BarSlot(int bar, int index) => "bar" + bar + "." + index;
 
@@ -154,6 +154,7 @@ namespace Game.Client
             Add(Skills, "Skills", "Windows", new KeyBind(KeyCode.K));
             Add(Quests, "Quests", "Windows", new KeyBind(KeyCode.L));
             Add(Menu, "Menu", "Windows", new KeyBind(KeyCode.M));
+            Add(Map, "World map", "Windows", new KeyBind(KeyCode.N));   // `BL-365`
             Add(Chat, "Type in chat", "Windows", new KeyBind(KeyCode.Return), new KeyBind(KeyCode.KeypadEnter));
 
             foreach (var a in All) LoadOne(a);

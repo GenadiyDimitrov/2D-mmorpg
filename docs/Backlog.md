@@ -298,7 +298,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-361` | ⏸ | **An iOS client** — needs a Mac (or cloud Mac) + Xcode, an Apple Developer account ($99/yr), TestFlight for testers (HTTPS, which iOS demands, is already live) | ops |
 | `BL-362` | 🔵 | **Drop groups the IG way** — A: show group % + shares inside (display); B: author them that way; C: bake the formulas into a per-mob odds table (formula/hand rows) | loot |
 | `BL-363` | 🔴 | **A browser (WebGL) client** — test build BUILT (0.272.0, `/play/`, logs in + moves, 60 MB); owed: your FPS in a real browser, deploy, a WebGL quality preset | client |
-| `BL-365` | 🔴 | **A minimap + world map** — a corner minimap (you, party, mobs, NPCs, your heading) and a full map window (zones, towns, your position); desktop first, phone too | client |
 
 ---
 
@@ -2743,20 +2742,3 @@ CHANGELOG.
 4. Leave the .NET SignalR DLLs out of the WebGL build (the browser never uses them). That trims the 16 MB of code.
 5. Clean up the browser-only rough edges: `screen.orientation.lock()` logs an error on desktop, and three URP debug
    shaders are unsupported on WebGL (harmless).
-
-## `BL-365` 🔴 A MINIMAP + A WORLD MAP (2026-11-05)
-
-Your words: *"minimap/map"*, item 4 of your half of the `BL-364` list. It was filed separately because it is a feature in
-its own right, not a setting, and it belongs on the phone as much as on a desktop.
-
-**There is none today.** The client has no minimap and no map window. Regions (`GameUi.Regions`) is the only list of places.
-
-**My proposal (not ruled; change anything):**
-1. **Minimap**, top corner, round, north up (a toggle can rotate it with the camera). It shows you with an arrow for your
-   heading, party members, mobs (red when aggressive), NPCs and the ground colour of the biomes around you. The radius is
-   about the entity distance (`BL-358`). Tapping it opens the map.
-2. **World map** window (key `N` on a desktop, which `BL-364`'s key list will hold). It shows the whole generated world:
-   biome colours, town names, zone level bands, your position and your party's. Drag to pan, wheel or pinch to zoom.
-3. **Later, not now:** marks you place yourself, quest targets, click-to-walk on the map.
-
-❓ **Owed by you:** confirm or change 1-3. Unless you say otherwise, I build 1 and 2 after `BL-364`.

@@ -196,6 +196,7 @@ namespace Game.Client
             else if (KeyBindings.Down(KeyBindings.Skills)) ToggleWindow(_skillsPanel);
             else if (KeyBindings.Down(KeyBindings.Quests)) ToggleWindow(_questPanel);
             else if (KeyBindings.Down(KeyBindings.Menu)) ToggleWindow(_menuPanel);
+            else if (KeyBindings.Down(KeyBindings.Map)) ToggleWorldMap();
             else if (KeyBindings.Down(KeyBindings.Chat) && _chatSubmitFrame != Time.frameCount)
             {
                 _commandField.Select();

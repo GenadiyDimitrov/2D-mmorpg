@@ -94,7 +94,7 @@ namespace Game.Client
             // Pivot is the TOP-right corner, so growing the height extends it downward — which is
             // what lets the panel follow its content without the pins walking up the screen.
             UiKit.Place(_trackerPanel, new Vector2(1f, 1f), new Vector2(1f, 1f),
-                        new Vector2(-12f, -220f), new Vector2(TrackerWidth, 180f));
+                        new Vector2(-12f, -334f), new Vector2(TrackerWidth, 180f));   // under the minimap (`BL-365`)
             var inner = _trackerPanel.GetChild(0);
 
             // Movable, like the other floating panels — it will inevitably sit over something.

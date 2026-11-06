@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.273.5**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.274.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,29 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-11-06 (latest) — 0.273.5: Settings rows in headed groups
+## 2026-11-06 (latest) — 0.274.0: a minimap and a world map (`BL-365`)
+
+Client only. No server change and no `game.db` delete. Owner: *"do a minimap+world map"*.
+
+- **The ground is a texture now** (`Ui/MapTexture.cs`). It is 512×512 over the overworld, and every pixel is
+  `BiomeGround.ColourAt`, the same function that colours the 3D ground, so the map matches what you walk on. It is
+  painted a few rows per frame under a 3 ms budget (~1 s on a phone), so entering the world never hitches.
+- **Minimap** (`Ui/GameUi.Map.cs`): a round minimap in the top-right corner under the action buttons. It is north-up,
+  with a red **N** on the rim, and your arrow points where you face. Dots: green = party, white = players,
+  yellow = NPCs, orange = mobs, red = aggressive mobs. It shows only what the server already sends you. **+ / -** on its
+  rim switch the range between 2k, 4k and 8k (default 4k). Underground (dungeons, the jail) it shows dots on dark ground.
+  Tapping it opens the world map.
+- **World map**: key **N** (rebindable, Keys → Windows → *World map*), a tap on the minimap, or **Menu → Map**. It shows
+  biome colours, town names and field names with their level band. Field names appear only once you zoom in enough to
+  read them. It also shows your arrow and party members who are in view (the party roster carries no position). Drag
+  to pan, and use the wheel, a pinch or **+ / -** to zoom. **Me** re-centres and follows you again. The window can be
+  moved, resized and locked like the others.
+- **Minimap: on/off** and **Rotate: on/off** live in the map's footer and are saved per device (`ui.minimap*`). Rotate
+  turns the minimap with the camera.
+- **Moved to make room:** the camera compass is now LEFT of the minimap, and the quest tracker's default position
+  moved down from -220 to -334.
+
+## 2026-11-06 — 0.273.5: Settings rows in headed groups
 
 Client only. Owner: *"can u make the settings body a tabs or groups (like the desktop one)?"* — groups, headed like
 Desktop's, in one scroll:

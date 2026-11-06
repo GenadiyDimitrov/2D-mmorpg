@@ -9006,3 +9006,27 @@ section of Settings is shown only on Windows and WebGL. `BL-360`'s owed fullscre
 
 **Build order (mine):** the right-click camera bug first (in `Open-Checklist` My Finds, not here). Then 3 + 4 (small),
 1 + 2 (the key list and movement go together), 5-8 in the Settings section, and 9 last, once the section exists.
+
+## `BL-365` — BUILT in 0.274.0 (2026-11-06): the minimap + the world map
+
+You said *"do a minimap+world map"*, which took items 1 and 2 of the proposal below as written. A round north-up minimap
+sits under the action buttons. It has a Rotate toggle, three ranges (2k / 4k / 8k) and dots for party, players, NPCs,
+mobs and aggressive mobs. The world map opens with N, a tap on the minimap, or Menu → Map. Item 3 (your own marks,
+quest targets, click-to-walk) was marked "later" and is not built. It gets an id when you ask for it.
+
+## `BL-365` 🔴 A MINIMAP + A WORLD MAP (2026-11-05)
+
+Your words: *"minimap/map"*, item 4 of your half of the `BL-364` list. It was filed separately because it is a feature in
+its own right, not a setting, and it belongs on the phone as much as on a desktop.
+
+**There is none today.** The client has no minimap and no map window. Regions (`GameUi.Regions`) is the only list of places.
+
+**My proposal (not ruled; change anything):**
+1. **Minimap**, top corner, round, north up (a toggle can rotate it with the camera). It shows you with an arrow for your
+   heading, party members, mobs (red when aggressive), NPCs and the ground colour of the biomes around you. The radius is
+   about the entity distance (`BL-358`). Tapping it opens the map.
+2. **World map** window (key `N` on a desktop, which `BL-364`'s key list will hold). It shows the whole generated world:
+   biome colours, town names, zone level bands, your position and your party's. Drag to pan, wheel or pinch to zoom.
+3. **Later, not now:** marks you place yourself, quest targets, click-to-walk on the map.
+
+❓ **Owed by you:** confirm or change 1-3. Unless you say otherwise, I build 1 and 2 after `BL-364`.

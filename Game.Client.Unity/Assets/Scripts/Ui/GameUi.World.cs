@@ -382,6 +382,8 @@ namespace Game.Client
             BuildAdminBagWindow();
             BuildRankWindow();
             BuildRegionUi();
+            BuildMinimap();      // `BL-365`
+            BuildWorldMap();
             BuildSlotMenu();
         }
 
@@ -1057,14 +1059,13 @@ namespace Game.Client
         /// `BL-344` step 8 — the way home after a drag has turned or tilted the view. It shows ONLY while
         /// the camera is off top-down north-up (so the default HUD is unchanged), its red end points at
         /// north wherever you have turned, and a tap swings the view back (<see cref="CameraRig.ResetView"/>).
-        /// Under the Skills button: the one free square between the action rows (down to -146) and the
-        /// quest tracker (from -220).
+        /// Under the action rows, LEFT of the minimap (`BL-365`, which took the corner square under Skills).
         /// </summary>
         private void BuildCompass()
         {
             var button = UiKit.TextButton(_worldRoot, "", () => { if (Boot.CameraRig != null) Boot.CameraRig.ResetView(); });
             _compass = UiKit.Rect(button.gameObject);
-            UiKit.Place(_compass, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-12f, -152f), new Vector2(46f, 46f));
+            UiKit.Place(_compass, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-188f, -152f), new Vector2(46f, 46f));
 
             var needle = UiKit.Box(button.transform, "Needle", new Color(0.85f, 0.87f, 0.90f), blocksInput: false);
             _compassNeedle = UiKit.Rect(needle.gameObject);
@@ -1116,6 +1117,8 @@ namespace Game.Client
                                         + "Set up Auto Farm first.</size>",
                                         "Offline", () => Boot.StartOfflineFarm()); }, false, 0),
                 ("Auto Pots", () => { CloseWindow(_menuPanel); OpenAutoPotions(); }, false, 0),
+                // `BL-365` — also a tap on the minimap, but the minimap can be switched off.
+                ("Map", () => { CloseWindow(_menuPanel); OpenWorldMap(); }, false, 0),
                 ("Quests", () => { CloseWindow(_menuPanel); ToggleWindow(_questPanel); }, false, 0),
                 // `BL-253` — the drop database. On the MENU rather than at an NPC or inside the bag for
                 // the same reason Craft is: "where do I get this" is a question you ask while looking
@@ -1614,6 +1617,8 @@ namespace Game.Client
             RefreshTarget();
             RefreshSkillBar();
             RefreshCompass();     // `BL-344` step 8
+            RefreshMinimap();     // `BL-365`
+            RefreshWorldMap();
             RefreshConsole();
             RefreshTitlesTab();
             RefreshBag();
