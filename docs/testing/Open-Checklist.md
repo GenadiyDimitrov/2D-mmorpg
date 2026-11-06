@@ -21,7 +21,17 @@
 
 ## My Finds — next pass (write here)
 
+- [ ] 🐞 (2026-11-06, yours) *"assigning keys should not execute skills ..."*: in the Keys window, the key you press
+  to bind also fires that key's current action (a bar skill). While a capture is waiting, the key must go to the capture
+  only. (Filed with `BL-367`.) ->
 - [ ] ->
+
+---
+
+## §177 — 0.274.1: no compass beside the minimap (2026-11-06)
+
+- `177a` [ ] - Turn or tilt the camera. Does nothing appear left of the minimap any more, and does the quest tracker
+  under it still sit clear of the minimap? ->
 
 ---
 
@@ -35,8 +45,8 @@
 - `176c` [ ] - Map footer: does **Rotate: on** turn the minimap with the camera, with N following north? Does
   **Minimap: off** hide it, and do both survive a restart? ->
 - `176d` [ ] - In a dungeon: the minimap shows dots on dark ground, and the map says *Underground*? ->
-- `176e` [ ] - The compass (after turning the camera) now sits left of the minimap, and the quest tracker under it.
-  Do they overlap anything? ->
+- `176e` [ ] - The quest tracker sits under the minimap (the compass that was left of it went in 0.274.1, §177).
+  Does it overlap anything? ->
 
 ---
 

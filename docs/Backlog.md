@@ -298,6 +298,8 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-361` | ⏸ | **An iOS client** — needs a Mac (or cloud Mac) + Xcode, an Apple Developer account ($99/yr), TestFlight for testers (HTTPS, which iOS demands, is already live) | ops |
 | `BL-362` | 🔵 | **Drop groups the IG way** — A: show group % + shares inside (display); B: author them that way; C: bake the formulas into a per-mob odds table (formula/hand rows) | loot |
 | `BL-363` | 🔴 | **A browser (WebGL) client** — test build BUILT (0.272.0, `/play/`, logs in + moves, 60 MB); owed: your FPS in a real browser, deploy, a WebGL quality preset | client |
+| `BL-366` | 🔴 | **Map + minimap detail** — roads outside towns, NPC positions outside towns, a city view (houses + NPCs) behind `+`/`−`, hover names on the city view and on minimap dots | client |
+| `BL-367` | 🔴 | **Hover a skill-bar slot = the skill's card** (desktop), the same details the Skills window shows | client |
 
 ---
 
@@ -2742,3 +2744,36 @@ CHANGELOG.
 4. Leave the .NET SignalR DLLs out of the WebGL build (the browser never uses them). That trims the 16 MB of code.
 5. Clean up the browser-only rough edges: `screen.orientation.lock()` logs an error on desktop, and three URP debug
    shaders are unsupported on WebGL (harmless).
+
+## `BL-366` 🔴 MAP + MINIMAP DETAIL: ROADS, NPCs, A CITY VIEW, HOVER NAMES (2026-11-06)
+
+Your words (2026-11-06, after `BL-365` shipped):
+- *"map and minimap to have more "details outside towns" like roads not only ground"*
+- *"map to have npc positions if outside towns"*
+- *"map details when inside town it can switch to city view with houses and npc position (bigger minimap) - with "- and
+  +" buttons -> "-" exites the city view and "+" on each city to show detailed map incide the city"*
+- *"map with city view hovering over showing name of npc"*
+- *"minimap hovering over the dots also shows name of npc/monsters"*
+
+**What exists to build on:** `MapTexture` paints only `BiomeGround.ColourAt`. The roads are already shared data
+(`WorldMap.Roads`, 600 wide), so they can be painted into the same texture on both maps. The towns' houses and
+NPC spots are `TownLayout` (shared). Hover is `HoverTip` (desktop only, `HoverTip.Wanted`).
+
+**The parts:**
+1. **Roads** painted on the map and minimap textures.
+2. **NPCs outside towns** marked on the world map (towns stay a single marker at world zoom).
+3. **City view:** a `+` on each town marker on the world map opens that town's plan (houses + NPC positions, drawn
+   large). `−` goes back to the world. When you are **inside** a town, the minimap can switch to the city view itself
+   (bigger). ❓ Do you want it to switch automatically when you walk in, or only with a button?
+4. **Hover names in the city view:** pointing at an NPC shows its name.
+5. **Hover names on minimap dots:** NPCs and monsters (and players?). Desktop only; a phone has no hover.
+
+## `BL-367` 🔴 HOVER A SKILL-BAR SLOT = THE SKILL'S CARD (desktop) (2026-11-06)
+
+Your words: *"hovering over skillbar shows details (popup with skill details like the skill window do)"*.
+
+On a desktop (`HoverTip.Wanted`), pointing at a filled bar slot shows the same skill card the Skills window shows,
+and it closes when you move off. Buffs and party buffs already work this way (`BL-364`). Phones keep what they do now.
+
+The bug you named with it (*"assigning keys should not execute skills"*) is in the checklist under My Finds, since it
+is a bug and not a feature.

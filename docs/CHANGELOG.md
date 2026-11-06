@@ -11,7 +11,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.274.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.274.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -28,7 +28,17 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 opened something) moves to a new volume, and this table gets a row. To search everything: `grep -rn "..." docs/CHANGELOG.md
 docs/changelogs/`.
 
-## 2026-11-06 (latest) — 0.274.0: a minimap and a world map (`BL-365`)
+## 2026-11-06 (latest) — 0.274.1: the compass next to the minimap is gone
+
+Client only. No `game.db` delete. Owner: *"remove the compass(reset) next to the minimap"*.
+
+- The compass button (`BL-344` step 8) that showed beside the minimap once the camera was turned, and swung the view
+  back to north-up when tapped, is removed (`GameUi.World.cs`). The minimap already shows which way north is.
+  `CameraRig.ResetView` stays in the code but nothing calls it now.
+- Filed: `BL-366` (map/minimap detail: roads, NPCs, city view, hover names) and `BL-367` (hover a bar slot for the skill
+  card). The bug where a key being bound also fires its skill is in the checklist under My Finds.
+
+## 2026-11-06 — 0.274.0: a minimap and a world map (`BL-365`)
 
 Client only. No server change and no `game.db` delete. Owner: *"do a minimap+world map"*.
 
